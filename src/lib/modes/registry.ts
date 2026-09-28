@@ -43,7 +43,8 @@ export const MODES: readonly GameMode[] = [
 	},
 	{
 		id: 'minefield',
-		status: 'coming-soon',
+		status: 'playable',
+		href: '/play/minefield',
 		icon: IconBomb,
 		tileClass: 'bg-tie-red',
 		name: m.mode_minefield_name,
