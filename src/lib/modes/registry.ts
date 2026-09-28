@@ -34,7 +34,8 @@ export type GameMode = ModeBase &
 export const MODES: readonly GameMode[] = [
 	{
 		id: 'blocks',
-		status: 'coming-soon',
+		status: 'playable',
+		href: '/play/blocks',
 		icon: IconBlocks,
 		tileClass: 'bg-khaki',
 		name: m.mode_blocks_name,
