@@ -42,7 +42,7 @@
 					type="button"
 					class="sticker sticker-interactive flex w-full flex-col items-start gap-1 p-4 text-start active:scale-95 {id ===
 					selected
-						? 'bg-explosion-yellow!'
+						? 'bg-explosion-yellow'
 						: ''}"
 					style:--tilt="{TILTS[id]}deg"
 					aria-current={id === selected ? 'true' : undefined}
