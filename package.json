@@ -14,8 +14,8 @@
 		"check:watch": "svelte-kit sync && bun run i18n:compile && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
 		"lint": "prettier --check . && eslint .",
-		"test": "vitest run",
-		"test:watch": "vitest"
+		"test": "bun run i18n:compile && vitest run",
+		"test:watch": "bun run i18n:compile && vitest"
 	},
 	"devDependencies": {
 		"@eslint/compat": "2.1.1",
