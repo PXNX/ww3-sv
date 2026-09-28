@@ -167,7 +167,7 @@
 	"shootdown_commander_worried": "Der Kommandant salutiert nervös",
 	"shootdown_commander_smug": "Der Kommandant ist sehr zufrieden mit sich",
 	"shootdown_blimp_1": "Plopp! {characterName}s Luftschiff zieht mit einem traurigen Pfeifen davon.",
-	"shootdown_blimp_2": "{characterName} hätte gern sein Geld für das Luftschiff zurück.",
+	"shootdown_blimp_2": "{characterName} hätte gern das Geld für das Luftschiff zurück.",
 	"shootdown_blimp_3": "{characterName} schmollt. Das Luftschiff war sehr teuer.",
 	"mode_pipeline_name": "Pipeline-Panik",
 	"mode_pipeline_description": "Halte das Öl am Fließen, während Rohre brechen.",
