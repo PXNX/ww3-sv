@@ -88,7 +88,7 @@
 	"convoy_start": "Cast off",
 	"convoy_how_to": "Swipe or tap left and right to change lanes. Dodge mines, gunboats and drones, and grab the oil barrels.",
 	"convoy_how_to_keys": "Keyboard: arrow keys or A and D. P pauses.",
-	"convoy_intro": "{characterName} has sent his gunboats. Good luck!",
+	"convoy_intro": "{characterName} has sent the gunboats. Good luck!",
 	"convoy_hull": "Hull",
 	"convoy_hull_status": "Hull {hull} of {max}",
 	"convoy_distance": "Distance",

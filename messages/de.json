@@ -88,7 +88,7 @@
 	"convoy_start": "Leinen los",
 	"convoy_how_to": "Wische oder tippe links und rechts, um die Spur zu wechseln. Weiche Minen, Kanonenbooten und Drohnen aus und schnapp dir die Ölfässer.",
 	"convoy_how_to_keys": "Tastatur: Pfeiltasten oder A und D. P pausiert.",
-	"convoy_intro": "{characterName} hat seine Kanonenboote losgeschickt. Viel Glück!",
+	"convoy_intro": "{characterName} hat die Kanonenboote losgeschickt. Viel Glück!",
 	"convoy_hull": "Rumpf",
 	"convoy_hull_status": "Rumpf {hull} von {max}",
 	"convoy_distance": "Strecke",
