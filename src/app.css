@@ -7,7 +7,7 @@
 }
 
 @plugin 'daisyui/theme' {
-	name: 'chokepoint';
+	name: 'ww3';
 	default: true;
 	prefersdark: false;
 	color-scheme: light;
