@@ -13,7 +13,7 @@
 
 <button
 	type="button"
-	class="btn-chunky min-h-14 flex-1 {armed ? 'bg-explosion-yellow!' : ''}"
+	class="btn-chunky min-h-14 flex-1 {armed ? 'bg-explosion-yellow' : ''}"
 	style:rotate={armed ? '1.5deg' : '0deg'}
 	aria-pressed={armed}
 	disabled={disabled || left === 0}
