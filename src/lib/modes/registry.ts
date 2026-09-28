@@ -79,7 +79,8 @@ export const MODES: readonly GameMode[] = [
 	},
 	{
 		id: 'pipeline',
-		status: 'coming-soon',
+		status: 'playable',
+		href: '/play/pipeline',
 		icon: IconFuel,
 		tileClass: 'bg-mustard',
 		name: m.mode_pipeline_name,
