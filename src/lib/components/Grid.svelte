@@ -9,6 +9,9 @@
 	import type { ClearFeedback, Preview } from '$lib/stores/blocksGame.svelte';
 	import BlocksCell from './BlocksCell.svelte';
 
+	/** Shared starburst sprite, also used by Shootdown; a placeholder until owner-supplied art exists */
+	const EXPLOSION_SPRITE = '/assets/shootdown/_placeholder-explosion.svg';
+
 	let {
 		board,
 		preview,
@@ -38,13 +41,18 @@
 	const clearCells = $derived(new Set(preview?.clears ?? []));
 	const burstCells = $derived(new Set(reducedMotion ? [] : (feedback?.cells ?? [])));
 
-	function cellFromPoint(event: PointerEvent) {
+	/** Which cell sits under a viewport point, or null when it is outside the board */
+	export function cellAt(clientX: number, clientY: number) {
 		if (!grid) return null;
 		const rect = grid.getBoundingClientRect();
-		const col = Math.floor(((event.clientX - rect.left) / rect.width) * board.size);
-		const row = Math.floor(((event.clientY - rect.top) / rect.height) * board.size);
+		const col = Math.floor(((clientX - rect.left) / rect.width) * board.size);
+		const row = Math.floor(((clientY - rect.top) / rect.height) * board.size);
 		if (row < 0 || col < 0 || row >= board.size || col >= board.size) return null;
 		return { row, col };
+	}
+
+	function cellFromPoint(event: PointerEvent) {
+		return cellAt(event.clientX, event.clientY);
 	}
 
 	function pointerDown(event: PointerEvent) {
@@ -150,9 +158,9 @@
 					{/if}
 					{#if burstCells.has(index)}
 						{#key feedback?.id}
-							<span
-								class="blocks-burst pointer-events-none absolute inset-0 rounded-full bg-explosion-yellow"
-							></span>
+							<span class="blocks-burst pointer-events-none absolute inset-0">
+								<img src={EXPLOSION_SPRITE} alt="" draggable="false" class="size-full" />
+							</span>
 						{/key}
 					{/if}
 				</button>

@@ -24,6 +24,17 @@
 		s: '#e5484d',
 		line: '#4fa8d8'
 	};
+
+	/** Ink motif per kind, shared as SVG assets rather than drawn inline */
+	const KIND_MOTIF: Record<PieceKind, string> = {
+		square: '/assets/sprites/blocks/barrel.svg',
+		l: '/assets/sprites/blocks/warship-bow.svg',
+		z: '/assets/sprites/mine.svg',
+		s: '/assets/sprites/mine.svg',
+		line: '/assets/sprites/blocks/porthole.svg'
+	};
+
+	const BLOCKED_MOTIF = '/assets/sprites/blocks/blocked.svg';
 </script>
 
 <script lang="ts">
@@ -55,24 +66,12 @@
 	aria-hidden="true"
 >
 	{#if kind && look !== 'empty'}
-		<svg viewBox="0 0 10 10" class="absolute inset-0 size-full" fill="none" stroke="#111111">
-			{#if look === 'blocked'}
-				<path d="M3 3l4 4M7 3l-4 4" stroke-width="1.6" stroke-linecap="round" />
-			{:else if kind === 'square'}
-				<!-- Barrel hoops -->
-				<path d="M2 3.5h6M2 6.5h6" stroke-width="1.1" />
-			{:else if kind === 'line'}
-				<!-- Tanker porthole -->
-				<circle cx="5" cy="5" r="1.6" stroke-width="1.1" fill="#ffffff" />
-			{:else if kind === 'l'}
-				<!-- Warship bow -->
-				<path d="M2.5 6.5h5l-1 1.5h-3z" stroke-width="1" fill="#ffffff" />
-			{:else}
-				<!-- Sea mine with spikes -->
-				<circle cx="5" cy="5" r="1.8" stroke-width="1" fill="#111111" />
-				<path d="M5 1.8v1.4M5 6.8v1.4M1.8 5h1.4M6.8 5h1.4" stroke-width="1" />
-			{/if}
-		</svg>
+		<img
+			src={look === 'blocked' ? BLOCKED_MOTIF : KIND_MOTIF[kind]}
+			alt=""
+			draggable="false"
+			class="absolute inset-0 size-full"
+		/>
 	{/if}
 </span>
 
