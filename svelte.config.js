@@ -5,8 +5,8 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 const config = {
 	preprocess: vitePreprocess(),
 	kit: {
-		// Pinned because Bun reports its own Node.js version, which the adapter cannot map automatically
-		adapter: adapter({ runtime: 'nodejs24.x' })
+		// Functions run on Vercel's Bun runtime; the Bun version is set by bunVersion in vercel.json
+		adapter: adapter({ runtime: 'experimental_bun1.x' })
 	}
 };
 
