@@ -70,7 +70,8 @@ export const MODES: readonly GameMode[] = [
 	},
 	{
 		id: 'shootdown',
-		status: 'coming-soon',
+		status: 'playable',
+		href: '/play/shootdown',
 		icon: IconCrosshair,
 		tileClass: 'bg-sky',
 		name: m.mode_shootdown_name,
