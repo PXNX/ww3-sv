@@ -27,3 +27,6 @@ vite.config.ts.timestamp-*
 
 .idea
 .theia
+
+# Local agent worktrees
+/.claude/worktrees
