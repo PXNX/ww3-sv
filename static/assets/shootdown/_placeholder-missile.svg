@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 120">
+	<!-- Generic placeholder interceptor missile: a pointed dark body with a small flame -->
+	<g stroke="#111111" stroke-width="6" stroke-linejoin="round" stroke-linecap="round">
+		<path d="M20 0 L33 18 L33 100 L7 100 L7 18 Z" fill="#3B4048"/>
+		<path d="M14 100 L20 118 L26 100 Z" fill="#F0772F"/>
+	</g>
+</svg>

@@ -18,7 +18,7 @@ export const CHARACTER_NAME: Record<Locale, string> = {
 };
 
 const POSE_FILES: Record<MascotPose, string> = {
-	idle: 'mascot-idle.png',
+	idle: 'mascot-idle.svg',
 	smug: 'mascot-smug.png',
 	sweating: 'mascot-sweating.png',
 	sunk: 'mascot-sunk.png',
@@ -26,7 +26,7 @@ const POSE_FILES: Record<MascotPose, string> = {
 };
 
 /** Add a pose here once its owner-supplied artwork is in static/assets/mascot/ */
-const SUPPLIED_POSES: readonly MascotPose[] = [];
+const SUPPLIED_POSES: readonly MascotPose[] = ['idle'];
 
 export function mascotImage(pose: MascotPose): string {
 	return SUPPLIED_POSES.includes(pose)
