@@ -209,9 +209,11 @@
 
 				{#if strike}
 					{@const progress = approach(strike)}
+					<!-- The button fills the whole tile so the tap target stays comfortable even on a
+						 small hard-difficulty board; only the ring, icon and badge inside are visually inset. -->
 					<button
 						type="button"
-						class="marker absolute inset-[8%] touch-manipulation rounded-full focus-visible:outline-3 focus-visible:outline-tie-red focus-visible:outline-dashed"
+						class="marker absolute inset-0 touch-manipulation rounded-full focus-visible:outline-3 focus-visible:outline-tie-red focus-visible:outline-dashed"
 						style:pointer-events={canIntercept ? 'auto' : 'none'}
 						tabindex={canIntercept ? 0 : -1}
 						aria-label={strike.kind === 'drone'
@@ -219,44 +221,46 @@
 							: m.pipeline_intercept_rocket()}
 						onclick={() => onIntercept(strike.id)}
 					>
-						<svg viewBox="0 0 100 100" class="absolute inset-0 size-full" aria-hidden="true">
-							<circle
-								cx="50"
-								cy="50"
-								r="44"
-								fill="rgb(229 72 77 / 0.25)"
-								stroke="#e5484d"
-								stroke-width="6"
-								stroke-dasharray="10 7"
+						<span class="pointer-events-none absolute inset-[8%]" aria-hidden="true">
+							<svg viewBox="0 0 100 100" class="absolute inset-0 size-full">
+								<circle
+									cx="50"
+									cy="50"
+									r="44"
+									fill="rgb(229 72 77 / 0.25)"
+									stroke="#e5484d"
+									stroke-width="6"
+									stroke-dasharray="10 7"
+								/>
+								<circle
+									cx="50"
+									cy="50"
+									r="44"
+									fill="none"
+									stroke="#111111"
+									stroke-width="4"
+									stroke-dasharray="{markerRing * (1 - progress)} {markerRing}"
+									transform="rotate(-90 50 50)"
+								/>
+								<path d="M50 30 V70 M30 50 H70" stroke="#111111" stroke-width="4" />
+							</svg>
+							<PipelineStrikeIcon
+								kind={strike.kind}
+								class="absolute inset-[18%] size-[64%] drop-shadow-none"
 							/>
-							<circle
-								cx="50"
-								cy="50"
-								r="44"
-								fill="none"
-								stroke="#111111"
-								stroke-width="4"
-								stroke-dasharray="{markerRing * (1 - progress)} {markerRing}"
-								transform="rotate(-90 50 50)"
-							/>
-							<path d="M50 30 V70 M30 50 H70" stroke="#111111" stroke-width="4" />
-						</svg>
-						<PipelineStrikeIcon
-							kind={strike.kind}
-							class="absolute inset-[18%] size-[64%] drop-shadow-none"
-						/>
-						<span
-							class="absolute -top-1 -right-1 grid size-5 place-items-center rounded-full border-2 border-ink bg-explosion-yellow text-xs leading-none font-bold"
-							aria-hidden="true">!</span
-						>
-						{#if canIntercept}
-							<img
-								src={spriteSrc('patriotLauncher')}
-								alt=""
-								class="absolute -bottom-1 -left-1 w-6 rounded-sm border-2 border-ink bg-paper"
-								draggable="false"
-							/>
-						{/if}
+							<span
+								class="absolute -top-1 -right-1 grid size-5 place-items-center rounded-full border-2 border-ink bg-explosion-yellow text-xs leading-none font-bold"
+								>!</span
+							>
+							{#if canIntercept}
+								<img
+									src={spriteSrc('patriotLauncher')}
+									alt=""
+									class="absolute -bottom-1 -left-1 w-6 rounded-sm border-2 border-ink bg-paper"
+									draggable="false"
+								/>
+							{/if}
+						</span>
 					</button>
 					{#if !reducedMotion}
 						<!-- The incoming machine drops towards the target as the warning runs out -->

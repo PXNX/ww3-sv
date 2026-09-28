@@ -18,6 +18,7 @@
 	import type { ScoreCard } from '$lib/services/share';
 	import { CAMEO_PLACEHOLDER, cameoPortrait, pickCameo, type Cameo } from '$lib/theme/cameos';
 	import { CHARACTER_NAME } from '$lib/theme/character';
+	import { soundManager } from '$lib/sound/soundManager.svelte';
 	import CharacterMascot from './CharacterMascot.svelte';
 	import Confetti from './Confetti.svelte';
 	import ShareButton from './ShareButton.svelte';
@@ -58,6 +59,7 @@
 			lastCameo = cameo.id;
 			portraitFailed = false;
 			dialog.showModal();
+			soundManager().play(isNewBest ? 'new-best' : 'game-over');
 		} else if (!open && dialog.open) {
 			dialog.close();
 		}

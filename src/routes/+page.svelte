@@ -4,11 +4,15 @@
 	import CharacterMascot from '$lib/components/CharacterMascot.svelte';
 	import LocaleSwitcher from '$lib/components/LocaleSwitcher.svelte';
 	import ModeSelect from '$lib/components/ModeSelect.svelte';
+	import SoundToggle from '$lib/components/SoundToggle.svelte';
 	import StraitScene from '$lib/components/scenery/StraitScene.svelte';
 </script>
 
-<main class="mx-auto flex max-w-5xl flex-col gap-8 px-4 pt-4 pb-12">
-	<div class="flex justify-end">
+<main
+	class="mx-auto flex max-w-5xl flex-col gap-8 px-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(3rem+env(safe-area-inset-bottom))]"
+>
+	<div class="flex justify-end gap-2">
+		<SoundToggle />
 		<LocaleSwitcher />
 	</div>
 

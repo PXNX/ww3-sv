@@ -28,6 +28,14 @@ import { canDeploySubmarine, submarineSweep } from '$lib/game/minefield/submarin
 import { createRandom, randomSeed, type Random } from '$lib/game/random';
 import { highscores, type Highscores } from '$lib/services/highscore';
 import { localStore, type Store } from '$lib/services/storage';
+import { soundManager } from '$lib/sound/soundManager.svelte';
+import type { SoundId } from '$lib/sound/sounds';
+
+const EVENT_SOUNDS: Record<MinefieldEventDetail['kind'], SoundId> = {
+	explosion: 'explosion-small',
+	defused: 'sparkle',
+	'needs-water': 'ui-error'
+};
 
 export type MinefieldPhase = 'ready' | 'playing' | 'won' | 'lost';
 
@@ -160,6 +168,7 @@ export class MinefieldGame {
 	flag(index: number) {
 		if (!this.canAct) return;
 		this.board = toggleFlag(this.board, index);
+		soundManager().play('ui-toggle');
 	}
 
 	deploySubmarine(index: number) {
@@ -225,7 +234,10 @@ export class MinefieldGame {
 			detail = { kind: 'explosion', cells: change.detonated };
 		}
 		if (detail) this.#announce(detail);
-		else this.event = null;
+		else {
+			this.event = null;
+			soundManager().play('click');
+		}
 		if (this.tankersLeft === 0) {
 			this.#finish(false);
 			return;
@@ -239,6 +251,7 @@ export class MinefieldGame {
 
 	#announce(detail: MinefieldEventDetail) {
 		this.event = { ...detail, id: ++this.#eventId };
+		soundManager().play(EVENT_SOUNDS[detail.kind]);
 	}
 
 	#finish(won: boolean) {

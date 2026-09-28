@@ -24,6 +24,7 @@ import { createRandom, randomSeed, type Random } from '$lib/game/random';
 import { prefersReducedMotion } from '$lib/game/loop';
 import { highscores } from '$lib/services/highscore';
 import { localStore } from '$lib/services/storage';
+import { soundManager } from '$lib/sound/soundManager.svelte';
 import { m } from '$lib/paraglide/messages';
 import { getLocale } from '$lib/paraglide/runtime';
 import { CHARACTER_NAME, type MascotPose } from '$lib/theme/character';
@@ -146,6 +147,12 @@ export class MergeGame {
 		if (outcome.droppedMine) notices.push({ kind: 'mine-dropped' });
 		this.showNotices(notices);
 
+		if (outcome.createdMegaTanker) soundManager().play('chime-big');
+		else if (outcome.merges.length > 1) soundManager().play('chime');
+		else if (outcome.merges.length === 1) soundManager().play('pop');
+		if (outcome.destroyedMines.length > 0) soundManager().play('sparkle');
+		if (outcome.droppedMine) soundManager().play('alarm');
+
 		this.state = outcome.state;
 		this.recordTier();
 		this.afterChange();
@@ -170,6 +177,7 @@ export class MergeGame {
 		this.mineJustDropped = false;
 		this.showLeaving([{ tile, ...position, effect: 'submarine' }]);
 		this.showNotices([{ kind: 'submarine' }]);
+		soundManager().play('zap');
 		this.state = next;
 		this.afterChange();
 	}

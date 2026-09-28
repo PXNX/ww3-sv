@@ -18,6 +18,7 @@ import type { Cell, Piece, PieceKind } from '$lib/game/blocks/pieces';
 import { NO_COMBO, performanceMood, scoreMove } from '$lib/game/blocks/scoring';
 import { createRandom, randomSeed, type Random } from '$lib/game/random';
 import { highscores, type Highscores } from '$lib/services/highscore';
+import { soundManager } from '$lib/sound/soundManager.svelte';
 
 export const BLOCKS_BEST_KEY = ['blocks', 'score'] as const;
 
@@ -118,6 +119,7 @@ export class BlocksGame {
 	select(index: number | null) {
 		if (this.over) return;
 		this.selected = index === null || this.selected === index || !this.tray[index] ? null : index;
+		if (this.selected !== null) soundManager().play('click');
 	}
 
 	/** Where the selected piece would land for a tap on the given cell, and whether that is legal */
@@ -141,7 +143,10 @@ export class BlocksGame {
 		if (!piece || this.selected === null || this.over) return 'no-selection';
 		const [anchorRow, anchorCol] = clampAnchor(this.board, piece, row, col);
 		const result = placePiece(this.board, piece, anchorRow, anchorCol);
-		if (!result) return 'blocked';
+		if (!result) {
+			soundManager().play('ui-error');
+			return 'blocked';
+		}
 
 		const lines = lineCount(result.cleared);
 		const move = scoreMove(piece.cells.length, lines, this.combo);
@@ -164,6 +169,7 @@ export class BlocksGame {
 						cells: result.clearedCells
 					}
 				: null;
+		soundManager().play(lines >= 2 ? 'chime' : lines === 1 ? 'pop' : 'thud');
 
 		const tray = this.tray.map((entry, index) => (index === slot ? null : entry));
 		this.tray = tray.every((entry) => entry === null)

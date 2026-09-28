@@ -6,6 +6,7 @@
 	import type { Snippet } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { m } from '$lib/paraglide/messages';
+	import SoundToggle from './SoundToggle.svelte';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
 
 	let {
@@ -28,15 +29,18 @@
 	<title>{title}</title>
 </svelte:head>
 
-<main class="mx-auto flex min-h-dvh max-w-3xl flex-col gap-3 px-3 pt-3 pb-6">
+<main
+	class="mx-auto flex min-h-dvh max-w-3xl flex-col gap-3 px-3 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
+>
 	<div class="flex items-center justify-between gap-2">
 		<a href={resolve('/')} class="btn-chunky px-3 py-1 text-sm">
 			<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
 			{m.game_back()}
 		</a>
-		{#if actions}
-			<div class="flex items-center gap-2">{@render actions()}</div>
-		{/if}
+		<div class="flex items-center gap-2">
+			{@render actions?.()}
+			<SoundToggle />
+		</div>
 	</div>
 
 	<header

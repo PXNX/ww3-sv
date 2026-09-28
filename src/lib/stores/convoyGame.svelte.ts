@@ -17,6 +17,8 @@ import {
 } from '$lib/game/convoy/runnerStep';
 import { createRandom, randomSeed, type Random } from '$lib/game/random';
 import { highscores, type Highscores } from '$lib/services/highscore';
+import { soundManager } from '$lib/sound/soundManager.svelte';
+import type { SoundId } from '$lib/sound/sounds';
 
 export type ConvoyStatus = 'ready' | 'running' | 'paused' | 'over';
 
@@ -27,6 +29,16 @@ const EFFECTS: Partial<Record<RunnerEventType, Pick<ConvoyEffect, 'kind' | 'dura
 	escort: { kind: 'sparkle', durationMs: 380 },
 	escortBonus: { kind: 'sparkle', durationMs: 380 },
 	slick: { kind: 'splash', durationMs: 420 }
+};
+
+const SOUNDS: Partial<Record<RunnerEventType, SoundId>> = {
+	hit: 'explosion-small',
+	shield: 'sparkle',
+	barrel: 'pickup',
+	escort: 'chime',
+	escortBonus: 'chime-big',
+	slick: 'splash',
+	nearMiss: 'whoosh'
 };
 
 const SHAKE_MS = 280;
@@ -113,6 +125,7 @@ export class ConvoyGame {
 	steer(direction: -1 | 1) {
 		if (this.status !== 'running') return;
 		this.runner = steer(this.runner, direction);
+		soundManager().play('click');
 	}
 
 	/** Advances the game by one fixed step */
@@ -132,6 +145,8 @@ export class ConvoyGame {
 			if (event.type === 'hit' && !this.reducedMotion) this.shakeMs = SHAKE_MS;
 			if (event.type === 'nearMiss') this.nearMisses++;
 			if (event.type === 'shield') this.shieldSaves++;
+			const sound = SOUNDS[event.type];
+			if (sound) soundManager().play(sound);
 		}
 
 		this.#sync();

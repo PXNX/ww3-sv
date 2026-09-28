@@ -254,6 +254,8 @@
 	"game_pause": "Pause",
 	"game_paused": "Paused",
 	"game_resume": "Resume",
+	"sound_mute": "Mute sound",
+	"sound_unmute": "Unmute sound",
 	"gameover_title": "Game over",
 	"gameover_final_score": "Final score",
 	"gameover_new_best": "New personal best!",
