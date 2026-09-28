@@ -62,14 +62,7 @@ export interface Obstacle {
 }
 
 export type RunnerEventType =
-	| 'hit'
-	| 'shield'
-	| 'barrel'
-	| 'escort'
-	| 'escortBonus'
-	| 'slick'
-	| 'nearMiss'
-	| 'sunk';
+	'hit' | 'shield' | 'barrel' | 'escort' | 'escortBonus' | 'slick' | 'nearMiss' | 'sunk';
 
 export interface RunnerEvent {
 	type: RunnerEventType;
