@@ -58,5 +58,12 @@
 	"cameo_erdogan_name": "Recep Tayyip Erdoğan",
 	"cameo_erdogan": "Erdoğan offers to mediate between {characterName} and the tankers, for a small bridge toll.",
 	"cameo_macron_name": "Emmanuel Macron",
-	"cameo_macron": "Macron sends {characterName} a strongly worded croissant."
+	"cameo_macron": "Macron sends {characterName} a strongly worded croissant.",
+	"error_status": "Error {status}",
+	"error_lost_title": "Wrong turn",
+	"error_lost_body": "This page sailed right off the map.",
+	"error_broken_title": "Something went bang",
+	"error_broken_body": "Only the page got hurt. Try again in a moment.",
+	"error_home": "Back to the menu",
+	"error_retry": "Reload"
 }

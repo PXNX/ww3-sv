@@ -58,5 +58,12 @@
 	"cameo_erdogan_name": "Recep Tayyip Erdoğan",
 	"cameo_erdogan": "Erdoğan bietet an, zwischen {characterName} und den Tankern zu vermitteln, gegen eine kleine Brückenmaut.",
 	"cameo_macron_name": "Emmanuel Macron",
-	"cameo_macron": "Macron schickt {characterName} ein deutlich formuliertes Croissant."
+	"cameo_macron": "Macron schickt {characterName} ein deutlich formuliertes Croissant.",
+	"error_status": "Fehler {status}",
+	"error_lost_title": "Falsch abgebogen",
+	"error_lost_body": "Diese Seite ist glatt über den Kartenrand gesegelt.",
+	"error_broken_title": "Irgendwas hat geknallt",
+	"error_broken_body": "Nur die Seite hat was abbekommen. Versuch es gleich nochmal.",
+	"error_home": "Zurück zum Menü",
+	"error_retry": "Neu laden"
 }
