@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+	<!-- Generic placeholder sea mine: spiky, flat red -->
+	<g stroke="#111111" stroke-width="5" stroke-linecap="round">
+		<path d="M40 6 V18 M40 62 V74 M6 40 H18 M62 40 H74 M16 16 L25 25 M55 55 L64 64 M64 16 L55 25 M25 55 L16 64"/>
+		<circle cx="40" cy="40" r="23" fill="#E5484D"/>
+		<circle cx="32" cy="32" r="5" fill="#FFFFFF" stroke="none"/>
+	</g>
+</svg>

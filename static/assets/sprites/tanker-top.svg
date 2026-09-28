@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 164">
+	<!-- Generic placeholder tanker, top-down view, bow pointing up -->
+	<g stroke="#111111" stroke-width="5" stroke-linejoin="round">
+		<path d="M32 6 C52 22 56 42 56 62 V150 Q56 158 48 158 H16 Q8 158 8 150 V62 C8 42 12 22 32 6 Z" fill="#2B2F36"/>
+		<rect x="16" y="124" width="32" height="24" fill="#FFFFFF"/>
+		<circle cx="32" cy="136" r="5" fill="#E5484D"/>
+	</g>
+	<text x="32" y="84" text-anchor="middle" font-family="system-ui, sans-serif" font-size="20" font-weight="900" fill="#FFFFFF" transform="rotate(-90 32 84)">OIL</text>
+</svg>

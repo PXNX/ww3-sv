@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 104">
+	<!-- Generic placeholder launcher truck with a raised missile rack; not traced from any reference -->
+	<g stroke="#111111" stroke-width="5" stroke-linejoin="round">
+		<g transform="rotate(-28 46 60)">
+			<rect x="22" y="32" width="92" height="28" fill="#9AA37A"/>
+			<circle cx="108" cy="39" r="4" fill="#111111" stroke="none"/>
+			<circle cx="108" cy="53" r="4" fill="#111111" stroke="none"/>
+		</g>
+		<rect x="10" y="58" width="116" height="24" fill="#7C8C5C"/>
+		<path d="M126 82 V46 H148 L160 62 V82 Z" fill="#7C8C5C"/>
+		<path d="M132 52 H146 L154 62 H132 Z" fill="#AEB4BE"/>
+		<circle cx="32" cy="86" r="11" fill="#111111"/>
+		<circle cx="62" cy="86" r="11" fill="#111111"/>
+		<circle cx="104" cy="86" r="11" fill="#111111"/>
+		<circle cx="144" cy="86" r="11" fill="#111111"/>
+	</g>
+</svg>
