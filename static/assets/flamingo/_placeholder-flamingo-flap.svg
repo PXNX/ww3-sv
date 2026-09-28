@@ -1,18 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 84">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 90">
 	<!-- Generic placeholder flamingo, wing raised mid-flap; flat pink, facing right; not traced from any reference -->
-	<g stroke="#111111" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
-		<path d="M36 46 L20 52 L2 49" stroke-width="6"/>
-		<path d="M36 46 L20 52 L2 49" stroke="#D9608E" stroke-width="2.5"/>
-		<path d="M38 48 L24 56 L6 56" stroke-width="6"/>
-		<path d="M38 48 L24 56 L6 56" stroke="#D9608E" stroke-width="2.5"/>
-		<path d="M30 37 L20 32 L22 44 Z" fill="#D9608E"/>
-		<path d="M54 36 Q66 32 66 20" fill="none" stroke-width="7"/>
-		<path d="M54 36 Q66 32 66 20" fill="none" stroke="#F28DB2" stroke-width="3.5"/>
-		<path d="M38 35 L30 12 L52 33 Z" fill="#D9608E"/>
-		<ellipse cx="44" cy="40" rx="17" ry="11" fill="#F28DB2"/>
-		<circle cx="68" cy="18" r="6.5" fill="#F28DB2"/>
-		<path d="M73 15 L84 19 L74 21 Z" fill="#FFFFFF"/>
-		<path d="M80 17 L84 19 L79 20 Z" fill="#111111"/>
-		<circle cx="69" cy="14" r="2.5" fill="#111111" stroke="none"/>
+	<g stroke="#111111" stroke-linejoin="round" stroke-linecap="round">
+		<path d="M34 66 L18 78 L4 74" fill="none" stroke-width="4"/>
+		<path d="M38 68 L24 84 L10 84" fill="none" stroke-width="4"/>
+		<path d="M20 46 L8 40 L14 54 Z" fill="#D9608E" stroke-width="4"/>
+		<path d="M56 42 Q66 18 74 10" fill="none" stroke-width="11"/>
+		<path d="M56 42 Q66 18 74 10" fill="none" stroke="#F28DB2" stroke-width="6"/>
+		<ellipse cx="42" cy="52" rx="24" ry="17" fill="#F28DB2" stroke-width="4"/>
+		<circle cx="76" cy="8" r="11" fill="#F28DB2" stroke-width="4"/>
+		<circle cx="80" cy="5" r="2" fill="#111111" stroke="none"/>
+		<path d="M84 2 L96 8 L86 16 L80 10 Z" fill="#FFFFFF" stroke-width="3"/>
+		<path d="M91 6 L96 8 L90 11 Z" fill="#111111" stroke-width="2"/>
+		<path d="M34 44 Q40 16 56 30 Q42 44 34 44 Z" fill="#D9608E" stroke-width="4"/>
 	</g>
 </svg>
