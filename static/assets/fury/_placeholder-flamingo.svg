@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 92 90">
+	<!-- Generic placeholder flamingo bird, side profile facing right; not traced from any reference -->
+	<g stroke="#111111" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+		<path d="M24 66 L6 74 M24 70 L8 80" stroke-width="4"/>
+		<path d="M50 38 Q60 20 66 30 L66 40 Q58 44 50 46 Z" fill="#F29BB8"/>
+		<ellipse cx="40" cy="50" rx="25" ry="20" fill="#F29BB8"/>
+		<path d="M20 40 Q34 22 48 38 Q34 48 20 40 Z" fill="#D9668D"/>
+		<circle cx="66" cy="30" r="9" fill="#F29BB8"/>
+		<path d="M72 24 L82 30 L76 38 L70 33 Z" fill="#FFFFFF"/>
+		<path d="M78 28 L82 30 L77 33 Z" fill="#111111"/>
+		<circle cx="70" cy="26" r="3" fill="#FFFFFF" stroke-width="1.5"/>
+		<circle cx="71" cy="26" r="1.4" fill="#111111" stroke="none"/>
+	</g>
+</svg>

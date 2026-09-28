@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 160">
+	<!-- Generic placeholder power pylon: steel lattice tower with a cross-arm and drooping wires -->
+	<g stroke="#111111" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+		<path d="M8 26 Q2 60 6 100 M48 26 Q54 60 50 100" fill="none" stroke-width="2"/>
+		<rect x="8" y="8" width="40" height="152" fill="#C9CDD3"/>
+		<path d="M14 30 L42 55 M42 30 L14 55 M14 60 L42 85 M42 60 L14 85 M14 90 L42 115 M42 90 L14 115 M14 120 L42 145 M42 120 L14 145" stroke-width="2"/>
+		<path d="M8 8 L28 0 L48 8 Z" fill="#C9CDD3"/>
+		<rect x="0" y="14" width="56" height="8" fill="#C9CDD3"/>
+		<rect x="4" y="16" width="6" height="12" fill="#FFFFFF"/>
+		<rect x="46" y="16" width="6" height="12" fill="#FFFFFF"/>
+	</g>
+</svg>

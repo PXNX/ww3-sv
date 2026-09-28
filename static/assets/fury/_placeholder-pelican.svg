@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 92 90">
+	<!-- Generic placeholder pelican, side profile facing right, with a large pouch beak -->
+	<g stroke="#111111" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+		<path d="M50 40 Q58 24 62 32 L62 42 Q56 46 50 46 Z" fill="#EFE3C4"/>
+		<ellipse cx="40" cy="50" rx="25" ry="20" fill="#EFE3C4"/>
+		<path d="M20 40 Q34 22 48 38 Q34 48 20 40 Z" fill="#CDBB8E"/>
+		<circle cx="62" cy="32" r="10.5" fill="#EFE3C4"/>
+		<path d="M68 26 L90 32 Q78 46 66 40 Z" fill="#F0913A"/>
+		<circle cx="65" cy="28" r="3" fill="#FFFFFF" stroke-width="1.5"/>
+		<circle cx="66" cy="28" r="1.4" fill="#111111" stroke="none"/>
+	</g>
+</svg>

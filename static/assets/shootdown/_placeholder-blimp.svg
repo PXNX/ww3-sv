@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 65">
+	<!-- Generic placeholder blimp: a flat envelope, tail fin and small gondola; not a real airship -->
+	<g stroke="#111111" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+		<path d="M34 32 L2 17 L10 32 L2 47 Z" fill="#E5484D"/>
+		<ellipse cx="80" cy="32" rx="72" ry="28" fill="#F6C9A0"/>
+		<rect x="64" y="44" width="32" height="14" fill="#7C8C5C"/>
+	</g>
+</svg>

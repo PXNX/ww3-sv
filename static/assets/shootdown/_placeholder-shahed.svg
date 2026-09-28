@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130 120">
+	<!-- Generic placeholder attack drone: dark dart shape with a pale propeller hub; not traced from any reference -->
+	<g stroke="#111111" stroke-width="8" stroke-linejoin="round" stroke-linecap="round">
+		<path d="M65 120 L130 20 L65 50 L0 20 Z" fill="#3B4048"/>
+		<path d="M125 20 L125 2 M5 20 L5 2" stroke-width="6"/>
+		<ellipse cx="65" cy="46" rx="16" ry="8" fill="#AEB4BE"/>
+	</g>
+</svg>

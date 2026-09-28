@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 160">
+	<!-- Generic placeholder radar mast: khaki lattice column with a dish on top -->
+	<g stroke="#111111" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+		<rect x="4" y="30" width="48" height="126" fill="#7C8C5C"/>
+		<path d="M4 40 L52 70 M52 40 L4 70 M4 80 L52 110 M52 80 L4 110 M4 120 L52 150 M52 120 L4 150" stroke-width="2"/>
+		<rect x="22" y="14" width="12" height="18" fill="#7C8C5C"/>
+		<path d="M2 16 A26 11 0 0 1 54 16 Z" fill="#FFFFFF"/>
+	</g>
+</svg>

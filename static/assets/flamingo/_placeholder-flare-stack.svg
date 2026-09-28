@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 200">
+	<!-- Generic placeholder flare stack: a steel column with a flickering flame on top -->
+	<g stroke="#111111" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+		<rect x="4" y="24" width="32" height="176" fill="#C9CDD3"/>
+		<rect x="6" y="44" width="28" height="12" fill="#FFFFFF" stroke-width="2"/>
+		<rect x="6" y="84" width="28" height="12" fill="#FFFFFF" stroke-width="2"/>
+		<rect x="6" y="124" width="28" height="12" fill="#FFFFFF" stroke-width="2"/>
+		<rect x="6" y="164" width="28" height="12" fill="#FFFFFF" stroke-width="2"/>
+		<path d="M11 24 Q8 8 20 -2 Q32 8 29 24 Z" fill="#F5C83A"/>
+		<path d="M16 24 Q20 10 24 24 Z" fill="#E5484D"/>
+	</g>
+</svg>

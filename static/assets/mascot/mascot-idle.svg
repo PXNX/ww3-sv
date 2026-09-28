@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" role="img" aria-label="Mascot idle">
+	<!-- Original cartoon caricature in the app's flat, thick-outline style; not traced from any reference -->
+	<g stroke="#111111" stroke-width="6" stroke-linejoin="round" stroke-linecap="round">
+		<!-- hard offset shadow -->
+		<path d="M40 232 Q36 150 100 146 Q164 150 160 232 Z" fill="#111111" transform="translate(7 5)"/>
+		<circle cx="100" cy="82" r="56" fill="#111111" transform="translate(7 5)"/>
+		<!-- suit -->
+		<path d="M40 232 Q36 150 100 146 Q164 150 160 232 Z" fill="#20242E"/>
+		<!-- shirt collar -->
+		<path d="M82 146 L100 162 L118 146 L110 146 L100 156 L90 146 Z" fill="#FFFFFF"/>
+		<!-- tie -->
+		<path d="M94 149 L106 149 L102 178 L98 178 Z" fill="#E5484D"/>
+		<!-- lapels -->
+		<path d="M68 150 L88 178 M132 150 L112 178" fill="none" stroke-width="3"/>
+		<!-- neck -->
+		<rect x="86" y="122" width="28" height="26" fill="#EDA46B"/>
+		<!-- head -->
+		<circle cx="100" cy="82" r="56" fill="#EDA46B"/>
+		<!-- ears -->
+		<ellipse cx="45" cy="86" rx="8" ry="12" fill="#EDA46B"/>
+		<ellipse cx="155" cy="86" rx="8" ry="12" fill="#EDA46B"/>
+		<!-- hair swoop -->
+		<path d="M44 64 Q58 16 100 18 Q144 16 158 54 Q148 38 128 42 Q106 32 90 40 Q68 32 54 48 Q46 54 44 64 Z" fill="#EFCB74"/>
+		<path d="M68 28 Q90 20 112 26" fill="none" stroke-width="3"/>
+		<!-- eyebrows -->
+		<path d="M72 66 L88 61" stroke-width="4"/>
+		<path d="M112 61 L128 66" stroke-width="4"/>
+		<!-- eyes, squinting -->
+		<path d="M76 76 Q86 69 96 76 Q86 83 76 76 Z" fill="#FFFFFF" stroke-width="3"/>
+		<path d="M104 76 Q114 69 124 76 Q114 83 104 76 Z" fill="#FFFFFF" stroke-width="3"/>
+		<circle cx="88" cy="76" r="2.5" fill="#111111" stroke="none"/>
+		<circle cx="112" cy="76" r="2.5" fill="#111111" stroke="none"/>
+		<!-- nose -->
+		<path d="M97 82 Q93 92 100 97 Q106 94 104 90" fill="none" stroke-width="3"/>
+		<!-- mouth -->
+		<path d="M82 110 Q100 105 118 110" fill="none" stroke-width="4"/>
+	</g>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 110">
+	<!-- Generic placeholder storage tank: a flat cylinder with a stripe, cap and a ladder -->
+	<g stroke="#111111" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+		<rect x="0" y="16" width="70" height="94" fill="#FFFFFF"/>
+		<rect x="2" y="58" width="66" height="10" fill="#7C8C5C" stroke-width="2"/>
+		<path d="M56 26 L56 108 M64 26 L64 108 M56 30 L64 30 M56 40 L64 40 M56 50 L64 50 M56 60 L64 60 M56 70 L64 70 M56 80 L64 80 M56 90 L64 90 M56 100 L64 100" stroke-width="2"/>
+		<ellipse cx="35" cy="16" rx="35" ry="8" fill="#FFFFFF"/>
+	</g>
+</svg>
