@@ -60,7 +60,8 @@ export const MODES: readonly GameMode[] = [
 	},
 	{
 		id: 'merge',
-		status: 'coming-soon',
+		status: 'playable',
+		href: '/play/merge',
 		icon: IconMerge,
 		tileClass: 'bg-skin',
 		name: m.mode_merge_name,
