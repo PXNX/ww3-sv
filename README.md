@@ -1,4 +1,4 @@
-# Chokepoint Chaos
+# World War 3
 
 A satirical cartoon puzzle and arcade collection about oil, shipping, and geopolitics, built as a
 SvelteKit Progressive Web App. Eight game modes are planned; they are added one commit at a time
@@ -8,7 +8,7 @@ settings stay in the browser's local storage.
 ## Tech stack
 
 - SvelteKit with Svelte 5 runes, deployed with `@sveltejs/adapter-vercel`
-- Tailwind CSS and daisyUI (custom `chokepoint` theme)
+- Tailwind CSS and daisyUI (custom `ww3` theme)
 - unplugin-icons with the Fluent, Lucide, Fluent Emoji, and Circle Flags icon sets (bundled locally)
 - inlang Paraglide JS for English, German, and Persian (right-to-left)
 - Vitest for pure logic unit tests
