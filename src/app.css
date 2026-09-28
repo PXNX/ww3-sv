@@ -1,0 +1,61 @@
+@import 'tailwindcss';
+@import './lib/styles/tokens.css';
+@import './lib/styles/playful.css';
+
+@plugin 'daisyui' {
+	themes: false;
+}
+
+@plugin 'daisyui/theme' {
+	name: 'chokepoint';
+	default: true;
+	prefersdark: false;
+	color-scheme: light;
+	--color-base-100: #e8e1bc;
+	--color-base-200: #ddd5a8;
+	--color-base-300: #cfc693;
+	--color-base-content: #111111;
+	--color-primary: #4fa8d8;
+	--color-primary-content: #111111;
+	--color-secondary: #7c8c5c;
+	--color-secondary-content: #111111;
+	--color-accent: #e5484d;
+	--color-accent-content: #111111;
+	--color-neutral: #111111;
+	--color-neutral-content: #ffffff;
+	--color-info: #4fa8d8;
+	--color-info-content: #111111;
+	--color-success: #7c8c5c;
+	--color-success-content: #111111;
+	--color-warning: #ddb93c;
+	--color-warning-content: #111111;
+	--color-error: #e5484d;
+	--color-error-content: #111111;
+	--radius-selector: 0.6rem;
+	--radius-field: 0.5rem;
+	--radius-box: 0.9rem;
+	--size-selector: 0.25rem;
+	--size-field: 0.25rem;
+	--border: 3px;
+	--depth: 0;
+	--noise: 0;
+}
+
+@layer base {
+	body {
+		background: var(--color-sand);
+		color: var(--color-ink);
+		font-family: var(--font-sans);
+	}
+
+	h1,
+	h2,
+	h3 {
+		font-family: var(--font-display);
+	}
+}
+
+/* Playing fields never mirror in right-to-left languages; only the surrounding chrome does */
+[data-playfield] {
+	direction: ltr;
+}

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Placeholder portrait">
+	<!-- Generic, unnamed stand-in shown until a named cameo portrait is supplied -->
+	<g stroke="#111111" stroke-width="6" stroke-linejoin="round">
+		<rect x="14" y="12" width="172" height="172" rx="18" fill="#111111" transform="translate(6 6)"/>
+		<rect x="14" y="12" width="172" height="172" rx="18" fill="#FFFFFF"/>
+		<path d="M44 184 Q44 124 100 122 Q156 124 156 184" fill="#E8E1BC"/>
+		<circle cx="100" cy="80" r="36" fill="#E8E1BC"/>
+	</g>
+	<text x="100" y="96" text-anchor="middle" font-family="system-ui, sans-serif" font-size="44" font-weight="900" fill="#111111">?</text>
+</svg>
