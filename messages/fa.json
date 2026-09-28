@@ -58,5 +58,12 @@
 	"cameo_erdogan_name": "رجب طیب اردوغان",
 	"cameo_erdogan": "اردوغان پیشنهاد می‌دهد میان {characterName} و نفتکش‌ها میانجی‌گری کند، در ازای یک عوارض کوچک پل.",
 	"cameo_macron_name": "امانوئل مکرون",
-	"cameo_macron": "مکرون برای {characterName} یک کروسان با لحنی بسیار تند می‌فرستد."
+	"cameo_macron": "مکرون برای {characterName} یک کروسان با لحنی بسیار تند می‌فرستد.",
+	"error_status": "خطای {status}",
+	"error_lost_title": "راه را اشتباه آمدید",
+	"error_lost_body": "این صفحه از لبه‌ی نقشه بیرون رفته است.",
+	"error_broken_title": "یک چیزی ترکید",
+	"error_broken_body": "فقط صفحه آسیب دید. کمی بعد دوباره امتحان کنید.",
+	"error_home": "بازگشت به منو",
+	"error_retry": "بارگذاری دوباره"
 }
