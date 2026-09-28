@@ -225,122 +225,135 @@
 	bind:this={frame}
 	class="relative overflow-hidden rounded-[10px_6px_12px_8px] border-3 border-ink bg-ink shadow-[4px_4px_0_var(--color-ink)]"
 >
-	<div
-		role="group"
-		aria-label={m.minefield_board_label({ columns: board.columns, rows: board.rows })}
-		class="grid gap-[3px] p-[3px] {tool === 'submarine' && interactive ? 'cursor-crosshair' : ''}"
-		style:grid-template-columns="repeat({board.columns}, minmax(0, 1fr))"
-	>
-		{#each board.cells as cell, index (index)}
-			{@const hidden = cell.state === 'hidden' || cell.state === 'flagged'}
-			{@const sonar = SONAR[cell.adjacent]}
-			<button
-				type="button"
-				bind:this={buttons[index]}
-				class="cell relative flex aspect-square items-center justify-center rounded-[4px] {hidden
-					? 'bg-flag-blue'
-					: cell.state === 'detonated'
-						? 'bg-tie-red'
-						: channelCells.has(index)
-							? 'bg-paper'
-							: 'bg-sand'}"
-				class:hidden-water={hidden && interactive}
-				tabindex={index === focusIndex ? 0 : -1}
-				aria-label={label(cell, index)}
-				onfocus={() => (focusIndex = index)}
-				onclick={() => onclick(index)}
-				oncontextmenu={(event) => oncontextmenu(event, index)}
-				onpointerdown={(event) => onpointerdown(event, index)}
-				{onpointermove}
-				onpointerup={cancelPress}
-				onpointercancel={cancelPress}
-				onpointerleave={cancelPress}
-				onkeydown={(event) => onkeydown(event, index)}
+	<div class="overflow-x-auto">
+		<div class="relative">
+			<div
+				role="group"
+				aria-label={m.minefield_board_label({ columns: board.columns, rows: board.rows })}
+				class="grid gap-[3px] p-[3px] {tool === 'submarine' && interactive
+					? 'cursor-crosshair'
+					: ''}"
+				style:grid-template-columns="repeat({board.columns}, minmax(1.75rem, 1fr))"
 			>
-				{#if cell.state === 'flagged'}
-					<MinefieldBuoy class="pop-in size-[78%]" />
-					{#if showMines && !cell.mine}
-						<IconX class="absolute size-[80%] text-ink" stroke-width="3.5" aria-hidden="true" />
-					{/if}
-				{:else if cell.state === 'hidden'}
-					{#if showMines && cell.mine}
-						<img src={spriteSrc('mine')} alt="" class="size-[72%]" draggable="false" />
-					{:else}
-						<svg viewBox="0 0 40 20" class="w-[46%] opacity-60" aria-hidden="true">
-							<path
-								d="M3 12 Q10 4 17 12 T31 12 T38 9"
-								fill="none"
-								stroke="#ffffff"
-								stroke-width="4"
-								stroke-linecap="round"
-							/>
-						</svg>
-					{/if}
-				{:else if cell.state === 'detonated'}
-					<svg viewBox="0 0 100 100" class="pop-in absolute size-full" aria-hidden="true">
-						<polygon points={BURST} fill="#f5c83a" stroke="#111111" stroke-width="5" />
-					</svg>
-					<img
-						src={spriteSrc('mine')}
-						alt=""
-						class="relative size-[58%] -rotate-12"
-						draggable="false"
-					/>
-				{:else if sonar}
-					<svg viewBox="0 0 100 100" class="size-[84%]" aria-hidden="true">
-						{#if sonar.points}
-							<polygon
-								points={sonar.points}
-								fill={sonar.fill}
-								stroke="#111111"
-								stroke-width="7"
-								stroke-linejoin="round"
-							/>
-						{:else}
-							<circle cx="50" cy="50" r="44" fill={sonar.fill} stroke="#111111" stroke-width="7" />
-						{/if}
-						<text
-							x="50"
-							y={sonar.textY ?? 52}
-							text-anchor="middle"
-							dominant-baseline="central"
-							fill={sonar.text}
-							font-size="54"
-							font-weight="700"
-							class="font-display">{cell.adjacent}</text
-						>
-					</svg>
-				{/if}
-				{#if cell.defused}
-					<span
-						class="absolute end-0 top-0 flex size-[40%] items-center justify-center rounded-bl-[4px] bg-khaki"
-						aria-hidden="true"
+				{#each board.cells as cell, index (index)}
+					{@const hidden = cell.state === 'hidden' || cell.state === 'flagged'}
+					{@const sonar = SONAR[cell.adjacent]}
+					<button
+						type="button"
+						bind:this={buttons[index]}
+						class="cell relative flex aspect-square items-center justify-center rounded-[4px] {hidden
+							? 'bg-flag-blue'
+							: cell.state === 'detonated'
+								? 'bg-tie-red'
+								: channelCells.has(index)
+									? 'bg-paper'
+									: 'bg-sand'}"
+						class:hidden-water={hidden && interactive}
+						tabindex={index === focusIndex ? 0 : -1}
+						aria-label={label(cell, index)}
+						onfocus={() => (focusIndex = index)}
+						onclick={() => onclick(index)}
+						oncontextmenu={(event) => oncontextmenu(event, index)}
+						onpointerdown={(event) => onpointerdown(event, index)}
+						{onpointermove}
+						onpointerup={cancelPress}
+						onpointercancel={cancelPress}
+						onpointerleave={cancelPress}
+						onkeydown={(event) => onkeydown(event, index)}
 					>
-						<IconCheck class="size-full text-ink" stroke-width="4" />
-					</span>
-				{/if}
-			</button>
-		{/each}
-	</div>
+						{#if cell.state === 'flagged'}
+							<MinefieldBuoy class="pop-in size-[78%]" />
+							{#if showMines && !cell.mine}
+								<IconX class="absolute size-[80%] text-ink" stroke-width="3.5" aria-hidden="true" />
+							{/if}
+						{:else if cell.state === 'hidden'}
+							{#if showMines && cell.mine}
+								<img src={spriteSrc('mine')} alt="" class="size-[72%]" draggable="false" />
+							{:else}
+								<svg viewBox="0 0 40 20" class="w-[46%] opacity-60" aria-hidden="true">
+									<path
+										d="M3 12 Q10 4 17 12 T31 12 T38 9"
+										fill="none"
+										stroke="#ffffff"
+										stroke-width="4"
+										stroke-linecap="round"
+									/>
+								</svg>
+							{/if}
+						{:else if cell.state === 'detonated'}
+							<svg viewBox="0 0 100 100" class="pop-in absolute size-full" aria-hidden="true">
+								<polygon points={BURST} fill="#f5c83a" stroke="#111111" stroke-width="5" />
+							</svg>
+							<img
+								src={spriteSrc('mine')}
+								alt=""
+								class="relative size-[58%] -rotate-12"
+								draggable="false"
+							/>
+						{:else if sonar}
+							<svg viewBox="0 0 100 100" class="size-[84%]" aria-hidden="true">
+								{#if sonar.points}
+									<polygon
+										points={sonar.points}
+										fill={sonar.fill}
+										stroke="#111111"
+										stroke-width="7"
+										stroke-linejoin="round"
+									/>
+								{:else}
+									<circle
+										cx="50"
+										cy="50"
+										r="44"
+										fill={sonar.fill}
+										stroke="#111111"
+										stroke-width="7"
+									/>
+								{/if}
+								<text
+									x="50"
+									y={sonar.textY ?? 52}
+									text-anchor="middle"
+									dominant-baseline="central"
+									fill={sonar.text}
+									font-size="54"
+									font-weight="700"
+									class="font-display">{cell.adjacent}</text
+								>
+							</svg>
+						{/if}
+						{#if cell.defused}
+							<span
+								class="absolute end-0 top-0 flex size-[40%] items-center justify-center rounded-bl-[4px] bg-khaki"
+								aria-hidden="true"
+							>
+								<IconCheck class="size-full text-ink" stroke-width="4" />
+							</span>
+						{/if}
+					</button>
+				{/each}
+			</div>
 
-	{#if phase === 'won' && channel && !reducedMotion}
-		<div
-			class="pointer-events-none absolute inset-[3px]"
-			role="img"
-			aria-label={m.minefield_convoy_label()}
-		>
-			{#each Array.from({ length: convoyTankers }, (_, order) => order) as order (order)}
-				<img
-					{@attach sail(order)}
-					src={spriteSrc('tanker')}
-					alt=""
-					class="absolute -translate-x-1/2 -translate-y-1/2"
-					style:width="{(1.8 / board.columns) * 100}%"
-					draggable="false"
-				/>
-			{/each}
+			{#if phase === 'won' && channel && !reducedMotion}
+				<div
+					class="pointer-events-none absolute inset-[3px]"
+					role="img"
+					aria-label={m.minefield_convoy_label()}
+				>
+					{#each Array.from({ length: convoyTankers }, (_, order) => order) as order (order)}
+						<img
+							{@attach sail(order)}
+							src={spriteSrc('tanker')}
+							alt=""
+							class="absolute -translate-x-1/2 -translate-y-1/2"
+							style:width="{(1.8 / board.columns) * 100}%"
+							draggable="false"
+						/>
+					{/each}
+				</div>
+			{/if}
 		</div>
-	{/if}
+	</div>
 </div>
 
 <style>

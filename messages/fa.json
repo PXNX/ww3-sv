@@ -254,6 +254,8 @@
 	"game_pause": "توقف",
 	"game_paused": "متوقف شد",
 	"game_resume": "ادامه",
+	"sound_mute": "قطع صدا",
+	"sound_unmute": "پخش صدا",
 	"gameover_title": "بازی تمام شد",
 	"gameover_final_score": "امتیاز نهایی",
 	"gameover_new_best": "رکورد شخصی جدید!",

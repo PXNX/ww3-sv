@@ -20,6 +20,7 @@ import {
 } from '$lib/game/pipeline/pipelineStep';
 import { highscores } from '$lib/services/highscore';
 import { localStore } from '$lib/services/storage';
+import { soundManager } from '$lib/sound/soundManager.svelte';
 
 const DIFFICULTY_KEY = 'pipeline:difficulty';
 const STEP_MS = 1000 / 60;
@@ -108,12 +109,18 @@ export class PipelineGame {
 
 	rotate(cell: number) {
 		if (this.paused) return;
-		if (rotateTile(this.#game, cell)) this.#publish();
+		if (rotateTile(this.#game, cell)) {
+			this.#publish();
+			soundManager().play('click');
+		}
 	}
 
 	pressRepair(cell: number) {
 		if (this.paused) return;
-		if (startRepair(this.#game, cell)) this.#publish();
+		if (startRepair(this.#game, cell)) {
+			this.#publish();
+			soundManager().play('click');
+		}
 	}
 
 	releaseRepair() {
@@ -123,11 +130,21 @@ export class PipelineGame {
 
 	intercept(strikeId: number) {
 		if (this.paused) return;
-		if (intercept(this.#game, strikeId)) this.#publish();
+		if (intercept(this.#game, strikeId)) {
+			this.#publish();
+			soundManager().play('zap');
+		}
 	}
 
 	#update(stepMs: number) {
+		const repairsBefore = this.#game.repairs;
+		const tankersBefore = this.#game.tankersFilled;
 		stepGame(this.#game, stepMs, this.#random);
+		if (this.#game.effects.some((effect) => effect.kind === 'impact' && effect.ageMs === 0)) {
+			soundManager().play('explosion-tiny');
+		}
+		if (this.#game.repairs > repairsBefore) soundManager().play('chime');
+		if (this.#game.tankersFilled > tankersBefore) soundManager().play('chime-big');
 		if (this.#game.phase === 'over' && !this.result) this.#finish();
 	}
 

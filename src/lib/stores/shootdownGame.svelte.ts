@@ -25,6 +25,7 @@ import {
 } from '$lib/game/shootdown/render';
 import { highscores } from '$lib/services/highscore';
 import { localStore } from '$lib/services/storage';
+import { soundManager } from '$lib/sound/soundManager.svelte';
 
 export type ShootdownStatus = 'ready' | 'playing' | 'paused' | 'over';
 
@@ -172,7 +173,10 @@ export class ShootdownGame {
 			dtMs
 		);
 		this.#fireBufferMs = Math.max(0, this.#fireBufferMs - dtMs);
-		if (this.state.missiles.length > missilesBefore) this.#fireBufferMs = 0;
+		if (this.state.missiles.length > missilesBefore) {
+			this.#fireBufferMs = 0;
+			soundManager().play('fire');
+		}
 
 		for (const event of events) this.#handle(event);
 		this.#syncChrome();
@@ -202,38 +206,47 @@ export class ShootdownGame {
 			case 'drone-destroyed':
 				this.#explode(event.x, event.y, 38, explosionMs);
 				this.#popup(event.x, event.y, event.points);
+				soundManager().play('explosion-small');
 				break;
 			case 'diver-crashed':
 				this.#explode(event.x, event.y, 34, explosionMs);
+				soundManager().play('explosion-small');
 				break;
 			case 'boss-hit':
 				this.#explode(event.x, event.y, 22, explosionMs);
 				this.#popup(event.x, event.y, event.points);
+				soundManager().play('hit');
 				break;
 			case 'boss-destroyed':
 				this.#explode(event.x, event.y, 110, explosionMs * 1.6);
 				this.#popup(event.x, event.y, event.points);
 				this.shakeMs = SHAKE_MS;
+				soundManager().play('explosion-big');
 				break;
 			case 'blimp-hit':
 				this.#explode(event.x, event.y + 12, 56, explosionMs);
 				this.#popup(event.x, event.y + 30, event.points);
 				this.reaction = randomInt(this.#flavor, 1, BLIMP_LINES + 1);
 				this.#reactionMs = REACTION_MS;
+				soundManager().play('explosion-big');
 				break;
 			case 'bunker-hit':
 				this.effects.push({ kind: 'dust', x: event.x, y: event.y, ageMs: 0, durationMs: 300 });
+				soundManager().play('thud');
 				break;
 			case 'life-lost':
 				this.shakeMs = SHAKE_MS;
 				this.#showBanner({ kind: 'hit' }, 1300);
+				soundManager().play('alarm');
 				break;
 			case 'wave-cleared':
 				this.#showBanner({ kind: 'cleared', bonus: event.bonus }, INTERMISSION_MS);
+				soundManager().play('chime-big');
 				break;
 			case 'wave-started':
 				if (event.wave > 1) {
 					this.#showBanner({ kind: 'incoming', wave: event.wave, boss: event.boss }, 1600);
+					soundManager().play('alarm');
 				}
 				break;
 			case 'game-over':

@@ -23,6 +23,7 @@
 	import { getLocale } from '$lib/paraglide/runtime';
 	import type { ScoreCard } from '$lib/services/share';
 	import type { MinefieldResult } from '$lib/stores/minefieldGame.svelte';
+	import { soundManager } from '$lib/sound/soundManager.svelte';
 	import { CHARACTER_NAME } from '$lib/theme/character';
 	import { spriteSrc } from '$lib/theme/sprites';
 	import CharacterMascot from './CharacterMascot.svelte';
@@ -63,6 +64,7 @@
 			if (line === lastLine) line = (line + 1) % VICTORY_LINES.length;
 			lastLine = line;
 			dialog.showModal();
+			soundManager().play(isNewBest ? 'new-best' : 'chime-big');
 		} else if (!open && dialog.open) {
 			dialog.close();
 		}

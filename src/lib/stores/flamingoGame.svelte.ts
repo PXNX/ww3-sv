@@ -9,10 +9,21 @@ import {
 	gapsLeft,
 	stepFlamingo,
 	type CrashCause,
+	type FlamingoEvent,
 	type FlamingoState,
 	type Stage
 } from '$lib/game/flamingo/flamingoStep';
 import { highscores } from '$lib/services/highscore';
+import { soundManager } from '$lib/sound/soundManager.svelte';
+import type { SoundId } from '$lib/sound/sounds';
+
+const SOUNDS: Partial<Record<FlamingoEvent['type'], SoundId>> = {
+	flap: 'flap',
+	gap: 'ding',
+	approach: 'alarm',
+	strike: 'chime',
+	crash: 'hit'
+};
 
 export type FlamingoStatus = 'ready' | 'playing' | 'paused' | 'over';
 
@@ -76,6 +87,10 @@ export class FlamingoGame {
 		if (this.status !== 'playing' && this.status !== 'ready') return false;
 		stepFlamingo(this.sim, this.flapQueued, dt);
 		this.flapQueued = false;
+		for (const event of this.sim.events) {
+			const sound = SOUNDS[event.type];
+			if (sound) soundManager().play(sound);
+		}
 		this.sync();
 		if (this.sim.phase === 'over') this.finish();
 		return true;

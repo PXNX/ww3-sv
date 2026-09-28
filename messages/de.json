@@ -254,6 +254,8 @@
 	"game_pause": "Pause",
 	"game_paused": "Pausiert",
 	"game_resume": "Weiter",
+	"sound_mute": "Ton stumm schalten",
+	"sound_unmute": "Ton einschalten",
 	"gameover_title": "Spiel vorbei",
 	"gameover_final_score": "Endstand",
 	"gameover_new_best": "Neuer persönlicher Rekord!",
