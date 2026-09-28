@@ -1,0 +1,23 @@
+{
+	"version": 1,
+	"id": "level-02",
+	"width": 22,
+	"birds": ["flamingo", "flamingo", "flamingo"],
+	"blocks": [
+		{ "material": "wood", "shape": "box", "x": 12, "y": 0, "w": 0.4, "h": 2 },
+		{ "material": "wood", "shape": "box", "x": 13.6, "y": 0, "w": 0.4, "h": 2 },
+		{ "material": "wood", "shape": "box", "x": 12.8, "y": 2, "w": 2, "h": 0.4 },
+		{ "material": "wood", "shape": "box", "x": 16.3, "y": 0, "w": 0.4, "h": 1.6 },
+		{ "material": "wood", "shape": "box", "x": 18.1, "y": 0, "w": 0.4, "h": 1.6 },
+		{ "material": "wood", "shape": "box", "x": 17.2, "y": 1.6, "w": 2.2, "h": 0.4 },
+		{ "material": "wood", "shape": "box", "x": 16.6, "y": 2, "w": 0.4, "h": 1.4 },
+		{ "material": "wood", "shape": "box", "x": 17.8, "y": 2, "w": 0.4, "h": 1.4 },
+		{ "material": "wood", "shape": "box", "x": 17.2, "y": 3.4, "w": 1.6, "h": 0.4 },
+		{ "material": "wood", "shape": "crate", "x": 14.9, "y": 0, "w": 0.8, "h": 0.8 },
+		{ "material": "wood", "shape": "crate", "x": 14.9, "y": 0.8, "w": 0.8, "h": 0.8 }
+	],
+	"domes": [
+		{ "x": 12.8, "y": 2.4, "size": 1 },
+		{ "x": 17.2, "y": 3.8, "size": 1 }
+	]
+}

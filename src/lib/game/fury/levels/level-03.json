@@ -1,0 +1,20 @@
+{
+	"version": 1,
+	"id": "level-03",
+	"width": 23,
+	"birds": ["flamingo", "flamingo"],
+	"blocks": [
+		{ "material": "ice", "shape": "box", "x": 13.4, "y": 0, "w": 0.5, "h": 2.2 },
+		{ "material": "ice", "shape": "box", "x": 13.9, "y": 0, "w": 0.5, "h": 2.2 },
+		{ "material": "stone", "shape": "box", "x": 17, "y": 0, "w": 3.2, "h": 0.6 },
+		{ "material": "ice", "shape": "box", "x": 15.8, "y": 0.6, "w": 0.4, "h": 1.8 },
+		{ "material": "ice", "shape": "box", "x": 18.2, "y": 0.6, "w": 0.4, "h": 1.8 },
+		{ "material": "ice", "shape": "box", "x": 17, "y": 2.4, "w": 2.8, "h": 0.4 },
+		{ "material": "ice", "shape": "box", "x": 15.8, "y": 2.8, "w": 0.4, "h": 0.4 },
+		{ "material": "ice", "shape": "box", "x": 18.2, "y": 2.8, "w": 0.4, "h": 0.4 }
+	],
+	"domes": [
+		{ "x": 17, "y": 0.6, "size": 1.1 },
+		{ "x": 17, "y": 2.8, "size": 0.9 }
+	]
+}
