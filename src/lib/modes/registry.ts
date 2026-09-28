@@ -12,14 +12,7 @@ import IconFeather from '~icons/lucide/feather';
 import IconBird from '~icons/lucide/bird';
 
 export type ModeId =
-	| 'blocks'
-	| 'minefield'
-	| 'convoy'
-	| 'merge'
-	| 'shootdown'
-	| 'pipeline'
-	| 'flamingo'
-	| 'fury';
+	'blocks' | 'minefield' | 'convoy' | 'merge' | 'shootdown' | 'pipeline' | 'flamingo' | 'fury';
 
 interface ModeBase {
 	id: ModeId;

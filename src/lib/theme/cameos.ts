@@ -7,15 +7,7 @@ import { m } from '$lib/paraglide/messages';
 import type { Random } from '$lib/game/random';
 
 export type CameoId =
-	| 'xi'
-	| 'zelensky'
-	| 'putin'
-	| 'merz'
-	| 'mbs'
-	| 'khamenei'
-	| 'netanyahu'
-	| 'erdogan'
-	| 'macron';
+	'xi' | 'zelensky' | 'putin' | 'merz' | 'mbs' | 'khamenei' | 'netanyahu' | 'erdogan' | 'macron';
 
 export interface Cameo {
 	id: CameoId;

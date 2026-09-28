@@ -17,9 +17,7 @@ export interface ScoreCard {
 export type ShareMethod = 'web-share-files' | 'web-share-text' | 'download';
 
 export type ShareOutcome =
-	| { kind: 'shared' }
-	| { kind: 'cancelled' }
-	| { kind: 'downloaded'; linkCopied: boolean };
+	{ kind: 'shared' } | { kind: 'cancelled' } | { kind: 'downloaded'; linkCopied: boolean };
 
 type ShareNavigator = Pick<Navigator, 'share' | 'canShare'>;
 
