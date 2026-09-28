@@ -52,7 +52,8 @@ export const MODES: readonly GameMode[] = [
 	},
 	{
 		id: 'convoy',
-		status: 'coming-soon',
+		status: 'playable',
+		href: '/play/convoy',
 		icon: IconShip,
 		tileClass: 'bg-flag-blue',
 		name: m.mode_convoy_name,
