@@ -1,5 +1,6 @@
 import type { Component } from 'svelte';
 import type { SvelteHTMLElements } from 'svelte/elements';
+import type { RouteId } from '$app/types';
 import { m } from '$lib/paraglide/messages';
 import IconBlocks from '~icons/lucide/blocks';
 import IconBomb from '~icons/lucide/bomb';
@@ -20,12 +21,8 @@ export type ModeId =
 	| 'flamingo'
 	| 'fury';
 
-export type ModeStatus = 'coming-soon' | 'playable';
-
-export interface GameMode {
+interface ModeBase {
 	id: ModeId;
-	route: `/play/${ModeId}`;
-	status: ModeStatus;
 	icon: Component<SvelteHTMLElements['svg']>;
 	/** Tailwind background class for the icon tile, from the design tokens */
 	tileClass: string;
@@ -33,11 +30,17 @@ export interface GameMode {
 	description: () => string;
 }
 
+/**
+ * A mode becomes tappable by switching it to { status: 'playable', href: '/play/<id>' };
+ * the href is type-checked against the routes that actually exist.
+ */
+export type GameMode = ModeBase &
+	({ status: 'coming-soon' } | { status: 'playable'; href: RouteId });
+
 /** Single list of game modes; the start screen renders from it (requirements Section 19) */
 export const MODES: readonly GameMode[] = [
 	{
 		id: 'blocks',
-		route: '/play/blocks',
 		status: 'coming-soon',
 		icon: IconBlocks,
 		tileClass: 'bg-khaki',
@@ -46,7 +49,6 @@ export const MODES: readonly GameMode[] = [
 	},
 	{
 		id: 'minefield',
-		route: '/play/minefield',
 		status: 'coming-soon',
 		icon: IconBomb,
 		tileClass: 'bg-tie-red',
@@ -55,7 +57,6 @@ export const MODES: readonly GameMode[] = [
 	},
 	{
 		id: 'convoy',
-		route: '/play/convoy',
 		status: 'coming-soon',
 		icon: IconShip,
 		tileClass: 'bg-flag-blue',
@@ -64,7 +65,6 @@ export const MODES: readonly GameMode[] = [
 	},
 	{
 		id: 'merge',
-		route: '/play/merge',
 		status: 'coming-soon',
 		icon: IconMerge,
 		tileClass: 'bg-skin',
@@ -73,7 +73,6 @@ export const MODES: readonly GameMode[] = [
 	},
 	{
 		id: 'shootdown',
-		route: '/play/shootdown',
 		status: 'coming-soon',
 		icon: IconCrosshair,
 		tileClass: 'bg-sky',
@@ -82,7 +81,6 @@ export const MODES: readonly GameMode[] = [
 	},
 	{
 		id: 'pipeline',
-		route: '/play/pipeline',
 		status: 'coming-soon',
 		icon: IconFuel,
 		tileClass: 'bg-mustard',
@@ -91,7 +89,6 @@ export const MODES: readonly GameMode[] = [
 	},
 	{
 		id: 'flamingo',
-		route: '/play/flamingo',
 		status: 'coming-soon',
 		icon: IconFeather,
 		tileClass: 'bg-skin',
@@ -100,7 +97,6 @@ export const MODES: readonly GameMode[] = [
 	},
 	{
 		id: 'fury',
-		route: '/play/fury',
 		status: 'coming-soon',
 		icon: IconBird,
 		tileClass: 'bg-explosion-yellow',
