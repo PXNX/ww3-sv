@@ -14,13 +14,16 @@
 		fits,
 		selected,
 		disabled = false,
-		onselect
+		onselect,
+		ondragstart
 	}: {
 		tray: readonly (Piece | null)[];
 		fits: readonly boolean[];
 		selected: number | null;
 		disabled?: boolean;
 		onselect: (index: number) => void;
+		/** A press on a piece that might turn into a drag onto the board */
+		ondragstart?: (index: number, event: PointerEvent) => void;
 	} = $props();
 
 	const TILTS = [-2.5, 1.5, -1];
@@ -34,7 +37,7 @@
 				{@const fitsBoard = fits[index]}
 				<button
 					type="button"
-					class="sticker sticker-interactive relative flex aspect-square w-full items-center justify-center p-2 {isSelected
+					class="sticker sticker-interactive relative flex aspect-square w-full touch-none items-center justify-center p-2 {isSelected
 						? '-translate-y-1.5 bg-explosion-yellow outline-3 outline-offset-3 outline-tie-red outline-dashed'
 						: ''} {fitsBoard ? '' : 'opacity-60'}"
 					style:--tilt="{isSelected ? 0 : TILTS[index % TILTS.length]}deg"
@@ -43,6 +46,10 @@
 						(fitsBoard ? '' : `, ${m.blocks_piece_no_room()}`)}
 					{disabled}
 					onclick={() => onselect(index)}
+					onpointerdown={(event) => {
+						if (event.button !== 0 || disabled) return;
+						ondragstart?.(index, event);
+					}}
 				>
 					<span
 						data-playfield

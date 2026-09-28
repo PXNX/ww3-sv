@@ -5,9 +5,10 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { BlocksGame } from '$lib/stores/blocksGame.svelte';
+	import type { Piece } from '$lib/game/blocks/pieces';
 	import type { MascotPose } from '$lib/theme/character';
 	import { prefersReducedMotion } from '$lib/game/loop';
-	import { KIND_HEX } from '$lib/components/BlocksCell.svelte';
+	import BlocksCell, { KIND_HEX } from '$lib/components/BlocksCell.svelte';
 	import CharacterMascot from '$lib/components/CharacterMascot.svelte';
 	import GameOverModal from '$lib/components/GameOverModal.svelte';
 	import GameShell from '$lib/components/GameShell.svelte';
@@ -17,12 +18,72 @@
 	const game = new BlocksGame();
 	const reducedMotion = prefersReducedMotion();
 
+	let gridRef: Grid | undefined = $state();
 	let aim = $state<{ row: number; col: number } | null>(null);
 	/** A short hint after a tap that did nothing; the id replays the pop-in */
 	let notice = $state<{ text: string; id: number } | null>(null);
 	let noticeId = 0;
 
 	const preview = $derived(aim && game.selectedPiece ? game.preview(aim.row, aim.col) : null);
+
+	// Dragging a tray piece onto the board: a press below DRAG_THRESHOLD of movement is left to the
+	// tray's own click handling (tap-to-select); crossing it promotes to a real drag that follows the
+	// pointer and drives the same aim/preview/place pipeline as tap-to-place.
+	const DRAG_THRESHOLD = 6;
+	let dragCandidate = $state<{ index: number; pointerId: number; startX: number; startY: number } | null>(
+		null
+	);
+	let drag = $state<{ index: number; piece: Piece; pointerId: number; x: number; y: number } | null>(
+		null
+	);
+
+	function beginDragCandidate(index: number, event: PointerEvent) {
+		if (game.over || !game.tray[index]) return;
+		dragCandidate = { index, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY };
+	}
+
+	function windowPointerMove(event: PointerEvent) {
+		if (drag && event.pointerId === drag.pointerId) {
+			event.preventDefault();
+			drag = { ...drag, x: event.clientX, y: event.clientY };
+			aim = gridRef?.cellAt(event.clientX, event.clientY) ?? null;
+			return;
+		}
+		if (!dragCandidate || event.pointerId !== dragCandidate.pointerId) return;
+		const moved = Math.hypot(event.clientX - dragCandidate.startX, event.clientY - dragCandidate.startY);
+		if (moved < DRAG_THRESHOLD) return;
+		const piece = game.tray[dragCandidate.index];
+		if (!piece) {
+			dragCandidate = null;
+			return;
+		}
+		game.select(dragCandidate.index);
+		drag = { index: dragCandidate.index, piece, pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+		dragCandidate = null;
+		aim = gridRef?.cellAt(event.clientX, event.clientY) ?? null;
+	}
+
+	function windowPointerUp(event: PointerEvent) {
+		if (drag && event.pointerId === drag.pointerId) {
+			const cell = gridRef?.cellAt(event.clientX, event.clientY) ?? null;
+			drag = null;
+			if (cell) place(cell.row, cell.col);
+			else {
+				game.select(null);
+				aim = null;
+			}
+			return;
+		}
+		if (dragCandidate?.pointerId === event.pointerId) dragCandidate = null;
+	}
+
+	function windowPointerCancel(event: PointerEvent) {
+		if (drag?.pointerId === event.pointerId) {
+			drag = null;
+			aim = null;
+		}
+		if (dragCandidate?.pointerId === event.pointerId) dragCandidate = null;
+	}
 
 	const MOOD_POSE: Record<typeof game.mood, MascotPose> = {
 		winning: 'smug',
@@ -83,7 +144,12 @@
 	}
 </script>
 
-<svelte:window onkeydown={keyDown} />
+<svelte:window
+	onkeydown={keyDown}
+	onpointermove={windowPointerMove}
+	onpointerup={windowPointerUp}
+	onpointercancel={windowPointerCancel}
+/>
 
 <GameShell title={m.mode_blocks_name()} score={game.score} best={game.best}>
 	<div class="flex items-end gap-3">
@@ -121,6 +187,7 @@
 	</div>
 
 	<Grid
+		bind:this={gridRef}
 		board={game.board}
 		{preview}
 		feedback={game.feedback}
@@ -135,10 +202,32 @@
 		selected={game.selected}
 		disabled={game.over}
 		onselect={select}
+		ondragstart={beginDragCandidate}
 	/>
 
 	<p class="hidden text-center text-xs sm:block">{m.blocks_keyboard_hint()}</p>
 </GameShell>
+
+{#if drag}
+	<div
+		class="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-1/2 opacity-90"
+		style:left="{drag.x}px"
+		style:top="{drag.y}px"
+	>
+		<span
+			data-playfield
+			class="grid gap-[2px]"
+			style:grid-template-columns="repeat({drag.piece.width}, 1.75rem)"
+			style:grid-template-rows="repeat({drag.piece.height}, 1.75rem)"
+		>
+			{#each drag.piece.cells as [row, col] (`${row},${col}`)}
+				<span style:grid-row={row + 1} style:grid-column={col + 1}>
+					<BlocksCell kind={drag.piece.kind} class="size-7" />
+				</span>
+			{/each}
+		</span>
+	</div>
+{/if}
 
 <GameOverModal
 	open={game.over}
