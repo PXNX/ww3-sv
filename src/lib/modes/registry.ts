@@ -97,7 +97,8 @@ export const MODES: readonly GameMode[] = [
 	},
 	{
 		id: 'fury',
-		status: 'coming-soon',
+		status: 'playable',
+		href: '/play/fury',
 		icon: IconBird,
 		tileClass: 'bg-explosion-yellow',
 		name: m.mode_fury_name,

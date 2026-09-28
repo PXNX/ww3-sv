@@ -1,0 +1,28 @@
+{
+	"version": 1,
+	"id": "level-10",
+	"width": 24,
+	"birds": ["goose", "flamingo", "pelican"],
+	"blocks": [
+		{ "material": "wood", "shape": "barrel", "x": 13, "y": 0, "w": 0.6, "h": 0.9 },
+		{ "material": "wood", "shape": "barrel", "x": 13.7, "y": 0, "w": 0.6, "h": 0.9 },
+		{ "material": "wood", "shape": "barrel", "x": 14.4, "y": 0, "w": 0.6, "h": 0.9 },
+		{ "material": "wood", "shape": "barrel", "x": 15.1, "y": 0, "w": 0.6, "h": 0.9 },
+		{ "material": "wood", "shape": "box", "x": 14.05, "y": 0.9, "w": 2.8, "h": 0.4 },
+		{ "material": "wood", "shape": "barrel", "x": 13.35, "y": 1.3, "w": 0.6, "h": 0.9 },
+		{ "material": "wood", "shape": "barrel", "x": 14.05, "y": 1.3, "w": 0.6, "h": 0.9 },
+		{ "material": "wood", "shape": "barrel", "x": 14.75, "y": 1.3, "w": 0.6, "h": 0.9 },
+		{ "material": "wood", "shape": "box", "x": 14.05, "y": 2.2, "w": 2.2, "h": 0.4 },
+		{ "material": "wood", "shape": "crate", "x": 17.4, "y": 0, "w": 0.8, "h": 0.8 },
+		{ "material": "wood", "shape": "crate", "x": 18.2, "y": 0, "w": 0.8, "h": 0.8 },
+		{ "material": "wood", "shape": "crate", "x": 19, "y": 0, "w": 0.8, "h": 0.8 },
+		{ "material": "wood", "shape": "crate", "x": 17.8, "y": 0.8, "w": 0.8, "h": 0.8 },
+		{ "material": "wood", "shape": "crate", "x": 18.6, "y": 0.8, "w": 0.8, "h": 0.8 },
+		{ "material": "stone", "shape": "box", "x": 21.4, "y": 0, "w": 0.6, "h": 3 }
+	],
+	"domes": [
+		{ "x": 14.05, "y": 2.6, "size": 1 },
+		{ "x": 18.2, "y": 1.6, "size": 1 },
+		{ "x": 21.4, "y": 3, "size": 0.9 }
+	]
+}

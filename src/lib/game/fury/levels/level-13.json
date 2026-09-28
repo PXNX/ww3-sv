@@ -1,0 +1,29 @@
+{
+	"version": 1,
+	"id": "level-13",
+	"width": 24,
+	"birds": ["goose", "flamingo", "pelican"],
+	"blocks": [
+		{ "material": "stone", "shape": "box", "x": 16.2, "y": 0, "w": 0.4, "h": 1.5 },
+		{ "material": "stone", "shape": "box", "x": 17.8, "y": 0, "w": 0.4, "h": 1.5 },
+		{ "material": "stone", "shape": "box", "x": 17, "y": 1.5, "w": 2, "h": 0.4 },
+		{ "material": "wood", "shape": "box", "x": 16.2, "y": 1.9, "w": 0.4, "h": 1.5 },
+		{ "material": "wood", "shape": "box", "x": 17.8, "y": 1.9, "w": 0.4, "h": 1.5 },
+		{ "material": "wood", "shape": "box", "x": 17, "y": 3.4, "w": 2, "h": 0.4 },
+		{ "material": "wood", "shape": "box", "x": 16.2, "y": 3.8, "w": 0.4, "h": 1.5 },
+		{ "material": "wood", "shape": "box", "x": 17.8, "y": 3.8, "w": 0.4, "h": 1.5 },
+		{ "material": "wood", "shape": "box", "x": 17, "y": 5.3, "w": 2, "h": 0.4 },
+		{ "material": "wood", "shape": "box", "x": 16.2, "y": 5.7, "w": 0.4, "h": 1.5 },
+		{ "material": "wood", "shape": "box", "x": 17.8, "y": 5.7, "w": 0.4, "h": 1.5 },
+		{ "material": "wood", "shape": "box", "x": 17, "y": 7.2, "w": 2, "h": 0.4 },
+		{ "material": "stone", "shape": "box", "x": 13.6, "y": 0, "w": 0.6, "h": 1.8 },
+		{ "material": "wood", "shape": "spire", "x": 13.6, "y": 1.8, "w": 0.8, "h": 1 },
+		{ "material": "stone", "shape": "box", "x": 20.4, "y": 0, "w": 0.6, "h": 1.8 },
+		{ "material": "wood", "shape": "spire", "x": 20.4, "y": 1.8, "w": 0.8, "h": 1 }
+	],
+	"domes": [
+		{ "x": 17, "y": 7.6, "size": 1.1 },
+		{ "x": 17, "y": 0, "size": 0.9 },
+		{ "x": 17, "y": 3.8, "size": 0.9 }
+	]
+}
