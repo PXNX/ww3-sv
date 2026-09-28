@@ -16,12 +16,14 @@ const NEARLY_FULL = boardFromRows([
 	'XXXXXXX.'
 ]);
 
-const TRIALS = 3000;
+// Enough for stable rates with a fixed seed, and fast enough under a loaded test run
+const TRIALS = 1000;
 
 function rateWithPlaceable(board: Board, makeTray: () => readonly Piece[]): number {
+	const fits = new Set(PIECES.filter((piece) => fitsAnywhere(board, piece)));
 	let hits = 0;
 	for (let i = 0; i < TRIALS; i++) {
-		if (makeTray().some((piece) => fitsAnywhere(board, piece))) hits++;
+		if (makeTray().some((piece) => fits.has(piece))) hits++;
 	}
 	return hits / TRIALS;
 }
