@@ -88,7 +88,8 @@ export const MODES: readonly GameMode[] = [
 	},
 	{
 		id: 'flamingo',
-		status: 'coming-soon',
+		status: 'playable',
+		href: '/play/flamingo',
 		icon: IconFeather,
 		tileClass: 'bg-skin',
 		name: m.mode_flamingo_name,
