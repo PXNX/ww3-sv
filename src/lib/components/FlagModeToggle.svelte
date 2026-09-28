@@ -12,7 +12,7 @@
 
 <button
 	type="button"
-	class="btn-chunky min-h-14 flex-1 {active ? 'bg-tie-red!' : ''}"
+	class="btn-chunky min-h-14 flex-1 {active ? 'bg-tie-red' : ''}"
 	style:rotate={active ? '-1.5deg' : '0deg'}
 	aria-pressed={active}
 	{disabled}

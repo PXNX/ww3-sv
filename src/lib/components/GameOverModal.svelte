@@ -71,7 +71,7 @@
 	oncancel={(event) => event.preventDefault()}
 >
 	<div
-		class="sticker relative modal-box flex max-h-[92dvh] flex-col items-center gap-3 overflow-y-auto border-3 border-ink p-5 text-center"
+		class="sticker relative modal-box flex max-h-[92dvh] flex-col items-center gap-3 overflow-y-auto rounded-[18px_10px_16px_8px] border-3 border-ink bg-paper p-5 text-center shadow-(--shadow-hard)"
 		style:--tilt="-1deg"
 	>
 		{#if isNewBest}

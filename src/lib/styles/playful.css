@@ -3,99 +3,102 @@
  * buttons with a squash on press, and a bouncy pop-in. Corner radii are deliberately irregular.
  */
 
-/* Card that sits at a slight tilt (set --tilt per element) and straightens on hover or focus */
-.sticker {
-	background: var(--color-paper);
-	border: var(--outline);
-	border-radius: 18px 10px 16px 8px / 10px 16px 9px 18px;
-	box-shadow: var(--shadow-hard);
-	rotate: var(--tilt, 0deg);
-	transition:
-		rotate 250ms var(--ease-spring),
-		translate 250ms var(--ease-spring);
-}
-
-.sticker-interactive:hover,
-.sticker-interactive:focus-visible,
-.sticker-interactive:focus-within {
-	rotate: 0deg;
-	translate: 0 -3px;
-}
-
-/* Chunky button: irregular corners, hard shadow, squash-and-stretch on press */
-.btn-chunky {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 0.5rem;
-	padding: 0.5rem 1.1rem;
-	font-family: var(--font-display);
-	font-weight: 700;
-	background: var(--color-paper);
-	color: var(--color-ink);
-	border: var(--outline);
-	border-radius: 14px 6px 12px 8px / 8px 12px 6px 14px;
-	box-shadow: var(--shadow-hard);
-	cursor: pointer;
-	transition:
-		scale 180ms var(--ease-spring),
-		translate 180ms var(--ease-spring),
-		box-shadow 180ms var(--ease-spring);
-}
-
-.btn-chunky:active {
-	scale: 1.06 0.9;
-	translate: 2px 2px;
-	box-shadow: var(--shadow-hard-small);
-}
-
-/* Visible, on-style focus ring */
-.sticker-interactive:focus-visible,
-.btn-chunky:focus-visible,
-.btn-chunky:has(:focus-visible) {
-	outline: 3px dashed var(--color-tie-red);
-	outline-offset: 4px;
-}
-
-/* Bouncy, overshooting pop-in for score changes and line clears */
-@keyframes pop-in {
-	0% {
-		scale: 0.4;
-		opacity: 0;
-	}
-	60% {
-		scale: 1.15;
-		opacity: 1;
-	}
-	80% {
-		scale: 0.95;
-	}
-	100% {
-		scale: 1;
-	}
-}
-
-.pop-in {
-	animation: pop-in 450ms var(--ease-spring) both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.sticker,
-	.btn-chunky {
-		transition: none;
+/* In the components layer so Tailwind utilities (bg-*, px-*, …) on the same element win */
+@layer components {
+	/* Card that sits at a slight tilt (set --tilt per element) and straightens on hover or focus */
+	.sticker {
+		background: var(--color-paper);
+		border: var(--outline);
+		border-radius: 18px 10px 16px 8px / 10px 16px 9px 18px;
+		box-shadow: var(--shadow-hard);
+		rotate: var(--tilt, 0deg);
+		transition:
+			rotate 250ms var(--ease-spring),
+			translate 250ms var(--ease-spring);
 	}
 
 	.sticker-interactive:hover,
 	.sticker-interactive:focus-visible,
 	.sticker-interactive:focus-within {
-		translate: none;
+		rotate: 0deg;
+		translate: 0 -3px;
+	}
+
+	/* Chunky button: irregular corners, hard shadow, squash-and-stretch on press */
+	.btn-chunky {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		padding: 0.5rem 1.1rem;
+		font-family: var(--font-display);
+		font-weight: 700;
+		background: var(--color-paper);
+		color: var(--color-ink);
+		border: var(--outline);
+		border-radius: 14px 6px 12px 8px / 8px 12px 6px 14px;
+		box-shadow: var(--shadow-hard);
+		cursor: pointer;
+		transition:
+			scale 180ms var(--ease-spring),
+			translate 180ms var(--ease-spring),
+			box-shadow 180ms var(--ease-spring);
 	}
 
 	.btn-chunky:active {
-		scale: none;
+		scale: 1.06 0.9;
+		translate: 2px 2px;
+		box-shadow: var(--shadow-hard-small);
+	}
+
+	/* Visible, on-style focus ring */
+	.sticker-interactive:focus-visible,
+	.btn-chunky:focus-visible,
+	.btn-chunky:has(:focus-visible) {
+		outline: 3px dashed var(--color-tie-red);
+		outline-offset: 4px;
+	}
+
+	/* Bouncy, overshooting pop-in for score changes and line clears */
+	@keyframes pop-in {
+		0% {
+			scale: 0.4;
+			opacity: 0;
+		}
+		60% {
+			scale: 1.15;
+			opacity: 1;
+		}
+		80% {
+			scale: 0.95;
+		}
+		100% {
+			scale: 1;
+		}
 	}
 
 	.pop-in {
-		animation: none;
+		animation: pop-in 450ms var(--ease-spring) both;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.sticker,
+		.btn-chunky {
+			transition: none;
+		}
+
+		.sticker-interactive:hover,
+		.sticker-interactive:focus-visible,
+		.sticker-interactive:focus-within {
+			translate: none;
+		}
+
+		.btn-chunky:active {
+			scale: none;
+		}
+
+		.pop-in {
+			animation: none;
+		}
 	}
 }
