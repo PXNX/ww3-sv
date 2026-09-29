@@ -4,6 +4,7 @@
  * flavor fits the moment, so a shootdown "boss destroyed" and a merge "mega tanker" can share the
  * same triumphant chime without the catalog growing one entry per event per mode.
  */
+import { playClip, playRandomClip } from './clips';
 import { noise, sequence, tone } from './synth';
 
 export type SoundId =
@@ -29,7 +30,13 @@ export type SoundId =
 	| 'chime'
 	| 'chime-big'
 	| 'splash'
-	| 'sparkle';
+	| 'sparkle'
+	| 'mine-explosion'
+	| 'patriot-launch'
+	| 'shahed-impact'
+	| 'slava-ukraini'
+	| 'fart'
+	| 'fake-news';
 
 type SoundEffect = (ctx: AudioContext, dest: AudioNode) => void;
 
@@ -199,5 +206,26 @@ export const SOUNDS: Record<SoundId, SoundEffect> = {
 			{ frequency: 1200, duration: 0.07, type: 'sine', gain: 0.14 },
 			{ frequency: 1600, duration: 0.07, type: 'sine', gain: 0.14, delay: 0.05 },
 			{ frequency: 2000, duration: 0.09, type: 'sine', gain: 0.14, delay: 0.1 }
-		])
+		]),
+
+	// A recorded mine blast, for a mine going off in the minefield
+	'mine-explosion': (ctx, dest) =>
+		playRandomClip(ctx, dest, ['mine-explosion-1', 'mine-explosion-2']),
+
+	// A recorded rocket motor igniting, for a Patriot missile launching
+	'patriot-launch': (ctx, dest) =>
+		playRandomClip(ctx, dest, ['patriot-launch-1', 'patriot-launch-2']),
+
+	// A recorded impact, for a Shahed drone that gets through and hits its target
+	'shahed-impact': (ctx, dest) =>
+		playRandomClip(ctx, dest, ['shahed-impact-1', 'shahed-impact-2']),
+
+	// A recorded voice line, for a refinery struck in Flamingo Flight
+	'slava-ukraini': (ctx, dest) => playClip(ctx, dest, 'slava-ukraini'),
+
+	// A recorded fart, for the flamingo finally coming to rest after a crash
+	fart: (ctx, dest) => playClip(ctx, dest, 'fart'),
+
+	// A recorded "you are fake news" jab, for a lost game of Block Puzzle
+	'fake-news': (ctx, dest) => playClip(ctx, dest, 'fake-news')
 };

@@ -22,7 +22,8 @@ const SOUNDS: Partial<Record<FlamingoEvent['type'], SoundId>> = {
 	gap: 'ding',
 	approach: 'alarm',
 	strike: 'chime',
-	crash: 'hit'
+	crash: 'hit',
+	over: 'fart'
 };
 
 export type FlamingoStatus = 'ready' | 'playing' | 'paused' | 'over';
@@ -90,6 +91,7 @@ export class FlamingoGame {
 		for (const event of this.sim.events) {
 			const sound = SOUNDS[event.type];
 			if (sound) soundManager().play(sound);
+			if (event.type === 'strike') soundManager().play('slava-ukraini');
 		}
 		this.sync();
 		if (this.sim.phase === 'over') this.finish();
