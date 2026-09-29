@@ -104,7 +104,7 @@
 
 <div
 	data-playfield
-	class="mx-auto w-full max-w-[26rem] rounded-[16px_10px_18px_12px] border-3 border-ink bg-khaki p-2 shadow-[4px_4px_0_var(--color-ink)]"
+	class="mx-auto w-full max-w-[34rem] rounded-[16px_10px_18px_12px] border-3 border-ink bg-khaki p-2 shadow-[4px_4px_0_var(--color-ink)]"
 >
 	<!-- The cells are the accessible controls; the container only maps pointer positions to cells
 	     (so a finger can slide to aim) and moves the keyboard focus between cells with arrow keys -->
