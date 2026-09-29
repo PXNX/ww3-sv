@@ -1,19 +1,22 @@
 /*
- * The physics world of Feathered Fury, built on Planck.js (a Box2D port) and advanced with a fixed
+ * The physics world of Magyar's Birds, built on Planck.js (a Box2D port) and advanced with a fixed
  * timestep so every shot plays out the same way. Blocks are wood, stone or ice with different
  * strengths; impacts above a material's threshold wear the block down until it breaks. Golden
- * domes are the targets: they break from impacts or when they topple onto the ground.
- * Destruction is purely cartoonish: dust puffs, flying splinters and golden sparkles.
+ * domes are the targets: they break from impacts or when they topple onto the ground. Landmarks
+ * (oil tanks, a refinery, a factory, an S-400-style unit) are bigger sprite-drawn targets that break
+ * the same way. Destruction is purely cartoonish: dust puffs, flying splinters and golden sparkles.
  */
 import { Box, Circle, Edge, Polygon, World, type Body, type Contact } from 'planck';
 import type { Random } from '$lib/game/random';
-import { BIRDS, SPLIT_RADIUS, boostVelocity, splitOffsets, splitVelocities } from './birds';
+import { BIRDS, SPLIT_RADIUS, splitOffsets, splitVelocities } from './birds';
 import type { BirdKind } from './birds';
 import { GRAVITY, POUCH, STEP_SECONDS, type Vec } from './launch';
 import {
 	DOME_HEIGHT_RATIO,
+	LANDMARKS,
 	MAX_LEVEL_PIECES,
 	type BlockShape,
+	type LandmarkKind,
 	type LevelData,
 	type Material
 } from './levels/schema';
@@ -129,9 +132,18 @@ export interface BirdPiece extends PieceCommon {
 	done: boolean;
 }
 
-export type Piece = BlockPiece | DomePiece | BirdPiece;
+export interface LandmarkPiece extends PieceCommon {
+	kind: 'landmark';
+	landmark: LandmarkKind;
+	w: number;
+	h: number;
+	hp: number;
+	maxHp: number;
+}
 
-export type EffectTone = Material | 'gold' | 'dust' | 'feather';
+export type Piece = BlockPiece | DomePiece | BirdPiece | LandmarkPiece;
+
+export type EffectTone = Material | 'gold' | 'dust' | 'feather' | 'explosion';
 
 export type Effect =
 	| {
@@ -165,6 +177,7 @@ export type Effect =
 
 export type WorldEvent =
 	| { type: 'block-destroyed'; material: Material; points: number }
+	| { type: 'landmark-destroyed'; landmark: LandmarkKind; points: number }
 	| { type: 'dome-destroyed'; remaining: number }
 	| { type: 'impact'; strength: number }
 	| { type: 'ability'; bird: BirdKind };
@@ -187,7 +200,7 @@ export class FuryWorld {
 	#random: Random;
 	#nextId = 1;
 	#events: WorldEvent[] = [];
-	#damage = new Map<BlockPiece | DomePiece, number>();
+	#damage = new Map<BlockPiece | DomePiece | LandmarkPiece, number>();
 	#strongestImpact = 0;
 	/** Birds launched this turn (a split flamingo adds its two siblings) */
 	#turnBirds: BirdPiece[] = [];
@@ -205,7 +218,10 @@ export class FuryWorld {
 
 		for (const block of level.blocks) this.#addBlock(block);
 		for (const dome of level.domes) this.#addDome(dome.x, dome.y, dome.size);
-		this.blocksTotal = level.blocks.length;
+		for (const landmark of level.landmarks ?? []) {
+			this.#addLandmark(landmark.kind, landmark.x, landmark.y);
+		}
+		this.blocksTotal = level.blocks.length + (level.landmarks?.length ?? 0);
 		this.domesTotal = level.domes.length;
 
 		this.physics.on('post-solve', (contact, impulse) => {
@@ -330,9 +346,6 @@ export class FuryWorld {
 			);
 			this.#compact();
 			this.#puffs(center.x, center.y, 3, 0.35, 'feather');
-		} else if (ability === 'boost') {
-			bird.body.setLinearVelocity(boostVelocity(current));
-			this.#puffs(position.x, position.y, 3, 0.3, 'feather');
 		} else {
 			return false;
 		}
@@ -430,6 +443,34 @@ export class FuryWorld {
 		this.pieces.push(piece);
 	}
 
+	#addLandmark(kind: LandmarkKind, x: number, y: number) {
+		const spec = LANDMARKS[kind];
+		const body = this.physics.createBody({
+			type: 'dynamic',
+			position: { x, y: y + spec.h / 2 },
+			angularDamping: 0.3
+		});
+		body.createFixture({
+			shape: new Box(spec.w / 2, spec.h / 2),
+			density: 1.6,
+			friction: 0.7,
+			restitution: 0.05
+		});
+		const piece: LandmarkPiece = {
+			kind: 'landmark',
+			id: this.#nextId++,
+			body,
+			alive: true,
+			landmark: kind,
+			w: spec.w,
+			h: spec.h,
+			hp: spec.hp,
+			maxHp: spec.hp
+		};
+		body.setUserData(piece);
+		this.pieces.push(piece);
+	}
+
 	#addBird(kind: BirdKind, radius: number, small: boolean, position: Vec, velocity: Vec) {
 		const spec = BIRDS[kind];
 		const body = this.physics.createBody({
@@ -438,6 +479,7 @@ export class FuryWorld {
 			linearVelocity: { ...velocity },
 			// Angular damping only slows rolling; it does not bend the flight path
 			angularDamping: 1.5,
+			gravityScale: spec.gravityScale,
 			bullet: true
 		});
 		body.createFixture({
@@ -479,14 +521,24 @@ export class FuryWorld {
 	) {
 		if (!target || target === GROUND) return;
 		if (target.kind === 'bird') {
+			const firstHit = !target.hasHit;
 			target.hasHit = true;
 			this.#strongestImpact = Math.max(this.#strongestImpact, impulse);
+			if (firstHit && target.bird === 'pelican' && impulse > 1) {
+				const position = target.body.getPosition();
+				this.#burst(position.x, position.y);
+			}
 			return;
 		}
 		if (this.steps < GRACE_STEPS) return;
 		const multiplier =
 			other && other !== GROUND && other.kind === 'bird' ? BIRDS[other.bird].damageMultiplier : 1;
-		const spec = target.kind === 'dome' ? DOME_MATERIAL : MATERIALS[target.material];
+		const spec =
+			target.kind === 'dome'
+				? DOME_MATERIAL
+				: target.kind === 'landmark'
+					? LANDMARKS[target.landmark]
+					: MATERIALS[target.material];
 		const damage = impactDamage(impulse, spec.threshold, multiplier);
 		if (damage > 0) this.#damage.set(target, (this.#damage.get(target) ?? 0) + damage);
 		if (target.kind === 'dome') {
@@ -507,8 +559,8 @@ export class FuryWorld {
 		}
 	}
 
-	/** Removes a block or dome; returns true. Pieces that left the field give no dust. */
-	#destroy(piece: BlockPiece | DomePiece, visible = true): boolean {
+	/** Removes a block, dome or landmark; returns true. Pieces that left the field give no dust. */
+	#destroy(piece: BlockPiece | DomePiece | LandmarkPiece, visible = true): boolean {
 		const position = piece.body.getPosition();
 		const angle = piece.body.getAngle();
 		this.physics.destroyBody(piece.body);
@@ -538,6 +590,24 @@ export class FuryWorld {
 				x: position.x,
 				y: position.y + piece.size,
 				value: DOME_POINTS,
+				age: 0,
+				life: 60
+			});
+		} else if (piece.kind === 'landmark') {
+			this.blocksDestroyed++;
+			const points = LANDMARKS[piece.landmark].points;
+			this.destructionPoints += points;
+			this.#events.push({ type: 'landmark-destroyed', landmark: piece.landmark, points });
+			if (visible) {
+				const cy = position.y + piece.h * 0.4;
+				this.#puffs(position.x, cy, 5, piece.w * 0.45, 'dust');
+				this.#shards(position.x, cy, 7, Math.min(0.6, piece.w * 0.28), 'explosion', 0);
+			}
+			this.#addEffect({
+				kind: 'points',
+				x: position.x,
+				y: position.y + piece.h,
+				value: points,
 				age: 0,
 				life: 60
 			});
@@ -574,6 +644,12 @@ export class FuryWorld {
 	#addEffect(effect: Effect) {
 		if (this.effects.length >= MAX_EFFECTS) this.effects.shift();
 		this.effects.push(effect);
+	}
+
+	/** A small burst on the pelican's first impact: it hits hard enough to leave a little explosion */
+	#burst(x: number, y: number) {
+		this.#puffs(x, y, 4, 0.4, 'explosion');
+		this.#shards(x, y, 5, 0.18, 'explosion', 0);
 	}
 
 	#puffs(x: number, y: number, count: number, radius: number, tone: EffectTone) {

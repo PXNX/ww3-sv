@@ -1,4 +1,4 @@
-<!-- Level select for Feathered Fury: fifteen tilted level cards with stars, best score and locks -->
+<!-- Level select for Magyar's Birds: fifteen tilted level cards with stars, best score and locks -->
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { LEVEL_IDS, type FuryGame } from '$lib/stores/furyGame.svelte';

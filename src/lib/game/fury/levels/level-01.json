@@ -11,5 +11,6 @@
 		{ "material": "wood", "shape": "crate", "x": 17.8, "y": 0, "w": 0.8, "h": 0.8 },
 		{ "material": "wood", "shape": "crate", "x": 17.4, "y": 0.8, "w": 0.8, "h": 0.8 }
 	],
-	"domes": [{ "x": 14, "y": 2, "size": 1 }]
+	"domes": [{ "x": 14, "y": 2, "size": 1 }],
+	"landmarks": [{ "kind": "factory", "x": 20, "y": 0 }]
 }

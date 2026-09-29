@@ -1,5 +1,5 @@
 /*
- * Reactive state for Feathered Fury: the level select, the running match, aiming, pause, results
+ * Reactive state for Magyar's Birds: the level select, the running match, aiming, pause, results
  * and the locally stored progress. The match itself (physics) is not reactive; after every fixed
  * step the few values the interface shows are copied into $state fields.
  */

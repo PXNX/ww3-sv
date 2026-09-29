@@ -1,5 +1,5 @@
 <!--
-	Feathered Fury playing field: high-DPI canvas rendering, slingshot input (touch and mouse drag,
+	Magyar's Birds playing field: high-DPI canvas rendering, slingshot input (touch and mouse drag,
 	or the keyboard), the bird squad and the tap ability. The field stays left-to-right in every
 	language; the surrounding chrome mirrors.
 -->
@@ -8,24 +8,15 @@
 	import { m } from '$lib/paraglide/messages';
 
 	export function birdName(kind: BirdKind): string {
-		return kind === 'flamingo'
-			? m.fury_bird_flamingo()
-			: kind === 'goose'
-				? m.fury_bird_goose()
-				: m.fury_bird_pelican();
+		return kind === 'flamingo' ? m.fury_bird_flamingo() : m.fury_bird_pelican();
 	}
 
 	export function birdHint(kind: BirdKind): string {
-		return kind === 'flamingo'
-			? m.fury_bird_flamingo_hint()
-			: kind === 'goose'
-				? m.fury_bird_goose_hint()
-				: m.fury_bird_pelican_hint();
+		return kind === 'flamingo' ? m.fury_bird_flamingo_hint() : m.fury_bird_pelican_hint();
 	}
 
 	export const BIRD_CHIP: Record<BirdKind, string> = {
 		flamingo: '#f29bb8',
-		goose: '#f4f1ea',
 		pelican: '#efe3c4'
 	};
 </script>

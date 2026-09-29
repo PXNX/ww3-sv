@@ -1,5 +1,5 @@
 /*
- * Canvas drawing for Feathered Fury. Everything is a generic, original placeholder shape in the
+ * Canvas drawing for Magyar's Birds. Everything is a generic, original placeholder shape in the
  * app's style: thick uniform ink outlines, flat fills, no gradients. The onion domes are plain
  * golden architectural shapes with a simple ball-and-spire finial (no symbols of any kind).
  */
@@ -18,6 +18,7 @@ const GOLD = '#f5c83a';
 const GOLD_LIGHT = '#fbe38e';
 const WOOD = '#c98b4e';
 const BAND = '#5b3a29';
+const EXPLOSION = '#e8562c';
 const DISPLAY_FONT = "'Baloo 2', system-ui, sans-serif";
 
 const MATERIAL_FILL: Record<Material, string> = { wood: WOOD, stone: '#b86a52', ice: '#bfe7f4' };
@@ -25,7 +26,8 @@ const TONE_FILL: Record<EffectTone, string> = {
 	...MATERIAL_FILL,
 	gold: GOLD,
 	dust: '#f3eed8',
-	feather: PAPER
+	feather: PAPER,
+	explosion: EXPLOSION
 };
 
 /** World height shown above the ground per meter of width, and the ground band below it */
@@ -378,6 +380,51 @@ function drawDome(
 	context.restore();
 }
 
+/** A landmark drawn from its sprite (a plain khaki box until one loads), with cracks as it takes damage */
+function drawLandmark(
+	context: CanvasRenderingContext2D,
+	camera: Camera,
+	piece: Piece & { kind: 'landmark' },
+	sprites: FurySprites
+) {
+	const s = camera.scale;
+	const position = worldToScreen(camera, piece.body.getPosition());
+	const w = piece.w * s;
+	const h = piece.h * s;
+	context.save();
+	context.translate(position.x, position.y);
+	context.rotate(-piece.body.getAngle());
+	const image = sprites[piece.landmark];
+	if (image) {
+		context.drawImage(image, -w / 2, -h / 2, w, h);
+	} else {
+		outline(context, camera);
+		context.fillStyle = KHAKI;
+		context.beginPath();
+		context.rect(-w / 2, -h / 2, w, h);
+		context.fill();
+		context.stroke();
+	}
+
+	const damage = 1 - piece.hp / piece.maxHp;
+	if (damage > 0.3) {
+		const r = Math.min(w, h) / 2;
+		outline(context, camera);
+		context.lineWidth = Math.max(1, s * 0.04);
+		context.beginPath();
+		context.moveTo(-r * 0.7, -r * 0.5);
+		context.lineTo(-r * 0.1, -r * 0.1);
+		context.lineTo(-r * 0.3, r * 0.3);
+		context.lineTo(r * 0.3, r * 0.6);
+		if (damage > 0.65) {
+			context.moveTo(r * 0.6, -r * 0.6);
+			context.lineTo(r * 0.1, 0);
+		}
+		context.stroke();
+	}
+	context.restore();
+}
+
 /** An original side-profile bird: body, head and beak by type, facing along `angle` */
 function drawBird(
 	context: CanvasRenderingContext2D,
@@ -400,8 +447,8 @@ function drawBird(
 		return;
 	}
 	outline(context, camera);
-	const body = kind === 'flamingo' ? '#f29bb8' : kind === 'goose' ? '#f4f1ea' : '#efe3c4';
-	const wing = kind === 'flamingo' ? '#d9668d' : kind === 'goose' ? '#b7b9bd' : '#cdbb8e';
+	const body = kind === 'flamingo' ? '#f29bb8' : '#efe3c4';
+	const wing = kind === 'flamingo' ? '#d9668d' : '#cdbb8e';
 
 	if (kind === 'flamingo') {
 		// Long trailing legs
@@ -414,9 +461,9 @@ function drawBird(
 	}
 	// Neck and head reaching forward
 	const headX = kind === 'pelican' ? r * 0.75 : r * 1.05;
-	const headY = kind === 'goose' ? -r * 0.35 : -r * 0.55;
+	const headY = -r * 0.55;
 	const headR = r * (kind === 'pelican' ? 0.42 : 0.36);
-	context.fillStyle = kind === 'goose' ? '#3b3b3b' : body;
+	context.fillStyle = body;
 	context.beginPath();
 	context.moveTo(r * 0.3, -r * 0.35);
 	context.quadraticCurveTo(headX * 0.7, headY - r * 0.4, headX, headY);
@@ -434,7 +481,7 @@ function drawBird(
 	context.stroke();
 
 	// Head
-	context.fillStyle = kind === 'goose' ? '#3b3b3b' : body;
+	context.fillStyle = body;
 	context.beginPath();
 	context.arc(headX, headY, headR, 0, Math.PI * 2);
 	context.fill();
@@ -449,10 +496,6 @@ function drawBird(
 		context.lineTo(headX + headR * 1.9, headY + headR * 0.2);
 		context.lineTo(headX + headR * 1.5, headY + headR * 1.1);
 		context.lineTo(headX + headR * 0.6, headY + headR * 0.5);
-	} else if (kind === 'goose') {
-		context.moveTo(headX + headR * 0.8, headY - headR * 0.3);
-		context.lineTo(headX + headR * 1.9, headY + headR * 0.1);
-		context.lineTo(headX + headR * 0.8, headY + headR * 0.5);
 	} else {
 		// The pelican's big pouch beak
 		context.moveTo(headX + headR * 0.6, headY - headR * 0.4);
@@ -471,13 +514,6 @@ function drawBird(
 		context.fillStyle = INK;
 		context.beginPath();
 		context.arc(headX + headR * 1.6, headY + headR * 0.6, headR * 0.28, 0, Math.PI * 2);
-		context.fill();
-	}
-	if (kind === 'goose') {
-		// White cheek patch
-		context.fillStyle = PAPER;
-		context.beginPath();
-		context.arc(headX - headR * 0.1, headY + headR * 0.3, headR * 0.45, 0, Math.PI * 2);
 		context.fill();
 	}
 
@@ -630,6 +666,9 @@ export function drawScene(
 
 	for (const piece of world.pieces) {
 		if (piece.kind === 'block') drawBlock(context, camera, piece);
+	}
+	for (const piece of world.pieces) {
+		if (piece.kind === 'landmark') drawLandmark(context, camera, piece, options.sprites);
 	}
 	for (const piece of world.pieces) {
 		if (piece.kind === 'dome') drawDome(context, camera, piece, options);

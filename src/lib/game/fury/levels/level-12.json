@@ -2,7 +2,7 @@
 	"version": 1,
 	"id": "level-12",
 	"width": 25,
-	"birds": ["pelican", "goose", "flamingo", "pelican"],
+	"birds": ["pelican", "pelican", "flamingo", "pelican"],
 	"blocks": [
 		{ "material": "stone", "shape": "box", "x": 12.6, "y": 0, "w": 0.6, "h": 1 },
 		{ "material": "stone", "shape": "box", "x": 13.2, "y": 0, "w": 0.6, "h": 1 },
@@ -24,5 +24,6 @@
 		{ "x": 15.2, "y": 0, "size": 1 },
 		{ "x": 17, "y": 2.2, "size": 1 },
 		{ "x": 20.5, "y": 0, "size": 0.9 }
-	]
+	],
+	"landmarks": [{ "kind": "sam", "x": 23.2, "y": 0 }]
 }

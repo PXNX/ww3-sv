@@ -1,15 +1,15 @@
 /*
- * Owner-supplied artwork for Feathered Fury goes to static/assets/fury/ (requirements Section 14).
- * Until a file is supplied and listed in SUPPLIED_FURY_SPRITES, the birds and the dome fall back to
- * a generic placeholder SVG in the same flat, thick-outline style. Blocks (wood/stone/ice), the
- * slingshot, the broken dome and dust are drawn parametrically (shape, material and damage all vary
- * at runtime) and are not swapped by a single image, so they have no placeholder file yet.
+ * Owner-supplied artwork for Magyar's Birds goes to static/assets/fury/ (requirements Section 14).
+ * Until a file is supplied and listed in SUPPLIED_FURY_SPRITES, the birds, the dome and the
+ * landmarks fall back to a generic placeholder SVG in the same flat, thick-outline style. Blocks
+ * (wood/stone/ice), the slingshot, the broken dome and dust are drawn parametrically (shape,
+ * material and damage all vary at runtime) and are not swapped by a single image, so they have no
+ * placeholder file yet.
  */
 import { loadImage } from '$lib/theme/sprites';
 
 export type FurySpriteId =
 	| 'flamingo'
-	| 'goose'
 	| 'pelican'
 	| 'slingshot'
 	| 'wood'
@@ -17,11 +17,14 @@ export type FurySpriteId =
 	| 'ice'
 	| 'dome'
 	| 'domeBroken'
-	| 'dust';
+	| 'dust'
+	| 'oilTank'
+	| 'refinery'
+	| 'factory'
+	| 'sam';
 
 const FILES: Record<FurySpriteId, string> = {
 	flamingo: '/assets/fury/flamingo.png',
-	goose: '/assets/fury/goose.png',
 	pelican: '/assets/fury/pelican.png',
 	slingshot: '/assets/fury/slingshot.png',
 	wood: '/assets/fury/wood.png',
@@ -29,15 +32,27 @@ const FILES: Record<FurySpriteId, string> = {
 	ice: '/assets/fury/ice.png',
 	dome: '/assets/fury/dome.png',
 	domeBroken: '/assets/fury/dome-broken.png',
-	dust: '/assets/fury/dust.png'
+	dust: '/assets/fury/dust.png',
+	oilTank: '/assets/fury/oil-tank.png',
+	refinery: '/assets/fury/refinery.png',
+	factory: '/assets/fury/factory.png',
+	sam: '/assets/fury/sam.png'
 };
 
-/** Sprites with a placeholder SVG file; anything else stays canvas-drawn until supplied */
+/**
+ * Sprites with a placeholder SVG file; anything else stays canvas-drawn until supplied. The
+ * landmarks reuse existing generic placeholders from other modes instead of new art: an oil tank
+ * and a flare stack already exist for Flamingo Flight's refineries, and a generic launcher truck
+ * already exists for Shahed Shootdown's Patriot battery. The factory has no matching asset yet, so
+ * it stays a plain canvas-drawn box (see furyRender's drawLandmark) until one is supplied.
+ */
 const PLACEHOLDER_FILES: Partial<Record<FurySpriteId, string>> = {
 	flamingo: '/assets/fury/_placeholder-flamingo.svg',
-	goose: '/assets/fury/_placeholder-goose.svg',
 	pelican: '/assets/fury/_placeholder-pelican.svg',
-	dome: '/assets/fury/_placeholder-dome.svg'
+	dome: '/assets/fury/_placeholder-dome.svg',
+	oilTank: '/assets/flamingo/_placeholder-tank.svg',
+	refinery: '/assets/flamingo/_placeholder-flare-stack.svg',
+	sam: '/assets/shootdown/_placeholder-patriot-launcher.svg'
 };
 
 /** Add a sprite here once its owner-supplied file is in place */

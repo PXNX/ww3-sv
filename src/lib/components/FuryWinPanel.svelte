@@ -1,4 +1,4 @@
-<!-- Level-won panel for Feathered Fury: stars, score, bonus, next level, and sharing on a new best -->
+<!-- Level-won panel for Magyar's Birds: stars, score, bonus, next level, and sharing on a new best -->
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import type { ScoreCard } from '$lib/services/share';
