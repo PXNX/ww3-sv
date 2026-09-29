@@ -32,6 +32,8 @@ const CHAR = '#3a3a3a';
 const SMOKE = '#1c1c1c';
 const PINK = '#f28db2';
 const PINK_DARK = '#d9608e';
+const UKRAINE_BLUE = '#0057b7';
+const UKRAINE_YELLOW = '#ffd700';
 const LINE = 3;
 const DISPLAY_FONT = "'Baloo 2', system-ui, sans-serif";
 
@@ -46,6 +48,8 @@ export interface RenderLabels {
 	biggest: string;
 	strikeBiggest: string;
 	strikeTanks: (count: number) => string;
+	/** Cheered over every struck tank, in the Ukrainian flag's own blue and yellow */
+	slogan: string;
 	direction: 'ltr' | 'rtl';
 }
 
@@ -73,6 +77,7 @@ interface Popup {
 	y: number;
 	text: string;
 	age: number;
+	tone?: 'slogan';
 }
 
 interface Feather {
@@ -140,6 +145,13 @@ export class FlamingoEffects {
 					const text = labels.strikeTanks(event.result.destroyed.length);
 					this.popups.push({ x: event.x, y: event.y - 60, text, age: 0 });
 				}
+				this.popups.push({
+					x: event.x,
+					y: event.y - 90,
+					text: labels.slogan,
+					age: 0,
+					tone: 'slogan'
+				});
 				if (!this.reducedMotion) this.shake = event.result.biggestHit ? 12 : 7;
 			} else if (event.type === 'crash') {
 				const count = this.reducedMotion ? 3 : 7;
@@ -757,9 +769,10 @@ function drawEffects(
 	for (const popup of effects.popups) {
 		context.globalAlpha = Math.min(1, 2.4 - popup.age * 2);
 		context.lineWidth = 5;
-		context.strokeStyle = INK;
+		context.strokeStyle = popup.tone === 'slogan' ? UKRAINE_BLUE : INK;
 		context.strokeText(popup.text, popup.x, popup.y);
-		context.fillStyle = popup.text.startsWith('+') ? TIE_RED : YELLOW;
+		context.fillStyle =
+			popup.tone === 'slogan' ? UKRAINE_YELLOW : popup.text.startsWith('+') ? TIE_RED : YELLOW;
 		context.fillText(popup.text, popup.x, popup.y);
 	}
 	context.globalAlpha = 1;

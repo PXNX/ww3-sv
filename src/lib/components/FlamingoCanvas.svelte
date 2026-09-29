@@ -40,6 +40,7 @@
 		biggest: m.flamingo_biggest_label(),
 		strikeBiggest: m.flamingo_strike_biggest(),
 		strikeTanks: (count) => m.flamingo_strike_tanks({ count }),
+		slogan: m.flamingo_strike_slogan(),
 		direction: getLocale() === 'fa' ? 'rtl' : 'ltr'
 	};
 

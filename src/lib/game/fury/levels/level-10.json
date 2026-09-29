@@ -2,7 +2,7 @@
 	"version": 1,
 	"id": "level-10",
 	"width": 24,
-	"birds": ["goose", "flamingo", "pelican"],
+	"birds": ["pelican", "flamingo", "pelican"],
 	"blocks": [
 		{ "material": "wood", "shape": "barrel", "x": 13, "y": 0, "w": 0.6, "h": 0.9 },
 		{ "material": "wood", "shape": "barrel", "x": 13.7, "y": 0, "w": 0.6, "h": 0.9 },

@@ -22,8 +22,7 @@ const SOUNDS: Partial<Record<FlamingoEvent['type'], SoundId>> = {
 	gap: 'ding',
 	approach: 'alarm',
 	strike: 'chime',
-	crash: 'hit',
-	over: 'fart'
+	crash: 'hit'
 };
 
 export type FlamingoStatus = 'ready' | 'playing' | 'paused' | 'over';
@@ -92,6 +91,10 @@ export class FlamingoGame {
 			const sound = SOUNDS[event.type];
 			if (sound) soundManager().play(sound);
 			if (event.type === 'strike') soundManager().play('slava-ukraini');
+			// The flare is part of the refinery; only a "dumber" crash gets the fart
+			if (event.type === 'over' && this.sim.crash && this.sim.crash !== 'flare') {
+				soundManager().play('fart');
+			}
 		}
 		this.sync();
 		if (this.sim.phase === 'over') this.finish();

@@ -83,7 +83,7 @@ describe('validateLevel', () => {
 			h: 0.3
 		}));
 		expect(errorsOf({ ...valid, blocks, domes: [{ x: 20, y: 0, size: 1 }] })).toContain(
-			`blocks plus domes exceed the limit of ${MAX_LEVEL_PIECES}`
+			`blocks plus domes plus landmarks exceed the limit of ${MAX_LEVEL_PIECES}`
 		);
 	});
 
@@ -106,6 +106,20 @@ describe('validateLevel', () => {
 		expect(errorsOf(null)).toEqual(['level is not an object']);
 		expect(errorsOf({ ...valid, blocks: [{ x: 1 }] })).toContain(
 			'blocks[0] needs numeric x, y, w and h'
+		);
+	});
+
+	it('accepts a level with landmarks and rejects a malformed one', () => {
+		const withLandmark = { ...valid, landmarks: [{ kind: 'oilTank', x: 18, y: 0 }] };
+		expect(errorsOf(withLandmark)).toEqual([]);
+		expect(errorsOf({ ...valid, landmarks: [{ kind: 'eagle', x: 18, y: 0 }] })).toContain(
+			'landmarks[0].kind is invalid'
+		);
+		expect(errorsOf({ ...valid, landmarks: [{ kind: 'oilTank' }] })).toContain(
+			'landmarks[0] needs numeric x and y'
+		);
+		expect(errorsOf({ ...valid, landmarks: [{ kind: 'oilTank', x: 12, y: 0 }] })).toContain(
+			'blocks[0] overlaps landmarks[0]'
 		);
 	});
 

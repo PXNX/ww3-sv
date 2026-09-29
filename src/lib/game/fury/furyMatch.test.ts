@@ -10,7 +10,7 @@ const target: LevelData = {
 	version: 1,
 	id: 'level-99',
 	width: 22,
-	birds: ['pelican', 'flamingo', 'goose'],
+	birds: ['pelican', 'flamingo', 'pelican'],
 	blocks: [{ material: 'wood', shape: 'box', x: 18, y: 0, w: 0.4, h: 1 }],
 	domes: [{ x: 10, y: 0, size: 1 }]
 };

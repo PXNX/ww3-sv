@@ -131,24 +131,13 @@ describe('physics world', () => {
 		expect(world.bodyCount).toBeLessThanOrEqual(MAX_BODIES);
 	});
 
-	it('boosts a flying goose along its direction', () => {
-		const world = new FuryWorld(level([], [farDome]), createRandom(1));
-		const goose = world.launch('goose', launchVelocity({ angle: 0.5, power: 0.6 }));
-		run(world, 5);
-		const before = goose.body.getLinearVelocity().clone();
-		expect(world.useAbility()).toBe(true);
-		const after = goose.body.getLinearVelocity();
-		expect(after.length()).toBeGreaterThan(before.length() * 1.5);
-		expect(Math.atan2(after.y, after.x)).toBeCloseTo(Math.atan2(before.y, before.x));
-	});
-
 	it('offers no ability to a pelican or to a bird that already hit something', () => {
 		const world = new FuryWorld(level([], [farDome]), createRandom(1));
 		world.launch('pelican', launchVelocity({ angle: 0.5, power: 0.6 }));
 		expect(world.useAbility()).toBe(false);
-		const goose = world.launch('goose', launchVelocity({ angle: -0.5, power: 0.3 }));
+		const flamingo = world.launch('flamingo', launchVelocity({ angle: -0.5, power: 0.3 }));
 		run(world, 60);
-		expect(goose.hasHit).toBe(true);
+		expect(flamingo.hasHit).toBe(true);
 		expect(world.useAbility()).toBe(false);
 	});
 
@@ -157,8 +146,21 @@ describe('physics world', () => {
 		world.launch('flamingo', launchVelocity({ angle: 0.6, power: 0.8 }));
 		run(world, 10);
 		world.useAbility();
-		world.launch('goose', launchVelocity({ angle: 0.6, power: 0.8 }));
+		world.launch('pelican', launchVelocity({ angle: 0.6, power: 0.8 }));
 		expect(world.pieces.filter((piece) => piece.kind === 'bird')).toHaveLength(1);
+	});
+
+	it('bursts into a small explosion the first time a pelican hits something hard', () => {
+		const world = new FuryWorld(level([], [{ x: 10, y: 0, size: 1 }]), createRandom(1));
+		run(world, GRACE_STEPS);
+		world.launch('pelican', launchVelocity({ angle: 0, power: 0.8 }));
+		run(world, 30);
+		expect(
+			world.effects.some(
+				(effect) =>
+					(effect.kind === 'puff' || effect.kind === 'shard') && effect.tone === 'explosion'
+			)
+		).toBe(true);
 	});
 
 	it('finishes a bird that comes to rest', () => {

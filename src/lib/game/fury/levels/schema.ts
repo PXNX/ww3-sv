@@ -1,10 +1,35 @@
 /*
- * Level data format for Feathered Fury. Levels are hand-authored JSON files in this folder; every
+ * Level data format for Magyar's Birds. Levels are hand-authored JSON files in this folder; every
  * file carries a version number so the format can change later without breaking old files.
  * Coordinates are in meters: x is the horizontal center of a piece, y is its bottom edge, and the
  * ground is at y = 0. The slingshot stands at x = 3.
  */
 import { isBirdKind, type BirdKind } from '../birds';
+
+/** A landmark: a bigger, sprite-drawn destructible target dressing up the level's back half */
+export type LandmarkKind = 'oilTank' | 'refinery' | 'factory' | 'sam';
+export const LANDMARK_KINDS: readonly LandmarkKind[] = ['oilTank', 'refinery', 'factory', 'sam'];
+
+export interface LandmarkSpec {
+	w: number;
+	h: number;
+	hp: number;
+	/** Impulses at or below this cause no damage, same idea as a block material's threshold */
+	threshold: number;
+	points: number;
+}
+
+/*
+ * Width and height match each landmark's reused placeholder sprite's aspect ratio (a tall flare
+ * stack for the refinery, a squat launcher truck for the S-400-style unit) so the art is not
+ * stretched; see the placeholder mapping in ./assets.ts.
+ */
+export const LANDMARKS: Record<LandmarkKind, LandmarkSpec> = {
+	oilTank: { w: 1.1, h: 1.7, hp: 10, threshold: 2.2, points: 250 },
+	refinery: { w: 0.7, h: 3.2, hp: 16, threshold: 2.8, points: 400 },
+	factory: { w: 3.2, h: 2.4, hp: 20, threshold: 3.2, points: 500 },
+	sam: { w: 2.3, h: 1.4, hp: 14, threshold: 2.6, points: 450 }
+};
 
 export const LEVEL_VERSION = 1;
 
@@ -34,6 +59,13 @@ export interface LevelDome {
 	size: number;
 }
 
+/** A landmark placed on the ground: x is its center, y its base */
+export interface LevelLandmark {
+	kind: LandmarkKind;
+	x: number;
+	y: number;
+}
+
 export interface LevelData {
 	version: typeof LEVEL_VERSION;
 	/** level-01 to level-15 */
@@ -44,9 +76,11 @@ export interface LevelData {
 	birds: BirdKind[];
 	blocks: LevelBlock[];
 	domes: LevelDome[];
+	/** Oil tanks, a refinery, a factory or an S-400-style air defense unit; optional set dressing */
+	landmarks?: LevelLandmark[];
 }
 
-/** Performance budget: blocks plus domes per level (birds come on top, at most three at a time) */
+/** Performance budget: blocks, domes and landmarks per level (birds come on top, at most three at a time) */
 export const MAX_LEVEL_PIECES = 60;
 export const MAX_SQUAD = 6;
 export const MIN_WIDTH = 18;
@@ -73,13 +107,22 @@ interface Bounds {
 }
 
 /** Axis-aligned bounds of a piece; used for the overlap and placement checks */
-export function pieceBounds(piece: LevelBlock | LevelDome): Omit<Bounds, 'label'> {
+export function pieceBounds(piece: LevelBlock | LevelDome | LevelLandmark): Omit<Bounds, 'label'> {
 	if ('size' in piece) {
 		return {
 			left: piece.x - piece.size / 2,
 			right: piece.x + piece.size / 2,
 			bottom: piece.y,
 			top: piece.y + piece.size * DOME_HEIGHT_RATIO
+		};
+	}
+	if ('kind' in piece) {
+		const spec = LANDMARKS[piece.kind];
+		return {
+			left: piece.x - spec.w / 2,
+			right: piece.x + spec.w / 2,
+			bottom: piece.y,
+			top: piece.y + spec.h
 		};
 	}
 	return {
@@ -140,6 +183,24 @@ function validateDome(value: unknown, index: number, errors: string[]): LevelDom
 	return dome;
 }
 
+function validateLandmark(value: unknown, index: number, errors: string[]): LevelLandmark | null {
+	const label = `landmarks[${index}]`;
+	if (!isRecord(value)) {
+		errors.push(`${label} is not an object`);
+		return null;
+	}
+	const { kind, x, y } = value;
+	if (!LANDMARK_KINDS.includes(kind as LandmarkKind)) {
+		errors.push(`${label}.kind is invalid`);
+		return null;
+	}
+	if (![x, y].every(isNumber)) {
+		errors.push(`${label} needs numeric x and y`);
+		return null;
+	}
+	return { kind: kind as LandmarkKind, x: x as number, y: y as number };
+}
+
 /** Checks untrusted level data (a parsed JSON file) and returns either the level or all problems */
 export function validateLevel(data: unknown): LevelValidation {
 	const errors: string[] = [];
@@ -161,13 +222,17 @@ export function validateLevel(data: unknown): LevelValidation {
 
 	const rawBlocks = Array.isArray(data.blocks) ? data.blocks : null;
 	const rawDomes = Array.isArray(data.domes) ? data.domes : null;
+	const rawLandmarks = Array.isArray(data.landmarks) ? data.landmarks : [];
 	if (!rawBlocks) errors.push('blocks must be a list');
 	if (!rawDomes || rawDomes.length === 0) errors.push('a level needs at least one golden dome');
 
 	const blocks = (rawBlocks ?? []).map((block, index) => validateBlock(block, index, errors));
 	const domes = (rawDomes ?? []).map((dome, index) => validateDome(dome, index, errors));
-	if (blocks.length + domes.length > MAX_LEVEL_PIECES) {
-		errors.push(`blocks plus domes exceed the limit of ${MAX_LEVEL_PIECES}`);
+	const landmarks = rawLandmarks.map((landmark, index) =>
+		validateLandmark(landmark, index, errors)
+	);
+	if (blocks.length + domes.length + landmarks.length > MAX_LEVEL_PIECES) {
+		errors.push(`blocks plus domes plus landmarks exceed the limit of ${MAX_LEVEL_PIECES}`);
 	}
 
 	// Placement: inside the field, on or above the ground, and no two pieces overlapping
@@ -177,6 +242,9 @@ export function validateLevel(data: unknown): LevelValidation {
 	});
 	domes.forEach((dome, index) => {
 		if (dome) bounds.push({ label: `domes[${index}]`, ...pieceBounds(dome) });
+	});
+	landmarks.forEach((landmark, index) => {
+		if (landmark) bounds.push({ label: `landmarks[${index}]`, ...pieceBounds(landmark) });
 	});
 	for (const box of bounds) {
 		if (box.bottom < -1e-9) errors.push(`${box.label} is below the ground`);
@@ -202,7 +270,8 @@ export function validateLevel(data: unknown): LevelValidation {
 			width: width as number,
 			birds: birds as BirdKind[],
 			blocks: blocks as LevelBlock[],
-			domes: domes as LevelDome[]
+			domes: domes as LevelDome[],
+			landmarks: landmarks as LevelLandmark[]
 		}
 	};
 }

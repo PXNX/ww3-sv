@@ -2,7 +2,7 @@
 	"version": 1,
 	"id": "level-11",
 	"width": 24,
-	"birds": ["flamingo", "goose", "pelican", "flamingo"],
+	"birds": ["flamingo", "pelican", "pelican", "flamingo"],
 	"blocks": [
 		{ "material": "stone", "shape": "box", "x": 12.8, "y": 0, "w": 2, "h": 0.5 },
 		{ "material": "wood", "shape": "box", "x": 12.1, "y": 0.5, "w": 0.4, "h": 2 },
