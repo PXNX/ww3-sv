@@ -1,8 +1,7 @@
 <!--
 	Shahed Shootdown playfield: a crisp high-DPI canvas driven by the fixed-step loop, plus the
-	touch controls (drag on the ground band, hold the side zones, a large Fire button, tap the sky)
-	and keyboard controls (arrow keys or A and D, Space, P). The playfield never mirrors in
-	right-to-left languages.
+	touch controls (drag on the ground band to steer, tap the sky to fire) and keyboard controls
+	(arrow keys or A and D, Space, P). The playfield never mirrors in right-to-left languages.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -11,9 +10,6 @@
 	import { LAUNCHER_TOP, WORLD_HEIGHT, WORLD_WIDTH } from '$lib/game/shootdown/shootdownStep';
 	import { drawScene, loadSceneSprites } from '$lib/game/shootdown/render';
 	import type { ShootdownGame } from '$lib/stores/shootdownGame.svelte';
-	import IconChevronLeft from '~icons/lucide/chevron-left';
-	import IconChevronRight from '~icons/lucide/chevron-right';
-	import IconCrosshair from '~icons/lucide/crosshair';
 	import IconPlay from '~icons/lucide/play';
 
 	let { game, showTutorial = false }: { game: ShootdownGame; showTutorial?: boolean } = $props();
@@ -97,25 +93,6 @@
 		game.dragTo(null);
 	}
 
-	/** Pointer handlers for a button that acts while it is held down */
-	function holdHandlers(onChange: (held: boolean) => void) {
-		const release = () => onChange(false);
-		return {
-			onpointerdown: (event: PointerEvent) => {
-				(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-				onChange(true);
-			},
-			onpointerup: release,
-			onpointercancel: release,
-			onlostpointercapture: release,
-			oncontextmenu: (event: Event) => event.preventDefault()
-		};
-	}
-
-	const leftZone = holdHandlers((held) => game.steer('zone', -1, held));
-	const rightZone = holdHandlers((held) => game.steer('zone', 1, held));
-	const fireButton = holdHandlers((held) => game.holdFire(held));
-
 	const isInteractive = (target: EventTarget | null) =>
 		target instanceof HTMLElement &&
 		target.closest('button, a, input, select, textarea, [contenteditable]') !== null;
@@ -126,11 +103,11 @@
 		switch (event.code) {
 			case 'ArrowLeft':
 			case 'KeyA':
-				game.steer('key', -1, pressed);
+				game.steer(-1, pressed);
 				break;
 			case 'ArrowRight':
 			case 'KeyD':
-				game.steer('key', 1, pressed);
+				game.steer(1, pressed);
 				break;
 			case 'Space':
 				// A focused button handles Space itself
@@ -233,39 +210,5 @@
 				</div>
 			</div>
 		{/if}
-	</div>
-
-	<div class="grid grid-cols-[1fr_1.6fr_1fr] gap-3">
-		<button
-			type="button"
-			class="btn-chunky touch-none bg-mustard py-4 disabled:opacity-60"
-			aria-label={m.shootdown_move_left()}
-			disabled={game.status !== 'playing'}
-			{...leftZone}
-		>
-			<IconChevronLeft class="size-8" stroke-width="3" aria-hidden="true" />
-		</button>
-		<button
-			type="button"
-			class="btn-chunky touch-none bg-tie-red py-4 text-2xl disabled:opacity-60"
-			disabled={game.status !== 'playing'}
-			{...fireButton}
-			onclick={(event) => {
-				// Keyboard activation (Enter or Space on the focused button) has no pointer
-				if (event.detail === 0) game.pressFire();
-			}}
-		>
-			<IconCrosshair class="size-7" stroke-width="3" aria-hidden="true" />
-			{m.shootdown_fire()}
-		</button>
-		<button
-			type="button"
-			class="btn-chunky touch-none bg-mustard py-4 disabled:opacity-60"
-			aria-label={m.shootdown_move_right()}
-			disabled={game.status !== 'playing'}
-			{...rightZone}
-		>
-			<IconChevronRight class="size-8" stroke-width="3" aria-hidden="true" />
-		</button>
 	</div>
 </div>

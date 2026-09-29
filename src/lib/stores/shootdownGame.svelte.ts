@@ -81,7 +81,7 @@ export class ShootdownGame {
 	#flavor: Random = createRandom(randomSeed());
 	#bannerMs = 0;
 	#reactionMs = 0;
-	#steer = { zoneLeft: false, zoneRight: false, keyLeft: false, keyRight: false };
+	#steer = { left: false, right: false };
 	#dragTarget: number | null = null;
 	#fireHeld = false;
 	#fireBufferMs = 0;
@@ -128,10 +128,8 @@ export class ShootdownGame {
 		localStore().write(SETTINGS_KEY, { autoFire } satisfies ShootdownSettings);
 	}
 
-	/** Holding a side zone or an arrow key; the two sources are tracked separately */
-	steer(source: 'zone' | 'key', direction: -1 | 1, pressed: boolean) {
-		const side = direction === -1 ? 'Left' : 'Right';
-		this.#steer[`${source}${side}`] = pressed;
+	steer(direction: -1 | 1, pressed: boolean) {
+		this.#steer[direction === -1 ? 'left' : 'right'] = pressed;
 	}
 
 	/** Drag target in world units, or null when the drag ends */
@@ -149,7 +147,7 @@ export class ShootdownGame {
 	}
 
 	releaseInputs() {
-		this.#steer = { zoneLeft: false, zoneRight: false, keyLeft: false, keyRight: false };
+		this.#steer = { left: false, right: false };
 		this.#dragTarget = null;
 		this.#fireHeld = false;
 		this.#fireBufferMs = 0;
@@ -162,8 +160,8 @@ export class ShootdownGame {
 		if (this.status !== 'playing') return;
 
 		this.timeMs += dtMs;
-		const left = this.#steer.zoneLeft || this.#steer.keyLeft;
-		const right = this.#steer.zoneRight || this.#steer.keyRight;
+		const left = this.#steer.left;
+		const right = this.#steer.right;
 		const fire = this.autoFire || this.#fireHeld || this.#fireBufferMs > 0;
 		const missilesBefore = this.state.missiles.length;
 		const events = stepGame(

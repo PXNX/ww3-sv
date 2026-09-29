@@ -30,7 +30,8 @@
 </script>
 
 <ul
-	class="grid grid-cols-3 gap-2 [--tray-cell:1.125rem] sm:gap-3 sm:[--tray-cell:1.75rem]"
+	class="mx-auto grid w-full grid-cols-3 gap-2 [--tray-cell:1.125rem] sm:gap-3 sm:[--tray-cell:1.75rem]"
+	style:max-width="max(16rem, min(34rem, calc((100dvh - 15rem) * 0.75)))"
 	aria-label={m.blocks_tray_label()}
 >
 	{#each tray as piece, index (index)}
