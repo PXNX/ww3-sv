@@ -179,10 +179,28 @@ export type WorldEvent =
 	| { type: 'block-destroyed'; material: Material; points: number }
 	| { type: 'landmark-destroyed'; landmark: LandmarkKind; points: number }
 	| { type: 'dome-destroyed'; remaining: number }
-	| { type: 'impact'; strength: number }
+	| { type: 'impact'; strength: number; surface: ImpactSurface }
 	| { type: 'ability'; bird: BirdKind };
 
+/** What a bird struck hardest in a step, so the impact can sound like it */
+export type ImpactSurface = Material | 'dome' | 'ground' | 'bird';
+
 const GROUND = 'ground';
+
+/** The surface a bird hit; landmarks are heavy masonry, so they sound like stone */
+function surfaceOf(piece: Piece | typeof GROUND | null): ImpactSurface {
+	if (!piece || piece === GROUND) return 'ground';
+	switch (piece.kind) {
+		case 'block':
+			return piece.material;
+		case 'dome':
+			return 'dome';
+		case 'landmark':
+			return 'stone';
+		case 'bird':
+			return 'bird';
+	}
+}
 
 export class FuryWorld {
 	readonly level: LevelData;
@@ -202,6 +220,7 @@ export class FuryWorld {
 	#events: WorldEvent[] = [];
 	#damage = new Map<BlockPiece | DomePiece | LandmarkPiece, number>();
 	#strongestImpact = 0;
+	#strongestSurface: ImpactSurface = 'ground';
 	/** Birds launched this turn (a split flamingo adds its two siblings) */
 	#turnBirds: BirdPiece[] = [];
 
@@ -248,7 +267,11 @@ export class FuryWorld {
 		this.steps++;
 
 		if (this.#strongestImpact > 4) {
-			this.#events.push({ type: 'impact', strength: this.#strongestImpact });
+			this.#events.push({
+				type: 'impact',
+				strength: this.#strongestImpact,
+				surface: this.#strongestSurface
+			});
 		}
 
 		let removed = false;
@@ -523,7 +546,10 @@ export class FuryWorld {
 		if (target.kind === 'bird') {
 			const firstHit = !target.hasHit;
 			target.hasHit = true;
-			this.#strongestImpact = Math.max(this.#strongestImpact, impulse);
+			if (impulse > this.#strongestImpact) {
+				this.#strongestImpact = impulse;
+				this.#strongestSurface = surfaceOf(other);
+			}
 			if (firstHit && target.bird === 'pelican' && impulse > 1) {
 				const position = target.body.getPosition();
 				this.#burst(position.x, position.y);
