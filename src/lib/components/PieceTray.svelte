@@ -29,7 +29,10 @@
 	const TILTS = [-2.5, 1.5, -1];
 </script>
 
-<ul class="grid grid-cols-3 gap-3" aria-label={m.blocks_tray_label()}>
+<ul
+	class="grid grid-cols-3 gap-2 [--tray-cell:1.125rem] sm:gap-3 sm:[--tray-cell:1.75rem]"
+	aria-label={m.blocks_tray_label()}
+>
 	{#each tray as piece, index (index)}
 		<li class="flex">
 			{#if piece}
@@ -37,7 +40,7 @@
 				{@const fitsBoard = fits[index]}
 				<button
 					type="button"
-					class="sticker sticker-interactive relative flex aspect-square w-full touch-none items-center justify-center p-2 {isSelected
+					class="sticker sticker-interactive relative flex aspect-square w-full touch-none items-center justify-center p-1.5 sm:p-2 {isSelected
 						? '-translate-y-1.5 bg-explosion-yellow outline-3 outline-offset-3 outline-tie-red outline-dashed'
 						: ''} {fitsBoard ? '' : 'opacity-60'}"
 					style:--tilt="{isSelected ? 0 : TILTS[index % TILTS.length]}deg"
@@ -54,12 +57,12 @@
 					<span
 						data-playfield
 						class="grid gap-[2px]"
-						style:grid-template-columns="repeat({piece.width}, 1rem)"
-						style:grid-template-rows="repeat({piece.height}, 1rem)"
+						style:grid-template-columns="repeat({piece.width}, var(--tray-cell))"
+						style:grid-template-rows="repeat({piece.height}, var(--tray-cell))"
 					>
 						{#each piece.cells as [row, col] (`${row},${col}`)}
 							<span style:grid-row={row + 1} style:grid-column={col + 1}>
-								<BlocksCell kind={piece.kind} class="size-4" />
+								<BlocksCell kind={piece.kind} class="size-(--tray-cell)" />
 							</span>
 						{/each}
 					</span>

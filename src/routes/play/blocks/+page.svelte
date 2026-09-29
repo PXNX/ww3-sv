@@ -247,12 +247,12 @@
 		<span
 			data-playfield
 			class="grid gap-[2px]"
-			style:grid-template-columns="repeat({drag.piece.width}, 1.75rem)"
-			style:grid-template-rows="repeat({drag.piece.height}, 1.75rem)"
+			style:grid-template-columns="repeat({drag.piece.width}, 2.5rem)"
+			style:grid-template-rows="repeat({drag.piece.height}, 2.5rem)"
 		>
 			{#each drag.piece.cells as [row, col] (`${row},${col}`)}
 				<span style:grid-row={row + 1} style:grid-column={col + 1}>
-					<BlocksCell kind={drag.piece.kind} class="size-7" />
+					<BlocksCell kind={drag.piece.kind} class="size-10" />
 				</span>
 			{/each}
 		</span>
