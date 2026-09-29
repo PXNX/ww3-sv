@@ -18,6 +18,10 @@ export const MIN_SIZE = 3;
 export const MAX_SIZE = 8;
 export const START_SHIPS = 2;
 export const SUBMARINE_CHARGES = 1;
+/** Merging this many ships in a single move earns another submarine */
+export const SUBMARINE_MERGES = 3;
+/** The most submarines that can be held at once */
+export const MAX_SUBMARINES = 3;
 /** A mine is dropped after every MINE_INTERVAL-th board-changing move */
 export const MINE_INTERVAL = 5;
 /** Chance weights for the ship that appears after a move */
@@ -102,6 +106,8 @@ export interface MoveOutcome {
 	droppedMine: Position | null;
 	/** Whether this move created at least one Mega-Tanker */
 	createdMegaTanker: boolean;
+	/** Whether this move was a triple merge that earned a submarine */
+	earnedSubmarine: boolean;
 }
 
 /** Points for creating a ship of the given tier: 4 for a Fishing Boat, doubling per tier */
@@ -306,7 +312,8 @@ export function createGame(random: Random, size = DEFAULT_SIZE): MergeState {
 
 /**
  * Plays one move: slide and merge, destroy mines next to merges, score, then (only if the board
- * changed) spawn a new ship and, on every fifth move, drop a mine.
+ * changed) spawn a new ship and, on every fifth move, drop a mine. Merging three or more ships in
+ * one move earns a submarine, up to MAX_SUBMARINES.
  */
 export function applyMove(state: MergeState, direction: Direction, random: Random): MoveOutcome {
 	const slid = slide(state.board, direction);
@@ -319,13 +326,16 @@ export function applyMove(state: MergeState, direction: Direction, random: Rando
 			score: scoreMove([], 0),
 			spawned: null,
 			droppedMine: null,
-			createdMegaTanker: false
+			createdMegaTanker: false,
+			earnedSubmarine: false
 		};
 	}
 
 	const cleared = destroyMinesNear(slid.board, slid.merges);
 	const score = scoreMove(slid.merges, cleared.destroyed.length);
 	const moves = state.moves + 1;
+	const earnedSubmarine =
+		slid.merges.length >= SUBMARINE_MERGES && state.submarines < MAX_SUBMARINES;
 	let board = cleared.board;
 	let nextId = state.nextId;
 
@@ -348,6 +358,7 @@ export function applyMove(state: MergeState, direction: Direction, random: Rando
 			score: state.score + score.total,
 			moves,
 			highestTier: Math.max(state.highestTier, highestShipTier(board)),
+			submarines: state.submarines + (earnedSubmarine ? 1 : 0),
 			minesDestroyed: state.minesDestroyed + cleared.destroyed.length,
 			nextId
 		},
@@ -357,7 +368,8 @@ export function applyMove(state: MergeState, direction: Direction, random: Rando
 		score,
 		spawned: spawned && { ...spawned.position, tier: spawned.tier },
 		droppedMine,
-		createdMegaTanker: slid.merges.some((merge) => merge.tier === MAX_TIER)
+		createdMegaTanker: slid.merges.some((merge) => merge.tier === MAX_TIER),
+		earnedSubmarine
 	};
 }
 
@@ -429,7 +441,7 @@ export function isMergeState(value: unknown): value is MergeState {
 		isCount(state.highestTier) &&
 		(state.highestTier as number) <= MAX_TIER &&
 		isCount(state.submarines) &&
-		(state.submarines as number) <= SUBMARINE_CHARGES &&
+		(state.submarines as number) <= MAX_SUBMARINES &&
 		isCount(state.minesDestroyed) &&
 		isCount(state.nextId) &&
 		[...ids].every((id) => id < (state.nextId as number))
