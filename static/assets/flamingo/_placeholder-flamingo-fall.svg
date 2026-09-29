@@ -7,10 +7,10 @@
 		<path d="M56 42 Q66 18 74 10" fill="none" stroke-width="11"/>
 		<path d="M56 42 Q66 18 74 10" fill="none" stroke="#F28DB2" stroke-width="6"/>
 		<ellipse cx="42" cy="52" rx="24" ry="17" fill="#F28DB2" stroke-width="4"/>
-		<circle cx="76" cy="8" r="11" fill="#F28DB2" stroke-width="4"/>
-		<circle cx="80" cy="5" r="2" fill="#111111" stroke="none"/>
-		<path d="M84 2 L96 8 L86 16 L80 10 Z" fill="#FFFFFF" stroke-width="3"/>
-		<path d="M91 6 L96 8 L90 11 Z" fill="#111111" stroke-width="2"/>
+		<circle cx="76" cy="10" r="11" fill="#F28DB2" stroke-width="4"/>
+		<path d="M84 6 L100 10 L84 14 Z" fill="#FFFFFF" stroke-width="3"/>
+		<path d="M96 9 L100 10 L96 11 Z" fill="#111111" stroke-width="2"/>
+		<circle cx="78" cy="4" r="2" fill="#111111" stroke="none"/>
 		<path d="M32 46 Q44 32 56 42 Q44 50 32 46 Z" fill="#D9608E" stroke-width="4"/>
 	</g>
 </svg>
