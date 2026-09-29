@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onDestroy } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import CharacterMascot from '$lib/components/CharacterMascot.svelte';
 	import Confetti from '$lib/components/Confetti.svelte';
 	import GameOverModal from '$lib/components/GameOverModal.svelte';
@@ -10,17 +10,19 @@
 	import { drawMergeBoard } from '$lib/game/merge/tierStyle';
 	import { m } from '$lib/paraglide/messages';
 	import { getLocale } from '$lib/paraglide/runtime';
+	import { firstPlay } from '$lib/services/tutorial';
 	import { MergeGame, noticeText, shipName } from '$lib/stores/mergeGame.svelte';
 	import { CHARACTER_NAME } from '$lib/theme/character';
 	import { spriteSrc } from '$lib/theme/sprites';
-	import IconArrowDown from '~icons/lucide/arrow-down';
-	import IconArrowLeft from '~icons/lucide/arrow-left';
-	import IconArrowRight from '~icons/lucide/arrow-right';
-	import IconArrowUp from '~icons/lucide/arrow-up';
 	import IconRotate from '~icons/lucide/rotate-ccw';
 
 	const game = new MergeGame();
 	onDestroy(() => game.destroy());
+
+	let showTutorial = $state(false);
+	onMount(() => {
+		showTutorial = firstPlay('merge');
+	});
 
 	const characterName = $derived(CHARACTER_NAME[getLocale()]);
 	const drawBoard = $derived(drawMergeBoard(game.state.board));
@@ -60,13 +62,6 @@
 		event.preventDefault();
 		game.move(direction);
 	}
-
-	const ARROWS = [
-		{ direction: 'up', icon: IconArrowUp, label: m.merge_move_up, area: 'up' },
-		{ direction: 'left', icon: IconArrowLeft, label: m.merge_move_left, area: 'left' },
-		{ direction: 'right', icon: IconArrowRight, label: m.merge_move_right, area: 'right' },
-		{ direction: 'down', icon: IconArrowDown, label: m.merge_move_down, area: 'down' }
-	] as const;
 </script>
 
 <svelte:window onkeydown={onKeyDown} />
@@ -178,29 +173,10 @@
 			{/if}
 		</div>
 
-		<div
-			data-playfield
-			class="arrows mx-auto grid gap-2"
-			role="group"
-			aria-label={m.merge_controls_label()}
-		>
-			{#each ARROWS as arrow (arrow.direction)}
-				{@const Icon = arrow.icon}
-				<button
-					type="button"
-					class="btn-chunky size-14 p-0"
-					style:grid-area={arrow.area}
-					aria-label={arrow.label()}
-					disabled={game.over}
-					onclick={() => game.move(arrow.direction)}
-				>
-					<Icon class="size-7" stroke-width="3" aria-hidden="true" />
-				</button>
-			{/each}
-		</div>
-
 		<div class="flex flex-col gap-1 text-sm leading-snug">
-			<p>{m.merge_instructions()}</p>
+			{#if showTutorial}
+				<p>{m.merge_instructions()}</p>
+			{/if}
 			{#if game.bestTier}
 				<p class="font-bold">{m.merge_best_ship({ ship: shipName(game.bestTier) })}</p>
 			{/if}
@@ -237,13 +213,6 @@
 </GameOverModal>
 
 <style>
-	.arrows {
-		grid-template-areas:
-			'. up .'
-			'left . right'
-			'. down .';
-	}
-
 	.urgent {
 		animation: nudge 800ms ease-in-out infinite;
 	}

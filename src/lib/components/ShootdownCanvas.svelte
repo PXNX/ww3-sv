@@ -16,7 +16,7 @@
 	import IconCrosshair from '~icons/lucide/crosshair';
 	import IconPlay from '~icons/lucide/play';
 
-	let { game }: { game: ShootdownGame } = $props();
+	let { game, showTutorial = false }: { game: ShootdownGame; showTutorial?: boolean } = $props();
 
 	let canvas: HTMLCanvasElement | undefined = $state();
 	let context: CanvasRenderingContext2D | null = null;
@@ -207,8 +207,10 @@
 					style:--tilt="-1.5deg"
 				>
 					{#if game.status === 'ready'}
-						<p class="leading-snug font-semibold">{m.shootdown_how_to()}</p>
-						<p class="hidden text-sm sm:block">{m.shootdown_keyboard_hint()}</p>
+						{#if showTutorial}
+							<p class="leading-snug font-semibold">{m.shootdown_how_to()}</p>
+							<p class="hidden text-sm sm:block">{m.shootdown_keyboard_hint()}</p>
+						{/if}
 						<button
 							type="button"
 							class="btn-chunky bg-tie-red text-xl"

@@ -7,6 +7,7 @@
 	import GameOverModal from '$lib/components/GameOverModal.svelte';
 	import GameShell from '$lib/components/GameShell.svelte';
 	import { drawScene, fitCamera } from '$lib/game/fury/furyRender';
+	import { firstPlay } from '$lib/services/tutorial';
 	import { FuryGame } from '$lib/stores/furyGame.svelte';
 	import IconList from '~icons/lucide/list';
 	import IconPause from '~icons/lucide/pause';
@@ -14,7 +15,11 @@
 	import IconRotate from '~icons/lucide/rotate-ccw';
 
 	const game = new FuryGame();
-	onMount(() => game.load());
+	let showTutorial = $state(false);
+	onMount(() => {
+		game.load();
+		showTutorial = firstPlay('fury');
+	});
 
 	const playing = $derived(game.screen === 'play');
 	const title = $derived(
@@ -69,7 +74,7 @@
 
 	{#if playing}
 		<div class="relative">
-			<FuryCanvas {game} />
+			<FuryCanvas {game} {showTutorial} />
 			{#if game.paused}
 				<div
 					class="absolute inset-0 flex items-start justify-center bg-ink/30 pt-10"

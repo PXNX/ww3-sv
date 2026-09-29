@@ -7,11 +7,13 @@
 	import type { CrashCause } from '$lib/game/flamingo/flamingoStep';
 	import { drawShareScene } from '$lib/game/flamingo/render';
 	import { onAppHidden } from '$lib/game/loop';
+	import { firstPlay } from '$lib/services/tutorial';
 	import { FlamingoGame } from '$lib/stores/flamingoGame.svelte';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
 
 	const game = new FlamingoGame();
+	let showTutorial = $state(false);
 
 	const CRASH_LINES: Record<CrashCause, () => string> = {
 		balloon: m.flamingo_crash_balloon,
@@ -25,6 +27,7 @@
 
 	onMount(() => {
 		game.loadBests();
+		showTutorial = firstPlay('flamingo');
 		return onAppHidden(() => game.pause());
 	});
 
@@ -50,7 +53,7 @@
 		</button>
 	{/snippet}
 
-	<FlamingoCanvas {game} />
+	<FlamingoCanvas {game} {showTutorial} />
 </GameShell>
 
 <GameOverModal

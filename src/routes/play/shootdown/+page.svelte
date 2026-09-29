@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import GameShell from '$lib/components/GameShell.svelte';
@@ -6,6 +7,7 @@
 	import ShootdownCanvas from '$lib/components/ShootdownCanvas.svelte';
 	import ShootdownCommander from '$lib/components/ShootdownCommander.svelte';
 	import { STARTING_LIVES } from '$lib/game/shootdown/shootdownStep';
+	import { firstPlay } from '$lib/services/tutorial';
 	import { ShootdownGame } from '$lib/stores/shootdownGame.svelte';
 	import { CHARACTER_NAME } from '$lib/theme/character';
 	import IconHeart from '~icons/lucide/heart';
@@ -15,6 +17,11 @@
 
 	const game = new ShootdownGame();
 	const modeName = m.mode_shootdown_name();
+
+	let showTutorial = $state(false);
+	onMount(() => {
+		showTutorial = firstPlay('shootdown');
+	});
 
 	// Short mascot reaction lines for shooting down the blimp (flagged for owner review)
 	const BLIMP_REACTIONS = [m.shootdown_blimp_1, m.shootdown_blimp_2, m.shootdown_blimp_3];
@@ -95,7 +102,7 @@
 			</div>
 		</div>
 
-		<ShootdownCanvas {game} />
+		<ShootdownCanvas {game} {showTutorial} />
 	</section>
 
 	<GameOverModal

@@ -9,7 +9,7 @@
 	import { MAX_HULL } from '$lib/game/convoy/constants';
 	import { drawConvoyBoard } from '$lib/game/convoy/drawScene';
 	import { prefersReducedMotion } from '$lib/game/loop';
-	import { localStore } from '$lib/services/storage';
+	import { firstPlay } from '$lib/services/tutorial';
 	import { ConvoyGame } from '$lib/stores/convoyGame.svelte';
 	import { CHARACTER_NAME } from '$lib/theme/character';
 	import IconHeart from '~icons/lucide/heart';
@@ -17,29 +17,13 @@
 	import IconPlay from '~icons/lucide/play';
 	import IconShield from '~icons/lucide/shield';
 
-	const SETTINGS_KEY = 'convoy:settings';
-
-	interface ConvoySettings {
-		buttons: boolean;
-	}
-
-	const isSettings = (value: unknown): value is ConvoySettings =>
-		typeof value === 'object' &&
-		value !== null &&
-		typeof (value as ConvoySettings).buttons === 'boolean';
-
 	const game = new ConvoyGame({ reducedMotion: prefersReducedMotion() });
-	let showButtons = $state(false);
+	let showTutorial = $state(false);
 
 	onMount(() => {
 		game.loadBest();
-		showButtons = localStore().read(SETTINGS_KEY, { buttons: false }, isSettings).buttons;
+		showTutorial = firstPlay('convoy');
 	});
-
-	function toggleButtons(event: Event) {
-		showButtons = (event.currentTarget as HTMLInputElement).checked;
-		localStore().write(SETTINGS_KEY, { buttons: showButtons });
-	}
 
 	// The mascot sent the gunboats: smug when the tanker is in trouble, sweating when it is not
 	const mascotPose = $derived(
@@ -108,7 +92,7 @@
 		<CharacterMascot pose={mascotPose} class="ms-auto w-12 -rotate-3" />
 	</section>
 
-	<ConvoyCanvas {game} {showButtons}>
+	<ConvoyCanvas {game}>
 		{#if game.status === 'ready'}
 			<div
 				class="sticker pointer-events-auto flex max-w-xs flex-col items-center gap-3 p-4 text-center"
@@ -118,8 +102,10 @@
 				<p class="font-display text-lg leading-tight font-bold">
 					{m.convoy_intro({ characterName: CHARACTER_NAME[getLocale()] })}
 				</p>
-				<p class="text-sm leading-snug">{m.convoy_how_to()}</p>
-				<p class="text-xs leading-snug">{m.convoy_how_to_keys()}</p>
+				{#if showTutorial}
+					<p class="text-sm leading-snug">{m.convoy_how_to()}</p>
+					<p class="text-xs leading-snug">{m.convoy_how_to_keys()}</p>
+				{/if}
 				<button type="button" class="btn-chunky bg-tie-red text-lg" onclick={() => game.start()}>
 					<IconPlay class="size-5" aria-hidden="true" />
 					{m.convoy_start()}
@@ -159,16 +145,6 @@
 			{/if}
 		{/if}
 	</ConvoyCanvas>
-
-	<label class="flex items-center gap-2 self-center text-sm font-semibold">
-		<input
-			type="checkbox"
-			class="toggle border-3 border-ink"
-			checked={showButtons}
-			onchange={toggleButtons}
-		/>
-		{m.convoy_buttons_setting()}
-	</label>
 </GameShell>
 
 <GameOverModal

@@ -1,7 +1,7 @@
 <!--
 	Convoy Runner playfield: draws the strait on a canvas (crisp on high-density screens) and turns
-	swipes, taps on either half, arrow keys, A and D, and the optional on-screen buttons into lane
-	changes. Left and right are always physical, also in right-to-left languages.
+	swipes, taps on either half, arrow keys, and A and D into lane changes. Left and right are always
+	physical, also in right-to-left languages.
 -->
 <script lang="ts">
 	import { onMount, type Snippet } from 'svelte';
@@ -10,16 +10,12 @@
 	import { drawScene, loadConvoySprites } from '$lib/game/convoy/drawScene';
 	import { createFixedLoop, onAppHidden } from '$lib/game/loop';
 	import type { ConvoyGame } from '$lib/stores/convoyGame.svelte';
-	import IconChevronLeft from '~icons/lucide/chevron-left';
-	import IconChevronRight from '~icons/lucide/chevron-right';
 
 	let {
 		game,
-		showButtons = false,
 		children
 	}: {
 		game: ConvoyGame;
-		showButtons?: boolean;
 		/** Overlays shown on top of the field, such as the start or pause card */
 		children?: Snippet;
 	} = $props();
@@ -179,45 +175,4 @@
 			{/if}
 		</div>
 	</div>
-
-	{#if showButtons}
-		<div class="flex w-full max-w-sm justify-between gap-4">
-			<button
-				type="button"
-				class="btn-chunky min-h-16 flex-1 bg-flag-blue text-lg"
-				aria-label={m.convoy_steer_left()}
-				disabled={game.status !== 'running'}
-				onpointerdown={(event) => {
-					event.preventDefault();
-					game.steer(-1);
-				}}
-				onkeydown={(event) => {
-					if (event.key === 'Enter' || event.key === ' ') {
-						event.preventDefault();
-						game.steer(-1);
-					}
-				}}
-			>
-				<IconChevronLeft class="size-8" aria-hidden="true" />
-			</button>
-			<button
-				type="button"
-				class="btn-chunky min-h-16 flex-1 bg-flag-blue text-lg"
-				aria-label={m.convoy_steer_right()}
-				disabled={game.status !== 'running'}
-				onpointerdown={(event) => {
-					event.preventDefault();
-					game.steer(1);
-				}}
-				onkeydown={(event) => {
-					if (event.key === 'Enter' || event.key === ' ') {
-						event.preventDefault();
-						game.steer(1);
-					}
-				}}
-			>
-				<IconChevronRight class="size-8" aria-hidden="true" />
-			</button>
-		</div>
-	{/if}
 </div>
