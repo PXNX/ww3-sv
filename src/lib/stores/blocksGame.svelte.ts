@@ -37,7 +37,12 @@ export interface ClearFeedback {
 	lines: number;
 	points: number;
 	streak: number;
+	/** Board indices that were cleared */
 	cells: number[];
+	/** The kind each cleared cell held, in the same order as cells */
+	kinds: PieceKind[];
+	/** Center of the piece that caused the clear, so the animation can ripple outwards from it */
+	origin: Cell;
 }
 
 export type PlaceOutcome = 'placed' | 'no-selection' | 'blocked';
@@ -151,6 +156,10 @@ export class BlocksGame {
 		const lines = lineCount(result.cleared);
 		const move = scoreMove(piece.cells.length, lines, this.combo);
 		const slot = this.selected;
+		const placedNow = new Set(result.placed);
+		const kinds = result.clearedCells.map(
+			(index) => (placedNow.has(index) ? piece.kind : this.board.cells[index]) ?? piece.kind
+		);
 
 		this.board = result.board;
 		this.score += move.points;
@@ -166,7 +175,9 @@ export class BlocksGame {
 						lines,
 						points: move.linePoints,
 						streak: move.combo.streak,
-						cells: result.clearedCells
+						cells: result.clearedCells,
+						kinds,
+						origin: [anchorRow + (piece.height - 1) / 2, anchorCol + (piece.width - 1) / 2]
 					}
 				: null;
 		soundManager().play(lines >= 2 ? 'chime' : lines === 1 ? 'pop' : 'thud');

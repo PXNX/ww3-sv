@@ -34,12 +34,18 @@
 	const preview = $derived(aim && game.selectedPiece ? game.preview(aim.row, aim.col) : null);
 
 	// Dragging a tray piece onto the board: a press below DRAG_THRESHOLD of movement is left to the
-	// tray's own click handling (tap-to-select); crossing it promotes to a real drag that follows the
-	// pointer and drives the same aim/preview/place pipeline as tap-to-place.
+	// tray's own click handling (tap-to-select); crossing it promotes to a real drag. The piece is drawn
+	// at board-cell size and the spot it lands on is worked out from where the piece itself is (not
+	// from the fingertip), so the ghost on the board always matches what the player sees.
+	// The drag runs until the pointer is released: moving over full cells, other pieces or off the
+	// board only changes the preview, it never cancels the drag.
 	const DRAG_THRESHOLD = 6;
+	/** Ignore the click a browser may still fire on the tray right after a drag ended */
+	const CLICK_AFTER_DRAG_MS = 400;
 	let dragCandidate = $state<{
 		index: number;
 		pointerId: number;
+		pointerType: string;
 		startX: number;
 		startY: number;
 	} | null>(null);
@@ -49,13 +55,72 @@
 		pointerId: number;
 		x: number;
 		y: number;
+		/** Board cell size and gap in pixels, measured when the drag began */
+		cell: number;
+		gap: number;
+		/** How far the piece is held above the pointer, so a fingertip never covers it */
+		lift: number;
 	} | null>(null);
+	let dragEndedAt = 0;
+	let pendingPoint: { x: number; y: number } | null = null;
+	let frameRequest = 0;
+
+	/** The board cell the dragged piece's top-left corner is closest to, or null when it is off the board */
+	function aimFor(current: NonNullable<typeof drag>) {
+		const board = gridRef?.metrics();
+		if (!board) return null;
+		const { piece, cell, gap } = current;
+		const pitch = cell + gap;
+		const width = piece.width * pitch - gap;
+		const height = piece.height * pitch - gap;
+		const left = current.x - width / 2;
+		const top = current.y - current.lift - height / 2;
+		// At least half a cell of the piece has to hang over the board
+		const margin = pitch / 2;
+		const overlaps =
+			left + width > board.left + margin &&
+			left < board.left + board.width - margin &&
+			top + height > board.top + margin &&
+			top < board.top + board.height - margin;
+		if (!overlaps) return null;
+		return {
+			col: Math.round((left - board.left) / pitch),
+			row: Math.round((top - board.top) / pitch)
+		};
+	}
+
+	function moveDrag(x: number, y: number) {
+		if (!drag) return;
+		drag = { ...drag, x, y };
+		aim = aimFor(drag);
+	}
+
+	/** Applies at most one pointer position per frame, however often the browser reports moves */
+	function queueDragMove(x: number, y: number) {
+		pendingPoint = { x, y };
+		if (frameRequest) return;
+		frameRequest = requestAnimationFrame(() => {
+			frameRequest = 0;
+			const point = pendingPoint;
+			pendingPoint = null;
+			if (point) moveDrag(point.x, point.y);
+		});
+	}
+
+	function stopDrag() {
+		cancelAnimationFrame(frameRequest);
+		frameRequest = 0;
+		pendingPoint = null;
+		drag = null;
+		dragEndedAt = performance.now();
+	}
 
 	function beginDragCandidate(index: number, event: PointerEvent) {
 		if (game.over || !game.tray[index]) return;
 		dragCandidate = {
 			index,
 			pointerId: event.pointerId,
+			pointerType: event.pointerType,
 			startX: event.clientX,
 			startY: event.clientY
 		};
@@ -64,8 +129,7 @@
 	function windowPointerMove(event: PointerEvent) {
 		if (drag && event.pointerId === drag.pointerId) {
 			event.preventDefault();
-			drag = { ...drag, x: event.clientX, y: event.clientY };
-			aim = gridRef?.cellAt(event.clientX, event.clientY) ?? null;
+			queueDragMove(event.clientX, event.clientY);
 			return;
 		}
 		if (!dragCandidate || event.pointerId !== dragCandidate.pointerId) return;
@@ -79,27 +143,33 @@
 			dragCandidate = null;
 			return;
 		}
-		game.select(dragCandidate.index);
+		// Select without toggling: dragging a piece that was already tapped must keep it selected
+		if (game.selected !== dragCandidate.index) game.select(dragCandidate.index);
+		notice = null;
+		const board = gridRef?.metrics();
+		const cell = board?.cell ?? 40;
+		const gap = board?.gap ?? 3;
 		drag = {
 			index: dragCandidate.index,
 			piece,
 			pointerId: event.pointerId,
 			x: event.clientX,
-			y: event.clientY
+			y: event.clientY,
+			cell,
+			gap,
+			lift: dragCandidate.pointerType === 'mouse' ? 0 : (piece.height / 2 + 0.75) * (cell + gap)
 		};
 		dragCandidate = null;
-		aim = gridRef?.cellAt(event.clientX, event.clientY) ?? null;
+		aim = aimFor(drag);
 	}
 
 	function windowPointerUp(event: PointerEvent) {
 		if (drag && event.pointerId === drag.pointerId) {
-			const cell = gridRef?.cellAt(event.clientX, event.clientY) ?? null;
-			drag = null;
-			if (cell) place(cell.row, cell.col);
-			else {
-				game.select(null);
-				aim = null;
-			}
+			const target = aimFor({ ...drag, x: event.clientX, y: event.clientY });
+			stopDrag();
+			aim = null;
+			if (target) place(target.row, target.col);
+			else game.select(null);
 			return;
 		}
 		if (dragCandidate?.pointerId === event.pointerId) dragCandidate = null;
@@ -107,7 +177,7 @@
 
 	function windowPointerCancel(event: PointerEvent) {
 		if (drag?.pointerId === event.pointerId) {
-			drag = null;
+			stopDrag();
 			aim = null;
 		}
 		if (dragCandidate?.pointerId === event.pointerId) dragCandidate = null;
@@ -134,6 +204,11 @@
 	function select(index: number) {
 		game.select(index);
 		notice = null;
+	}
+
+	function traySelect(index: number) {
+		if (performance.now() - dragEndedAt < CLICK_AFTER_DRAG_MS) return;
+		select(index);
 	}
 
 	function retry() {
@@ -229,7 +304,7 @@
 		fits={game.fits}
 		selected={game.selected}
 		disabled={game.over}
-		onselect={select}
+		onselect={traySelect}
 		ondragstart={beginDragCandidate}
 	/>
 
@@ -239,20 +314,23 @@
 </GameShell>
 
 {#if drag}
+	{@const pitch = drag.cell + drag.gap}
+	{@const width = drag.piece.width * pitch - drag.gap}
+	{@const height = drag.piece.height * pitch - drag.gap}
 	<div
-		class="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-1/2 opacity-90"
-		style:left="{drag.x}px"
-		style:top="{drag.y}px"
+		class="pointer-events-none fixed top-0 left-0 z-50 will-change-transform"
+		style:transform="translate3d({drag.x - width / 2}px, {drag.y - drag.lift - height / 2}px, 0)"
 	>
 		<span
 			data-playfield
-			class="grid gap-[2px]"
-			style:grid-template-columns="repeat({drag.piece.width}, 2.5rem)"
-			style:grid-template-rows="repeat({drag.piece.height}, 2.5rem)"
+			class="blocks-drag-piece grid opacity-90 drop-shadow-[3px_5px_0_rgb(0_0_0_/_0.35)]"
+			style:gap="{drag.gap}px"
+			style:grid-template-columns="repeat({drag.piece.width}, {drag.cell}px)"
+			style:grid-template-rows="repeat({drag.piece.height}, {drag.cell}px)"
 		>
 			{#each drag.piece.cells as [row, col] (`${row},${col}`)}
 				<span style:grid-row={row + 1} style:grid-column={col + 1}>
-					<BlocksCell kind={drag.piece.kind} class="size-10" />
+					<BlocksCell kind={drag.piece.kind} class="w-full" />
 				</span>
 			{/each}
 		</span>
@@ -282,3 +360,25 @@
 		</div>
 	</dl>
 </GameOverModal>
+
+<style>
+	/* The piece grows from the tray to board size when it is picked up */
+	@keyframes blocks-drag-pickup {
+		from {
+			scale: 0.55;
+		}
+		to {
+			scale: 1;
+		}
+	}
+
+	.blocks-drag-piece {
+		animation: blocks-drag-pickup 140ms var(--ease-spring) both;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.blocks-drag-piece {
+			animation: none;
+		}
+	}
+</style>

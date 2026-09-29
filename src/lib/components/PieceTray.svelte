@@ -41,7 +41,7 @@
 				{@const fitsBoard = fits[index]}
 				<button
 					type="button"
-					class="sticker sticker-interactive relative flex aspect-square w-full touch-none items-center justify-center p-1.5 sm:p-2 {isSelected
+					class="sticker sticker-interactive relative flex aspect-square w-full touch-none items-center justify-center p-1.5 select-none [-webkit-touch-callout:none] sm:p-2 {isSelected
 						? '-translate-y-1.5 bg-explosion-yellow outline-3 outline-offset-3 outline-tie-red outline-dashed'
 						: ''} {fitsBoard ? '' : 'opacity-60'}"
 					style:--tilt="{isSelected ? 0 : TILTS[index % TILTS.length]}deg"
@@ -50,6 +50,7 @@
 						(fitsBoard ? '' : `, ${m.blocks_piece_no_room()}`)}
 					{disabled}
 					onclick={() => onselect(index)}
+					oncontextmenu={(event) => event.preventDefault()}
 					onpointerdown={(event) => {
 						if (event.button !== 0 || disabled) return;
 						ondragstart?.(index, event);

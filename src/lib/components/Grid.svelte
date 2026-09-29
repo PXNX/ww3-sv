@@ -7,10 +7,15 @@
 	import { m } from '$lib/paraglide/messages';
 	import type { Board } from '$lib/game/blocks/board';
 	import type { ClearFeedback, Preview } from '$lib/stores/blocksGame.svelte';
-	import BlocksCell from './BlocksCell.svelte';
+	import BlocksCell, { KIND_HEX } from './BlocksCell.svelte';
 
-	/** Shared starburst sprite, also used by Shootdown; a placeholder until owner-supplied art exists */
-	const EXPLOSION_SPRITE = '/assets/shootdown/_placeholder-explosion.svg';
+	/** Directions the shards of a cleared cell fly off in */
+	const SHARDS = [
+		[-1, -1],
+		[1, -1],
+		[-1, 1],
+		[1, 1]
+	] as const;
 
 	let {
 		board,
@@ -30,6 +35,7 @@
 	} = $props();
 
 	let grid: HTMLDivElement | undefined = $state();
+	let frame: HTMLDivElement | undefined = $state();
 	let cursor = $state({ row: 0, col: 0 });
 	let activePointer: number | null = null;
 
@@ -39,7 +45,44 @@
 		new Set(preview?.cells.map(([row, col]) => row * board.size + col) ?? [])
 	);
 	const clearCells = $derived(new Set(preview?.clears ?? []));
-	const burstCells = $derived(new Set(reducedMotion ? [] : (feedback?.cells ?? [])));
+	const clearing = $derived(
+		reducedMotion || !feedback
+			? []
+			: feedback.cells.map((index, order) => {
+					const row = Math.floor(index / board.size);
+					const col = index % board.size;
+					// Ripple outwards from the piece that completed the line
+					const distance = Math.hypot(row - feedback.origin[0], col - feedback.origin[1]);
+					return { index, row, col, kind: feedback.kinds[order], delay: Math.round(distance * 40) };
+				})
+	);
+	const clearingByCell = $derived(new Map(clearing.map((entry) => [entry.index, entry])));
+	/** Where the score popup floats up: the middle of everything that was cleared */
+	const popup = $derived.by(() => {
+		if (!feedback || reducedMotion || clearing.length === 0) return null;
+		const mean = (values: number[]) =>
+			values.reduce((sum, value) => sum + value, 0) / values.length;
+		return {
+			row: mean(clearing.map((entry) => entry.row)),
+			col: mean(clearing.map((entry) => entry.col))
+		};
+	});
+
+	// A short jolt of the whole board, harder for bigger clears
+	$effect(() => {
+		if (!feedback || reducedMotion || !frame) return;
+		const strength = Math.min(feedback.lines, 4) * 2;
+		frame.animate(
+			[
+				{ transform: 'translate(0, 0)' },
+				{ transform: `translate(${-strength}px, ${strength / 2}px) rotate(${-strength / 8}deg)` },
+				{ transform: `translate(${strength}px, ${-strength / 2}px) rotate(${strength / 8}deg)` },
+				{ transform: `translate(${-strength / 2}px, 0)` },
+				{ transform: 'translate(0, 0)' }
+			],
+			{ duration: 320, easing: 'ease-out' }
+		);
+	});
 
 	/** Which cell sits under a viewport point, or null when it is outside the board */
 	export function cellAt(clientX: number, clientY: number) {
@@ -49,6 +92,15 @@
 		const row = Math.floor(((clientY - rect.top) / rect.height) * board.size);
 		if (row < 0 || col < 0 || row >= board.size || col >= board.size) return null;
 		return { row, col };
+	}
+
+	/** The board's cells in viewport pixels, so a dragged piece can be sized and aligned to them */
+	export function metrics() {
+		if (!grid) return null;
+		const rect = grid.getBoundingClientRect();
+		const gap = parseFloat(getComputedStyle(grid).columnGap) || 0;
+		const cell = (rect.width - gap * (board.size - 1)) / board.size;
+		return { left: rect.left, top: rect.top, width: rect.width, height: rect.height, cell, gap };
 	}
 
 	function cellFromPoint(event: PointerEvent) {
@@ -103,6 +155,7 @@
 </script>
 
 <div
+	bind:this={frame}
 	data-playfield
 	class="mx-auto w-full rounded-[16px_10px_18px_12px] border-3 border-ink bg-khaki p-2 shadow-[4px_4px_0_var(--color-ink)]"
 	style:max-width="max(16rem, min(34rem, calc((100dvh - 15rem) * 0.75)))"
@@ -114,7 +167,7 @@
 		bind:this={grid}
 		role="group"
 		aria-label={m.blocks_board_label()}
-		class="grid touch-none gap-[3px] select-none"
+		class="relative grid touch-none gap-[3px] select-none"
 		style:grid-template-columns="repeat({board.size}, minmax(0, 1fr))"
 		onpointerdown={pointerDown}
 		onpointermove={pointerMove}
@@ -157,16 +210,36 @@
 							class="pointer-events-none absolute inset-0 rounded-[5px_3px_6px_4px] outline-3 -outline-offset-3 outline-explosion-yellow"
 						></span>
 					{/if}
-					{#if burstCells.has(index)}
+					{#if clearingByCell.get(index)}
+						{@const entry = clearingByCell.get(index)!}
 						{#key feedback?.id}
-							<span class="blocks-burst pointer-events-none absolute inset-0">
-								<img src={EXPLOSION_SPRITE} alt="" draggable="false" class="size-full" />
+							<span
+								class="blocks-clear pointer-events-none absolute inset-0 z-10"
+								style:--delay="{entry.delay}ms"
+								style:--tint={KIND_HEX[entry.kind]}
+							>
+								<span class="blocks-clear-flash absolute inset-0"></span>
+								{#each SHARDS as [dx, dy] (`${dx},${dy}`)}
+									<span class="blocks-shard absolute" style:--dx={dx} style:--dy={dy}></span>
+								{/each}
 							</span>
 						{/key}
 					{/if}
 				</button>
 			{/each}
 		{/each}
+		{#if popup && feedback}
+			{#key feedback.id}
+				<span
+					class="blocks-popup pointer-events-none absolute z-20 font-display text-3xl font-bold text-explosion-yellow"
+					style:left="{((popup.col + 0.5) / board.size) * 100}%"
+					style:top="{((popup.row + 0.5) / board.size) * 100}%"
+					dir="ltr"
+				>
+					{m.blocks_points({ points: feedback.points })}
+				</span>
+			{/key}
+		{/if}
 	</div>
 </div>
 
@@ -177,28 +250,93 @@
 		z-index: 1;
 	}
 
-	/* A short starburst where a line was cleared */
-	@keyframes blocks-burst {
+	/* The cleared cell flashes white, pops in its own color and shrinks away: a ripple from the placed piece */
+	@keyframes blocks-clear-flash {
+		/* Until its turn in the ripple the cell keeps looking like the block it was */
 		0% {
-			scale: 0.3;
+			scale: 1;
 			opacity: 1;
+			background: var(--tint);
 		}
-		60% {
-			scale: 1.25;
-			opacity: 0.9;
+		25% {
+			scale: 1.18;
+			opacity: 1;
+			background: white;
+		}
+		50% {
+			scale: 1.1;
+			background: var(--tint);
 		}
 		100% {
-			scale: 1.4;
+			scale: 0;
+			opacity: 0;
+			rotate: 45deg;
+			background: var(--tint);
+		}
+	}
+
+	@keyframes blocks-shard {
+		0% {
+			translate: 0 0;
+			scale: 1;
+			opacity: 0;
+		}
+		1% {
+			translate: 0 0;
+			scale: 1;
+			opacity: 1;
+		}
+		100% {
+			translate: calc(var(--dx) * 1.6rem) calc(var(--dy) * 1.6rem);
+			scale: 0.2;
+			opacity: 0;
+			rotate: calc(var(--dx) * var(--dy) * 120deg);
+		}
+	}
+
+	@keyframes blocks-popup {
+		0% {
+			translate: -50% -20%;
+			scale: 0.4;
+			opacity: 0;
+		}
+		25% {
+			translate: -50% -60%;
+			scale: 1.25;
+			opacity: 1;
+		}
+		100% {
+			translate: -50% -190%;
+			scale: 1;
 			opacity: 0;
 		}
 	}
 
-	.blocks-burst {
-		animation: blocks-burst 420ms var(--ease-spring) both;
+	.blocks-clear-flash {
+		border: 2px solid var(--color-ink);
+		border-radius: 5px 3px 6px 4px;
+		animation: blocks-clear-flash 480ms var(--ease-spring) var(--delay) both;
+	}
+
+	.blocks-shard {
+		left: calc(50% - 0.2rem);
+		top: calc(50% - 0.2rem);
+		width: 0.4rem;
+		height: 0.4rem;
+		border: 1.5px solid var(--color-ink);
+		background: var(--tint);
+		animation: blocks-shard 520ms ease-out var(--delay) both;
+	}
+
+	.blocks-popup {
+		-webkit-text-stroke: 2px var(--color-ink);
+		paint-order: stroke fill;
+		animation: blocks-popup 1000ms ease-out 120ms both;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.blocks-burst {
+		.blocks-clear,
+		.blocks-popup {
 			display: none;
 		}
 	}
