@@ -2,6 +2,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { APP_NAME } from '$lib/config';
 	import CharacterMascot from '$lib/components/CharacterMascot.svelte';
+	import InstallPwaHint from '$lib/components/InstallPwaHint.svelte';
 	import LocaleSwitcher from '$lib/components/LocaleSwitcher.svelte';
 	import ModeSelect from '$lib/components/ModeSelect.svelte';
 	import SoundToggle from '$lib/components/SoundToggle.svelte';
@@ -15,6 +16,8 @@
 		<SoundToggle />
 		<LocaleSwitcher />
 	</div>
+
+	<InstallPwaHint />
 
 	<header class="flex flex-col items-center gap-3 text-center">
 		<h1

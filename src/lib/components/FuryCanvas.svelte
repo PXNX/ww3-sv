@@ -221,7 +221,8 @@
 	>
 		<canvas
 			bind:this={canvas}
-			class="block aspect-[10/7] max-h-[68dvh] w-full touch-none bg-sky select-none focus-visible:outline-3 focus-visible:outline-offset-[-6px] focus-visible:outline-tie-red focus-visible:outline-dashed"
+			class="block aspect-[10/7] w-full touch-none bg-sky select-none focus-visible:outline-3 focus-visible:outline-offset-[-6px] focus-visible:outline-tie-red focus-visible:outline-dashed"
+			style:max-height="min(68dvh, calc(100dvh - 15rem))"
 			tabindex="0"
 			aria-label={m.fury_canvas_label()}
 			onpointerdown={onPointerDown}
