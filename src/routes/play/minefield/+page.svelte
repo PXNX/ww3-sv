@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import FlagModeToggle from '$lib/components/FlagModeToggle.svelte';
 	import GameOverModal from '$lib/components/GameOverModal.svelte';
 	import GameShell from '$lib/components/GameShell.svelte';
@@ -16,6 +17,7 @@
 	import { formatTime } from '$lib/game/minefield/scoring';
 	import { m } from '$lib/paraglide/messages';
 	import type { ScoreCard } from '$lib/services/share';
+	import { firstPlay } from '$lib/services/tutorial';
 	import { MinefieldGame } from '$lib/stores/minefieldGame.svelte';
 	import { spriteSrc } from '$lib/theme/sprites';
 	import IconArrowRight from '~icons/lucide/arrow-right';
@@ -30,6 +32,11 @@
 	let picking = $state(true);
 	let victoryOpen = $state(false);
 	let gameOverOpen = $state(false);
+	let showTutorial = $state(false);
+
+	onMount(() => {
+		showTutorial = firstPlay('minefield');
+	});
 
 	const modeName = $derived(
 		`${m.mode_minefield_name()} (${DIFFICULTY_NAMES[game.difficultyId]()})`
@@ -205,7 +212,9 @@
 		</div>
 
 		<p class="min-h-6 text-center font-semibold" role="status" aria-live="polite">{status}</p>
-		<p class="text-sm leading-snug opacity-80">{m.minefield_help()}</p>
+		{#if showTutorial}
+			<p class="text-sm leading-snug opacity-80">{m.minefield_help()}</p>
+		{/if}
 	{/if}
 </GameShell>
 

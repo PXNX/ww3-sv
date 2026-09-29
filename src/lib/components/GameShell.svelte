@@ -30,12 +30,12 @@
 </svelte:head>
 
 <main
-	class="mx-auto flex min-h-dvh max-w-3xl flex-col gap-3 px-3 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
+	class="mx-auto flex min-h-dvh max-w-3xl flex-col gap-2 px-2 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:gap-3 sm:px-3 sm:pt-[calc(0.75rem+env(safe-area-inset-top))] sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
 >
 	<div class="flex items-center justify-between gap-2">
-		<a href={resolve('/')} class="btn-chunky px-3 py-1 text-sm">
+		<a href={resolve('/')} class="btn-chunky px-2 py-1 text-sm sm:px-3" aria-label={m.game_back()}>
 			<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
-			{m.game_back()}
+			<span class="hidden sm:inline">{m.game_back()}</span>
 		</a>
 		<div class="flex items-center gap-2">
 			{@render actions?.()}
@@ -44,9 +44,9 @@
 	</div>
 
 	<header
-		class="flex items-center justify-between gap-3 rounded-[14px_8px_16px_10px] border-3 border-ink bg-banner-slate px-4 py-2 text-paper shadow-[4px_4px_0_var(--color-ink)]"
+		class="flex items-center justify-between gap-3 rounded-[14px_8px_16px_10px] border-3 border-ink bg-banner-slate px-3 py-1.5 text-paper shadow-[4px_4px_0_var(--color-ink)] sm:px-4 sm:py-2"
 	>
-		<h1 class="text-2xl leading-tight font-bold sm:text-3xl">{title}</h1>
+		<h1 class="text-xl leading-tight font-bold sm:text-2xl lg:text-3xl">{title}</h1>
 		{#if score !== undefined}
 			<div class="flex flex-col items-end font-display leading-none">
 				<span class="text-xs font-bold tracking-wide uppercase opacity-90">{m.game_score()}</span>

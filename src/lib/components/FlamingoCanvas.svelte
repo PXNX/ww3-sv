@@ -19,7 +19,7 @@
 	import type { FlamingoGame } from '$lib/stores/flamingoGame.svelte';
 	import IconPlay from '~icons/lucide/play';
 
-	let { game }: { game: FlamingoGame } = $props();
+	let { game, showTutorial = false }: { game: FlamingoGame; showTutorial?: boolean } = $props();
 
 	let canvas: HTMLCanvasElement | undefined = $state();
 	let context: CanvasRenderingContext2D | null = null;
@@ -166,9 +166,14 @@
 			>
 				{m.flamingo_tap_to_start()}
 			</p>
-			<p dir="auto" class="rounded-md border-2 border-ink bg-paper px-2 py-1 text-sm leading-snug">
-				{m.flamingo_controls_hint()}
-			</p>
+			{#if showTutorial}
+				<p
+					dir="auto"
+					class="rounded-md border-2 border-ink bg-paper px-2 py-1 text-sm leading-snug"
+				>
+					{m.flamingo_controls_hint()}
+				</p>
+			{/if}
 		</div>
 	{/if}
 

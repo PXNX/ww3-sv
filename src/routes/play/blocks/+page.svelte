@@ -3,6 +3,7 @@
 	and clear full rows and columns. The game ends when none of the offered pieces fits.
 -->
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { BlocksGame } from '$lib/stores/blocksGame.svelte';
 	import type { Piece } from '$lib/game/blocks/pieces';
@@ -14,9 +15,15 @@
 	import GameShell from '$lib/components/GameShell.svelte';
 	import Grid from '$lib/components/Grid.svelte';
 	import PieceTray from '$lib/components/PieceTray.svelte';
+	import { firstPlay } from '$lib/services/tutorial';
 
 	const game = new BlocksGame();
 	const reducedMotion = prefersReducedMotion();
+
+	let showTutorial = $state(false);
+	onMount(() => {
+		showTutorial = firstPlay('blocks');
+	});
 
 	let gridRef: Grid | undefined = $state();
 	let aim = $state<{ row: number; col: number } | null>(null);
@@ -30,16 +37,28 @@
 	// tray's own click handling (tap-to-select); crossing it promotes to a real drag that follows the
 	// pointer and drives the same aim/preview/place pipeline as tap-to-place.
 	const DRAG_THRESHOLD = 6;
-	let dragCandidate = $state<{ index: number; pointerId: number; startX: number; startY: number } | null>(
-		null
-	);
-	let drag = $state<{ index: number; piece: Piece; pointerId: number; x: number; y: number } | null>(
-		null
-	);
+	let dragCandidate = $state<{
+		index: number;
+		pointerId: number;
+		startX: number;
+		startY: number;
+	} | null>(null);
+	let drag = $state<{
+		index: number;
+		piece: Piece;
+		pointerId: number;
+		x: number;
+		y: number;
+	} | null>(null);
 
 	function beginDragCandidate(index: number, event: PointerEvent) {
 		if (game.over || !game.tray[index]) return;
-		dragCandidate = { index, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY };
+		dragCandidate = {
+			index,
+			pointerId: event.pointerId,
+			startX: event.clientX,
+			startY: event.clientY
+		};
 	}
 
 	function windowPointerMove(event: PointerEvent) {
@@ -50,7 +69,10 @@
 			return;
 		}
 		if (!dragCandidate || event.pointerId !== dragCandidate.pointerId) return;
-		const moved = Math.hypot(event.clientX - dragCandidate.startX, event.clientY - dragCandidate.startY);
+		const moved = Math.hypot(
+			event.clientX - dragCandidate.startX,
+			event.clientY - dragCandidate.startY
+		);
 		if (moved < DRAG_THRESHOLD) return;
 		const piece = game.tray[dragCandidate.index];
 		if (!piece) {
@@ -58,7 +80,13 @@
 			return;
 		}
 		game.select(dragCandidate.index);
-		drag = { index: dragCandidate.index, piece, pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+		drag = {
+			index: dragCandidate.index,
+			piece,
+			pointerId: event.pointerId,
+			x: event.clientX,
+			y: event.clientY
+		};
 		dragCandidate = null;
 		aim = gridRef?.cellAt(event.clientX, event.clientY) ?? null;
 	}
@@ -180,7 +208,7 @@
 				{#key notice.id}
 					<p class="pop-in font-bold text-tie-red">{notice.text}</p>
 				{/key}
-			{:else}
+			{:else if showTutorial}
 				<p class="text-sm leading-snug">{m.blocks_instructions()}</p>
 			{/if}
 		</div>
@@ -205,7 +233,9 @@
 		ondragstart={beginDragCandidate}
 	/>
 
-	<p class="hidden text-center text-xs sm:block">{m.blocks_keyboard_hint()}</p>
+	{#if showTutorial}
+		<p class="hidden text-center text-xs sm:block">{m.blocks_keyboard_hint()}</p>
+	{/if}
 </GameShell>
 
 {#if drag}

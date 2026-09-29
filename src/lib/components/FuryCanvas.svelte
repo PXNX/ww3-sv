@@ -50,7 +50,7 @@
 	import type { FuryGame } from '$lib/stores/furyGame.svelte';
 	import IconSparkles from '~icons/lucide/sparkles';
 
-	let { game }: { game: FuryGame } = $props();
+	let { game, showTutorial = false }: { game: FuryGame; showTutorial?: boolean } = $props();
 
 	let canvas: HTMLCanvasElement | undefined = $state();
 	let size = { width: 0, height: 0, dpr: 1 };
@@ -294,7 +294,9 @@
 	{#if game.currentBird}
 		<p class="font-semibold">{birdName(game.currentBird)}: {birdHint(game.currentBird)}</p>
 	{/if}
-	<p class="text-sm">{m.fury_controls_hint()}</p>
-	<p class="text-sm">{m.fury_keyboard_hint()}</p>
+	{#if showTutorial}
+		<p class="text-sm">{m.fury_controls_hint()}</p>
+		<p class="text-sm">{m.fury_keyboard_hint()}</p>
+	{/if}
 	<p class="sr-only" role="status" aria-live="polite">{announcementText}</p>
 </div>

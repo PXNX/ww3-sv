@@ -17,6 +17,7 @@
 		type Difficulty
 	} from '$lib/game/pipeline/pipelineStep';
 	import { boardDrawer } from '$lib/game/pipeline/shareBoard';
+	import { firstPlay } from '$lib/services/tutorial';
 	import { PipelineGame } from '$lib/stores/pipelineGame.svelte';
 	import { spriteSrc } from '$lib/theme/sprites';
 	import IconCheck from '~icons/lucide/check';
@@ -27,9 +28,11 @@
 
 	const game = new PipelineGame();
 	let reducedMotion = $state(false);
+	let showTutorial = $state(false);
 
 	onMount(() => {
 		reducedMotion = prefersReducedMotion();
+		showTutorial = firstPlay('pipeline');
 		return game.mount();
 	});
 
@@ -247,9 +250,11 @@
 				<IconCheck class="size-4" aria-hidden="true" />
 			{/if}
 		</button>
-		<p>{m.pipeline_repair_toggle_hint()}</p>
-		<p class="font-semibold">{m.pipeline_controls_hint()}</p>
-		<p class="opacity-80">{m.pipeline_keyboard_hint()}</p>
+		{#if showTutorial}
+			<p>{m.pipeline_repair_toggle_hint()}</p>
+			<p class="font-semibold">{m.pipeline_controls_hint()}</p>
+			<p class="opacity-80">{m.pipeline_keyboard_hint()}</p>
+		{/if}
 	</div>
 </GameShell>
 
