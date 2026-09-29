@@ -1,11 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 136">
-	<!-- Generic placeholder onion dome: plain gold architectural shape with a ball-and-spire finial, no symbols -->
-	<g stroke="#111111" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+	<!-- Generic placeholder onion dome in the colorful spiral-striped style of Red Square's cathedral domes; plain ball finial, no symbols -->
+	<defs>
+		<clipPath id="domeShape">
+			<path d="M16 136 L84 136 L84 124 C112 106 106 70 60 46 Q53 38 50 26 Q47 38 40 46 C44 70 38 106 16 124 Z"/>
+		</clipPath>
+	</defs>
+	<g stroke="#111111" stroke-linejoin="round" stroke-linecap="round">
+		<g clip-path="url(#domeShape)">
+			<rect x="-20" y="112" width="140" height="14" fill="#F5C83A" transform="rotate(35 50 68)"/>
+			<rect x="-20" y="92" width="140" height="14" fill="#E5484D" transform="rotate(35 50 68)"/>
+			<rect x="-20" y="72" width="140" height="14" fill="#3FA796" transform="rotate(35 50 68)"/>
+			<rect x="-20" y="52" width="140" height="14" fill="#F5C83A" transform="rotate(35 50 68)"/>
+			<rect x="-20" y="32" width="140" height="14" fill="#E5484D" transform="rotate(35 50 68)"/>
+			<rect x="-20" y="12" width="140" height="14" fill="#3FA796" transform="rotate(35 50 68)"/>
+			<rect x="-20" y="-8" width="140" height="14" fill="#F5C83A" transform="rotate(35 50 68)"/>
+			<rect x="-20" y="-28" width="140" height="14" fill="#E5484D" transform="rotate(35 50 68)"/>
+		</g>
 		<path
 			d="M16 136 L84 136 L84 124 C112 106 106 70 60 46 Q53 38 50 26 Q47 38 40 46 C44 70 38 106 16 124 Z"
-			fill="#F5C83A"
+			fill="none"
+			stroke-width="4"
 		/>
-		<ellipse cx="30" cy="91" rx="7" ry="20" fill="#FBE38E" transform="rotate(14.3 30 91)"/>
 		<path d="M16 124 L84 124 M50 124 Q70 86 50 41" fill="none" stroke-width="3"/>
 		<path d="M50 26 L50 0" stroke-width="4"/>
 		<circle cx="50" cy="12" r="6" fill="#F5C83A" stroke-width="3"/>
