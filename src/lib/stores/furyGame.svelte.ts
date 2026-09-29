@@ -6,7 +6,7 @@
 import { createRandom, randomSeed } from '$lib/game/random';
 import type { BirdKind } from '$lib/game/fury/birds';
 import { FuryMatch, type FuryPhase } from '$lib/game/fury/furyMatch';
-import type { WorldEvent } from '$lib/game/fury/furyWorld';
+import type { ImpactSurface, WorldEvent } from '$lib/game/fury/furyWorld';
 import { DEFAULT_AIM, MIN_POWER, adjustAim, type Aim } from '$lib/game/fury/launch';
 import { LEVELS } from '$lib/game/fury/levels';
 import {
@@ -23,6 +23,8 @@ import {
 } from '$lib/game/fury/progress';
 import { highscores } from '$lib/services/highscore';
 import { localStore } from '$lib/services/storage';
+import { soundManager } from '$lib/sound/soundManager.svelte';
+import type { SoundId } from '$lib/sound/sounds';
 
 export type FuryScreen = 'select' | 'play';
 
@@ -31,6 +33,21 @@ export type FuryAnnouncement =
 
 /** Steps between the end of a level and its result panel, so the last domes can pop (1.2 s) */
 const RESULT_DELAY_STEPS = 72;
+
+/** The sound of a bird hitting each kind of surface */
+const IMPACT_SOUNDS: Record<ImpactSurface, SoundId> = {
+	wood: 'impact-wood',
+	stone: 'impact-stone',
+	ice: 'impact-ice',
+	dome: 'impact-dome',
+	ground: 'thud',
+	bird: 'thud'
+};
+
+/** Steps (60 per second) between two impact sounds, so a collapsing tower is not a wall of noise */
+const IMPACT_SOUND_GAP = 5;
+/** Each step of pull strength (fraction of full power) makes the slingshot creak once */
+const PULL_CREAK_STEP = 0.15;
 
 export const LEVEL_IDS: readonly string[] = LEVELS.map((level) => level.id);
 
@@ -71,6 +88,8 @@ export class FuryGame {
 	/** Events of the latest step, for effects such as screen shake */
 	lastEvents: WorldEvent[] = [];
 	#resultSteps = 0;
+	#lastImpactSound = -IMPACT_SOUND_GAP;
+	#pullStep = 0;
 
 	get level() {
 		return LEVELS[this.levelIndex];
@@ -125,6 +144,8 @@ export class FuryGame {
 		this.aim = null;
 		this.announcement = null;
 		this.#resultSteps = 0;
+		this.#lastImpactSound = -IMPACT_SOUND_GAP;
+		this.#pullStep = 0;
 		this.best = this.bestFor(LEVELS[index].id);
 		this.#sync();
 	}
@@ -156,20 +177,29 @@ export class FuryGame {
 	setAim(aim: Aim | null) {
 		if (this.phase !== 'aiming' || this.paused) return;
 		this.aim = aim;
+		this.#creak(aim);
 	}
 
 	/** Keyboard aiming: starts from the default aim when there is none yet */
 	nudgeAim(angleDelta: number, powerDelta: number) {
 		if (this.phase !== 'aiming' || this.paused) return;
 		this.aim = adjustAim(this.aim ?? DEFAULT_AIM, angleDelta, powerDelta);
+		this.#creak(this.aim);
 	}
 
 	/** Releases the slingshot; a weak pull puts the bird back */
 	release(): boolean {
 		const aim = this.aim;
 		this.aim = null;
-		if (!this.match || this.paused || !aim || aim.power < MIN_POWER) return false;
+		this.#pullStep = 0;
+		if (!this.match || this.paused || !aim) return false;
+		if (aim.power < MIN_POWER) {
+			// Too weak a pull puts the bird back
+			if (aim.power > 0) soundManager().play('click');
+			return false;
+		}
 		const launched = this.match.launch(aim);
+		if (launched) soundManager().play('sling-release', aim.power);
 		this.#sync();
 		return launched;
 	}
@@ -200,7 +230,9 @@ export class FuryGame {
 		this.lastEvents = match.world.drainEvents();
 		this.steps++;
 
+		const brokenMaterials: string[] = [];
 		for (const event of this.lastEvents) {
+			this.#playEvent(event, brokenMaterials);
 			if (event.type === 'dome-destroyed' && event.remaining > 0) {
 				this.announcement = { kind: 'dome', remaining: event.remaining };
 			}
@@ -215,6 +247,39 @@ export class FuryGame {
 			if (this.#resultSteps >= RESULT_DELAY_STEPS) this.#finish(match);
 		}
 		this.#sync();
+	}
+
+	/** Creaks once per notch of pull strength, in either direction, so pulling back sounds taut */
+	#creak(aim: Aim | null) {
+		const step = aim ? Math.floor(aim.power / PULL_CREAK_STEP) : 0;
+		if (aim && step !== this.#pullStep) soundManager().play('sling-draw', aim.power);
+		this.#pullStep = step;
+	}
+
+	/** Plays the sound of one world event; blocks of one material breaking together sound once */
+	#playEvent(event: WorldEvent, brokenMaterials: string[]) {
+		switch (event.type) {
+			case 'impact':
+				if (this.steps - this.#lastImpactSound < IMPACT_SOUND_GAP) return;
+				this.#lastImpactSound = this.steps;
+				soundManager().play(IMPACT_SOUNDS[event.surface], Math.min(1, (event.strength - 4) / 16));
+				return;
+			case 'block-destroyed':
+				if (brokenMaterials.includes(event.material)) return;
+				brokenMaterials.push(event.material);
+				soundManager().play(`break-${event.material}`);
+				return;
+			case 'landmark-destroyed':
+				soundManager().play('explosion-small');
+				return;
+			case 'dome-destroyed':
+				soundManager().play('dome-pop');
+				return;
+			case 'ability':
+				soundManager().play('flap');
+				soundManager().play('whoosh');
+				return;
+		}
 	}
 
 	#finish(match: FuryMatch) {

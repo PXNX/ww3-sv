@@ -88,13 +88,12 @@ export class FlamingoGame {
 		stepFlamingo(this.sim, this.flapQueued, dt);
 		this.flapQueued = false;
 		for (const event of this.sim.events) {
-			const sound = SOUNDS[event.type];
+			// The fart is the sound of the crash itself; the flare is part of the refinery, so
+			// only a "dumber" crash gets it and the flare keeps the plain clank
+			const crashedDumb = event.type === 'crash' && event.cause !== 'flare';
+			const sound = crashedDumb ? 'fart' : SOUNDS[event.type];
 			if (sound) soundManager().play(sound);
 			if (event.type === 'strike') soundManager().play('slava-ukraini');
-			// The flare is part of the refinery; only a "dumber" crash gets the fart
-			if (event.type === 'over' && this.sim.crash && this.sim.crash !== 'flare') {
-				soundManager().play('fart');
-			}
 		}
 		this.sync();
 		if (this.sim.phase === 'over') this.finish();

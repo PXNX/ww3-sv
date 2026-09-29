@@ -28,13 +28,16 @@ class SoundManager {
 		this.muted = localStore().read(SETTINGS_KEY, { muted: false }, isSettings).muted;
 	}
 
-	/** Plays a sound effect; silently does nothing when muted or when audio is unavailable */
-	play(id: SoundId) {
+	/**
+	 * Plays a sound effect; silently does nothing when muted or when audio is unavailable. The
+	 * optional intensity (0 to 1) lets sounds such as impacts scale with how hard something was.
+	 */
+	play(id: SoundId, intensity = 1) {
 		if (this.muted) return;
 		const context = this.#ensureContext();
 		if (!context) return;
 		try {
-			SOUNDS[id](context, this.#master!);
+			SOUNDS[id](context, this.#master!, Math.min(1, Math.max(0, intensity)));
 		} catch {
 			// Best-effort: a sound glitch should never break gameplay
 		}
