@@ -2,7 +2,7 @@
 	<!-- Generic placeholder onion dome in the colorful spiral-striped style of Red Square's cathedral domes; plain ball finial, no symbols -->
 	<defs>
 		<clipPath id="domeShape">
-			<path d="M16 136 L84 136 L84 124 C112 106 106 70 60 46 Q53 38 50 26 Q47 38 40 46 C44 70 38 106 16 124 Z"/>
+			<path d="M16 136 L84 136 L84 124 C112 106 106 70 60 46 Q53 38 50 26 Q47 38 40 46 C-6 70 -12 106 16 124 Z"/>
 		</clipPath>
 	</defs>
 	<g stroke="#111111" stroke-linejoin="round" stroke-linecap="round">
@@ -17,7 +17,7 @@
 			<rect x="-20" y="-28" width="140" height="14" fill="#E5484D" transform="rotate(35 50 68)"/>
 		</g>
 		<path
-			d="M16 136 L84 136 L84 124 C112 106 106 70 60 46 Q53 38 50 26 Q47 38 40 46 C44 70 38 106 16 124 Z"
+			d="M16 136 L84 136 L84 124 C112 106 106 70 60 46 Q53 38 50 26 Q47 38 40 46 C-6 70 -12 106 16 124 Z"
 			fill="none"
 			stroke-width="4"
 		/>

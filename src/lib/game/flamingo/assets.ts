@@ -39,12 +39,16 @@ const PLACEHOLDER_FILES: Record<FlamingoAssetId, string> = {
 /** Add an asset here once its owner-supplied file is in place */
 const SUPPLIED_ASSETS: readonly FlamingoAssetId[] = [];
 
-const ALL_ASSET_IDS: readonly FlamingoAssetId[] = [
+/**
+ * Assets drawn into a fixed-size box, so a single placeholder image scales correctly. The radar
+ * mast, power pylon and barrage balloon are instead drawn into a box whose height depends on where
+ * the gap randomly lands, and the balloon stack tiles all the way to the top of the screen; a single
+ * static image there would either stretch or leave most of the column transparent, so those three
+ * keep the adaptive canvas drawing until real art (which can tile) is supplied.
+ */
+const PLACEHOLDER_ASSET_IDS: readonly FlamingoAssetId[] = [
 	'flamingoFlap',
 	'flamingoFall',
-	'radarMast',
-	'barrageBalloon',
-	'powerPylon',
 	'tank',
 	'tankDestroyed',
 	'flareStack'
@@ -52,7 +56,7 @@ const ALL_ASSET_IDS: readonly FlamingoAssetId[] = [
 
 /** Files to load for drawing: the owner-supplied file once listed above, a placeholder SVG otherwise */
 export function suppliedFlamingoAssets(): [FlamingoAssetId, string][] {
-	return ALL_ASSET_IDS.map((id) => [
+	return PLACEHOLDER_ASSET_IDS.map((id) => [
 		id,
 		SUPPLIED_ASSETS.includes(id) ? ASSET_FILES[id] : PLACEHOLDER_FILES[id]
 	]);
