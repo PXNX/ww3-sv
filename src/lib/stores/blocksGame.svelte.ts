@@ -184,6 +184,7 @@ export class BlocksGame {
 	#end() {
 		this.over = true;
 		this.selected = null;
+		soundManager().play('fake-news');
 		const result = this.#scores.submit(BLOCKS_BEST_KEY, this.score);
 		this.isNewBest = result.isNewBest;
 		this.best = result.best;

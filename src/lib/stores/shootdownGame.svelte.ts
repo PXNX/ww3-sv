@@ -175,7 +175,7 @@ export class ShootdownGame {
 		this.#fireBufferMs = Math.max(0, this.#fireBufferMs - dtMs);
 		if (this.state.missiles.length > missilesBefore) {
 			this.#fireBufferMs = 0;
-			soundManager().play('fire');
+			soundManager().play('patriot-launch');
 		}
 
 		for (const event of events) this.#handle(event);
@@ -210,7 +210,7 @@ export class ShootdownGame {
 				break;
 			case 'diver-crashed':
 				this.#explode(event.x, event.y, 34, explosionMs);
-				soundManager().play('explosion-small');
+				soundManager().play('shahed-impact');
 				break;
 			case 'boss-hit':
 				this.#explode(event.x, event.y, 22, explosionMs);

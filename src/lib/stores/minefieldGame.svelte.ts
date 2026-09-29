@@ -32,7 +32,7 @@ import { soundManager } from '$lib/sound/soundManager.svelte';
 import type { SoundId } from '$lib/sound/sounds';
 
 const EVENT_SOUNDS: Record<MinefieldEventDetail['kind'], SoundId> = {
-	explosion: 'explosion-small',
+	explosion: 'mine-explosion',
 	defused: 'sparkle',
 	'needs-water': 'ui-error'
 };
