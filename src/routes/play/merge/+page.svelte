@@ -6,7 +6,8 @@
 	import GameShell from '$lib/components/GameShell.svelte';
 	import MergeGrid from '$lib/components/MergeGrid.svelte';
 	import MergeShip from '$lib/components/MergeShip.svelte';
-	import { MAX_TIER, type Direction } from '$lib/game/merge/mergeBoard';
+	import TutorialModal from '$lib/components/TutorialModal.svelte';
+	import { MAX_SUBMARINES, MAX_TIER, type Direction } from '$lib/game/merge/mergeBoard';
 	import { drawMergeBoard } from '$lib/game/merge/tierStyle';
 	import { m } from '$lib/paraglide/messages';
 	import { getLocale } from '$lib/paraglide/runtime';
@@ -14,11 +15,13 @@
 	import { MergeGame, noticeText, shipName } from '$lib/stores/mergeGame.svelte';
 	import { CHARACTER_NAME } from '$lib/theme/character';
 	import { spriteSrc } from '$lib/theme/sprites';
+	import IconHelp from '~icons/lucide/circle-help';
 	import IconRotate from '~icons/lucide/rotate-ccw';
 
 	const game = new MergeGame();
 	onDestroy(() => game.destroy());
 
+	// The how-to-play screen opens on the first visit and whenever the help button is tapped
 	let showTutorial = $state(false);
 	onMount(() => {
 		showTutorial = firstPlay('merge');
@@ -52,7 +55,7 @@
 	};
 
 	function onKeyDown(event: KeyboardEvent) {
-		if (game.over || event.altKey || event.ctrlKey || event.metaKey) return;
+		if (game.over || showTutorial || event.altKey || event.ctrlKey || event.metaKey) return;
 		if (event.key === 'Escape') {
 			game.cancelSubmarine();
 			return;
@@ -70,6 +73,15 @@
 	{#snippet actions()}
 		<button
 			type="button"
+			class="btn-chunky px-2 py-1 text-sm sm:px-3"
+			aria-label={m.merge_help_button()}
+			onclick={() => (showTutorial = true)}
+		>
+			<IconHelp class="size-4" aria-hidden="true" />
+			<span class="hidden sm:inline">{m.merge_help_button()}</span>
+		</button>
+		<button
+			type="button"
 			class="btn-chunky px-3 py-1 text-sm"
 			class:bg-explosion-yellow={confirmingRestart}
 			onclick={newGame}
@@ -81,21 +93,17 @@
 
 	<div class="mx-auto flex w-full max-w-md flex-col gap-3">
 		<!-- The mascot reacts to the board and announces mines, combos and clears -->
-		<div class="flex items-center gap-3">
+		<div class="flex min-h-14 items-center gap-3">
 			<CharacterMascot pose={game.mood} class="w-16 shrink-0 -rotate-3" />
-			<div
-				class="sticker flex min-h-14 flex-1 flex-col justify-center px-3 py-1.5 text-sm leading-snug"
-				style:--tilt="1deg"
-				role="status"
-				aria-live="polite"
-			>
+			<div class="flex-1" role="status" aria-live="polite">
 				{#key game.noticeKey}
 					{#if game.notices.length > 0}
-						<p class="pop-in font-bold">
+						<p
+							class="sticker pop-in px-3 py-1.5 text-sm leading-snug font-bold"
+							style:--tilt="1deg"
+						>
 							{game.notices.map(noticeText).join(' ')}
 						</p>
-					{:else}
-						<p>{m.merge_mine_rule({ characterName })}</p>
 					{/if}
 				{/key}
 			</div>
@@ -174,15 +182,23 @@
 		</div>
 
 		<div class="flex flex-col gap-1 text-sm leading-snug">
-			{#if showTutorial}
-				<p>{m.merge_instructions()}</p>
-			{/if}
 			{#if game.bestTier}
 				<p class="font-bold">{m.merge_best_ship({ ship: shipName(game.bestTier) })}</p>
 			{/if}
 		</div>
 	</div>
 </GameShell>
+
+<TutorialModal
+	open={showTutorial}
+	title={m.merge_tutorial_title()}
+	closeLabel={m.merge_tutorial_close()}
+	onclose={() => (showTutorial = false)}
+>
+	<p>{m.merge_instructions()}</p>
+	<p>{m.merge_mine_rule({ characterName })}</p>
+	<p>{m.merge_tutorial_submarine({ max: MAX_SUBMARINES })}</p>
+</TutorialModal>
 
 <GameOverModal
 	open={game.over}

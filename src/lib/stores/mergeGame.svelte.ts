@@ -66,7 +66,8 @@ export type MergeNotice =
 	| { kind: 'mine-dropped' }
 	| { kind: 'mines-cleared'; count: number }
 	| { kind: 'combo'; count: number }
-	| { kind: 'submarine' };
+	| { kind: 'submarine' }
+	| { kind: 'submarine-earned' };
 
 export class MergeGame {
 	state: MergeState;
@@ -144,6 +145,7 @@ export class MergeGame {
 		if (outcome.destroyedMines.length > 0) {
 			notices.push({ kind: 'mines-cleared', count: outcome.destroyedMines.length });
 		}
+		if (outcome.earnedSubmarine) notices.push({ kind: 'submarine-earned' });
 		if (outcome.droppedMine) notices.push({ kind: 'mine-dropped' });
 		this.showNotices(notices);
 
@@ -151,6 +153,7 @@ export class MergeGame {
 		else if (outcome.merges.length > 1) soundManager().play('chime');
 		else if (outcome.merges.length === 1) soundManager().play('pop');
 		if (outcome.destroyedMines.length > 0) soundManager().play('sparkle');
+		if (outcome.earnedSubmarine) soundManager().play('pickup');
 		if (outcome.droppedMine) soundManager().play('alarm');
 
 		this.state = outcome.state;
@@ -259,5 +262,7 @@ export function noticeText(notice: MergeNotice): string {
 			return m.merge_event_combo({ count: notice.count });
 		case 'submarine':
 			return m.merge_event_submarine();
+		case 'submarine-earned':
+			return m.merge_event_submarine_earned();
 	}
 }

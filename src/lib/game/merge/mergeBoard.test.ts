@@ -11,6 +11,7 @@ import {
 	emptyCells,
 	isGameOver,
 	isMergeState,
+	MAX_SUBMARINES,
 	MAX_TIER,
 	MINE_BONUS,
 	MINE_INTERVAL,
@@ -320,6 +321,29 @@ describe('submarine', () => {
 		expect(useSubmarine(state, { row: 0, col: 2 })).toBeNull();
 		expect(useSubmarine(state, { row: 5, col: 5 })).toBeNull();
 	});
+
+	it('is earned by merging three ships in one move', () => {
+		const state = stateFrom(['1 1 .', '2 2 .', '3 3 .'], { submarines: 0 });
+		const outcome = applyMove(state, 'left', createRandom(20));
+		expect(outcome.merges).toHaveLength(3);
+		expect(outcome.earnedSubmarine).toBe(true);
+		expect(outcome.state.submarines).toBe(1);
+	});
+
+	it('is not earned by fewer than three merges', () => {
+		const state = stateFrom(['1 1 .', '2 2 .', '. . .'], { submarines: 0 });
+		const outcome = applyMove(state, 'left', createRandom(21));
+		expect(outcome.merges).toHaveLength(2);
+		expect(outcome.earnedSubmarine).toBe(false);
+		expect(outcome.state.submarines).toBe(0);
+	});
+
+	it('is not earned beyond the most that can be held', () => {
+		const state = stateFrom(['1 1 .', '2 2 .', '3 3 .'], { submarines: MAX_SUBMARINES });
+		const outcome = applyMove(state, 'left', createRandom(22));
+		expect(outcome.earnedSubmarine).toBe(false);
+		expect(outcome.state.submarines).toBe(MAX_SUBMARINES);
+	});
 });
 
 describe('game over', () => {
@@ -389,7 +413,7 @@ describe('saved games', () => {
 			{ ...valid, size: 2 },
 			{ ...valid, board: valid.board.slice(1) },
 			{ ...valid, score: -1 },
-			{ ...valid, submarines: 5 },
+			{ ...valid, submarines: MAX_SUBMARINES + 1 },
 			{ ...valid, nextId: 2 },
 			{ ...valid, board: parse(['1 9 .', '. . .', '. . .']) },
 			{
