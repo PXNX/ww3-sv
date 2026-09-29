@@ -89,7 +89,7 @@ describe('pattern set', () => {
 		const drift = PATTERNS.find((source) => source.id === 'gunboat-drift')!;
 		const mirrored = mirrorPattern(drift);
 		const gunboat = mirrored.items.find((item) => item.kind === 'gunboat')!;
-		expect(gunboat).toMatchObject({ lane: 2, driftTo: 1 });
+		expect(gunboat).toMatchObject({ lane: 3, driftTo: 2 });
 		expect(mirrorPattern(mirrored).items).toEqual(drift.items);
 	});
 });
@@ -134,18 +134,18 @@ describe('survivingLanes', () => {
 		blockedSpans(lanes.map((lane) => ({ kind: 'mine' as const, lane, at })));
 
 	it('keeps a lane that is never blocked', () => {
-		expect(survivingLanes(wall([0, 1], 3), [2], MAX_SPEED, 0, 3)).toEqual([2]);
+		expect(survivingLanes(wall([0, 1, 3, 4], 3), [2], MAX_SPEED, 0, 3)).toEqual([2]);
 	});
 
-	it('finds nothing when all three lanes are walled off', () => {
-		expect(survivingLanes(wall([0, 1, 2], 3), [0, 1, 2], MAX_SPEED, 0, 5)).toEqual([]);
+	it('finds nothing when every lane is walled off', () => {
+		expect(survivingLanes(wall(LANES, 3), LANES, MAX_SPEED, 0, 5)).toEqual([]);
 	});
 
 	it('allows moving across when there is room', () => {
 		// Checked while the wall is alongside the tanker: only the open lane is survivable there
-		expect(survivingLanes(wall([1, 2], 3), [2], MAX_SPEED, 0, 3)).toEqual([0]);
-		// Once the wall has passed, every lane is open again
-		expect(survivingLanes(wall([1, 2], 3), [2], MAX_SPEED, 0, 5)).toEqual([0, 1, 2]);
+		expect(survivingLanes(wall([1, 2, 3, 4], 3), [2], MAX_SPEED, 0, 3)).toEqual([0]);
+		// Once the wall has passed, every lane is open again, given enough room to cross back to it
+		expect(survivingLanes(wall([1, 2, 3, 4], 3), [2], MAX_SPEED, 0, 9)).toEqual([...LANES]);
 	});
 
 	it('rejects a lane change that would need more time than there is', () => {
@@ -161,12 +161,10 @@ describe('survivingLanes', () => {
 	});
 
 	it('catches an unfair staircase of mines', () => {
-		const staircase = blockedSpans([
-			{ kind: 'mine', lane: 0, at: 0 },
-			{ kind: 'mine', lane: 1, at: 2 },
-			{ kind: 'mine', lane: 2, at: 4 }
-		]);
-		expect(survivingLanes(staircase, [0, 1, 2], MAX_SPEED, -3, 5)).toEqual([]);
+		const staircase = blockedSpans(
+			LANES.map((lane) => ({ kind: 'mine' as const, lane, at: lane * 2 }))
+		);
+		expect(survivingLanes(staircase, LANES, MAX_SPEED, -3, LANES.length * 2 + 1)).toEqual([]);
 	});
 
 	it('ignores collectibles', () => {
@@ -222,5 +220,5 @@ describe('fair spawning', () => {
 			}
 		}
 		expect(failures).toEqual([]);
-	});
+	}, 20_000);
 });

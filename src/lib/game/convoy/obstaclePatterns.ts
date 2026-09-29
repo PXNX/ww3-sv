@@ -41,7 +41,7 @@ const CELL_KINDS: Record<string, ItemKind> = {
 };
 
 /**
- * One row of a pattern, written as three characters, one per lane from left to right:
+ * One row of a pattern, written as five characters, one per lane from left to right:
  * M mine, G gunboat, D drone, S oil slick, B oil barrel, E submarine escort, . empty,
  * and < or > for a gunboat drifting one lane to the left or right.
  */
@@ -71,21 +71,21 @@ function pattern(
 }
 
 export const PATTERNS: readonly ObstaclePattern[] = [
-	pattern('lone-mine', 0, 3, [row(0, 'BMB')]),
-	pattern('side-mines', 0, 2, [row(0, 'MBM'), row(1.2, '.B.')]),
-	pattern('double-mine', 0, 2, [row(0, 'MM.'), row(1.5, '..B')]),
-	pattern('barrel-diagonal', 0, 1, [row(0, 'B..'), row(1, '.B.'), row(2, '..B')]),
-	pattern('barrel-alley', 0, 1.5, [row(0, 'MBM'), row(1, '.B.'), row(2, 'MBM')]),
-	pattern('gunboat-drift', 30, 2, [row(0, '>.B')]),
-	pattern('zigzag', 40, 2, [row(0, 'MM.'), row(3.2, 'M.M'), row(6.4, '.MM')]),
-	pattern('slick-corridor', 50, 1.5, [row(0, 'SM.'), row(2, '..B'), row(4, '.MS')]),
-	pattern('drone-pair', 60, 2, [row(0, 'D.D'), row(1.5, '.B.')]),
-	pattern('gunboat-pair', 80, 1.5, [row(0, 'G..'), row(3.4, '..<')]),
-	pattern('escort-drop', 100, 0.5, [row(0, 'MEM')]),
-	pattern('drone-chase', 120, 1.5, [row(0, 'DD.'), row(3.6, '.DD')]),
-	pattern('oil-spill', 150, 1, [row(0, 'BSB'), row(1, '.S.'), row(4, 'M.M')]),
-	pattern('gauntlet', 200, 1.5, [row(0, 'G.M'), row(3.4, '.D.'), row(6.8, 'M.S')]),
-	pattern('crossing-gunboat', 300, 1, [row(0, '.>.'), row(3.6, 'M..')])
+	pattern('lone-mine', 0, 3, [row(0, '.BMB.')]),
+	pattern('side-mines', 0, 2, [row(0, '.MBM.'), row(1.2, '..B..')]),
+	pattern('double-mine', 0, 2, [row(0, '.MM..'), row(1.5, '...B.')]),
+	pattern('barrel-diagonal', 0, 1, [row(0, '.B...'), row(1, '..B..'), row(2, '...B.')]),
+	pattern('barrel-alley', 0, 1.5, [row(0, '.MBM.'), row(1, '..B..'), row(2, '.MBM.')]),
+	pattern('gunboat-drift', 30, 2, [row(0, '.>.B.')]),
+	pattern('zigzag', 40, 2, [row(0, '.MM..'), row(3.2, '.M.M.'), row(6.4, '..MM.')]),
+	pattern('slick-corridor', 50, 1.5, [row(0, '.SM..'), row(2, '...B.'), row(4, '..MS.')]),
+	pattern('drone-pair', 60, 2, [row(0, '.D.D.'), row(1.5, '..B..')]),
+	pattern('gunboat-pair', 80, 1.5, [row(0, '.G...'), row(3.4, '...<.')]),
+	pattern('escort-drop', 100, 0.5, [row(0, '.MEM.')]),
+	pattern('drone-chase', 120, 1.5, [row(0, '.DD..'), row(3.6, '..DD.')]),
+	pattern('oil-spill', 150, 1, [row(0, '.BSB.'), row(1, '..S..'), row(4, '.M.M.')]),
+	pattern('gauntlet', 200, 1.5, [row(0, '.G.M.'), row(3.4, '..D..'), row(6.8, '.M.S.')]),
+	pattern('crossing-gunboat', 300, 1, [row(0, '..>..'), row(3.6, '.M...')])
 ];
 
 /** Distance from the first to the last row of a pattern */

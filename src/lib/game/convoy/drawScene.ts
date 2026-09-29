@@ -14,7 +14,7 @@ import {
 	TANKER_OFFSET,
 	VIEW_AHEAD
 } from './constants';
-import { droneArrival, type Obstacle, type RunnerState } from './runnerStep';
+import { droneArrival, shoreInsetLanes, type Obstacle, type RunnerState } from './runnerStep';
 
 const INK = '#111111';
 const PAPER = '#ffffff';
@@ -126,6 +126,9 @@ export function drawScene(
 		drawEffect(context, effect, toX(effect.x), toY(effect.y), unit, line);
 	}
 
+	// Drawn last so a narrowing bank visibly reclaims anything still sitting on it
+	drawShoreBanks(context, unit, width, height, line, shoreInsetLanes(runner));
+
 	context.restore();
 }
 
@@ -169,19 +172,29 @@ function drawWater(
 		context.stroke();
 	}
 	context.setLineDash([]);
+}
 
-	// Sandy banks on both sides
-	const bank = SIDE_MARGIN * unit;
+/** Sandy banks on both sides, wider while the shore has narrowed in around a squeeze */
+function drawShoreBanks(
+	context: CanvasRenderingContext2D,
+	unit: number,
+	width: number,
+	height: number,
+	line: number,
+	inset: { left: number; right: number }
+) {
+	const leftBank = (SIDE_MARGIN + inset.left) * unit;
+	const rightBank = (SIDE_MARGIN + inset.right) * unit;
 	context.fillStyle = SAND;
-	context.fillRect(0, 0, bank, height);
-	context.fillRect(width - bank, 0, bank, height);
+	context.fillRect(0, 0, leftBank, height);
+	context.fillRect(width - rightBank, 0, rightBank, height);
 	context.strokeStyle = INK;
 	context.lineWidth = line * 1.5;
 	context.beginPath();
-	context.moveTo(bank, 0);
-	context.lineTo(bank, height);
-	context.moveTo(width - bank, 0);
-	context.lineTo(width - bank, height);
+	context.moveTo(leftBank, 0);
+	context.lineTo(leftBank, height);
+	context.moveTo(width - rightBank, 0);
+	context.lineTo(width - rightBank, height);
 	context.stroke();
 }
 
