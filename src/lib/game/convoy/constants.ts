@@ -3,8 +3,8 @@
  * distance along the strait is measured in the same units.
  */
 
-export type Lane = 0 | 1 | 2;
-export const LANES: readonly Lane[] = [0, 1, 2];
+export type Lane = 0 | 1 | 2 | 3 | 4;
+export const LANES: readonly Lane[] = [0, 1, 2, 3, 4];
 export const LANE_COUNT = LANES.length;
 
 /** Things that float in the strait; the first four are obstacles, the last two collectibles */
@@ -88,3 +88,15 @@ export const GUNBOAT_DRIFT_END = 2.6;
 export const DRONE_WARNING_AHEAD = 1.5;
 export const DRONE_ARRIVE_START = 3.2;
 export const DRONE_ARRIVE_END = 2.4;
+
+// Shore narrowing: every so often the banks close in for a while, then open back up. Much
+// slower-paced than obstacles and lane changes, so it reads as a tide rather than a reflex test.
+export const SHORE_OPEN_MIN_MS = 15000;
+export const SHORE_OPEN_MAX_MS = 25000;
+export const SHORE_NARROW_MIN_MS = 5000;
+export const SHORE_NARROW_MAX_MS = 8000;
+/** How long the banks take to slide in or out, much gentler than a lane change */
+export const SHORE_TRANSITION_MS = 2200;
+/** How many lanes the banks swallow during a squeeze, chosen at random each time */
+export const SHORE_MIN_LANES_BLOCKED = 1;
+export const SHORE_MAX_LANES_BLOCKED = 3;

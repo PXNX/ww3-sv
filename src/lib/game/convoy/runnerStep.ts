@@ -25,6 +25,13 @@ import {
 	PATTERN_GAP,
 	POINTS_PER_UNIT,
 	REDUCED_MOTION_RAMP_FACTOR,
+	SHORE_MAX_LANES_BLOCKED,
+	SHORE_MIN_LANES_BLOCKED,
+	SHORE_NARROW_MAX_MS,
+	SHORE_NARROW_MIN_MS,
+	SHORE_OPEN_MAX_MS,
+	SHORE_OPEN_MIN_MS,
+	SHORE_TRANSITION_MS,
 	SLICK_SLIDE_MS,
 	SLIDE_OVERSHOOT,
 	SPAWN_AHEAD,
@@ -93,6 +100,14 @@ export interface RunnerState {
 	barrels: number;
 	/** Unrounded score */
 	points: number;
+	/** Shore narrowing: which phase the banks are in right now */
+	shorePhase: 'open' | 'narrowing' | 'narrow' | 'widening';
+	shorePhaseElapsedMs: number;
+	/** How long the current phase lasts before moving to the next */
+	shorePhaseDurationMs: number;
+	/** Lanes swallowed by the bank once a squeeze is fully in, counted from the left and right edges */
+	shoreLeftBlocked: number;
+	shoreRightBlocked: number;
 	obstacles: Obstacle[];
 	/** Where the next pattern starts, in world units */
 	nextSpawnAt: number;
@@ -125,6 +140,12 @@ export function createRunner(): RunnerState {
 		nearMisses: 0,
 		barrels: 0,
 		points: 0,
+		shorePhase: 'open',
+		shorePhaseElapsedMs: 0,
+		// A calm opening stretch before the shore ever narrows
+		shorePhaseDurationMs: SHORE_OPEN_MAX_MS,
+		shoreLeftBlocked: 0,
+		shoreRightBlocked: 0,
 		obstacles: [],
 		nextSpawnAt: FIRST_PATTERN_AT,
 		lastPatternId: null,
@@ -153,14 +174,20 @@ export function springSlide(t: number): number {
 	return 1 + (SLIDE_OVERSHOOT + 1) * u * u * u + SLIDE_OVERSHOOT * u * u;
 }
 
-function clampLane(lane: number): Lane {
-	return Math.min(LANE_COUNT - 1, Math.max(0, lane)) as Lane;
+function clampLane(lane: number, min = 0, max = LANE_COUNT - 1): Lane {
+	return Math.min(max, Math.max(min, lane)) as Lane;
+}
+
+/** The lanes still open right now, given how far the shore has narrowed */
+function openLaneRange(state: RunnerState): { min: number; max: number } {
+	return { min: state.shoreLeftBlocked, max: LANE_COUNT - 1 - state.shoreRightBlocked };
 }
 
 /** Starts a lane change of one lane to the left (-1) or right (1) */
 export function steer(state: RunnerState, direction: -1 | 1): RunnerState {
 	if (state.over || state.slipping) return state;
-	const lane = clampLane(state.lane + direction);
+	const { min, max } = openLaneRange(state);
+	const lane = clampLane(state.lane + direction, min, max);
 	if (lane === state.lane) return state;
 	return {
 		...state,
@@ -208,6 +235,75 @@ export function droneArrival(ahead: number): number {
 	return Math.min(1, Math.max(0, t));
 }
 
+/**
+ * Advances the shore's open/narrowing/narrow/widening cycle, swallows lanes at random once a
+ * squeeze starts, and nudges the tanker off a lane the moment it's about to become bank.
+ */
+function stepShore(draft: RunnerState, dtMs: number, random: Random) {
+	draft.shorePhaseElapsedMs += dtMs;
+	while (draft.shorePhaseElapsedMs >= draft.shorePhaseDurationMs) {
+		draft.shorePhaseElapsedMs -= draft.shorePhaseDurationMs;
+		switch (draft.shorePhase) {
+			case 'open': {
+				const blocked =
+					SHORE_MIN_LANES_BLOCKED +
+					Math.floor(random() * (SHORE_MAX_LANES_BLOCKED - SHORE_MIN_LANES_BLOCKED + 1));
+				const left = Math.floor(random() * (blocked + 1));
+				draft.shoreLeftBlocked = left;
+				draft.shoreRightBlocked = blocked - left;
+				draft.shorePhase = 'narrowing';
+				draft.shorePhaseDurationMs = SHORE_TRANSITION_MS;
+
+				// The bank is about to swallow this lane: nudge the tanker to the nearest open one
+				const { min, max } = openLaneRange(draft);
+				if (draft.lane < min || draft.lane > max) {
+					draft.slideFrom = draft.x;
+					draft.lane = clampLane(draft.lane, min, max);
+					draft.slideElapsedMs = 0;
+					draft.slideDurationMs = LANE_CHANGE_MS;
+				}
+				break;
+			}
+			case 'narrowing':
+				draft.shorePhase = 'narrow';
+				draft.shorePhaseDurationMs =
+					SHORE_NARROW_MIN_MS + random() * (SHORE_NARROW_MAX_MS - SHORE_NARROW_MIN_MS);
+				break;
+			case 'narrow':
+				draft.shorePhase = 'widening';
+				draft.shorePhaseDurationMs = SHORE_TRANSITION_MS;
+				break;
+			case 'widening':
+				draft.shoreLeftBlocked = 0;
+				draft.shoreRightBlocked = 0;
+				draft.shorePhase = 'open';
+				draft.shorePhaseDurationMs =
+					SHORE_OPEN_MIN_MS + random() * (SHORE_OPEN_MAX_MS - SHORE_OPEN_MIN_MS);
+				break;
+		}
+	}
+}
+
+/** How far the bank currently reaches into the field from each side, in lane widths (0 to 1 each) */
+export function shoreInsetLanes(state: RunnerState): { left: number; right: number } {
+	let progress: number;
+	switch (state.shorePhase) {
+		case 'narrowing':
+			progress = state.shorePhaseElapsedMs / state.shorePhaseDurationMs;
+			break;
+		case 'narrow':
+			progress = 1;
+			break;
+		case 'widening':
+			progress = 1 - state.shorePhaseElapsedMs / state.shorePhaseDurationMs;
+			break;
+		default:
+			progress = 0;
+	}
+	progress = Math.min(1, Math.max(0, progress));
+	return { left: state.shoreLeftBlocked * progress, right: state.shoreRightBlocked * progress };
+}
+
 function overlaps(state: RunnerState, obstacle: Obstacle): boolean {
 	const size = ITEM_SIZE[obstacle.kind];
 	return (
@@ -237,6 +333,8 @@ export function stepRunner(
 	draft.speed = speedAt(draft.distance, reducedMotion);
 	const travelled = (draft.speed * dtMs) / 1000;
 	draft.distance += travelled;
+
+	stepShore(draft, dtMs, random);
 
 	// Lane slide
 	draft.slideElapsedMs = Math.min(draft.slideDurationMs, draft.slideElapsedMs + dtMs);
@@ -293,10 +391,10 @@ export function stepRunner(
 				case 'slick': {
 					obstacle.passed = true;
 					if (draft.slipping) break;
-					const direction =
-						draft.lane === 0 ? 1 : draft.lane === LANE_COUNT - 1 ? -1 : obstacle.push;
+					const { min, max } = openLaneRange(draft);
+					const direction = draft.lane <= min ? 1 : draft.lane >= max ? -1 : obstacle.push;
 					draft.slideFrom = draft.x;
-					draft.lane = clampLane(draft.lane + direction);
+					draft.lane = clampLane(draft.lane + direction, min, max);
 					draft.slideElapsedMs = 0;
 					draft.slideDurationMs = SLICK_SLIDE_MS;
 					draft.slipping = true;

@@ -6,6 +6,7 @@ import {
 	FIRST_PATTERN_AT,
 	INVULNERABLE_MS,
 	LANE_CHANGE_MS,
+	LANE_COUNT,
 	MAX_HULL,
 	MAX_SPEED,
 	NAUTICAL_MILES_PER_UNIT,
@@ -23,6 +24,7 @@ import {
 	multiplierFor,
 	runnerNauticalMiles,
 	runnerScore,
+	shoreInsetLanes,
 	speedAt,
 	springSlide,
 	steer,
@@ -87,7 +89,10 @@ describe('lane changes', () => {
 		state = steer(state, -1);
 		expect(state.lane).toBe(0);
 		expect(steer(state, -1)).toBe(state);
-		expect(steer(steer(steer(state, 1), 1), 1).lane).toBe(2);
+		let right = state;
+		for (let i = 0; i < LANE_COUNT - 1; i++) right = steer(right, 1);
+		expect(right.lane).toBe(LANE_COUNT - 1);
+		expect(steer(right, 1)).toBe(right);
 	});
 
 	it('slides springily: overshoots slightly and settles within the lane-change time', () => {
@@ -290,6 +295,40 @@ describe('scoring', () => {
 		const plain = run(runnerWith(), 1000);
 		const boosted = run(runnerWith([], { nearMissStreak: 10 }), 1000);
 		expect(boosted.points).toBeCloseTo(plain.points * 2, 5);
+	});
+});
+
+describe('shore narrowing', () => {
+	it('starts fully open', () => {
+		const state = createRunner();
+		expect(state.shorePhase).toBe('open');
+		expect(shoreInsetLanes(state)).toEqual({ left: 0, right: 0 });
+	});
+
+	it('reports full inset only once fully narrow', () => {
+		const narrow = {
+			...runnerWith(),
+			shorePhase: 'narrow' as const,
+			shoreLeftBlocked: 2,
+			shoreRightBlocked: 1
+		};
+		expect(shoreInsetLanes(narrow)).toEqual({ left: 2, right: 1 });
+	});
+
+	it('keeps steering within whatever lanes are still open', () => {
+		const narrowed = { ...runnerWith(), shoreLeftBlocked: 1, shoreRightBlocked: 1 };
+		expect(steer({ ...narrowed, lane: 1 }, -1).lane).toBe(1);
+		expect(steer({ ...narrowed, lane: 3 }, 1).lane).toBe(3);
+	});
+
+	it('never leaves the tanker in a lane the bank has swallowed', () => {
+		let state = createRunner();
+		const random = createRandom(3);
+		for (let t = 0; t < 200; t++) {
+			state = stepRunner(state, 250, random);
+			expect(state.lane).toBeGreaterThanOrEqual(state.shoreLeftBlocked);
+			expect(state.lane).toBeLessThanOrEqual(LANE_COUNT - 1 - state.shoreRightBlocked);
+		}
 	});
 });
 
