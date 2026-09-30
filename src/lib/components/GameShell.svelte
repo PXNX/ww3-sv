@@ -30,7 +30,7 @@
 </svelte:head>
 
 <main
-	class="mx-auto flex min-h-dvh max-w-3xl flex-col gap-2 px-2 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:gap-3 sm:px-3 sm:pt-[calc(0.75rem+env(safe-area-inset-top))] sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
+	class="mx-auto flex h-dvh max-w-3xl flex-col gap-2 overflow-hidden px-2 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:gap-3 sm:px-3 sm:pt-[calc(0.75rem+env(safe-area-inset-top))] sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
 >
 	<div class="flex items-center justify-between gap-2">
 		<a href={resolve('/')} class="btn-chunky px-2 py-1 text-sm sm:px-3" aria-label={m.game_back()}>
@@ -60,5 +60,7 @@
 		{/if}
 	</header>
 
-	{@render children()}
+	<div class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto sm:gap-3">
+		{@render children()}
+	</div>
 </main>
