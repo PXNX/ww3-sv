@@ -41,6 +41,9 @@
 
 	const grid = $derived(view.grid);
 	const columns = $derived(`repeat(${grid.cols}, minmax(0, 1fr))`);
+	// The station and terminal landmark rows add roughly 0.8 of a column's width each on top of
+	// the square tile grid, so the board is taller than it is wide by this many "columns" worth.
+	const heightFactor = $derived(grid.cols / (grid.rows + 1.6));
 	const strikeByCell = $derived(new Map(view.strikes.map((strike) => [strike.cell, strike])));
 	const canIntercept = $derived(view.charges > 0 && !disabled);
 	const explosion = explosionFrames()[0];
@@ -154,7 +157,11 @@
 	const markerRing = 2 * Math.PI * 44;
 </script>
 
-<div data-playfield class="mx-auto flex w-full max-w-[32rem] flex-col select-none">
+<div
+	data-playfield
+	class="mx-auto flex w-full flex-col select-none"
+	style:max-width="max(14rem, min(32rem, calc((100dvh - 17rem) * {heightFactor})))"
+>
 	<div class="grid gap-1 px-2" style:grid-template-columns={columns}>
 		{#each { length: grid.cols }, col (col)}
 			<div class="aspect-[5/4]">
