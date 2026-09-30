@@ -10,7 +10,6 @@
 		DIFFICULTIES,
 		DIFFICULTY_CONFIG,
 		TANKER_DEPART_MS,
-		barrelsPerSecond,
 		finalScore,
 		shutdownSecondsLeft,
 		streakMultiplier,
@@ -45,7 +44,6 @@
 	const shownScore = $derived(
 		game.result ? game.result.score : Math.floor(finalScore(view) / 10) * 10
 	);
-	const rate = $derived(barrelsPerSecond(config, view.flow.pathLength));
 	const multiplier = $derived(streakMultiplier(view.streak));
 	const tankerPercent = $derived(Math.floor((view.tankerFill / config.tankerCapacity) * 100));
 	const departing = $derived(view.tankerDepartMs > 0);
@@ -58,11 +56,26 @@
 		normal: m.pipeline_difficulty_normal,
 		hard: m.pipeline_difficulty_hard
 	};
-	const TILTS = [-1.5, 1, -0.8, 1.4];
 </script>
 
 <GameShell title={m.mode_pipeline_name()} score={shownScore} best={game.best}>
 	{#snippet actions()}
+		<button
+			type="button"
+			class="btn-chunky px-3 py-1 text-sm {game.handsFree ? 'bg-mustard' : ''}"
+			aria-pressed={game.handsFree}
+			aria-label={m.pipeline_repair_toggle()}
+			onclick={() => (game.handsFree = !game.handsFree)}
+		>
+			<PipelineWrench standalone class="size-4" />
+			<span class="hidden sm:inline">{m.pipeline_repair_toggle()}</span>
+			<span
+				class="rounded border-2 border-ink px-1 text-xs {game.handsFree ? 'bg-ink text-paper' : ''}"
+				aria-hidden="true"
+			>
+				{game.handsFree ? '✓' : '–'}
+			</span>
+		</button>
 		{#if game.paused}
 			<button type="button" class="btn-chunky px-3 py-1 text-sm" onclick={() => game.resume()}>
 				<IconPlay class="size-4" aria-hidden="true" />
@@ -82,75 +95,78 @@
 	{/snippet}
 
 	<div class="flex flex-wrap items-center justify-between gap-2">
-		<fieldset class="flex items-center gap-2" disabled={running && !game.paused}>
-			<legend class="sr-only">{m.pipeline_difficulty_label()}</legend>
-			<span class="text-sm font-bold" aria-hidden="true">{m.pipeline_difficulty_label()}</span>
-			{#each DIFFICULTIES as level (level)}
-				<button
-					type="button"
-					class="btn-chunky px-2.5 py-0.5 text-sm disabled:opacity-60 {game.difficulty === level
-						? 'bg-mustard'
-						: ''}"
-					aria-pressed={game.difficulty === level}
-					onclick={() => game.setDifficulty(level)}
-				>
-					{#if game.difficulty === level}
-						<IconCheck class="size-4" aria-hidden="true" />
-					{/if}
-					{LEVEL_NAMES[level]()}
-					<span class="text-xs opacity-80" dir="ltr"
-						>{DIFFICULTY_CONFIG[level].size}×{DIFFICULTY_CONFIG[level].size}</span
+		{#if view.phase === 'setup'}
+			<fieldset class="flex flex-wrap items-center gap-2">
+				<legend class="sr-only">{m.pipeline_difficulty_label()}</legend>
+				<span class="text-sm font-bold" aria-hidden="true">{m.pipeline_difficulty_label()}</span>
+				{#each DIFFICULTIES as level (level)}
+					<button
+						type="button"
+						class="btn-chunky px-2.5 py-0.5 text-sm {game.difficulty === level ? 'bg-mustard' : ''}"
+						aria-pressed={game.difficulty === level}
+						onclick={() => game.setDifficulty(level)}
 					>
-				</button>
-			{/each}
-		</fieldset>
-		<button type="button" class="btn-chunky px-3 py-0.5 text-sm" onclick={() => game.newGame()}>
+						{#if game.difficulty === level}
+							<IconCheck class="size-4" aria-hidden="true" />
+						{/if}
+						{LEVEL_NAMES[level]()}
+						<span class="text-xs opacity-80" dir="ltr"
+							>{DIFFICULTY_CONFIG[level].size}×{DIFFICULTY_CONFIG[level].size}</span
+						>
+					</button>
+				{/each}
+			</fieldset>
+		{:else}
+			<span class="text-sm font-bold opacity-70">
+				{m.pipeline_difficulty_label()}: {LEVEL_NAMES[game.difficulty]()}
+			</span>
+		{/if}
+		<button
+			type="button"
+			class="btn-chunky px-2.5 py-0.5 text-sm"
+			aria-label={m.pipeline_new_board()}
+			onclick={() => game.newGame()}
+		>
 			<IconRefresh class="size-4" aria-hidden="true" />
-			{m.pipeline_new_board()}
+			<span class="hidden sm:inline">{m.pipeline_new_board()}</span>
 		</button>
 	</div>
 
-	<dl class="grid grid-cols-2 gap-2 sm:grid-cols-4">
-		<div class="sticker flex flex-col px-3 py-1.5" style:--tilt="{TILTS[0]}deg">
-			<dt class="text-xs font-bold uppercase">{m.pipeline_charges_label()}</dt>
-			<dd class="flex items-center gap-1">
-				{#each { length: config.maxCharges }, slot (slot)}
-					<img
-						src={spriteSrc('patriotLauncher')}
-						alt=""
-						class="w-8 {slot < view.charges ? '' : 'opacity-25 grayscale'}"
-						draggable="false"
-					/>
-				{/each}
-				<span class="ms-auto font-display text-lg font-bold tabular-nums"
-					>{view.charges}/{config.maxCharges}</span
-				>
-			</dd>
-		</div>
-		<div class="sticker flex flex-col px-3 py-1.5" style:--tilt="{TILTS[1]}deg">
-			<dt class="text-xs font-bold uppercase">{m.pipeline_rate_label()}</dt>
-			<dd class="font-display text-2xl font-bold tabular-nums">{rate.toFixed(1)}</dd>
-		</div>
-		<div class="sticker flex flex-col px-3 py-1.5" style:--tilt="{TILTS[2]}deg">
-			<dt class="text-xs font-bold uppercase">{m.pipeline_multiplier_label()}</dt>
-			<dd
-				class="font-display text-2xl font-bold tabular-nums {view.streak > 0 ? 'text-tie-red' : ''}"
+	<div
+		class="flex items-center gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1.5 shadow-[3px_3px_0_var(--color-ink)]"
+	>
+		<div
+			class="flex items-center gap-1"
+			role="img"
+			aria-label="{m.pipeline_charges_label()}: {view.charges}/{config.maxCharges}"
+		>
+			{#each { length: config.maxCharges }, slot (slot)}
+				<img
+					src={spriteSrc('patriotLauncher')}
+					alt=""
+					class="w-7 {slot < view.charges ? '' : 'opacity-25 grayscale'}"
+					draggable="false"
+				/>
+			{/each}
+			<span class="font-display text-lg font-bold tabular-nums" aria-hidden="true"
+				>{view.charges}</span
 			>
-				×{multiplier}
-			</dd>
 		</div>
-		<div class="sticker flex flex-col px-3 py-1.5" style:--tilt="{TILTS[3]}deg">
-			<dt class="text-xs font-bold uppercase">{m.pipeline_stat_tankers()}</dt>
-			<dd class="font-display text-2xl font-bold tabular-nums">{view.tankersFilled}</dd>
-		</div>
-	</dl>
+		{#if multiplier > 1}
+			{#key multiplier}
+				<span
+					class="pop-in ms-auto shrink-0 rounded-md border-2 border-ink bg-explosion-yellow px-2 py-0.5 text-sm font-bold text-tie-red"
+					dir="ltr"
+					aria-label="{m.pipeline_multiplier_label()} ×{multiplier}"
+				>
+					×{multiplier}
+				</span>
+			{/key}
+		{/if}
+	</div>
 
 	<div aria-live="polite" class="min-h-10">
-		{#if view.phase === 'setup'}
-			<p class="rounded-lg border-3 border-ink bg-paper px-3 py-1.5 text-sm font-semibold">
-				{m.pipeline_setup_hint()}
-			</p>
-		{:else if cut}
+		{#if cut}
 			<div
 				class="flex items-center gap-2 rounded-lg border-3 border-ink bg-tie-red px-3 py-1.5 font-bold"
 			>
@@ -237,25 +253,16 @@
 		<span class="font-display text-lg font-bold tabular-nums">{tankerPercent}%</span>
 	</section>
 
-	<div class="flex flex-col gap-2 text-sm">
-		<button
-			type="button"
-			class="btn-chunky self-start px-3 py-1 text-sm {game.handsFree ? 'bg-mustard' : ''}"
-			aria-pressed={game.handsFree}
-			onclick={() => (game.handsFree = !game.handsFree)}
-		>
-			<PipelineWrench standalone class="size-5" />
-			{m.pipeline_repair_toggle()}
-			{#if game.handsFree}
-				<IconCheck class="size-4" aria-hidden="true" />
+	{#if view.phase === 'setup'}
+		<div class="rounded-lg border-3 border-ink bg-paper px-3 py-2 text-sm">
+			<p class="font-semibold">{m.pipeline_setup_hint()}</p>
+			{#if showTutorial}
+				<p class="mt-1">{m.pipeline_controls_hint()}</p>
+				<p class="mt-1 opacity-80">{m.pipeline_repair_toggle_hint()}</p>
+				<p class="mt-1 hidden opacity-80 sm:block">{m.pipeline_keyboard_hint()}</p>
 			{/if}
-		</button>
-		{#if showTutorial}
-			<p>{m.pipeline_repair_toggle_hint()}</p>
-			<p class="font-semibold">{m.pipeline_controls_hint()}</p>
-			<p class="opacity-80">{m.pipeline_keyboard_hint()}</p>
-		{/if}
-	</div>
+		</div>
+	{/if}
 </GameShell>
 
 <GameOverModal
