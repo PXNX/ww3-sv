@@ -23,7 +23,12 @@
 	const STEP_MS = 1000 / 60;
 	/** Share of the viewport height the field may take, leaving room for the header */
 	const MAX_HEIGHT_SHARE = 0.68;
-	const SWIPE_PX = 24;
+	/** Below this much total movement, a touch is a tap rather than a drag */
+	const TAP_PX = 24;
+	/** A drag needs to cross this share of a lane's on-screen width to change lanes, so the
+	 * gesture scales with however big the field is actually rendered (bigger on a wide tablet,
+	 * smaller in narrow mobile portrait) instead of a fixed pixel amount */
+	const LANE_SWIPE_SHARE = 0.5;
 
 	let wrapper: HTMLDivElement | undefined = $state();
 	let canvas: HTMLCanvasElement | undefined = $state();
@@ -118,34 +123,57 @@
 		}
 	}
 
-	let gesture: { id: number; x: number; y: number; handled: boolean } | null = null;
+	/** Pixel width of one lane as actually rendered, for gestures that should scale with it */
+	function laneWidthPx(): number {
+		return cssWidth / FIELD_WIDTH;
+	}
+
+	let gesture: {
+		id: number;
+		startX: number;
+		startY: number;
+		lastX: number;
+		stepped: boolean;
+	} | null = null;
 
 	function onPointerDown(event: PointerEvent) {
 		if (game.status !== 'running' || !event.isPrimary) return;
-		gesture = { id: event.pointerId, x: event.clientX, y: event.clientY, handled: false };
+		gesture = {
+			id: event.pointerId,
+			startX: event.clientX,
+			startY: event.clientY,
+			lastX: event.clientX,
+			stepped: false
+		};
 		canvas?.setPointerCapture(event.pointerId);
 	}
 
 	function onPointerMove(event: PointerEvent) {
-		if (!gesture || gesture.id !== event.pointerId || gesture.handled) return;
-		const dx = event.clientX - gesture.x;
-		const dy = event.clientY - gesture.y;
-		if (Math.abs(dx) >= SWIPE_PX && Math.abs(dx) > Math.abs(dy)) {
-			gesture.handled = true;
-			game.steer(dx < 0 ? -1 : 1);
+		if (!gesture || gesture.id !== event.pointerId) return;
+		const totalDx = event.clientX - gesture.startX;
+		const totalDy = event.clientY - gesture.startY;
+		// Only once the drag is clearly horizontal, so a vertical scroll attempt is left alone
+		if (Math.abs(totalDx) <= Math.abs(totalDy)) return;
+		const threshold = Math.max(TAP_PX / 2, laneWidthPx() * LANE_SWIPE_SHARE);
+		// A single continuous drag can cross several lanes: keep stepping as it keeps moving
+		while (Math.abs(event.clientX - gesture.lastX) >= threshold) {
+			const direction = event.clientX > gesture.lastX ? 1 : -1;
+			gesture.lastX += direction * threshold;
+			gesture.stepped = true;
+			game.steer(direction);
 		}
 	}
 
 	function onPointerUp(event: PointerEvent) {
 		if (!gesture || gesture.id !== event.pointerId) return;
-		const { x, y, handled } = gesture;
+		const { startX, startY, stepped } = gesture;
 		gesture = null;
-		if (handled || !canvas) return;
-		const moved = Math.hypot(event.clientX - x, event.clientY - y);
-		if (moved >= SWIPE_PX) return;
+		if (stepped || !canvas) return;
+		const moved = Math.hypot(event.clientX - startX, event.clientY - startY);
+		if (moved >= TAP_PX) return;
 		// A tap: the left or right half of the field
 		const rect = canvas.getBoundingClientRect();
-		game.steer(x - rect.left < rect.width / 2 ? -1 : 1);
+		game.steer(startX - rect.left < rect.width / 2 ? -1 : 1);
 	}
 </script>
 
