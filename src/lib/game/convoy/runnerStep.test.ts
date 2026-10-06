@@ -18,12 +18,16 @@ import {
 } from './constants';
 import {
 	createRunner,
+	dragShip,
 	driftProgress,
 	droneArrival,
+	grabShip,
 	makeObstacle,
 	multiplierFor,
+	releaseShip,
 	runnerNauticalMiles,
 	runnerScore,
+	shipRange,
 	shoreInsetLanes,
 	speedAt,
 	springSlide,
@@ -116,6 +120,85 @@ describe('lane changes', () => {
 		expect(state.lane).toBe(1);
 		state = run(state, LANE_CHANGE_MS + 20);
 		expect(state.x).toBe(1);
+	});
+});
+
+describe('holding the tanker (direct manipulation)', () => {
+	it('puts the tanker exactly at the pointer, immediately and after every step', () => {
+		let state = grabShip(runnerWith());
+		for (const target of [1.37, 2.9, 0.42, 3.05]) {
+			state = dragShip(state, target);
+			expect(state.x).toBe(target);
+			// Stepping the simulation does not ease or lag behind
+			state = stepRunner(state, STEP, createRandom(1));
+			expect(state.x).toBe(target);
+		}
+	});
+
+	it('clamps to the lane area but remembers where the pointer is', () => {
+		let state = grabShip(runnerWith());
+		state = dragShip(state, -4);
+		expect(state.x).toBe(0);
+		state = dragShip(state, 40);
+		expect(state.x).toBe(LANE_COUNT - 1);
+		expect(state.lane).toBe(LANE_COUNT - 1);
+		expect(stepRunner(state, STEP, createRandom(1)).x).toBe(LANE_COUNT - 1);
+	});
+
+	it('keeps the tanker inside the water the banks leave open', () => {
+		const narrow = {
+			...runnerWith(),
+			shorePhase: 'narrow' as const,
+			shoreLeftBlocked: 1,
+			shoreRightBlocked: 2
+		};
+		let state = grabShip(narrow);
+		expect(shipRange(state)).toEqual({ min: 1, max: LANE_COUNT - 1 - 2 });
+		state = dragShip(state, 0);
+		expect(state.x).toBe(1);
+		state = dragShip(state, 4);
+		expect(state.x).toBe(2);
+		expect(state.lane).toBe(2);
+	});
+
+	it('does nothing until the tanker has been grabbed', () => {
+		const state = runnerWith();
+		expect(dragShip(state, 3)).toBe(state);
+	});
+
+	it('settles into the nearest lane on release', () => {
+		let state = dragShip(grabShip(runnerWith()), 2.7);
+		state = releaseShip(state);
+		expect(state.dragX).toBeNull();
+		expect(state.lane).toBe(3);
+		expect(state.x).toBe(2.7);
+		state = run(state, LANE_CHANGE_MS + 20);
+		expect(state.x).toBe(3);
+	});
+
+	it('is taken out of the hands by an oil slick, which then slides as usual', () => {
+		let state = grabShip(runnerWith([{ kind: 'slick', lane: 1, ahead: 0.2, push: 1 }]));
+		state = stepRunner(state, STEP, createRandom(1));
+		expect(state.slipping).toBe(true);
+		expect(state.dragX).toBeNull();
+		expect(dragShip(state, 4)).toBe(state);
+		state = run(state, SLICK_SLIDE_MS + 50);
+		expect(state.x).toBe(2);
+	});
+
+	it('lets a lane change from the keyboard take over', () => {
+		const state = steer(dragShip(grabShip(runnerWith()), 1.4), 1);
+		expect(state.dragX).toBeNull();
+		expect(state.lane).toBe(2);
+	});
+
+	it('still hits obstacles at its exact position', () => {
+		// A mine in lane 2, tanker held at 1.0: clear. Dragged to 1.8: collides
+		const mine = runnerWith([{ kind: 'mine', lane: 2, ahead: 0.5 }]);
+		const clear = run(dragShip(grabShip(mine), 1), 400);
+		expect(clear.hull).toBe(MAX_HULL);
+		const hit = run(dragShip(grabShip(mine), 1.8), 400);
+		expect(hit.hull).toBe(MAX_HULL - 1);
 	});
 });
 
