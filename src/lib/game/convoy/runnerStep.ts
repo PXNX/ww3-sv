@@ -90,6 +90,8 @@ export interface RunnerState {
 	slideFrom: number;
 	slideElapsedMs: number;
 	slideDurationMs: number;
+	/** Held by a finger or the mouse: the tanker sits exactly at this x (in lanes), no sliding */
+	dragX: number | null;
 	/** Sliding on an oil slick: steering is locked until the slide ends */
 	slipping: boolean;
 	hull: number;
@@ -132,6 +134,7 @@ export function createRunner(): RunnerState {
 		slideFrom: 1,
 		slideElapsedMs: 0,
 		slideDurationMs: LANE_CHANGE_MS,
+		dragX: null,
 		slipping: false,
 		hull: MAX_HULL,
 		invulnerableMs: 0,
@@ -183,14 +186,56 @@ function openLaneRange(state: RunnerState): { min: number; max: number } {
 	return { min: state.shoreLeftBlocked, max: LANE_COUNT - 1 - state.shoreRightBlocked };
 }
 
+/** How far the tanker's center may currently go sideways, in lanes: the open water as the banks close in */
+export function shipRange(state: RunnerState): { min: number; max: number } {
+	const inset = shoreInsetLanes(state);
+	return { min: inset.left, max: LANE_COUNT - 1 - inset.right };
+}
+
+function clampToRange(x: number, { min, max }: { min: number; max: number }): number {
+	return Math.min(Math.max(x, min), Math.max(min, max));
+}
+
+function nearestOpenLane(state: RunnerState, x: number): Lane {
+	const { min, max } = openLaneRange(state);
+	return clampLane(Math.round(x), min, max);
+}
+
+/** Takes hold of the tanker where it is now; moves then follow the pointer 1:1 (see dragShip) */
+export function grabShip(state: RunnerState): RunnerState {
+	if (state.over || state.slipping) return state;
+	return { ...state, dragX: state.x };
+}
+
+/** Puts the held tanker at x lanes, clamped to the open water, with no easing at all */
+export function dragShip(state: RunnerState, x: number): RunnerState {
+	if (state.over || state.slipping || state.dragX === null) return state;
+	const clamped = clampToRange(x, shipRange(state));
+	return { ...state, dragX: x, x: clamped, lane: nearestOpenLane(state, clamped) };
+}
+
+/** Lets go of the tanker: it settles into the nearest open lane with a short slide */
+export function releaseShip(state: RunnerState): RunnerState {
+	if (state.dragX === null) return state;
+	return {
+		...state,
+		dragX: null,
+		lane: nearestOpenLane(state, state.x),
+		slideFrom: state.x,
+		slideElapsedMs: 0,
+		slideDurationMs: LANE_CHANGE_MS
+	};
+}
+
 /** Starts a lane change of one lane to the left (-1) or right (1) */
 export function steer(state: RunnerState, direction: -1 | 1): RunnerState {
 	if (state.over || state.slipping) return state;
 	const { min, max } = openLaneRange(state);
 	const lane = clampLane(state.lane + direction, min, max);
-	if (lane === state.lane) return state;
+	if (lane === state.lane && state.dragX === null) return state;
 	return {
 		...state,
+		dragX: null,
 		lane,
 		slideFrom: state.x,
 		slideElapsedMs: 0,
@@ -336,13 +381,19 @@ export function stepRunner(
 
 	stepShore(draft, dtMs, random);
 
-	// Lane slide
-	draft.slideElapsedMs = Math.min(draft.slideDurationMs, draft.slideElapsedMs + dtMs);
-	const progress = springSlide(draft.slideElapsedMs / draft.slideDurationMs);
-	draft.x = draft.slideFrom + (draft.lane - draft.slideFrom) * progress;
-	if (draft.slideElapsedMs >= draft.slideDurationMs) {
-		draft.x = draft.lane;
-		draft.slipping = false;
+	if (draft.dragX !== null) {
+		// Held: exactly where the pointer put it, kept inside the water that is still open
+		draft.x = clampToRange(draft.dragX, shipRange(draft));
+		draft.lane = nearestOpenLane(draft, draft.x);
+	} else {
+		// Lane slide
+		draft.slideElapsedMs = Math.min(draft.slideDurationMs, draft.slideElapsedMs + dtMs);
+		const progress = springSlide(draft.slideElapsedMs / draft.slideDurationMs);
+		draft.x = draft.slideFrom + (draft.lane - draft.slideFrom) * progress;
+		if (draft.slideElapsedMs >= draft.slideDurationMs) {
+			draft.x = draft.lane;
+			draft.slipping = false;
+		}
 	}
 
 	draft.invulnerableMs = Math.max(0, draft.invulnerableMs - dtMs);
@@ -398,6 +449,8 @@ export function stepRunner(
 					draft.slideElapsedMs = 0;
 					draft.slideDurationMs = SLICK_SLIDE_MS;
 					draft.slipping = true;
+					// The slick takes the tanker out of the player's hands until the slide ends
+					draft.dragX = null;
 					event('slick', obstacle.x, obstacle.y);
 					break;
 				}

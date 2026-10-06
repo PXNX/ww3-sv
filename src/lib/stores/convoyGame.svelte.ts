@@ -7,7 +7,10 @@ import { MAX_HULL } from '$lib/game/convoy/constants';
 import type { ConvoyEffect } from '$lib/game/convoy/drawScene';
 import {
 	createRunner,
+	dragShip,
+	grabShip,
 	multiplierFor,
+	releaseShip,
 	runnerNauticalMiles,
 	runnerScore,
 	steer,
@@ -126,6 +129,24 @@ export class ConvoyGame {
 		if (this.status !== 'running') return;
 		this.runner = steer(this.runner, direction);
 		soundManager().play('click');
+	}
+
+	/** Takes hold of the tanker (a finger or the mouse went down); false when it cannot be held now */
+	grabShip(): boolean {
+		if (this.status !== 'running') return false;
+		this.runner = grabShip(this.runner);
+		return this.runner.dragX !== null;
+	}
+
+	/** Moves the held tanker to x lanes, 1:1 with the pointer; the runner clamps it to the open water */
+	dragShipTo(x: number) {
+		if (this.status !== 'running') return;
+		this.runner = dragShip(this.runner, x);
+	}
+
+	/** Lets go of the tanker; it settles into the nearest lane */
+	releaseShip() {
+		this.runner = releaseShip(this.runner);
 	}
 
 	/** Advances the game by one fixed step */
