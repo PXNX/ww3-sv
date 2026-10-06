@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { createRandom, pickOne, pickWeighted, randomInt, shuffle } from './random';
+import {
+	createRandom,
+	dailySeed,
+	dayKey,
+	pickOne,
+	pickWeighted,
+	randomInt,
+	seedFromString,
+	shuffle
+} from './random';
 
 describe('seeded random', () => {
 	it('repeats the same sequence for the same seed', () => {
@@ -48,5 +57,25 @@ describe('seeded random', () => {
 		const shuffled = shuffle(createRandom(9), items);
 		expect([...shuffled].sort()).toEqual(items);
 		expect(items).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+	});
+
+	it('derives stable seeds from text', () => {
+		expect(seedFromString('wordle')).toBe(seedFromString('wordle'));
+		expect(seedFromString('wordle')).not.toBe(seedFromString('vault'));
+		expect(Number.isInteger(seedFromString('x'))).toBe(true);
+	});
+
+	it('formats the day key in local time with zero padding', () => {
+		expect(dayKey(new Date(2026, 0, 5, 23, 59))).toBe('2026-01-05');
+		expect(dayKey(new Date(2026, 10, 15, 0, 1))).toBe('2026-11-15');
+	});
+
+	it('gives the same daily seed all day and a new one each day and mode', () => {
+		const morning = new Date(2026, 5, 1, 7, 0);
+		const evening = new Date(2026, 5, 1, 22, 30);
+		const nextDay = new Date(2026, 5, 2, 7, 0);
+		expect(dailySeed('wordle', morning)).toBe(dailySeed('wordle', evening));
+		expect(dailySeed('wordle', morning)).not.toBe(dailySeed('wordle', nextDay));
+		expect(dailySeed('wordle', morning)).not.toBe(dailySeed('vault', morning));
 	});
 });

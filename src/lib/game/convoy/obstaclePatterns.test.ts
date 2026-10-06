@@ -130,7 +130,7 @@ describe('pickPattern', () => {
 });
 
 describe('survivingLanes', () => {
-	const wall = (lanes: Lane[], at: number) =>
+	const wall = (lanes: readonly Lane[], at: number) =>
 		blockedSpans(lanes.map((lane) => ({ kind: 'mine' as const, lane, at })));
 
 	it('keeps a lane that is never blocked', () => {
