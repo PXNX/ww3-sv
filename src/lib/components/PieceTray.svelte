@@ -22,7 +22,7 @@
 		selected: number | null;
 		disabled?: boolean;
 		onselect: (index: number) => void;
-		/** A press on a piece that might turn into a drag onto the board */
+		/** A press on a piece that might turn into a drag onto the board (currentTarget is its button) */
 		ondragstart?: (index: number, event: PointerEvent) => void;
 	} = $props();
 
@@ -58,6 +58,7 @@
 				>
 					<span
 						data-playfield
+						data-tray-piece
 						class="grid gap-[2px]"
 						style:grid-template-columns="repeat({piece.width}, var(--tray-cell))"
 						style:grid-template-rows="repeat({piece.height}, var(--tray-cell))"

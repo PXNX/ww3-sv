@@ -7,6 +7,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import type { Board } from '$lib/game/blocks/board';
 	import type { ClearFeedback, Preview } from '$lib/stores/blocksGame.svelte';
+	import { cellAt as cellAtPoint } from '$lib/game/pointerDrag';
 	import BlocksCell, { KIND_HEX } from './BlocksCell.svelte';
 
 	/** Directions the shards of a cleared cell fly off in */
@@ -87,11 +88,7 @@
 	/** Which cell sits under a viewport point, or null when it is outside the board */
 	export function cellAt(clientX: number, clientY: number) {
 		if (!grid) return null;
-		const rect = grid.getBoundingClientRect();
-		const col = Math.floor(((clientX - rect.left) / rect.width) * board.size);
-		const row = Math.floor(((clientY - rect.top) / rect.height) * board.size);
-		if (row < 0 || col < 0 || row >= board.size || col >= board.size) return null;
-		return { row, col };
+		return cellAtPoint(grid.getBoundingClientRect(), { x: clientX, y: clientY }, board.size);
 	}
 
 	/** The board's cells in viewport pixels, so a dragged piece can be sized and aligned to them */
@@ -108,7 +105,8 @@
 	}
 
 	function pointerDown(event: PointerEvent) {
-		if (event.button !== 0) return;
+		// A second finger must not take over the aim of the first
+		if (event.button !== 0 || !event.isPrimary) return;
 		activePointer = event.pointerId;
 		// Keep receiving moves while a finger slides across the board
 		if (event.pointerType !== 'mouse') grid?.setPointerCapture(event.pointerId);
