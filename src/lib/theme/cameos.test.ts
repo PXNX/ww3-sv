@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createRandom } from '$lib/game/random';
-import { CAMEO_PLACEHOLDER, CAMEOS, cameoPortrait, pickCameo } from './cameos';
+import { CAMEO_PLACEHOLDER, CAMEOS, cameoAsset, cameoPortrait, pickCameo } from './cameos';
 
 describe('cameos', () => {
 	it('has the nine-character roster, each listed once', () => {
@@ -26,6 +26,11 @@ describe('cameos', () => {
 
 	it('falls back to the placeholder portrait until one is supplied', () => {
 		for (const cameo of CAMEOS) expect(cameoPortrait(cameo.id)).toBe(CAMEO_PLACEHOLDER);
+	});
+
+	it('builds URLs for files in static/assets/cameos', () => {
+		expect(cameoAsset('businessman-calm.svg')).toBe('/assets/cameos/businessman-calm.svg');
+		expect(CAMEO_PLACEHOLDER).toBe(cameoAsset('_placeholder.svg'));
 	});
 
 	it('eventually picks every cameo', () => {

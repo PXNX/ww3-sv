@@ -65,6 +65,11 @@ export function playClip(ctx: AudioContext, dest: AudioNode, id: ClipId, gain = 
 }
 
 /** Plays one of several variants of the same clip at random, so repeats don't sound identical */
-export function playRandomClip(ctx: AudioContext, dest: AudioNode, ids: readonly ClipId[], gain = 0.8): void {
+export function playRandomClip(
+	ctx: AudioContext,
+	dest: AudioNode,
+	ids: readonly ClipId[],
+	gain = 0.8
+): void {
 	playClip(ctx, dest, ids[Math.floor(Math.random() * ids.length)], gain);
 }

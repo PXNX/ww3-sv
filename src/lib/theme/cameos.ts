@@ -34,6 +34,24 @@ export const CAMEOS: readonly Cameo[] = [
 	{ id: 'macron', name: m.cameo_macron_name, message: m.cameo_macron }
 ];
 
+/**
+ * A mode-specific cameo for the game-over screen, used instead of the random roster pick. Pass
+ * `null` to the modal to show no cameo at all.
+ */
+export interface CameoOverride {
+	/** Image URL, normally from cameoAsset(); falls back to the placeholder if it fails to load */
+	image: string;
+	alt: string;
+	message: string;
+	/** Caption above the message; defaults to the shared "Breaking news" label */
+	label?: string;
+}
+
+/** URL of a file in static/assets/cameos/, for example cameoAsset('businessman-calm.svg') */
+export function cameoAsset(file: string): string {
+	return `${CAMEO_DIRECTORY}/${file}`;
+}
+
 export function cameoPortrait(id: CameoId): string {
 	return SUPPLIED_PORTRAITS.includes(id) ? `${CAMEO_DIRECTORY}/${id}.png` : CAMEO_PLACEHOLDER;
 }

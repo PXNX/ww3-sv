@@ -8,4 +8,6 @@ bun.lockb
 # Miscellaneous
 /static/
 /project.inlang/cache/
+/project.inlang/.meta.json
+/project.inlang/README.md
 /node_modules
