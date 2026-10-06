@@ -14,8 +14,8 @@ const base = loadMessages(baseLocale);
 const translations = locales.filter((locale) => locale !== baseLocale);
 
 describe('message files', () => {
-	it('exist for exactly the three supported languages', () => {
-		expect([...locales].sort()).toEqual(['de', 'en', 'fa']);
+	it('exist for exactly the four supported languages', () => {
+		expect([...locales].sort()).toEqual(['ar', 'de', 'en', 'fa']);
 		expect(messageFileCount()).toBe(locales.length);
 	});
 

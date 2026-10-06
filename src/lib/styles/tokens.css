@@ -50,6 +50,31 @@
 		U+A720-A7FF;
 }
 
+/*
+ * Baloo Bhaijaan 2, the Arabic-script sibling of Baloo 2 (SIL Open Font License, see
+ * BalooBhaijaan2-OFL-LICENSE.txt). It also covers the Persian letters, and the unicode-range keeps
+ * it from ever being downloaded for Latin-only pages.
+ */
+@font-face {
+	font-family: 'Baloo Bhaijaan 2';
+	font-style: normal;
+	font-display: swap;
+	font-weight: 400;
+	src: url('/fonts/baloo-bhaijaan-2-arabic-400-normal.woff2') format('woff2');
+	unicode-range:
+		U+0600-06FF, U+0750-077F, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FEFF;
+}
+
+@font-face {
+	font-family: 'Baloo Bhaijaan 2';
+	font-style: normal;
+	font-display: swap;
+	font-weight: 700;
+	src: url('/fonts/baloo-bhaijaan-2-arabic-700-normal.woff2') format('woff2');
+	unicode-range:
+		U+0600-06FF, U+0750-077F, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FEFF;
+}
+
 @theme {
 	--color-ink: #111111;
 	--color-paper: #ffffff;
@@ -66,8 +91,10 @@
 	--color-heart: #8b0a1a;
 	--color-heart-outline: #4a0510;
 
-	--font-display: 'Baloo 2', ui-rounded, system-ui, sans-serif;
-	--font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+	--font-display: 'Baloo 2', 'Baloo Bhaijaan 2', ui-rounded, system-ui, sans-serif;
+	--font-sans:
+		'Baloo Bhaijaan 2', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+		sans-serif;
 }
 
 :root {
