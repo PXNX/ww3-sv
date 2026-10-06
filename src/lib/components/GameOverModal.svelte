@@ -16,7 +16,13 @@
 	import { m } from '$lib/paraglide/messages';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import type { ScoreCard } from '$lib/services/share';
-	import { CAMEO_PLACEHOLDER, cameoPortrait, pickCameo, type Cameo } from '$lib/theme/cameos';
+	import {
+		CAMEO_PLACEHOLDER,
+		cameoPortrait,
+		pickCameo,
+		type Cameo,
+		type CameoOverride
+	} from '$lib/theme/cameos';
 	import { CHARACTER_NAME } from '$lib/theme/character';
 	import { soundManager } from '$lib/sound/soundManager.svelte';
 	import CharacterMascot from './CharacterMascot.svelte';
@@ -31,6 +37,7 @@
 		isNewBest = false,
 		title,
 		drawBoard,
+		customCameo,
 		onRetry,
 		children
 	}: {
@@ -41,6 +48,11 @@
 		/** Defaults to "Game over" */
 		title?: string;
 		drawBoard?: ScoreCard['drawBoard'];
+		/**
+		 * Image slot: a mode-specific cameo (image from static/assets/cameos/, alt text and message)
+		 * shown instead of the random one; null hides the cameo. Omit it for the shared roster.
+		 */
+		customCameo?: CameoOverride | null;
 		onRetry: () => void;
 		/** Mode-specific extra stats, shown under the score */
 		children?: Snippet;
@@ -50,13 +62,37 @@
 	let cameo: Cameo | undefined = $state();
 	let portraitFailed = $state(false);
 
-	const portrait = $derived(cameo && !portraitFailed ? cameoPortrait(cameo.id) : CAMEO_PLACEHOLDER);
+	const portrait = $derived(
+		customCameo
+			? portraitFailed
+				? CAMEO_PLACEHOLDER
+				: customCameo.image
+			: cameo && !portraitFailed
+				? cameoPortrait(cameo.id)
+				: CAMEO_PLACEHOLDER
+	);
+	const showCameo = $derived(customCameo ? true : customCameo === undefined && cameo !== undefined);
+	const cameoAlt = $derived(
+		portrait === CAMEO_PLACEHOLDER
+			? m.cameo_placeholder_alt()
+			: customCameo
+				? customCameo.alt
+				: m.cameo_portrait_alt({ name: cameo?.name() ?? '' })
+	);
+	const cameoLabel = $derived(customCameo?.label ?? m.gameover_cameo_label());
+	const cameoMessage = $derived(
+		customCameo
+			? customCameo.message
+			: (cameo?.message({ characterName: CHARACTER_NAME[getLocale()] }) ?? '')
+	);
 
 	$effect(() => {
 		if (!dialog) return;
 		if (open && !dialog.open) {
-			cameo = pickCameo(Math.random, lastCameo);
-			lastCameo = cameo.id;
+			if (customCameo === undefined) {
+				cameo = pickCameo(Math.random, lastCameo);
+				lastCameo = cameo.id;
+			}
 			portraitFailed = false;
 			dialog.showModal();
 			soundManager().play(isNewBest ? 'new-best' : 'game-over');
@@ -98,23 +134,19 @@
 			<div class="w-full">{@render children()}</div>
 		{/if}
 
-		{#if cameo}
+		{#if showCameo}
 			<figure
 				class="flex w-full items-center gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-sand p-3 text-start"
 			>
 				<img
 					src={portrait}
-					alt={portrait === CAMEO_PLACEHOLDER
-						? m.cameo_placeholder_alt()
-						: m.cameo_portrait_alt({ name: cameo.name() })}
+					alt={cameoAlt}
 					class="size-20 shrink-0 -rotate-2 rounded-lg border-3 border-ink bg-paper object-cover"
 					onerror={() => (portraitFailed = true)}
 				/>
 				<figcaption class="flex flex-col gap-1">
-					<span class="text-xs font-bold uppercase">{m.gameover_cameo_label()}</span>
-					<span class="leading-snug">
-						{cameo.message({ characterName: CHARACTER_NAME[getLocale()] })}
-					</span>
+					<span class="text-xs font-bold uppercase">{cameoLabel}</span>
+					<span class="leading-snug">{cameoMessage}</span>
 				</figcaption>
 			</figure>
 		{/if}

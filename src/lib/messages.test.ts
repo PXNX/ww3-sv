@@ -1,33 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import settings from '../../project.inlang/settings.json';
+import {
+	baseLocale,
+	hasPersianScript,
+	loadMessages,
+	locales,
+	messageFileCount,
+	messageKeys,
+	messageParameters,
+	missingMessages
+} from './testing/messages';
 
-type MessageFile = Record<string, string>;
-
-const files = import.meta.glob<Record<string, unknown>>('../../messages/*.json', {
-	eager: true,
-	import: 'default'
-});
-
-function loadMessages(locale: string): MessageFile {
-	const messages = { ...files[`../../messages/${locale}.json`] };
-	delete messages.$schema;
-	return messages as MessageFile;
-}
-
-function parameters(message: string): string[] {
-	return [...message.matchAll(/\{(\w+)\}/g)].map((match) => match[1]).sort();
-}
-
-const { baseLocale, locales } = settings;
 const base = loadMessages(baseLocale);
 const translations = locales.filter((locale) => locale !== baseLocale);
 
 describe('message files', () => {
 	it('exist for exactly the three supported languages', () => {
 		expect([...locales].sort()).toEqual(['de', 'en', 'fa']);
-		expect(Object.keys(files).sort()).toEqual(
-			[...locales].sort().map((locale) => `../../messages/${locale}.json`)
-		);
+		expect(messageFileCount()).toBe(locales.length);
 	});
 
 	it.each(translations)('%s has exactly the same keys as the base language', (locale) => {
@@ -47,7 +36,27 @@ describe('message files', () => {
 	it.each(translations)('%s uses the same parameters as the base language', (locale) => {
 		const translated = loadMessages(locale);
 		for (const key of Object.keys(base)) {
-			expect(parameters(translated[key] ?? ''), key).toEqual(parameters(base[key]));
+			expect(messageParameters(translated[key] ?? ''), key).toEqual(messageParameters(base[key]));
 		}
+	});
+});
+
+describe('message helpers for new modes', () => {
+	it('finds keys by prefix and reports a prefix that matches nothing', () => {
+		expect(messageKeys(['game_']).length).toBeGreaterThan(0);
+		expect(missingMessages(['game_'])).toEqual([]);
+		expect(missingMessages(['no_such_prefix_'])).toEqual(['no keys start with "no_such_prefix_"']);
+	});
+
+	it('recognises Persian text', () => {
+		expect(hasPersianScript('ادامه')).toBe(true);
+		expect(hasPersianScript('Resume')).toBe(false);
+	});
+
+	it('has Persian text in the shared pause, game-over and About messages', () => {
+		const fa = loadMessages('fa');
+		const keys = messageKeys(['game_', 'gameover_', 'about_']);
+		const untranslated = keys.filter((key) => !hasPersianScript(fa[key]));
+		expect(untranslated).toEqual([]);
 	});
 });
