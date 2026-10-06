@@ -1,5 +1,5 @@
 <!--
-	About page: a short note that every character is fictional and that the jokes are satire aimed
+	About page: a short note that public figures appear as caricatures, other characters are fictional and that the jokes are satire aimed
 	at governments, bureaucracy and situations (roadmap Section 1.4).
 -->
 <script lang="ts">
