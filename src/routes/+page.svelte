@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { m } from '$lib/paraglide/messages';
 	import { APP_NAME } from '$lib/config';
 	import CharacterMascot from '$lib/components/CharacterMascot.svelte';
@@ -42,4 +43,8 @@
 		<h2 id="choose-mode" class="text-2xl font-bold">{m.home_choose_mode()}</h2>
 		<ModeSelect />
 	</section>
+
+	<footer class="text-center text-sm">
+		<a href={resolve('/about')} class="font-semibold underline">{m.about_link()}</a>
+	</footer>
 </main>

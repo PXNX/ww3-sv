@@ -156,6 +156,7 @@ export class BlocksGame {
 		const lines = lineCount(result.cleared);
 		const move = scoreMove(piece.cells.length, lines, this.combo);
 		const slot = this.selected;
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local lookup, never reactive state
 		const placedNow = new Set(result.placed);
 		const kinds = result.clearedCells.map(
 			(index) => (placedNow.has(index) ? piece.kind : this.board.cells[index]) ?? piece.kind

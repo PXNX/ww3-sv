@@ -22,6 +22,31 @@ export function randomSeed(): number {
 	return Math.floor(Math.random() * 4294967296);
 }
 
+/** Turns any text into a 32-bit seed (FNV-1a), so the same text always gives the same seed */
+export function seedFromString(text: string): number {
+	let hash = 0x811c9dc5;
+	for (let i = 0; i < text.length; i++) {
+		hash ^= text.charCodeAt(i);
+		hash = Math.imul(hash, 0x01000193);
+	}
+	return hash >>> 0;
+}
+
+/** Calendar day as YYYY-MM-DD in the player's local time zone */
+export function dayKey(date: Date = new Date()): string {
+	const month = String(date.getMonth() + 1).padStart(2, '0');
+	const day = String(date.getDate()).padStart(2, '0');
+	return `${date.getFullYear()}-${month}-${day}`;
+}
+
+/**
+ * Seed for a daily puzzle: everyone gets the same puzzle on the same day, and each mode (the
+ * salt, for example 'wordle') gets its own sequence.
+ */
+export function dailySeed(salt: string, date: Date = new Date()): number {
+	return seedFromString(`${salt}:${dayKey(date)}`);
+}
+
 /** Integer in [min, maxExclusive) */
 export function randomInt(random: Random, min: number, maxExclusive: number): number {
 	return min + Math.floor(random() * (maxExclusive - min));
