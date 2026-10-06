@@ -1,14 +1,17 @@
 <!--
-	Convoy Runner playfield: draws the strait on a canvas (crisp on high-density screens) and turns
-	swipes, taps on either half, arrow keys, and A and D into lane changes. Left and right are always
-	physical, also in right-to-left languages.
+	Convoy Runner playfield: draws the strait on a canvas (crisp on high-density screens). The tanker
+	is held with a finger or the mouse and follows it 1:1 sideways (shared PointerDrag helper); a tap
+	beside it, arrow keys, and A and D change lane. Left and right are always physical, also in
+	right-to-left languages.
 -->
 <script lang="ts">
 	import { onMount, type Snippet } from 'svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { FIELD_HEIGHT, FIELD_WIDTH } from '$lib/game/convoy/constants';
+	import { FIELD_HEIGHT, FIELD_WIDTH, SIDE_MARGIN } from '$lib/game/convoy/constants';
 	import { drawScene, loadConvoySprites } from '$lib/game/convoy/drawScene';
+	import { shipRange } from '$lib/game/convoy/runnerStep';
 	import { createFixedLoop, onAppHidden } from '$lib/game/loop';
+	import { PointerDrag, clampToBounds, clientToLocal } from '$lib/game/pointerDrag';
 	import type { ConvoyGame } from '$lib/stores/convoyGame.svelte';
 
 	let {
@@ -25,10 +28,8 @@
 	const MAX_HEIGHT_SHARE = 0.68;
 	/** Below this much total movement, a touch is a tap rather than a drag */
 	const TAP_PX = 24;
-	/** A drag needs to cross this share of a lane's on-screen width to change lanes, so the
-	 * gesture scales with however big the field is actually rendered (bigger on a wide tablet,
-	 * smaller in narrow mobile portrait) instead of a fixed pixel amount */
-	const LANE_SWIPE_SHARE = 0.5;
+	/** A press this close to the tanker (in lanes) only grabs it; a tap further away steers towards it */
+	const TAP_ON_SHIP_LANES = 0.6;
 
 	let wrapper: HTMLDivElement | undefined = $state();
 	let canvas: HTMLCanvasElement | undefined = $state();
@@ -123,58 +124,73 @@
 		}
 	}
 
-	/** Pixel width of one lane as actually rendered, for gestures that should scale with it */
-	function laneWidthPx(): number {
-		return cssWidth / FIELD_WIDTH;
+	/** Field units from the left edge of the field to the center of lane 0 */
+	const LANE_ORIGIN = SIDE_MARGIN + 0.5;
+	const FIELD = { width: FIELD_WIDTH, height: FIELD_HEIGHT };
+
+	/** Viewport x of a sideways position given in lanes (rect: the canvas, measured fresh) */
+	function clientXOfLane(rect: DOMRect, lane: number): number {
+		return rect.left + ((LANE_ORIGIN + lane) / FIELD_WIDTH) * rect.width;
 	}
 
-	let gesture: {
-		id: number;
-		startX: number;
-		startY: number;
-		lastX: number;
-		stepped: boolean;
-	} | null = null;
+	/** Sideways position in lanes under a viewport x */
+	function laneAtClientX(rect: DOMRect, clientX: number): number {
+		return clientToLocal(rect, { x: clientX, y: 0 }, FIELD).x - LANE_ORIGIN;
+	}
+
+	/** The way a tap steers; 0 when the press was on the tanker itself, which only grabs it */
+	let tapDirection: -1 | 0 | 1 = 0;
+
+	// The tanker follows the pointer 1:1 on x: pos = pointer + grab offset, no smoothing. The same
+	// press-and-drag works for touch and mouse; a quick tap beside the tanker still changes lane.
+	const drag = new PointerDrag({
+		// The tanker stays inside the open water (the banks move in and out), in viewport pixels
+		constrain: (position) => {
+			if (!canvas) return position;
+			const rect = canvas.getBoundingClientRect();
+			const { min, max } = shipRange(game.runner);
+			return clampToBounds(position, {
+				minX: clientXOfLane(rect, min),
+				maxX: clientXOfLane(rect, max),
+				minY: Number.NEGATIVE_INFINITY,
+				maxY: Number.POSITIVE_INFINITY
+			});
+		},
+		onMove: (session) => {
+			if (!canvas) return;
+			const rect = canvas.getBoundingClientRect();
+			if (game.runner.dragX === null) {
+				// An oil slick or the keyboard moved the tanker: take hold again where it is now
+				if (!game.grabShip()) return;
+				drag.regrab({ x: clientXOfLane(rect, game.runner.x), y: session.pointer.y });
+			}
+			game.dragShipTo(laneAtClientX(rect, session.position.x));
+		},
+		onEnd: (session) => {
+			game.releaseShip();
+			if (tapDirection !== 0 && session.travelled < TAP_PX) game.steer(tapDirection);
+		},
+		onCancel: () => game.releaseShip()
+	});
 
 	function onPointerDown(event: PointerEvent) {
-		if (game.status !== 'running' || !event.isPrimary) return;
-		gesture = {
-			id: event.pointerId,
-			startX: event.clientX,
-			startY: event.clientY,
-			lastX: event.clientX,
-			stepped: false
-		};
-		canvas?.setPointerCapture(event.pointerId);
-	}
-
-	function onPointerMove(event: PointerEvent) {
-		if (!gesture || gesture.id !== event.pointerId) return;
-		const totalDx = event.clientX - gesture.startX;
-		const totalDy = event.clientY - gesture.startY;
-		// Only once the drag is clearly horizontal, so a vertical scroll attempt is left alone
-		if (Math.abs(totalDx) <= Math.abs(totalDy)) return;
-		const threshold = Math.max(TAP_PX / 2, laneWidthPx() * LANE_SWIPE_SHARE);
-		// A single continuous drag can cross several lanes: keep stepping as it keeps moving
-		while (Math.abs(event.clientX - gesture.lastX) >= threshold) {
-			const direction = event.clientX > gesture.lastX ? 1 : -1;
-			gesture.lastX += direction * threshold;
-			gesture.stepped = true;
-			game.steer(direction);
-		}
-	}
-
-	function onPointerUp(event: PointerEvent) {
-		if (!gesture || gesture.id !== event.pointerId) return;
-		const { startX, startY, stepped } = gesture;
-		gesture = null;
-		if (stepped || !canvas) return;
-		const moved = Math.hypot(event.clientX - startX, event.clientY - startY);
-		if (moved >= TAP_PX) return;
-		// A tap: the left or right half of the field
+		if (game.status !== 'running' || !canvas) return;
 		const rect = canvas.getBoundingClientRect();
-		game.steer(startX - rect.left < rect.width / 2 ? -1 : 1);
+		const shipX = game.runner.x;
+		const began = drag.begin(event, {
+			origin: { x: clientXOfLane(rect, shipX), y: event.clientY },
+			capture: canvas
+		});
+		if (!began) return;
+		const gap = laneAtClientX(rect, event.clientX) - shipX;
+		tapDirection = Math.abs(gap) <= TAP_ON_SHIP_LANES ? 0 : gap < 0 ? -1 : 1;
+		game.grabShip();
 	}
+
+	// Pausing, game over or a restart ends any hold
+	$effect(() => {
+		if (game.status !== 'running') drag.abort();
+	});
 </script>
 
 <svelte:window onkeydown={onKeydown} />
@@ -191,9 +207,9 @@
 				class="block size-full touch-none select-none"
 				aria-label={m.convoy_playfield_label()}
 				onpointerdown={onPointerDown}
-				onpointermove={onPointerMove}
-				onpointerup={onPointerUp}
-				onpointercancel={() => (gesture = null)}
+				onpointermove={(event) => drag.pointerMove(event)}
+				onpointerup={(event) => drag.pointerUp(event)}
+				onpointercancel={(event) => drag.pointerCancel(event)}
 				oncontextmenu={(event) => event.preventDefault()}
 			></canvas>
 			{#if children}
