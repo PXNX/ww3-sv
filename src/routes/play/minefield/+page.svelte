@@ -3,6 +3,7 @@
 	import FlagModeToggle from '$lib/components/FlagModeToggle.svelte';
 	import GameOverModal from '$lib/components/GameOverModal.svelte';
 	import GameShell from '$lib/components/GameShell.svelte';
+	import LivesBar from '$lib/components/LivesBar.svelte';
 	import MineGrid, { convoyDurationMs } from '$lib/components/MineGrid.svelte';
 	import MinefieldDifficultyPicker, {
 		DIFFICULTY_NAMES
@@ -155,6 +156,9 @@
 				<img src={spriteSrc('mine')} alt="" class="size-4" />
 				<span class="sr-only">{m.minefield_mines_left_label()}:</span>
 				{game.minesLeft}
+			</span>
+			<span class="flex items-center rounded-md border-2 border-ink bg-paper px-2 py-0.5">
+				<LivesBar lives={game.tankersLeft} max={TANKER_COUNT} class="text-base" />
 			</span>
 		</div>
 
