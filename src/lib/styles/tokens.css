@@ -62,6 +62,9 @@
 	--color-mustard: #ddb93c;
 	--color-banner-slate: #6a7c9b;
 	--color-explosion-yellow: #f5c83a;
+	/* Lives: deep red hearts with a darker outline (LivesBar) */
+	--color-heart: #8b0a1a;
+	--color-heart-outline: #4a0510;
 
 	--font-display: 'Baloo 2', ui-rounded, system-ui, sans-serif;
 	--font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;

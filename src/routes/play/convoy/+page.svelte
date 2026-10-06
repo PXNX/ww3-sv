@@ -6,13 +6,13 @@
 	import ConvoyCanvas from '$lib/components/ConvoyCanvas.svelte';
 	import GameOverModal from '$lib/components/GameOverModal.svelte';
 	import GameShell from '$lib/components/GameShell.svelte';
+	import LivesBar from '$lib/components/LivesBar.svelte';
 	import { MAX_HULL } from '$lib/game/convoy/constants';
 	import { drawConvoyBoard } from '$lib/game/convoy/drawScene';
 	import { prefersReducedMotion } from '$lib/game/loop';
 	import { firstPlay } from '$lib/services/tutorial';
 	import { ConvoyGame } from '$lib/stores/convoyGame.svelte';
 	import { CHARACTER_NAME } from '$lib/theme/character';
-	import IconHeart from '~icons/lucide/heart';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
 	import IconShield from '~icons/lucide/shield';
@@ -51,18 +51,9 @@
 		aria-label={m.mode_convoy_name()}
 	>
 		<span
-			class="inline-flex items-center gap-1 rounded-[10px_6px_12px_8px] border-3 border-ink bg-paper px-2 py-0.5"
-			role="status"
-			aria-label={m.convoy_hull_status({ hull: game.hull, max: MAX_HULL })}
+			class="inline-flex items-center rounded-[10px_6px_12px_8px] border-3 border-ink bg-paper px-2 py-0.5"
 		>
-			<span aria-hidden="true">{m.convoy_hull()}</span>
-			{#each Array.from({ length: MAX_HULL }, (_, index) => index) as index (index)}
-				<IconHeart
-					class="size-4 {index < game.hull ? 'fill-tie-red' : 'opacity-30'}"
-					aria-hidden="true"
-				/>
-			{/each}
-			<span aria-hidden="true" class="tabular-nums">{game.hull}/{MAX_HULL}</span>
+			<LivesBar lives={game.hull} max={MAX_HULL} class="text-base" />
 		</span>
 		<span class="rounded-[6px_12px_8px_10px] border-3 border-ink bg-paper px-2 py-0.5 tabular-nums">
 			{m.convoy_distance()}: {m.convoy_distance_value({ distance: game.distance.toFixed(1) })}
