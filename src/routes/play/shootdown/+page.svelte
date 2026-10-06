@@ -4,13 +4,13 @@
 	import { getLocale } from '$lib/paraglide/runtime';
 	import GameShell from '$lib/components/GameShell.svelte';
 	import GameOverModal from '$lib/components/GameOverModal.svelte';
+	import LivesBar from '$lib/components/LivesBar.svelte';
 	import ShootdownCanvas from '$lib/components/ShootdownCanvas.svelte';
 	import ShootdownCommander from '$lib/components/ShootdownCommander.svelte';
 	import { STARTING_LIVES } from '$lib/game/shootdown/shootdownStep';
 	import { firstPlay } from '$lib/services/tutorial';
 	import { ShootdownGame } from '$lib/stores/shootdownGame.svelte';
 	import { CHARACTER_NAME } from '$lib/theme/character';
-	import IconHeart from '~icons/lucide/heart';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
 	import IconRepeat from '~icons/lucide/repeat';
@@ -87,19 +87,7 @@
 				{/if}
 			</p>
 
-			<div
-				class="flex shrink-0 items-center gap-0.5"
-				role="img"
-				aria-label={m.shootdown_lives({ lives: game.lives })}
-			>
-				{#each { length: STARTING_LIVES }, index (index)}
-					<IconHeart
-						class="size-5 {index < game.lives ? 'fill-tie-red' : 'opacity-40'}"
-						stroke-width="2.5"
-						aria-hidden="true"
-					/>
-				{/each}
-			</div>
+			<LivesBar lives={game.lives} max={STARTING_LIVES} class="shrink-0 text-xl" />
 		</div>
 
 		<ShootdownCanvas {game} {showTutorial} />
