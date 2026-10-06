@@ -6,6 +6,7 @@
 	import { onMount } from 'svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { getLocale } from '$lib/paraglide/runtime';
+	import { textDirection } from '$lib/i18n';
 	import { createFixedLoop, prefersReducedMotion, type FixedLoop } from '$lib/game/loop';
 	import { suppliedFlamingoAssets } from '$lib/game/flamingo/assets';
 	import { WORLD_WIDTH } from '$lib/game/flamingo/physics';
@@ -41,7 +42,7 @@
 		strikeBiggest: m.flamingo_strike_biggest(),
 		strikeTanks: (count) => m.flamingo_strike_tanks({ count }),
 		slogan: m.flamingo_strike_slogan(),
-		direction: getLocale() === 'fa' ? 'rtl' : 'ltr'
+		direction: textDirection(getLocale())
 	};
 
 	function render() {

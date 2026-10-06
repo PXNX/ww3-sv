@@ -14,7 +14,8 @@ export const MASCOT_PLACEHOLDER = `${MASCOT_DIRECTORY}/_placeholder-mascot.svg`;
 export const CHARACTER_NAME: Record<Locale, string> = {
 	en: 'Trump',
 	de: 'Trump',
-	fa: 'ترامپ'
+	fa: 'ترامپ',
+	ar: 'ترامب'
 };
 
 const POSE_FILES: Record<MascotPose, string> = {

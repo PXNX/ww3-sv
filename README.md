@@ -10,7 +10,7 @@ settings stay in the browser's local storage.
 - SvelteKit with Svelte 5 runes, deployed with `@sveltejs/adapter-vercel`
 - Tailwind CSS and daisyUI (custom `ww3` theme)
 - unplugin-icons with the Fluent, Lucide, Fluent Emoji, and Circle Flags icon sets (bundled locally)
-- inlang Paraglide JS for English, German, and Persian (right-to-left)
+- inlang Paraglide JS for English, German, Persian, and Arabic (both right-to-left)
 - Vitest for pure logic unit tests
 - Bun 1.4.2 as package manager and local runtime
 - Self-hosted Baloo 2 display font (SIL Open Font License) under `static/fonts/`
@@ -44,7 +44,7 @@ Before every commit, all of these must pass: `bun install --frozen-lockfile`, `b
 ## Project layout
 
 ```
-messages/{en,de,fa}.json       translatable strings (key parity is enforced by a unit test)
+messages/{en,de,fa,ar}.json    translatable strings (key parity is enforced by a unit test)
 project.inlang/settings.json   inlang project configuration
 src/lib/modes/registry.ts      single list of game modes; the start screen renders from it
 src/lib/theme/character.ts     swappable mascot configuration (name, poses, asset paths)
@@ -61,7 +61,7 @@ static/fonts/                  self-hosted font files and license
 
 The locale is taken from local storage if the player picked one in the locale switcher, otherwise
 from the browser language, and falls back to English. Pages are rendered in the browser only
-(`ssr = false`, prerendered shells), because the locale is only known on the device. When Persian
+(`ssr = false`, prerendered shells), because the locale is only known on the device. When Persian or Arabic
 is active, the document direction switches to right-to-left; playing fields must carry the
 `data-playfield` attribute so they always stay left-to-right.
 
