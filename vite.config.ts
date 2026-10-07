@@ -12,7 +12,7 @@ export default defineConfig({
 			preprocess: vitePreprocess(),
 
 			// Functions run on Vercel's Bun runtime; the Bun version is set by bunVersion in vercel.json
-			adapter: adapter({ runtime: 'experimental_bun1.x' })
+			adapter: adapter({ runtime: 'bun1.x' })
 		}),
 		paraglideVitePlugin({
 			project: './project.inlang',
