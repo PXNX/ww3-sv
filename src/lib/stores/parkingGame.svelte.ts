@@ -134,6 +134,8 @@ export class ParkingGame {
 	}
 
 	backToSelect() {
+		// Leaving a won level also closes its win panel, which is open while `won` is set
+		this.won = false;
 		this.screen = 'select';
 	}
 

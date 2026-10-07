@@ -2,12 +2,11 @@
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { APP_NAME } from '#lib/config.js';
-	import CharacterMascot from '#lib/components/CharacterMascot.svelte';
+	import CameoLineup from '#lib/components/CameoLineup.svelte';
 	import InstallPwaHint from '#lib/components/InstallPwaHint.svelte';
 	import LocaleSwitcher from '#lib/components/LocaleSwitcher.svelte';
 	import ModeSelect from '#lib/components/ModeSelect.svelte';
 	import SoundToggle from '#lib/components/SoundToggle.svelte';
-	import StraitScene from '#lib/components/scenery/StraitScene.svelte';
 </script>
 
 <main
@@ -28,14 +27,8 @@
 		</h1>
 		<p class="text-lg font-semibold">{m.home_tagline({ location: m.location_name() })}</p>
 
-		<div class="relative mt-2 w-full max-w-2xl">
-			<div class="sticker overflow-hidden p-0" style:--tilt="-1deg">
-				<StraitScene />
-			</div>
-			<CharacterMascot
-				pose="idle"
-				class="absolute -end-2 -bottom-6 w-24 rotate-6 drop-shadow-[3px_3px_0_var(--color-ink)] sm:w-32"
-			/>
+		<div class="sticker mt-2 w-full max-w-2xl bg-sand p-0" style:--tilt="-1deg">
+			<CameoLineup />
 		</div>
 	</header>
 
