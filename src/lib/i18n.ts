@@ -7,7 +7,9 @@ export const LOCALE_NAMES: Record<Locale, string> = {
 	en: 'English',
 	de: 'Deutsch',
 	fa: 'فارسی',
-	ar: 'العربية'
+	ar: 'العربية',
+	uk: 'Українська',
+	ru: 'Русский'
 };
 
 export function textDirection(locale: Locale): 'ltr' | 'rtl' {

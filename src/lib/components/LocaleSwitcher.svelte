@@ -11,7 +11,7 @@
 	}
 </script>
 
-<label class="btn-chunky py-1 ps-3 pe-1">
+<label class="btn-chunky py-1 ps-3 pe-1 has-[:focus-visible]:outline-none">
 	<IconLanguages class="size-5" aria-hidden="true" />
 	<span class="sr-only">{m.language_label()}</span>
 	<select
