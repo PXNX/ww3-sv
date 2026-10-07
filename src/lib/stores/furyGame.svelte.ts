@@ -304,6 +304,7 @@ export class FuryGame {
 			this.progress = recordWin(this.progress, level.id, match.stars);
 			localStore().write(PROGRESS_KEY, this.progress);
 			this.showWin = true;
+			if (match.stars === 3) soundManager().play('welcome-to-ukraine');
 		} else {
 			this.isNewBest = false;
 			this.showFail = true;
