@@ -226,6 +226,22 @@
 				</button>
 			{/each}
 		{/each}
+		{#if !reducedMotion && feedback && clearing.length > 0}
+			<!-- A soft shockwave rolls out from the piece that completed the line -->
+			{#key feedback.id}
+				<span
+					class="pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-[5px]"
+					aria-hidden="true"
+				>
+					<span
+						class="blocks-blast absolute"
+						style:left="{((feedback.origin[1] + 0.5) / board.size) * 100}%"
+						style:top="{((feedback.origin[0] + 0.5) / board.size) * 100}%"
+						style:--reach={Math.min(feedback.lines, 3) * 0.5 + 1.5}
+					></span>
+				</span>
+			{/key}
+		{/if}
 		{#if popup && feedback}
 			{#key feedback.id}
 				<span
@@ -310,6 +326,34 @@
 		}
 	}
 
+	/* A thin ring plus a faint glow that expand from the origin and fade out; the board is square, so
+	   the size is a share of the board width */
+	@keyframes blocks-blast {
+		0% {
+			scale: 0.05;
+			opacity: 0.55;
+		}
+		100% {
+			scale: var(--reach);
+			opacity: 0;
+		}
+	}
+
+	.blocks-blast {
+		width: 50%;
+		aspect-ratio: 1;
+		margin: -25% 0 0 -25%;
+		border: 3px solid rgb(255 255 255 / 0.9);
+		border-radius: 50%;
+		background: radial-gradient(
+			circle,
+			transparent 45%,
+			rgb(255 214 69 / 0.35) 70%,
+			transparent 72%
+		);
+		animation: blocks-blast 520ms ease-out both;
+	}
+
 	.blocks-clear-flash {
 		border: 2px solid var(--color-ink);
 		border-radius: 5px 3px 6px 4px;
@@ -334,6 +378,7 @@
 
 	@media (prefers-reduced-motion: reduce) {
 		.blocks-clear,
+		.blocks-blast,
 		.blocks-popup {
 			display: none;
 		}

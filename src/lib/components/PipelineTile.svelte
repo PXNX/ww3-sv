@@ -15,7 +15,9 @@
 		broken,
 		repair,
 		repairing,
-		reducedMotion
+		reducedMotion,
+		inbound = [],
+		delayMs = 0
 	}: {
 		kind: TileKind;
 		rotation: Rotation;
@@ -24,6 +26,10 @@
 		repair: number;
 		repairing: boolean;
 		reducedMotion: boolean;
+		/** Per arm (in the order of the unrotated shape): oil enters the tile through it */
+		inbound?: boolean[];
+		/** How long oil takes to reach this tile, so a new connection fills the pipes one after another */
+		delayMs?: number;
 	} = $props();
 
 	// Count whole turns so a turn from 270 to 0 degrees keeps spinning forward
@@ -43,6 +49,8 @@
 	};
 	const arms = $derived(openings(kind, 0).map((direction) => ENDS[direction]));
 	const ringLength = 2 * Math.PI * 42;
+	const oil = $derived(filled ? '#2b2f36' : '#ffffff');
+	const fillDelay = $derived(filled && !reducedMotion ? `${delayMs}ms` : '0ms');
 </script>
 
 <svg viewBox="0 0 100 100" class="pointer-events-none size-full" aria-hidden="true">
@@ -62,23 +70,37 @@
 				y1="50"
 				x2={x}
 				y2={y}
-				stroke={filled ? '#2b2f36' : '#ffffff'}
+				class="oil"
+				class:animated={!reducedMotion}
+				style:stroke={oil}
+				style:transition-delay={fillDelay}
 				stroke-width="24"
 			/>
 		{/each}
-		<circle cx="50" cy="50" r="12" fill={filled ? '#2b2f36' : '#ffffff'} />
+		<circle
+			cx="50"
+			cy="50"
+			r="12"
+			class="oil"
+			class:animated={!reducedMotion}
+			style:fill={oil}
+			style:transition-delay={fillDelay}
+		/>
 		{#if filled && !broken}
+			<!-- Gold beads run along every arm in the direction the oil really travels: arms that
+			     bring oil in are drawn from their end to the middle, the others from the middle out -->
 			{#each arms as [x, y], index (index)}
 				<line
-					x1="50"
-					y1="50"
-					x2={x}
-					y2={y}
+					x1={inbound[index] ? x : 50}
+					y1={inbound[index] ? y : 50}
+					x2={inbound[index] ? 50 : x}
+					y2={inbound[index] ? 50 : y}
 					class="flow"
 					class:moving={!reducedMotion}
 					stroke="#ddb93c"
-					stroke-width="6"
-					stroke-dasharray="6 12"
+					stroke-width="7"
+					stroke-linecap="round"
+					stroke-dasharray="0.1 16"
 				/>
 			{/each}
 		{/if}
@@ -135,13 +157,20 @@
 		transition: transform 220ms var(--ease-spring);
 	}
 
+	/* The oil colors the pipe in after the oil in front of it, so a new connection fills visibly */
+	.oil.animated {
+		transition:
+			stroke 180ms ease-out,
+			fill 180ms ease-out;
+	}
+
 	.flow.moving {
-		animation: flow 700ms linear infinite;
+		animation: flow 600ms linear infinite;
 	}
 
 	@keyframes flow {
 		to {
-			stroke-dashoffset: -18;
+			stroke-dashoffset: -16.1;
 		}
 	}
 
