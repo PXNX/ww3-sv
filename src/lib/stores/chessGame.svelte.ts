@@ -70,11 +70,23 @@ export type QuipKind = 'greeting' | 'calm' | 'blunder' | 'check' | 'takes' | 'lo
 const QUIPS: Record<QuipKind, (() => string)[]> = {
 	greeting: [m.chess_quip_greeting_1],
 	calm: [m.chess_quip_calm_1, m.chess_quip_calm_2],
-	blunder: [m.chess_quip_blunder_1, m.chess_quip_blunder_2, m.chess_quip_blunder_3],
-	check: [m.chess_quip_check_1, m.chess_quip_check_2],
-	takes: [m.chess_quip_takes_1, m.chess_quip_takes_2],
-	'loses-piece': [m.chess_quip_loses_piece_1, m.chess_quip_loses_piece_2],
-	card: [m.chess_quip_card_1, m.chess_quip_card_2]
+	blunder: [
+		m.chess_quip_blunder_1,
+		m.chess_quip_blunder_2,
+		m.chess_quip_blunder_3,
+		m.chess_quip_blunder_4,
+		m.chess_quip_blunder_5,
+		m.chess_quip_blunder_6
+	],
+	check: [m.chess_quip_check_1, m.chess_quip_check_2, m.chess_quip_check_3],
+	takes: [m.chess_quip_takes_1, m.chess_quip_takes_2, m.chess_quip_takes_3, m.chess_quip_takes_4],
+	'loses-piece': [
+		m.chess_quip_loses_piece_1,
+		m.chess_quip_loses_piece_2,
+		m.chess_quip_loses_piece_3,
+		m.chess_quip_loses_piece_4
+	],
+	card: [m.chess_quip_card_1, m.chess_quip_card_2, m.chess_quip_card_3]
 };
 
 /** Something Putin says, as a kind and a variant; the id lets the view replay the pop-in */
@@ -147,6 +159,46 @@ const CARD_TEXT: Record<
 		name: m.chess_card_bear_hug_name,
 		description: m.chess_card_bear_hug_description,
 		played: m.chess_card_bear_hug_played
+	},
+	javelin: {
+		name: m.chess_card_javelin_name,
+		description: m.chess_card_javelin_description,
+		played: m.chess_card_javelin_played
+	},
+	bayraktar: {
+		name: m.chess_card_bayraktar_name,
+		description: m.chess_card_bayraktar_description,
+		played: m.chess_card_bayraktar_played
+	},
+	himars: {
+		name: m.chess_card_himars_name,
+		description: m.chess_card_himars_description,
+		played: m.chess_card_himars_played
+	},
+	'grain-corridor': {
+		name: m.chess_card_grain_corridor_name,
+		description: m.chess_card_grain_corridor_description,
+		played: m.chess_card_grain_corridor_played
+	},
+	'lend-lease': {
+		name: m.chess_card_lend_lease_name,
+		description: m.chess_card_lend_lease_description,
+		played: m.chess_card_lend_lease_played
+	},
+	'frozen-assets': {
+		name: m.chess_card_frozen_assets_name,
+		description: m.chess_card_frozen_assets_description,
+		played: m.chess_card_frozen_assets_played
+	},
+	'trade-war': {
+		name: m.chess_card_trade_war_name,
+		description: m.chess_card_trade_war_description,
+		played: m.chess_card_trade_war_played
+	},
+	'art-of-the-deal': {
+		name: m.chess_card_art_of_the_deal_name,
+		description: m.chess_card_art_of_the_deal_description,
+		played: m.chess_card_art_of_the_deal_played
 	}
 };
 
@@ -321,7 +373,9 @@ export class ChessGame {
 		if (definition.target === 'piece' && target === undefined) return;
 
 		const param =
-			definition.target === 'piece' ? squareName(target!) : rollCardParam(id, this.random);
+			definition.target === 'piece'
+				? squareName(target!)
+				: rollCardParam(id, this.random, this.match.position);
 		const play: CardPlay = param ? { id, param } : { id };
 		const next = playCard(this.match, play);
 		if (!next) {
