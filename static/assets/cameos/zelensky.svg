@@ -1,6 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Caricature of Volodymyr Zelensky">
 	<!-- Original cartoon caricature, flat colours and thin outlines with big soft heads in the style of the freeonis videos; not traced from any reference -->
-	<rect width="200" height="200" fill="#CFE6F2" stroke="none"/>
 	<g stroke="#1c1c1c" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
 		<path d="M30 206 Q34 148 100 146 Q166 148 170 206 Z" fill="#5E626B"/>
 		<path d="M76 146 Q100 168 124 146" fill="none" stroke-width="3"/>

@@ -4,7 +4,9 @@ import { createRandom } from '#lib/game/random.js';
 import {
 	CAMEO_PLACEHOLDER,
 	CAMEOS,
+	MASCOT_FLAG,
 	cameoAsset,
+	cameoFlag,
 	cameoPortrait,
 	guestPortrait,
 	pickCameo,
@@ -53,6 +55,13 @@ describe('cameos', () => {
 			expect(cameoPortrait(cameo.id)).toBe(`/assets/cameos/${cameo.id}.svg`);
 			expect(existsSync(`static/assets/cameos/${cameo.id}.svg`)).toBe(true);
 		}
+	});
+
+	it('has a flag file for every cameo and the mascot', () => {
+		for (const cameo of CAMEOS) {
+			expect(existsSync(`static${cameoFlag(cameo.id)}`)).toBe(true);
+		}
+		expect(existsSync(`static${MASCOT_FLAG}`)).toBe(true);
 	});
 
 	it('has a portrait file for every Putin mood', () => {
