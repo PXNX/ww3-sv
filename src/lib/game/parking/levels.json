@@ -1,0 +1,633 @@
+[
+	{
+		"id": "e01",
+		"tier": "easy",
+		"width": 5,
+		"height": 5,
+		"par": 2,
+		"tanker": { "row": 3, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "v", "length": 3, "row": 1, "col": 2 },
+			{ "axis": "h", "length": 2, "row": 1, "col": 0 },
+			{ "axis": "h", "length": 2, "row": 0, "col": 0 },
+			{ "axis": "v", "length": 3, "row": 0, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 1, "col": 4 },
+			{ "axis": "h", "length": 2, "row": 4, "col": 0 }
+		],
+		"rocks": []
+	},
+	{
+		"id": "e02",
+		"tier": "easy",
+		"width": 5,
+		"height": 5,
+		"par": 3,
+		"tanker": { "row": 3, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "h", "length": 2, "row": 2, "col": 0 },
+			{ "axis": "v", "length": 2, "row": 1, "col": 3 },
+			{ "axis": "h", "length": 2, "row": 0, "col": 0 },
+			{ "axis": "h", "length": 2, "row": 0, "col": 3 },
+			{ "axis": "v", "length": 3, "row": 1, "col": 4 }
+		],
+		"rocks": []
+	},
+	{
+		"id": "e03",
+		"tier": "easy",
+		"width": 5,
+		"height": 5,
+		"par": 3,
+		"tanker": { "row": 1, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "h", "length": 2, "row": 4, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 4 },
+			{ "axis": "h", "length": 2, "row": 2, "col": 2 },
+			{ "axis": "h", "length": 2, "row": 0, "col": 0 },
+			{ "axis": "h", "length": 2, "row": 3, "col": 3 },
+			{ "axis": "h", "length": 2, "row": 4, "col": 0 }
+		],
+		"rocks": [[0, 3]]
+	},
+	{
+		"id": "e04",
+		"tier": "easy",
+		"width": 5,
+		"height": 5,
+		"par": 4,
+		"tanker": { "row": 1, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "h", "length": 3, "row": 4, "col": 0 },
+			{ "axis": "h", "length": 2, "row": 0, "col": 0 },
+			{ "axis": "v", "length": 2, "row": 1, "col": 4 },
+			{ "axis": "h", "length": 3, "row": 3, "col": 1 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 3 }
+		],
+		"rocks": []
+	},
+	{
+		"id": "e05",
+		"tier": "easy",
+		"width": 6,
+		"height": 6,
+		"par": 4,
+		"tanker": { "row": 2, "col": 1, "length": 2 },
+		"ships": [
+			{ "axis": "v", "length": 3, "row": 0, "col": 4 },
+			{ "axis": "h", "length": 3, "row": 4, "col": 2 },
+			{ "axis": "v", "length": 3, "row": 0, "col": 3 }
+		],
+		"rocks": []
+	},
+	{
+		"id": "e06",
+		"tier": "easy",
+		"width": 6,
+		"height": 6,
+		"par": 5,
+		"tanker": { "row": 4, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "h", "length": 3, "row": 1, "col": 0 },
+			{ "axis": "h", "length": 2, "row": 3, "col": 0 },
+			{ "axis": "v", "length": 3, "row": 2, "col": 2 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 1, "col": 5 },
+			{ "axis": "h", "length": 2, "row": 0, "col": 0 }
+		],
+		"rocks": [[2, 1]]
+	},
+	{
+		"id": "e07",
+		"tier": "easy",
+		"width": 6,
+		"height": 6,
+		"par": 6,
+		"tanker": { "row": 3, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "h", "length": 2, "row": 2, "col": 1 },
+			{ "axis": "h", "length": 2, "row": 4, "col": 3 },
+			{ "axis": "v", "length": 3, "row": 3, "col": 5 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 3 },
+			{ "axis": "h", "length": 2, "row": 1, "col": 4 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 3 }
+		],
+		"rocks": [[1, 1]]
+	},
+	{
+		"id": "e08",
+		"tier": "easy",
+		"width": 6,
+		"height": 6,
+		"par": 6,
+		"tanker": { "row": 1, "col": 1, "length": 2 },
+		"ships": [
+			{ "axis": "v", "length": 2, "row": 0, "col": 4 },
+			{ "axis": "h", "length": 2, "row": 2, "col": 0 },
+			{ "axis": "v", "length": 2, "row": 1, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 4 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 3 },
+			{ "axis": "v", "length": 3, "row": 1, "col": 5 }
+		],
+		"rocks": []
+	},
+	{
+		"id": "e09",
+		"tier": "easy",
+		"width": 6,
+		"height": 6,
+		"par": 7,
+		"tanker": { "row": 3, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "v", "length": 2, "row": 3, "col": 2 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 4 },
+			{ "axis": "h", "length": 3, "row": 2, "col": 1 },
+			{ "axis": "h", "length": 3, "row": 1, "col": 1 },
+			{ "axis": "h", "length": 3, "row": 5, "col": 2 }
+		],
+		"rocks": [[0, 3]]
+	},
+	{
+		"id": "e10",
+		"tier": "easy",
+		"width": 6,
+		"height": 6,
+		"par": 8,
+		"tanker": { "row": 1, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "v", "length": 2, "row": 0, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 3 },
+			{ "axis": "h", "length": 3, "row": 5, "col": 2 },
+			{ "axis": "v", "length": 2, "row": 4, "col": 0 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 2 },
+			{ "axis": "h", "length": 3, "row": 2, "col": 2 }
+		],
+		"rocks": [[0, 0]]
+	},
+	{
+		"id": "m01",
+		"tier": "medium",
+		"width": 6,
+		"height": 6,
+		"par": 9,
+		"tanker": { "row": 1, "col": 1, "length": 2 },
+		"ships": [
+			{ "axis": "v", "length": 2, "row": 1, "col": 4 },
+			{ "axis": "h", "length": 2, "row": 3, "col": 0 },
+			{ "axis": "v", "length": 2, "row": 1, "col": 5 },
+			{ "axis": "h", "length": 2, "row": 0, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 4 },
+			{ "axis": "h", "length": 2, "row": 4, "col": 2 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 3 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 3 },
+			{ "axis": "h", "length": 2, "row": 3, "col": 2 },
+			{ "axis": "v", "length": 3, "row": 0, "col": 0 }
+		],
+		"rocks": []
+	},
+	{
+		"id": "m02",
+		"tier": "medium",
+		"width": 6,
+		"height": 6,
+		"par": 10,
+		"tanker": { "row": 2, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "h", "length": 2, "row": 0, "col": 3 },
+			{ "axis": "h", "length": 2, "row": 4, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 3 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 2 },
+			{ "axis": "v", "length": 2, "row": 1, "col": 5 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 4 },
+			{ "axis": "h", "length": 2, "row": 4, "col": 1 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 0 },
+			{ "axis": "h", "length": 2, "row": 0, "col": 1 },
+			{ "axis": "h", "length": 2, "row": 1, "col": 3 }
+		],
+		"rocks": [
+			[3, 2],
+			[5, 5],
+			[0, 0]
+		]
+	},
+	{
+		"id": "m03",
+		"tier": "medium",
+		"width": 6,
+		"height": 6,
+		"par": 11,
+		"tanker": { "row": 4, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "h", "length": 2, "row": 2, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 1 },
+			{ "axis": "v", "length": 2, "row": 4, "col": 2 },
+			{ "axis": "h", "length": 2, "row": 1, "col": 0 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 4 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 5 },
+			{ "axis": "h", "length": 2, "row": 1, "col": 2 }
+		],
+		"rocks": [
+			[0, 2],
+			[3, 0],
+			[0, 5]
+		]
+	},
+	{
+		"id": "m04",
+		"tier": "medium",
+		"width": 6,
+		"height": 6,
+		"par": 11,
+		"tanker": { "row": 1, "col": 1, "length": 2 },
+		"ships": [
+			{ "axis": "v", "length": 2, "row": 1, "col": 5 },
+			{ "axis": "h", "length": 2, "row": 4, "col": 1 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 1 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 4, "col": 0 },
+			{ "axis": "h", "length": 2, "row": 2, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 2 },
+			{ "axis": "h", "length": 2, "row": 4, "col": 3 }
+		],
+		"rocks": [
+			[3, 0],
+			[0, 1],
+			[5, 2]
+		]
+	},
+	{
+		"id": "m05",
+		"tier": "medium",
+		"width": 6,
+		"height": 6,
+		"par": 12,
+		"tanker": { "row": 2, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "v", "length": 2, "row": 2, "col": 4 },
+			{ "axis": "h", "length": 2, "row": 0, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 2 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 5 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 0 },
+			{ "axis": "h", "length": 2, "row": 4, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 5 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 0 }
+		],
+		"rocks": [
+			[4, 1],
+			[4, 2]
+		]
+	},
+	{
+		"id": "m06",
+		"tier": "medium",
+		"width": 6,
+		"height": 6,
+		"par": 13,
+		"tanker": { "row": 4, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "v", "length": 2, "row": 2, "col": 2 },
+			{ "axis": "v", "length": 2, "row": 4, "col": 5 },
+			{ "axis": "h", "length": 2, "row": 0, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 1, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 2 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 1 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 5 },
+			{ "axis": "v", "length": 3, "row": 1, "col": 0 }
+		],
+		"rocks": []
+	},
+	{
+		"id": "m07",
+		"tier": "medium",
+		"width": 6,
+		"height": 6,
+		"par": 13,
+		"tanker": { "row": 3, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "v", "length": 2, "row": 0, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 3 },
+			{ "axis": "v", "length": 3, "row": 3, "col": 5 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 2 },
+			{ "axis": "v", "length": 3, "row": 1, "col": 2 },
+			{ "axis": "h", "length": 2, "row": 0, "col": 4 },
+			{ "axis": "h", "length": 2, "row": 2, "col": 3 }
+		],
+		"rocks": [
+			[2, 1],
+			[0, 0]
+		]
+	},
+	{
+		"id": "m08",
+		"tier": "medium",
+		"width": 6,
+		"height": 6,
+		"par": 14,
+		"tanker": { "row": 1, "col": 1, "length": 2 },
+		"ships": [
+			{ "axis": "v", "length": 2, "row": 0, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 3 },
+			{ "axis": "h", "length": 2, "row": 3, "col": 0 },
+			{ "axis": "h", "length": 3, "row": 2, "col": 3 },
+			{ "axis": "v", "length": 3, "row": 0, "col": 0 },
+			{ "axis": "h", "length": 2, "row": 4, "col": 0 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 4 },
+			{ "axis": "h", "length": 2, "row": 3, "col": 2 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 0 }
+		],
+		"rocks": [[0, 5]]
+	},
+	{
+		"id": "m09",
+		"tier": "medium",
+		"width": 6,
+		"height": 6,
+		"par": 15,
+		"tanker": { "row": 2, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "v", "length": 3, "row": 0, "col": 5 },
+			{ "axis": "h", "length": 2, "row": 0, "col": 2 },
+			{ "axis": "h", "length": 3, "row": 5, "col": 1 },
+			{ "axis": "h", "length": 2, "row": 4, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 1, "col": 2 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 4 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 2 },
+			{ "axis": "v", "length": 2, "row": 1, "col": 3 }
+		],
+		"rocks": [
+			[0, 1],
+			[1, 1],
+			[1, 0]
+		]
+	},
+	{
+		"id": "m10",
+		"tier": "medium",
+		"width": 6,
+		"height": 6,
+		"par": 16,
+		"tanker": { "row": 1, "col": 1, "length": 2 },
+		"ships": [
+			{ "axis": "v", "length": 2, "row": 0, "col": 5 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 1, "col": 4 },
+			{ "axis": "v", "length": 3, "row": 3, "col": 2 },
+			{ "axis": "v", "length": 2, "row": 4, "col": 3 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 4 },
+			{ "axis": "h", "length": 2, "row": 2, "col": 1 },
+			{ "axis": "h", "length": 2, "row": 0, "col": 2 },
+			{ "axis": "v", "length": 2, "row": 4, "col": 1 }
+		],
+		"rocks": [
+			[2, 0],
+			[4, 0],
+			[0, 0]
+		]
+	},
+	{
+		"id": "h01",
+		"tier": "hard",
+		"width": 6,
+		"height": 6,
+		"par": 17,
+		"tanker": { "row": 2, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "v", "length": 3, "row": 1, "col": 2 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 1 },
+			{ "axis": "h", "length": 2, "row": 0, "col": 0 },
+			{ "axis": "h", "length": 2, "row": 4, "col": 2 },
+			{ "axis": "h", "length": 3, "row": 5, "col": 1 },
+			{ "axis": "v", "length": 2, "row": 1, "col": 5 },
+			{ "axis": "v", "length": 2, "row": 4, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 3 }
+		],
+		"rocks": [
+			[1, 4],
+			[1, 3]
+		]
+	},
+	{
+		"id": "h02",
+		"tier": "hard",
+		"width": 6,
+		"height": 6,
+		"par": 18,
+		"tanker": { "row": 2, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "h", "length": 2, "row": 5, "col": 3 },
+			{ "axis": "v", "length": 3, "row": 0, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 4, "col": 5 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 2 },
+			{ "axis": "h", "length": 2, "row": 1, "col": 0 },
+			{ "axis": "h", "length": 2, "row": 4, "col": 1 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 0 },
+			{ "axis": "v", "length": 2, "row": 1, "col": 4 },
+			{ "axis": "h", "length": 3, "row": 0, "col": 0 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 1 }
+		],
+		"rocks": [[0, 5]]
+	},
+	{
+		"id": "h03",
+		"tier": "hard",
+		"width": 6,
+		"height": 6,
+		"par": 19,
+		"tanker": { "row": 4, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "v", "length": 3, "row": 2, "col": 2 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 3 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 1, "col": 0 },
+			{ "axis": "h", "length": 2, "row": 1, "col": 1 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 5 },
+			{ "axis": "v", "length": 2, "row": 1, "col": 3 },
+			{ "axis": "h", "length": 2, "row": 2, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 1 }
+		],
+		"rocks": [
+			[3, 0],
+			[5, 1],
+			[0, 2]
+		]
+	},
+	{
+		"id": "h04",
+		"tier": "hard",
+		"width": 6,
+		"height": 6,
+		"par": 20,
+		"tanker": { "row": 1, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "v", "length": 3, "row": 0, "col": 3 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 4 },
+			{ "axis": "v", "length": 3, "row": 0, "col": 5 },
+			{ "axis": "v", "length": 2, "row": 1, "col": 4 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 2 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 0 },
+			{ "axis": "v", "length": 2, "row": 4, "col": 0 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 2 },
+			{ "axis": "h", "length": 2, "row": 2, "col": 1 },
+			{ "axis": "h", "length": 2, "row": 0, "col": 0 },
+			{ "axis": "h", "length": 2, "row": 4, "col": 2 }
+		],
+		"rocks": [[3, 1]]
+	},
+	{
+		"id": "h05",
+		"tier": "hard",
+		"width": 6,
+		"height": 6,
+		"par": 21,
+		"tanker": { "row": 2, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "h", "length": 2, "row": 4, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 2 },
+			{ "axis": "v", "length": 2, "row": 4, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 3 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 4 },
+			{ "axis": "h", "length": 2, "row": 3, "col": 4 },
+			{ "axis": "v", "length": 3, "row": 0, "col": 5 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 1 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 1 },
+			{ "axis": "h", "length": 2, "row": 0, "col": 1 }
+		],
+		"rocks": [[1, 2]]
+	},
+	{
+		"id": "h06",
+		"tier": "hard",
+		"width": 6,
+		"height": 6,
+		"par": 22,
+		"tanker": { "row": 4, "col": 1, "length": 2 },
+		"ships": [
+			{ "axis": "h", "length": 3, "row": 0, "col": 0 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 4 },
+			{ "axis": "h", "length": 2, "row": 2, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 4, "col": 0 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 3 },
+			{ "axis": "h", "length": 2, "row": 1, "col": 1 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 2 },
+			{ "axis": "v", "length": 2, "row": 4, "col": 5 },
+			{ "axis": "h", "length": 2, "row": 3, "col": 0 },
+			{ "axis": "h", "length": 2, "row": 1, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 5 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 2 }
+		],
+		"rocks": [[0, 4]]
+	},
+	{
+		"id": "h07",
+		"tier": "hard",
+		"width": 6,
+		"height": 6,
+		"par": 23,
+		"tanker": { "row": 1, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "v", "length": 2, "row": 1, "col": 4 },
+			{ "axis": "h", "length": 2, "row": 2, "col": 1 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 2 },
+			{ "axis": "v", "length": 2, "row": 1, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 2 },
+			{ "axis": "h", "length": 3, "row": 3, "col": 1 },
+			{ "axis": "h", "length": 2, "row": 4, "col": 2 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 5 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 5 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 0 }
+		],
+		"rocks": [
+			[4, 4],
+			[0, 3]
+		]
+	},
+	{
+		"id": "h08",
+		"tier": "hard",
+		"width": 6,
+		"height": 6,
+		"par": 24,
+		"tanker": { "row": 2, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "v", "length": 3, "row": 1, "col": 4 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 4, "col": 1 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 3 },
+			{ "axis": "h", "length": 3, "row": 1, "col": 1 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 0 },
+			{ "axis": "v", "length": 2, "row": 4, "col": 0 },
+			{ "axis": "h", "length": 2, "row": 3, "col": 0 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 2 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 5 }
+		],
+		"rocks": [
+			[4, 2],
+			[0, 1],
+			[4, 5],
+			[0, 3]
+		]
+	},
+	{
+		"id": "h09",
+		"tier": "hard",
+		"width": 6,
+		"height": 6,
+		"par": 26,
+		"tanker": { "row": 2, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "h", "length": 2, "row": 0, "col": 4 },
+			{ "axis": "h", "length": 2, "row": 4, "col": 2 },
+			{ "axis": "v", "length": 3, "row": 0, "col": 2 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 5 },
+			{ "axis": "v", "length": 2, "row": 1, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 3 },
+			{ "axis": "h", "length": 2, "row": 3, "col": 2 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 1 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 0 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 0 },
+			{ "axis": "v", "length": 2, "row": 1, "col": 5 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 0 }
+		],
+		"rocks": [[3, 4]]
+	},
+	{
+		"id": "h10",
+		"tier": "hard",
+		"width": 6,
+		"height": 6,
+		"par": 28,
+		"tanker": { "row": 2, "col": 0, "length": 2 },
+		"ships": [
+			{ "axis": "h", "length": 2, "row": 4, "col": 4 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 2 },
+			{ "axis": "v", "length": 3, "row": 1, "col": 5 },
+			{ "axis": "v", "length": 2, "row": 0, "col": 3 },
+			{ "axis": "h", "length": 2, "row": 3, "col": 0 },
+			{ "axis": "v", "length": 2, "row": 4, "col": 0 },
+			{ "axis": "h", "length": 3, "row": 1, "col": 0 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 2 },
+			{ "axis": "h", "length": 2, "row": 5, "col": 4 },
+			{ "axis": "v", "length": 2, "row": 3, "col": 3 },
+			{ "axis": "v", "length": 2, "row": 2, "col": 4 },
+			{ "axis": "h", "length": 2, "row": 0, "col": 0 }
+		],
+		"rocks": [[0, 5]]
+	}
+]

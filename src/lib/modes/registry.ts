@@ -12,6 +12,7 @@ import IconFeather from '~icons/lucide/feather';
 import IconBird from '~icons/lucide/bird';
 import IconCastle from '~icons/lucide/castle';
 import IconShield from '~icons/lucide/shield';
+import IconParking from '~icons/lucide/square-parking';
 
 export type ModeId =
 	| 'blocks'
@@ -23,7 +24,8 @@ export type ModeId =
 	| 'flamingo'
 	| 'fury'
 	| 'chess'
-	| 'dronewall';
+	| 'dronewall'
+	| 'parking';
 
 interface ModeBase {
 	id: ModeId;
@@ -132,5 +134,14 @@ export const MODES: readonly GameMode[] = [
 		tileClass: 'bg-khaki',
 		name: m.mode_dronewall_name,
 		description: m.mode_dronewall_description
+	},
+	{
+		id: 'parking',
+		status: 'playable',
+		href: '/play/parking',
+		icon: IconParking,
+		tileClass: 'bg-sky',
+		name: m.mode_parking_name,
+		description: m.mode_parking_description
 	}
 ];
