@@ -1,6 +1,6 @@
 <!--
-	The build panel under the playfield: with an empty slot selected it offers the five defenses,
-	with a built one selected it shows what it is and offers upgrade and sell. Everything costs
+	The build panel, shown over the playfield while a spot is selected: an empty spot offers the
+	seven defenses, a built one shows what it is and offers upgrade and sell. Everything costs
 	helmets (the only currency). A button that is too expensive stays tappable so the helmet
 	counter can shake, and says so to screen readers through aria-disabled.
 -->
@@ -26,14 +26,18 @@
 		mortar: m.dronewall_mortar_name,
 		nest: m.dronewall_nest_name,
 		patriot: m.dronewall_patriot_name,
-		trench: m.dronewall_trench_name
+		trench: m.dronewall_trench_name,
+		azov: m.dronewall_azov_name,
+		leopard: m.dronewall_leopard_name
 	};
 	const ROLES: Record<DefenseKind, () => string> = {
 		squad: m.dronewall_squad_role,
 		mortar: m.dronewall_mortar_role,
 		nest: m.dronewall_nest_role,
 		patriot: m.dronewall_patriot_role,
-		trench: m.dronewall_trench_role
+		trench: m.dronewall_trench_role,
+		azov: m.dronewall_azov_role,
+		leopard: m.dronewall_leopard_role
 	};
 
 	const defense = $derived.by(() => {
@@ -47,25 +51,19 @@
 </script>
 
 <div
-	class="flex min-h-[5.5rem] w-full flex-col justify-center rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-2 py-1.5 shadow-[3px_3px_0_var(--color-ink)]"
+	class="flex w-full flex-col justify-center rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-2 py-1.5 shadow-[3px_3px_0_var(--color-ink)]"
 	aria-live="polite"
 >
-	{#if game.selectedSlot === null}
-		<p dir="auto" class="px-1 text-center text-sm leading-snug font-semibold">
-			{m.dronewall_panel_hint()}
-		</p>
-	{:else if defense === null}
-		<ul class="grid grid-cols-5 gap-1">
+	{#if defense === null}
+		<ul class="grid grid-cols-4 gap-1.5">
 			{#each DEFENSE_KINDS as kind (kind)}
 				{@const cost = buildCost(kind)}
 				<li class="contents">
 					<button
 						type="button"
-						class="btn-chunky h-full flex-col gap-0 px-0.5 py-1 text-[0.65rem] leading-tight sm:text-xs {afford(
-							cost
-						)
-							? 'bg-paper'
-							: 'bg-sand opacity-70'}"
+						class="btn-chunky h-full flex-col gap-0 px-0.5 py-1 text-[0.7rem] leading-tight sm:text-xs {afford(cost)
+								? 'bg-paper'
+								: 'bg-sand opacity-70'}"
 						aria-disabled={!afford(cost)}
 						onclick={() => game.build(kind)}
 					>

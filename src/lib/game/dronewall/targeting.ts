@@ -2,7 +2,14 @@
  * Targeting and damage rules. Everything here is a pure function of the soldiers, so the rules
  * can be tested without running a whole game.
  */
-import { SLOTS, defenseStats, type DefenseKind, type DefenseStats, type Point } from './config';
+import {
+	SLOTS,
+	defenseStats,
+	isGarrison,
+	type DefenseKind,
+	type DefenseStats,
+	type Point
+} from './config';
 import { ROAD, distanceBetween, pointAt, type Path } from './path';
 import type { Defense, Flyer, Projectile, Soldier } from './state';
 
@@ -81,8 +88,8 @@ export function flyersInRange(flyers: readonly Flyer[], origin: Point, range: nu
 }
 
 /** Distance an enemy still has to travel before it breaches the line */
-export function remainingDistance(enemy: Soldier | Flyer): number {
-	return 'air' in enemy ? enemy.length - enemy.progress : ROAD.length - enemy.progress;
+export function remainingDistance(enemy: Soldier | Flyer, road: Path = ROAD): number {
+	return 'air' in enemy ? enemy.length - enemy.progress : road.length - enemy.progress;
 }
 
 /** The aerial enemy closest to the line in reach, for squads (which hurt aircraft less) */
@@ -167,27 +174,35 @@ export function splashDamage(damage: number, distance: number, radius: number): 
 }
 
 /** The slowest speed multiplier among the trenches that reach the point (1 when none does) */
-export function slowAt(point: Point, defenses: readonly (Defense | null)[]): number {
+export function slowAt(
+	point: Point,
+	defenses: readonly (Defense | null)[],
+	slots: readonly Point[] = SLOTS
+): number {
 	let slow = 1;
 	defenses.forEach((defense, slot) => {
 		if (!defense || defense.kind !== 'trench') return;
 		const stats = defenseStats('trench', defense.level);
-		if (distanceBetween(SLOTS[slot], point) <= stats.range) slow = Math.min(slow, stats.slow);
+		if (distanceBetween(slots[slot], point) <= stats.range) slow = Math.min(slow, stats.slow);
 	});
 	return slow;
 }
 
 /** Mine damage per second at a point: the strongest trench reaching it (mines do not stack) */
-export function mineDpsAt(point: Point, defenses: readonly (Defense | null)[]): number {
+export function mineDpsAt(
+	point: Point,
+	defenses: readonly (Defense | null)[],
+	slots: readonly Point[] = SLOTS
+): number {
 	let dps = 0;
 	defenses.forEach((defense, slot) => {
 		if (!defense || defense.kind !== 'trench') return;
 		const stats = defenseStats('trench', defense.level);
-		if (distanceBetween(SLOTS[slot], point) <= stats.range) dps = Math.max(dps, stats.dps);
+		if (distanceBetween(slots[slot], point) <= stats.range) dps = Math.max(dps, stats.dps);
 	});
 	return dps;
 }
 
 export function isShooter(kind: DefenseKind): boolean {
-	return kind !== 'trench';
+	return kind !== 'trench' && !isGarrison(kind);
 }
