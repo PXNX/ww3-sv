@@ -37,6 +37,7 @@ export type SoundId =
 	| 'slava-ukraini'
 	| 'fart'
 	| 'fake-news'
+	| 'welcome-to-ukraine'
 	| 'putin-laugh'
 	| 'sling-draw'
 	| 'sling-release'
@@ -247,6 +248,9 @@ export const SOUNDS: Record<SoundId, SoundEffect> = {
 
 	// A recorded "you are fake news" jab, for a lost game of Block Puzzle
 	'fake-news': (ctx, dest) => playClip(ctx, dest, 'fake-news'),
+
+	// A recorded sung "Welcome to Ukraine" line, for a three-star win in Fury
+	'welcome-to-ukraine': (ctx, dest) => playClip(ctx, dest, 'welcome-to-ukraine'),
 
 	// A gruff, wheezy "ha ha ha ha" in a low male voice: the first ha punches in high and loud,
 	// then each one comes a little softer, lower and further apart, ending in a breathy exhale

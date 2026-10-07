@@ -14,7 +14,8 @@ export type ClipId =
 	| 'shahed-impact-2'
 	| 'slava-ukraini'
 	| 'fart'
-	| 'fake-news';
+	| 'fake-news'
+	| 'welcome-to-ukraine';
 
 const DIRECTORY = '/assets/sounds';
 
@@ -27,7 +28,8 @@ const CLIP_FILES: Record<ClipId, string> = {
 	'shahed-impact-2': 'shahed-impact-2.wav',
 	'slava-ukraini': 'slava-ukraini.wav',
 	fart: 'fart.wav',
-	'fake-news': 'fake-news.wav'
+	'fake-news': 'fake-news.wav',
+	'welcome-to-ukraine': 'welcome-to-ukraine.mp3'
 };
 
 const buffers = new Map<AudioContext, Map<ClipId, Promise<AudioBuffer>>>();
