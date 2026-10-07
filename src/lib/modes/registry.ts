@@ -15,6 +15,7 @@ import IconShield from '~icons/lucide/shield';
 import IconParking from '~icons/lucide/square-parking';
 import IconRadar from '~icons/lucide/radar';
 import IconMegaphone from '~icons/lucide/megaphone';
+import IconFootprints from '~icons/lucide/footprints';
 
 export type ModeId =
 	| 'blocks'
@@ -29,7 +30,8 @@ export type ModeId =
 	| 'dronewall'
 	| 'parking'
 	| 'slice'
-	| 'whack';
+	| 'whack'
+	| 'runcomrade';
 
 interface ModeBase {
 	id: ModeId;
@@ -165,5 +167,14 @@ export const MODES: readonly GameMode[] = [
 		tileClass: 'bg-explosion-yellow',
 		name: m.mode_whack_name,
 		description: m.mode_whack_description
+	},
+	{
+		id: 'runcomrade',
+		status: 'playable',
+		href: '/play/runcomrade',
+		icon: IconFootprints,
+		tileClass: 'bg-mustard',
+		name: m.mode_runcomrade_name,
+		description: m.mode_runcomrade_description
 	}
 ];

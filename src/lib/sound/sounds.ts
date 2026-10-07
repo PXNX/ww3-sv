@@ -56,7 +56,8 @@ export type SoundId =
 	| 'ability-blast'
 	| 'ability-boomerang'
 	| 'blocks-place'
-	| 'blocks-clear';
+	| 'blocks-clear'
+	| 'drone-buzz';
 
 /** Intensity runs from 0 to 1 and lets one sound scale (louder, higher) with how hard something happened */
 type SoundEffect = (ctx: AudioContext, dest: AudioNode, intensity: number) => void;
@@ -643,5 +644,35 @@ export const SOUNDS: Record<SoundId, SoundEffect> = {
 				delay: 0.04 + i * 0.055
 			});
 		}
+	},
+
+	// An FPV drone buzzing close behind: a few fast rasping pulses over a whine. Intensity (how near
+	// the drone is) lifts the pitch and the volume.
+	'drone-buzz': (ctx, dest, intensity) => {
+		const pitch = 170 + intensity * 120;
+		for (let pulse = 0; pulse < 4; pulse++) {
+			tone(ctx, dest, {
+				frequency: pitch,
+				glideTo: pitch * 1.05,
+				duration: 0.07,
+				type: 'sawtooth',
+				gain: 0.04 + intensity * 0.08,
+				delay: pulse * 0.075
+			});
+		}
+		tone(ctx, dest, {
+			frequency: pitch * 4.02,
+			glideTo: pitch * 4.3,
+			duration: 0.3,
+			type: 'square',
+			gain: 0.012 + intensity * 0.03
+		});
+		noise(ctx, dest, {
+			duration: 0.3,
+			filterType: 'bandpass',
+			filterFrequency: 1200 + intensity * 600,
+			q: 4,
+			gain: 0.03 + intensity * 0.06
+		});
 	}
 };
