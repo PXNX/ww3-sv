@@ -3,10 +3,17 @@ import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 import Icons from 'unplugin-icons/vite';
+import adapter from '@sveltejs/adapter-vercel';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 export default defineConfig({
 	plugins: [
-		sveltekit(),
+		sveltekit({
+			preprocess: vitePreprocess(),
+
+			// Functions run on Vercel's Bun runtime; the Bun version is set by bunVersion in vercel.json
+			adapter: adapter({ runtime: 'experimental_bun1.x' })
+		}),
 		paraglideVitePlugin({
 			project: './project.inlang',
 			outdir: './src/lib/paraglide',
