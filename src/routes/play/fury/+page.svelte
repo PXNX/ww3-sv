@@ -46,7 +46,8 @@
 			preview: [],
 			time: 0,
 			reducedMotion: true,
-			sprites: {}
+			sprites: {},
+			backdrop: game.backdrop
 		});
 		context.restore();
 	}
@@ -127,7 +128,7 @@
 	blocksDestroyed={game.blocksDestroyed}
 	blocksTotal={game.blocksTotal}
 	isNewBest={game.isNewBest}
-	hasNextLevel={game.hasNextLevel}
+	preparedCleared={game.preparedCleared}
 	modeName={m.mode_fury_name()}
 	{drawBoard}
 	onNext={() => game.nextLevel()}

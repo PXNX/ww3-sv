@@ -17,5 +17,6 @@
 		{ "x": 17, "y": 0.6, "size": 1.1 },
 		{ "x": 17, "y": 2.8, "size": 0.9 }
 	],
-	"landmarks": [{ "kind": "oilTank", "x": 20.5, "y": 0 }]
+	"landmarks": [{ "kind": "oilTank", "x": 20.5, "y": 0 }],
+	"hills": [{ "x": 8.73, "w": 3.4, "h": 0.71, "flat": 1.02 }]
 }

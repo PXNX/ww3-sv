@@ -2,13 +2,32 @@
  * Level data format for Magyar's Birds. Levels are hand-authored JSON files in this folder; every
  * file carries a version number so the format can change later without breaking old files.
  * Coordinates are in meters: x is the horizontal center of a piece, y is its bottom edge, and the
- * ground is at y = 0. The slingshot stands at x = 3.
+ * ground is at y = 0, except on hills, which raise the ground under the pieces standing on them.
+ * The slingshot stands at x = 3.
  */
 import { isBirdKind, type BirdKind } from '../birds';
+import {
+	HILL_CLEARANCE_X,
+	MAX_HILLS,
+	MAX_HILL_HEIGHT,
+	MIN_HILL_HEIGHT,
+	groundMax,
+	type LevelHill
+} from '../terrain';
 
 /** A landmark: a bigger, sprite-drawn destructible target dressing up the level's back half */
-export type LandmarkKind = 'oilTank' | 'refinery' | 'factory' | 'sam';
-export const LANDMARK_KINDS: readonly LandmarkKind[] = ['oilTank', 'refinery', 'factory', 'sam'];
+export type LandmarkKind =
+	'oilTank' | 'refinery' | 'factory' | 'sam' | 'radar' | 'pylon' | 'watchtower' | 'bunker';
+export const LANDMARK_KINDS: readonly LandmarkKind[] = [
+	'oilTank',
+	'refinery',
+	'factory',
+	'sam',
+	'radar',
+	'pylon',
+	'watchtower',
+	'bunker'
+];
 
 export interface LandmarkSpec {
 	w: number;
@@ -22,13 +41,18 @@ export interface LandmarkSpec {
 /*
  * Width and height match each landmark's reused placeholder sprite's aspect ratio (a tall flare
  * stack for the refinery, a squat launcher truck for the S-400-style unit) so the art is not
- * stretched; see the placeholder mapping in ./assets.ts.
+ * stretched; see the placeholder mapping in ./assets.ts. The radar mast and the power pylon reuse
+ * Flamingo Flight's tall, narrow placeholders; the watchtower and the bunker are canvas-drawn.
  */
 export const LANDMARKS: Record<LandmarkKind, LandmarkSpec> = {
 	oilTank: { w: 1.1, h: 1.7, hp: 10, threshold: 2.2, points: 250 },
 	refinery: { w: 0.7, h: 3.2, hp: 16, threshold: 2.8, points: 400 },
 	factory: { w: 3.2, h: 2.4, hp: 20, threshold: 3.2, points: 500 },
-	sam: { w: 2.3, h: 1.4, hp: 14, threshold: 2.6, points: 450 }
+	sam: { w: 2.3, h: 1.4, hp: 14, threshold: 2.6, points: 450 },
+	radar: { w: 0.75, h: 2.15, hp: 8, threshold: 2, points: 300 },
+	pylon: { w: 0.75, h: 2.15, hp: 9, threshold: 2.2, points: 300 },
+	watchtower: { w: 1.3, h: 3.2, hp: 12, threshold: 2.4, points: 350 },
+	bunker: { w: 3, h: 1.2, hp: 24, threshold: 3.6, points: 550 }
 };
 
 export const LEVEL_VERSION = 1;
@@ -37,11 +61,23 @@ export type Material = 'wood' | 'stone' | 'ice';
 export const MATERIAL_KINDS: readonly Material[] = ['wood', 'stone', 'ice'];
 
 /**
- * box: plain block; crate and barrel: boxes drawn as a crate or an oil barrel;
- * spire: a pointed tower roof (triangle); ball: a round block (w is the diameter, h must equal w)
+ * box: plain block; crate, barrel and pillar: boxes drawn as a crate, an oil barrel or a column;
+ * spire: a pointed tower roof (triangle); ball and tire: round blocks (w is the diameter, h must
+ * equal w), the tire being bouncy
  */
-export type BlockShape = 'box' | 'crate' | 'barrel' | 'spire' | 'ball';
-export const BLOCK_SHAPES: readonly BlockShape[] = ['box', 'crate', 'barrel', 'spire', 'ball'];
+export type BlockShape = 'box' | 'crate' | 'barrel' | 'pillar' | 'spire' | 'ball' | 'tire';
+export const BLOCK_SHAPES: readonly BlockShape[] = [
+	'box',
+	'crate',
+	'barrel',
+	'pillar',
+	'spire',
+	'ball',
+	'tire'
+];
+
+/** Round shapes: w is the diameter and h must equal it */
+export const isRoundShape = (shape: BlockShape): boolean => shape === 'ball' || shape === 'tire';
 
 export interface LevelBlock {
 	material: Material;
@@ -68,7 +104,7 @@ export interface LevelLandmark {
 
 export interface LevelData {
 	version: typeof LEVEL_VERSION;
-	/** level-01 to level-15 */
+	/** level-01 to level-15 for the prepared levels, level-16 and up for the generated ones */
 	id: string;
 	/** Width of the playing field in meters; the camera fits it */
 	width: number;
@@ -78,6 +114,8 @@ export interface LevelData {
 	domes: LevelDome[];
 	/** Oil tanks, a refinery, a factory or an S-400-style air defense unit; optional set dressing */
 	landmarks?: LevelLandmark[];
+	/** Raised ground; optional, no hills means flat ground */
+	hills?: LevelHill[];
 }
 
 /** Performance budget: blocks, domes and landmarks per level (birds come on top, at most three at a time) */
@@ -160,8 +198,8 @@ function validateBlock(value: unknown, index: number, errors: string[]): LevelBl
 	if (size.w < 0.2 || size.w > 8 || size.h < 0.2 || size.h > 8) {
 		errors.push(`${label} size must be between 0.2 and 8 meters`);
 	}
-	if (shape === 'ball' && Math.abs(size.w - size.h) > 1e-9) {
-		errors.push(`${label} is a ball, so w and h must be equal`);
+	if (isRoundShape(shape as BlockShape) && Math.abs(size.w - size.h) > 1e-9) {
+		errors.push(`${label} is round, so w and h must be equal`);
 	}
 	return {
 		material: material as Material,
@@ -201,13 +239,32 @@ function validateLandmark(value: unknown, index: number, errors: string[]): Leve
 	return { kind: kind as LandmarkKind, x: x as number, y: y as number };
 }
 
+function validateHill(value: unknown, index: number, errors: string[]): LevelHill | null {
+	const label = `hills[${index}]`;
+	if (!isRecord(value) || ![value.x, value.w, value.h, value.flat].every(isNumber)) {
+		errors.push(`${label} needs numeric x, w, h and flat`);
+		return null;
+	}
+	const hill = {
+		x: value.x as number,
+		w: value.w as number,
+		h: value.h as number,
+		flat: value.flat as number
+	};
+	if (hill.h < MIN_HILL_HEIGHT || hill.h > MAX_HILL_HEIGHT) {
+		errors.push(`${label}.h must be ${MIN_HILL_HEIGHT} to ${MAX_HILL_HEIGHT} meters`);
+	}
+	if (hill.flat < 0 || hill.w <= hill.flat) errors.push(`${label}.w must be larger than flat`);
+	return hill;
+}
+
 /** Checks untrusted level data (a parsed JSON file) and returns either the level or all problems */
 export function validateLevel(data: unknown): LevelValidation {
 	const errors: string[] = [];
 	if (!isRecord(data)) return { ok: false, errors: ['level is not an object'] };
 
 	if (data.version !== LEVEL_VERSION) errors.push(`version must be ${LEVEL_VERSION}`);
-	if (typeof data.id !== 'string' || !/^level-\d{2}$/.test(data.id)) {
+	if (typeof data.id !== 'string' || !/^level-\d{2,}$/.test(data.id)) {
 		errors.push('id must look like level-01');
 	}
 	const width = data.width;
@@ -223,6 +280,7 @@ export function validateLevel(data: unknown): LevelValidation {
 	const rawBlocks = Array.isArray(data.blocks) ? data.blocks : null;
 	const rawDomes = Array.isArray(data.domes) ? data.domes : null;
 	const rawLandmarks = Array.isArray(data.landmarks) ? data.landmarks : [];
+	const rawHills = Array.isArray(data.hills) ? data.hills : [];
 	if (!rawBlocks) errors.push('blocks must be a list');
 	if (!rawDomes || rawDomes.length === 0) errors.push('a level needs at least one golden dome');
 
@@ -231,6 +289,9 @@ export function validateLevel(data: unknown): LevelValidation {
 	const landmarks = rawLandmarks.map((landmark, index) =>
 		validateLandmark(landmark, index, errors)
 	);
+	const hills = rawHills.map((hill, index) => validateHill(hill, index, errors));
+	if (hills.length > MAX_HILLS) errors.push(`a level has at most ${MAX_HILLS} hills`);
+	const validHills = hills.filter((hill): hill is LevelHill => hill !== null);
 	if (blocks.length + domes.length + landmarks.length > MAX_LEVEL_PIECES) {
 		errors.push(`blocks plus domes plus landmarks exceed the limit of ${MAX_LEVEL_PIECES}`);
 	}
@@ -246,8 +307,23 @@ export function validateLevel(data: unknown): LevelValidation {
 	landmarks.forEach((landmark, index) => {
 		if (landmark) bounds.push({ label: `landmarks[${index}]`, ...pieceBounds(landmark) });
 	});
+	const sortedHills = [...validHills].sort((a, b) => a.x - b.x);
+	sortedHills.forEach((hill, index) => {
+		if (hill.x - hill.w / 2 < HILL_CLEARANCE_X - 1e-9) {
+			errors.push(`hills[${index}] reaches too close to the slingshot`);
+		}
+		if (isNumber(width) && hill.x + hill.w / 2 > width + 1e-9) {
+			errors.push(`hills[${index}] is outside the field`);
+		}
+		const next = sortedHills[index + 1];
+		if (next && hill.x + hill.w / 2 > next.x - next.w / 2 + 1e-9) {
+			errors.push(`hills[${index}] overlaps another hill`);
+		}
+	});
 	for (const box of bounds) {
-		if (box.bottom < -1e-9) errors.push(`${box.label} is below the ground`);
+		if (box.bottom < groundMax(validHills, box.left, box.right) - 1e-9) {
+			errors.push(`${box.label} is below the ground`);
+		}
 		if (box.left < MIN_STRUCTURE_X - 1e-9)
 			errors.push(`${box.label} is too close to the slingshot`);
 		if (isNumber(width) && box.right > width + 1e-9)
@@ -271,7 +347,8 @@ export function validateLevel(data: unknown): LevelValidation {
 			birds: birds as BirdKind[],
 			blocks: blocks as LevelBlock[],
 			domes: domes as LevelDome[],
-			landmarks: landmarks as LevelLandmark[]
+			landmarks: landmarks as LevelLandmark[],
+			hills: validHills
 		}
 	};
 }
