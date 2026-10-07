@@ -11,7 +11,12 @@
 	import type { SvelteHTMLElements } from 'svelte/elements';
 	import { cardDefinition, type CardId, type CardKind } from '#lib/game/chess/cards.js';
 	import { m } from '#lib/paraglide/messages.js';
-	import { cardDescription, cardName, type ChessGame } from '#lib/stores/chessGame.svelte.js';
+	import {
+		cardDescription,
+		cardName,
+		noticeText,
+		type ChessGame
+	} from '#lib/stores/chessGame.svelte.js';
 	import IconUkraine from '~icons/circle-flags/ua';
 	import IconUsa from '~icons/circle-flags/us';
 	import IconBiohazard from '~icons/lucide/biohazard';
@@ -97,12 +102,12 @@
 	const remaining = $derived(game.cardSlots.filter((id) => id !== null).length);
 </script>
 
-<section class="flex flex-col gap-2" aria-label={m.chess_cards_label()}>
-	<ul class="flex justify-center px-1 pt-10 pb-1">
+<section class="flex flex-col gap-1" aria-label={m.chess_cards_label()}>
+	<ul class="flex justify-center px-1 pt-7 pb-0.5">
 		{#each game.cardSlots as id, index (index)}
 			{@const fan = FAN[index % FAN.length]}
 			<li
-				class="w-28 shrink-0 not-first:-ms-3.5"
+				class="w-[min(7rem,14dvh)] shrink-0 not-first:-ms-3.5"
 				style:--r="{fan.rotate}deg"
 				style:--y="{fan.drop}rem"
 			>
@@ -179,7 +184,7 @@
 		{/each}
 	</ul>
 
-	<div class="flex min-h-12 flex-col gap-2 text-sm leading-snug" role="status" aria-live="polite">
+	<div class="flex min-h-11 flex-col gap-1 text-sm leading-snug" role="status" aria-live="polite">
 		{#if armed}
 			<p class="font-semibold">{cardDescription(armed)}</p>
 			{#if needsTarget}
@@ -194,6 +199,13 @@
 					{m.chess_card_play()}
 				</button>
 			{/if}
+		{:else if game.notice}
+			<!-- What the last card did, in the same spot as the hint so no extra row is needed -->
+			{#key game.noticeKey}
+				<p class="sticker pop-in px-3 py-1 font-bold" style:--tilt="-1deg">
+					{noticeText(game.notice)}
+				</p>
+			{/key}
 		{:else if remaining > 0}
 			<p>{m.chess_cards_hint({ count: remaining })}</p>
 		{:else}
@@ -215,7 +227,7 @@
 	/* A tapped card straightens up, lifts out of the fan and grows a little */
 	button.card[aria-pressed='true'] {
 		z-index: 20;
-		transform: translateY(-1.75rem) rotate(0deg) scale(1.14);
+		transform: translateY(-1.25rem) rotate(0deg) scale(1.1);
 		box-shadow: 0 8px 0 var(--color-ink);
 		outline: 4px solid var(--color-explosion-yellow);
 	}

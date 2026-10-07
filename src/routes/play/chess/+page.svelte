@@ -7,13 +7,7 @@
 	import TutorialModal from '#lib/components/TutorialModal.svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
-	import {
-		cardName,
-		ChessGame,
-		noticeText,
-		quipText,
-		VANCE_CHANCE
-	} from '#lib/stores/chessGame.svelte.js';
+	import { cardName, ChessGame, quipText, VANCE_CHANCE } from '#lib/stores/chessGame.svelte.js';
 	import {
 		CAMEO_PLACEHOLDER,
 		cameoPortrait,
@@ -107,13 +101,14 @@
 		</button>
 	{/snippet}
 
-	<div class="mx-auto flex w-full max-w-md flex-col gap-3 px-1">
+	<!-- Everything fits the screen: the board takes whatever height the other rows leave over -->
+	<div class="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-2 px-1">
 		<!-- Putin comments on the game; a rookie mistake is always sold as a master plan -->
-		<div class="flex min-h-16 items-center gap-3">
+		<div class="flex min-h-14 items-center gap-3">
 			<img
 				src={putinPortrait}
 				alt={putinAlt}
-				class="size-16 shrink-0 -rotate-2 rounded-lg border-3 border-ink bg-paper object-cover"
+				class="size-14 shrink-0 -rotate-2 rounded-lg border-3 border-ink bg-paper object-cover"
 			/>
 			<div class="flex-1" role="status" aria-live="polite">
 				{#if game.thinking}
@@ -133,48 +128,43 @@
 			</div>
 		</div>
 
-		<div class="relative">
-			<ChessBoard {game} />
+		<!-- A size container: the board is the biggest square that fits its width and height -->
+		<div class="relative mx-auto min-h-24 w-full flex-1" style:container-type="size">
+			<div class="relative mx-auto size-[min(100cqw,100cqh)]">
+				<ChessBoard {game} />
 
-			{#if game.vance !== null}
-				<div
-					class="absolute inset-0 z-20 flex items-center justify-center rounded-[16px_10px_18px_8px] bg-ink/50 p-3"
-					role="alertdialog"
-					aria-labelledby="vance-title"
-				>
+				{#if game.vance !== null}
 					<div
-						class="sticker pop-in flex flex-col items-center gap-2 p-4 text-center"
-						style:--tilt="2deg"
+						class="absolute inset-0 z-20 flex items-center justify-center rounded-[16px_10px_18px_8px] bg-ink/50 p-2"
+						role="alertdialog"
+						aria-labelledby="vance-title"
 					>
-						<img
-							src={vancePortrait}
-							alt={vancePortrait === CAMEO_PLACEHOLDER
-								? m.cameo_placeholder_alt()
-								: m.cameo_portrait_alt({ name: m.chess_vance_name() })}
-							class="size-20 rotate-2 rounded-lg border-3 border-ink bg-paper object-cover"
-						/>
-						<h2 id="vance-title" class="text-2xl font-bold">{m.chess_vance_title()}</h2>
-						<p class="leading-snug">{m.chess_vance_message({ card: cardName(game.vance) })}</p>
-						<button
-							type="button"
-							class="btn-chunky bg-explosion-yellow"
-							onclick={() => game.dismissVance()}
+						<div
+							class="sticker pop-in flex flex-col items-center gap-1.5 p-3 text-center"
+							style:--tilt="2deg"
 						>
-							{m.chess_vance_dismiss()}
-						</button>
+							<img
+								src={vancePortrait}
+								alt={vancePortrait === CAMEO_PLACEHOLDER
+									? m.cameo_placeholder_alt()
+									: m.cameo_portrait_alt({ name: m.chess_vance_name() })}
+								class="size-14 rotate-2 rounded-lg border-3 border-ink bg-paper object-cover"
+							/>
+							<h2 id="vance-title" class="text-xl font-bold">{m.chess_vance_title()}</h2>
+							<p class="text-sm leading-snug">
+								{m.chess_vance_message({ card: cardName(game.vance) })}
+							</p>
+							<button
+								type="button"
+								class="btn-chunky bg-explosion-yellow"
+								onclick={() => game.dismissVance()}
+							>
+								{m.chess_vance_dismiss()}
+							</button>
+						</div>
 					</div>
-				</div>
-			{/if}
-		</div>
-
-		<div class="min-h-9" role="status" aria-live="polite">
-			{#key game.noticeKey}
-				{#if game.notice}
-					<p class="sticker pop-in px-3 py-1.5 text-sm leading-snug font-bold" style:--tilt="-1deg">
-						{noticeText(game.notice)}
-					</p>
 				{/if}
-			{/key}
+			</div>
 		</div>
 
 		<ChessCards {game} />

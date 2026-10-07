@@ -48,7 +48,7 @@
 
 <div
 	data-playfield
-	class="relative aspect-square w-full overflow-hidden rounded-[16px_10px_18px_8px] border-3 border-ink shadow-[4px_4px_0_var(--color-ink)] select-none"
+	class="relative size-full overflow-hidden rounded-[16px_10px_18px_8px] border-3 border-ink shadow-[4px_4px_0_var(--color-ink)] select-none"
 	role="group"
 	aria-label={m.chess_board_label()}
 >

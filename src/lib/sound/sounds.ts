@@ -5,7 +5,7 @@
  * same triumphant chime without the catalog growing one entry per event per mode.
  */
 import { playClip, playRandomClip } from './clips';
-import { noise, sequence, tone } from './synth';
+import { noise, sequence, tone, voice } from './synth';
 
 export type SoundId =
 	| 'ui-tap'
@@ -37,6 +37,7 @@ export type SoundId =
 	| 'slava-ukraini'
 	| 'fart'
 	| 'fake-news'
+	| 'putin-laugh'
 	| 'sling-draw'
 	| 'sling-release'
 	| 'impact-wood'
@@ -244,6 +245,36 @@ export const SOUNDS: Record<SoundId, SoundEffect> = {
 
 	// A recorded "you are fake news" jab, for a lost game of Block Puzzle
 	'fake-news': (ctx, dest) => playClip(ctx, dest, 'fake-news'),
+
+	// A gruff, wheezy "ha ha ha ha" in a low male voice: the first ha punches in high and loud,
+	// then each one comes a little softer, lower and further apart, ending in a breathy exhale
+	'putin-laugh': (ctx, dest) => {
+		const HA = [700, 1220, 2600] as const;
+		let at = 0;
+		for (let i = 0; i < 6; i++) {
+			const fade = 1 - i * 0.11;
+			const pitch = (172 - i * 7) * (0.97 + Math.random() * 0.06);
+			voice(ctx, dest, {
+				pitch,
+				pitchTo: pitch * 0.82,
+				duration: 0.12 + i * 0.008,
+				formants: HA,
+				gain: 0.5 * fade,
+				breath: 0.7,
+				delay: at
+			});
+			at += 0.17 + i * 0.012 + Math.random() * 0.02;
+		}
+		voice(ctx, dest, {
+			pitch: 120,
+			pitchTo: 85,
+			duration: 0.42,
+			formants: [650, 1100, 2500],
+			gain: 0.3,
+			breath: 1,
+			delay: at
+		});
+	},
 
 	// A creaking stretch of leather and rubber as the slingshot is pulled back; a stronger pull
 	// creaks higher and louder

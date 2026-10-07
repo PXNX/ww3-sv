@@ -205,7 +205,7 @@ const CARD_TEXT: Record<
 export const cardName = (id: CardId): string => CARD_TEXT[id].name();
 export const cardDescription = (id: CardId): string => CARD_TEXT[id].description();
 
-/** Localized text for the notice shown above the board */
+/** Localized text for the notice shown below the board */
 export function noticeText(notice: ChessNotice): string {
 	if (notice.kind === 'refused') return m.chess_card_refused({ card: cardName(notice.id) });
 	if (notice.id === 'plague' && notice.param === 'b') return m.chess_card_plague_played_putin();
@@ -482,19 +482,13 @@ export class ChessGame {
 		const after = matchStatus(this.match);
 		const checksPlayer = after.kind === 'playing' && after.check;
 
-		if (choice.blunder) {
-			this.say('blunder');
-			soundManager().play('fake-news');
-		} else if (checksPlayer) {
-			this.say('takes');
-			soundManager().play('alarm');
-		} else if (choice.move.captured) {
-			this.say('takes');
-			soundManager().play('hit');
-		} else {
-			if (this.random() < CALM_REMARK_CHANCE) this.say('calm');
-			soundManager().play('pop');
-		}
+		if (choice.blunder) this.say('blunder');
+		else if (checksPlayer || choice.move.captured) this.say('takes');
+		else if (this.random() < CALM_REMARK_CHANCE) this.say('calm');
+
+		// Taking a piece is always worth a laugh, whatever else the move did
+		if (choice.move.captured) soundManager().play('putin-laugh');
+		else soundManager().play(checksPlayer ? 'alarm' : 'pop');
 		this.afterAction();
 	}
 
