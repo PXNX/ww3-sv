@@ -13,6 +13,7 @@ import IconBird from '~icons/lucide/bird';
 import IconCastle from '~icons/lucide/castle';
 import IconShield from '~icons/lucide/shield';
 import IconParking from '~icons/lucide/square-parking';
+import IconRadar from '~icons/lucide/radar';
 
 export type ModeId =
 	| 'blocks'
@@ -25,7 +26,8 @@ export type ModeId =
 	| 'fury'
 	| 'chess'
 	| 'dronewall'
-	| 'parking';
+	| 'parking'
+	| 'slice';
 
 interface ModeBase {
 	id: ModeId;
@@ -143,5 +145,14 @@ export const MODES: readonly GameMode[] = [
 		tileClass: 'bg-sky',
 		name: m.mode_parking_name,
 		description: m.mode_parking_description
+	},
+	{
+		id: 'slice',
+		status: 'playable',
+		href: '/play/slice',
+		icon: IconRadar,
+		tileClass: 'bg-tie-red',
+		name: m.mode_slice_name,
+		description: m.mode_slice_description
 	}
 ];
