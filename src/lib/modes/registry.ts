@@ -14,6 +14,7 @@ import IconCastle from '~icons/lucide/castle';
 import IconShield from '~icons/lucide/shield';
 import IconParking from '~icons/lucide/square-parking';
 import IconRadar from '~icons/lucide/radar';
+import IconMegaphone from '~icons/lucide/megaphone';
 
 export type ModeId =
 	| 'blocks'
@@ -27,7 +28,8 @@ export type ModeId =
 	| 'chess'
 	| 'dronewall'
 	| 'parking'
-	| 'slice';
+	| 'slice'
+	| 'whack';
 
 interface ModeBase {
 	id: ModeId;
@@ -154,5 +156,14 @@ export const MODES: readonly GameMode[] = [
 		tileClass: 'bg-tie-red',
 		name: m.mode_slice_name,
 		description: m.mode_slice_description
+	},
+	{
+		id: 'whack',
+		status: 'playable',
+		href: '/play/whack',
+		icon: IconMegaphone,
+		tileClass: 'bg-explosion-yellow',
+		name: m.mode_whack_name,
+		description: m.mode_whack_description
 	}
 ];
