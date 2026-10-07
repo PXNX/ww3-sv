@@ -20,6 +20,7 @@
 		CAMEO_PLACEHOLDER,
 		cameoPortrait,
 		pickCameo,
+		pickCameoMessage,
 		type Cameo,
 		type CameoOverride
 	} from '$lib/theme/cameos';
@@ -60,6 +61,7 @@
 
 	let dialog: HTMLDialogElement | undefined = $state();
 	let cameo: Cameo | undefined = $state();
+	let cameoLine = $state(0);
 	let portraitFailed = $state(false);
 
 	const portrait = $derived(
@@ -83,7 +85,7 @@
 	const cameoMessage = $derived(
 		customCameo
 			? customCameo.message
-			: (cameo?.message({ characterName: CHARACTER_NAME[getLocale()] }) ?? '')
+			: (cameo?.messages[cameoLine]({ characterName: CHARACTER_NAME[getLocale()] }) ?? '')
 	);
 
 	$effect(() => {
@@ -91,6 +93,7 @@
 		if (open && !dialog.open) {
 			if (customCameo === undefined) {
 				cameo = pickCameo(Math.random, lastCameo);
+				cameoLine = pickCameoMessage(Math.random, cameo);
 				lastCameo = cameo.id;
 			}
 			portraitFailed = false;

@@ -1,35 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" role="img" aria-label="Mascot sunk">
-	<!-- Original cartoon caricature in the app's flat, thick-outline style; not traced from any reference -->
-	<g stroke="#111111" stroke-width="6" stroke-linejoin="round" stroke-linecap="round">
-		<!-- lower head sunk under a wave: shadow, head, hair, face, then water on top -->
-		<ellipse cx="107" cy="117" rx="58" ry="55" fill="#111111"/>
-		<ellipse cx="100" cy="112" rx="58" ry="55" fill="#F0A25E"/>
-		<ellipse cx="43" cy="116" rx="8" ry="12" fill="#F0A25E"/>
-		<ellipse cx="157" cy="116" rx="8" ry="12" fill="#F0A25E"/>
-		<!-- soaked swoop, flopped over one side -->
-		<path d="M42 100 Q40 52 96 46 Q154 42 164 86 Q166 96 160 104 Q146 76 118 78 Q92 68 62 86 Q50 90 42 100 Z" fill="#F7D774"/>
-		<path d="M160 78 Q184 96 164 126 Q152 122 154 104 Z" fill="#F7D774"/>
-		<path d="M56 78 Q86 54 126 60 M72 90 Q104 72 140 80" fill="none" stroke-width="3"/>
-		<!-- sad brows -->
-		<path d="M66 92 L94 100" stroke-width="5"/>
-		<path d="M106 100 L134 92" stroke-width="5"/>
-		<!-- eyes looking up, hopeless -->
-		<circle cx="82" cy="112" r="12" fill="#FFFFFF" stroke-width="3"/>
-		<circle cx="118" cy="112" r="12" fill="#FFFFFF" stroke-width="3"/>
-		<circle cx="82" cy="107" r="3" fill="#111111" stroke="none"/>
-		<circle cx="118" cy="107" r="3" fill="#111111" stroke="none"/>
-		<!-- nose -->
-		<path d="M97 118 Q92 130 101 134 Q108 132 106 126" fill="none" stroke-width="3"/>
-		<!-- bubbles -->
-		<circle cx="150" cy="150" r="7" fill="#DFF3FB" stroke-width="3"/>
-		<circle cx="166" cy="134" r="4" fill="#DFF3FB" stroke-width="2.5"/>
-		<!-- water -->
-		<path d="M0 148 Q20 136 40 148 T80 148 T120 148 T160 148 T200 148 L200 240 L0 240 Z" fill="#4FA8D8"/>
-		<path d="M0 176 Q20 166 40 176 T80 176 T120 176 T160 176 T200 176" fill="none" stroke="#FFFFFF" stroke-width="4"/>
-		<path d="M0 206 Q20 196 40 206 T80 206 T120 206 T160 206 T200 206" fill="none" stroke="#FFFFFF" stroke-width="4"/>
-		<!-- red tie floating on the surface -->
-		<path d="M86 160 L102 150 L124 158 L106 170 Z" fill="#D7263D"/>
-		<!-- tiny raised hand waving for help -->
-		<path d="M20 148 L20 118 Q20 108 28 108 Q36 108 36 118 L36 148" fill="#F0A25E"/>
+	<!-- Original cartoon caricature, flat colours and thin outlines with a big soft head in the style of the freeonis videos; not traced from any reference -->
+	<g stroke="#1c1c1c" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+		<ellipse cx="100" cy="116" rx="62" ry="58" fill="#F5BC84"/>
+		<ellipse cx="38" cy="120" rx="8" ry="12" fill="#F5BC84"/><ellipse cx="162" cy="120" rx="8" ry="12" fill="#F5BC84"/>
+		<ellipse cx="100" cy="116" rx="62" ry="58" fill="#F5BC84"/>
+		<path d="M38 114 Q32 54 98 48 Q162 46 168 96 Q170 108 164 116 Q150 82 120 80 Q92 70 60 88 Q46 94 38 114 Z" fill="#F5D26B"/>
+		<path d="M166 92 Q192 98 172 122 Q162 116 162 104 Z" fill="#F5D26B"/>
+		<path d="M54 78 Q88 54 128 60 M70 90 Q104 72 140 80" fill="none" stroke-width="2.5"/>
+		<path d="M164 90 Q186 108 166 138 Q154 134 156 116 Z" fill="#F5D26B"/>
+		<path d="M62 96 L96 104" stroke-width="5"/><path d="M104 104 L138 96" stroke-width="5"/>
+		<circle cx="80" cy="114" r="13" fill="#FFFFFF"/><circle cx="120" cy="114" r="13" fill="#FFFFFF"/>
+		<circle cx="80" cy="109" r="3" fill="#1c1c1c" stroke="none"/><circle cx="120" cy="109" r="3" fill="#1c1c1c" stroke="none"/>
+		<path d="M96 118 Q92 132 100 136 Q108 134 105 126" fill="#F2A29B"/>
+		<circle cx="150" cy="156" r="7" fill="#DFF3FB" stroke-width="3"/><circle cx="166" cy="140" r="4" fill="#DFF3FB" stroke-width="2.5"/>
+		<path d="M0 150 Q20 138 40 150 T80 150 T120 150 T160 150 T200 150 L200 240 L0 240 Z" fill="#7FC4E8"/>
+		<path d="M0 180 Q20 170 40 180 T80 180 T120 180 T160 180 T200 180" fill="none" stroke="#FFFFFF" stroke-width="4"/>
+		<path d="M0 210 Q20 200 40 210 T80 210 T120 210 T160 210 T200 210" fill="none" stroke="#FFFFFF" stroke-width="4"/>
+		<path d="M86 164 L102 154 L124 162 L106 174 Z" fill="#D7263D"/>
+		<path d="M20 150 L20 120 Q20 110 28 110 Q36 110 36 120 L36 150" fill="#F5BC84"/>
 	</g>
 </svg>

@@ -1,37 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Caricature of Mohammed bin Salman">
-	<!-- Original cartoon caricature in the app's flat, thick-outline style; not traced from any reference -->
-	<rect width="200" height="200" fill="#7C8C5C"/>
-	<g stroke="#111111" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
-		<!-- white thobe -->
-		<path d="M14 204 Q18 146 100 142 Q182 146 186 204 Z" fill="#FFFFFF"/>
-		<path d="M100 150 L100 204" fill="none" stroke-width="3"/>
-		<!-- neck -->
-		<path d="M86 118 L114 118 L116 142 Q100 154 84 142 Z" fill="#E5AE7E"/>
-		<!-- ghutra draped behind head and over the shoulders -->
-		<path d="M38 88 Q34 30 100 28 Q166 30 162 88 Q170 128 178 160 L120 150 L80 150 L22 160 Q30 128 38 88 Z" fill="#FFFFFF"/>
-		<path d="M44 70 L156 70 M42 92 L158 92 M40 114 L160 114 M50 50 L150 50" fill="none" stroke="#D7263D" stroke-width="2.5" opacity="0.8"/>
-		<!-- ears hidden; round face -->
-		<ellipse cx="100" cy="92" rx="46" ry="48" fill="#E5AE7E"/>
-		<!-- full dark beard -->
-		<path d="M54 92 Q56 140 100 146 Q144 140 146 92 Q140 120 118 124 Q100 118 82 124 Q60 120 54 92 Z" fill="#2A1E18"/>
-		<!-- moustache -->
-		<path d="M82 112 Q100 104 118 112 Q100 118 82 112 Z" fill="#2A1E18" stroke-width="3"/>
-		<!-- ghutra front band over forehead -->
-		<path d="M52 66 Q56 40 100 38 Q144 40 148 66 Q124 58 100 58 Q76 58 52 66 Z" fill="#FFFFFF"/>
-		<!-- black agal ropes -->
-		<path d="M44 38 Q100 20 156 38" fill="none" stroke-width="9"/>
-		<path d="M44 48 Q100 30 156 48" fill="none" stroke-width="9"/>
-		<!-- brows -->
-		<path d="M68 76 L92 74" stroke-width="5"/>
-		<path d="M108 74 L132 76" stroke-width="5"/>
-		<!-- eyes -->
-		<path d="M68 86 Q80 80 92 86 Q80 92 68 86 Z" fill="#FFFFFF" stroke-width="3"/>
-		<path d="M108 86 Q120 80 132 86 Q120 92 108 86 Z" fill="#FFFFFF" stroke-width="3"/>
-		<circle cx="80" cy="86" r="2.6" fill="#111111" stroke="none"/>
-		<circle cx="120" cy="86" r="2.6" fill="#111111" stroke="none"/>
-		<!-- nose -->
-		<path d="M98 90 Q93 102 100 105 Q107 103 104 98" fill="none" stroke-width="3"/>
-		<!-- confident grin -->
-		<path d="M88 126 Q100 134 112 126" fill="none" stroke="#FFFFFF" stroke-width="3"/>
+	<!-- Original cartoon caricature, flat colours and thin outlines with big soft heads in the style of the freeonis videos; not traced from any reference -->
+	<rect width="200" height="200" fill="#D9E8C0" stroke="none"/>
+	<g stroke="#1c1c1c" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
+		<path d="M30 206 Q36 152 100 150 Q164 152 170 206 Z" fill="#FFFFFF"/>
+		<path d="M100 158 L100 206" fill="none" stroke-width="2.5"/>
+		<path d="M84 128 L116 128 L118 154 Q100 164 82 154 Z" fill="#E5AE7E"/>
+		<path d="M32 90 Q26 24 100 22 Q174 24 168 90 Q176 130 184 164 L124 156 L76 156 L16 164 Q24 130 32 90 Z" fill="#FFFFFF"/>
+		<path d="M40 56 L160 56 M36 80 L164 80 M32 104 L168 104 M30 128 L170 128 M60 30 L140 30" fill="none" stroke="#E5484D" stroke-width="3" opacity="0.85"/>
+		<ellipse cx="100" cy="90" rx="52" ry="52" fill="#E5AE7E"/>
+		<path d="M50 94 Q52 148 100 156 Q148 148 150 94 Q142 128 120 130 Q100 122 80 130 Q58 128 50 94 Z" fill="#2A1E18"/>
+		<path d="M80 118 Q100 108 120 118 Q100 126 80 118 Z" fill="#2A1E18"/>
+		<path d="M92 136 Q100 144 108 136 Q100 140 92 136 Z" fill="#FFFFFF" stroke-width="2"/>
+		<path d="M44 50 Q100 26 156 50" fill="none" stroke-width="10"/>
+		<path d="M44 64 Q100 40 156 64" fill="none" stroke-width="10"/>
+		<path d="M58 80 L92 84" stroke-width="6"/><path d="M108 84 L142 80" stroke-width="6"/>
+		<circle cx="78" cy="94" r="10" fill="#FFFFFF"/>
+		<circle cx="78" cy="95" r="3.2" fill="#1c1c1c" stroke="none"/><circle cx="122" cy="94" r="10" fill="#FFFFFF"/>
+		<circle cx="122" cy="95" r="3.2" fill="#1c1c1c" stroke="none"/>
+		<ellipse cx="100" cy="106" rx="10" ry="12" fill="#D98F78"/>
+		<path d="M97 115 Q100 118 103 115" fill="none" stroke-width="2"/>
 	</g>
 </svg>

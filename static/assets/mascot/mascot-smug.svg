@@ -1,42 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" role="img" aria-label="Mascot smug">
-	<!-- Original cartoon caricature in the app's flat, thick-outline style; not traced from any reference -->
-	<g stroke="#111111" stroke-width="6" stroke-linejoin="round" stroke-linecap="round">
-		<!-- hard offset shadow -->
-		<path d="M30 236 Q28 156 100 150 Q172 156 170 236 Z" fill="#111111" transform="translate(7 5)"/>
-		<ellipse cx="100" cy="82" rx="58" ry="55" fill="#111111" transform="translate(7 5)"/>
-		<!-- suit -->
-		<path d="M30 236 Q28 156 100 150 Q172 156 170 236 Z" fill="#1F2A44"/>
-		<path d="M78 150 L100 182 L122 150 Z" fill="#FFFFFF"/>
-		<path d="M93 156 L107 156 L104 168 L96 168 Z" fill="#D7263D"/>
-		<path d="M96 168 L104 168 L112 222 L100 234 L88 222 Z" fill="#D7263D"/>
-		<path d="M62 158 L88 206 M138 158 L112 206" fill="none" stroke-width="3"/>
-		<rect x="132" y="186" width="12" height="8" fill="#4FA8D8" stroke-width="2"/>
-		<!-- thumbs up -->
-		<path d="M144 214 Q140 196 150 192 L152 176 Q160 172 162 182 L164 194 Q178 196 176 208 Q174 224 160 226 Z" fill="#F0A25E"/>
-		<!-- neck -->
-		<path d="M84 122 L116 122 L118 152 L100 160 L82 152 Z" fill="#F0A25E"/>
-		<!-- ears -->
-		<ellipse cx="43" cy="86" rx="8" ry="12" fill="#F0A25E"/>
-		<ellipse cx="157" cy="86" rx="8" ry="12" fill="#F0A25E"/>
-		<!-- head, chin raised -->
-		<ellipse cx="100" cy="82" rx="58" ry="55" fill="#F0A25E"/>
-		<ellipse cx="82" cy="78" rx="15" ry="9" fill="#FBE3C6" stroke="none"/>
-		<ellipse cx="118" cy="78" rx="15" ry="9" fill="#FBE3C6" stroke="none"/>
-		<!-- golden swoop -->
-		<path d="M42 68 Q40 20 96 14 Q154 10 164 54 Q166 64 160 70 Q146 42 118 44 Q92 34 62 52 Q50 58 42 68 Z" fill="#F7D774"/>
-		<path d="M164 48 Q186 54 168 74 Q160 68 160 60 Z" fill="#F7D774"/>
-		<path d="M56 44 Q86 20 126 26 M72 56 Q104 38 140 46 M60 60 Q74 48 92 48" fill="none" stroke-width="3"/>
-		<!-- raised brows -->
-		<path d="M68 60 Q82 52 96 62" fill="none" stroke-width="5"/>
-		<path d="M104 62 Q118 52 132 60" fill="none" stroke-width="5"/>
-		<!-- eyes closed, happy arcs -->
-		<path d="M70 80 Q82 70 94 80" fill="none" stroke-width="4"/>
-		<path d="M106 80 Q118 70 130 80" fill="none" stroke-width="4"/>
-		<!-- nose -->
-		<path d="M97 84 Q92 98 101 102 Q108 100 106 94" fill="none" stroke-width="3"/>
-		<!-- big smirk with teeth -->
-		<path d="M76 108 Q100 104 126 106 Q122 130 100 130 Q80 128 76 108 Z" fill="#FFFFFF" stroke-width="4"/>
-		<path d="M80 114 L122 112" fill="none" stroke-width="2"/>
-		<path d="M126 106 Q134 104 136 98" fill="none" stroke-width="4"/>
+	<!-- Original cartoon caricature, flat colours and thin outlines with a big soft head in the style of the freeonis videos; not traced from any reference -->
+	<g stroke="#1c1c1c" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+		<path d="M44 240 Q48 172 100 168 Q152 172 156 240 Z" fill="#1F2A44"/>
+		<path d="M82 170 L100 196 L118 170 Z" fill="#FFFFFF"/>
+		<path d="M94 172 L106 172 L104 182 L96 182 Z" fill="#D7263D"/>
+		<path d="M96 182 L104 182 L110 232 L100 240 L90 232 Z" fill="#D7263D"/>
+		<path d="M66 178 L88 214 M134 178 L112 214" fill="none" stroke-width="2.5"/>
+		<path d="M146 220 Q142 202 152 198 L154 182 Q162 178 164 188 L166 200 Q180 202 178 214 Q176 230 162 232 Z" fill="#F5BC84"/>
+		<path d="M84 130 L116 130 L118 172 L100 180 L82 172 Z" fill="#F5BC84"/>
+		<ellipse cx="38" cy="90" rx="8" ry="12" fill="#F5BC84"/><ellipse cx="162" cy="90" rx="8" ry="12" fill="#F5BC84"/>
+		<ellipse cx="100" cy="86" rx="62" ry="58" fill="#F5BC84"/>
+		<ellipse cx="80" cy="84" rx="17" ry="11" fill="#FBE3C6" stroke="none"/><ellipse cx="120" cy="84" rx="17" ry="11" fill="#FBE3C6" stroke="none"/>
+		<path d="M38 82 Q32 22 98 16 Q162 14 168 64 Q170 76 164 84 Q150 50 120 48 Q92 38 60 56 Q46 62 38 82 Z" fill="#F5D26B"/>
+		<path d="M166 60 Q192 66 172 90 Q162 84 162 72 Z" fill="#F5D26B"/>
+		<path d="M54 46 Q88 22 128 28 M70 58 Q104 40 140 48" fill="none" stroke-width="2.5"/>
+		<path d="M62 62 Q80 54 96 66" fill="none" stroke-width="5"/><path d="M104 66 Q120 54 138 62" fill="none" stroke-width="5"/>
+		<path d="M66 86 Q80 74 94 86" fill="none" stroke-width="4"/><path d="M106 86 Q120 74 134 86" fill="none" stroke-width="4"/>
+		<path d="M96 88 Q92 102 100 106 Q108 104 105 96" fill="#F2A29B"/>
+		<path d="M76 110 Q100 106 126 108 Q122 134 100 134 Q80 132 76 110 Z" fill="#FFFFFF" stroke-width="3.5"/>
+		<path d="M80 118 L122 116" fill="none" stroke-width="2"/>
+		<path d="M126 108 Q134 106 136 100" fill="none" stroke-width="3.5"/>
 	</g>
 </svg>
