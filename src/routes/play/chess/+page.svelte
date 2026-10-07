@@ -34,6 +34,14 @@
 			: m.cameo_portrait_alt({ name: m.cameo_putin_name() })
 	);
 	const putinFlag = cameoFlag('putin');
+	// The player takes the white side as Zelensky
+	const zelenskyPortrait = cameoPortrait('zelensky');
+	const zelenskyAlt = $derived(
+		zelenskyPortrait === CAMEO_PLACEHOLDER
+			? m.cameo_placeholder_alt()
+			: m.cameo_portrait_alt({ name: m.cameo_zelensky_name() })
+	);
+	const zelenskyFlag = cameoFlag('zelensky');
 	const vancePortrait = guestPortrait('vance');
 
 	// "New game" asks once more before throwing away a running game
@@ -106,7 +114,7 @@
 
 	<!-- Everything fits the screen: the board takes whatever height the other rows leave over -->
 	<div class="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-2 px-1">
-		<!-- Putin comments on the game; a rookie mistake is always sold as a master plan -->
+		<!-- Putin comments on the game, a rookie mistake is always sold as a master plan; you play as Zelensky -->
 		<div class="flex min-h-14 items-center gap-3">
 			<img
 				src={putinPortrait}
@@ -130,6 +138,12 @@
 					{/key}
 				{/if}
 			</div>
+			<img
+				src={zelenskyPortrait}
+				alt={zelenskyAlt}
+				class="size-14 shrink-0 rotate-2 rounded-lg border-3 border-ink bg-paper object-cover"
+				style:background="url({zelenskyFlag}) center / 100% 100%"
+			/>
 		</div>
 
 		<!-- A size container: the board is the biggest square that fits its width and height -->
