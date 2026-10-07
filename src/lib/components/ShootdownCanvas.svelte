@@ -133,7 +133,7 @@
 <div
 	data-playfield
 	class="flex w-full flex-col gap-3 select-none"
-	style:max-width="max(17rem, min(100%, calc((100dvh - 17rem) * 0.6)))"
+	style:max-width="max(17rem, min(100%, calc((100dvh - 13rem) * 0.6)))"
 >
 	<div class="relative">
 		<canvas

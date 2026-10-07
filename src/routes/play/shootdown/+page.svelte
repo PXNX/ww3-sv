@@ -63,13 +63,17 @@
 		{/if}
 	{/snippet}
 
-	<section class="flex flex-col items-center gap-3">
+	<!-- The status bar and the canvas share one width: as wide as the screen allows, within the height -->
+	<section
+		class="mx-auto flex w-full flex-col items-center gap-2"
+		style:max-width="max(17rem, min(100%, calc((100dvh - 13rem) * 0.6)))"
+	>
 		<div
-			class="flex w-full max-w-md items-center gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
+			class="flex w-full items-center gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1 shadow-[3px_3px_0_var(--color-ink)]"
 		>
-			<ShootdownCommander pose={game.commander} class="h-16 w-14 shrink-0" />
+			<ShootdownCommander pose={game.commander} class="h-11 w-10 shrink-0" />
 
-			<p class="min-h-10 flex-1 text-sm leading-snug font-semibold" aria-live="polite">
+			<p class="min-h-8 flex-1 text-sm leading-snug font-semibold" aria-live="polite">
 				{#if reactionLine}
 					<span class="pop-in inline-block">{reactionLine}</span>
 				{:else}

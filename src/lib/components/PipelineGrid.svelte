@@ -7,10 +7,11 @@
 	The playing field never mirrors in right-to-left languages.
 -->
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { cellCol, cellRow, stationCell } from '$lib/game/pipeline/pipeGrid';
+	import { cellCol, cellRow, neighbor, stationCell } from '$lib/game/pipeline/pipeGrid';
 	import type { Strike } from '$lib/game/pipeline/strikes';
-	import { openings, type Direction, type TileKind } from '$lib/game/pipeline/tiles';
+	import { NORTH, openings, type Direction, type TileKind } from '$lib/game/pipeline/tiles';
 	import type { PipelineView } from '$lib/stores/pipelineGame.svelte';
 	import { explosionFrames, spriteSrc } from '$lib/theme/sprites';
 	import PipelineLandmark from './PipelineLandmark.svelte';
@@ -22,6 +23,8 @@
 		gameId,
 		reducedMotion,
 		disabled,
+		tankerLevel = 0,
+		overlay,
 		onRotate,
 		onRepairStart,
 		onRepairEnd,
@@ -31,6 +34,10 @@
 		gameId: number;
 		reducedMotion: boolean;
 		disabled: boolean;
+		/** How full the tanker at the terminal is, from 0 to 1 */
+		tankerLevel?: number;
+		/** Notices drawn over the top of the board, such as the shutdown warning */
+		overlay?: Snippet;
 		onRotate: (cell: number) => void;
 		onRepairStart: (cell: number) => void;
 		onRepairEnd: () => void;
@@ -78,6 +85,20 @@
 				.map((direction) => DIRECTION_NAMES[direction]())
 				.join(', '),
 			status
+		});
+	}
+
+	/** Per arm of the unrotated shape: whether the oil enters the tile through that arm */
+	function inboundArms(cell: number): boolean[] {
+		const tile = grid.tiles[cell];
+		const distance = view.flow.distance[cell];
+		if (distance < 0) return [];
+		return openings(tile.kind, 0).map((base) => {
+			const direction = ((base + tile.rotation) % 4) as Direction;
+			// The station feeds the first tile from above
+			if (distance === 0) return direction === NORTH;
+			const next = neighbor(grid, cell, direction);
+			return next !== null && view.flow.distance[next] === distance - 1;
 		});
 	}
 
@@ -159,9 +180,11 @@
 
 <div
 	data-playfield
-	class="mx-auto flex w-full flex-col select-none"
-	style:max-width="max(14rem, min(32rem, calc((100dvh - 17rem) * {heightFactor})))"
+	class="relative mx-auto flex w-full flex-col select-none"
+	style:max-width="max(14rem, min(36rem, calc((100dvh - 12.5rem) * {heightFactor})))"
 >
+	{@render overlay?.()}
+
 	<div class="grid gap-1 px-2" style:grid-template-columns={columns}>
 		{#each { length: grid.cols }, col (col)}
 			<div class="aspect-[5/4]">
@@ -170,6 +193,7 @@
 						kind="station"
 						active={view.flow.filled[stationCell(grid)]}
 						label={m.pipeline_station()}
+						{reducedMotion}
 					/>
 				{/if}
 			</div>
@@ -211,6 +235,8 @@
 						repair={tile.repair}
 						repairing={view.repairing === cell}
 						{reducedMotion}
+						inbound={inboundArms(cell)}
+						delayMs={Math.min(view.flow.distance[cell], 14) * 45}
 					/>
 				</button>
 
@@ -312,6 +338,8 @@
 						kind="terminal"
 						active={view.flow.reachesTerminal}
 						label={m.pipeline_terminal()}
+						level={tankerLevel}
+						{reducedMotion}
 					/>
 				{/if}
 			</div>
