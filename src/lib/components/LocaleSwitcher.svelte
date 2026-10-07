@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import { getLocale, isLocale, locales, setLocale } from '$lib/paraglide/runtime';
-	import { LOCALE_NAMES } from '$lib/i18n';
+	import { m } from '#lib/paraglide/messages.js';
+	import { getLocale, isLocale, locales, setLocale } from '#lib/paraglide/runtime.js';
+	import { LOCALE_NAMES } from '#lib/i18n.js';
 	import IconLanguages from '~icons/lucide/languages';
 
 	function onchange(event: Event & { currentTarget: HTMLSelectElement }) {

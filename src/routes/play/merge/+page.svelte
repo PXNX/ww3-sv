@@ -1,20 +1,20 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
-	import CharacterMascot from '$lib/components/CharacterMascot.svelte';
-	import Confetti from '$lib/components/Confetti.svelte';
-	import GameOverModal from '$lib/components/GameOverModal.svelte';
-	import GameShell from '$lib/components/GameShell.svelte';
-	import MergeGrid from '$lib/components/MergeGrid.svelte';
-	import MergeShip from '$lib/components/MergeShip.svelte';
-	import TutorialModal from '$lib/components/TutorialModal.svelte';
-	import { MAX_SUBMARINES, MAX_TIER, type Direction } from '$lib/game/merge/mergeBoard';
-	import { drawMergeBoard } from '$lib/game/merge/tierStyle';
-	import { m } from '$lib/paraglide/messages';
-	import { getLocale } from '$lib/paraglide/runtime';
-	import { firstPlay } from '$lib/services/tutorial';
-	import { MergeGame, noticeText, shipName } from '$lib/stores/mergeGame.svelte';
-	import { CHARACTER_NAME } from '$lib/theme/character';
-	import { spriteSrc } from '$lib/theme/sprites';
+	import CharacterMascot from '#lib/components/CharacterMascot.svelte';
+	import Confetti from '#lib/components/Confetti.svelte';
+	import GameOverModal from '#lib/components/GameOverModal.svelte';
+	import GameShell from '#lib/components/GameShell.svelte';
+	import MergeGrid from '#lib/components/MergeGrid.svelte';
+	import MergeShip from '#lib/components/MergeShip.svelte';
+	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import { MAX_SUBMARINES, MAX_TIER, type Direction } from '#lib/game/merge/mergeBoard.js';
+	import { drawMergeBoard } from '#lib/game/merge/tierStyle.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { firstPlay } from '#lib/services/tutorial.js';
+	import { MergeGame, noticeText, shipName } from '#lib/stores/mergeGame.svelte.js';
+	import { CHARACTER_NAME } from '#lib/theme/character.js';
+	import { spriteSrc } from '#lib/theme/sprites.js';
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconRotate from '~icons/lucide/rotate-ccw';
 

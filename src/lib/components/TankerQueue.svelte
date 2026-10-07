@@ -3,8 +3,8 @@
 	the strait, is the next to go; a sunk tanker tips over and settles with a few bubbles.
 -->
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import { spriteSrc } from '$lib/theme/sprites';
+	import { m } from '#lib/paraglide/messages.js';
+	import { spriteSrc } from '#lib/theme/sprites.js';
 
 	let { total, afloat }: { total: number; afloat: number } = $props();
 </script>

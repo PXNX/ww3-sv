@@ -6,9 +6,9 @@
 <script lang="ts">
 	import type { Component } from 'svelte';
 	import type { SvelteHTMLElements } from 'svelte/elements';
-	import { cardDefinition, type CardId, type CardKind } from '$lib/game/chess/cards';
-	import { m } from '$lib/paraglide/messages';
-	import { cardDescription, cardName, type ChessGame } from '$lib/stores/chessGame.svelte';
+	import { cardDefinition, type CardId, type CardKind } from '#lib/game/chess/cards.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { cardDescription, cardName, type ChessGame } from '#lib/stores/chessGame.svelte.js';
 	import IconBiohazard from '~icons/lucide/biohazard';
 	import IconBall from '~icons/lucide/circle-dot';
 	import IconHeartCrack from '~icons/lucide/heart-crack';

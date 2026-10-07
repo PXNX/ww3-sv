@@ -1,6 +1,6 @@
 <!-- Primary way to place buoy flags on touch screens (long-press is only a shortcut) -->
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import MinefieldBuoy from './MinefieldBuoy.svelte';
 
 	let {

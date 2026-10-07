@@ -8,12 +8,12 @@
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { m } from '$lib/paraglide/messages';
-	import { cellCol, cellRow, neighbor, stationCell } from '$lib/game/pipeline/pipeGrid';
-	import type { Strike } from '$lib/game/pipeline/strikes';
-	import { NORTH, openings, type Direction, type TileKind } from '$lib/game/pipeline/tiles';
-	import type { PipelineView } from '$lib/stores/pipelineGame.svelte';
-	import { explosionFrames, spriteSrc } from '$lib/theme/sprites';
+	import { m } from '#lib/paraglide/messages.js';
+	import { cellCol, cellRow, neighbor, stationCell } from '#lib/game/pipeline/pipeGrid.js';
+	import type { Strike } from '#lib/game/pipeline/strikes.js';
+	import { NORTH, openings, type Direction, type TileKind } from '#lib/game/pipeline/tiles.js';
+	import type { PipelineView } from '#lib/stores/pipelineGame.svelte.js';
+	import { explosionFrames, spriteSrc } from '#lib/theme/sprites.js';
 	import PipelineLandmark from './PipelineLandmark.svelte';
 	import PipelineStrikeIcon from './PipelineStrikeIcon.svelte';
 	import PipelineTile from './PipelineTile.svelte';

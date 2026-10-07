@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { APP_NAME } from '$lib/config';
-	import { m } from '$lib/paraglide/messages';
-	import { renderScoreCard, shareScore, type ScoreCard } from '$lib/services/share';
-	import { mascotImage } from '$lib/theme/character';
+	import { APP_NAME } from '#lib/config.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { renderScoreCard, shareScore, type ScoreCard } from '#lib/services/share.js';
+	import { mascotImage } from '#lib/theme/character.js';
 	import IconShare from '~icons/lucide/share-2';
 
 	let {

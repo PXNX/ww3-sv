@@ -6,8 +6,8 @@
 	right. Only the bar mirrors; playfields keep data-playfield and stay left to right.
 -->
 <script lang="ts">
-	import { heartStates, lostHearts } from '$lib/game/lives';
-	import { m } from '$lib/paraglide/messages';
+	import { heartStates, lostHearts } from '#lib/game/lives.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import IconHeartFilled from '~icons/fluent/heart-24-filled';
 	import IconHeartOutline from '~icons/fluent/heart-24-regular';
 

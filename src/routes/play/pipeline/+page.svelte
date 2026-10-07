@@ -1,25 +1,25 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { m } from '$lib/paraglide/messages';
-	import GameOverModal from '$lib/components/GameOverModal.svelte';
-	import GameShell from '$lib/components/GameShell.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import GameOverModal from '#lib/components/GameOverModal.svelte';
+	import GameShell from '#lib/components/GameShell.svelte';
 	import PipelineDifficultyPicker, {
 		LEVEL_NAMES
-	} from '$lib/components/PipelineDifficultyPicker.svelte';
-	import PipelineGrid from '$lib/components/PipelineGrid.svelte';
-	import PipelineWrench from '$lib/components/PipelineWrench.svelte';
-	import { prefersReducedMotion } from '$lib/game/loop';
+	} from '#lib/components/PipelineDifficultyPicker.svelte';
+	import PipelineGrid from '#lib/components/PipelineGrid.svelte';
+	import PipelineWrench from '#lib/components/PipelineWrench.svelte';
+	import { prefersReducedMotion } from '#lib/game/loop.js';
 	import {
 		TANKER_DEPART_MS,
 		finalScore,
 		shutdownSecondsLeft,
 		streakMultiplier,
 		type Difficulty
-	} from '$lib/game/pipeline/pipelineStep';
-	import { boardDrawer } from '$lib/game/pipeline/shareBoard';
-	import { firstPlay } from '$lib/services/tutorial';
-	import { PipelineGame } from '$lib/stores/pipelineGame.svelte';
-	import { spriteSrc } from '$lib/theme/sprites';
+	} from '#lib/game/pipeline/pipelineStep.js';
+	import { boardDrawer } from '#lib/game/pipeline/shareBoard.js';
+	import { firstPlay } from '#lib/services/tutorial.js';
+	import { PipelineGame } from '#lib/stores/pipelineGame.svelte.js';
+	import { spriteSrc } from '#lib/theme/sprites.js';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
 	import IconRefresh from '~icons/lucide/refresh-cw';

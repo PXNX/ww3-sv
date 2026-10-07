@@ -2,7 +2,7 @@
  * Swappable mascot configuration (requirements Section 13). This is the only module that knows the
  * mascot's name and image paths; game logic never references the character.
  */
-import type { Locale } from '$lib/paraglide/runtime';
+import type { Locale } from '#lib/paraglide/runtime.js';
 
 export type MascotPose = 'idle' | 'smug' | 'sweating' | 'sunk' | 'sulking';
 

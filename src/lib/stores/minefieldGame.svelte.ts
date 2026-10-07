@@ -2,14 +2,14 @@
  * Minefield game state: wraps the pure rules in src/lib/game/minefield with the tools, tankers,
  * submarines, timer and personal bests. The page only calls methods and reads fields.
  */
-import { findChannel } from '$lib/game/minefield/channelPathfinding';
+import { findChannel } from '#lib/game/minefield/channelPathfinding.js';
 import {
 	DEFAULT_DIFFICULTY,
 	DIFFICULTIES,
 	TANKER_COUNT,
 	isDifficultyId,
 	type DifficultyId
-} from '$lib/game/minefield/difficulty';
+} from '#lib/game/minefield/difficulty.js';
 import {
 	chord,
 	countFlags,
@@ -22,14 +22,14 @@ import {
 	toggleFlag,
 	type Board,
 	type BoardChange
-} from '$lib/game/minefield/minefieldBoard';
-import { liveScore, scoreGame, type ScoreBreakdown } from '$lib/game/minefield/scoring';
-import { canDeploySubmarine, submarineSweep } from '$lib/game/minefield/submarineSweep';
-import { createRandom, randomSeed, type Random } from '$lib/game/random';
-import { highscores, type Highscores } from '$lib/services/highscore';
-import { localStore, type Store } from '$lib/services/storage';
-import { soundManager } from '$lib/sound/soundManager.svelte';
-import type { SoundId } from '$lib/sound/sounds';
+} from '#lib/game/minefield/minefieldBoard.js';
+import { liveScore, scoreGame, type ScoreBreakdown } from '#lib/game/minefield/scoring.js';
+import { canDeploySubmarine, submarineSweep } from '#lib/game/minefield/submarineSweep.js';
+import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
+import { highscores, type Highscores } from '#lib/services/highscore.js';
+import { localStore, type Store } from '#lib/services/storage.js';
+import { soundManager } from '#lib/sound/soundManager.svelte.js';
+import type { SoundId } from '#lib/sound/sounds.js';
 
 const EVENT_SOUNDS: Record<MinefieldEventDetail['kind'], SoundId> = {
 	explosion: 'mine-explosion',

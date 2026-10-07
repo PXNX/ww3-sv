@@ -3,7 +3,7 @@
  * board are weighted up, and the fuller the board, the stronger that bias (adaptive difficulty).
  * Pieces that do not fit keep a weight, so trays stay unpredictable and a game can still end.
  */
-import { pickWeighted, type Random } from '$lib/game/random';
+import { pickWeighted, type Random } from '#lib/game/random.js';
 import { fillRatio, fitsAnywhere, type Board } from './board';
 import { PIECES, type Piece } from './pieces';
 

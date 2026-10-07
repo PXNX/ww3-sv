@@ -1,7 +1,7 @@
 <!-- Difficulty choice before a Pipeline Panic game; the last choice is highlighted and focused -->
 <script lang="ts" module>
-	import type { Difficulty } from '$lib/game/pipeline/pipelineStep';
-	import { m } from '$lib/paraglide/messages';
+	import type { Difficulty } from '#lib/game/pipeline/pipelineStep.js';
+	import { m } from '#lib/paraglide/messages.js';
 
 	export const LEVEL_NAMES: Record<Difficulty, () => string> = {
 		easy: m.pipeline_difficulty_easy,
@@ -11,8 +11,8 @@
 </script>
 
 <script lang="ts">
-	import { DIFFICULTIES, DIFFICULTY_CONFIG } from '$lib/game/pipeline/pipelineStep';
-	import { highscores } from '$lib/services/highscore';
+	import { DIFFICULTIES, DIFFICULTY_CONFIG } from '#lib/game/pipeline/pipelineStep.js';
+	import { highscores } from '#lib/services/highscore.js';
 	import IconGrid from '~icons/lucide/grid-3x3';
 	import IconTrophy from '~icons/lucide/trophy';
 

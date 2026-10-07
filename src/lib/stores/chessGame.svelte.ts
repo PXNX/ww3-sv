@@ -12,7 +12,7 @@ import {
 	rollCardParam,
 	type CardId,
 	type CardPlay
-} from '$lib/game/chess/cards';
+} from '#lib/game/chess/cards.js';
 import {
 	legalMoves,
 	squareName,
@@ -20,7 +20,7 @@ import {
 	type Move,
 	type PromotionType,
 	type Square
-} from '$lib/game/chess/chess';
+} from '#lib/game/chess/chess.js';
 import {
 	createMatch,
 	finalScore,
@@ -31,13 +31,13 @@ import {
 	replayMatch,
 	stealCard,
 	type MatchState
-} from '$lib/game/chess/match';
-import { choosePutinMove } from '$lib/game/chess/putin';
-import { createRandom, randomSeed, type Random } from '$lib/game/random';
-import { highscores, type Highscores } from '$lib/services/highscore';
-import { localStore, type Store } from '$lib/services/storage';
-import { soundManager } from '$lib/sound/soundManager.svelte';
-import { m } from '$lib/paraglide/messages';
+} from '#lib/game/chess/match.js';
+import { choosePutinMove } from '#lib/game/chess/putin.js';
+import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
+import { highscores, type Highscores } from '#lib/services/highscore.js';
+import { localStore, type Store } from '#lib/services/storage.js';
+import { soundManager } from '#lib/sound/soundManager.svelte.js';
+import { m } from '#lib/paraglide/messages.js';
 
 const SAVE_KEY = 'chess:game';
 const SCORE_BEST = ['chess', 'score'];

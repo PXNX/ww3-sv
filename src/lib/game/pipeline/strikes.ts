@@ -2,7 +2,7 @@
  * Strike scheduling for Pipeline Panic: how often strikes come, how many arrive at once, and which
  * tiles they aim at. Every strike announces itself with a warning marker before it breaks a tile.
  */
-import { pickWeighted, type Random } from '$lib/game/random';
+import { pickWeighted, type Random } from '#lib/game/random.js';
 import type { Flow, PipeGrid } from './pipeGrid';
 
 export type StrikeKind = 'drone' | 'rocket';

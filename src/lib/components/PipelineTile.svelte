@@ -5,7 +5,12 @@
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { openings, type Direction, type Rotation, type TileKind } from '$lib/game/pipeline/tiles';
+	import {
+		openings,
+		type Direction,
+		type Rotation,
+		type TileKind
+	} from '#lib/game/pipeline/tiles.js';
 	import PipelineWrench from './PipelineWrench.svelte';
 
 	let {

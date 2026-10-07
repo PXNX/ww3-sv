@@ -3,8 +3,8 @@
  * pool of messages, so a portrait and a joke can never be mismatched. All lines are absurd,
  * obviously fictional parody narration, never quotes.
  */
-import { m } from '$lib/paraglide/messages';
-import type { Random } from '$lib/game/random';
+import { m } from '#lib/paraglide/messages.js';
+import type { Random } from '#lib/game/random.js';
 
 export type CameoId =
 	'xi' | 'zelensky' | 'putin' | 'merz' | 'mbs' | 'khamenei' | 'netanyahu' | 'erdogan' | 'macron';

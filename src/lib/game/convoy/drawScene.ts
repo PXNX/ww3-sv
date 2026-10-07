@@ -3,7 +3,7 @@
  * thick ink outlines, no gradients (requirements Section 15). Gunboats, drones, slicks and barrels
  * are generic original shapes; the tanker, mine and submarine use the shared sprites.
  */
-import { explosionFrames, loadImage, spriteSrc } from '$lib/theme/sprites';
+import { explosionFrames, loadImage, spriteSrc } from '#lib/theme/sprites.js';
 import {
 	DRONE_WARNING_AHEAD,
 	FIELD_HEIGHT,

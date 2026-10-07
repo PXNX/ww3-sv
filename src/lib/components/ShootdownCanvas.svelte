@@ -5,11 +5,11 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { m } from '$lib/paraglide/messages';
-	import { createFixedLoop, onAppHidden } from '$lib/game/loop';
-	import { LAUNCHER_TOP, WORLD_HEIGHT, WORLD_WIDTH } from '$lib/game/shootdown/shootdownStep';
-	import { drawScene, loadSceneSprites } from '$lib/game/shootdown/render';
-	import type { ShootdownGame } from '$lib/stores/shootdownGame.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import { createFixedLoop, onAppHidden } from '#lib/game/loop.js';
+	import { LAUNCHER_TOP, WORLD_HEIGHT, WORLD_WIDTH } from '#lib/game/shootdown/shootdownStep.js';
+	import { drawScene, loadSceneSprites } from '#lib/game/shootdown/render.js';
+	import type { ShootdownGame } from '#lib/stores/shootdownGame.svelte.js';
 	import IconPlay from '~icons/lucide/play';
 
 	let { game, showTutorial = false }: { game: ShootdownGame; showTutorial?: boolean } = $props();

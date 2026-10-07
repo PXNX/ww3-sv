@@ -2,7 +2,7 @@
  * Minefield rules (requirements Section 3): mine placement with a safe first tap, sonar numbers,
  * flood reveal, buoy flags and chording. Every function is pure and returns a new board.
  */
-import { shuffle, type Random } from '$lib/game/random';
+import { shuffle, type Random } from '#lib/game/random.js';
 import { hasMineFreeRoute } from './channelPathfinding';
 import { neighborIndices, type GridSize } from './grid';
 

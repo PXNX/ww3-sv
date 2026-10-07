@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createRandom, type Random } from '$lib/game/random';
+import { createRandom, type Random } from '#lib/game/random.js';
 import { computeFlow } from './pipeGrid';
 import {
 	DIFFICULTIES,

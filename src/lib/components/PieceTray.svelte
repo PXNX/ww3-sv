@@ -3,8 +3,8 @@
 	nowhere are dimmed and labelled, so the signal is never color alone.
 -->
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import type { Piece } from '$lib/game/blocks/pieces';
+	import { m } from '#lib/paraglide/messages.js';
+	import type { Piece } from '#lib/game/blocks/pieces.js';
 	import BlocksCell from './BlocksCell.svelte';
 	import IconBan from '~icons/lucide/ban';
 	import IconCheck from '~icons/lucide/check';

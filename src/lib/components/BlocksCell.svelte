@@ -4,7 +4,7 @@
 	sea mines (Z- and S-shapes), and tankers (lines).
 -->
 <script lang="ts" module>
-	import type { PieceKind } from '$lib/game/blocks/pieces';
+	import type { PieceKind } from '#lib/game/blocks/pieces.js';
 
 	export type CellLook = 'filled' | 'empty' | 'ghost' | 'blocked';
 

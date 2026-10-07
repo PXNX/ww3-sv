@@ -1,7 +1,7 @@
 <!-- The parts of a Minefield score, shown on the victory and game-over screens -->
 <script lang="ts">
-	import type { ScoreBreakdown } from '$lib/game/minefield/scoring';
-	import { m } from '$lib/paraglide/messages';
+	import type { ScoreBreakdown } from '#lib/game/minefield/scoring.js';
+	import { m } from '#lib/paraglide/messages.js';
 
 	let { score }: { score: ScoreBreakdown } = $props();
 

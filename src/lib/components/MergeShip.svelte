@@ -4,7 +4,7 @@
 	so the ladder stays readable at small sizes and for players with color-vision deficiency.
 -->
 <script lang="ts">
-	import { tierStyle, tokenColor } from '$lib/game/merge/tierStyle';
+	import { tierStyle, tokenColor } from '#lib/game/merge/tierStyle.js';
 
 	let { tier, class: className = '' }: { tier: number; class?: string } = $props();
 

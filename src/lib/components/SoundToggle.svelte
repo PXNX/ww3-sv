@@ -1,7 +1,7 @@
 <!-- A small icon button that mutes or unmutes every sound effect, remembered across sessions. -->
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import { soundManager } from '$lib/sound/soundManager.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import IconVolume2 from '~icons/lucide/volume-2';
 	import IconVolumeX from '~icons/lucide/volume-x';
 

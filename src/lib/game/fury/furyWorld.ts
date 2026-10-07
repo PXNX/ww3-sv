@@ -7,7 +7,7 @@
  * the same way. Destruction is purely cartoonish: dust puffs, flying splinters and golden sparkles.
  */
 import { Box, Chain, Circle, Edge, Polygon, World, type Body, type Contact } from 'planck';
-import type { Random } from '$lib/game/random';
+import type { Random } from '#lib/game/random.js';
 import {
 	BIRDS,
 	BLAST_DAMAGE,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createRandom } from '$lib/game/random';
+import { createRandom } from '#lib/game/random.js';
 import { BIRD_KINDS } from '../birds';
 import { FuryWorld } from '../furyWorld';
 import { groundMax } from '../terrain';

@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CardId } from '$lib/game/chess/cards';
-import { parseSquare } from '$lib/game/chess/chess';
-import { createHighscores } from '$lib/services/highscore';
-import { createStore, type KeyValueStorage } from '$lib/services/storage';
-import { missingMessages } from '$lib/testing/messages';
+import type { CardId } from '#lib/game/chess/cards.js';
+import { parseSquare } from '#lib/game/chess/chess.js';
+import { createHighscores } from '#lib/services/highscore.js';
+import { createStore, type KeyValueStorage } from '#lib/services/storage.js';
+import { missingMessages } from '#lib/testing/messages.js';
 import { ChessGame, VANCE_CHANCE } from './chessGame.svelte';
 
 function memoryStorage(): KeyValueStorage {

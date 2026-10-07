@@ -19,15 +19,15 @@ import {
 	type MergeState,
 	type Position,
 	type Tile
-} from '$lib/game/merge/mergeBoard';
-import { createRandom, randomSeed, type Random } from '$lib/game/random';
-import { prefersReducedMotion } from '$lib/game/loop';
-import { highscores } from '$lib/services/highscore';
-import { localStore } from '$lib/services/storage';
-import { soundManager } from '$lib/sound/soundManager.svelte';
-import { m } from '$lib/paraglide/messages';
-import { getLocale } from '$lib/paraglide/runtime';
-import { CHARACTER_NAME, type MascotPose } from '$lib/theme/character';
+} from '#lib/game/merge/mergeBoard.js';
+import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
+import { prefersReducedMotion } from '#lib/game/loop.js';
+import { highscores } from '#lib/services/highscore.js';
+import { localStore } from '#lib/services/storage.js';
+import { soundManager } from '#lib/sound/soundManager.svelte.js';
+import { m } from '#lib/paraglide/messages.js';
+import { getLocale } from '#lib/paraglide/runtime.js';
+import { CHARACTER_NAME, type MascotPose } from '#lib/theme/character.js';
 
 const SAVE_KEY = 'merge:game';
 const SCORE_BEST = ['merge', 'score'];

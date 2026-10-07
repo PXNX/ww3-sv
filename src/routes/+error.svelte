@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { APP_NAME } from '$lib/config';
-	import { m } from '$lib/paraglide/messages';
-	import ErrorScene from '$lib/components/scenery/ErrorScene.svelte';
+	import { APP_NAME } from '#lib/config.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import ErrorScene from '#lib/components/scenery/ErrorScene.svelte';
 	import IconHome from '~icons/lucide/house';
 	import IconRotate from '~icons/lucide/rotate-ccw';
 

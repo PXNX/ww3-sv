@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import { MASCOT_PLACEHOLDER, mascotImage, type MascotPose } from '$lib/theme/character';
+	import { m } from '#lib/paraglide/messages.js';
+	import { MASCOT_PLACEHOLDER, mascotImage, type MascotPose } from '#lib/theme/character.js';
 
 	let { pose = 'idle', class: className = '' }: { pose?: MascotPose; class?: string } = $props();
 

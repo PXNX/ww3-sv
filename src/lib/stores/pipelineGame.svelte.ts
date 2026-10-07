@@ -3,9 +3,9 @@
  * snapshot for rendering once per frame. Unchanged tiles keep their snapshot object, so only
  * the tiles that actually changed are redrawn.
  */
-import { createFixedLoop, onAppHidden, type FixedLoop } from '$lib/game/loop';
-import { createRandom, randomSeed, type Random } from '$lib/game/random';
-import type { Tile } from '$lib/game/pipeline/pipeGrid';
+import { createFixedLoop, onAppHidden, type FixedLoop } from '#lib/game/loop.js';
+import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
+import type { Tile } from '#lib/game/pipeline/pipeGrid.js';
 import {
 	createGame,
 	finalScore,
@@ -17,10 +17,10 @@ import {
 	stopRepair,
 	type Difficulty,
 	type PipelineState
-} from '$lib/game/pipeline/pipelineStep';
-import { highscores } from '$lib/services/highscore';
-import { localStore } from '$lib/services/storage';
-import { soundManager } from '$lib/sound/soundManager.svelte';
+} from '#lib/game/pipeline/pipelineStep.js';
+import { highscores } from '#lib/services/highscore.js';
+import { localStore } from '#lib/services/storage.js';
+import { soundManager } from '#lib/sound/soundManager.svelte.js';
 
 const DIFFICULTY_KEY = 'pipeline:difficulty';
 const STEP_MS = 1000 / 60;

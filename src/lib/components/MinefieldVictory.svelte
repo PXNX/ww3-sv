@@ -4,7 +4,7 @@
 	A new best score or time adds confetti and a Share button.
 -->
 <script lang="ts" module>
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 
 	const VICTORY_LINES = [
 		m.minefield_victory_1,
@@ -19,13 +19,13 @@
 
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { formatTime } from '$lib/game/minefield/scoring';
-	import { getLocale } from '$lib/paraglide/runtime';
-	import type { ScoreCard } from '$lib/services/share';
-	import type { MinefieldResult } from '$lib/stores/minefieldGame.svelte';
-	import { soundManager } from '$lib/sound/soundManager.svelte';
-	import { CHARACTER_NAME } from '$lib/theme/character';
-	import { spriteSrc } from '$lib/theme/sprites';
+	import { formatTime } from '#lib/game/minefield/scoring.js';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import type { ScoreCard } from '#lib/services/share.js';
+	import type { MinefieldResult } from '#lib/stores/minefieldGame.svelte.js';
+	import { soundManager } from '#lib/sound/soundManager.svelte.js';
+	import { CHARACTER_NAME } from '#lib/theme/character.js';
+	import { spriteSrc } from '#lib/theme/sprites.js';
 	import CharacterMascot from './CharacterMascot.svelte';
 	import Confetti from './Confetti.svelte';
 	import MinefieldScoreBreakdown from './MinefieldScoreBreakdown.svelte';

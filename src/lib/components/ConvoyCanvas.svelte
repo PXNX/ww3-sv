@@ -6,13 +6,13 @@
 -->
 <script lang="ts">
 	import { onMount, type Snippet } from 'svelte';
-	import { m } from '$lib/paraglide/messages';
-	import { FIELD_HEIGHT, FIELD_WIDTH, SIDE_MARGIN } from '$lib/game/convoy/constants';
-	import { drawScene, loadConvoySprites } from '$lib/game/convoy/drawScene';
-	import { shipRange } from '$lib/game/convoy/runnerStep';
-	import { createFixedLoop, onAppHidden } from '$lib/game/loop';
-	import { PointerDrag, clampToBounds, clientToLocal } from '$lib/game/pointerDrag';
-	import type { ConvoyGame } from '$lib/stores/convoyGame.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import { FIELD_HEIGHT, FIELD_WIDTH, SIDE_MARGIN } from '#lib/game/convoy/constants.js';
+	import { drawScene, loadConvoySprites } from '#lib/game/convoy/drawScene.js';
+	import { shipRange } from '#lib/game/convoy/runnerStep.js';
+	import { createFixedLoop, onAppHidden } from '#lib/game/loop.js';
+	import { PointerDrag, clampToBounds, clientToLocal } from '#lib/game/pointerDrag.js';
+	import type { ConvoyGame } from '#lib/stores/convoyGame.svelte.js';
 
 	let {
 		game,

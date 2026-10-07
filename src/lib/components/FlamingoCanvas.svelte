@@ -4,20 +4,20 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { m } from '$lib/paraglide/messages';
-	import { getLocale } from '$lib/paraglide/runtime';
-	import { textDirection } from '$lib/i18n';
-	import { createFixedLoop, prefersReducedMotion, type FixedLoop } from '$lib/game/loop';
-	import { suppliedFlamingoAssets } from '$lib/game/flamingo/assets';
-	import { WORLD_WIDTH } from '$lib/game/flamingo/physics';
+	import { m } from '#lib/paraglide/messages.js';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { textDirection } from '#lib/i18n.js';
+	import { createFixedLoop, prefersReducedMotion, type FixedLoop } from '#lib/game/loop.js';
+	import { suppliedFlamingoAssets } from '#lib/game/flamingo/assets.js';
+	import { WORLD_WIDTH } from '#lib/game/flamingo/physics.js';
 	import {
 		FlamingoEffects,
 		drawScene,
 		type RenderAssets,
 		type RenderLabels
-	} from '$lib/game/flamingo/render';
-	import { explosionFrames, loadImage } from '$lib/theme/sprites';
-	import type { FlamingoGame } from '$lib/stores/flamingoGame.svelte';
+	} from '#lib/game/flamingo/render.js';
+	import { explosionFrames, loadImage } from '#lib/theme/sprites.js';
+	import type { FlamingoGame } from '#lib/stores/flamingoGame.svelte.js';
 	import IconPlay from '~icons/lucide/play';
 
 	let { game, showTutorial = false }: { game: FlamingoGame; showTutorial?: boolean } = $props();

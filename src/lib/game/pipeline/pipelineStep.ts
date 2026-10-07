@@ -4,7 +4,7 @@
  * station to the export terminal. From then on strikes arrive, oil is delivered while the route is
  * connected, and a flow cut lasting shutdownMs shuts the station down (game over).
  */
-import type { Random } from '$lib/game/random';
+import type { Random } from '#lib/game/random.js';
 import { computeFlow, generateLayout, type Flow, type PipeGrid } from './pipeGrid';
 import {
 	pickStrikeKind,

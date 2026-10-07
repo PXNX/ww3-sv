@@ -12,13 +12,13 @@ import {
 	lineCount,
 	placePiece,
 	type Board
-} from '$lib/game/blocks/board';
-import { generateTray } from '$lib/game/blocks/pieceGenerator';
-import type { Cell, Piece, PieceKind } from '$lib/game/blocks/pieces';
-import { NO_COMBO, performanceMood, scoreMove } from '$lib/game/blocks/scoring';
-import { createRandom, randomSeed, type Random } from '$lib/game/random';
-import { highscores, type Highscores } from '$lib/services/highscore';
-import { soundManager } from '$lib/sound/soundManager.svelte';
+} from '#lib/game/blocks/board.js';
+import { generateTray } from '#lib/game/blocks/pieceGenerator.js';
+import type { Cell, Piece, PieceKind } from '#lib/game/blocks/pieces.js';
+import { NO_COMBO, performanceMood, scoreMove } from '#lib/game/blocks/scoring.js';
+import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
+import { highscores, type Highscores } from '#lib/services/highscore.js';
+import { soundManager } from '#lib/sound/soundManager.svelte.js';
 
 export const BLOCKS_BEST_KEY = ['blocks', 'score'] as const;
 

@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { createRandom } from '$lib/game/random';
+import { createRandom } from '#lib/game/random.js';
 import {
 	CAMEO_PLACEHOLDER,
 	CAMEOS,

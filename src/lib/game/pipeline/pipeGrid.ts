@@ -4,7 +4,7 @@
  * the top row; the export terminal sits on the opposite (south) edge below the bottom row, which
  * suits a portrait phone screen.
  */
-import { pickWeighted, randomInt, type Random } from '$lib/game/random';
+import { pickWeighted, randomInt, type Random } from '#lib/game/random.js';
 import {
 	DELTA,
 	DIRECTIONS,

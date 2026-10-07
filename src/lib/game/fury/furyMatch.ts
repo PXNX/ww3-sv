@@ -5,7 +5,7 @@
  * aiming -> (launch) -> flying -> (all birds finished) -> settling -> aiming | won | failed
  * The level is won the moment the last golden dome breaks, in any phase.
  */
-import type { Random } from '$lib/game/random';
+import type { Random } from '#lib/game/random.js';
 import { BIRDS, type BirdKind } from './birds';
 import { FuryWorld } from './furyWorld';
 import { MIN_POWER, launchVelocity, type Aim } from './launch';

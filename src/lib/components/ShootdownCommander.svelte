@@ -4,9 +4,9 @@
 	generic flat silhouette drawn here until then.
 -->
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import { shootdownAsset, type ShootdownAssetId } from '$lib/game/shootdown/assets';
-	import type { CommanderPose } from '$lib/game/shootdown/shootdownStep';
+	import { m } from '#lib/paraglide/messages.js';
+	import { shootdownAsset, type ShootdownAssetId } from '#lib/game/shootdown/assets.js';
+	import type { CommanderPose } from '#lib/game/shootdown/shootdownStep.js';
 
 	let { pose = 'pointing', class: className = '' }: { pose?: CommanderPose; class?: string } =
 		$props();

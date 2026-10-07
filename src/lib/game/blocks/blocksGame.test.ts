@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { createHighscores } from '$lib/services/highscore';
-import { createStore, type KeyValueStorage } from '$lib/services/storage';
-import { BLOCKS_BEST_KEY, BlocksGame } from '$lib/stores/blocksGame.svelte';
+import { createHighscores } from '#lib/services/highscore.js';
+import { createStore, type KeyValueStorage } from '#lib/services/storage.js';
+import { BLOCKS_BEST_KEY, BlocksGame } from '#lib/stores/blocksGame.svelte.js';
 import { boardFromRows, legalAnchors } from './board';
 import { pieceById } from './pieces';
 

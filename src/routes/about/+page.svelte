@@ -4,9 +4,9 @@
 -->
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { m } from '$lib/paraglide/messages';
-	import { APP_NAME } from '$lib/config';
-	import LocaleSwitcher from '$lib/components/LocaleSwitcher.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import { APP_NAME } from '#lib/config.js';
+	import LocaleSwitcher from '#lib/components/LocaleSwitcher.svelte';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
 </script>
 

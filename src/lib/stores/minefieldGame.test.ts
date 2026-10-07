@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createHighscores } from '$lib/services/highscore';
-import { createStore, type KeyValueStorage } from '$lib/services/storage';
+import { createHighscores } from '#lib/services/highscore.js';
+import { createStore, type KeyValueStorage } from '#lib/services/storage.js';
 import { MinefieldGame } from './minefieldGame.svelte';
 
 function memoryStorage(): KeyValueStorage {

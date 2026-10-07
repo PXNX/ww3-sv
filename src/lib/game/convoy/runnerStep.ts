@@ -2,7 +2,7 @@
  * Convoy Runner rules (requirements Section 4), stepped by a fixed time delta so the game
  * behaves identically on every device. All functions are pure: they return a new state.
  */
-import type { Random } from '$lib/game/random';
+import type { Random } from '#lib/game/random.js';
 import {
 	BARREL_POINTS,
 	DRONE_ARRIVE_END,

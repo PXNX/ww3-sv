@@ -7,7 +7,7 @@
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import IconPlay from '~icons/lucide/play';
 
 	let {

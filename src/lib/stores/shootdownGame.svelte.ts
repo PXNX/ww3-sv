@@ -3,8 +3,8 @@
  * banners, the commander's mood, settings and personal bests. The simulation state itself is a
  * plain object (read by the canvas every frame); only what the page chrome shows is reactive.
  */
-import { createRandom, randomInt, randomSeed, type Random } from '$lib/game/random';
-import { prefersReducedMotion } from '$lib/game/loop';
+import { createRandom, randomInt, randomSeed, type Random } from '#lib/game/random.js';
+import { prefersReducedMotion } from '#lib/game/loop.js';
 import {
 	INTERMISSION_MS,
 	STARTING_LIVES,
@@ -14,7 +14,7 @@ import {
 	type CommanderPose,
 	type ShootdownEvent,
 	type ShootdownState
-} from '$lib/game/shootdown/shootdownStep';
+} from '#lib/game/shootdown/shootdownStep.js';
 import {
 	createClouds,
 	driftClouds,
@@ -22,10 +22,10 @@ import {
 	type Cloud,
 	type Effect,
 	type SceneExtras
-} from '$lib/game/shootdown/render';
-import { highscores } from '$lib/services/highscore';
-import { localStore } from '$lib/services/storage';
-import { soundManager } from '$lib/sound/soundManager.svelte';
+} from '#lib/game/shootdown/render.js';
+import { highscores } from '#lib/services/highscore.js';
+import { localStore } from '#lib/services/storage.js';
+import { soundManager } from '#lib/sound/soundManager.svelte.js';
 
 export type ShootdownStatus = 'ready' | 'playing' | 'paused' | 'over';
 

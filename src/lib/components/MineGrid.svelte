@@ -42,12 +42,12 @@
 
 <script lang="ts">
 	import type { Attachment } from 'svelte/attachments';
-	import { prefersReducedMotion } from '$lib/game/loop';
-	import { cellPosition, type GridSize } from '$lib/game/minefield/grid';
-	import type { Board, Cell } from '$lib/game/minefield/minefieldBoard';
-	import { m } from '$lib/paraglide/messages';
-	import type { MinefieldPhase, MinefieldTool } from '$lib/stores/minefieldGame.svelte';
-	import { spriteSrc } from '$lib/theme/sprites';
+	import { prefersReducedMotion } from '#lib/game/loop.js';
+	import { cellPosition, type GridSize } from '#lib/game/minefield/grid.js';
+	import type { Board, Cell } from '#lib/game/minefield/minefieldBoard.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import type { MinefieldPhase, MinefieldTool } from '#lib/stores/minefieldGame.svelte.js';
+	import { spriteSrc } from '#lib/theme/sprites.js';
 	import MinefieldBuoy from './MinefieldBuoy.svelte';
 	import IconCheck from '~icons/lucide/check';
 	import IconX from '~icons/lucide/x';
