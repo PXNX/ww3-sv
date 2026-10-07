@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" role="img" aria-label="Mascot sweating">
 	<!-- Original cartoon caricature, flat colours and thin outlines with a big soft head in the style of the freeonis videos; not traced from any reference -->
 	<g stroke="#1c1c1c" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
-		<path data-part="neck" d="M52 118 L148 118 L154 184 L46 184 Z" fill="#F27F3E"/>
-		<path d="M62 158 Q100 170 138 158" fill="none" stroke="#D9772F" stroke-width="2.5" opacity="0.7"/>
+		<path data-part="neck" d="M72 118 L128 118 L132 184 L68 184 Z" fill="#F27F3E"/>
+		<path d="M78 164 Q100 170 122 164" fill="none" stroke="#D9772F" stroke-width="2.5" opacity="0.7"/>
 		<path d="M10 240 Q10 178 100 172 Q190 178 190 240 Z" fill="#1F2A44"/>
 		<path d="M78 174 L100 200 L122 174 Z" fill="#FFFFFF"/>
 		<path d="M93 176 L107 176 L105 186 L95 186 Z" fill="#D7263D"/>
@@ -11,7 +11,7 @@
 		<circle cx="132" cy="232" r="3.5" fill="#F5D26B" stroke-width="2"/>
 		<path d="M120 224 L128 231 M120 240 L128 233" fill="none" stroke-width="2"/>
 		<ellipse cx="28" cy="96" rx="8" ry="13" fill="#F27F3E"/><ellipse cx="172" cy="96" rx="8" ry="13" fill="#F27F3E"/>
-		<path d="M27 90 Q26 26 100 28 Q174 26 173 90 Q182 142 100 153 Q18 142 27 90 Z" fill="#F27F3E"/>
+		<path d="M27 90 Q26 26 100 28 Q174 26 173 90 Q182 146 100 158 Q18 146 27 90 Z" fill="#F27F3E"/>
 		<path d="M68 140 Q100 155 132 140" fill="none" stroke-width="2.5"/>
 		<ellipse cx="78" cy="88" rx="18" ry="11" fill="#FFE6C6" stroke="none"/><ellipse cx="122" cy="88" rx="18" ry="11" fill="#FFE6C6" stroke="none"/>
 		<ellipse cx="46" cy="116" rx="12" ry="8" fill="#EE7A5E" stroke="none" opacity="0.6"/><ellipse cx="154" cy="116" rx="12" ry="8" fill="#EE7A5E" stroke="none" opacity="0.6"/>
