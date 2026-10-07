@@ -1,5 +1,5 @@
 <!--
-	The build panel under the playfield: with an empty slot selected it offers the four defenses,
+	The build panel under the playfield: with an empty slot selected it offers the five defenses,
 	with a built one selected it shows what it is and offers upgrade and sell. Everything costs
 	helmets (the only currency). A button that is too expensive stays tappable so the helmet
 	counter can shake, and says so to screen readers through aria-disabled.
@@ -25,12 +25,14 @@
 		squad: m.dronewall_squad_name,
 		mortar: m.dronewall_mortar_name,
 		nest: m.dronewall_nest_name,
+		patriot: m.dronewall_patriot_name,
 		trench: m.dronewall_trench_name
 	};
 	const ROLES: Record<DefenseKind, () => string> = {
 		squad: m.dronewall_squad_role,
 		mortar: m.dronewall_mortar_role,
 		nest: m.dronewall_nest_role,
+		patriot: m.dronewall_patriot_role,
 		trench: m.dronewall_trench_role
 	};
 
@@ -53,19 +55,21 @@
 			{m.dronewall_panel_hint()}
 		</p>
 	{:else if defense === null}
-		<ul class="grid grid-cols-4 gap-1.5">
+		<ul class="grid grid-cols-5 gap-1">
 			{#each DEFENSE_KINDS as kind (kind)}
 				{@const cost = buildCost(kind)}
 				<li class="contents">
 					<button
 						type="button"
-						class="btn-chunky flex-col gap-0 px-1 py-1 text-xs leading-tight {afford(cost)
+						class="btn-chunky h-full flex-col gap-0 px-0.5 py-1 text-[0.65rem] leading-tight sm:text-xs {afford(
+							cost
+						)
 							? 'bg-paper'
 							: 'bg-sand opacity-70'}"
 						aria-disabled={!afford(cost)}
 						onclick={() => game.build(kind)}
 					>
-						<DroneWallDefense {kind} class="size-8" />
+						<DroneWallDefense {kind} class="size-7 sm:size-8" />
 						<span class="text-center">{NAMES[kind]()}</span>
 						<span class="flex items-center gap-0.5 text-sm" aria-label={m.dronewall_cost({ cost })}>
 							<DroneWallDefense kind="helmet" class="size-4" />

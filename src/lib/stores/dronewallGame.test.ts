@@ -76,16 +76,42 @@ describe('DroneWallGame', () => {
 		expect(game.selectedSlot).toBeNull();
 	});
 
-	it('collects a tapped helmet only while playing', () => {
+	it('collects dropped helmets by itself when they land on the counter', () => {
 		const { game } = newGame();
-		const helmet = dropHelmet(game.state, soldierAt(300), 1);
-		expect(game.tap(helmet.x, helmet.y)).toBe(false);
 		game.start();
-		const fresh = dropHelmet(game.state, soldierAt(300), 1);
-		expect(game.tap(fresh.x + 3, fresh.y)).toBe(true);
-		expect(game.helmets).toBe(STARTING_HELMETS + 1);
-		expect(game.collected).toBe(1);
-		expect(game.tap(fresh.x, fresh.y)).toBe(false);
+		dropHelmet(game.state, soldierAt(300), 1);
+		dropHelmet(game.state, soldierAt(310, 'brute'), 3);
+		game.update(STEP);
+		// Still flying: not in the pocket yet
+		expect(game.helmets).toBe(STARTING_HELMETS);
+		for (let i = 0; i < 60; i++) game.update(STEP);
+		expect(game.helmets).toBe(STARTING_HELMETS + 4);
+		expect(game.collected).toBe(4);
+		expect(game.collectPulse).toBe(2);
+		expect(game.state.helmets).toHaveLength(0);
+		// The "+n" pops up at the counter, not where the soldier fell
+		expect(game.effects.some((effect) => effect.kind === 'popup')).toBe(true);
+	});
+
+	it('cycles the game speed with one button: x1, x2, x4 and around', () => {
+		const { game } = newGame();
+		expect(game.speed).toBe(1);
+		expect(game.cycleSpeed()).toBe(2);
+		expect(game.cycleSpeed()).toBe(4);
+		expect(game.cycleSpeed()).toBe(1);
+	});
+
+	it('runs that many simulation steps per frame', () => {
+		const { game } = newGame();
+		game.start();
+		game.update(STEP);
+		const normal = game.state.timeMs;
+		for (const speed of [2, 4]) {
+			game.speed = speed as 2 | 4;
+			const before = game.state.timeMs;
+			game.update(STEP);
+			expect(game.state.timeMs - before).toBeCloseTo(normal * speed);
+		}
 	});
 
 	it('shows tumble and poof effects for a fallen soldier, never anything bloody', () => {

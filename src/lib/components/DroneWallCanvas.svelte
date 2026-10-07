@@ -1,7 +1,9 @@
 <!--
-	Drone Wall playfield: a crisp high-DPI canvas driven by the fixed-step loop. Tapping a helmet
-	collects it; the fixed defense slots are real buttons laid over the canvas, so they work with
-	touch, mouse and keyboard alike. The playfield never mirrors in right-to-left languages.
+	Drone Wall playfield: a crisp high-DPI canvas driven by the fixed-step loop. Fallen enemies drop
+	helmets that fly to the helmet counter in the corner of the field (the canvas measures where it
+	sits, so they land right on it). The fixed defense slots are real buttons laid over the canvas, so
+	they work with touch, mouse and keyboard alike. The playfield never mirrors in right-to-left
+	languages.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -12,11 +14,13 @@
 	import { clientToLocal } from '#lib/game/pointerDrag.js';
 	import type { DroneWallGame } from '#lib/stores/dronewallGame.svelte.js';
 	import PauseOverlay from './PauseOverlay.svelte';
+	import DroneWallDefense from './DroneWallDefense.svelte';
 	import IconPlay from '~icons/lucide/play';
 
 	let { game }: { game: DroneWallGame } = $props();
 
 	let canvas: HTMLCanvasElement | undefined = $state();
+	let counter: HTMLElement | undefined = $state();
 	let context: CanvasRenderingContext2D | null = null;
 	/** CSS pixels per world unit */
 	let scale = 1;
@@ -28,6 +32,19 @@
 		drawScene(context, game.state, game.sceneExtras());
 	}
 
+	/** Tells the game where the helmet counter is, in world units, so helmets fly to its centre */
+	function measureCounter() {
+		if (!canvas || !counter) return;
+		const field = canvas.getBoundingClientRect();
+		const box = counter.getBoundingClientRect();
+		if (field.width === 0) return;
+		game.helmetTarget = clientToLocal(
+			field,
+			{ x: box.left + box.width / 2, y: box.top + box.height / 2 },
+			{ width: WORLD_WIDTH, height: WORLD_HEIGHT }
+		);
+	}
+
 	function resize() {
 		if (!canvas) return;
 		const ratio = window.devicePixelRatio || 1;
@@ -35,6 +52,7 @@
 		scale = width / WORLD_WIDTH;
 		canvas.width = Math.round(width * ratio);
 		canvas.height = Math.round(((width * WORLD_HEIGHT) / WORLD_WIDTH) * ratio);
+		measureCounter();
 		draw();
 	}
 
@@ -64,19 +82,15 @@
 		draw();
 	});
 
-	function onCanvasDown(event: PointerEvent) {
-		if (game.status !== 'playing' || !canvas) return;
-		const rect = canvas.getBoundingClientRect();
-		const point = clientToLocal(
-			rect,
-			{ x: event.clientX, y: event.clientY },
-			{
-				width: WORLD_WIDTH,
-				height: WORLD_HEIGHT
-			}
-		);
-		// A tap that misses every helmet just closes the build panel
-		if (!game.tap(point.x, point.y)) game.select(null);
+	// The counter grows with its number of digits, so measure again when that changes
+	$effect(() => {
+		void String(game.helmets).length;
+		measureCounter();
+	});
+
+	function onCanvasDown() {
+		// A tap on the open field just closes the build panel
+		if (game.status === 'playing') game.select(null);
 	}
 
 	const isInteractive = (target: EventTarget | null) =>
@@ -116,6 +130,29 @@
 			oncontextmenu={(event) => event.preventDefault()}
 		></canvas>
 
+		<!-- The helmet counter: collected helmets fly in here -->
+		<div bind:this={counter} class="pointer-events-none absolute top-[1.5%] right-[2.5%]">
+			{#key game.collectPulse}
+				<span
+					class="bump inline-block rounded-[10px_6px_12px_8px] border-3 border-ink bg-paper px-2 py-0.5 shadow-[2px_2px_0_var(--color-ink)]"
+				>
+					{#key game.brokeCount}
+						<span
+							class="inline-flex items-center gap-1 font-display text-xl leading-none font-bold tabular-nums {game.brokeCount >
+							0
+								? 'shake'
+								: ''}"
+							role="img"
+							aria-label={m.dronewall_helmets_label({ count: game.helmets })}
+						>
+							<DroneWallDefense kind="helmet" class="size-6" />
+							<span aria-hidden="true" class="min-w-[1.5ch] text-end">{game.helmets}</span>
+						</span>
+					{/key}
+				</span>
+			{/key}
+		</div>
+
 		{#each SLOTS as slot, index (index)}
 			{@const defense = built[index]}
 			<button
@@ -149,13 +186,17 @@
 						class="pop-in rounded-[10px_6px_12px_8px] border-3 border-ink px-3 py-1 text-center font-display text-xl font-bold shadow-[3px_3px_0_var(--color-ink)] {game
 							.banner.kind === 'breach'
 							? 'bg-tie-red'
-							: 'bg-paper'}"
+							: game.banner.kind === 'air'
+								? 'bg-explosion-yellow'
+								: 'bg-paper'}"
 						style:rotate="-2deg"
 					>
 						{#if game.banner.kind === 'incoming'}
 							{m.dronewall_wave_incoming({ wave: game.banner.wave })}
 						{:else if game.banner.kind === 'cleared'}
 							{m.dronewall_wave_cleared({ bonus: game.banner.bonus })}
+						{:else if game.banner.kind === 'air'}
+							{m.dronewall_air_incoming()}
 						{:else}
 							{m.dronewall_breach()}
 						{/if}
@@ -184,3 +225,41 @@
 		{/if}
 	</div>
 </div>
+
+<style>
+	.bump {
+		animation: bump 220ms ease-out;
+	}
+
+	.shake {
+		animation: shake 360ms ease-in-out;
+	}
+
+	@keyframes bump {
+		40% {
+			transform: scale(1.14);
+		}
+	}
+
+	@keyframes shake {
+		20% {
+			translate: -4px 0;
+		}
+		40% {
+			translate: 4px 0;
+		}
+		60% {
+			translate: -3px 0;
+		}
+		80% {
+			translate: 2px 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.bump,
+		.shake {
+			animation: none;
+		}
+	}
+</style>

@@ -46,14 +46,23 @@ export const STARTING_HELMETS = 22;
 export const FIRST_PREP_MS = 9000;
 export const PREP_MS = 6500;
 
-/** A dropped helmet stays this long, and blinks during the last part */
-export const HELMET_TTL_MS = 6500;
-export const HELMET_BLINK_MS = 2000;
-/** A tap within this distance of a helmet picks it up (generous for fingers) */
-export const HELMET_PICK_RADIUS = 30;
+/**
+ * A dropped helmet collects itself: it pops up where the enemy fell, then flies to the helmet
+ * counter and is added to the pocket when it lands.
+ */
+export const HELMET_POP_MS = 260;
+export const HELMET_FLY_MS = 640;
+/** Where the helmet counter sits on the field, until the page measures the real spot */
+export const HELMET_TARGET: Point = { x: WORLD_WIDTH - 42, y: 22 };
 
-export type DefenseKind = 'squad' | 'mortar' | 'nest' | 'trench';
-export const DEFENSE_KINDS: readonly DefenseKind[] = ['squad', 'mortar', 'nest', 'trench'];
+export type DefenseKind = 'squad' | 'mortar' | 'nest' | 'patriot' | 'trench';
+export const DEFENSE_KINDS: readonly DefenseKind[] = [
+	'squad',
+	'mortar',
+	'nest',
+	'patriot',
+	'trench'
+];
 export const MAX_LEVEL = 3;
 
 export type SoldierKind = 'scout' | 'grunt' | 'brute';
@@ -76,7 +85,34 @@ export const SOLDIERS: Record<SoldierKind, SoldierStats> = {
 	brute: { hp: 150, speed: 25, value: 3, radius: 15, points: 40 }
 };
 
-/** Soldiers get a little sturdier every wave */
+/** Aerial enemies ignore the road and fly straight from the top edge at the line */
+export type FlyerKind = 'shahed' | 'heli';
+export type EnemyKind = SoldierKind | FlyerKind;
+
+export interface FlyerStats {
+	hp: number;
+	/** World units per second along the straight flight */
+	speed: number;
+	value: number;
+	radius: number;
+	points: number;
+}
+
+export const FLYERS: Record<FlyerKind, FlyerStats> = {
+	// A fast kamikaze drone
+	shahed: { hp: 30, speed: 62, value: 1, radius: 9, points: 15 },
+	// A slow, tough helicopter
+	heli: { hp: 150, speed: 36, value: 3, radius: 15, points: 50 }
+};
+
+export function isFlyerKind(kind: EnemyKind): kind is FlyerKind {
+	return kind in FLYERS;
+}
+
+/** Share of its damage an assault squad deals to aerial enemies (Patriots deal full damage) */
+export const SQUAD_AIR_FACTOR = 0.4;
+
+/** Enemies get a little sturdier every wave */
 export function hpScale(wave: number): number {
 	return Math.pow(1.11, Math.max(0, wave - 1));
 }
@@ -98,6 +134,8 @@ export interface DefenseStats {
 	slow: number;
 	/** Trench: mine damage per second to every soldier inside range */
 	dps: number;
+	/** Nest drones and Patriot missiles: flight speed in units per second */
+	speed: number;
 }
 
 const NONE = {
@@ -106,6 +144,7 @@ const NONE = {
 	flightMs: 0,
 	slow: 1,
 	dps: 0,
+	speed: 0,
 	intervalMs: 0,
 	damage: 0
 };
@@ -148,11 +187,17 @@ const DEFENSE_STATS: Record<DefenseKind, readonly DefenseStats[]> = {
 			flightMs: 750
 		}
 	],
-	// One strong hit on the toughest soldier in reach, then a cooldown
+	// Spams FPV drones, one every interval, each diving onto a soldier in reach
 	nest: [
-		{ ...NONE, range: 200, intervalMs: 1800, damage: 55 },
-		{ ...NONE, range: 215, intervalMs: 1500, damage: 75 },
-		{ ...NONE, range: 230, intervalMs: 1200, damage: 100 }
+		{ ...NONE, range: 200, intervalMs: 560, damage: 18, speed: 230 },
+		{ ...NONE, range: 215, intervalMs: 460, damage: 24, speed: 240 },
+		{ ...NONE, range: 230, intervalMs: 340, damage: 30, speed: 250 }
+	],
+	// Long range anti-air: homing missiles that only go for aerial enemies
+	patriot: [
+		{ ...NONE, range: 240, intervalMs: 1900, damage: 45, speed: 300 },
+		{ ...NONE, range: 255, intervalMs: 1550, damage: 60, speed: 310 },
+		{ ...NONE, range: 270, intervalMs: 1250, damage: 80, speed: 320 }
 	],
 	// Slows the crowd; the upgrades add mines
 	trench: [
@@ -167,6 +212,7 @@ const DEFENSE_COSTS: Record<DefenseKind, readonly [number, number, number]> = {
 	squad: [10, 12, 20],
 	mortar: [20, 18, 28],
 	nest: [16, 16, 26],
+	patriot: [22, 18, 28],
 	trench: [8, 10, 16]
 };
 

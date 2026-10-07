@@ -1,29 +1,58 @@
 /*
- * One fixed step of Drone Wall: waves start and end, soldiers march, trenches slow and mine them,
- * defenses pick targets and fire, mortar shells land, fallen soldiers drop helmets, and anyone who
- * reaches the end of the road costs a heart. All randomness comes from the Random passed in.
+ * One fixed step of Drone Wall: waves start and end, soldiers march and aircraft fly in, trenches
+ * slow and mine the soldiers, defenses pick targets and fire, drones, missiles and mortar shells
+ * land, fallen enemies drop helmets that collect themselves, and anyone who reaches the line costs
+ * a heart. All randomness comes from the Random passed in.
  */
 import type { Random } from '#lib/game/random.js';
-import { PREP_MS, SLOTS, SOLDIERS, defenseStats, hpScale, type Point } from './config';
-import { ageHelmets, dropHelmet } from './economy';
-import { ROAD, distanceBetween, pointAt } from './path';
-import type { DroneWallEvent, DroneWallState, Soldier } from './state';
 import {
+	FLYERS,
+	LINE_Y,
+	PREP_MS,
+	SLOTS,
+	SOLDIERS,
+	SQUAD_AIR_FACTOR,
+	WORLD_WIDTH,
+	defenseStats,
+	hpScale,
+	type Point
+} from './config';
+import { collectHelmets, dropHelmet } from './economy';
+import { ROAD, distanceBetween, pointAt } from './path';
+import { flyProjectiles, launchFpv, launchMissile } from './projectiles';
+import type { DroneWallEvent, DroneWallState, Flyer, Soldier } from './state';
+import {
+	incomingDamage,
 	mineDpsAt,
+	pickAirTarget,
 	pickMortarAim,
 	pickNestTarget,
+	pickPatriotTarget,
 	pickSquadTarget,
+	remainingDistance,
 	slowAt,
 	splashDamage
 } from './targeting';
-import { generateWave, type SpawnEntry } from './waves';
+import {
+	generateWave,
+	isFlyerSpawn,
+	type FlyerSpawn,
+	type SoldierSpawn,
+	type SpawnEntry
+} from './waves';
 
 /** Score for clearing a wave grows with the wave number */
 export function waveBonus(wave: number): number {
 	return 20 + 10 * wave;
 }
 
-export function spawnSoldier(state: DroneWallState, entry: SpawnEntry): Soldier {
+/** Aerial enemies enter this far above the field and leave the road alone */
+const FLYER_ENTRY_Y = -30;
+/** Aerial enemies fly toward a point on the line, within this much of the field's sides */
+const FLIGHT_MARGIN = 30;
+const WOBBLE = 7;
+
+export function spawnSoldier(state: DroneWallState, entry: SoldierSpawn): Soldier {
 	const stats = SOLDIERS[entry.kind];
 	const maxHp = Math.round(stats.hp * hpScale(state.wave));
 	const start = pointAt(ROAD, 0);
@@ -44,10 +73,47 @@ export function spawnSoldier(state: DroneWallState, entry: SpawnEntry): Soldier 
 	return soldier;
 }
 
-export function damageSoldier(soldier: Soldier, amount: number) {
-	if (amount <= 0 || soldier.hp <= 0) return;
-	soldier.hp -= amount;
-	soldier.hitMs = 140;
+const laneToX = (lane: number) => WORLD_WIDTH / 2 + lane * (WORLD_WIDTH / 2 - FLIGHT_MARGIN);
+
+export function spawnFlyer(state: DroneWallState, entry: FlyerSpawn): Flyer {
+	const stats = FLYERS[entry.kind];
+	const maxHp = Math.round(stats.hp * hpScale(state.wave));
+	const fromX = laneToX(entry.lane);
+	const toX = laneToX(entry.exitLane);
+	const flyer: Flyer = {
+		id: state.nextId++,
+		kind: entry.kind,
+		air: true,
+		hp: maxHp,
+		maxHp,
+		speed: stats.speed * entry.speedScale,
+		fromX,
+		toX,
+		progress: 0,
+		length: Math.hypot(toX - fromX, LINE_Y - FLYER_ENTRY_Y),
+		phase: entry.lane * 5,
+		x: fromX,
+		y: FLYER_ENTRY_Y,
+		hitMs: 0
+	};
+	state.flyers.push(flyer);
+	return flyer;
+}
+
+/** Where a flyer is after flying `progress` units; the straight line plus a little wobble */
+export function flyerPosition(flyer: Flyer): Point {
+	const t = Math.min(1, flyer.progress / flyer.length);
+	const wobble = Math.sin(flyer.progress / 38 + flyer.phase) * WOBBLE * Math.min(1, t * 6);
+	return {
+		x: flyer.fromX + (flyer.toX - flyer.fromX) * t + wobble,
+		y: FLYER_ENTRY_Y + (LINE_Y - FLYER_ENTRY_Y) * t
+	};
+}
+
+export function damageSoldier(target: Pick<Soldier, 'hp' | 'hitMs'>, amount: number) {
+	if (amount <= 0 || target.hp <= 0) return;
+	target.hp -= amount;
+	target.hitMs = 140;
 }
 
 function startWave(state: DroneWallState, random: Random, events: DroneWallEvent[]) {
@@ -57,6 +123,15 @@ function startWave(state: DroneWallState, random: Random, events: DroneWallEvent
 	state.queue = generateWave(state.wave, random);
 	state.queueIndex = 0;
 	events.push({ type: 'wave-started', wave: state.wave });
+}
+
+function spawnEntry(state: DroneWallState, entry: SpawnEntry, events: DroneWallEvent[]) {
+	if (isFlyerSpawn(entry)) {
+		spawnFlyer(state, entry);
+		events.push({ type: 'flyer-spawned', kind: entry.kind });
+	} else {
+		spawnSoldier(state, entry);
+	}
 }
 
 function updateWavePhase(
@@ -75,14 +150,14 @@ function updateWavePhase(
 		state.queueIndex < state.queue.length &&
 		state.queue[state.queueIndex].atMs <= state.waveMs
 	) {
-		spawnSoldier(state, state.queue[state.queueIndex]);
+		spawnEntry(state, state.queue[state.queueIndex], events);
 		state.queueIndex += 1;
 	}
 }
 
 function checkWaveCleared(state: DroneWallState, events: DroneWallEvent[]) {
 	if (state.phase !== 'wave' || state.queueIndex < state.queue.length) return;
-	if (state.soldiers.length > 0 || state.shells.length > 0) return;
+	if (state.soldiers.length > 0 || state.flyers.length > 0 || state.shells.length > 0) return;
 	const bonus = waveBonus(state.wave);
 	state.score += bonus;
 	state.phase = 'prep';
@@ -114,7 +189,30 @@ function marchSoldiers(state: DroneWallState, dtMs: number, events: DroneWallEve
 	});
 }
 
-function fireDefenses(state: DroneWallState, dtMs: number, events: DroneWallEvent[]) {
+function flyFlyers(state: DroneWallState, dtMs: number, events: DroneWallEvent[]) {
+	for (const flyer of state.flyers) {
+		flyer.hitMs = Math.max(0, flyer.hitMs - dtMs);
+		if (flyer.hp <= 0) continue;
+		flyer.progress += (flyer.speed * dtMs) / 1000;
+		const position = flyerPosition(flyer);
+		flyer.x = position.x;
+		flyer.y = position.y;
+	}
+
+	state.flyers = state.flyers.filter((flyer) => {
+		if (flyer.hp <= 0 || flyer.progress < flyer.length) return true;
+		state.lives = Math.max(0, state.lives - 1);
+		events.push({ type: 'leak', x: flyer.x, y: LINE_Y });
+		return false;
+	});
+}
+
+function fireDefenses(
+	state: DroneWallState,
+	random: Random,
+	dtMs: number,
+	events: DroneWallEvent[]
+) {
 	state.defenses.forEach((defense, slot) => {
 		if (!defense || defense.kind === 'trench') return;
 		defense.firedMs = Math.max(0, defense.firedMs - dtMs);
@@ -123,16 +221,17 @@ function fireDefenses(state: DroneWallState, dtMs: number, events: DroneWallEven
 
 		const origin = SLOTS[slot];
 		const stats = defenseStats(defense.kind, defense.level);
+		let aim: Point;
 
 		if (defense.kind === 'mortar') {
-			const aim = pickMortarAim(state.soldiers, origin, stats);
-			if (!aim) return;
+			const spot = pickMortarAim(state.soldiers, origin, stats);
+			if (!spot) return;
 			state.shells.push({
 				id: state.nextId++,
 				fromX: origin.x,
 				fromY: origin.y,
-				toX: aim.x,
-				toY: aim.y,
+				toX: spot.x,
+				toY: spot.y,
 				ageMs: 0,
 				flightMs: stats.flightMs,
 				damage: stats.damage,
@@ -143,27 +242,53 @@ function fireDefenses(state: DroneWallState, dtMs: number, events: DroneWallEven
 				slot,
 				fromX: origin.x,
 				fromY: origin.y,
-				toX: aim.x,
-				toY: aim.y
+				toX: spot.x,
+				toY: spot.y
 			});
-			defense.aim = Math.atan2(aim.y - origin.y, aim.x - origin.x);
-		} else {
-			const target =
-				defense.kind === 'squad'
-					? pickSquadTarget(state.soldiers, origin, stats)
-					: pickNestTarget(state.soldiers, origin, stats);
+			aim = spot;
+		} else if (defense.kind === 'nest') {
+			const target = pickNestTarget(
+				state.soldiers,
+				origin,
+				stats,
+				incomingDamage(state.projectiles, 'fpv')
+			);
 			if (!target) return;
-			damageSoldier(target, stats.damage);
-			defense.aim = Math.atan2(target.y - origin.y, target.x - origin.x);
+			launchFpv(state, random, origin, stats, target);
+			events.push({ type: 'drone-launched', slot, x: origin.x, y: origin.y });
+			aim = target;
+		} else if (defense.kind === 'patriot') {
+			const target = pickPatriotTarget(
+				state.flyers,
+				origin,
+				stats,
+				incomingDamage(state.projectiles, 'missile')
+			);
+			if (!target) return;
+			launchMissile(state, origin, stats, target);
+			events.push({ type: 'missile-launched', slot, x: origin.x, y: origin.y });
+			aim = target;
+		} else {
+			// The squad shoots whoever is closest to breaking through, aircraft included, but
+			// rifles do little against those
+			const ground = pickSquadTarget(state.soldiers, origin, stats);
+			const air = pickAirTarget(state.flyers, origin, stats.range);
+			const shootAir =
+				air !== null && (!ground || remainingDistance(air) < remainingDistance(ground));
+			const target = shootAir ? air : ground;
+			if (!target) return;
+			damageSoldier(target, shootAir ? stats.damage * SQUAD_AIR_FACTOR : stats.damage);
 			events.push({
-				type: defense.kind === 'squad' ? 'squad-shot' : 'drone-strike',
+				type: 'squad-shot',
 				slot,
 				fromX: origin.x,
 				fromY: origin.y,
 				toX: target.x,
 				toY: target.y
 			});
+			aim = target;
 		}
+		defense.aim = Math.atan2(aim.y - origin.y, aim.x - origin.x);
 		defense.cooldownMs = stats.intervalMs;
 		defense.firedMs = 160;
 	});
@@ -200,6 +325,15 @@ function reapFallen(state: DroneWallState, events: DroneWallEvent[]) {
 		events.push({ type: 'soldier-fell', x: soldier.x, y: soldier.y, kind: soldier.kind });
 		return false;
 	});
+	state.flyers = state.flyers.filter((flyer) => {
+		if (flyer.hp > 0) return true;
+		const stats = FLYERS[flyer.kind];
+		dropHelmet(state, flyer, stats.value);
+		state.kills += 1;
+		state.score += stats.points;
+		events.push({ type: 'flyer-fell', x: flyer.x, y: flyer.y, kind: flyer.kind });
+		return false;
+	});
 }
 
 /** Advances the game by dtMs and returns what happened, for sounds and effects */
@@ -210,10 +344,12 @@ export function stepGame(state: DroneWallState, random: Random, dtMs: number): D
 
 	updateWavePhase(state, random, dtMs, events);
 	marchSoldiers(state, dtMs, events);
-	fireDefenses(state, dtMs, events);
+	flyFlyers(state, dtMs, events);
+	fireDefenses(state, random, dtMs, events);
+	flyProjectiles(state, dtMs, damageSoldier, events);
 	landShells(state, dtMs, events);
 	reapFallen(state, events);
-	events.push(...ageHelmets(state, dtMs));
+	events.push(...collectHelmets(state, dtMs));
 
 	if (state.lives <= 0) {
 		state.over = true;
