@@ -4,7 +4,7 @@
  * every sound through one master gain so muting is instant and click-free, and remembers the
  * player's mute preference the same way shootdown/pipeline remember their settings.
  */
-import { localStore } from '$lib/services/storage';
+import { localStore } from '#lib/services/storage.js';
 import { SOUNDS, type SoundId } from './sounds';
 
 const SETTINGS_KEY = 'sound:settings';

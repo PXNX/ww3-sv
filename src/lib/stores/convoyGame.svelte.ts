@@ -3,8 +3,8 @@
  * the canvas every frame; only the numbers the page displays are reactive, and they are synced
  * after each step so the interface does not re-render sixty times a second.
  */
-import { MAX_HULL } from '$lib/game/convoy/constants';
-import type { ConvoyEffect } from '$lib/game/convoy/drawScene';
+import { MAX_HULL } from '#lib/game/convoy/constants.js';
+import type { ConvoyEffect } from '#lib/game/convoy/drawScene.js';
 import {
 	createRunner,
 	dragShip,
@@ -17,11 +17,11 @@ import {
 	stepRunner,
 	type RunnerEventType,
 	type RunnerState
-} from '$lib/game/convoy/runnerStep';
-import { createRandom, randomSeed, type Random } from '$lib/game/random';
-import { highscores, type Highscores } from '$lib/services/highscore';
-import { soundManager } from '$lib/sound/soundManager.svelte';
-import type { SoundId } from '$lib/sound/sounds';
+} from '#lib/game/convoy/runnerStep.js';
+import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
+import { highscores, type Highscores } from '#lib/services/highscore.js';
+import { soundManager } from '#lib/sound/soundManager.svelte.js';
+import type { SoundId } from '#lib/sound/sounds.js';
 
 export type ConvoyStatus = 'ready' | 'running' | 'paused' | 'over';
 

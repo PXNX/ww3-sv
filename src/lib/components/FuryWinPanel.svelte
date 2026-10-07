@@ -1,7 +1,7 @@
 <!-- Level-won panel for Magyar's Birds: stars, score, bonus, next level, and sharing on a new best -->
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import type { ScoreCard } from '$lib/services/share';
+	import { m } from '#lib/paraglide/messages.js';
+	import type { ScoreCard } from '#lib/services/share.js';
 	import Confetti from './Confetti.svelte';
 	import FuryStars from './FuryStars.svelte';
 	import ShareButton from './ShareButton.svelte';

@@ -4,19 +4,19 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { m } from '$lib/paraglide/messages';
-	import { BlocksGame } from '$lib/stores/blocksGame.svelte';
-	import type { Piece } from '$lib/game/blocks/pieces';
-	import type { MascotPose } from '$lib/theme/character';
-	import { prefersReducedMotion } from '$lib/game/loop';
-	import { PointerDrag, clamp } from '$lib/game/pointerDrag';
-	import BlocksCell, { KIND_HEX } from '$lib/components/BlocksCell.svelte';
-	import CharacterMascot from '$lib/components/CharacterMascot.svelte';
-	import GameOverModal from '$lib/components/GameOverModal.svelte';
-	import GameShell from '$lib/components/GameShell.svelte';
-	import Grid from '$lib/components/Grid.svelte';
-	import PieceTray from '$lib/components/PieceTray.svelte';
-	import { firstPlay } from '$lib/services/tutorial';
+	import { m } from '#lib/paraglide/messages.js';
+	import { BlocksGame } from '#lib/stores/blocksGame.svelte.js';
+	import type { Piece } from '#lib/game/blocks/pieces.js';
+	import type { MascotPose } from '#lib/theme/character.js';
+	import { prefersReducedMotion } from '#lib/game/loop.js';
+	import { PointerDrag, clamp } from '#lib/game/pointerDrag.js';
+	import BlocksCell, { KIND_HEX } from '#lib/components/BlocksCell.svelte';
+	import CharacterMascot from '#lib/components/CharacterMascot.svelte';
+	import GameOverModal from '#lib/components/GameOverModal.svelte';
+	import GameShell from '#lib/components/GameShell.svelte';
+	import Grid from '#lib/components/Grid.svelte';
+	import PieceTray from '#lib/components/PieceTray.svelte';
+	import { firstPlay } from '#lib/services/tutorial.js';
 
 	const game = new BlocksGame();
 	const reducedMotion = prefersReducedMotion();

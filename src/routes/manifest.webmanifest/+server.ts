@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { APP_NAME, APP_SHORT_NAME } from '$lib/config';
+import { APP_NAME, APP_SHORT_NAME } from '#lib/config.js';
 import type { RequestHandler } from './$types';
 
 // Generated here rather than kept as a static file so the app name has a single source

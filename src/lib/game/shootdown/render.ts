@@ -4,8 +4,8 @@
  * clouds and bunkers are generic original shapes: flat fills, thick ink outlines on machines,
  * and outline-free clouds and sky (requirements Section 6, visual treatment).
  */
-import { explosionFrames, loadImage, spriteSrc } from '$lib/theme/sprites';
-import { createRandom } from '$lib/game/random';
+import { explosionFrames, loadImage, spriteSrc } from '#lib/theme/sprites.js';
+import { createRandom } from '#lib/game/random.js';
 import { CANVAS_ASSETS, shootdownAsset, type ShootdownAssetId } from './assets';
 import {
 	BLIMP_HEIGHT,

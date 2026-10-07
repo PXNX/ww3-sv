@@ -6,7 +6,7 @@
  * stepGame only changes the state object it is given and draws every random decision from the
  * Random it is passed, so a seeded Random makes a whole game reproducible in tests.
  */
-import { pickOne, type Random } from '$lib/game/random';
+import { pickOne, type Random } from '#lib/game/random.js';
 import { waveDefinition, type WaveDefinition } from './waves';
 
 // World units: the playfield is always drawn into this portrait rectangle, then scaled to fit

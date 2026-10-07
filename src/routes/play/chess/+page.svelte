@@ -1,25 +1,25 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
-	import ChessBoard from '$lib/components/ChessBoard.svelte';
-	import ChessCards from '$lib/components/ChessCards.svelte';
-	import GameOverModal from '$lib/components/GameOverModal.svelte';
-	import GameShell from '$lib/components/GameShell.svelte';
-	import TutorialModal from '$lib/components/TutorialModal.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import { firstPlay } from '$lib/services/tutorial';
+	import ChessBoard from '#lib/components/ChessBoard.svelte';
+	import ChessCards from '#lib/components/ChessCards.svelte';
+	import GameOverModal from '#lib/components/GameOverModal.svelte';
+	import GameShell from '#lib/components/GameShell.svelte';
+	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import { firstPlay } from '#lib/services/tutorial.js';
 	import {
 		cardName,
 		ChessGame,
 		noticeText,
 		quipText,
 		VANCE_CHANCE
-	} from '$lib/stores/chessGame.svelte';
+	} from '#lib/stores/chessGame.svelte.js';
 	import {
 		CAMEO_PLACEHOLDER,
 		cameoPortrait,
 		guestPortrait,
 		type CameoOverride
-	} from '$lib/theme/cameos';
+	} from '#lib/theme/cameos.js';
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconRotate from '~icons/lucide/rotate-ccw';
 

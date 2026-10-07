@@ -3,7 +3,7 @@
 	down at their target. Machines only, with no markings of any kind.
 -->
 <script lang="ts">
-	import type { StrikeKind } from '$lib/game/pipeline/strikes';
+	import type { StrikeKind } from '#lib/game/pipeline/strikes.js';
 
 	let { kind, class: className = '' }: { kind: StrikeKind; class?: string } = $props();
 </script>

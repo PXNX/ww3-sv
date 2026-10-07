@@ -6,7 +6,7 @@
  * material and damage all vary at runtime) and are not swapped by a single image, so they have no
  * placeholder file yet.
  */
-import { loadImage } from '$lib/theme/sprites';
+import { loadImage } from '#lib/theme/sprites.js';
 
 export type FurySpriteId =
 	| 'flamingo'

@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { m } from '$lib/paraglide/messages';
-	import FuryCanvas from '$lib/components/FuryCanvas.svelte';
-	import FuryLevelSelect from '$lib/components/FuryLevelSelect.svelte';
-	import FuryWinPanel from '$lib/components/FuryWinPanel.svelte';
-	import GameOverModal from '$lib/components/GameOverModal.svelte';
-	import GameShell from '$lib/components/GameShell.svelte';
-	import { drawScene, fitCamera } from '$lib/game/fury/furyRender';
-	import { firstPlay } from '$lib/services/tutorial';
-	import { FuryGame } from '$lib/stores/furyGame.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import FuryCanvas from '#lib/components/FuryCanvas.svelte';
+	import FuryLevelSelect from '#lib/components/FuryLevelSelect.svelte';
+	import FuryWinPanel from '#lib/components/FuryWinPanel.svelte';
+	import GameOverModal from '#lib/components/GameOverModal.svelte';
+	import GameShell from '#lib/components/GameShell.svelte';
+	import { drawScene, fitCamera } from '#lib/game/fury/furyRender.js';
+	import { firstPlay } from '#lib/services/tutorial.js';
+	import { FuryGame } from '#lib/stores/furyGame.svelte.js';
 	import IconList from '~icons/lucide/list';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';

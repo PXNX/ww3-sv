@@ -1,4 +1,4 @@
-import type { Locale } from '$lib/paraglide/runtime';
+import type { Locale } from '#lib/paraglide/runtime.js';
 
 const RIGHT_TO_LEFT_LOCALES: readonly Locale[] = ['fa', 'ar'];
 

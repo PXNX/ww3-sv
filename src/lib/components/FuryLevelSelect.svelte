@@ -3,10 +3,10 @@
 	followed by the generated levels once the prepared ones are won
 -->
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import { LEVEL_IDS, type FuryGame } from '$lib/stores/furyGame.svelte';
-	import { levelIdAt } from '$lib/game/fury/levels';
-	import { totalStars } from '$lib/game/fury/progress';
+	import { m } from '#lib/paraglide/messages.js';
+	import { LEVEL_IDS, type FuryGame } from '#lib/stores/furyGame.svelte.js';
+	import { levelIdAt } from '#lib/game/fury/levels/index.js';
+	import { totalStars } from '#lib/game/fury/progress.js';
 	import FuryStars from './FuryStars.svelte';
 	import IconLock from '~icons/lucide/lock';
 

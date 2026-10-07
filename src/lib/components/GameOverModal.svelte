@@ -4,7 +4,7 @@
 	On a new personal best it adds confetti and a Share button.
 -->
 <script lang="ts" module>
-	import type { CameoId } from '$lib/theme/cameos';
+	import type { CameoId } from '#lib/theme/cameos.js';
 
 	// Remembered across game overs so the same cameo never appears twice in a row
 	let lastCameo: CameoId | undefined;
@@ -13,9 +13,9 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { resolve } from '$app/paths';
-	import { m } from '$lib/paraglide/messages';
-	import { getLocale } from '$lib/paraglide/runtime';
-	import type { ScoreCard } from '$lib/services/share';
+	import { m } from '#lib/paraglide/messages.js';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import type { ScoreCard } from '#lib/services/share.js';
 	import {
 		CAMEO_PLACEHOLDER,
 		cameoPortrait,
@@ -23,9 +23,9 @@
 		pickCameoMessage,
 		type Cameo,
 		type CameoOverride
-	} from '$lib/theme/cameos';
-	import { CHARACTER_NAME } from '$lib/theme/character';
-	import { soundManager } from '$lib/sound/soundManager.svelte';
+	} from '#lib/theme/cameos.js';
+	import { CHARACTER_NAME } from '#lib/theme/character.js';
+	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import CharacterMascot from './CharacterMascot.svelte';
 	import Confetti from './Confetti.svelte';
 	import ShareButton from './ShareButton.svelte';

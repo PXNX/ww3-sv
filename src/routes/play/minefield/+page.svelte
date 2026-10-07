@@ -1,25 +1,25 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import FlagModeToggle from '$lib/components/FlagModeToggle.svelte';
-	import GameOverModal from '$lib/components/GameOverModal.svelte';
-	import GameShell from '$lib/components/GameShell.svelte';
-	import MineGrid, { convoyDurationMs } from '$lib/components/MineGrid.svelte';
+	import FlagModeToggle from '#lib/components/FlagModeToggle.svelte';
+	import GameOverModal from '#lib/components/GameOverModal.svelte';
+	import GameShell from '#lib/components/GameShell.svelte';
+	import MineGrid, { convoyDurationMs } from '#lib/components/MineGrid.svelte';
 	import MinefieldDifficultyPicker, {
 		DIFFICULTY_NAMES
-	} from '$lib/components/MinefieldDifficultyPicker.svelte';
-	import MinefieldScoreBreakdown from '$lib/components/MinefieldScoreBreakdown.svelte';
-	import MinefieldVictory from '$lib/components/MinefieldVictory.svelte';
-	import SubmarineTool from '$lib/components/SubmarineTool.svelte';
-	import TankerQueue from '$lib/components/TankerQueue.svelte';
-	import { onAppHidden, prefersReducedMotion } from '$lib/game/loop';
-	import { TANKER_COUNT, type DifficultyId } from '$lib/game/minefield/difficulty';
-	import { drawMinefieldBoard } from '$lib/game/minefield/drawBoard';
-	import { formatTime } from '$lib/game/minefield/scoring';
-	import { m } from '$lib/paraglide/messages';
-	import type { ScoreCard } from '$lib/services/share';
-	import { firstPlay } from '$lib/services/tutorial';
-	import { MinefieldGame } from '$lib/stores/minefieldGame.svelte';
-	import { spriteSrc } from '$lib/theme/sprites';
+	} from '#lib/components/MinefieldDifficultyPicker.svelte';
+	import MinefieldScoreBreakdown from '#lib/components/MinefieldScoreBreakdown.svelte';
+	import MinefieldVictory from '#lib/components/MinefieldVictory.svelte';
+	import SubmarineTool from '#lib/components/SubmarineTool.svelte';
+	import TankerQueue from '#lib/components/TankerQueue.svelte';
+	import { onAppHidden, prefersReducedMotion } from '#lib/game/loop.js';
+	import { TANKER_COUNT, type DifficultyId } from '#lib/game/minefield/difficulty.js';
+	import { drawMinefieldBoard } from '#lib/game/minefield/drawBoard.js';
+	import { formatTime } from '#lib/game/minefield/scoring.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import type { ScoreCard } from '#lib/services/share.js';
+	import { firstPlay } from '#lib/services/tutorial.js';
+	import { MinefieldGame } from '#lib/stores/minefieldGame.svelte.js';
+	import { spriteSrc } from '#lib/theme/sprites.js';
 	import IconArrowRight from '~icons/lucide/arrow-right';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';

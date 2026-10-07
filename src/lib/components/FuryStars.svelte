@@ -1,6 +1,6 @@
 <!-- Three-star rating drawn as shapes: filled stars earned, outlined stars not (never color alone) -->
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 
 	let { stars, class: className = 'size-5' }: { stars: number; class?: string } = $props();
 </script>

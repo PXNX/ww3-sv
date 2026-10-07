@@ -1,7 +1,7 @@
 import type { Component } from 'svelte';
 import type { SvelteHTMLElements } from 'svelte/elements';
 import type { RouteId } from '$app/types';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import IconBlocks from '~icons/lucide/blocks';
 import IconBomb from '~icons/lucide/bomb';
 import IconShip from '~icons/lucide/ship';

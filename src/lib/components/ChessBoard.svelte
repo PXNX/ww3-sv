@@ -13,9 +13,9 @@
 		squareName,
 		type PieceType,
 		type PromotionType
-	} from '$lib/game/chess/chess';
-	import { m } from '$lib/paraglide/messages';
-	import type { ChessGame } from '$lib/stores/chessGame.svelte';
+	} from '#lib/game/chess/chess.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import type { ChessGame } from '#lib/stores/chessGame.svelte.js';
 	import IconBishop from '~icons/lucide/chess-bishop';
 	import IconKing from '~icons/lucide/chess-king';
 	import IconKnight from '~icons/lucide/chess-knight';

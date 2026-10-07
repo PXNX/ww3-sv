@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { m } from '$lib/paraglide/messages';
-	import FlamingoCanvas from '$lib/components/FlamingoCanvas.svelte';
-	import GameOverModal from '$lib/components/GameOverModal.svelte';
-	import GameShell from '$lib/components/GameShell.svelte';
-	import type { CrashCause } from '$lib/game/flamingo/flamingoStep';
-	import { drawShareScene } from '$lib/game/flamingo/render';
-	import { onAppHidden } from '$lib/game/loop';
-	import { firstPlay } from '$lib/services/tutorial';
-	import { FlamingoGame } from '$lib/stores/flamingoGame.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import FlamingoCanvas from '#lib/components/FlamingoCanvas.svelte';
+	import GameOverModal from '#lib/components/GameOverModal.svelte';
+	import GameShell from '#lib/components/GameShell.svelte';
+	import type { CrashCause } from '#lib/game/flamingo/flamingoStep.js';
+	import { drawShareScene } from '#lib/game/flamingo/render.js';
+	import { onAppHidden } from '#lib/game/loop.js';
+	import { firstPlay } from '#lib/services/tutorial.js';
+	import { FlamingoGame } from '#lib/stores/flamingoGame.svelte.js';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
 

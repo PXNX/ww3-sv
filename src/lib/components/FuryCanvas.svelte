@@ -4,8 +4,8 @@
 	language; the surrounding chrome mirrors.
 -->
 <script lang="ts" module>
-	import type { BirdKind } from '$lib/game/fury/birds';
-	import { m } from '$lib/paraglide/messages';
+	import type { BirdKind } from '#lib/game/fury/birds.js';
+	import { m } from '#lib/paraglide/messages.js';
 
 	const BIRD_NAMES: Record<BirdKind, () => string> = {
 		flamingo: m.fury_bird_flamingo,
@@ -38,16 +38,16 @@
 
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
-	import { createFixedLoop, onAppHidden, prefersReducedMotion } from '$lib/game/loop';
-	import { loadFurySprites, type FurySprites } from '$lib/game/fury/assets';
-	import { BIRDS } from '$lib/game/fury/birds';
+	import { createFixedLoop, onAppHidden, prefersReducedMotion } from '#lib/game/loop.js';
+	import { loadFurySprites, type FurySprites } from '#lib/game/fury/assets.js';
+	import { BIRDS } from '#lib/game/fury/birds.js';
 	import {
 		BIRD_LOOKS,
 		drawScene,
 		fitCamera,
 		screenToWorld,
 		type Camera
-	} from '$lib/game/fury/furyRender';
+	} from '#lib/game/fury/furyRender.js';
 	import {
 		KEY_ANGLE_STEP,
 		KEY_POWER_STEP,
@@ -58,8 +58,8 @@
 		previewSeconds,
 		trajectoryPoints,
 		type Vec
-	} from '$lib/game/fury/launch';
-	import type { FuryGame } from '$lib/stores/furyGame.svelte';
+	} from '#lib/game/fury/launch.js';
+	import type { FuryGame } from '#lib/stores/furyGame.svelte.js';
 	import IconSparkles from '~icons/lucide/sparkles';
 
 	let { game, showTutorial = false }: { game: FuryGame; showTutorial?: boolean } = $props();

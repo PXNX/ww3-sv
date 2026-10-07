@@ -4,8 +4,8 @@
 	stays hidden there rather than showing a prompt that would do nothing).
 -->
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import { localStore } from '$lib/services/storage';
+	import { m } from '#lib/paraglide/messages.js';
+	import { localStore } from '#lib/services/storage.js';
 	import IconDownload from '~icons/lucide/download';
 	import IconX from '~icons/lucide/x';
 

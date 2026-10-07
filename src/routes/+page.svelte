@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { m } from '$lib/paraglide/messages';
-	import { APP_NAME } from '$lib/config';
-	import CharacterMascot from '$lib/components/CharacterMascot.svelte';
-	import InstallPwaHint from '$lib/components/InstallPwaHint.svelte';
-	import LocaleSwitcher from '$lib/components/LocaleSwitcher.svelte';
-	import ModeSelect from '$lib/components/ModeSelect.svelte';
-	import SoundToggle from '$lib/components/SoundToggle.svelte';
-	import StraitScene from '$lib/components/scenery/StraitScene.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import { APP_NAME } from '#lib/config.js';
+	import CharacterMascot from '#lib/components/CharacterMascot.svelte';
+	import InstallPwaHint from '#lib/components/InstallPwaHint.svelte';
+	import LocaleSwitcher from '#lib/components/LocaleSwitcher.svelte';
+	import ModeSelect from '#lib/components/ModeSelect.svelte';
+	import SoundToggle from '#lib/components/SoundToggle.svelte';
+	import StraitScene from '#lib/components/scenery/StraitScene.svelte';
 </script>
 
 <main
@@ -45,6 +45,6 @@
 	</section>
 
 	<footer class="text-center text-sm">
-		<a href={resolve('/about')} class="font-semibold underline">{m.about_link()}</a>
+		<a href={resolve('about')} class="font-semibold underline">{m.about_link()}</a>
 	</footer>
 </main>

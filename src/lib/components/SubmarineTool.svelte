@@ -1,7 +1,7 @@
 <!-- Arms a mine-removal submarine; the next tap on unexplored water sends it there -->
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import { spriteSrc } from '$lib/theme/sprites';
+	import { m } from '#lib/paraglide/messages.js';
+	import { spriteSrc } from '#lib/theme/sprites.js';
 
 	let {
 		armed,

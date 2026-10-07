@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { m } from '$lib/paraglide/messages';
-	import { getLocale } from '$lib/paraglide/runtime';
-	import GameShell from '$lib/components/GameShell.svelte';
-	import GameOverModal from '$lib/components/GameOverModal.svelte';
-	import LivesBar from '$lib/components/LivesBar.svelte';
-	import ShootdownCanvas from '$lib/components/ShootdownCanvas.svelte';
-	import ShootdownCommander from '$lib/components/ShootdownCommander.svelte';
-	import { STARTING_LIVES } from '$lib/game/shootdown/shootdownStep';
-	import { firstPlay } from '$lib/services/tutorial';
-	import { ShootdownGame } from '$lib/stores/shootdownGame.svelte';
-	import { CHARACTER_NAME } from '$lib/theme/character';
+	import { m } from '#lib/paraglide/messages.js';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import GameShell from '#lib/components/GameShell.svelte';
+	import GameOverModal from '#lib/components/GameOverModal.svelte';
+	import LivesBar from '#lib/components/LivesBar.svelte';
+	import ShootdownCanvas from '#lib/components/ShootdownCanvas.svelte';
+	import ShootdownCommander from '#lib/components/ShootdownCommander.svelte';
+	import { STARTING_LIVES } from '#lib/game/shootdown/shootdownStep.js';
+	import { firstPlay } from '#lib/services/tutorial.js';
+	import { ShootdownGame } from '#lib/stores/shootdownGame.svelte.js';
+	import { CHARACTER_NAME } from '#lib/theme/character.js';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
 	import IconRepeat from '~icons/lucide/repeat';

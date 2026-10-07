@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createRandom, pickOne } from '$lib/game/random';
+import { createRandom, pickOne } from '#lib/game/random.js';
 import { boardFromRows, createBoard, fitsAnywhere, type Board } from './board';
 import { generateTray, placeableWeight, TRAY_SIZE } from './pieceGenerator';
 import { PIECES, type Piece } from './pieces';

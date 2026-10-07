@@ -4,14 +4,7 @@
  */
 import type { Vec } from './launch';
 
-export type BirdKind =
-	| 'flamingo'
-	| 'pelican'
-	| 'stork'
-	| 'goose'
-	| 'falcon'
-	| 'phoenix'
-	| 'parrot';
+export type BirdKind = 'flamingo' | 'pelican' | 'stork' | 'goose' | 'falcon' | 'phoenix' | 'parrot';
 
 /**
  * split: three small flamingos; dash: a burst of forward speed; egg: drops a heavy egg straight

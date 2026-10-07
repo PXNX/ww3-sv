@@ -2,7 +2,7 @@
 <svelte:options namespace="svg" />
 
 <script lang="ts">
-	import { starburst } from '$lib/theme/starburst';
+	import { starburst } from '#lib/theme/starburst.js';
 
 	let {
 		x,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createRandom } from '$lib/game/random';
+import { createRandom } from '#lib/game/random.js';
 import { FuryWorld } from '../furyWorld';
 import { LEVELS, loadLevels } from './index';
 import { LEVEL_VERSION, MAX_LEVEL_PIECES, validateLevel, type LevelData } from './schema';

@@ -5,7 +5,7 @@
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { soundManager } from '$lib/sound/soundManager.svelte';
+	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 
 	let {
 		open,

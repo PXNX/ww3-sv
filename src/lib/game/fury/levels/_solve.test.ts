@@ -1,6 +1,6 @@
 import { appendFileSync } from 'node:fs';
 import { it } from 'vitest';
-import { createRandom } from '$lib/game/random';
+import { createRandom } from '#lib/game/random.js';
 import { FuryMatch } from '../furyMatch';
 import { levelAt } from './index';
 import type { LevelData } from './schema';
@@ -40,8 +40,7 @@ function solve(level: LevelData) {
 				for (const tap of taps) {
 					const shot = { angle, power, tap };
 					const match = replay(level, [...shots, shot]);
-					const score =
-						match.world.domesDestroyed * 100000 + match.world.destructionPoints;
+					const score = match.world.domesDestroyed * 100000 + match.world.destructionPoints;
 					const won = match.phase === 'won';
 					if (!best || score > best.score || (won && !best.won)) best = { shot, score, won };
 				}
@@ -49,7 +48,12 @@ function solve(level: LevelData) {
 		if (best!.won) return { won: true, used: bird + 1, shots };
 	}
 	const final = replay(level, shots);
-	return { won: final.phase === 'won', used: shots.length, shots, domes: final.world.domesDestroyed };
+	return {
+		won: final.phase === 'won',
+		used: shots.length,
+		shots,
+		domes: final.world.domesDestroyed
+	};
 }
 
 it('solves the new levels', { timeout: 3_000_000 }, () => {

@@ -5,7 +5,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { resolve } from '$app/paths';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import SoundToggle from './SoundToggle.svelte';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
 

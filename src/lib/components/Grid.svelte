@@ -4,10 +4,10 @@
 	pressing Enter places it. The board always stays left-to-right (data-playfield).
 -->
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import type { Board } from '$lib/game/blocks/board';
-	import type { ClearFeedback, Preview } from '$lib/stores/blocksGame.svelte';
-	import { cellAt as cellAtPoint } from '$lib/game/pointerDrag';
+	import { m } from '#lib/paraglide/messages.js';
+	import type { Board } from '#lib/game/blocks/board.js';
+	import type { ClearFeedback, Preview } from '#lib/stores/blocksGame.svelte.js';
+	import { cellAt as cellAtPoint } from '#lib/game/pointerDrag.js';
 	import BlocksCell, { KIND_HEX } from './BlocksCell.svelte';
 
 	/** Directions the shards of a cleared cell fly off in */

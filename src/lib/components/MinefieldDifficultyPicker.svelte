@@ -1,7 +1,7 @@
 <!-- Difficulty choice before a game; the last choice is highlighted and focused -->
 <script lang="ts" module>
-	import type { DifficultyId } from '$lib/game/minefield/difficulty';
-	import { m } from '$lib/paraglide/messages';
+	import type { DifficultyId } from '#lib/game/minefield/difficulty.js';
+	import { m } from '#lib/paraglide/messages.js';
 
 	export const DIFFICULTY_NAMES: Record<DifficultyId, () => string> = {
 		easy: m.minefield_difficulty_easy,
@@ -11,11 +11,11 @@
 </script>
 
 <script lang="ts">
-	import { DIFFICULTIES, DIFFICULTY_IDS } from '$lib/game/minefield/difficulty';
-	import { formatTime } from '$lib/game/minefield/scoring';
-	import { highscores } from '$lib/services/highscore';
-	import { bestParts } from '$lib/stores/minefieldGame.svelte';
-	import { spriteSrc } from '$lib/theme/sprites';
+	import { DIFFICULTIES, DIFFICULTY_IDS } from '#lib/game/minefield/difficulty.js';
+	import { formatTime } from '#lib/game/minefield/scoring.js';
+	import { highscores } from '#lib/services/highscore.js';
+	import { bestParts } from '#lib/stores/minefieldGame.svelte.js';
+	import { spriteSrc } from '#lib/theme/sprites.js';
 	import IconBomb from '~icons/lucide/bomb';
 	import IconGrid from '~icons/lucide/grid-3x3';
 	import IconTimer from '~icons/lucide/timer';

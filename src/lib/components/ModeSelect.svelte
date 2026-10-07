@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { m } from '$lib/paraglide/messages';
-	import { MODES } from '$lib/modes/registry';
+	import { m } from '#lib/paraglide/messages.js';
+	import { MODES } from '#lib/modes/registry.js';
 	import IconHourglass from '~icons/lucide/hourglass';
 
 	// Varied, slight tilts so the cards read like a sticker sheet rather than a dashboard

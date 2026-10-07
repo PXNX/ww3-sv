@@ -3,7 +3,7 @@
  * Every pattern, and every pattern following another at top speed, leaves at least one lane the
  * tanker can reach given its lane-change time; the reachability check below proves it in tests.
  */
-import { pickWeighted, type Random } from '$lib/game/random';
+import { pickWeighted, type Random } from '#lib/game/random.js';
 import {
 	ITEM_SIZE,
 	LANE_CHANGE_MS,

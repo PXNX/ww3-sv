@@ -4,11 +4,11 @@
 	left-to-right, also in Persian, so swipe directions match what the player sees.
 -->
 <script lang="ts">
-	import type { Direction, Tile } from '$lib/game/merge/mergeBoard';
-	import { tierStyle, tokenColor } from '$lib/game/merge/tierStyle';
-	import { m } from '$lib/paraglide/messages';
-	import { shipName, type LeavingEffect, type MergeGame } from '$lib/stores/mergeGame.svelte';
-	import { spriteSrc } from '$lib/theme/sprites';
+	import type { Direction, Tile } from '#lib/game/merge/mergeBoard.js';
+	import { tierStyle, tokenColor } from '#lib/game/merge/tierStyle.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { shipName, type LeavingEffect, type MergeGame } from '#lib/stores/mergeGame.svelte.js';
+	import { spriteSrc } from '#lib/theme/sprites.js';
 	import MergeShip from './MergeShip.svelte';
 
 	let { game }: { game: MergeGame } = $props();

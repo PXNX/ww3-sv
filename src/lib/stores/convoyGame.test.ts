@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { makeObstacle } from '$lib/game/convoy/runnerStep';
-import { createHighscores } from '$lib/services/highscore';
-import { createStore, type KeyValueStorage } from '$lib/services/storage';
+import { makeObstacle } from '#lib/game/convoy/runnerStep.js';
+import { createHighscores } from '#lib/services/highscore.js';
+import { createStore, type KeyValueStorage } from '#lib/services/storage.js';
 import { ConvoyGame } from './convoyGame.svelte';
 
 function memoryStorage(): KeyValueStorage {

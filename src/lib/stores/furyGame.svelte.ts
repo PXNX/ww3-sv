@@ -3,13 +3,13 @@
  * and the locally stored progress. The match itself (physics) is not reactive; after every fixed
  * step the few values the interface shows are copied into $state fields.
  */
-import { createRandom, randomSeed } from '$lib/game/random';
-import type { BirdKind } from '$lib/game/fury/birds';
-import { FuryMatch, type FuryPhase } from '$lib/game/fury/furyMatch';
-import type { ImpactSurface, WorldEvent } from '$lib/game/fury/furyWorld';
-import { DEFAULT_AIM, MIN_POWER, adjustAim, type Aim } from '$lib/game/fury/launch';
-import { LEVELS, PREPARED_LEVEL_COUNT, levelAt, levelIdAt } from '$lib/game/fury/levels';
-import { backgroundFor, type Backdrop } from '$lib/game/fury/backgrounds';
+import { createRandom, randomSeed } from '#lib/game/random.js';
+import type { BirdKind } from '#lib/game/fury/birds.js';
+import { FuryMatch, type FuryPhase } from '#lib/game/fury/furyMatch.js';
+import type { ImpactSurface, WorldEvent } from '#lib/game/fury/furyWorld.js';
+import { DEFAULT_AIM, MIN_POWER, adjustAim, type Aim } from '#lib/game/fury/launch.js';
+import { LEVELS, PREPARED_LEVEL_COUNT, levelAt, levelIdAt } from '#lib/game/fury/levels/index.js';
+import { backgroundFor, type Backdrop } from '#lib/game/fury/backgrounds.js';
 import {
 	DEFAULT_SETTINGS,
 	EMPTY_PROGRESS,
@@ -22,11 +22,11 @@ import {
 	visibleLevelCount,
 	type FuryProgress,
 	type FurySettings
-} from '$lib/game/fury/progress';
-import { highscores } from '$lib/services/highscore';
-import { localStore } from '$lib/services/storage';
-import { soundManager } from '$lib/sound/soundManager.svelte';
-import type { SoundId } from '$lib/sound/sounds';
+} from '#lib/game/fury/progress.js';
+import { highscores } from '#lib/services/highscore.js';
+import { localStore } from '#lib/services/storage.js';
+import { soundManager } from '#lib/sound/soundManager.svelte.js';
+import type { SoundId } from '#lib/sound/sounds.js';
 
 export type FuryScreen = 'select' | 'play';
 

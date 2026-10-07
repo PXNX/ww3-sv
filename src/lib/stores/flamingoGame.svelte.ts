@@ -3,7 +3,7 @@
  * $lib/game/flamingo/flamingoStep and is advanced by the canvas's fixed-timestep loop; this store
  * mirrors the numbers the page shows, queues flaps, and records the bests on game over.
  */
-import { randomSeed } from '$lib/game/random';
+import { randomSeed } from '#lib/game/random.js';
 import {
 	createFlamingoState,
 	gapsLeft,
@@ -12,10 +12,10 @@ import {
 	type FlamingoEvent,
 	type FlamingoState,
 	type Stage
-} from '$lib/game/flamingo/flamingoStep';
-import { highscores } from '$lib/services/highscore';
-import { soundManager } from '$lib/sound/soundManager.svelte';
-import type { SoundId } from '$lib/sound/sounds';
+} from '#lib/game/flamingo/flamingoStep.js';
+import { highscores } from '#lib/services/highscore.js';
+import { soundManager } from '#lib/sound/soundManager.svelte.js';
+import type { SoundId } from '#lib/sound/sounds.js';
 
 const SOUNDS: Partial<Record<FlamingoEvent['type'], SoundId>> = {
 	flap: 'flap',
