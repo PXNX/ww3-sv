@@ -2,53 +2,45 @@
 	"version": 1,
 	"id": "level-06",
 	"width": 27,
-	"birds": ["goose", "flamingo", "goose", "pelican"],
+	"birds": ["goose", "goose", "flamingo"],
 	"blocks": [
 		{
 			"material": "stone",
 			"shape": "pillar",
-			"x": 12.7,
+			"x": 12.1,
 			"y": 0,
-			"w": 0.5,
-			"h": 3
+			"w": 1.6,
+			"h": 4.4
 		},
 		{
 			"material": "stone",
 			"shape": "pillar",
-			"x": 14.3,
+			"x": 14.9,
 			"y": 0,
-			"w": 0.5,
-			"h": 3
+			"w": 1.6,
+			"h": 4.4
 		},
 		{
-			"material": "wood",
+			"material": "stone",
 			"shape": "pillar",
-			"x": 21.2,
+			"x": 20.6,
 			"y": 0.8,
-			"w": 0.5,
-			"h": 2.6
+			"w": 1.6,
+			"h": 4.2
 		},
 		{
-			"material": "wood",
+			"material": "stone",
 			"shape": "pillar",
-			"x": 22.8,
+			"x": 23.4,
 			"y": 0.8,
-			"w": 0.5,
-			"h": 2.6
+			"w": 1.6,
+			"h": 4.2
 		},
 		{
 			"material": "wood",
 			"shape": "crate",
-			"x": 23.7,
+			"x": 24.8,
 			"y": 0.8,
-			"w": 0.8,
-			"h": 0.8
-		},
-		{
-			"material": "wood",
-			"shape": "crate",
-			"x": 23.7,
-			"y": 1.6,
 			"w": 0.8,
 			"h": 0.8
 		}
@@ -85,10 +77,10 @@
 			"flat": 1
 		},
 		{
-			"x": 22,
-			"w": 8,
+			"x": 22.4,
+			"w": 9,
 			"h": 0.8,
-			"flat": 4.4
+			"flat": 5.6
 		}
 	]
 }

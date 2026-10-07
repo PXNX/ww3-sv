@@ -2,15 +2,23 @@
 	"version": 1,
 	"id": "level-12",
 	"width": 27,
-	"birds": ["parrot", "flamingo", "parrot", "pelican"],
+	"birds": ["parrot", "parrot", "flamingo"],
 	"blocks": [
 		{
 			"material": "stone",
-			"shape": "pillar",
+			"shape": "box",
 			"x": 14,
 			"y": 0,
-			"w": 1,
-			"h": 2.4
+			"w": 1.4,
+			"h": 1.2
+		},
+		{
+			"material": "stone",
+			"shape": "box",
+			"x": 14,
+			"y": 1.2,
+			"w": 1.4,
+			"h": 1.2
 		},
 		{
 			"material": "wood",
@@ -38,11 +46,19 @@
 		},
 		{
 			"material": "stone",
-			"shape": "pillar",
+			"shape": "box",
 			"x": 21.8,
 			"y": 1.2,
-			"w": 1,
-			"h": 2.4
+			"w": 1.4,
+			"h": 1.2
+		},
+		{
+			"material": "stone",
+			"shape": "box",
+			"x": 21.8,
+			"y": 2.4,
+			"w": 1.4,
+			"h": 1.2
 		},
 		{
 			"material": "wood",

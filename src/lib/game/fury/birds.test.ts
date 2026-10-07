@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
 	BIRDS,
 	BIRD_KINDS,
+	BLAST_RADIUS,
+	BOOMERANG_KEEP,
+	BOOMERANG_LIFT,
 	DASH_FACTOR,
 	DASH_MAX_SPEED,
 	DIVE_ANGLE,
@@ -10,6 +13,8 @@ import {
 	EGG_DROP_SPEED,
 	SPLIT_GAP,
 	SPLIT_SPREAD,
+	blastFalloff,
+	boomerangVelocity,
 	dashVelocity,
 	diveVelocity,
 	eggVelocity,
@@ -60,8 +65,18 @@ describe('birds', () => {
 		expect(offsets[2].y).toBeCloseTo(-SPLIT_GAP);
 	});
 
-	it('has five birds, three of them with a new tap ability each', () => {
-		expect(BIRD_KINDS).toEqual(['flamingo', 'pelican', 'stork', 'goose', 'falcon']);
+	it('has seven birds, five of them with their own tap ability', () => {
+		expect(BIRD_KINDS).toEqual([
+			'flamingo',
+			'pelican',
+			'stork',
+			'goose',
+			'falcon',
+			'phoenix',
+			'parrot'
+		]);
+		expect(BIRDS.phoenix.ability).toBe('blast');
+		expect(BIRDS.parrot.ability).toBe('boomerang');
 		expect(BIRDS.stork.ability).toBe('dash');
 		expect(BIRDS.goose.ability).toBe('egg');
 		expect(BIRDS.falcon.ability).toBe('dive');
@@ -92,5 +107,19 @@ describe('birds', () => {
 		expect(rising.y).toBe(-EGG_DROP_SPEED);
 		expect(rising.x).toBeCloseTo(10 * EGG_DRIFT);
 		expect(eggVelocity({ x: 10, y: -8 }).y).toBeLessThan(-8);
+	});
+
+	it('turns the parrot around: back the way it came, a little higher', () => {
+		const back = boomerangVelocity({ x: 10, y: -3 });
+		expect(back.x).toBeCloseTo(-10 * BOOMERANG_KEEP);
+		expect(back.y).toBe(BOOMERANG_LIFT);
+		expect(boomerangVelocity({ x: 8, y: 5 }).y).toBe(5 + BOOMERANG_LIFT);
+	});
+
+	it('fades the phoenix blast out with distance', () => {
+		expect(blastFalloff(0)).toBe(1);
+		expect(blastFalloff(BLAST_RADIUS / 2)).toBeCloseTo(0.5);
+		expect(blastFalloff(BLAST_RADIUS)).toBe(0);
+		expect(blastFalloff(BLAST_RADIUS * 3)).toBe(0);
 	});
 });

@@ -2,7 +2,7 @@
 	"version": 1,
 	"id": "level-04",
 	"width": 26,
-	"birds": ["stork", "flamingo", "stork", "pelican"],
+	"birds": ["stork", "stork", "flamingo"],
 	"blocks": [
 		{
 			"material": "wood",
@@ -54,49 +54,89 @@
 		},
 		{
 			"material": "stone",
-			"shape": "pillar",
-			"x": 19.3,
-			"y": 1,
-			"w": 0.8,
-			"h": 3.2
-		},
-		{
-			"material": "stone",
-			"shape": "pillar",
-			"x": 20,
-			"y": 1,
-			"w": 0.5,
-			"h": 2
-		},
-		{
-			"material": "stone",
-			"shape": "pillar",
-			"x": 21.4,
-			"y": 1,
-			"w": 0.5,
-			"h": 2
-		},
-		{
-			"material": "stone",
-			"shape": "pillar",
-			"x": 22.8,
-			"y": 1,
-			"w": 0.5,
-			"h": 2
-		},
-		{
-			"material": "wood",
 			"shape": "box",
-			"x": 21.4,
-			"y": 3,
-			"w": 3.4,
-			"h": 0.4
+			"x": 19.2,
+			"y": 1,
+			"w": 1,
+			"h": 0.8
 		},
 		{
-			"material": "wood",
-			"shape": "spire",
-			"x": 21.4,
+			"material": "stone",
+			"shape": "box",
+			"x": 19.2,
+			"y": 1.8,
+			"w": 1,
+			"h": 0.8
+		},
+		{
+			"material": "stone",
+			"shape": "box",
+			"x": 19.2,
+			"y": 2.6,
+			"w": 1,
+			"h": 0.8
+		},
+		{
+			"material": "stone",
+			"shape": "box",
+			"x": 19.2,
 			"y": 3.4,
+			"w": 1,
+			"h": 0.8
+		},
+		{
+			"material": "stone",
+			"shape": "box",
+			"x": 19.2,
+			"y": 4.2,
+			"w": 1,
+			"h": 0.8
+		},
+		{
+			"material": "stone",
+			"shape": "pillar",
+			"x": 20.4,
+			"y": 1,
+			"w": 0.5,
+			"h": 2
+		},
+		{
+			"material": "stone",
+			"shape": "pillar",
+			"x": 21.8,
+			"y": 1,
+			"w": 0.5,
+			"h": 2
+		},
+		{
+			"material": "stone",
+			"shape": "pillar",
+			"x": 23.2,
+			"y": 1,
+			"w": 0.5,
+			"h": 2
+		},
+		{
+			"material": "stone",
+			"shape": "box",
+			"x": 21.8,
+			"y": 3,
+			"w": 3.5,
+			"h": 0.5
+		},
+		{
+			"material": "stone",
+			"shape": "box",
+			"x": 21.8,
+			"y": 3.5,
+			"w": 3.5,
+			"h": 0.5
+		},
+		{
+			"material": "stone",
+			"shape": "spire",
+			"x": 21.8,
+			"y": 4,
 			"w": 1.4,
 			"h": 1.2
 		}
@@ -108,12 +148,12 @@
 			"size": 0.7
 		},
 		{
-			"x": 20.7,
+			"x": 21.1,
 			"y": 1,
 			"size": 0.7
 		},
 		{
-			"x": 22.1,
+			"x": 22.5,
 			"y": 1,
 			"size": 0.7
 		}
@@ -133,10 +173,10 @@
 			"flat": 1
 		},
 		{
-			"x": 21,
-			"w": 8.4,
+			"x": 21.3,
+			"w": 9.4,
 			"h": 1,
-			"flat": 4.4
+			"flat": 5.4
 		}
 	]
 }

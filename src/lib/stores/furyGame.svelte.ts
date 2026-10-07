@@ -4,6 +4,7 @@
  * step the few values the interface shows are copied into $state fields.
  */
 import { createRandom, randomSeed } from '#lib/game/random.js';
+import { ABILITY_SOUNDS } from '#lib/game/fury/abilitySounds.js';
 import type { BirdKind } from '#lib/game/fury/birds.js';
 import { FuryMatch, type FuryPhase } from '#lib/game/fury/furyMatch.js';
 import type { ImpactSurface, WorldEvent } from '#lib/game/fury/furyWorld.js';
@@ -285,14 +286,11 @@ export class FuryGame {
 			case 'dome-destroyed':
 				soundManager().play('dome-pop');
 				return;
-			case 'ability':
-				if (event.bird === 'phoenix') {
-					soundManager().play('explosion-small');
-					return;
-				}
-				soundManager().play('flap');
-				soundManager().play('whoosh');
+			case 'ability': {
+				const sound = ABILITY_SOUNDS[event.bird];
+				if (sound) soundManager().play(sound);
 				return;
+			}
 		}
 	}
 
