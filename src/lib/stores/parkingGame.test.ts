@@ -114,6 +114,17 @@ describe('ParkingGame', () => {
 		expect(game.moves).toBe(0);
 	});
 
+	it('clears the win state when going back to the level select', () => {
+		const { game } = newGame();
+		game.openLevel(0);
+		playSolution(game);
+		expect(game.won).toBe(true);
+		game.backToSelect();
+		expect(game.screen).toBe('select');
+		expect(game.won).toBe(false);
+		expect(game.isUnlocked(1)).toBe(true);
+	});
+
 	it('gives fewer stars for a wasteful solution and keeps the better one', () => {
 		const { game } = newGame();
 		game.openLevel(0);
