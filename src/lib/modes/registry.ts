@@ -11,6 +11,7 @@ import IconFuel from '~icons/lucide/fuel';
 import IconFeather from '~icons/lucide/feather';
 import IconBird from '~icons/lucide/bird';
 import IconCastle from '~icons/lucide/castle';
+import IconShield from '~icons/lucide/shield';
 
 export type ModeId =
 	| 'blocks'
@@ -21,7 +22,8 @@ export type ModeId =
 	| 'pipeline'
 	| 'flamingo'
 	| 'fury'
-	| 'chess';
+	| 'chess'
+	| 'dronewall';
 
 interface ModeBase {
 	id: ModeId;
@@ -121,5 +123,14 @@ export const MODES: readonly GameMode[] = [
 		tileClass: 'bg-banner-slate',
 		name: m.mode_chess_name,
 		description: m.mode_chess_description
+	},
+	{
+		id: 'dronewall',
+		status: 'playable',
+		href: '/play/dronewall',
+		icon: IconShield,
+		tileClass: 'bg-khaki',
+		name: m.mode_dronewall_name,
+		description: m.mode_dronewall_description
 	}
 ];
