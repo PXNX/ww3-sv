@@ -115,6 +115,13 @@ export function guestPortrait(id: GuestId): string {
 	return SUPPLIED_GUESTS.includes(id) ? `${CAMEO_DIRECTORY}/${id}.svg` : CAMEO_PLACEHOLDER;
 }
 
+/** Putin's moods: `calm` is the default roster portrait (sad and old), the others are extra faces */
+export type PutinMood = 'calm' | 'angry' | 'sad';
+
+export function putinPortrait(mood: PutinMood): string {
+	return mood === 'calm' ? cameoPortrait('putin') : `${CAMEO_DIRECTORY}/putin-${mood}.svg`;
+}
+
 /** Picks a random cameo, never the same one twice in a row */
 export function pickCameo(random: Random, previous?: CameoId): Cameo {
 	const pool = CAMEOS.length > 1 ? CAMEOS.filter((cameo) => cameo.id !== previous) : CAMEOS;
