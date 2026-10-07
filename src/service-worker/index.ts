@@ -11,15 +11,23 @@ import { self as sw } from '$app/service-worker';
 
 const CACHE = `ww3-${version}`;
 // Manifest paths are relative to the base path; resolve() turns them into root-relative URLs
-const PRECACHE = [...immutable, ...assets, ...prerendered].map(({ path }) =>
-	resolve(path as never)
-);
+const toUrls = (entries: readonly { path: string }[]) =>
+	entries.map(({ path }) => resolve(path as never));
+// The app itself must be cached completely, or the install fails and the browser never offers it
+const SHELL = toUrls([...immutable, ...prerendered]);
+// Static assets (sprites, sounds, fonts) are cached one by one: a single failed download must not
+// abort the install, because without an active service worker the app is not installable
+const OPTIONAL = toUrls(assets);
+const PRECACHE = [...SHELL, ...OPTIONAL];
 
 sw.addEventListener('install', (event) => {
 	event.waitUntil(
 		caches
 			.open(CACHE)
-			.then((cache) => cache.addAll(PRECACHE))
+			.then(async (cache) => {
+				await cache.addAll(SHELL);
+				await Promise.allSettled(OPTIONAL.map((url) => cache.add(url)));
+			})
 			.then(() => sw.skipWaiting())
 	);
 });

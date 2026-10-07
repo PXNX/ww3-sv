@@ -29,9 +29,9 @@ export const GET: RequestHandler = () =>
 					sizes: '512x512',
 					type: 'image/png',
 					purpose: 'maskable'
-				},
-				{ src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }
-			]
+				}
+			],
+			prefer_related_applications: false
 		},
 		{ headers: { 'content-type': 'application/manifest+json' } }
 	);
