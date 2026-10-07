@@ -1,25 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" role="img" aria-label="Mascot sulking">
 	<!-- Original cartoon caricature, flat colours and thin outlines with a big soft head in the style of the freeonis videos; not traced from any reference -->
 	<g stroke="#1c1c1c" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
-		<path d="M44 240 Q48 172 100 168 Q152 172 156 240 Z" fill="#1F2A44"/>
-		<path d="M82 170 L100 196 L118 170 Z" fill="#FFFFFF"/>
-		<path d="M94 172 L106 172 L104 182 L96 182 Z" fill="#D7263D"/>
-		<path d="M96 182 L104 182 L110 232 L100 240 L90 232 Z" fill="#D7263D"/>
-		<path d="M66 178 L88 214 M134 178 L112 214" fill="none" stroke-width="2.5"/>
-		<path d="M40 214 Q42 190 74 196 L158 208 Q170 214 166 226 Q162 238 148 236 L56 228 Q38 224 40 214 Z" fill="#2C3A5E"/>
-		<path d="M50 204 Q100 226 158 202" fill="none" stroke-width="2.5"/>
-		<ellipse cx="148" cy="204" rx="13" ry="10" fill="#F5BC84"/><ellipse cx="56" cy="220" rx="13" ry="10" fill="#F5BC84"/>
-		<path d="M84 134 L116 134 L118 176 L100 184 L82 176 Z" fill="#F5BC84"/>
-		<ellipse cx="38" cy="96" rx="8" ry="12" fill="#F5BC84"/><ellipse cx="162" cy="96" rx="8" ry="12" fill="#F5BC84"/>
-		<ellipse cx="100" cy="92" rx="62" ry="58" fill="#F5BC84"/>
-		<ellipse cx="80" cy="90" rx="17" ry="11" fill="#FBE3C6" stroke="none"/><ellipse cx="120" cy="90" rx="17" ry="11" fill="#FBE3C6" stroke="none"/>
+		<path d="M10 240 Q10 182 100 176 Q190 182 190 240 Z" fill="#1F2A44"/>
+		<path d="M78 178 L100 204 L122 178 Z" fill="#FFFFFF"/>
+		<path d="M93 180 L107 180 L105 190 L95 190 Z" fill="#D7263D"/>
+		<path d="M95 190 L105 190 Q122 214 112 240 L100 240 L88 240 Q78 214 95 190 Z" fill="#D7263D"/>
+		<path d="M52 188 L86 230 M148 188 L114 230" fill="none" stroke-width="2.5"/>
+		<circle cx="132" cy="236" r="3.5" fill="#F5D26B" stroke-width="2"/>
+		<path d="M120 228 L128 235 M120 244 L128 237" fill="none" stroke-width="2"/>
+		<path d="M14 214 Q16 190 66 196 L168 206 Q186 214 182 228 Q178 240 160 238 L44 230 Q12 226 14 214 Z" fill="#2C3A5E"/>
+		<path d="M30 204 Q100 226 168 202" fill="none" stroke-width="2.5"/>
+		<ellipse cx="160" cy="204" rx="14" ry="10" fill="#F39A45"/><ellipse cx="38" cy="222" rx="14" ry="10" fill="#F39A45"/>
+		<ellipse cx="28" cy="100" rx="8" ry="13" fill="#F39A45"/><ellipse cx="172" cy="100" rx="8" ry="13" fill="#F39A45"/>
+		<path d="M27 94 Q26 30 100 32 Q174 30 173 94 Q182 152 100 164 Q18 152 27 94 Z" fill="#F39A45"/>
+		<path d="M64 150 Q100 166 136 150" fill="none" stroke-width="2.5"/>
+		<ellipse cx="78" cy="92" rx="18" ry="11" fill="#FFE6C6" stroke="none"/><ellipse cx="122" cy="92" rx="18" ry="11" fill="#FFE6C6" stroke="none"/>
+		<ellipse cx="46" cy="120" rx="12" ry="8" fill="#EE7A5E" stroke="none" opacity="0.6"/><ellipse cx="154" cy="120" rx="12" ry="8" fill="#EE7A5E" stroke="none" opacity="0.6"/>
+		<g transform="translate(-10 0) scale(1.1 1)">
 		<path d="M38 88 Q32 28 98 22 Q162 20 168 70 Q170 82 164 90 Q150 56 120 54 Q92 44 60 62 Q46 68 38 88 Z" fill="#F5D26B"/>
 		<path d="M166 66 Q192 72 172 96 Q162 90 162 78 Z" fill="#F5D26B"/>
 		<path d="M54 52 Q88 28 128 34 M70 64 Q104 46 140 54" fill="none" stroke-width="2.5"/>
+		</g>
 		<path d="M62 82 L96 92" stroke-width="5"/><path d="M104 92 L138 82" stroke-width="5"/>
 		<ellipse cx="80" cy="98" rx="13" ry="8" fill="#FFFFFF"/><ellipse cx="120" cy="98" rx="13" ry="8" fill="#FFFFFF"/>
 		<circle cx="75" cy="99" r="3.2" fill="#1c1c1c" stroke="none"/><circle cx="115" cy="99" r="3.2" fill="#1c1c1c" stroke="none"/>
-		<path d="M96 98 Q92 112 100 116 Q108 114 105 106" fill="#F2A29B"/>
-		<path d="M82 134 Q100 118 118 134" fill="none" stroke-width="5"/>
+		<path d="M96 98 Q92 112 100 116 Q108 114 105 106" fill="#EE7A5E"/>
+		<path d="M82 136 Q100 120 118 136" fill="none" stroke-width="5"/>
 	</g>
 </svg>

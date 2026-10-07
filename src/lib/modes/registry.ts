@@ -10,9 +10,18 @@ import IconCrosshair from '~icons/lucide/crosshair';
 import IconFuel from '~icons/lucide/fuel';
 import IconFeather from '~icons/lucide/feather';
 import IconBird from '~icons/lucide/bird';
+import IconCastle from '~icons/lucide/castle';
 
 export type ModeId =
-	'blocks' | 'minefield' | 'convoy' | 'merge' | 'shootdown' | 'pipeline' | 'flamingo' | 'fury';
+	| 'blocks'
+	| 'minefield'
+	| 'convoy'
+	| 'merge'
+	| 'shootdown'
+	| 'pipeline'
+	| 'flamingo'
+	| 'fury'
+	| 'chess';
 
 interface ModeBase {
 	id: ModeId;
@@ -103,5 +112,14 @@ export const MODES: readonly GameMode[] = [
 		tileClass: 'bg-explosion-yellow',
 		name: m.mode_fury_name,
 		description: m.mode_fury_description
+	},
+	{
+		id: 'chess',
+		status: 'playable',
+		href: '/play/chess',
+		icon: IconCastle,
+		tileClass: 'bg-banner-slate',
+		name: m.mode_chess_name,
+		description: m.mode_chess_description
 	}
 ];

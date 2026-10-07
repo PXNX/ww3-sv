@@ -1,7 +1,7 @@
 # World War 3
 
 A satirical cartoon puzzle and arcade collection about oil, shipping, and geopolitics, built as a
-SvelteKit Progressive Web App. Eight game modes are planned; they are added one commit at a time
+SvelteKit Progressive Web App. Nine game modes are planned; they are added one commit at a time
 (see the commit plan below). There is no backend, no database, and no account system: scores and
 settings stay in the browser's local storage.
 
@@ -90,4 +90,6 @@ in `POSE_FILES` in `src/lib/theme/character.ts` at it; cameo portraits work the 
 13. `feat: add Progressive Web App support and generated icons`
 14. `chore: final polish, right-to-left review, and deployment configuration`
 
-Each step is a separate commit that leaves the repository in a working state.
+Each step is a separate commit that leaves the repository in a working state. The ninth mode, 4D Chess
+(`feat(chess): add 4D Chess mode`), is a chess match against Putin with event cards; it was added after
+Feathered Fury.
