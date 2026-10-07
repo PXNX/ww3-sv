@@ -249,8 +249,6 @@
 							style:top="{(row / board.size) * 100}%"
 							style:height="{100 / board.size}%"
 							style:transform-origin="{((feedback.origin[1] + 0.5) / board.size) * 100}% 50%"
-							style:background="linear-gradient(to bottom, transparent, var(--sweep) 50%,
-							transparent)"
 						></span>
 					{/each}
 					{#each feedback.cols as col (`c${col}`)}
@@ -259,8 +257,6 @@
 							style:left="{(col / board.size) * 100}%"
 							style:width="{100 / board.size}%"
 							style:transform-origin="50% {((feedback.origin[0] + 0.5) / board.size) * 100}%"
-							style:background="linear-gradient(to right, transparent, var(--sweep) 50%,
-							transparent)"
 						></span>
 					{/each}
 				</span>
@@ -408,10 +404,12 @@
 	}
 
 	.blocks-sweep-row {
+		background: linear-gradient(to bottom, transparent, var(--sweep) 50%, transparent);
 		animation: blocks-sweep-row 420ms ease-out both;
 	}
 
 	.blocks-sweep-col {
+		background: linear-gradient(to right, transparent, var(--sweep) 50%, transparent);
 		animation: blocks-sweep-col 420ms ease-out both;
 	}
 
