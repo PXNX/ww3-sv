@@ -92,6 +92,8 @@ export interface CameoOverride {
 	image: string;
 	alt: string;
 	message: string;
+	/** Flag image shown behind the portrait, normally from cameoFlag() */
+	flag?: string;
 	/** Caption above the message; defaults to the shared "Breaking news" label */
 	label?: string;
 }
@@ -100,6 +102,28 @@ export interface CameoOverride {
 export function cameoAsset(file: string): string {
 	return `${CAMEO_DIRECTORY}/${file}`;
 }
+
+const FLAG_DIRECTORY = '/assets/flags';
+
+/** Country flag shown behind each cameo, as a file in static/assets/flags/ */
+const CAMEO_FLAGS: Record<CameoId, string> = {
+	xi: 'cn',
+	zelensky: 'ua',
+	putin: 'ru',
+	merz: 'de',
+	mbs: 'sa',
+	khamenei: 'ir',
+	netanyahu: 'il',
+	erdogan: 'tr',
+	macron: 'fr'
+};
+
+export function cameoFlag(id: CameoId): string {
+	return `${FLAG_DIRECTORY}/${CAMEO_FLAGS[id]}.svg`;
+}
+
+/** The mascot's flag */
+export const MASCOT_FLAG = `${FLAG_DIRECTORY}/us.svg`;
 
 export function cameoPortrait(id: CameoId): string {
 	return SUPPLIED_PORTRAITS.includes(id) ? `${CAMEO_DIRECTORY}/${id}.svg` : CAMEO_PLACEHOLDER;

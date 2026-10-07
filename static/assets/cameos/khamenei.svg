@@ -1,6 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Caricature of Ali Khamenei">
 	<!-- Original cartoon caricature, flat colours and thin outlines with big soft heads in the style of the freeonis videos; not traced from any reference -->
-	<rect width="200" height="200" fill="#F9EDB5" stroke="none"/>
 	<g stroke="#1c1c1c" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
 		<path d="M24 206 Q30 150 100 148 Q170 150 176 206 Z" fill="#7A5A40"/>
 		<path d="M84 148 L100 166 L116 148 Z" fill="#FFFFFF"/>
@@ -21,8 +20,5 @@
 		<circle cx="78" cy="93" r="3" fill="#1c1c1c" stroke="none"/><circle cx="122" cy="93" r="3" fill="#1c1c1c" stroke="none"/>
 		<ellipse cx="100" cy="108" rx="8" ry="10" fill="#E9A890"/>
 		<path d="M97 115 Q100 118 103 115" fill="none" stroke-width="2"/>
-		<path d="M148 168 L180 168 L176 196 L152 196 Z" fill="#FFFFFF"/>
-		<path d="M180 172 Q196 174 178 188" fill="none" stroke-width="3.5"/>
-		<path d="M158 160 Q154 150 160 144 M170 160 Q166 150 172 144" fill="none" stroke-width="2.5"/>
 	</g>
 </svg>

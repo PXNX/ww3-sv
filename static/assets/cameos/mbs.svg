@@ -1,6 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Caricature of Mohammed bin Salman">
 	<!-- Original cartoon caricature, flat colours and thin outlines with big soft heads in the style of the freeonis videos; not traced from any reference -->
-	<rect width="200" height="200" fill="#D9E8C0" stroke="none"/>
 	<g stroke="#1c1c1c" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
 		<path d="M30 206 Q36 152 100 150 Q164 152 170 206 Z" fill="#FFFFFF"/>
 		<path d="M100 158 L100 206" fill="none" stroke-width="2.5"/>

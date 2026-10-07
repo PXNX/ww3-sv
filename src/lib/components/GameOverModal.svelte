@@ -18,6 +18,7 @@
 	import type { ScoreCard } from '#lib/services/share.js';
 	import {
 		CAMEO_PLACEHOLDER,
+		cameoFlag,
 		cameoPortrait,
 		pickCameo,
 		pickCameoMessage,
@@ -81,6 +82,7 @@
 				? customCameo.alt
 				: m.cameo_portrait_alt({ name: cameo?.name() ?? '' })
 	);
+	const flag = $derived(customCameo ? customCameo.flag : cameo ? cameoFlag(cameo.id) : undefined);
 	const cameoLabel = $derived(customCameo?.label ?? m.gameover_cameo_label());
 	const cameoMessage = $derived(
 		customCameo
@@ -145,6 +147,7 @@
 					src={portrait}
 					alt={cameoAlt}
 					class="size-20 shrink-0 -rotate-2 rounded-lg border-3 border-ink bg-paper object-cover"
+					style:background={flag ? `url(${flag}) center / 100% 100%` : undefined}
 					onerror={() => (portraitFailed = true)}
 				/>
 				<figcaption class="flex flex-col gap-1">

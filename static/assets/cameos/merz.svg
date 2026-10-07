@@ -1,6 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Caricature of Friedrich Merz">
 	<!-- Original cartoon caricature, flat colours and thin outlines with big soft heads in the style of the freeonis videos; not traced from any reference -->
-	<rect width="200" height="200" fill="#F9EDB5" stroke="none"/>
 	<g stroke="#1c1c1c" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
 		
 		<path d="M40 206 Q44 150 100 148 Q156 150 160 206 Z" fill="#1E2B45"/>

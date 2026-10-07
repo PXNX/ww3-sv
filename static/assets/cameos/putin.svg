@@ -1,6 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Caricature of Vladimir Putin">
 	<!-- Original cartoon caricature, flat colours and thin outlines with big soft heads in the style of the freeonis videos; not traced from any reference -->
-	<rect width="200" height="200" fill="#D9E3EF" stroke="none"/>
 	<g stroke="#1c1c1c" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
 		<rect x="-4" y="176" width="208" height="40" fill="#B98A5E"/>
 		<path d="M34 178 Q40 150 100 148 Q160 150 166 178 Z" fill="#2C3140"/>

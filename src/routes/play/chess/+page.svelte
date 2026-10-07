@@ -10,6 +10,7 @@
 	import { cardName, ChessGame, quipText, VANCE_CHANCE } from '#lib/stores/chessGame.svelte.js';
 	import {
 		CAMEO_PLACEHOLDER,
+		cameoFlag,
 		cameoPortrait,
 		guestPortrait,
 		type CameoOverride
@@ -32,6 +33,7 @@
 			? m.cameo_placeholder_alt()
 			: m.cameo_portrait_alt({ name: m.cameo_putin_name() })
 	);
+	const putinFlag = cameoFlag('putin');
 	const vancePortrait = guestPortrait('vance');
 
 	// "New game" asks once more before throwing away a running game
@@ -67,6 +69,7 @@
 	);
 	const putinCameo: CameoOverride = $derived({
 		image: putinPortrait,
+		flag: putinFlag,
 		alt: putinAlt,
 		message: {
 			win: m.chess_gameover_putin_win,
@@ -109,6 +112,7 @@
 				src={putinPortrait}
 				alt={putinAlt}
 				class="size-14 shrink-0 -rotate-2 rounded-lg border-3 border-ink bg-paper object-cover"
+				style:background="url({putinFlag}) center / 100% 100%"
 			/>
 			<div class="flex-1" role="status" aria-live="polite">
 				{#if game.thinking}
