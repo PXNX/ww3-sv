@@ -39,6 +39,9 @@ export interface ClearFeedback {
 	streak: number;
 	/** Board indices that were cleared */
 	cells: number[];
+	/** The rows and columns that were completed, so the view can sweep a blast along each one */
+	rows: number[];
+	cols: number[];
 	/** The kind each cleared cell held, in the same order as cells */
 	kinds: PieceKind[];
 	/** Center of the piece that caused the clear, so the animation can ripple outwards from it */
@@ -177,11 +180,18 @@ export class BlocksGame {
 						points: move.linePoints,
 						streak: move.combo.streak,
 						cells: result.clearedCells,
+						rows: result.cleared.rows,
+						cols: result.cleared.cols,
 						kinds,
 						origin: [anchorRow + (piece.height - 1) / 2, anchorCol + (piece.width - 1) / 2]
 					}
 				: null;
-		soundManager().play(lines >= 2 ? 'chime' : lines === 1 ? 'pop' : 'thud');
+		if (lines > 0) {
+			// Bigger clears and longer streaks ring out with more notes
+			soundManager().play('blocks-clear', (lines - 1 + (move.combo.streak - 1) * 0.5) / 4);
+		} else {
+			soundManager().play('blocks-place');
+		}
 
 		const tray = this.tray.map((entry, index) => (index === slot ? null : entry));
 		this.tray = tray.every((entry) => entry === null)
