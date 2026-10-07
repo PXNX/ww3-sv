@@ -1,13 +1,15 @@
 <!--
 	Game-over screen shared by every mode (requirements Section 10): final score, a random cameo
-	portrait with its matching message, the mascot's "sunk" pose, and a Try Again button.
+	portrait with its matching message, the mascot in a random game-over pose, and a Try Again button.
 	On a new personal best it adds confetti and a Share button.
 -->
 <script lang="ts" module>
 	import type { CameoId } from '#lib/theme/cameos.js';
+	import type { MascotPose } from '#lib/theme/character.js';
 
 	// Remembered across game overs so the same cameo never appears twice in a row
 	let lastCameo: CameoId | undefined;
+	let lastPose: MascotPose | undefined;
 </script>
 
 <script lang="ts">
@@ -25,7 +27,7 @@
 		type Cameo,
 		type CameoOverride
 	} from '#lib/theme/cameos.js';
-	import { CHARACTER_NAME } from '#lib/theme/character.js';
+	import { CHARACTER_NAME, pickGameOverPose } from '#lib/theme/character.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import CharacterMascot from './CharacterMascot.svelte';
 	import Confetti from './Confetti.svelte';
@@ -64,6 +66,7 @@
 	let cameo: Cameo | undefined = $state();
 	let cameoLine = $state(0);
 	let portraitFailed = $state(false);
+	let pose: MascotPose = $state('sunk');
 
 	const portrait = $derived(
 		customCameo
@@ -99,6 +102,8 @@
 				lastCameo = cameo.id;
 			}
 			portraitFailed = false;
+			pose = pickGameOverPose(Math.random, lastPose);
+			lastPose = pose;
 			dialog.showModal();
 			soundManager().play(isNewBest ? 'new-best' : 'game-over');
 		} else if (!open && dialog.open) {
@@ -157,7 +162,7 @@
 			</figure>
 		{/if}
 
-		<CharacterMascot pose="sunk" class="w-24 rotate-6" />
+		<CharacterMascot {pose} class="w-24 rotate-6" />
 
 		<div class="flex flex-wrap items-center justify-center gap-3">
 			<button type="button" class="btn-chunky bg-tie-red text-lg" onclick={onRetry}>
