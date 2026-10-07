@@ -52,8 +52,8 @@ src/lib/styles/tokens.css      design tokens and font faces
 src/lib/styles/playful.css     tilt, bounce, and press interaction styles
 src/lib/components/            shared components (mode select, mascot, locale switcher)
 src/routes/+page.svelte        start screen
-static/assets/mascot/          mascot artwork (placeholder until the owner supplies it)
-static/assets/cameos/          cameo portraits (placeholder until the owner supplies them)
+static/assets/mascot/          mascot artwork, one SVG per pose
+static/assets/cameos/          cameo portraits, one SVG per cameo id
 static/fonts/                  self-hosted font files and license
 ```
 
@@ -67,10 +67,11 @@ is active, the document direction switches to right-to-left; playing fields must
 
 ### Mascot artwork
 
-Until the owner supplies the freeonis artwork, every pose shows
-`static/assets/mascot/_placeholder-mascot.svg`. To use real art, add the pose files (for example
-`mascot-idle.png`) to `static/assets/mascot/` and list the pose in `SUPPLIED_POSES` in
-`src/lib/theme/character.ts`.
+Every pose and every cameo ships with an original SVG caricature. The generic placeholders
+(`_placeholder-mascot.svg`, `_placeholder.svg`) remain as fallbacks for a missing file. To replace
+a pose with the owner-supplied artwork, add the file to `static/assets/mascot/` and point the pose
+in `POSE_FILES` in `src/lib/theme/character.ts` at it; cameo portraits work the same way in
+`src/lib/theme/cameos.ts`.
 
 ## Commit plan
 

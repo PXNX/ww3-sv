@@ -22,14 +22,14 @@ export const CHARACTER_NAME: Record<Locale, string> = {
 
 const POSE_FILES: Record<MascotPose, string> = {
 	idle: 'mascot-idle.svg',
-	smug: 'mascot-smug.png',
-	sweating: 'mascot-sweating.png',
-	sunk: 'mascot-sunk.png',
-	sulking: 'mascot-sulking.png'
+	smug: 'mascot-smug.svg',
+	sweating: 'mascot-sweating.svg',
+	sunk: 'mascot-sunk.svg',
+	sulking: 'mascot-sulking.svg'
 };
 
-/** Add a pose here once its owner-supplied artwork is in static/assets/mascot/ */
-const SUPPLIED_POSES: readonly MascotPose[] = ['idle'];
+/** Add a pose here once its artwork is in static/assets/mascot/ */
+const SUPPLIED_POSES: readonly MascotPose[] = ['idle', 'smug', 'sweating', 'sunk', 'sulking'];
 
 export function mascotImage(pose: MascotPose): string {
 	return SUPPLIED_POSES.includes(pose)

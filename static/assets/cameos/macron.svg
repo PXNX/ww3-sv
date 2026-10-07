@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Caricature of Emmanuel Macron">
+	<!-- Original cartoon caricature in the app's flat, thick-outline style; not traced from any reference -->
+	<rect width="200" height="200" fill="#4FA8D8"/>
+	<g stroke="#111111" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+		<!-- slim navy suit, white shirt, narrow tie -->
+		<path d="M14 204 Q18 142 100 138 Q182 142 186 204 Z" fill="#1F2D55"/>
+		<path d="M80 138 L100 170 L120 138 Z" fill="#FFFFFF"/>
+		<path d="M96 142 L104 142 L103 152 L97 152 Z" fill="#E5484D"/>
+		<path d="M97 152 L103 152 L106 188 L100 194 L94 188 Z" fill="#E5484D"/>
+		<path d="M62 146 L88 188 M138 146 L112 188" fill="none" stroke-width="3"/>
+		<!-- neck -->
+		<path d="M87 116 L113 116 L115 138 L100 146 L85 138 Z" fill="#F2C7A0"/>
+		<!-- ears -->
+		<ellipse cx="54" cy="92" rx="7" ry="11" fill="#F2C7A0"/>
+		<ellipse cx="146" cy="92" rx="7" ry="11" fill="#F2C7A0"/>
+		<!-- slightly narrower, youthful face -->
+		<path d="M54 80 Q54 36 100 34 Q146 36 146 80 Q148 124 100 132 Q52 124 54 80 Z" fill="#F2C7A0"/>
+		<!-- short brown hair swept to the side -->
+		<path d="M52 78 Q48 34 100 28 Q152 34 148 78 Q146 58 130 48 Q106 42 84 50 Q60 56 52 78 Z" fill="#6B4A32"/>
+		<path d="M64 52 Q96 34 134 48" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.4"/>
+		<!-- brows peeking above the shades -->
+		<path d="M66 68 L92 65" stroke="#4A3220" stroke-width="5"/>
+		<path d="M108 65 L134 68" stroke="#4A3220" stroke-width="5"/>
+		<!-- sunglasses -->
+		<path d="M60 74 L140 74 L140 78 L60 78 Z" fill="#111111" stroke-width="3"/>
+		<path d="M62 76 L94 76 Q94 96 78 96 Q62 96 62 76 Z" fill="#17181C" stroke-width="4"/>
+		<path d="M106 76 L138 76 Q138 96 122 96 Q106 96 106 76 Z" fill="#17181C" stroke-width="4"/>
+		<path d="M94 80 Q100 76 106 80" fill="none" stroke-width="4"/>
+		<path d="M68 80 L78 80 M112 80 L122 80" fill="none" stroke="#FFFFFF" stroke-width="3" opacity="0.6"/>
+		<path d="M60 76 L54 80 M140 76 L146 80" fill="none" stroke-width="4"/>
+		<!-- nose -->
+		<path d="M98 94 Q93 105 100 108 Q107 106 104 101" fill="none" stroke-width="3"/>
+		<!-- closed, tight little smile -->
+		<path d="M88 118 Q100 124 112 118" fill="none" stroke-width="4"/>
+		<!-- strongly worded croissant -->
+		<path d="M136 176 Q150 156 172 162 Q190 168 188 184 Q178 190 166 184 Q152 188 136 176 Z" fill="#E8A94A"/>
+		<path d="M152 164 Q154 176 160 184 M166 162 Q168 174 170 184 M178 168 Q178 176 176 184" fill="none" stroke-width="2.5"/>
+	</g>
+</svg>

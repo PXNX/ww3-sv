@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createRandom } from '$lib/game/random';
 import { CAMEO_PLACEHOLDER, CAMEOS, cameoAsset, cameoPortrait, pickCameo } from './cameos';
@@ -24,8 +25,11 @@ describe('cameos', () => {
 		}
 	});
 
-	it('falls back to the placeholder portrait until one is supplied', () => {
-		for (const cameo of CAMEOS) expect(cameoPortrait(cameo.id)).toBe(CAMEO_PLACEHOLDER);
+	it('has a portrait file for every cameo', () => {
+		for (const cameo of CAMEOS) {
+			expect(cameoPortrait(cameo.id)).toBe(`/assets/cameos/${cameo.id}.svg`);
+			expect(existsSync(`static/assets/cameos/${cameo.id}.svg`)).toBe(true);
+		}
 	});
 
 	it('builds URLs for files in static/assets/cameos', () => {

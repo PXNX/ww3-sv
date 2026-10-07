@@ -2,37 +2,44 @@
 	<!-- Original cartoon caricature in the app's flat, thick-outline style; not traced from any reference -->
 	<g stroke="#111111" stroke-width="6" stroke-linejoin="round" stroke-linecap="round">
 		<!-- hard offset shadow -->
-		<path d="M40 232 Q36 150 100 146 Q164 150 160 232 Z" fill="#111111" transform="translate(7 5)"/>
-		<circle cx="100" cy="82" r="56" fill="#111111" transform="translate(7 5)"/>
+		<path d="M30 236 Q28 156 100 150 Q172 156 170 236 Z" fill="#111111" transform="translate(7 5)"/>
+		<ellipse cx="100" cy="84" rx="58" ry="55" fill="#111111" transform="translate(7 5)"/>
 		<!-- suit -->
-		<path d="M40 232 Q36 150 100 146 Q164 150 160 232 Z" fill="#20242E"/>
-		<!-- shirt collar -->
-		<path d="M82 146 L100 162 L118 146 L110 146 L100 156 L90 146 Z" fill="#FFFFFF"/>
-		<!-- tie -->
-		<path d="M94 149 L106 149 L102 178 L98 178 Z" fill="#E5484D"/>
-		<!-- lapels -->
-		<path d="M68 150 L88 178 M132 150 L112 178" fill="none" stroke-width="3"/>
+		<path d="M30 236 Q28 156 100 150 Q172 156 170 236 Z" fill="#1F2A44"/>
+		<!-- shirt -->
+		<path d="M78 150 L100 182 L122 150 Z" fill="#FFFFFF"/>
+		<!-- long tie -->
+		<path d="M93 156 L107 156 L104 168 L96 168 Z" fill="#D7263D"/>
+		<path d="M96 168 L104 168 L112 222 L100 234 L88 222 Z" fill="#D7263D"/>
+		<!-- lapels and flag pin -->
+		<path d="M62 158 L88 206 M138 158 L112 206" fill="none" stroke-width="3"/>
+		<rect x="132" y="186" width="12" height="8" fill="#4FA8D8" stroke-width="2"/>
 		<!-- neck -->
-		<rect x="86" y="122" width="28" height="26" fill="#EDA46B"/>
-		<!-- head -->
-		<circle cx="100" cy="82" r="56" fill="#EDA46B"/>
+		<path d="M84 124 L116 124 L118 152 L100 160 L82 152 Z" fill="#F0A25E"/>
 		<!-- ears -->
-		<ellipse cx="45" cy="86" rx="8" ry="12" fill="#EDA46B"/>
-		<ellipse cx="155" cy="86" rx="8" ry="12" fill="#EDA46B"/>
-		<!-- hair swoop -->
-		<path d="M44 64 Q58 16 100 18 Q144 16 158 54 Q148 38 128 42 Q106 32 90 40 Q68 32 54 48 Q46 54 44 64 Z" fill="#EFCB74"/>
-		<path d="M68 28 Q90 20 112 26" fill="none" stroke-width="3"/>
+		<ellipse cx="43" cy="88" rx="8" ry="12" fill="#F0A25E"/>
+		<ellipse cx="157" cy="88" rx="8" ry="12" fill="#F0A25E"/>
+		<!-- head -->
+		<ellipse cx="100" cy="84" rx="58" ry="55" fill="#F0A25E"/>
+		<!-- pale eye patches -->
+		<ellipse cx="82" cy="78" rx="15" ry="10" fill="#FBE3C6" stroke="none"/>
+		<ellipse cx="118" cy="78" rx="15" ry="10" fill="#FBE3C6" stroke="none"/>
+		<!-- big golden swoop, combed from right to left and over the forehead -->
+		<path d="M42 70 Q40 22 96 16 Q154 12 164 56 Q166 66 160 72 Q146 44 118 46 Q92 36 62 54 Q50 60 42 70 Z" fill="#F7D774"/>
+		<path d="M164 50 Q186 56 168 76 Q160 70 160 62 Z" fill="#F7D774"/>
+		<path d="M56 46 Q86 22 126 28 M72 58 Q104 40 140 48 M60 62 Q74 50 92 50" fill="none" stroke-width="3"/>
 		<!-- eyebrows -->
-		<path d="M72 66 L88 61" stroke-width="4"/>
-		<path d="M112 61 L128 66" stroke-width="4"/>
-		<!-- eyes, squinting -->
-		<path d="M76 76 Q86 69 96 76 Q86 83 76 76 Z" fill="#FFFFFF" stroke-width="3"/>
-		<path d="M104 76 Q114 69 124 76 Q114 83 104 76 Z" fill="#FFFFFF" stroke-width="3"/>
-		<circle cx="88" cy="76" r="2.5" fill="#111111" stroke="none"/>
-		<circle cx="112" cy="76" r="2.5" fill="#111111" stroke="none"/>
+		<path d="M68 62 L96 66" stroke-width="5"/>
+		<path d="M104 66 L132 62" stroke-width="5"/>
+		<!-- eyes, narrowed -->
+		<path d="M70 80 Q82 72 94 80 Q82 86 70 80 Z" fill="#FFFFFF" stroke-width="3"/>
+		<path d="M106 80 Q118 72 130 80 Q118 86 106 80 Z" fill="#FFFFFF" stroke-width="3"/>
+		<circle cx="84" cy="79" r="2.8" fill="#111111" stroke="none"/>
+		<circle cx="116" cy="79" r="2.8" fill="#111111" stroke="none"/>
 		<!-- nose -->
-		<path d="M97 82 Q93 92 100 97 Q106 94 104 90" fill="none" stroke-width="3"/>
-		<!-- mouth -->
-		<path d="M82 110 Q100 105 118 110" fill="none" stroke-width="4"/>
+		<path d="M97 84 Q92 98 101 102 Q108 100 106 94" fill="none" stroke-width="3"/>
+		<!-- pursed mouth -->
+		<path d="M84 116 Q100 108 116 116 Q100 124 84 116 Z" fill="#C6414B" stroke-width="4"/>
+		<path d="M84 116 Q100 118 116 116" fill="none" stroke-width="2"/>
 	</g>
 </svg>

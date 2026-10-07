@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Caricature of Ali Khamenei">
+	<!-- Original cartoon caricature in the app's flat, thick-outline style; not traced from any reference -->
+	<rect width="200" height="200" fill="#E8E1BC"/>
+	<g stroke="#111111" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+		<!-- brown cloak over a white collar -->
+		<path d="M10 204 Q14 142 100 138 Q186 142 190 204 Z" fill="#6B4A32"/>
+		<path d="M82 138 L100 160 L118 138 Z" fill="#FFFFFF"/>
+		<!-- neck -->
+		<path d="M88 124 L112 124 L114 140 L100 150 L86 140 Z" fill="#E9BE96"/>
+		<!-- ears under turban -->
+		<ellipse cx="54" cy="90" rx="6" ry="10" fill="#E9BE96"/>
+		<ellipse cx="146" cy="90" rx="6" ry="10" fill="#E9BE96"/>
+		<!-- narrow face -->
+		<ellipse cx="100" cy="92" rx="44" ry="48" fill="#E9BE96"/>
+		<!-- long white beard -->
+		<path d="M56 94 Q54 150 100 176 Q146 150 144 94 Q136 124 118 128 Q100 120 82 128 Q64 124 56 94 Z" fill="#F4F4F4"/>
+		<path d="M100 134 L100 168 M84 134 Q84 156 94 168 M116 134 Q116 156 106 168" fill="none" stroke-width="2.5"/>
+		<!-- moustache -->
+		<path d="M82 112 Q100 104 118 112 Q100 120 82 112 Z" fill="#F4F4F4" stroke-width="3"/>
+		<!-- black turban -->
+		<path d="M46 66 Q42 18 100 16 Q158 18 154 66 Q130 54 100 54 Q70 54 46 66 Z" fill="#1E1E22"/>
+		<path d="M56 48 Q100 30 144 48 M52 60 Q100 42 148 60" fill="none" stroke="#5A5A64" stroke-width="2.5"/>
+		<!-- bushy white brows -->
+		<path d="M68 76 L92 74" stroke="#F4F4F4" stroke-width="7"/>
+		<path d="M108 74 L132 76" stroke="#F4F4F4" stroke-width="7"/>
+		<path d="M68 76 L92 74 M108 74 L132 76" fill="none" stroke-width="1.5"/>
+		<!-- round glasses -->
+		<circle cx="80" cy="88" r="13" fill="#FFFFFF" fill-opacity="0.45" stroke-width="4"/>
+		<circle cx="120" cy="88" r="13" fill="#FFFFFF" fill-opacity="0.45" stroke-width="4"/>
+		<path d="M93 88 L107 88" fill="none" stroke-width="3.5"/>
+		<circle cx="80" cy="88" r="2.6" fill="#111111" stroke="none"/>
+		<circle cx="120" cy="88" r="2.6" fill="#111111" stroke="none"/>
+		<!-- nose -->
+		<path d="M100 92 Q96 102 101 105" fill="none" stroke-width="3"/>
+		<!-- tiny tea cup, because of the tea break -->
+		<path d="M150 170 L178 170 L174 194 L154 194 Z" fill="#FFFFFF"/>
+		<path d="M178 174 Q192 176 176 188" fill="none" stroke-width="3.5"/>
+		<path d="M158 164 Q154 156 160 150 M168 164 Q164 156 170 150" fill="none" stroke-width="2.5"/>
+	</g>
+</svg>

@@ -19,8 +19,18 @@ const CAMEO_DIRECTORY = '/assets/cameos';
 
 export const CAMEO_PLACEHOLDER = `${CAMEO_DIRECTORY}/_placeholder.svg`;
 
-/** Add a cameo here once its owner-supplied portrait is in static/assets/cameos/<id>.png */
-const SUPPLIED_PORTRAITS: readonly CameoId[] = [];
+/** Add a cameo here once its portrait is in static/assets/cameos/<id>.svg */
+const SUPPLIED_PORTRAITS: readonly CameoId[] = [
+	'xi',
+	'zelensky',
+	'putin',
+	'merz',
+	'mbs',
+	'khamenei',
+	'netanyahu',
+	'erdogan',
+	'macron'
+];
 
 export const CAMEOS: readonly Cameo[] = [
 	{ id: 'xi', name: m.cameo_xi_name, message: m.cameo_xi },
@@ -53,7 +63,7 @@ export function cameoAsset(file: string): string {
 }
 
 export function cameoPortrait(id: CameoId): string {
-	return SUPPLIED_PORTRAITS.includes(id) ? `${CAMEO_DIRECTORY}/${id}.png` : CAMEO_PLACEHOLDER;
+	return SUPPLIED_PORTRAITS.includes(id) ? `${CAMEO_DIRECTORY}/${id}.svg` : CAMEO_PLACEHOLDER;
 }
 
 /** Picks a random cameo, never the same one twice in a row */

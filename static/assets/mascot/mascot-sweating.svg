@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" role="img" aria-label="Mascot sweating">
+	<!-- Original cartoon caricature in the app's flat, thick-outline style; not traced from any reference -->
+	<g stroke="#111111" stroke-width="6" stroke-linejoin="round" stroke-linecap="round">
+		<!-- hard offset shadow -->
+		<path d="M30 236 Q28 156 100 150 Q172 156 170 236 Z" fill="#111111" transform="translate(7 5)"/>
+		<ellipse cx="100" cy="84" rx="58" ry="55" fill="#111111" transform="translate(7 5)"/>
+		<!-- suit, tie hanging crooked -->
+		<path d="M30 236 Q28 156 100 150 Q172 156 170 236 Z" fill="#1F2A44"/>
+		<path d="M78 150 L100 182 L122 150 Z" fill="#FFFFFF"/>
+		<path d="M93 156 L107 156 L106 168 L98 168 Z" fill="#D7263D"/>
+		<path d="M98 168 L106 168 L120 216 L110 230 L94 218 Z" fill="#D7263D"/>
+		<path d="M62 158 L88 206 M138 158 L112 206" fill="none" stroke-width="3"/>
+		<!-- neck -->
+		<path d="M84 124 L116 124 L118 152 L100 160 L82 152 Z" fill="#F0A25E"/>
+		<ellipse cx="43" cy="88" rx="8" ry="12" fill="#F0A25E"/>
+		<ellipse cx="157" cy="88" rx="8" ry="12" fill="#F0A25E"/>
+		<!-- head, a little flushed -->
+		<ellipse cx="100" cy="84" rx="58" ry="55" fill="#F59B5A"/>
+		<!-- golden swoop, slightly drooping -->
+		<path d="M42 72 Q40 24 96 18 Q154 14 164 58 Q166 68 160 76 Q146 48 118 50 Q92 40 62 58 Q50 62 42 72 Z" fill="#F7D774"/>
+		<path d="M164 54 Q184 64 166 82 Q158 76 160 66 Z" fill="#F7D774"/>
+		<path d="M56 50 Q86 26 126 32 M72 62 Q104 44 140 52" fill="none" stroke-width="3"/>
+		<!-- worried brows -->
+		<path d="M66 68 L94 58" stroke-width="5"/>
+		<path d="M106 58 L134 68" stroke-width="5"/>
+		<!-- wide eyes, small pupils -->
+		<circle cx="82" cy="80" r="13" fill="#FFFFFF" stroke-width="3"/>
+		<circle cx="118" cy="80" r="13" fill="#FFFFFF" stroke-width="3"/>
+		<circle cx="85" cy="80" r="3" fill="#111111" stroke="none"/>
+		<circle cx="115" cy="80" r="3" fill="#111111" stroke="none"/>
+		<!-- nose -->
+		<path d="M97 88 Q92 100 101 104 Q108 102 106 96" fill="none" stroke-width="3"/>
+		<!-- wobbly gritted mouth -->
+		<path d="M78 118 L86 112 L94 118 L102 112 L110 118 L118 112 L124 118 Q112 130 98 130 Q84 130 78 118 Z" fill="#FFFFFF" stroke-width="3.5"/>
+		<!-- sweat drops -->
+		<path d="M30 46 Q22 62 30 68 Q38 62 30 46 Z" fill="#9AD8F5" stroke-width="3"/>
+		<path d="M170 40 Q162 56 170 62 Q178 56 170 40 Z" fill="#9AD8F5" stroke-width="3"/>
+		<path d="M142 112 Q136 124 142 130 Q148 124 142 112 Z" fill="#9AD8F5" stroke-width="3"/>
+	</g>
+</svg>
