@@ -5,7 +5,6 @@
 import {
 	HELMET_FLY_MS,
 	HELMET_POP_MS,
-	SLOTS,
 	buildCost,
 	sellValue,
 	upgradeCost,
@@ -25,7 +24,7 @@ export function canAfford(state: DroneWallState, cost: number): boolean {
 
 export function build(state: DroneWallState, slot: number, kind: DefenseKind): EconomyResult {
 	if (state.over) return fail('game-over');
-	if (!SLOTS[slot]) return fail('bad-slot');
+	if (!state.map.slots[slot]) return fail('bad-slot');
 	if (state.defenses[slot]) return fail('occupied');
 	const cost = buildCost(kind);
 	if (!canAfford(state, cost)) return fail('poor');
@@ -38,7 +37,7 @@ export function build(state: DroneWallState, slot: number, kind: DefenseKind): E
 export function upgrade(state: DroneWallState, slot: number): EconomyResult {
 	if (state.over) return fail('game-over');
 	const defense = state.defenses[slot];
-	if (!SLOTS[slot]) return fail('bad-slot');
+	if (!state.map.slots[slot]) return fail('bad-slot');
 	if (!defense) return fail('empty');
 	const cost = upgradeCost(defense.kind, defense.level);
 	if (cost === null) return fail('max-level');
@@ -52,11 +51,12 @@ export function upgrade(state: DroneWallState, slot: number): EconomyResult {
 export function sell(state: DroneWallState, slot: number): EconomyResult {
 	if (state.over) return fail('game-over');
 	const defense = state.defenses[slot];
-	if (!SLOTS[slot]) return fail('bad-slot');
+	if (!state.map.slots[slot]) return fail('bad-slot');
 	if (!defense) return fail('empty');
 	const refund = sellValue(defense.kind, defense.level);
 	state.currency += refund;
 	state.defenses[slot] = null;
+	state.units = state.units.filter((unit) => unit.slot !== slot);
 	return { ok: true, cost: refund };
 }
 

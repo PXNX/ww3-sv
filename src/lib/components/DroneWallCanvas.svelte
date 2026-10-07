@@ -9,12 +9,14 @@
 	import { onMount } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { createFixedLoop, onAppHidden } from '#lib/game/loop.js';
-	import { SLOTS, WORLD_HEIGHT, WORLD_WIDTH } from '#lib/game/dronewall/config.js';
+	import { WORLD_HEIGHT, WORLD_WIDTH } from '#lib/game/dronewall/config.js';
 	import { drawScene } from '#lib/game/dronewall/render.js';
 	import { clientToLocal } from '#lib/game/pointerDrag.js';
 	import type { DroneWallGame } from '#lib/stores/dronewallGame.svelte.js';
 	import PauseOverlay from './PauseOverlay.svelte';
 	import DroneWallDefense from './DroneWallDefense.svelte';
+	import DroneWallMapPicker from './DroneWallMapPicker.svelte';
+	import DroneWallPanel from './DroneWallPanel.svelte';
 	import IconPlay from '~icons/lucide/play';
 
 	let { game }: { game: DroneWallGame } = $props();
@@ -109,6 +111,17 @@
 	/** Slot buttons are this many world units wide, centred on the slot */
 	const SLOT_BUTTON = 46;
 
+	/** The defense spots of the map being played (a new game can bring another map) */
+	const slots = $derived.by(() => {
+		void game.revision;
+		return game.state.map.slots;
+	});
+
+	/** The build panel sits on the half of the field away from the selected spot */
+	const panelOnTop = $derived(
+		game.selectedSlot !== null && (slots[game.selectedSlot]?.y ?? 0) > WORLD_HEIGHT / 2
+	);
+
 	/** What stands on each slot; the simulation state is not reactive, so this follows `revision` */
 	const built = $derived.by(() => {
 		void game.revision;
@@ -124,7 +137,7 @@
 	<div class="relative">
 		<canvas
 			bind:this={canvas}
-			class="block aspect-[9/14] w-full touch-none rounded-[14px_8px_16px_10px] border-3 border-ink shadow-[4px_4px_0_var(--color-ink)]"
+			class="block aspect-[9/16] w-full touch-none rounded-[14px_8px_16px_10px] border-3 border-ink shadow-[4px_4px_0_var(--color-ink)]"
 			aria-label={m.dronewall_playfield_label()}
 			onpointerdown={onCanvasDown}
 			oncontextmenu={(event) => event.preventDefault()}
@@ -153,7 +166,7 @@
 			{/key}
 		</div>
 
-		{#each SLOTS as slot, index (index)}
+		{#each slots as slot, index (index)}
 			{@const defense = built[index]}
 			<button
 				type="button"
@@ -174,6 +187,13 @@
 				onclick={() => game.select(index)}
 			></button>
 		{/each}
+
+		<!-- The build panel floats over the field, so the field can use the whole screen -->
+		{#if game.selectedSlot !== null && game.status === 'playing'}
+			<div class="absolute inset-x-1.5 z-10 {panelOnTop ? 'top-1.5' : 'bottom-1.5'}">
+				<DroneWallPanel {game} />
+			</div>
+		{/if}
 
 		<!-- Wave and breach announcements, also read out by screen readers -->
 		<div
@@ -214,6 +234,7 @@
 					style:--tilt="-1.5deg"
 				>
 					<p dir="auto" class="text-sm leading-snug font-semibold">{m.dronewall_ready_hint()}</p>
+					<DroneWallMapPicker {game} />
 					<button type="button" class="btn-chunky bg-tie-red text-xl" onclick={() => game.start()}>
 						<IconPlay class="size-5" aria-hidden="true" />
 						{m.dronewall_start()}

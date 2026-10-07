@@ -35,6 +35,9 @@ export interface WaveComposition {
 	grunts: number;
 	scouts: number;
 	brutes: number;
+	runners: number;
+	shields: number;
+	btrs: number;
 	platoons: number;
 	shaheds: number;
 	helis: number;
@@ -46,6 +49,9 @@ export function waveComposition(wave: number): WaveComposition {
 		grunts: 6 + 2 * w,
 		scouts: w < 2 ? 0 : Math.min(2 + w, 20),
 		brutes: w < 3 ? 0 : Math.floor((w - 1) / 2) + (w % 5 === 0 ? 2 : 0),
+		runners: w < 4 ? 0 : Math.min(14, w - 1),
+		shields: w < 5 ? 0 : Math.min(10, Math.floor((w - 3) / 2)),
+		btrs: w < 8 ? 0 : Math.min(5, 1 + Math.floor((w - 8) / 3)),
 		platoons: Math.min(6, 1 + Math.floor((w + 1) / 2)),
 		shaheds: w < 3 ? 0 : Math.min(8, 1 + Math.floor((w - 3) / 2)),
 		helis: w < 7 ? 0 : Math.min(5, 1 + Math.floor((w - 7) / 3))
@@ -53,8 +59,8 @@ export function waveComposition(wave: number): WaveComposition {
 }
 
 export function waveSize(wave: number): number {
-	const { grunts, scouts, brutes, shaheds, helis } = waveComposition(wave);
-	return grunts + scouts + brutes + shaheds + helis;
+	const { grunts, scouts, brutes, runners, shields, btrs, shaheds, helis } = waveComposition(wave);
+	return grunts + scouts + brutes + runners + shields + btrs + shaheds + helis;
 }
 
 /** Spacing inside a platoon and between platoons */
@@ -65,6 +71,9 @@ const SPEED_SCALE: Record<EnemyKind, readonly [number, number]> = {
 	scout: [0.92, 1.2],
 	grunt: [0.88, 1.12],
 	brute: [0.95, 1.05],
+	runner: [0.9, 1.15],
+	shield: [0.92, 1.1],
+	btr: [0.95, 1.05],
 	shahed: [0.92, 1.12],
 	heli: [0.95, 1.05]
 };
@@ -79,15 +88,20 @@ function between(random: Random, [min, max]: readonly [number, number]): number 
 const sideways = (random: Random) => Math.round((random() * 2 - 1) * 100) / 100;
 
 export function generateWave(wave: number, random: Random): SpawnEntry[] {
-	const { grunts, scouts, brutes, platoons, shaheds, helis } = waveComposition(wave);
-	// Brutes are shuffled in among the others but always sit at the back of their platoon
+	const { grunts, scouts, brutes, runners, shields, btrs, platoons, shaheds, helis } =
+		waveComposition(wave);
+	// The heavy ones (brutes, armored cars) are shuffled in among the platoons but always sit at
+	// the back of theirs
 	const light: SoldierKind[] = shuffle(random, [
 		...Array<SoldierKind>(grunts).fill('grunt'),
-		...Array<SoldierKind>(scouts).fill('scout')
+		...Array<SoldierKind>(scouts).fill('scout'),
+		...Array<SoldierKind>(runners).fill('runner'),
+		...Array<SoldierKind>(shields).fill('shield')
 	]);
 	const groups: SoldierKind[][] = Array.from({ length: platoons }, () => []);
 	light.forEach((kind, index) => groups[index % platoons].push(kind));
 	for (let i = 0; i < brutes; i++) groups[randomInt(random, 0, platoons)].push('brute');
+	for (let i = 0; i < btrs; i++) groups[randomInt(random, 0, platoons)].push('btr');
 
 	const entries: SpawnEntry[] = [];
 	let at = 0;

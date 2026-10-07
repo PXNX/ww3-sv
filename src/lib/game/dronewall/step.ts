@@ -9,17 +9,19 @@ import {
 	FLYERS,
 	LINE_Y,
 	PREP_MS,
-	SLOTS,
 	SOLDIERS,
 	SQUAD_AIR_FACTOR,
 	WORLD_WIDTH,
 	defenseStats,
 	hpScale,
+	isGarrison,
 	type Point
 } from './config';
+import { damageSoldier } from './damage';
 import { collectHelmets, dropHelmet } from './economy';
-import { ROAD, distanceBetween, pointAt } from './path';
+import { distanceBetween, pointAt } from './path';
 import { flyProjectiles, launchFpv, launchMissile } from './projectiles';
+import { updateUnits } from './units';
 import type { DroneWallEvent, DroneWallState, Flyer, Soldier } from './state';
 import {
 	incomingDamage,
@@ -55,7 +57,7 @@ const WOBBLE = 7;
 export function spawnSoldier(state: DroneWallState, entry: SoldierSpawn): Soldier {
 	const stats = SOLDIERS[entry.kind];
 	const maxHp = Math.round(stats.hp * hpScale(state.wave));
-	const start = pointAt(ROAD, 0);
+	const start = pointAt(state.map.road, 0);
 	const soldier: Soldier = {
 		id: state.nextId++,
 		kind: entry.kind,
@@ -67,7 +69,8 @@ export function spawnSoldier(state: DroneWallState, entry: SoldierSpawn): Soldie
 		x: start.x,
 		y: start.y,
 		slow: 1,
-		hitMs: 0
+		hitMs: 0,
+		engaged: false
 	};
 	state.soldiers.push(soldier);
 	return soldier;
@@ -110,11 +113,7 @@ export function flyerPosition(flyer: Flyer): Point {
 	};
 }
 
-export function damageSoldier(target: Pick<Soldier, 'hp' | 'hitMs'>, amount: number) {
-	if (amount <= 0 || target.hp <= 0) return;
-	target.hp -= amount;
-	target.hitMs = 140;
-}
+export { damageSoldier };
 
 function startWave(state: DroneWallState, random: Random, events: DroneWallEvent[]) {
 	state.wave += 1;
@@ -169,20 +168,21 @@ function marchSoldiers(state: DroneWallState, dtMs: number, events: DroneWallEve
 	for (const soldier of state.soldiers) {
 		soldier.hitMs = Math.max(0, soldier.hitMs - dtMs);
 		// Trenches slow the crowd, mines hurt it
-		soldier.slow = slowAt(soldier, state.defenses);
-		const dps = mineDpsAt(soldier, state.defenses);
+		soldier.slow = slowAt(soldier, state.defenses, state.map.slots);
+		const dps = mineDpsAt(soldier, state.defenses, state.map.slots);
 		if (dps > 0 && soldier.y >= 0) damageSoldier(soldier, (dps * dtMs) / 1000);
-		if (soldier.hp <= 0) continue;
+		// A soldier in melee with a defender unit stands and fights
+		if (soldier.hp <= 0 || soldier.engaged) continue;
 
 		soldier.progress += (soldier.speed * soldier.slow * dtMs) / 1000;
-		const sample = pointAt(ROAD, soldier.progress);
+		const sample = pointAt(state.map.road, soldier.progress);
 		soldier.x = sample.x;
 		soldier.y = sample.y;
 	}
 
 	// Anyone who reached the end of the road breaches the line
 	state.soldiers = state.soldiers.filter((soldier) => {
-		if (soldier.hp <= 0 || soldier.progress < ROAD.length) return true;
+		if (soldier.hp <= 0 || soldier.progress < state.map.road.length) return true;
 		state.lives = Math.max(0, state.lives - 1);
 		events.push({ type: 'leak', x: soldier.x, y: soldier.y });
 		return false;
@@ -214,17 +214,17 @@ function fireDefenses(
 	events: DroneWallEvent[]
 ) {
 	state.defenses.forEach((defense, slot) => {
-		if (!defense || defense.kind === 'trench') return;
+		if (!defense || defense.kind === 'trench' || isGarrison(defense.kind)) return;
 		defense.firedMs = Math.max(0, defense.firedMs - dtMs);
 		defense.cooldownMs = Math.max(0, defense.cooldownMs - dtMs);
 		if (defense.cooldownMs > 0) return;
 
-		const origin = SLOTS[slot];
+		const origin = state.map.slots[slot];
 		const stats = defenseStats(defense.kind, defense.level);
 		let aim: Point;
 
 		if (defense.kind === 'mortar') {
-			const spot = pickMortarAim(state.soldiers, origin, stats);
+			const spot = pickMortarAim(state.soldiers, origin, stats, state.map.road);
 			if (!spot) return;
 			state.shells.push({
 				id: state.nextId++,
@@ -273,11 +273,14 @@ function fireDefenses(
 			// rifles do little against those
 			const ground = pickSquadTarget(state.soldiers, origin, stats);
 			const air = pickAirTarget(state.flyers, origin, stats.range);
+			const road = state.map.road;
 			const shootAir =
-				air !== null && (!ground || remainingDistance(air) < remainingDistance(ground));
+				air !== null && (!ground || remainingDistance(air) < remainingDistance(ground, road));
 			const target = shootAir ? air : ground;
 			if (!target) return;
-			damageSoldier(target, shootAir ? stats.damage * SQUAD_AIR_FACTOR : stats.damage);
+			// Rifles do little against aircraft and shields, and next to nothing against armor
+			const bullet = 'air' in target ? SQUAD_AIR_FACTOR : SOLDIERS[target.kind].armor;
+			damageSoldier(target, stats.damage * bullet);
 			events.push({
 				type: 'squad-shot',
 				slot,
@@ -343,6 +346,7 @@ export function stepGame(state: DroneWallState, random: Random, dtMs: number): D
 	state.timeMs += dtMs;
 
 	updateWavePhase(state, random, dtMs, events);
+	updateUnits(state, dtMs, events);
 	marchSoldiers(state, dtMs, events);
 	flyFlyers(state, dtMs, events);
 	fireDefenses(state, random, dtMs, events);

@@ -10,8 +10,6 @@ import {
 	HELMET_TARGET,
 	LINE_Y,
 	MAX_LEVEL,
-	PATH_POINTS,
-	SLOTS,
 	SOLDIERS,
 	WORLD_HEIGHT,
 	WORLD_WIDTH,
@@ -19,11 +17,22 @@ import {
 	isFlyerKind,
 	type EnemyKind,
 	type FlyerKind,
+	type MapTheme,
 	type Point,
 	type SoldierKind
 } from './config';
-import { ROAD, pointAt } from './path';
-import type { Defense, DroneWallState, Flyer, Helmet, Projectile, Shell, Soldier } from './state';
+import type { Decor, DroneWallMap } from './maps';
+import { pointAt, type Path } from './path';
+import type {
+	Defense,
+	DroneWallState,
+	Flyer,
+	Helmet,
+	Projectile,
+	Shell,
+	Soldier,
+	Unit
+} from './state';
 
 // Design tokens (src/lib/styles/tokens.css); a canvas cannot read Tailwind utilities
 const INK = '#111111';
@@ -35,9 +44,6 @@ const YELLOW = '#f5c83a';
 const SANDBAG = '#cdbb7e';
 const SOVIET_GREEN = '#6f7d3c';
 const SOVIET_GREEN_DARK = '#55612e';
-const FIELD = '#8c9d69';
-const FIELD_DARK = '#7c8c5c';
-const ROAD_FILL = '#e8dca8';
 const DISPLAY_FONT = "'Baloo 2', system-ui, sans-serif";
 
 export type Effect =
@@ -100,43 +106,140 @@ function inkEllipse(
 	ctx.stroke();
 }
 
-function polyline(ctx: CanvasRenderingContext2D) {
+function polyline(ctx: CanvasRenderingContext2D, points: readonly Point[]) {
 	ctx.beginPath();
-	PATH_POINTS.forEach((point, index) => {
+	points.forEach((point, index) => {
 		if (index === 0) ctx.moveTo(point.x, point.y);
 		else ctx.lineTo(point.x, point.y);
 	});
 }
 
-function drawField(ctx: CanvasRenderingContext2D) {
-	ctx.fillStyle = FIELD;
+function drawField(ctx: CanvasRenderingContext2D, map: DroneWallMap) {
+	const { theme, points } = map;
+	ctx.fillStyle = theme.field;
 	ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 	// Soft mown stripes
-	ctx.fillStyle = FIELD_DARK;
+	ctx.fillStyle = theme.stripe;
 	for (let y = 0; y < WORLD_HEIGHT; y += 56) ctx.fillRect(0, y, WORLD_WIDTH, 28);
 
-	// The road: ink edge, then the sand surface
+	// The road: ink edge, then the surface
 	ctx.lineJoin = 'round';
 	ctx.lineCap = 'butt';
-	polyline(ctx);
+	polyline(ctx, points);
 	ctx.lineWidth = 38;
 	ctx.strokeStyle = INK;
 	ctx.stroke();
-	polyline(ctx);
+	polyline(ctx, points);
 	ctx.lineWidth = 32;
-	ctx.strokeStyle = ROAD_FILL;
+	ctx.strokeStyle = theme.road;
 	ctx.stroke();
-	polyline(ctx);
+	polyline(ctx, points);
 	ctx.lineWidth = 2;
 	ctx.setLineDash([10, 12]);
 	ctx.strokeStyle = 'rgba(17,17,17,0.18)';
 	ctx.stroke();
 	ctx.setLineDash([]);
+
+	for (const prop of map.decor) drawDecor(ctx, prop, theme);
 }
 
-function drawLine(ctx: CanvasRenderingContext2D) {
+/** One scenery prop: a tree, pine, rock, bush or cactus, standing at its position */
+function drawDecor(ctx: CanvasRenderingContext2D, prop: Decor, theme: MapTheme) {
+	const leaf = theme.leaves[prop.tint % theme.leaves.length];
+	ctx.save();
+	ctx.translate(prop.x, prop.y);
+	ctx.scale(prop.size, prop.size);
+	// A shadow under everything
+	ctx.beginPath();
+	ctx.ellipse(1, 3, 12, 4.5, 0, 0, Math.PI * 2);
+	ctx.fillStyle = 'rgba(17,17,17,0.18)';
+	ctx.fill();
+	switch (prop.kind) {
+		case 'tree':
+			ctx.fillStyle = '#7a5a3a';
+			ctx.fillRect(-2.5, -8, 5, 11);
+			ctx.lineWidth = 1.8;
+			ctx.strokeStyle = INK;
+			ctx.strokeRect(-2.5, -8, 5, 11);
+			inkEllipse(ctx, 0, -16, 12, 11, leaf, 2);
+			inkEllipse(ctx, -4, -19, 4, 3, 'rgba(255,255,255,0.3)', 0.1);
+			break;
+		case 'pine':
+			ctx.fillStyle = '#6b4f36';
+			ctx.fillRect(-2, -3, 4, 6);
+			for (const [y, half] of [
+				[-4, 11],
+				[-13, 9],
+				[-21, 6.5]
+			]) {
+				ctx.beginPath();
+				ctx.moveTo(-half, y);
+				ctx.lineTo(0, y - 12);
+				ctx.lineTo(half, y);
+				ctx.closePath();
+				ctx.fillStyle = leaf;
+				ctx.fill();
+				ctx.lineWidth = 2;
+				ctx.strokeStyle = INK;
+				ctx.stroke();
+				// Snow on the branches
+				ctx.beginPath();
+				ctx.moveTo(-half * 0.45, y - 6.5);
+				ctx.lineTo(0, y - 12);
+				ctx.lineTo(half * 0.45, y - 6.5);
+				ctx.closePath();
+				ctx.fillStyle = PAPER;
+				ctx.fill();
+			}
+			break;
+		case 'rock':
+			ctx.beginPath();
+			ctx.moveTo(-11, 3);
+			ctx.lineTo(-8, -7);
+			ctx.lineTo(1, -10);
+			ctx.lineTo(10, -4);
+			ctx.lineTo(11, 3);
+			ctx.closePath();
+			ctx.fillStyle = '#9a9a96';
+			ctx.fill();
+			ctx.lineWidth = 2;
+			ctx.strokeStyle = INK;
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.moveTo(-6, -4);
+			ctx.lineTo(0, -7);
+			ctx.lineWidth = 2;
+			ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+			ctx.stroke();
+			break;
+		case 'bush':
+			inkEllipse(ctx, -6, -3, 7, 6, leaf, 2);
+			inkEllipse(ctx, 6, -3, 7, 6, leaf, 2);
+			inkEllipse(ctx, 0, -7, 8, 7, leaf, 2);
+			break;
+		case 'cactus':
+			ctx.lineWidth = 2;
+			ctx.strokeStyle = INK;
+			ctx.fillStyle = leaf;
+			for (const rect of [
+				[-3.5, -22, 7, 26],
+				[-12, -15, 5, 9],
+				[7, -12, 5, 9]
+			]) {
+				ctx.beginPath();
+				ctx.roundRect(rect[0], rect[1], rect[2], rect[3], 3);
+				ctx.fill();
+				ctx.stroke();
+			}
+			break;
+	}
+	ctx.restore();
+}
+
+function drawLine(ctx: CanvasRenderingContext2D, map: DroneWallMap) {
 	// The Ukrainian line: a sandbag wall with the flag colours
 	const top = LINE_Y + 4;
+	const exit = map.points[map.points.length - 1].x;
 	ctx.fillStyle = FLAG_BLUE;
 	ctx.fillRect(0, top, WORLD_WIDTH, (WORLD_HEIGHT - top) / 2);
 	ctx.fillStyle = YELLOW;
@@ -144,21 +247,22 @@ function drawLine(ctx: CanvasRenderingContext2D) {
 	ctx.lineWidth = 3;
 	ctx.strokeStyle = INK;
 	ctx.strokeRect(-2, top, WORLD_WIDTH + 4, WORLD_HEIGHT - top + 2);
-	// Sandbags along the top edge
+	// Sandbags along the top edge, with a gap where the road comes in
 	for (let x = 8; x < WORLD_WIDTH; x += 30) {
-		if (Math.abs(x - 310) < 24) continue;
+		if (Math.abs(x - exit) < 24) continue;
 		inkEllipse(ctx, x, top, 14, 7, SANDBAG);
 	}
 }
 
 function drawSlot(
 	ctx: CanvasRenderingContext2D,
+	slots: readonly Point[],
 	slot: number,
 	selected: boolean,
 	showEmpty: boolean,
 	occupied: boolean
 ) {
-	const { x, y } = SLOTS[slot];
+	const { x, y } = slots[slot];
 	if (!occupied) {
 		ctx.beginPath();
 		ctx.arc(x, y, 21, 0, Math.PI * 2);
@@ -191,9 +295,14 @@ function drawSlot(
 	}
 }
 
-function drawRangeRing(ctx: CanvasRenderingContext2D, slot: number, defense: Defense | null) {
+function drawRangeRing(
+	ctx: CanvasRenderingContext2D,
+	slots: readonly Point[],
+	slot: number,
+	defense: Defense | null
+) {
 	if (!defense) return;
-	const { x, y } = SLOTS[slot];
+	const { x, y } = slots[slot];
 	const stats = defenseStats(defense.kind, defense.level);
 	ctx.beginPath();
 	ctx.arc(x, y, stats.range, 0, Math.PI * 2);
@@ -491,13 +600,80 @@ function drawTrench(ctx: CanvasRenderingContext2D, x: number, y: number, defense
 	}
 }
 
+/** A sandbag post with a tent (Azov) or a vehicle shed (Leopard) and a flag */
+function drawGarrisonPost(
+	ctx: CanvasRenderingContext2D,
+	x: number,
+	y: number,
+	kind: 'azov' | 'leopard',
+	t: number
+) {
+	inkEllipse(ctx, x, y + 10, 24, 10, SANDBAG);
+	ctx.lineWidth = 2.2;
+	ctx.strokeStyle = INK;
+	if (kind === 'azov') {
+		// A tent
+		ctx.beginPath();
+		ctx.moveTo(x - 17, y + 8);
+		ctx.lineTo(x - 2, y - 14);
+		ctx.lineTo(x + 13, y + 8);
+		ctx.closePath();
+		ctx.fillStyle = '#5d6b45';
+		ctx.fill();
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(x - 2, y - 14);
+		ctx.lineTo(x - 2, y + 8);
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(x - 6, y + 8);
+		ctx.lineTo(x - 2, y - 1);
+		ctx.lineTo(x + 2, y + 8);
+		ctx.fillStyle = '#2b3022';
+		ctx.fill();
+	} else {
+		// A shed with an arched door for the tank
+		ctx.beginPath();
+		ctx.roundRect(x - 19, y - 9, 34, 19, 3);
+		ctx.fillStyle = '#6b705f';
+		ctx.fill();
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(x - 12, y + 10);
+		ctx.lineTo(x - 12, y);
+		ctx.quadraticCurveTo(x - 2, y - 9, x + 8, y);
+		ctx.lineTo(x + 8, y + 10);
+		ctx.closePath();
+		ctx.fillStyle = '#2b3022';
+		ctx.fill();
+		ctx.stroke();
+		ctx.fillStyle = '#59604d';
+		ctx.fillRect(x - 19, y - 12, 34, 4);
+		ctx.strokeRect(x - 19, y - 12, 34, 4);
+	}
+	// The flag on its pole, waving a little
+	const wave = Math.sin(t / 220) * 1.2;
+	ctx.beginPath();
+	ctx.moveTo(x + 17, y + 8);
+	ctx.lineTo(x + 17, y - 22);
+	ctx.lineWidth = 2;
+	ctx.stroke();
+	ctx.fillStyle = FLAG_BLUE;
+	ctx.fillRect(x + 17, y - 22, 12, 4 + wave * 0.3);
+	ctx.fillStyle = YELLOW;
+	ctx.fillRect(x + 17, y - 18 + wave * 0.3, 12, 4 + wave * 0.3);
+	ctx.lineWidth = 1.5;
+	ctx.strokeRect(x + 17, y - 22, 12, 8 + wave * 0.6);
+}
+
 function drawDefense(
 	ctx: CanvasRenderingContext2D,
+	slots: readonly Point[],
 	slot: number,
 	defense: Defense,
 	timeMs: number
 ) {
-	const { x, y } = SLOTS[slot];
+	const { x, y } = slots[slot];
 	switch (defense.kind) {
 		case 'squad':
 			drawSquad(ctx, x, y, defense, timeMs);
@@ -511,6 +687,10 @@ function drawDefense(
 		case 'patriot':
 			drawPatriot(ctx, x, y, defense, timeMs);
 			break;
+		case 'azov':
+		case 'leopard':
+			drawGarrisonPost(ctx, x, y, defense.kind, timeMs);
+			break;
 		case 'trench':
 			drawTrench(ctx, x, y, defense);
 			break;
@@ -518,10 +698,73 @@ function drawDefense(
 	drawPips(ctx, x, y + 25, defense.level);
 }
 
-const BODY: Record<SoldierKind, string> = { scout: '#c9aa82', grunt: '#a58e75', brute: '#7a655a' };
-const HAT: Record<SoldierKind, string> = { scout: '#5e6168', grunt: '#4b4f55', brute: '#35383d' };
+const BODY: Record<SoldierKind, string> = {
+	scout: '#c9aa82',
+	grunt: '#a58e75',
+	brute: '#7a655a',
+	runner: '#d6b985',
+	shield: '#8f8a7a',
+	btr: '#6c7358'
+};
+const HAT: Record<SoldierKind, string> = {
+	scout: '#5e6168',
+	grunt: '#4b4f55',
+	brute: '#35383d',
+	runner: '#8a3b36',
+	shield: '#2f4a6b',
+	btr: '#59604d'
+};
 
 /** A chunky blob soldier standing at (0, 0) of the current transform */
+/** An armored car with angry eyes behind the windscreen, standing at (0, 0) */
+function drawBtr(ctx: CanvasRenderingContext2D, t: number, phase: number, flash: boolean) {
+	const r = SOLDIERS.btr.radius;
+	const rumble = Math.sin(t / 55 + phase) * 0.6;
+	// Wheels
+	for (const dx of [-0.95, -0.32, 0.32, 0.95]) {
+		inkEllipse(ctx, dx * r, r * 0.78 + rumble * 0.4, r * 0.24, r * 0.26, INK, 1.2);
+	}
+	ctx.beginPath();
+	ctx.roundRect(-r * 1.25, -r * 0.7 + rumble, r * 2.5, r * 1.5, 7);
+	ctx.fillStyle = flash ? PAPER : BODY.btr;
+	ctx.fill();
+	ctx.lineWidth = 2.6;
+	ctx.strokeStyle = INK;
+	ctx.stroke();
+	// A turret with a stubby gun
+	ctx.fillStyle = flash ? PAPER : HAT.btr;
+	ctx.fillRect(-2, -r * 1.35 + rumble, 4, r * 0.55);
+	ctx.strokeRect(-2, -r * 1.35 + rumble, 4, r * 0.55);
+	ctx.beginPath();
+	ctx.ellipse(0, -r * 0.7 + rumble, r * 0.62, r * 0.38, 0, 0, Math.PI * 2);
+	ctx.fill();
+	ctx.stroke();
+	// The windscreen with the eyes
+	ctx.beginPath();
+	ctx.roundRect(-r * 0.85, -r * 0.2 + rumble, r * 1.7, r * 0.6, 4);
+	ctx.fillStyle = flash ? PAPER : '#9fc4d6';
+	ctx.fill();
+	ctx.lineWidth = 1.8;
+	ctx.stroke();
+	for (const dx of [-0.38, 0.38]) {
+		ctx.beginPath();
+		ctx.arc(dx * r, r * 0.1 + rumble, r * 0.17, 0, Math.PI * 2);
+		ctx.fillStyle = PAPER;
+		ctx.fill();
+		ctx.beginPath();
+		ctx.arc(dx * r, r * 0.16 + rumble, r * 0.08, 0, Math.PI * 2);
+		ctx.fillStyle = INK;
+		ctx.fill();
+	}
+	ctx.beginPath();
+	ctx.moveTo(-r * 0.62, -r * 0.02 + rumble);
+	ctx.lineTo(-r * 0.15, r * 0.06 + rumble);
+	ctx.moveTo(r * 0.62, -r * 0.02 + rumble);
+	ctx.lineTo(r * 0.15, r * 0.06 + rumble);
+	ctx.lineWidth = 1.6;
+	ctx.stroke();
+}
+
 function drawBlob(
 	ctx: CanvasRenderingContext2D,
 	kind: SoldierKind,
@@ -530,8 +773,12 @@ function drawBlob(
 	flash: boolean,
 	grumpy = true
 ) {
+	if (kind === 'btr') {
+		drawBtr(ctx, t, phase, flash);
+		return;
+	}
 	const r = SOLDIERS[kind].radius;
-	const stride = Math.sin(t / 95 + phase) * 2;
+	const stride = Math.sin(t / 95 + phase) * (kind === 'runner' ? 3 : 2);
 	// Stubby feet
 	inkEllipse(ctx, -r * 0.45, r * 0.95 + stride * 0.5, r * 0.35, r * 0.24, INK, 1);
 	inkEllipse(ctx, r * 0.45, r * 0.95 - stride * 0.5, r * 0.35, r * 0.24, INK, 1);
@@ -571,16 +818,46 @@ function drawBlob(
 		ctx.fillStyle = '#4a3b30';
 		ctx.fillRect(-r * 0.95, r * 0.45, r * 1.9, r * 0.22);
 	}
+	if (kind === 'shield') {
+		// A riot shield held in front
+		ctx.beginPath();
+		ctx.roundRect(-r * 1.3, -r * 0.5, r * 1.05, r * 1.75, 4);
+		ctx.fillStyle = flash ? PAPER : '#9aa6b4';
+		ctx.fill();
+		ctx.lineWidth = 2.2;
+		ctx.strokeStyle = INK;
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(-r * 1.05, -r * 0.2);
+		ctx.lineTo(-r * 1.05, r * 0.95);
+		ctx.lineWidth = 1.4;
+		ctx.stroke();
+	}
+	if (kind === 'runner') {
+		// Speed lines trailing up the road
+		ctx.lineWidth = 1.6;
+		ctx.strokeStyle = 'rgba(17,17,17,0.45)';
+		for (const dx of [-0.5, 0.5]) {
+			ctx.beginPath();
+			ctx.moveTo(dx * r, -r * 1.35);
+			ctx.lineTo(dx * r, -r * 2.1);
+			ctx.stroke();
+		}
+	}
 }
 
-function drawSoldier(ctx: CanvasRenderingContext2D, soldier: Soldier, timeMs: number) {
+function drawSoldier(ctx: CanvasRenderingContext2D, soldier: Soldier, timeMs: number, road: Path) {
 	const r = SOLDIERS[soldier.kind].radius;
-	const sample = pointAt(ROAD, soldier.progress);
+	const sample = pointAt(road, soldier.progress);
 	// Spread the crowd across the width of the road
 	const side = soldier.lane * 8;
-	const x = soldier.x - Math.sin(sample.angle) * side;
+	// A soldier in a melee shakes on the spot instead of hopping along
+	const shake = soldier.engaged ? Math.sin(timeMs / 38 + soldier.id) * 1.4 : 0;
+	const x = soldier.x - Math.sin(sample.angle) * side + shake;
 	const y = soldier.y + Math.cos(sample.angle) * side;
-	const hop = Math.abs(Math.sin(timeMs / 130 + soldier.id)) * 2 * soldier.slow;
+	const hop = soldier.engaged
+		? 0
+		: Math.abs(Math.sin(timeMs / 130 + soldier.id)) * 2 * soldier.slow;
 	ctx.save();
 	ctx.translate(x, y - hop);
 	ctx.beginPath();
@@ -602,6 +879,134 @@ function drawSoldier(ctx: CanvasRenderingContext2D, soldier: Soldier, timeMs: nu
 }
 
 /** A five-pointed star centred on (x, y) as the current path */
+/** A friendly unit of a garrison post: an Azov fighter with a club, or a Leopard 2 tank */
+function drawUnit(ctx: CanvasRenderingContext2D, unit: Unit, timeMs: number) {
+	const flash = unit.hitMs > 0;
+	const tank = unit.kind === 'leopard';
+	const size = tank ? 20 : 10;
+	ctx.save();
+	ctx.translate(unit.x, unit.y);
+	// Its shadow
+	ctx.beginPath();
+	ctx.ellipse(0, size * 0.95, size * (tank ? 1.5 : 1), size * 0.32, 0, 0, Math.PI * 2);
+	ctx.fillStyle = 'rgba(17,17,17,0.25)';
+	ctx.fill();
+
+	if (tank) {
+		ctx.rotate(unit.facing);
+		const recoil = unit.swingMs > 0 ? -4 * Math.sin((unit.swingMs / 220) * Math.PI) : 0;
+		// Tracks with wheels, then the hull
+		for (const dy of [-14, 7]) {
+			ctx.beginPath();
+			ctx.roundRect(-20, dy, 40, 7, 3.5);
+			ctx.fillStyle = '#2f343b';
+			ctx.fill();
+			ctx.lineWidth = 2;
+			ctx.strokeStyle = INK;
+			ctx.stroke();
+			for (let i = -3; i <= 3; i++) {
+				ctx.beginPath();
+				ctx.arc(i * 5.5, dy + 3.5, 2, 0, Math.PI * 2);
+				ctx.fillStyle = '#6b727c';
+				ctx.fill();
+			}
+		}
+		ctx.beginPath();
+		ctx.roundRect(-18, -9, 36, 18, 5);
+		ctx.fillStyle = flash ? PAPER : '#5f6a4a';
+		ctx.fill();
+		ctx.lineWidth = 2.4;
+		ctx.stroke();
+		// The gun first, so the turret sits on top of it
+		ctx.fillStyle = flash ? PAPER : '#3b4048';
+		ctx.fillRect(4 + recoil, -2.2, 26, 4.4);
+		ctx.strokeRect(4 + recoil, -2.2, 26, 4.4);
+		ctx.fillRect(28 + recoil, -3.4, 5, 6.8);
+		ctx.strokeRect(28 + recoil, -3.4, 5, 6.8);
+		if (unit.swingMs > 110) {
+			ctx.beginPath();
+			ctx.arc(36 + recoil, 0, 6, 0, Math.PI * 2);
+			ctx.fillStyle = YELLOW;
+			ctx.fill();
+			ctx.lineWidth = 1.5;
+			ctx.stroke();
+		}
+		ctx.beginPath();
+		ctx.ellipse(-2, 0, 12, 9.5, 0, 0, Math.PI * 2);
+		ctx.fillStyle = flash ? PAPER : '#6c7858';
+		ctx.fill();
+		ctx.lineWidth = 2.4;
+		ctx.stroke();
+		// The commander, popping out of the hatch
+		inkEllipse(ctx, -5, 0, 4.6, 4.6, FLAG_BLUE, 1.6);
+		ctx.beginPath();
+		ctx.ellipse(-5, -2, 4.8, 3.2, 0, Math.PI, 0);
+		ctx.closePath();
+		ctx.fillStyle = '#4d5a38';
+		ctx.fill();
+		ctx.stroke();
+		ctx.rotate(-unit.facing);
+	} else {
+		const stride = Math.sin(timeMs / 80 + unit.id) * 1.5;
+		// Boots, body, helmet and a patch, like the assault squad
+		inkEllipse(ctx, -4, 9 + stride * 0.4, 3.3, 2.4, INK, 1);
+		inkEllipse(ctx, 4, 9 - stride * 0.4, 3.3, 2.4, INK, 1);
+		inkEllipse(ctx, 0, 0, 9.5, 10, flash ? PAPER : FLAG_BLUE, 2.2);
+		ctx.beginPath();
+		ctx.ellipse(0, -3.5, 9.8, 7.5, 0, Math.PI, 0);
+		ctx.closePath();
+		ctx.fillStyle = flash ? PAPER : '#4d5a38';
+		ctx.fill();
+		ctx.lineWidth = 2.2;
+		ctx.strokeStyle = INK;
+		ctx.stroke();
+		for (const dx of [-3.5, 3.5]) {
+			ctx.beginPath();
+			ctx.arc(dx, -0.5, 2, 0, Math.PI * 2);
+			ctx.fillStyle = PAPER;
+			ctx.fill();
+			ctx.beginPath();
+			ctx.arc(dx + Math.cos(unit.facing), -0.5 + Math.sin(unit.facing), 1, 0, Math.PI * 2);
+			ctx.fillStyle = INK;
+			ctx.fill();
+		}
+		ctx.fillStyle = YELLOW;
+		ctx.fillRect(-9, 4, 18, 3);
+		// The club swings toward the enemy
+		const swing =
+			unit.swingMs > 0
+				? -1.1 + (1 - unit.swingMs / 220) * 2.2
+				: Math.sin(timeMs / 300 + unit.id) * 0.15;
+		ctx.save();
+		ctx.rotate(unit.facing + swing);
+		ctx.lineCap = 'round';
+		ctx.beginPath();
+		ctx.moveTo(6, 0);
+		ctx.lineTo(17, 0);
+		ctx.lineWidth = 5;
+		ctx.strokeStyle = INK;
+		ctx.stroke();
+		ctx.lineWidth = 2.6;
+		ctx.strokeStyle = '#9a7b4f';
+		ctx.stroke();
+		ctx.lineCap = 'butt';
+		ctx.restore();
+	}
+
+	if (unit.hp < unit.maxHp) {
+		const w = size * 2;
+		const top = -size * (tank ? 1.1 : 1.6);
+		ctx.fillStyle = PAPER;
+		ctx.fillRect(-w / 2, top, w, 4);
+		ctx.fillStyle = unit.hp / unit.maxHp > 0.4 ? '#6ac05c' : TIE_RED;
+		ctx.fillRect(-w / 2, top, w * Math.max(0, unit.hp / unit.maxHp), 4);
+		ctx.lineWidth = 1.2;
+		ctx.strokeStyle = INK;
+		ctx.strokeRect(-w / 2, top, w, 4);
+	}
+	ctx.restore();
+}
+
 function starPath(
 	ctx: CanvasRenderingContext2D,
 	x: number,
@@ -1048,24 +1453,36 @@ export function drawScene(
 	ctx.beginPath();
 	ctx.rect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 	ctx.clip();
-	drawField(ctx);
-	drawLine(ctx);
+	const { map } = state;
+	drawField(ctx, map);
+	drawLine(ctx, map);
 
 	if (extras.selectedSlot !== null) {
-		drawRangeRing(ctx, extras.selectedSlot, state.defenses[extras.selectedSlot] ?? null);
+		drawRangeRing(ctx, map.slots, extras.selectedSlot, state.defenses[extras.selectedSlot] ?? null);
 	}
 	// Trenches lie flat on the ground, below the crowd
 	state.defenses.forEach((defense, slot) => {
-		drawSlot(ctx, slot, slot === extras.selectedSlot, extras.showEmptySlots, defense !== null);
-		if (defense?.kind === 'trench') drawDefense(ctx, slot, defense, state.timeMs);
+		drawSlot(
+			ctx,
+			map.slots,
+			slot,
+			slot === extras.selectedSlot,
+			extras.showEmptySlots,
+			defense !== null
+		);
+		if (defense?.kind === 'trench') drawDefense(ctx, map.slots, slot, defense, state.timeMs);
 	});
 
 	const standing = [...state.soldiers].sort((a, b) => a.y - b.y);
-	for (const soldier of standing) drawSoldier(ctx, soldier, state.timeMs);
+	for (const soldier of standing) drawSoldier(ctx, soldier, state.timeMs, map.road);
 
 	state.defenses.forEach((defense, slot) => {
-		if (defense && defense.kind !== 'trench') drawDefense(ctx, slot, defense, state.timeMs);
+		if (defense && defense.kind !== 'trench') {
+			drawDefense(ctx, map.slots, slot, defense, state.timeMs);
+		}
 	});
+	// Defender units walk about their posts, in front of them
+	for (const unit of [...state.units].sort((a, b) => a.y - b.y)) drawUnit(ctx, unit, state.timeMs);
 	for (const shell of state.shells) drawShell(ctx, shell);
 	// Aircraft fly above everything on the ground, and the projectiles above them
 	for (const flyer of state.flyers) drawFlyer(ctx, flyer, state.timeMs);

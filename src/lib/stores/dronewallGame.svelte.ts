@@ -6,10 +6,10 @@
  */
 import {
 	HELMET_TARGET,
-	SLOTS,
 	STARTING_LIVES,
 	type DefenseKind,
 	type EnemyKind,
+	type MapId,
 	type Point
 } from '#lib/game/dronewall/config.js';
 import { build, sell, upgrade, type EconomyResult } from '#lib/game/dronewall/economy.js';
@@ -74,6 +74,8 @@ export class DroneWallGame {
 	collectPulse = $state(0);
 	/** How many simulation steps run per frame: x1, x2 or x4 */
 	speed = $state<GameSpeed>(1);
+	/** The map for the next game (and the one on show before it starts) */
+	mapId = $state<MapId>('serpentine');
 	best = $state<number | null>(null);
 	bestWave = $state<number | null>(null);
 	isNewBest = $state(false);
@@ -110,11 +112,21 @@ export class DroneWallGame {
 		this.bestWave = this.#scores().get(WAVE_KEY);
 	}
 
+	/** Picks the map to play; before the first game it also shows that map on the field */
+	selectMap(id: MapId) {
+		if (this.status === 'playing' || this.status === 'paused') return;
+		this.mapId = id;
+		if (this.status === 'ready') {
+			this.state = createGame(id);
+			this.revision += 1;
+		}
+	}
+
 	start() {
 		const seed = this.#seed();
 		this.#random = createRandom(seed);
 		this.#flavor = createRandom(seed ^ 0x9e3779b9);
-		this.state = createGame();
+		this.state = createGame(this.mapId);
 		this.effects = [];
 		this.selectedSlot = null;
 		this.banner = null;
@@ -140,7 +152,7 @@ export class DroneWallGame {
 
 	/** Selects a slot to build on or manage; selecting it again closes the panel */
 	select(slot: number | null) {
-		if (slot !== null && !SLOTS[slot]) return;
+		if (slot !== null && !this.state.map.slots[slot]) return;
 		this.selectedSlot = slot === this.selectedSlot ? null : slot;
 	}
 
@@ -229,6 +241,39 @@ export class DroneWallGame {
 				this.#play('pop', SOUND_GAP_MS);
 				break;
 			}
+			case 'unit-spawned':
+				this.effects.push({
+					kind: 'poof',
+					x: event.x,
+					y: event.y,
+					size: event.kind === 'leopard' ? 30 : 18,
+					ageMs: 0,
+					durationMs: 320 * short + 80
+				});
+				this.#play(event.kind === 'leopard' ? 'thud' : 'click', SOUND_GAP_MS);
+				break;
+			case 'unit-fell':
+				this.effects.push({
+					kind: 'poof',
+					x: event.x,
+					y: event.y,
+					size: event.kind === 'leopard' ? 40 : 24,
+					ageMs: 0,
+					durationMs: 450 * short + 100
+				});
+				this.#play(event.kind === 'leopard' ? 'explosion-small' : 'pop', SOUND_GAP_MS);
+				break;
+			case 'melee-hit':
+				this.effects.push({
+					kind: 'poof',
+					x: event.x,
+					y: event.y,
+					size: event.kind === 'leopard' ? 20 : 12,
+					ageMs: 0,
+					durationMs: 220 * short + 60
+				});
+				this.#play(event.kind === 'leopard' ? 'thud' : 'hit', SOUND_GAP_MS);
+				break;
 			case 'flyer-spawned':
 				this.#showBanner({ kind: 'air' }, 1300);
 				this.#play('alarm', 1500);

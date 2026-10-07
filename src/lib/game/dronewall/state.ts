@@ -4,13 +4,15 @@
  */
 import {
 	FIRST_PREP_MS,
-	SLOTS,
 	STARTING_HELMETS,
 	STARTING_LIVES,
 	type DefenseKind,
 	type FlyerKind,
+	type GarrisonKind,
+	type MapId,
 	type SoldierKind
 } from './config';
+import { getMap, type DroneWallMap } from './maps';
 import type { SpawnEntry } from './waves';
 
 export interface Soldier {
@@ -30,6 +32,30 @@ export interface Soldier {
 	slow: number;
 	/** Hit flash, counts down */
 	hitMs: number;
+	/** In melee with a defender unit this step, so it stands still and fights */
+	engaged: boolean;
+}
+
+/** A defender that walks around its post and fights soldiers in melee (Azov infantry, a Leopard tank) */
+export interface Unit {
+	id: number;
+	/** The defense (slot) it belongs to */
+	slot: number;
+	kind: GarrisonKind;
+	x: number;
+	y: number;
+	hp: number;
+	maxHp: number;
+	/** Where it is looking, in radians (drawing, and the tank's turret) */
+	facing: number;
+	/** Offsets its place on the patrol circle from the other units of the post */
+	phase: number;
+	targetId: number | null;
+	attackMs: number;
+	/** Hit flash, counts down */
+	hitMs: number;
+	/** Swing animation, counts down (drawing only) */
+	swingMs: number;
 }
 
 /** An aerial enemy: flies a straight line from above the field to the line, ignoring the road */
@@ -116,7 +142,10 @@ export interface DroneWallState {
 	waveMs: number;
 	queue: SpawnEntry[];
 	queueIndex: number;
+	/** The map being played: road, slots and scenery */
+	map: DroneWallMap;
 	soldiers: Soldier[];
+	units: Unit[];
 	flyers: Flyer[];
 	helmets: Helmet[];
 	shells: Shell[];
@@ -135,7 +164,8 @@ export interface DroneWallState {
 	nextId: number;
 }
 
-export function createGame(): DroneWallState {
+export function createGame(mapId: MapId = 'serpentine'): DroneWallState {
+	const map = getMap(mapId);
 	return {
 		timeMs: 0,
 		wave: 0,
@@ -144,12 +174,14 @@ export function createGame(): DroneWallState {
 		waveMs: 0,
 		queue: [],
 		queueIndex: 0,
+		map,
 		soldiers: [],
+		units: [],
 		flyers: [],
 		helmets: [],
 		shells: [],
 		projectiles: [],
-		defenses: SLOTS.map(() => null),
+		defenses: map.slots.map(() => null),
 		currency: STARTING_HELMETS,
 		lives: STARTING_LIVES,
 		score: 0,
@@ -164,6 +196,9 @@ export type DroneWallEvent =
 	| { type: 'wave-started'; wave: number }
 	| { type: 'wave-cleared'; wave: number; bonus: number }
 	| { type: 'soldier-fell'; x: number; y: number; kind: SoldierKind }
+	| { type: 'unit-spawned'; x: number; y: number; kind: GarrisonKind }
+	| { type: 'unit-fell'; x: number; y: number; kind: GarrisonKind }
+	| { type: 'melee-hit'; x: number; y: number; kind: GarrisonKind }
 	| { type: 'flyer-spawned'; kind: FlyerKind }
 	| { type: 'flyer-fell'; x: number; y: number; kind: FlyerKind }
 	| { type: 'helmet-collected'; x: number; y: number; value: number }

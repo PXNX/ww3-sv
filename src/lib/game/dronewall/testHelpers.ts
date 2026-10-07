@@ -25,6 +25,7 @@ export function soldierAt(
 		y: sample.y,
 		slow: 1,
 		hitMs: 0,
+		engaged: false,
 		...overrides
 	};
 }

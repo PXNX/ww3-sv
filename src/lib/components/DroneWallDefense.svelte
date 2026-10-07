@@ -1,5 +1,5 @@
 <!--
-	Small cartoon icons for the Drone Wall build menu: the five defenses and the Soviet helmet that
+	Small cartoon icons for the Drone Wall build menu: the seven defenses and the Soviet helmet that
 	pays for them. Original shapes with thick ink outlines; the squad's patch is a generic round badge.
 -->
 <script lang="ts">
@@ -70,6 +70,26 @@
 			<path d="M24 9v13.5" stroke="var(--color-tie-red)" stroke-width="2.4" />
 		</g>
 		<circle cx="6" cy="19" r="3.6" fill="var(--color-flag-blue)" />
+	{:else if kind === 'azov'}
+		<ellipse cx="16" cy="27" rx="13" ry="4" fill="#cdbb7e" />
+		<path d="M23 15l5.5-7" stroke-width="4.4" />
+		<path d="M23 15l5.5-7" stroke="#9a7b4f" stroke-width="2.2" />
+		<ellipse cx="14" cy="19" rx="9" ry="9.5" fill="var(--color-flag-blue)" />
+		<path d="M5 15a9 7 0 0 1 18 0z" fill="#4d5a38" />
+		<circle cx="10.5" cy="17" r="1.6" fill="var(--color-paper)" stroke-width="1.2" />
+		<circle cx="17.5" cy="17" r="1.6" fill="var(--color-paper)" stroke-width="1.2" />
+		<rect x="5" y="22" width="18" height="3" fill="var(--color-explosion-yellow)" stroke-width="1.5" />
+	{:else if kind === 'leopard'}
+		<ellipse cx="16" cy="28" rx="14" ry="3" fill="#cdbb7e" />
+		<rect x="2.5" y="19" width="27" height="8" rx="4" fill="#2f343b" />
+		<circle cx="8" cy="23" r="1.6" fill="#6b727c" stroke-width="0" />
+		<circle cx="13" cy="23" r="1.6" fill="#6b727c" stroke-width="0" />
+		<circle cx="19" cy="23" r="1.6" fill="#6b727c" stroke-width="0" />
+		<circle cx="24" cy="23" r="1.6" fill="#6b727c" stroke-width="0" />
+		<rect x="5" y="14" width="22" height="8" rx="2.5" fill="#5f6a4a" />
+		<rect x="19" y="10.5" width="12" height="3.4" fill="#3b4048" />
+		<ellipse cx="14" cy="11" rx="8" ry="5.2" fill="#6c7858" />
+		<circle cx="11.5" cy="8.3" r="2.8" fill="var(--color-flag-blue)" stroke-width="1.5" />
 	{:else}
 		<rect x="3" y="13" width="26" height="12" rx="5" fill="#6f5b3d" />
 		<path d="M7 20l4-3 5 3 5-3 4 3" stroke-opacity="0.45" />
