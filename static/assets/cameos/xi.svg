@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Caricature of Xi Jinping">
+	<!-- Original cartoon caricature in the app's flat, thick-outline style; not traced from any reference -->
+	<rect width="200" height="200" fill="#E5484D"/>
+	<g stroke="#111111" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+		<!-- dark jacket, high mandarin-style collar -->
+		<path d="M14 204 Q18 142 100 138 Q182 142 186 204 Z" fill="#23272F"/>
+		<path d="M82 138 L100 152 L118 138 L118 128 L82 128 Z" fill="#23272F"/>
+		<path d="M100 152 L100 204" fill="none" stroke-width="3"/>
+		<circle cx="100" cy="166" r="2.5" fill="#F5C83A" stroke-width="2"/>
+		<circle cx="100" cy="184" r="2.5" fill="#F5C83A" stroke-width="2"/>
+		<!-- neck -->
+		<path d="M86 118 L114 118 L116 134 L100 142 L84 134 Z" fill="#F2C28C"/>
+		<!-- ears -->
+		<ellipse cx="50" cy="92" rx="7" ry="11" fill="#F2C28C"/>
+		<ellipse cx="150" cy="92" rx="7" ry="11" fill="#F2C28C"/>
+		<!-- big round face -->
+		<ellipse cx="100" cy="88" rx="52" ry="50" fill="#F2C28C"/>
+		<!-- neat black hair, side part -->
+		<path d="M48 82 Q42 36 100 32 Q158 36 152 82 Q148 60 128 54 Q96 46 66 56 Q52 62 48 82 Z" fill="#1A1A1A"/>
+		<path d="M74 48 Q100 40 128 52" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.5"/>
+		<!-- thick brows -->
+		<path d="M68 72 L90 70" stroke-width="5"/>
+		<path d="M110 70 L132 72" stroke-width="5"/>
+		<!-- calm eyes -->
+		<path d="M70 82 Q80 77 90 82" fill="none" stroke-width="3.5"/>
+		<path d="M110 82 Q120 77 130 82" fill="none" stroke-width="3.5"/>
+		<circle cx="80" cy="83" r="2.2" fill="#111111" stroke="none"/>
+		<circle cx="120" cy="83" r="2.2" fill="#111111" stroke="none"/>
+		<!-- nose and soft smile -->
+		<path d="M98 86 Q94 98 100 101 Q106 99 103 94" fill="none" stroke-width="3"/>
+		<path d="M82 112 Q100 122 118 112" fill="none" stroke-width="4"/>
+		<!-- cheek -->
+		<ellipse cx="68" cy="102" rx="8" ry="5" fill="#E89A86" stroke="none"/>
+		<ellipse cx="132" cy="102" rx="8" ry="5" fill="#E89A86" stroke="none"/>
+	</g>
+</svg>

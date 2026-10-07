@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Caricature of Friedrich Merz">
+	<!-- Original cartoon caricature in the app's flat, thick-outline style; not traced from any reference -->
+	<rect width="200" height="200" fill="#F5C83A"/>
+	<g stroke="#111111" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+		<!-- broad dark suit, white shirt, blue tie -->
+		<path d="M4 204 Q10 140 100 136 Q190 140 196 204 Z" fill="#1E2B45"/>
+		<path d="M78 136 L100 172 L122 136 Z" fill="#FFFFFF"/>
+		<path d="M94 141 L106 141 L104 153 L96 153 Z" fill="#4FA8D8"/>
+		<path d="M96 153 L104 153 L110 192 L100 200 L90 192 Z" fill="#4FA8D8"/>
+		<path d="M56 146 L88 190 M144 146 L112 190" fill="none" stroke-width="3"/>
+		<!-- thick neck -->
+		<path d="M80 112 L120 112 L122 136 L100 146 L78 136 Z" fill="#F0BC98"/>
+		<!-- large ears -->
+		<ellipse cx="46" cy="90" rx="9" ry="14" fill="#F0BC98"/>
+		<ellipse cx="154" cy="90" rx="9" ry="14" fill="#F0BC98"/>
+		<!-- wide, heavy face with a strong square chin -->
+		<path d="M48 74 Q46 30 100 28 Q154 30 152 74 Q156 108 140 124 Q124 138 100 138 Q76 138 60 124 Q44 108 48 74 Z" fill="#F0BC98"/>
+		<!-- bald dome with only thin silver hair around the sides and back -->
+		<path d="M48 76 Q44 62 52 50 Q56 56 56 70 Q56 78 54 86 Q50 84 48 76 Z" fill="#D5D8DE"/>
+		<path d="M152 76 Q156 62 148 50 Q144 56 144 70 Q144 78 146 86 Q150 84 152 76 Z" fill="#D5D8DE"/>
+		<path d="M72 40 Q100 30 128 40" fill="none" stroke="#D5D8DE" stroke-width="3"/>
+		<path d="M76 34 Q94 26 112 30" fill="none" stroke="#FFFFFF" stroke-width="3" opacity="0.7"/>
+		<!-- forehead lines -->
+		<path d="M76 54 Q100 49 124 54 M80 62 Q100 58 120 62" fill="none" stroke-width="2"/>
+		<!-- thick dark-grey brows -->
+		<path d="M64 74 Q78 66 94 72" fill="none" stroke="#6F737C" stroke-width="7"/>
+		<path d="M106 72 Q122 66 136 74" fill="none" stroke="#6F737C" stroke-width="7"/>
+		<!-- bright blue eyes -->
+		<path d="M68 84 Q80 77 92 84 Q80 91 68 84 Z" fill="#FFFFFF" stroke-width="3"/>
+		<path d="M108 84 Q120 77 132 84 Q120 91 108 84 Z" fill="#FFFFFF" stroke-width="3"/>
+		<circle cx="80" cy="84" r="3.4" fill="#3C86C8" stroke-width="1.5"/>
+		<circle cx="120" cy="84" r="3.4" fill="#3C86C8" stroke-width="1.5"/>
+		<path d="M68 92 Q80 97 92 92 M108 92 Q120 97 132 92" fill="none" stroke-width="2"/>
+		<!-- long, straight nose -->
+		<path d="M98 80 Q95 100 92 106 Q100 111 108 106 Q105 98 103 90" fill="none" stroke-width="3.5"/>
+		<!-- thin lips, firm and slightly smug -->
+		<path d="M82 120 Q100 124 118 120" fill="none" stroke-width="4"/>
+		<path d="M118 120 Q124 120 126 114" fill="none" stroke-width="3"/>
+		<!-- jowl lines -->
+		<path d="M66 100 Q68 118 80 128 M134 100 Q132 118 120 128" fill="none" stroke-width="2.5"/>
+	</g>
+</svg>
