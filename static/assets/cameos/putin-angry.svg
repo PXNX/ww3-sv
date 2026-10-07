@@ -2,12 +2,11 @@
 	<!-- Original cartoon caricature, flat colours and thin outlines with big soft heads in the style of the freeonis videos; not traced from any reference -->
 	<rect width="200" height="200" fill="#F2C9C4" stroke="none"/>
 	<g stroke="#1c1c1c" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
-		<rect x="-4" y="176" width="208" height="40" fill="#B98A5E"/>
-		<path d="M34 178 Q40 150 100 148 Q160 150 166 178 Z" fill="#2C3140"/>
+		<g transform="translate(100 200) scale(0.85) translate(-100 -200)">
+		<path d="M34 230 Q40 150 100 148 Q160 150 166 230 Z" fill="#2C3140"/>
 		<path d="M82 150 L100 174 L118 150 Z" fill="#FFFFFF"/>
 		<path d="M94 152 L106 152 L104 162 L96 162 Z" fill="#2D4E8F"/>
-		<path d="M96 162 L104 162 L107 176 L93 176 Z" fill="#2D4E8F"/>
-		<rect x="-4" y="176" width="208" height="40" fill="#B98A5E"/>
+		<path d="M96 162 L104 162 L108 198 L100 204 L92 198 Z" fill="#2D4E8F"/>
 		<path d="M86 128 L114 128 L114 154 L86 154 Z" fill="#F4B79C"/>
 		<ellipse cx="42" cy="92" rx="8" ry="12" fill="#F4B79C"/>
 		<ellipse cx="158" cy="92" rx="8" ry="12" fill="#F4B79C"/>
@@ -28,5 +27,6 @@
 		<path d="M82 130 Q100 124 118 130 L116 137 Q100 132 84 137 Z" fill="#FFFFFF" stroke-width="2.5"/>
 		<g stroke="#C8232C" stroke-width="3.5" fill="none"><path d="M138 38 Q146 38 146 46 M154 38 Q154 46 146 46 M138 56 Q146 56 146 48 M154 56 Q154 48 146 48"/></g>
 		<path d="M30 52 Q22 44 28 36 M170 52 Q178 44 172 36" fill="none" stroke-width="3"/>
+		</g>
 	</g>
 </svg>
