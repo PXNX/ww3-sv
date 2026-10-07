@@ -217,6 +217,9 @@
 								style:--tint={KIND_HEX[entry.kind]}
 							>
 								<span class="blocks-clear-flash absolute inset-0"></span>
+								<!-- A faint puff of dust that drifts up and thins out -->
+								<span class="blocks-dust absolute" style:--drift={((entry.index * 7) % 5) - 2}
+								></span>
 								{#each SHARDS as [dx, dy] (`${dx},${dy}`)}
 									<span class="blocks-shard absolute" style:--dx={dx} style:--dy={dy}></span>
 								{/each}
@@ -410,6 +413,33 @@
 
 	.blocks-sweep-col {
 		animation: blocks-sweep-col 420ms ease-out both;
+	}
+
+	@keyframes blocks-dust {
+		0% {
+			translate: 0 0;
+			scale: 0.4;
+			opacity: 0;
+		}
+		20% {
+			opacity: 0.5;
+		}
+		100% {
+			translate: calc(var(--drift) * 0.35rem) -1.4rem;
+			scale: 1.7;
+			opacity: 0;
+		}
+	}
+
+	/* Soft, borderless and low in contrast, so it reads as dust rather than as another shape */
+	.blocks-dust {
+		left: -20%;
+		top: -20%;
+		width: 140%;
+		height: 140%;
+		border-radius: 50%;
+		background: radial-gradient(circle, rgb(222 212 190 / 0.55) 0%, transparent 65%);
+		animation: blocks-dust 900ms ease-out calc(var(--delay) + 150ms) both;
 	}
 
 	.blocks-clear-flash {
