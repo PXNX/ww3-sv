@@ -15,7 +15,9 @@ export const CHARACTER_NAME: Record<Locale, string> = {
 	en: 'Trump',
 	de: 'Trump',
 	fa: 'ترامپ',
-	ar: 'ترامب'
+	ar: 'ترامب',
+	uk: 'Трамп',
+	ru: 'Трамп'
 };
 
 const POSE_FILES: Record<MascotPose, string> = {

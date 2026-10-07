@@ -169,6 +169,7 @@
 	"pipeline_difficulty_easy": "Leicht",
 	"pipeline_difficulty_normal": "Normal",
 	"pipeline_difficulty_hard": "Schwer",
+	"pipeline_choose_difficulty": "Wähle einen Schwierigkeitsgrad",
 	"pipeline_new_board": "Neues Feld",
 	"pipeline_board_label": "Rohrfeld",
 	"pipeline_station": "Pumpstation",

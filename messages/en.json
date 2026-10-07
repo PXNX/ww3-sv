@@ -169,6 +169,7 @@
 	"pipeline_difficulty_easy": "Easy",
 	"pipeline_difficulty_normal": "Normal",
 	"pipeline_difficulty_hard": "Hard",
+	"pipeline_choose_difficulty": "Choose a difficulty",
 	"pipeline_new_board": "New board",
 	"pipeline_board_label": "Pipe grid",
 	"pipeline_station": "Pumping station",
