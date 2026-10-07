@@ -1,0 +1,81 @@
+/*
+ * The wave generator: a wave is a list of soldiers, grouped in platoons that walk close together
+ * (clumps are what mortars are for), with a gap between platoons. The same seed always makes the
+ * same wave.
+ */
+import { randomInt, shuffle, type Random } from '#lib/game/random.js';
+import type { SoldierKind } from './config';
+
+export interface SpawnEntry {
+	/** Time since the wave started */
+	atMs: number;
+	kind: SoldierKind;
+	/** Multiplier on the soldier's speed, so a crowd does not march in lockstep */
+	speedScale: number;
+	/** Sideways position on the road, from -1 to 1 */
+	lane: number;
+}
+
+export interface WaveComposition {
+	grunts: number;
+	scouts: number;
+	brutes: number;
+	platoons: number;
+}
+
+export function waveComposition(wave: number): WaveComposition {
+	const w = Math.max(1, Math.floor(wave));
+	return {
+		grunts: 6 + 2 * w,
+		scouts: w < 2 ? 0 : Math.min(2 + w, 20),
+		brutes: w < 3 ? 0 : Math.floor((w - 1) / 2) + (w % 5 === 0 ? 2 : 0),
+		platoons: Math.min(6, 1 + Math.floor((w + 1) / 2))
+	};
+}
+
+export function waveSize(wave: number): number {
+	const { grunts, scouts, brutes } = waveComposition(wave);
+	return grunts + scouts + brutes;
+}
+
+/** Spacing inside a platoon and between platoons */
+const CLUMP_GAP_MS: readonly [number, number] = [260, 480];
+const PLATOON_GAP_MS: readonly [number, number] = [3200, 5200];
+
+const SPEED_SCALE: Record<SoldierKind, readonly [number, number]> = {
+	scout: [0.92, 1.2],
+	grunt: [0.88, 1.12],
+	brute: [0.95, 1.05]
+};
+
+function between(random: Random, [min, max]: readonly [number, number]): number {
+	return min + random() * (max - min);
+}
+
+export function generateWave(wave: number, random: Random): SpawnEntry[] {
+	const { grunts, scouts, brutes, platoons } = waveComposition(wave);
+	// Brutes are shuffled in among the others but always sit at the back of their platoon
+	const light: SoldierKind[] = shuffle(random, [
+		...Array<SoldierKind>(grunts).fill('grunt'),
+		...Array<SoldierKind>(scouts).fill('scout')
+	]);
+	const groups: SoldierKind[][] = Array.from({ length: platoons }, () => []);
+	light.forEach((kind, index) => groups[index % platoons].push(kind));
+	for (let i = 0; i < brutes; i++) groups[randomInt(random, 0, platoons)].push('brute');
+
+	const entries: SpawnEntry[] = [];
+	let at = 0;
+	for (const group of groups) {
+		for (const kind of group) {
+			entries.push({
+				atMs: Math.round(at),
+				kind,
+				speedScale: Math.round(between(random, SPEED_SCALE[kind]) * 100) / 100,
+				lane: Math.round((random() * 2 - 1) * 100) / 100
+			});
+			at += between(random, CLUMP_GAP_MS);
+		}
+		at += between(random, PLATOON_GAP_MS);
+	}
+	return entries;
+}
