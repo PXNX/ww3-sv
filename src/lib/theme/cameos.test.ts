@@ -8,7 +8,8 @@ import {
 	cameoPortrait,
 	guestPortrait,
 	pickCameo,
-	pickCameoMessage
+	pickCameoMessage,
+	putinPortrait
 } from './cameos';
 
 describe('cameos', () => {
@@ -51,6 +52,13 @@ describe('cameos', () => {
 		for (const cameo of CAMEOS) {
 			expect(cameoPortrait(cameo.id)).toBe(`/assets/cameos/${cameo.id}.svg`);
 			expect(existsSync(`static/assets/cameos/${cameo.id}.svg`)).toBe(true);
+		}
+	});
+
+	it('has a portrait file for every Putin mood', () => {
+		expect(putinPortrait('calm')).toBe(cameoPortrait('putin'));
+		for (const mood of ['calm', 'angry', 'sad'] as const) {
+			expect(existsSync(`static${putinPortrait(mood)}`)).toBe(true);
 		}
 	});
 

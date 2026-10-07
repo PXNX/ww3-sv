@@ -1,6 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" role="img" aria-label="Mascot sulking">
 	<!-- Original cartoon caricature, flat colours and thin outlines with a big soft head in the style of the freeonis videos; not traced from any reference -->
 	<g stroke="#1c1c1c" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+		<path data-part="neck" d="M52 122 L148 122 L154 188 L46 188 Z" fill="#F39A45"/>
+		<path d="M62 162 Q100 174 138 162" fill="none" stroke="#D9772F" stroke-width="2.5" opacity="0.7"/>
 		<path d="M10 240 Q10 182 100 176 Q190 182 190 240 Z" fill="#1F2A44"/>
 		<path d="M78 178 L100 204 L122 178 Z" fill="#FFFFFF"/>
 		<path d="M93 180 L107 180 L105 190 L95 190 Z" fill="#D7263D"/>
@@ -12,8 +14,8 @@
 		<path d="M30 204 Q100 226 168 202" fill="none" stroke-width="2.5"/>
 		<ellipse cx="160" cy="204" rx="14" ry="10" fill="#F39A45"/><ellipse cx="38" cy="222" rx="14" ry="10" fill="#F39A45"/>
 		<ellipse cx="28" cy="100" rx="8" ry="13" fill="#F39A45"/><ellipse cx="172" cy="100" rx="8" ry="13" fill="#F39A45"/>
-		<path d="M27 94 Q26 30 100 32 Q174 30 173 94 Q182 152 100 164 Q18 152 27 94 Z" fill="#F39A45"/>
-		<path d="M64 150 Q100 166 136 150" fill="none" stroke-width="2.5"/>
+		<path d="M27 94 Q26 30 100 32 Q174 30 173 94 Q182 146 100 157 Q18 146 27 94 Z" fill="#F39A45"/>
+		<path d="M68 144 Q100 159 132 144" fill="none" stroke-width="2.5"/>
 		<ellipse cx="78" cy="92" rx="18" ry="11" fill="#FFE6C6" stroke="none"/><ellipse cx="122" cy="92" rx="18" ry="11" fill="#FFE6C6" stroke="none"/>
 		<ellipse cx="46" cy="120" rx="12" ry="8" fill="#EE7A5E" stroke="none" opacity="0.6"/><ellipse cx="154" cy="120" rx="12" ry="8" fill="#EE7A5E" stroke="none" opacity="0.6"/>
 		<g transform="translate(-10 0) scale(1.1 1)">
