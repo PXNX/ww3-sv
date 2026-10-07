@@ -11,6 +11,9 @@ import { loadImage } from '$lib/theme/sprites';
 export type FurySpriteId =
 	| 'flamingo'
 	| 'pelican'
+	| 'stork'
+	| 'goose'
+	| 'falcon'
 	| 'slingshot'
 	| 'wood'
 	| 'stone'
@@ -21,11 +24,18 @@ export type FurySpriteId =
 	| 'oilTank'
 	| 'refinery'
 	| 'factory'
-	| 'sam';
+	| 'sam'
+	| 'radar'
+	| 'pylon'
+	| 'watchtower'
+	| 'bunker';
 
 const FILES: Record<FurySpriteId, string> = {
 	flamingo: '/assets/fury/flamingo.png',
 	pelican: '/assets/fury/pelican.png',
+	stork: '/assets/fury/stork.png',
+	goose: '/assets/fury/goose.png',
+	falcon: '/assets/fury/falcon.png',
 	slingshot: '/assets/fury/slingshot.png',
 	wood: '/assets/fury/wood.png',
 	stone: '/assets/fury/stone.png',
@@ -36,7 +46,11 @@ const FILES: Record<FurySpriteId, string> = {
 	oilTank: '/assets/fury/oil-tank.png',
 	refinery: '/assets/fury/refinery.png',
 	factory: '/assets/fury/factory.png',
-	sam: '/assets/fury/sam.png'
+	sam: '/assets/fury/sam.png',
+	radar: '/assets/fury/radar.png',
+	pylon: '/assets/fury/pylon.png',
+	watchtower: '/assets/fury/watchtower.png',
+	bunker: '/assets/fury/bunker.png'
 };
 
 /**
@@ -44,15 +58,22 @@ const FILES: Record<FurySpriteId, string> = {
  * landmarks reuse existing generic placeholders from other modes instead of new art: an oil tank
  * and a flare stack already exist for Flamingo Flight's refineries, and a generic launcher truck
  * already exists for Shahed Shootdown's Patriot battery. The factory has no matching asset yet, so
- * it stays a plain canvas-drawn box (see furyRender's drawLandmark) until one is supplied.
+ * it stays a plain canvas-drawn box (see furyRender's drawLandmark) until one is supplied. The
+ * radar mast and the power pylon reuse Flamingo Flight's placeholders as well; the watchtower and
+ * the bunker are drawn parametrically on the canvas and have no placeholder file.
  */
 const PLACEHOLDER_FILES: Partial<Record<FurySpriteId, string>> = {
 	flamingo: '/assets/fury/_placeholder-flamingo.svg',
 	pelican: '/assets/fury/_placeholder-pelican.svg',
+	stork: '/assets/fury/_placeholder-stork.svg',
+	goose: '/assets/fury/_placeholder-goose.svg',
+	falcon: '/assets/fury/_placeholder-falcon.svg',
 	dome: '/assets/fury/_placeholder-dome.svg',
 	oilTank: '/assets/flamingo/_placeholder-tank.svg',
 	refinery: '/assets/flamingo/_placeholder-flare-stack.svg',
-	sam: '/assets/shootdown/_placeholder-patriot-launcher.svg'
+	sam: '/assets/shootdown/_placeholder-patriot-launcher.svg',
+	radar: '/assets/flamingo/_placeholder-radar-mast.svg',
+	pylon: '/assets/flamingo/_placeholder-power-pylon.svg'
 };
 
 /** Add a sprite here once its owner-supplied file is in place */

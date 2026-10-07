@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 92 90">
+	<!-- Generic placeholder falcon, side profile facing right: small, streamlined, with a hooked yellow beak -->
+	<g stroke="#111111" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+		<path d="M20 50 L2 44 L4 56 Z" fill="#3F5F80"/>
+		<path d="M52 42 Q58 28 64 34 L64 46 Q58 50 52 50 Z" fill="#6F8FB0"/>
+		<ellipse cx="40" cy="52" rx="25" ry="17" fill="#6F8FB0"/>
+		<ellipse cx="46" cy="58" rx="13" ry="8" fill="#E7EEF5" stroke="none"/>
+		<path d="M20 46 Q34 28 50 44 Q34 52 20 46 Z" fill="#3F5F80"/>
+		<circle cx="64" cy="34" r="9" fill="#6F8FB0"/>
+		<path d="M71 31 Q82 30 82 38 Q78 36 73 38 Z" fill="#F2C230"/>
+		<circle cx="66" cy="31" r="3" fill="#FFFFFF" stroke-width="1.5"/>
+		<circle cx="67" cy="31" r="1.4" fill="#111111" stroke="none"/>
+	</g>
+</svg>

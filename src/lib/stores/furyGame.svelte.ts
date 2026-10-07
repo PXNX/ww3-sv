@@ -8,7 +8,8 @@ import type { BirdKind } from '$lib/game/fury/birds';
 import { FuryMatch, type FuryPhase } from '$lib/game/fury/furyMatch';
 import type { ImpactSurface, WorldEvent } from '$lib/game/fury/furyWorld';
 import { DEFAULT_AIM, MIN_POWER, adjustAim, type Aim } from '$lib/game/fury/launch';
-import { LEVELS } from '$lib/game/fury/levels';
+import { LEVELS, PREPARED_LEVEL_COUNT, levelAt, levelIdAt } from '$lib/game/fury/levels';
+import { backgroundFor, type Backdrop } from '$lib/game/fury/backgrounds';
 import {
 	DEFAULT_SETTINGS,
 	EMPTY_PROGRESS,
@@ -18,6 +19,7 @@ import {
 	isFurySettings,
 	isUnlocked,
 	recordWin,
+	visibleLevelCount,
 	type FuryProgress,
 	type FurySettings
 } from '$lib/game/fury/progress';
@@ -49,6 +51,7 @@ const IMPACT_SOUND_GAP = 5;
 /** Each step of pull strength (fraction of full power) makes the slingshot creak once */
 const PULL_CREAK_STEP = 0.15;
 
+/** Ids of the prepared levels; the generated levels after them are numbered on from here */
 export const LEVEL_IDS: readonly string[] = LEVELS.map((level) => level.id);
 
 export function highscoreParts(levelId: string): string[] {
@@ -92,15 +95,22 @@ export class FuryGame {
 	#pullStep = 0;
 
 	get level() {
-		return LEVELS[this.levelIndex];
+		return levelAt(this.levelIndex);
 	}
 
-	get levelCount() {
-		return LEVELS.length;
+	/** The scenery of the current level; it changes every few levels */
+	get backdrop(): Backdrop {
+		return backgroundFor(this.levelIndex);
 	}
 
-	get hasNextLevel() {
-		return this.levelIndex + 1 < LEVELS.length;
+	/** Level cards to show: the prepared levels, then the generated ones reached so far */
+	get visibleLevels(): number {
+		return visibleLevelCount(this.progress, PREPARED_LEVEL_COUNT, levelIdAt);
+	}
+
+	/** True right after the last prepared level is won: from here on the levels are generated */
+	get preparedCleared(): boolean {
+		return this.levelIndex === PREPARED_LEVEL_COUNT - 1;
 	}
 
 	get currentBird(): BirdKind | null {
@@ -115,7 +125,7 @@ export class FuryGame {
 	}
 
 	isUnlocked(index: number): boolean {
-		return isUnlocked(this.progress, LEVEL_IDS, index);
+		return isUnlocked(this.progress, levelIdAt, index);
 	}
 
 	starsFor(levelId: string): number {
@@ -132,9 +142,10 @@ export class FuryGame {
 	}
 
 	openLevel(index: number) {
-		if (!this.isUnlocked(index) || !LEVELS[index]) return;
+		if (!this.isUnlocked(index)) return;
+		const level = levelAt(index);
 		this.levelIndex = index;
-		this.match = new FuryMatch(LEVELS[index], createRandom(randomSeed()));
+		this.match = new FuryMatch(level, createRandom(randomSeed()));
 		this.screen = 'play';
 		this.paused = false;
 		this.showWin = false;
@@ -146,7 +157,7 @@ export class FuryGame {
 		this.#resultSteps = 0;
 		this.#lastImpactSound = -IMPACT_SOUND_GAP;
 		this.#pullStep = 0;
-		this.best = this.bestFor(LEVELS[index].id);
+		this.best = this.bestFor(level.id);
 		this.#sync();
 	}
 
@@ -155,8 +166,7 @@ export class FuryGame {
 	}
 
 	nextLevel() {
-		if (this.hasNextLevel) this.openLevel(this.levelIndex + 1);
-		else this.backToSelect();
+		this.openLevel(this.levelIndex + 1);
 	}
 
 	backToSelect() {
@@ -283,7 +293,7 @@ export class FuryGame {
 	}
 
 	#finish(match: FuryMatch) {
-		const level = LEVELS[this.levelIndex];
+		const level = this.level;
 		if (match.phase === 'won') {
 			const result = highscores().submit(highscoreParts(level.id), match.score);
 			this.isNewBest = result.isNewBest;

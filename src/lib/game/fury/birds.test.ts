@@ -1,5 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { BIRDS, SPLIT_GAP, SPLIT_SPREAD, isBirdKind, splitOffsets, splitVelocities } from './birds';
+import {
+	BIRDS,
+	BIRD_KINDS,
+	DASH_FACTOR,
+	DASH_MAX_SPEED,
+	DIVE_ANGLE,
+	DIVE_MIN_SPEED,
+	EGG_DRIFT,
+	EGG_DROP_SPEED,
+	SPLIT_GAP,
+	SPLIT_SPREAD,
+	dashVelocity,
+	diveVelocity,
+	eggVelocity,
+	isBirdKind,
+	splitOffsets,
+	splitVelocities
+} from './birds';
 
 const speed = (v: { x: number; y: number }) => Math.hypot(v.x, v.y);
 const angle = (v: { x: number; y: number }) => Math.atan2(v.y, v.x);
@@ -18,7 +35,8 @@ describe('birds', () => {
 
 	it('recognizes bird kinds', () => {
 		expect(isBirdKind('flamingo')).toBe(true);
-		expect(isBirdKind('goose')).toBe(false);
+		expect(isBirdKind('goose')).toBe(true);
+		expect(isBirdKind('ostrich')).toBe(false);
 		expect(isBirdKind('eagle')).toBe(false);
 		expect(isBirdKind(3)).toBe(false);
 	});
@@ -40,5 +58,39 @@ describe('birds', () => {
 		expect(offsets[0].y).toBeCloseTo(SPLIT_GAP);
 		expect(Math.hypot(offsets[1].x, offsets[1].y)).toBe(0);
 		expect(offsets[2].y).toBeCloseTo(-SPLIT_GAP);
+	});
+
+	it('has five birds, three of them with a new tap ability each', () => {
+		expect(BIRD_KINDS).toEqual(['flamingo', 'pelican', 'stork', 'goose', 'falcon']);
+		expect(BIRDS.stork.ability).toBe('dash');
+		expect(BIRDS.goose.ability).toBe('egg');
+		expect(BIRDS.falcon.ability).toBe('dive');
+		for (const kind of BIRD_KINDS) expect(BIRDS[kind].kind).toBe(kind);
+		const abilities = BIRD_KINDS.map((kind) => BIRDS[kind].ability);
+		expect(new Set(abilities).size).toBe(abilities.length);
+	});
+
+	it('makes the stork dash forward faster, up to a cap', () => {
+		const dashed = dashVelocity({ x: 6, y: 3 });
+		expect(speed(dashed)).toBeCloseTo(speed({ x: 6, y: 3 }) * DASH_FACTOR);
+		expect(angle(dashed)).toBeCloseTo(angle({ x: 6, y: 3 }));
+		expect(speed(dashVelocity({ x: 20, y: 0 }))).toBe(DASH_MAX_SPEED);
+		expect(dashVelocity({ x: 0, y: 0 })).toEqual({ x: 0, y: 0 });
+	});
+
+	it('makes the falcon dive steeply forward, never slowly', () => {
+		const dived = diveVelocity({ x: 8, y: 4 });
+		expect(dived.x).toBeGreaterThan(0);
+		expect(angle(dived)).toBeCloseTo(-DIVE_ANGLE);
+		expect(speed(dived)).toBeGreaterThanOrEqual(DIVE_MIN_SPEED);
+		expect(speed(diveVelocity({ x: 1, y: 0 }))).toBe(DIVE_MIN_SPEED);
+		expect(diveVelocity({ x: -5, y: 0 }).x).toBeLessThan(0);
+	});
+
+	it('drops the goose’s egg downwards, faster than the bird falls', () => {
+		const rising = eggVelocity({ x: 10, y: 5 });
+		expect(rising.y).toBe(-EGG_DROP_SPEED);
+		expect(rising.x).toBeCloseTo(10 * EGG_DRIFT);
+		expect(eggVelocity({ x: 10, y: -8 }).y).toBeLessThan(-8);
 	});
 });

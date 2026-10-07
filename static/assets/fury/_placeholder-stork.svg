@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 92 90">
+	<!-- Generic placeholder stork, side profile facing right, with a long straight beak and trailing legs -->
+	<g stroke="#111111" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+		<path d="M26 64 L4 72 M26 68 L6 79" stroke="#E2452F" stroke-width="4"/>
+		<path d="M50 40 Q58 22 64 30 L64 42 Q56 46 50 46 Z" fill="#F4F1EA"/>
+		<ellipse cx="40" cy="50" rx="25" ry="19" fill="#F4F1EA"/>
+		<path d="M20 40 Q34 22 48 38 Q34 48 20 40 Z" fill="#2B2B2B"/>
+		<circle cx="64" cy="30" r="9" fill="#F4F1EA"/>
+		<path d="M71 27 L91 31 L71 35 Z" fill="#E2452F"/>
+		<circle cx="66" cy="26" r="2" fill="#111111" stroke="none"/>
+	</g>
+</svg>

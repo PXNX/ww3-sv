@@ -48,15 +48,31 @@ export function recordWin(progress: FuryProgress, levelId: string, stars: number
 	return { version: 1, stars: { ...progress.stars, [levelId]: clamped } };
 }
 
-/** The first level is always open; every other one needs the previous level won */
+/**
+ * The first level is always open; every other one needs the previous level won. Ids come from a
+ * function of the index, because the generated levels after the prepared ones never end.
+ */
 export function isUnlocked(
 	progress: FuryProgress,
-	levelIds: readonly string[],
+	idAt: (index: number) => string,
 	index: number
 ): boolean {
 	if (index <= 0) return index === 0;
-	const previous = levelIds[index - 1];
-	return previous !== undefined && (progress.stars[previous] ?? 0) > 0;
+	return (progress.stars[idAt(index - 1)] ?? 0) > 0;
+}
+
+/**
+ * How many level cards the level select shows: all prepared levels, and past them every level won
+ * so far plus the next one to play. The generated levels never end, so none are shown ahead.
+ */
+export function visibleLevelCount(
+	progress: FuryProgress,
+	preparedCount: number,
+	idAt: (index: number) => string
+): number {
+	let firstOpen = 0;
+	while ((progress.stars[idAt(firstOpen)] ?? 0) > 0) firstOpen++;
+	return Math.max(preparedCount, firstOpen + 1);
 }
 
 export function totalStars(progress: FuryProgress, levelIds: readonly string[]): number {

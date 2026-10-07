@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 92 90">
+	<!-- Generic placeholder goose, side profile facing right: round and solid, with a short orange beak -->
+	<g stroke="#111111" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+		<path d="M52 42 Q60 26 64 34 L64 46 Q58 50 52 50 Z" fill="#E9E6DF"/>
+		<ellipse cx="40" cy="52" rx="27" ry="22" fill="#E9E6DF"/>
+		<path d="M18 44 Q34 24 50 42 Q34 52 18 44 Z" fill="#BDB8AA"/>
+		<circle cx="65" cy="33" r="10" fill="#E9E6DF"/>
+		<path d="M72 30 L88 34 Q82 40 72 39 Z" fill="#F0913A"/>
+		<circle cx="67" cy="29" r="3" fill="#FFFFFF" stroke-width="1.5"/>
+		<circle cx="68" cy="29" r="1.4" fill="#111111" stroke="none"/>
+	</g>
+</svg>

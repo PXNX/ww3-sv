@@ -6,9 +6,20 @@
  * (oil tanks, a refinery, a factory, an S-400-style unit) are bigger sprite-drawn targets that break
  * the same way. Destruction is purely cartoonish: dust puffs, flying splinters and golden sparkles.
  */
-import { Box, Circle, Edge, Polygon, World, type Body, type Contact } from 'planck';
+import { Box, Chain, Circle, Edge, Polygon, World, type Body, type Contact } from 'planck';
 import type { Random } from '$lib/game/random';
-import { BIRDS, SPLIT_RADIUS, splitOffsets, splitVelocities } from './birds';
+import {
+	BIRDS,
+	EGG_DAMAGE_MULTIPLIER,
+	EGG_DENSITY,
+	EGG_RADIUS,
+	SPLIT_RADIUS,
+	dashVelocity,
+	diveVelocity,
+	eggVelocity,
+	splitOffsets,
+	splitVelocities
+} from './birds';
 import type { BirdKind } from './birds';
 import { GRAVITY, POUCH, STEP_SECONDS, type Vec } from './launch';
 import {
@@ -21,6 +32,7 @@ import {
 	type Material
 } from './levels/schema';
 import { BLOCK_POINTS, DOME_POINTS } from './rules';
+import { groundMax, terrainPoints } from './terrain';
 
 export interface MaterialSpec {
 	density: number;
@@ -111,7 +123,7 @@ export interface BlockPiece extends PieceCommon {
 export interface DomePiece extends PieceCommon {
 	kind: 'dome';
 	size: number;
-	/** Height of the base when loaded; a dome that started off the ground breaks when it lands */
+	/** Height of the base above the ground below it when loaded; a dome that started off the ground breaks when it lands */
 	startY: number;
 	hp: number;
 	maxHp: number;
@@ -125,6 +137,8 @@ export interface BirdPiece extends PieceCommon {
 	bird: BirdKind;
 	radius: number;
 	small: boolean;
+	/** A goose's egg: a small, heavy projectile dropped by the bird */
+	egg: boolean;
 	hasHit: boolean;
 	abilityUsed: boolean;
 	age: number;
@@ -230,10 +244,17 @@ export class FuryWorld {
 		this.physics = new World({ gravity: { x: 0, y: GRAVITY } });
 
 		const ground = this.physics.createBody({ type: 'static', userData: GROUND });
-		ground.createFixture({
-			shape: new Edge({ x: -40, y: 0 }, { x: level.width + 40, y: 0 }),
-			friction: 0.9
-		});
+		if (level.hills && level.hills.length > 0) {
+			ground.createFixture({
+				shape: new Chain(terrainPoints(level.hills, -40, level.width + 40), false),
+				friction: 0.9
+			});
+		} else {
+			ground.createFixture({
+				shape: new Edge({ x: -40, y: 0 }, { x: level.width + 40, y: 0 }),
+				friction: 0.9
+			});
+		}
 
 		for (const block of level.blocks) this.#addBlock(block);
 		for (const dome of level.domes) this.#addDome(dome.x, dome.y, dome.size);
@@ -353,7 +374,22 @@ export class FuryWorld {
 		const position = bird.body.getPosition();
 		bird.abilityUsed = true;
 
-		if (ability === 'split') {
+		if (ability === 'dash') {
+			bird.body.setLinearVelocity(dashVelocity(current));
+			this.#puffs(position.x, position.y, 3, bird.radius, 'feather');
+		} else if (ability === 'dive') {
+			bird.body.setLinearVelocity(diveVelocity(current));
+			this.#puffs(position.x, position.y, 3, bird.radius, 'feather');
+		} else if (ability === 'egg') {
+			const drop = {
+				x: position.x,
+				y: position.y - bird.radius - EGG_RADIUS - 0.05
+			};
+			const egg = this.#addBird(bird.bird, EGG_RADIUS, true, drop, eggVelocity(current), true);
+			// The egg joins the turn, so the turn lasts until it has landed as well
+			this.#turnBirds = [bird, egg];
+			this.#puffs(drop.x, drop.y, 2, 0.2, 'feather');
+		} else if (ability === 'split') {
 			const center = { x: position.x, y: position.y };
 			this.physics.destroyBody(bird.body);
 			bird.alive = false;
@@ -412,6 +448,9 @@ export class FuryWorld {
 		});
 		if (block.shape === 'ball') {
 			body.createFixture({ shape: new Circle(block.w / 2), ...fixture });
+		} else if (block.shape === 'tire') {
+			// A tire bounces: birds and neighbouring blocks rebound off it
+			body.createFixture({ shape: new Circle(block.w / 2), ...fixture, restitution: 0.45 });
 		} else if (block.shape === 'spire') {
 			const vertices = [
 				{ x: -block.w / 2, y: 0 },
@@ -456,7 +495,7 @@ export class FuryWorld {
 			body,
 			alive: true,
 			size,
-			startY: y,
+			startY: y - groundMax(this.level.hills, x - size / 2, x + size / 2),
 			hp: DOME_MATERIAL.hp,
 			maxHp: DOME_MATERIAL.hp,
 			wobble: 0,
@@ -494,7 +533,14 @@ export class FuryWorld {
 		this.pieces.push(piece);
 	}
 
-	#addBird(kind: BirdKind, radius: number, small: boolean, position: Vec, velocity: Vec) {
+	#addBird(
+		kind: BirdKind,
+		radius: number,
+		small: boolean,
+		position: Vec,
+		velocity: Vec,
+		egg = false
+	) {
 		const spec = BIRDS[kind];
 		const body = this.physics.createBody({
 			type: 'dynamic',
@@ -502,12 +548,12 @@ export class FuryWorld {
 			linearVelocity: { ...velocity },
 			// Angular damping only slows rolling; it does not bend the flight path
 			angularDamping: 1.5,
-			gravityScale: spec.gravityScale,
+			gravityScale: egg ? 1 : spec.gravityScale,
 			bullet: true
 		});
 		body.createFixture({
 			shape: new Circle(radius),
-			density: spec.density,
+			density: egg ? EGG_DENSITY : spec.density,
 			friction: 0.6,
 			restitution: 0.2
 		});
@@ -519,6 +565,7 @@ export class FuryWorld {
 			bird: kind,
 			radius,
 			small,
+			egg,
 			hasHit: false,
 			abilityUsed: small,
 			age: 0,
@@ -558,7 +605,11 @@ export class FuryWorld {
 		}
 		if (this.steps < GRACE_STEPS) return;
 		const multiplier =
-			other && other !== GROUND && other.kind === 'bird' ? BIRDS[other.bird].damageMultiplier : 1;
+			other && other !== GROUND && other.kind === 'bird'
+				? other.egg
+					? EGG_DAMAGE_MULTIPLIER
+					: BIRDS[other.bird].damageMultiplier
+				: 1;
 		const spec =
 			target.kind === 'dome'
 				? DOME_MATERIAL

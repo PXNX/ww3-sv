@@ -1,7 +1,11 @@
-<!-- Level select for Magyar's Birds: fifteen tilted level cards with stars, best score and locks -->
+<!--
+	Level select for Magyar's Birds: fifteen tilted level cards with stars, best score and locks,
+	followed by the generated levels once the prepared ones are won
+-->
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { LEVEL_IDS, type FuryGame } from '$lib/stores/furyGame.svelte';
+	import { levelIdAt } from '$lib/game/fury/levels';
 	import { totalStars } from '$lib/game/fury/progress';
 	import FuryStars from './FuryStars.svelte';
 	import IconLock from '~icons/lucide/lock';
@@ -24,9 +28,16 @@
 	</div>
 
 	<ol class="grid grid-cols-3 gap-4 sm:grid-cols-5">
-		{#each LEVEL_IDS as levelId, index (levelId)}
+		{#each { length: game.visibleLevels }, index (index)}
+			{@const levelId = levelIdAt(index)}
 			{@const unlocked = game.isUnlocked(index)}
 			{@const best = unlocked ? game.bestFor(levelId) : null}
+			{#if index === LEVEL_IDS.length}
+				<li class="col-span-full">
+					<h3 class="text-xl font-bold">{m.fury_endless_title()}</h3>
+					<p>{m.fury_endless_intro()}</p>
+				</li>
+			{/if}
 			<li class="flex">
 				<button
 					type="button"

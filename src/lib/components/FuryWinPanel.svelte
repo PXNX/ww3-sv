@@ -16,7 +16,7 @@
 		blocksDestroyed,
 		blocksTotal,
 		isNewBest,
-		hasNextLevel,
+		preparedCleared,
 		modeName,
 		drawBoard,
 		onNext,
@@ -29,7 +29,8 @@
 		blocksDestroyed: number;
 		blocksTotal: number;
 		isNewBest: boolean;
-		hasNextLevel: boolean;
+		/** The last prepared level was just won, so random levels follow */
+		preparedCleared: boolean;
 		modeName: string;
 		drawBoard?: ScoreCard['drawBoard'];
 		onNext: () => void;
@@ -79,17 +80,15 @@
 			<li>{m.fury_bird_bonus({ points: bonus })}</li>
 		</ul>
 
-		{#if !hasNextLevel}
+		{#if preparedCleared}
 			<p class="font-semibold">{m.fury_all_cleared()}</p>
 		{/if}
 
 		<div class="flex flex-wrap items-center justify-center gap-3">
-			{#if hasNextLevel}
-				<button type="button" class="btn-chunky bg-khaki text-lg" onclick={onNext}>
-					{m.fury_next_level()}
-					<IconArrowRight class="size-5 rtl:rotate-180" aria-hidden="true" />
-				</button>
-			{/if}
+			<button type="button" class="btn-chunky bg-khaki text-lg" onclick={onNext}>
+				{m.fury_next_level()}
+				<IconArrowRight class="size-5 rtl:rotate-180" aria-hidden="true" />
+			</button>
 			<button type="button" class="btn-chunky" onclick={onLevels}>
 				<IconList class="size-5" aria-hidden="true" />
 				{m.fury_back_to_levels()}

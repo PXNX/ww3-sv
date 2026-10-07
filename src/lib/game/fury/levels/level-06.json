@@ -27,5 +27,6 @@
 		{ "x": 14.6, "y": 3.2, "size": 1 },
 		{ "x": 19.2, "y": 0, "size": 0.9 }
 	],
-	"landmarks": [{ "kind": "refinery", "x": 22, "y": 0 }]
+	"landmarks": [{ "kind": "refinery", "x": 22, "y": 0 }],
+	"hills": [{ "x": 8.45, "w": 3.4, "h": 0.59, "flat": 1.02 }]
 }

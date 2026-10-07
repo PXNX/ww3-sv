@@ -7,18 +7,29 @@
 	import type { BirdKind } from '$lib/game/fury/birds';
 	import { m } from '$lib/paraglide/messages';
 
+	const BIRD_NAMES: Record<BirdKind, () => string> = {
+		flamingo: m.fury_bird_flamingo,
+		pelican: m.fury_bird_pelican,
+		stork: m.fury_bird_stork,
+		goose: m.fury_bird_goose,
+		falcon: m.fury_bird_falcon
+	};
+
+	const BIRD_HINTS: Record<BirdKind, () => string> = {
+		flamingo: m.fury_bird_flamingo_hint,
+		pelican: m.fury_bird_pelican_hint,
+		stork: m.fury_bird_stork_hint,
+		goose: m.fury_bird_goose_hint,
+		falcon: m.fury_bird_falcon_hint
+	};
+
 	export function birdName(kind: BirdKind): string {
-		return kind === 'flamingo' ? m.fury_bird_flamingo() : m.fury_bird_pelican();
+		return BIRD_NAMES[kind]();
 	}
 
 	export function birdHint(kind: BirdKind): string {
-		return kind === 'flamingo' ? m.fury_bird_flamingo_hint() : m.fury_bird_pelican_hint();
+		return BIRD_HINTS[kind]();
 	}
-
-	export const BIRD_CHIP: Record<BirdKind, string> = {
-		flamingo: '#f29bb8',
-		pelican: '#efe3c4'
-	};
 </script>
 
 <script lang="ts">
@@ -26,7 +37,13 @@
 	import { createFixedLoop, onAppHidden, prefersReducedMotion } from '$lib/game/loop';
 	import { loadFurySprites, type FurySprites } from '$lib/game/fury/assets';
 	import { BIRDS } from '$lib/game/fury/birds';
-	import { drawScene, fitCamera, screenToWorld, type Camera } from '$lib/game/fury/furyRender';
+	import {
+		BIRD_LOOKS,
+		drawScene,
+		fitCamera,
+		screenToWorld,
+		type Camera
+	} from '$lib/game/fury/furyRender';
 	import {
 		KEY_ANGLE_STEP,
 		KEY_POWER_STEP,
@@ -86,7 +103,8 @@
 			time: game.steps * STEP_SECONDS,
 			reducedMotion,
 			sprites,
-			shake: offset
+			shake: offset,
+			backdrop: game.backdrop
 		});
 	}
 
@@ -256,7 +274,7 @@
 					>
 						<span
 							class="inline-block size-3 rounded-full border-2 border-ink"
-							style:background={BIRD_CHIP[bird]}
+							style:background={BIRD_LOOKS[bird].body}
 							aria-hidden="true"
 						></span>
 						{birdName(bird)}
