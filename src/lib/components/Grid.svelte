@@ -239,6 +239,27 @@
 						style:top="{((feedback.origin[0] + 0.5) / board.size) * 100}%"
 						style:--reach={Math.min(feedback.lines, 3) * 0.5 + 1.5}
 					></span>
+					<!-- And a faint streak runs along every completed row and column -->
+					{#each feedback.rows as row (`r${row}`)}
+						<span
+							class="blocks-sweep-row absolute right-0 left-0"
+							style:top="{(row / board.size) * 100}%"
+							style:height="{100 / board.size}%"
+							style:transform-origin="{((feedback.origin[1] + 0.5) / board.size) * 100}% 50%"
+							style:background="linear-gradient(to bottom, transparent, var(--sweep) 50%,
+							transparent)"
+						></span>
+					{/each}
+					{#each feedback.cols as col (`c${col}`)}
+						<span
+							class="blocks-sweep-col absolute top-0 bottom-0"
+							style:left="{(col / board.size) * 100}%"
+							style:width="{100 / board.size}%"
+							style:transform-origin="50% {((feedback.origin[0] + 0.5) / board.size) * 100}%"
+							style:background="linear-gradient(to right, transparent, var(--sweep) 50%,
+							transparent)"
+						></span>
+					{/each}
 				</span>
 			{/key}
 		{/if}
@@ -354,6 +375,43 @@
 		animation: blocks-blast 520ms ease-out both;
 	}
 
+	/* A light streak that stretches out from the placed piece along a cleared line and fades */
+	@keyframes blocks-sweep-row {
+		0% {
+			scale: 0.05 1;
+			opacity: 0.7;
+		}
+		100% {
+			scale: 1 1;
+			opacity: 0;
+		}
+	}
+
+	@keyframes blocks-sweep-col {
+		0% {
+			scale: 1 0.05;
+			opacity: 0.7;
+		}
+		100% {
+			scale: 1 1;
+			opacity: 0;
+		}
+	}
+
+	.blocks-sweep-row,
+	.blocks-sweep-col {
+		--sweep: rgb(255 244 200 / 0.75);
+		pointer-events: none;
+	}
+
+	.blocks-sweep-row {
+		animation: blocks-sweep-row 420ms ease-out both;
+	}
+
+	.blocks-sweep-col {
+		animation: blocks-sweep-col 420ms ease-out both;
+	}
+
 	.blocks-clear-flash {
 		border: 2px solid var(--color-ink);
 		border-radius: 5px 3px 6px 4px;
@@ -379,6 +437,8 @@
 	@media (prefers-reduced-motion: reduce) {
 		.blocks-clear,
 		.blocks-blast,
+		.blocks-sweep-row,
+		.blocks-sweep-col,
 		.blocks-popup {
 			display: none;
 		}

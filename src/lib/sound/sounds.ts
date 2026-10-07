@@ -53,7 +53,9 @@ export type SoundId =
 	| 'ability-egg'
 	| 'ability-dive'
 	| 'ability-blast'
-	| 'ability-boomerang';
+	| 'ability-boomerang'
+	| 'blocks-place'
+	| 'blocks-clear';
 
 /** Intensity runs from 0 to 1 and lets one sound scale (louder, higher) with how hard something happened */
 type SoundEffect = (ctx: AudioContext, dest: AudioNode, intensity: number) => void;
@@ -583,5 +585,59 @@ export const SOUNDS: Record<SoundId, SoundEffect> = {
 			gain: 0.1,
 			delay: 0.05
 		});
+	},
+
+	// A soft wooden tock for setting a block down
+	'blocks-place': (ctx, dest) => {
+		tone(ctx, dest, { frequency: 260, glideTo: 150, duration: 0.09, type: 'triangle', gain: 0.22 });
+		noise(ctx, dest, {
+			duration: 0.05,
+			filterType: 'bandpass',
+			filterFrequency: 1100,
+			filterTo: 500,
+			gain: 0.14
+		});
+	},
+
+	// A line going off: a soft burst and an airy sweep under a run of glassy notes climbing a
+	// pentatonic scale. Intensity (bigger or chained clears) adds notes and lifts the pitch.
+	'blocks-clear': (ctx, dest, intensity) => {
+		const PENTATONIC = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51];
+		const notes = 3 + Math.round(intensity * 3);
+		const lift = Math.round(intensity * 2);
+		noise(ctx, dest, {
+			duration: 0.3,
+			filterType: 'lowpass',
+			filterFrequency: 1800,
+			filterTo: 140,
+			gain: 0.12 + intensity * 0.1
+		});
+		tone(ctx, dest, { frequency: 150, glideTo: 55, duration: 0.2, type: 'sine', gain: 0.16 });
+		noise(ctx, dest, {
+			duration: 0.26,
+			filterType: 'bandpass',
+			filterFrequency: 500,
+			filterTo: 4000,
+			q: 1.2,
+			gain: 0.1,
+			delay: 0.02
+		});
+		for (let i = 0; i < notes; i++) {
+			const frequency = PENTATONIC[Math.min(PENTATONIC.length - 1, lift + i)];
+			tone(ctx, dest, {
+				frequency,
+				duration: 0.2,
+				type: 'triangle',
+				gain: 0.16,
+				delay: 0.04 + i * 0.055
+			});
+			tone(ctx, dest, {
+				frequency: frequency * 2,
+				duration: 0.14,
+				type: 'sine',
+				gain: 0.05,
+				delay: 0.04 + i * 0.055
+			});
+		}
 	}
 };
