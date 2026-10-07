@@ -10,7 +10,7 @@ import {
 	domeVertices,
 	impactDamage
 } from './furyWorld';
-import { EGG_RADIUS } from './birds';
+import { BLAST_RADIUS, EGG_RADIUS } from './birds';
 import { launchVelocity } from './launch';
 import type { LevelBlock, LevelData, LevelDome } from './levels/schema';
 import { BLOCK_POINTS, DOME_POINTS } from './rules';
@@ -325,5 +325,46 @@ describe('new bird abilities', () => {
 			return world.blocksDestroyed;
 		};
 		expect(stoneUnder(true)).toBe(1);
+	});
+
+	it('lets the parrot turn around once and fly back', () => {
+		const world = new FuryWorld(level([], [farDome]), createRandom(1));
+		const bird = world.launch('parrot', launchVelocity({ angle: 0.6, power: 0.8 }));
+		run(world, 20);
+		expect(bird.body.getLinearVelocity().x).toBeGreaterThan(0);
+		expect(world.useAbility()).toBe(true);
+		expect(bird.body.getLinearVelocity().x).toBeLessThan(0);
+		expect(world.useAbility()).toBe(false);
+		expect(world.drainEvents()).toContainEqual({ type: 'ability', bird: 'parrot' });
+	});
+
+	it('lets the phoenix explode: it vanishes, shoves and damages what is near and spares the rest', () => {
+		const world = new FuryWorld(
+			level(
+				[
+					{ material: 'wood', shape: 'box', x: 12, y: 0, w: 0.6, h: 0.6 },
+					{ material: 'stone', shape: 'box', x: 12.8, y: 0, w: 0.6, h: 0.6 },
+					{ material: 'wood', shape: 'box', x: 22, y: 0, w: 0.6, h: 0.6 }
+				],
+				[farDome]
+			),
+			createRandom(1)
+		);
+		run(world, GRACE_STEPS + 5);
+		const bird = world.launch('phoenix', { x: 0, y: 0 }, { x: 12.4, y: 1.4 });
+		bird.body.setGravityScale(0);
+		bird.body.setLinearVelocity({ x: 0, y: 0 });
+		expect(world.useAbility()).toBe(true);
+		// The bird is gone and its turn is over
+		expect(world.pieces.some((piece) => piece.kind === 'bird')).toBe(false);
+		expect(world.birdsDone()).toBe(true);
+		// The wood block beside the blast breaks, the stone one only gets damaged, the far one is untouched
+		expect(world.blocksDestroyed).toBeGreaterThanOrEqual(1);
+		const blocks = world.pieces.filter((piece) => piece.kind === 'block');
+		expect(blocks.some((piece) => piece.kind === 'block' && piece.material === 'stone')).toBe(true);
+		const far = blocks.find((piece) => piece.body.getPosition().x > 20);
+		expect(far?.kind === 'block' && far.hp).toBe(far?.kind === 'block' ? far.maxHp : 0);
+		expect(BLAST_RADIUS).toBeLessThan(10);
+		expect(world.drainEvents()).toContainEqual({ type: 'ability', bird: 'phoenix' });
 	});
 });

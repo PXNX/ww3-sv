@@ -46,7 +46,13 @@ export type SoundId =
 	| 'break-wood'
 	| 'break-stone'
 	| 'break-ice'
-	| 'dome-pop';
+	| 'dome-pop'
+	| 'ability-split'
+	| 'ability-dash'
+	| 'ability-egg'
+	| 'ability-dive'
+	| 'ability-blast'
+	| 'ability-boomerang';
 
 /** Intensity runs from 0 to 1 and lets one sound scale (louder, higher) with how hard something happened */
 type SoundEffect = (ctx: AudioContext, dest: AudioNode, intensity: number) => void;
@@ -441,5 +447,110 @@ export const SOUNDS: Record<SoundId, SoundEffect> = {
 			{ frequency: 880, duration: 0.12, type: 'triangle', gain: 0.18, delay: 0.06 },
 			{ frequency: 1318.5, duration: 0.22, type: 'triangle', gain: 0.18, delay: 0.13 }
 		]);
+	},
+
+	// The flamingo splitting in three: a quick run of bubbly pops
+	'ability-split': (ctx, dest) => {
+		[520, 700, 940].forEach((frequency, index) =>
+			tone(ctx, dest, {
+				frequency,
+				glideTo: frequency * 1.6,
+				duration: 0.07,
+				type: 'sine',
+				gain: 0.2,
+				delay: index * 0.05
+			})
+		);
+		noise(ctx, dest, { duration: 0.1, filterType: 'highpass', filterFrequency: 4000, gain: 0.08 });
+	},
+
+	// The stork's dash: a sharp rising whoosh with a snap of speed
+	'ability-dash': (ctx, dest) => {
+		noise(ctx, dest, {
+			duration: 0.28,
+			filterType: 'bandpass',
+			filterFrequency: 500,
+			filterTo: 3200,
+			q: 2,
+			gain: 0.26
+		});
+		tone(ctx, dest, { frequency: 260, glideTo: 1100, duration: 0.2, type: 'sawtooth', gain: 0.1 });
+	},
+
+	// The goose's honk, then a soft plop as the egg drops
+	'ability-egg': (ctx, dest) => {
+		tone(ctx, dest, { frequency: 330, glideTo: 270, duration: 0.2, type: 'sawtooth', gain: 0.18 });
+		tone(ctx, dest, {
+			frequency: 440,
+			glideTo: 360,
+			duration: 0.18,
+			type: 'square',
+			gain: 0.08,
+			delay: 0.01
+		});
+		tone(ctx, dest, {
+			frequency: 520,
+			glideTo: 160,
+			duration: 0.12,
+			type: 'sine',
+			gain: 0.2,
+			delay: 0.2
+		});
+	},
+
+	// The falcon's dive: a falling screech over a rush of air
+	'ability-dive': (ctx, dest) => {
+		tone(ctx, dest, { frequency: 2600, glideTo: 700, duration: 0.3, type: 'sawtooth', gain: 0.14 });
+		noise(ctx, dest, {
+			duration: 0.32,
+			filterType: 'bandpass',
+			filterFrequency: 3000,
+			filterTo: 500,
+			q: 1.5,
+			gain: 0.2
+		});
+	},
+
+	// The phoenix bursting into flames: a boom, crackle and a shimmering rise
+	'ability-blast': (ctx, dest) => {
+		noise(ctx, dest, {
+			duration: 0.45,
+			filterType: 'lowpass',
+			filterFrequency: 2600,
+			filterTo: 120,
+			gain: 0.36
+		});
+		tone(ctx, dest, { frequency: 120, glideTo: 40, duration: 0.4, type: 'sine', gain: 0.3 });
+		for (const delay of [0.05, 0.13, 0.2, 0.3]) {
+			noise(ctx, dest, {
+				duration: 0.03,
+				filterType: 'highpass',
+				filterFrequency: 3500,
+				gain: 0.14,
+				delay
+			});
+		}
+		sequence(ctx, dest, [
+			{ frequency: 660, duration: 0.1, type: 'triangle', gain: 0.12, delay: 0.1 },
+			{ frequency: 990, duration: 0.1, type: 'triangle', gain: 0.12, delay: 0.18 },
+			{ frequency: 1480, duration: 0.2, type: 'triangle', gain: 0.12, delay: 0.26 }
+		]);
+	},
+
+	// The parrot's squawk: two chirps, up and then back down
+	'ability-boomerang': (ctx, dest) => {
+		sequence(ctx, dest, [
+			{ frequency: 700, glideTo: 1500, duration: 0.09, type: 'square', gain: 0.12 },
+			{ frequency: 1500, glideTo: 900, duration: 0.09, type: 'square', gain: 0.12, delay: 0.1 },
+			{ frequency: 900, glideTo: 1700, duration: 0.12, type: 'triangle', gain: 0.14, delay: 0.2 }
+		]);
+		noise(ctx, dest, {
+			duration: 0.22,
+			filterType: 'bandpass',
+			filterFrequency: 800,
+			filterTo: 2200,
+			gain: 0.1,
+			delay: 0.05
+		});
 	}
 };
