@@ -13,6 +13,7 @@ import {
 	PIECE_VALUE,
 	rowOf,
 	squareAt,
+	squareName,
 	type Board,
 	type Color,
 	type Piece,
@@ -32,15 +33,23 @@ export type CardId =
 	| 'farmer-revolution'
 	| 'mercenaries'
 	| 'rigged-election'
-	| 'bear-hug';
+	| 'bear-hug'
+	| 'javelin'
+	| 'bayraktar'
+	| 'himars'
+	| 'grain-corridor'
+	| 'lend-lease'
+	| 'frozen-assets'
+	| 'trade-war'
+	| 'art-of-the-deal';
 
-/** A card being played; `param` is the team ('w' or 'b') for plague, or a square for a ball */
+/** A card being played; `param` is the team ('w' or 'b') for plague, or the square it hits */
 export interface CardPlay {
 	id: CardId;
 	param?: string;
 }
 
-export type CardKind = 'chaos' | 'capture' | 'boost' | 'trade-off';
+export type CardKind = 'chaos' | 'capture' | 'strike' | 'boost' | 'trade-off';
 
 export interface CardDefinition {
 	id: CardId;
@@ -49,7 +58,7 @@ export interface CardDefinition {
 	weight: number;
 	/** 'piece' cards are played by tapping an enemy piece on the board */
 	target: 'none' | 'piece';
-	/** Highest piece value a ball can catch */
+	/** Highest piece value a ball or strike can hit */
 	maxValue?: number;
 }
 
@@ -66,7 +75,17 @@ export const CARDS: readonly CardDefinition[] = [
 	{ id: 'farmer-revolution', kind: 'boost', weight: 2, target: 'none' },
 	{ id: 'mercenaries', kind: 'trade-off', weight: 3, target: 'none' },
 	{ id: 'rigged-election', kind: 'trade-off', weight: 3, target: 'none' },
-	{ id: 'bear-hug', kind: 'trade-off', weight: 2, target: 'none' }
+	{ id: 'bear-hug', kind: 'trade-off', weight: 2, target: 'none' },
+	// Ukraine
+	{ id: 'javelin', kind: 'strike', weight: 3, target: 'piece', maxValue: 5 },
+	{ id: 'bayraktar', kind: 'strike', weight: 3, target: 'none' },
+	{ id: 'himars', kind: 'strike', weight: 1, target: 'piece', maxValue: 9 },
+	{ id: 'grain-corridor', kind: 'boost', weight: 2, target: 'none' },
+	// USA
+	{ id: 'lend-lease', kind: 'trade-off', weight: 2, target: 'none' },
+	{ id: 'frozen-assets', kind: 'trade-off', weight: 2, target: 'none' },
+	{ id: 'trade-war', kind: 'chaos', weight: 2, target: 'none' },
+	{ id: 'art-of-the-deal', kind: 'chaos', weight: 2, target: 'none' }
 ];
 
 export function cardDefinition(id: CardId): CardDefinition {
@@ -89,8 +108,15 @@ export function dealHand(random: Random, count = HAND_SIZE): CardId[] {
 }
 
 /** The part of a card that is decided by chance when it is played, so it can be saved */
-export function rollCardParam(id: CardId, random: Random): string | undefined {
-	return id === 'plague' ? (random() < 0.5 ? 'w' : 'b') : undefined;
+export function rollCardParam(id: CardId, random: Random, position: Position): string | undefined {
+	if (id === 'plague') return random() < 0.5 ? 'w' : 'b';
+	if (id === 'bayraktar') {
+		const targets = droneTargets(position);
+		return targets.length > 0
+			? squareName(targets[Math.floor(random() * targets.length)])
+			: undefined;
+	}
+	return undefined;
 }
 
 /** Saved form of a played card, for example 'c:plague:b' or 'c:great-ball:e7' */
@@ -135,6 +161,21 @@ export function ballTargets(position: Position, maxValue: number): Square[] {
 			? [square]
 			: []
 	);
+}
+
+/** Enemy knights and bishops, which the Bayraktar drone hunts down */
+export function droneTargets(position: Position): Square[] {
+	const enemy = opposite(position.turn);
+	return position.board.flatMap((piece, square) =>
+		piece?.color === enemy && (piece.type === 'n' || piece.type === 'b') ? [square] : []
+	);
+}
+
+/** Pawns of a team, the one closest to promoting first */
+function pawnsByAdvance(board: Board, color: Color): Square[] {
+	return board
+		.flatMap((piece, square) => (piece?.color === color && piece.type === 'p' ? [square] : []))
+		.sort((a, b) => (color === 'w' ? rowOf(a) - rowOf(b) : rowOf(b) - rowOf(a)) || a - b);
 }
 
 /** Squares the player can tap to play the card; empty for cards that need no target */
@@ -183,10 +224,7 @@ function cardBoard(position: Position, { id, param }: CardPlay): Board | null {
 		}
 		case 'pawn-net': {
 			// The three enemy pawns closest to promoting, the most dangerous ones, defect
-			const pawns = board
-				.flatMap((piece, square) => (piece?.color === enemy && piece.type === 'p' ? [square] : []))
-				.sort((a, b) => (enemy === 'b' ? rowOf(b) - rowOf(a) : rowOf(a) - rowOf(b)) || a - b)
-				.slice(0, 3);
+			const pawns = pawnsByAdvance(board, enemy).slice(0, 3);
 			for (const square of pawns) board[square] = { type: 'p', color: me };
 			return board;
 		}
@@ -201,9 +239,7 @@ function cardBoard(position: Position, { id, param }: CardPlay): Board | null {
 			return place(stripped, squares, 2, { type: 'n', color: me }) ? stripped : null;
 		}
 		case 'rigged-election': {
-			const pawns = board
-				.flatMap((piece, square) => (piece?.color === me && piece.type === 'p' ? [square] : []))
-				.sort((a, b) => (me === 'w' ? rowOf(a) - rowOf(b) : rowOf(b) - rowOf(a)) || a - b);
+			const pawns = pawnsByAdvance(board, me);
 			if (pawns.length === 0) return null;
 			board[pawns[0]] = { type: 'q', color: me };
 			// The price: the other side gets a free knight
@@ -219,6 +255,74 @@ function cardBoard(position: Position, { id, param }: CardPlay): Board | null {
 					(piece.color === me && piece.type === 'r')
 			);
 		}
+		case 'javelin': {
+			const square = param ? parseSquare(param) : null;
+			if (square === null || !cardTargets(position, id).includes(square)) return null;
+			board[square] = null;
+			return board;
+		}
+		case 'bayraktar': {
+			const square = param ? parseSquare(param) : null;
+			if (square === null || !droneTargets(position).includes(square)) return null;
+			board[square] = null;
+			return board;
+		}
+		case 'himars': {
+			// The hit piece and every enemy piece next to it go up in smoke, but never a king
+			const square = param ? parseSquare(param) : null;
+			if (square === null || !cardTargets(position, id).includes(square)) return null;
+			for (let dr = -1; dr <= 1; dr++) {
+				for (let dc = -1; dc <= 1; dc++) {
+					const row = rowOf(square) + dr;
+					const col = (square & 7) + dc;
+					if (row < 0 || row > 7 || col < 0 || col > 7) continue;
+					const near = squareAt(row, col);
+					const piece = board[near];
+					if (piece?.color === enemy && piece.type !== 'k') board[near] = null;
+				}
+			}
+			return board;
+		}
+		case 'grain-corridor': {
+			// Every pawn with a free square ahead steps forward, but none walks onto the last row
+			const step = me === 'w' ? -1 : 1;
+			const lastRow = me === 'w' ? 0 : 7;
+			position.board.forEach((piece, square) => {
+				if (piece?.color !== me || piece.type !== 'p') return;
+				const row = rowOf(square) + step;
+				if (row === lastRow) return;
+				const ahead = squareAt(row, square & 7);
+				if (position.board[ahead] !== null) return;
+				board[square] = null;
+				board[ahead] = piece;
+			});
+			return board;
+		}
+		case 'lend-lease': {
+			// A rook arrives from overseas; the bill is your two most advanced pawns
+			const pawns = pawnsByAdvance(board, me);
+			if (pawns.length < 2) return null;
+			board[pawns[0]] = null;
+			board[pawns[1]] = null;
+			const squares = freeSquares(board, reinforcementRows(me, 2), KNIGHT_FIRST);
+			return place(board, squares, 1, { type: 'r', color: me }) ? board : null;
+		}
+		case 'frozen-assets': {
+			if (!owns(board, enemy, 'r')) return null;
+			return without(
+				board,
+				(piece) =>
+					(piece.color === enemy && piece.type === 'r') ||
+					(piece.color === me && piece.type === 'b')
+			);
+		}
+		case 'trade-war':
+			return without(board, (piece) => piece.type === 'n' || piece.type === 'b');
+		case 'art-of-the-deal':
+			// Both sides call it a win: every rook changes sides where it stands
+			return board.map((piece): Piece | null =>
+				piece?.type === 'r' ? { type: 'r', color: opposite(piece.color) } : piece
+			);
 	}
 }
 

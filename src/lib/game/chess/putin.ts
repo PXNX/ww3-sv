@@ -22,7 +22,7 @@ import type { Random } from '../random';
 const VALUE: Record<PieceType, number> = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 0 };
 const MATE = 100_000;
 
-export const DEFAULT_BLUNDER_CHANCE = 0.2;
+export const DEFAULT_BLUNDER_CHANCE = 0.3;
 /** A mistake must lose at least a pawn, but never more than a bishop and a pawn */
 const MISTAKE_MIN_LOSS = 100;
 const MISTAKE_MAX_LOSS = 430;

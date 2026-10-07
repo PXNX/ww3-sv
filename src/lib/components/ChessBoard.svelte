@@ -5,8 +5,6 @@
 	Putin's are red.
 -->
 <script lang="ts">
-	import type { Component } from 'svelte';
-	import type { SvelteHTMLElements } from 'svelte/elements';
 	import {
 		colOf,
 		rowOf,
@@ -16,25 +14,9 @@
 	} from '#lib/game/chess/chess.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import type { ChessGame } from '#lib/stores/chessGame.svelte.js';
-	import IconBishop from '~icons/lucide/chess-bishop';
-	import IconKing from '~icons/lucide/chess-king';
-	import IconKnight from '~icons/lucide/chess-knight';
-	import IconPawn from '~icons/lucide/chess-pawn';
-	import IconQueen from '~icons/lucide/chess-queen';
-	import IconRook from '~icons/lucide/chess-rook';
+	import ChessPiece from './ChessPiece.svelte';
 
 	let { game }: { game: ChessGame } = $props();
-
-	type Icon = Component<SvelteHTMLElements['svg']>;
-
-	const ICONS: Record<PieceType, Icon> = {
-		p: IconPawn,
-		n: IconKnight,
-		b: IconBishop,
-		r: IconRook,
-		q: IconQueen,
-		k: IconKing
-	};
 
 	const PIECE_NAMES: Record<PieceType, () => string> = {
 		p: m.chess_piece_pawn,
@@ -75,7 +57,6 @@
 			{@const dark = (rowOf(square) + colOf(square)) % 2 === 1}
 			{@const isTarget = moveTargets.has(square)}
 			{@const isCardTarget = cardTargets.has(square)}
-			{@const Piece = piece ? ICONS[piece.type] : null}
 			<button
 				type="button"
 				class="relative flex items-center justify-center p-0 transition-colors focus-visible:z-10 focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-ink"
@@ -88,13 +69,11 @@
 				aria-pressed={game.selected === square}
 				onclick={() => game.pressSquare(square)}
 			>
-				{#if Piece && piece}
-					<Piece
-						class="pointer-events-none size-[82%] drop-shadow-[1px_1px_0_var(--color-ink)] [&_path]:stroke-ink {piece.color ===
-						'w'
-							? '[&_path]:fill-paper'
-							: '[&_path]:fill-tie-red'}"
-						aria-hidden="true"
+				{#if piece}
+					<ChessPiece
+						type={piece.type}
+						color={piece.color}
+						class="pointer-events-none size-[88%] drop-shadow-[1px_2px_0_rgb(0_0_0/0.3)]"
 					/>
 				{/if}
 
@@ -139,14 +118,13 @@
 				<p class="font-bold">{m.chess_promotion_title()}</p>
 				<div class="flex gap-2">
 					{#each PROMOTIONS as type (type)}
-						{@const Option = ICONS[type]}
 						<button
 							type="button"
 							class="btn-chunky p-2"
 							aria-label={PIECE_NAMES[type]()}
 							onclick={() => game.choosePromotion(type)}
 						>
-							<Option class="size-8 [&_path]:fill-paper [&_path]:stroke-ink" aria-hidden="true" />
+							<ChessPiece {type} color="w" class="size-9" />
 						</button>
 					{/each}
 				</div>
