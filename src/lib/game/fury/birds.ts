@@ -1,16 +1,24 @@
 /*
- * The five bird types of Magyar's Birds and their tap abilities. All values are in world units
+ * The seven bird types of Magyar's Birds and their tap abilities. All values are in world units
  * (meters, seconds). The physics world applies these; the math here stays pure and testable.
  */
 import type { Vec } from './launch';
 
-export type BirdKind = 'flamingo' | 'pelican' | 'stork' | 'goose' | 'falcon';
+export type BirdKind =
+	| 'flamingo'
+	| 'pelican'
+	| 'stork'
+	| 'goose'
+	| 'falcon'
+	| 'phoenix'
+	| 'parrot';
 
 /**
  * split: three small flamingos; dash: a burst of forward speed; egg: drops a heavy egg straight
- * down while the bird flies on; dive: swoops steeply downwards
+ * down while the bird flies on; dive: swoops steeply downwards; blast: bursts into a fiery
+ * explosion that shoves and damages everything nearby; boomerang: turns around and flies back
  */
-export type BirdAbility = 'split' | 'dash' | 'egg' | 'dive' | null;
+export type BirdAbility = 'split' | 'dash' | 'egg' | 'dive' | 'blast' | 'boomerang' | null;
 
 export interface BirdSpec {
 	kind: BirdKind;
@@ -25,7 +33,15 @@ export interface BirdSpec {
 	ability: BirdAbility;
 }
 
-export const BIRD_KINDS: readonly BirdKind[] = ['flamingo', 'pelican', 'stork', 'goose', 'falcon'];
+export const BIRD_KINDS: readonly BirdKind[] = [
+	'flamingo',
+	'pelican',
+	'stork',
+	'goose',
+	'falcon',
+	'phoenix',
+	'parrot'
+];
 
 export const BIRDS: Record<BirdKind, BirdSpec> = {
 	// The standard bird: tap in flight to split into three smaller flamingos
@@ -77,6 +93,26 @@ export const BIRDS: Record<BirdKind, BirdSpec> = {
 		damageMultiplier: 1.3,
 		gravityScale: 1,
 		ability: 'dive'
+	},
+	// Rises in flames: tap to burst into an explosion that blasts a whole cluster of blocks apart
+	phoenix: {
+		kind: 'phoenix',
+		radius: 0.4,
+		density: 3,
+		speedFactor: 1.05,
+		damageMultiplier: 1,
+		gravityScale: 0.9,
+		ability: 'blast'
+	},
+	// A colourful show-off: tap to turn around mid-air and come back at the target from behind
+	parrot: {
+		kind: 'parrot',
+		radius: 0.36,
+		density: 3,
+		speedFactor: 1,
+		damageMultiplier: 1.1,
+		gravityScale: 1,
+		ability: 'boomerang'
 	}
 };
 
@@ -92,6 +128,13 @@ export const EGG_RADIUS = 0.22;
 export const EGG_DENSITY = 7;
 export const EGG_DROP_SPEED = 5;
 export const EGG_DRIFT = 0.2;
+/** The phoenix's blast: reach in meters, shove and damage at the center (both fade out with distance) */
+export const BLAST_RADIUS = 3.2;
+export const BLAST_IMPULSE = 9;
+export const BLAST_DAMAGE = 14;
+/** The parrot's turn: it keeps this share of its speed, flying back with a little lift */
+export const BOOMERANG_KEEP = 0.9;
+export const BOOMERANG_LIFT = 4;
 /** An egg hits harder than its size suggests */
 export const EGG_DAMAGE_MULTIPLIER = 2.4;
 
@@ -122,6 +165,16 @@ export function diveVelocity(velocity: Vec): Vec {
 		x: forward * Math.cos(DIVE_ANGLE) * speed,
 		y: -Math.sin(DIVE_ANGLE) * speed
 	};
+}
+
+/** Velocity after the parrot turns around: back the way it came, a little higher */
+export function boomerangVelocity(velocity: Vec): Vec {
+	return { x: -velocity.x * BOOMERANG_KEEP, y: Math.max(velocity.y, 0) + BOOMERANG_LIFT };
+}
+
+/** Share of the blast that reaches a piece at the given distance: 1 at the center, 0 at the edge */
+export function blastFalloff(distance: number): number {
+	return Math.max(0, 1 - distance / BLAST_RADIUS);
 }
 
 /** Velocity of the goose's egg: thrown down faster than the bird itself, with a little forward drift */

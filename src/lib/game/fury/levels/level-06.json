@@ -1,32 +1,94 @@
 {
 	"version": 1,
 	"id": "level-06",
-	"width": 24,
-	"birds": ["flamingo", "flamingo", "pelican"],
+	"width": 27,
+	"birds": ["goose", "flamingo", "goose", "pelican"],
 	"blocks": [
-		{ "material": "wood", "shape": "crate", "x": 13, "y": 0, "w": 0.8, "h": 0.8 },
-		{ "material": "wood", "shape": "crate", "x": 13.8, "y": 0, "w": 0.8, "h": 0.8 },
-		{ "material": "wood", "shape": "crate", "x": 14.6, "y": 0, "w": 0.8, "h": 0.8 },
-		{ "material": "wood", "shape": "crate", "x": 15.4, "y": 0, "w": 0.8, "h": 0.8 },
-		{ "material": "wood", "shape": "crate", "x": 16.2, "y": 0, "w": 0.8, "h": 0.8 },
-		{ "material": "wood", "shape": "crate", "x": 13.4, "y": 0.8, "w": 0.8, "h": 0.8 },
-		{ "material": "wood", "shape": "crate", "x": 14.2, "y": 0.8, "w": 0.8, "h": 0.8 },
-		{ "material": "wood", "shape": "crate", "x": 15, "y": 0.8, "w": 0.8, "h": 0.8 },
-		{ "material": "wood", "shape": "crate", "x": 15.8, "y": 0.8, "w": 0.8, "h": 0.8 },
-		{ "material": "wood", "shape": "crate", "x": 13.8, "y": 1.6, "w": 0.8, "h": 0.8 },
-		{ "material": "wood", "shape": "crate", "x": 14.6, "y": 1.6, "w": 0.8, "h": 0.8 },
-		{ "material": "wood", "shape": "crate", "x": 15.4, "y": 1.6, "w": 0.8, "h": 0.8 },
-		{ "material": "wood", "shape": "crate", "x": 14.2, "y": 2.4, "w": 0.8, "h": 0.8 },
-		{ "material": "wood", "shape": "crate", "x": 15, "y": 2.4, "w": 0.8, "h": 0.8 },
-		{ "material": "wood", "shape": "box", "x": 18.4, "y": 0, "w": 0.4, "h": 2 },
-		{ "material": "wood", "shape": "box", "x": 20, "y": 0, "w": 0.4, "h": 2 },
-		{ "material": "wood", "shape": "box", "x": 19.2, "y": 2, "w": 2, "h": 0.4 },
-		{ "material": "wood", "shape": "spire", "x": 19.2, "y": 2.4, "w": 1.6, "h": 1.2 }
+		{
+			"material": "stone",
+			"shape": "pillar",
+			"x": 12.7,
+			"y": 0,
+			"w": 0.5,
+			"h": 3
+		},
+		{
+			"material": "stone",
+			"shape": "pillar",
+			"x": 14.3,
+			"y": 0,
+			"w": 0.5,
+			"h": 3
+		},
+		{
+			"material": "wood",
+			"shape": "pillar",
+			"x": 21.2,
+			"y": 0.8,
+			"w": 0.5,
+			"h": 2.6
+		},
+		{
+			"material": "wood",
+			"shape": "pillar",
+			"x": 22.8,
+			"y": 0.8,
+			"w": 0.5,
+			"h": 2.6
+		},
+		{
+			"material": "wood",
+			"shape": "crate",
+			"x": 23.7,
+			"y": 0.8,
+			"w": 0.8,
+			"h": 0.8
+		},
+		{
+			"material": "wood",
+			"shape": "crate",
+			"x": 23.7,
+			"y": 1.6,
+			"w": 0.8,
+			"h": 0.8
+		}
 	],
 	"domes": [
-		{ "x": 14.6, "y": 3.2, "size": 1 },
-		{ "x": 19.2, "y": 0, "size": 0.9 }
+		{
+			"x": 13.5,
+			"y": 0,
+			"size": 0.8
+		},
+		{
+			"x": 22,
+			"y": 0.8,
+			"size": 0.8
+		}
 	],
-	"landmarks": [{ "kind": "refinery", "x": 22, "y": 0 }],
-	"hills": [{ "x": 8.45, "w": 3.4, "h": 0.59, "flat": 1.02 }]
+	"landmarks": [
+		{
+			"kind": "radar",
+			"x": 16.5,
+			"y": 0
+		},
+		{
+			"kind": "pylon",
+			"x": 17.5,
+			"y": 0
+		}
+	],
+	"hills": [
+		{
+			"x": 7.3,
+			"w": 3.4,
+			"h": 0.45,
+			"flat": 1
+		},
+		{
+			"x": 22,
+			"w": 8,
+			"h": 0.8,
+			"flat": 4.4
+		}
+	]
 }

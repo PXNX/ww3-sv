@@ -63,23 +63,30 @@
 		>
 			{m.convoy_barrels()}: {game.barrels}
 		</span>
-		{#if game.multiplier > 1}
-			{#key game.multiplier}
-				<span
-					class="pop-in rotate-2 rounded-[8px_12px_6px_10px] border-3 border-ink bg-explosion-yellow px-2 py-0.5 tabular-nums"
-				>
-					{m.convoy_multiplier()} ×{game.multiplier.toFixed(1)}
-				</span>
-			{/key}
-		{/if}
-		{#if game.escort}
+		<!-- The bonus chips always take their space (hidden while inactive) so the field below never shifts -->
+		{#key game.multiplier}
 			<span
-				class="pop-in inline-flex items-center gap-1 rounded-[10px_8px_12px_6px] border-3 border-ink bg-sky px-2 py-0.5"
+				class={[
+					'rotate-2 rounded-[8px_12px_6px_10px] border-3 border-ink bg-explosion-yellow px-2 py-0.5 tabular-nums',
+					game.multiplier > 1 ? 'pop-in' : 'invisible'
+				]}
+				aria-hidden={game.multiplier > 1 ? undefined : 'true'}
+			>
+				{m.convoy_multiplier()} ×{Math.max(game.multiplier, 1).toFixed(1)}
+			</span>
+		{/key}
+		{#key game.escort}
+			<span
+				class={[
+					'inline-flex items-center gap-1 rounded-[10px_8px_12px_6px] border-3 border-ink bg-sky px-2 py-0.5',
+					game.escort ? 'pop-in' : 'invisible'
+				]}
+				aria-hidden={game.escort ? undefined : 'true'}
 			>
 				<IconShield class="size-4" aria-hidden="true" />
 				{m.convoy_escort()}
 			</span>
-		{/if}
+		{/key}
 		<CharacterMascot pose={mascotPose} class="ms-auto w-12 -rotate-3" />
 	</section>
 

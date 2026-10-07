@@ -1,22 +1,142 @@
 {
 	"version": 1,
 	"id": "level-04",
-	"width": 24,
-	"birds": ["pelican", "pelican", "flamingo"],
+	"width": 26,
+	"birds": ["stork", "flamingo", "stork", "pelican"],
 	"blocks": [
-		{ "material": "wood", "shape": "box", "x": 13.2, "y": 0, "w": 0.6, "h": 1.2 },
-		{ "material": "wood", "shape": "box", "x": 13.2, "y": 1.2, "w": 0.6, "h": 1.2 },
-		{ "material": "wood", "shape": "box", "x": 13.2, "y": 2.4, "w": 0.6, "h": 1.2 },
-		{ "material": "wood", "shape": "box", "x": 13.2, "y": 3.6, "w": 0.6, "h": 1.2 },
-		{ "material": "stone", "shape": "box", "x": 20, "y": 0, "w": 2.6, "h": 0.6 },
-		{ "material": "wood", "shape": "box", "x": 19.2, "y": 0.6, "w": 0.4, "h": 1.6 },
-		{ "material": "wood", "shape": "box", "x": 20.8, "y": 0.6, "w": 0.4, "h": 1.6 },
-		{ "material": "wood", "shape": "box", "x": 20, "y": 2.2, "w": 2, "h": 0.4 },
-		{ "material": "wood", "shape": "spire", "x": 21.8, "y": 0, "w": 0.8, "h": 1.4 }
+		{
+			"material": "wood",
+			"shape": "crate",
+			"x": 11.6,
+			"y": 0,
+			"w": 0.8,
+			"h": 0.8
+		},
+		{
+			"material": "wood",
+			"shape": "crate",
+			"x": 12.4,
+			"y": 0,
+			"w": 0.8,
+			"h": 0.8
+		},
+		{
+			"material": "wood",
+			"shape": "crate",
+			"x": 13.2,
+			"y": 0,
+			"w": 0.8,
+			"h": 0.8
+		},
+		{
+			"material": "ice",
+			"shape": "crate",
+			"x": 12,
+			"y": 0.8,
+			"w": 0.8,
+			"h": 0.8
+		},
+		{
+			"material": "ice",
+			"shape": "crate",
+			"x": 12.8,
+			"y": 0.8,
+			"w": 0.8,
+			"h": 0.8
+		},
+		{
+			"material": "wood",
+			"shape": "crate",
+			"x": 12.4,
+			"y": 1.6,
+			"w": 0.8,
+			"h": 0.8
+		},
+		{
+			"material": "stone",
+			"shape": "pillar",
+			"x": 19.3,
+			"y": 1,
+			"w": 0.8,
+			"h": 3.2
+		},
+		{
+			"material": "stone",
+			"shape": "pillar",
+			"x": 20,
+			"y": 1,
+			"w": 0.5,
+			"h": 2
+		},
+		{
+			"material": "stone",
+			"shape": "pillar",
+			"x": 21.4,
+			"y": 1,
+			"w": 0.5,
+			"h": 2
+		},
+		{
+			"material": "stone",
+			"shape": "pillar",
+			"x": 22.8,
+			"y": 1,
+			"w": 0.5,
+			"h": 2
+		},
+		{
+			"material": "wood",
+			"shape": "box",
+			"x": 21.4,
+			"y": 3,
+			"w": 3.4,
+			"h": 0.4
+		},
+		{
+			"material": "wood",
+			"shape": "spire",
+			"x": 21.4,
+			"y": 3.4,
+			"w": 1.4,
+			"h": 1.2
+		}
 	],
-	"domes": [{ "x": 20, "y": 2.6, "size": 1 }],
+	"domes": [
+		{
+			"x": 12.4,
+			"y": 2.4,
+			"size": 0.7
+		},
+		{
+			"x": 20.7,
+			"y": 1,
+			"size": 0.7
+		},
+		{
+			"x": 22.1,
+			"y": 1,
+			"size": 0.7
+		}
+	],
+	"landmarks": [
+		{
+			"kind": "watchtower",
+			"x": 15.4,
+			"y": 0
+		}
+	],
 	"hills": [
-		{ "x": 8.6, "w": 3.8, "h": 0.35, "flat": 1.14 },
-		{ "x": 16.1, "w": 3.6, "h": 0.4, "flat": 1.08 }
+		{
+			"x": 7.3,
+			"w": 3.4,
+			"h": 0.45,
+			"flat": 1
+		},
+		{
+			"x": 21,
+			"w": 8.4,
+			"h": 1,
+			"flat": 4.4
+		}
 	]
 }

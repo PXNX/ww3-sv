@@ -14,6 +14,8 @@ export type FurySpriteId =
 	| 'stork'
 	| 'goose'
 	| 'falcon'
+	| 'phoenix'
+	| 'parrot'
 	| 'slingshot'
 	| 'wood'
 	| 'stone'
@@ -36,6 +38,8 @@ const FILES: Record<FurySpriteId, string> = {
 	stork: '/assets/fury/stork.png',
 	goose: '/assets/fury/goose.png',
 	falcon: '/assets/fury/falcon.png',
+	phoenix: '/assets/fury/phoenix.png',
+	parrot: '/assets/fury/parrot.png',
 	slingshot: '/assets/fury/slingshot.png',
 	wood: '/assets/fury/wood.png',
 	stone: '/assets/fury/stone.png',
@@ -68,6 +72,8 @@ const PLACEHOLDER_FILES: Partial<Record<FurySpriteId, string>> = {
 	stork: '/assets/fury/_placeholder-stork.svg',
 	goose: '/assets/fury/_placeholder-goose.svg',
 	falcon: '/assets/fury/_placeholder-falcon.svg',
+	phoenix: '/assets/fury/_placeholder-phoenix.svg',
+	parrot: '/assets/fury/_placeholder-parrot.svg',
 	dome: '/assets/fury/_placeholder-dome.svg',
 	oilTank: '/assets/flamingo/_placeholder-tank.svg',
 	refinery: '/assets/flamingo/_placeholder-flare-stack.svg',

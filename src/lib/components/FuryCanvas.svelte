@@ -12,7 +12,9 @@
 		pelican: m.fury_bird_pelican,
 		stork: m.fury_bird_stork,
 		goose: m.fury_bird_goose,
-		falcon: m.fury_bird_falcon
+		falcon: m.fury_bird_falcon,
+		phoenix: m.fury_bird_phoenix,
+		parrot: m.fury_bird_parrot
 	};
 
 	const BIRD_HINTS: Record<BirdKind, () => string> = {
@@ -20,7 +22,9 @@
 		pelican: m.fury_bird_pelican_hint,
 		stork: m.fury_bird_stork_hint,
 		goose: m.fury_bird_goose_hint,
-		falcon: m.fury_bird_falcon_hint
+		falcon: m.fury_bird_falcon_hint,
+		phoenix: m.fury_bird_phoenix_hint,
+		parrot: m.fury_bird_parrot_hint
 	};
 
 	export function birdName(kind: BirdKind): string {

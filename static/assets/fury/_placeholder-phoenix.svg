@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 92 90">
+	<!-- Generic placeholder phoenix, side profile facing right: flame-coloured, with a fiery tail and crest -->
+	<g stroke="#111111" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+		<path d="M22 50 L2 38 L8 50 L0 60 L12 58 L6 72 L26 62 Z" fill="#F9C43A"/>
+		<path d="M52 42 Q58 26 64 32 L64 44 Q58 48 52 48 Z" fill="#EE5A2B"/>
+		<ellipse cx="40" cy="52" rx="25" ry="19" fill="#EE5A2B"/>
+		<path d="M20 44 Q34 24 50 42 Q34 52 20 44 Z" fill="#F9C43A"/>
+		<path d="M60 24 L58 12 L64 20 L68 8 L70 22" fill="#F9C43A"/>
+		<circle cx="65" cy="32" r="10" fill="#EE5A2B"/>
+		<path d="M72 29 L88 33 Q80 40 72 38 Z" fill="#F2C230"/>
+		<circle cx="67" cy="29" r="3" fill="#FFFFFF" stroke-width="1.5"/>
+		<circle cx="68" cy="29" r="1.4" fill="#111111" stroke="none"/>
+	</g>
+</svg>

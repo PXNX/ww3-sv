@@ -286,6 +286,10 @@ export class FuryGame {
 				soundManager().play('dome-pop');
 				return;
 			case 'ability':
+				if (event.bird === 'phoenix') {
+					soundManager().play('explosion-small');
+					return;
+				}
 				soundManager().play('flap');
 				soundManager().play('whoosh');
 				return;

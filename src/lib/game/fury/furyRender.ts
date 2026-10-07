@@ -726,6 +726,26 @@ export const BIRD_LOOKS: Record<BirdKind, BirdLook> = {
 		beakStyle: 'hook',
 		legs: null,
 		tail: '#3f5f80'
+	},
+	phoenix: {
+		body: '#ee5a2b',
+		wing: '#f9c43a',
+		beak: '#f2c230',
+		headX: 0.9,
+		headR: 0.38,
+		beakStyle: 'hook',
+		legs: null,
+		tail: '#f9c43a'
+	},
+	parrot: {
+		body: '#e53935',
+		wing: '#2e86de',
+		beak: '#f2c230',
+		headX: 0.8,
+		headR: 0.4,
+		beakStyle: 'hook',
+		legs: null,
+		tail: '#2e9e4f'
 	}
 };
 
@@ -744,6 +764,8 @@ function drawBird(
 	context.save();
 	context.translate(center.x, center.y);
 	context.rotate(-angle);
+	// A bird flying back (the parrot's turn) is mirrored instead of flying upside down
+	if (Math.cos(angle) < 0) context.scale(1, -1);
 	const image = sprites[kind];
 	if (image) {
 		context.drawImage(image, -r * 1.6, -r * 1.6, r * 3.2, r * 3.2);

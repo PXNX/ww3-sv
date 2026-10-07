@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 92 90">
+	<!-- Generic placeholder parrot, side profile facing right: red body, blue wing, green tail, hooked beak -->
+	<g stroke="#111111" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+		<path d="M24 50 L2 46 L4 58 L26 60 Z" fill="#2E9E4F"/>
+		<path d="M52 42 Q58 28 64 34 L64 46 Q58 50 52 50 Z" fill="#E53935"/>
+		<ellipse cx="40" cy="52" rx="24" ry="19" fill="#E53935"/>
+		<path d="M20 46 Q34 26 50 44 Q34 54 20 46 Z" fill="#2E86DE"/>
+		<circle cx="64" cy="34" r="10" fill="#E53935"/>
+		<path d="M71 29 Q84 28 83 40 Q80 36 73 38 Z" fill="#F2C230"/>
+		<circle cx="66" cy="31" r="3" fill="#FFFFFF" stroke-width="1.5"/>
+		<circle cx="67" cy="31" r="1.4" fill="#111111" stroke="none"/>
+	</g>
+</svg>

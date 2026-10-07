@@ -10,10 +10,15 @@ import { Box, Chain, Circle, Edge, Polygon, World, type Body, type Contact } fro
 import type { Random } from '$lib/game/random';
 import {
 	BIRDS,
+	BLAST_DAMAGE,
+	BLAST_IMPULSE,
+	BLAST_RADIUS,
 	EGG_DAMAGE_MULTIPLIER,
 	EGG_DENSITY,
 	EGG_RADIUS,
 	SPLIT_RADIUS,
+	blastFalloff,
+	boomerangVelocity,
 	dashVelocity,
 	diveVelocity,
 	eggVelocity,
@@ -380,6 +385,15 @@ export class FuryWorld {
 		} else if (ability === 'dive') {
 			bird.body.setLinearVelocity(diveVelocity(current));
 			this.#puffs(position.x, position.y, 3, bird.radius, 'feather');
+		} else if (ability === 'boomerang') {
+			bird.body.setLinearVelocity(boomerangVelocity(current));
+			this.#puffs(position.x, position.y, 3, bird.radius, 'feather');
+		} else if (ability === 'blast') {
+			this.#blast(position.x, position.y);
+			this.physics.destroyBody(bird.body);
+			bird.alive = false;
+			this.#turnBirds = [];
+			this.#compact();
 		} else if (ability === 'egg') {
 			const drop = {
 				x: position.x,
@@ -410,6 +424,37 @@ export class FuryWorld {
 		}
 		this.#events.push({ type: 'ability', bird: bird.bird });
 		return true;
+	}
+
+	/**
+	 * The phoenix's explosion: everything within reach is shoved away and damaged, both fading out
+	 * with distance, so a tight cluster of blocks is blown apart while far-off pieces stay put.
+	 */
+	#blast(x: number, y: number) {
+		let removed = false;
+		for (const piece of this.pieces) {
+			if (!piece.alive || piece.kind === 'bird') continue;
+			const center = piece.body.getWorldCenter();
+			const dx = center.x - x;
+			const dy = center.y - y;
+			const distance = Math.hypot(dx, dy);
+			const share = blastFalloff(distance);
+			if (share <= 0) continue;
+			const length = Math.max(distance, 0.1);
+			const push = BLAST_IMPULSE * share * Math.sqrt(piece.body.getMass());
+			// A little lift keeps the debris from just grinding along the ground
+			piece.body.applyLinearImpulse(
+				{ x: (dx / length) * push, y: (dy / length) * push + push * 0.3 },
+				center,
+				true
+			);
+			piece.hp -= BLAST_DAMAGE * share;
+			if (piece.kind === 'dome') piece.wobble = Math.min(1, piece.wobble + share);
+			if (piece.hp <= 0) removed = this.#destroy(piece) || removed;
+		}
+		this.#puffs(x, y, 6, BLAST_RADIUS * 0.3, 'explosion');
+		this.#shards(x, y, 8, 0.25, 'explosion', 0);
+		if (removed) this.#compact();
 	}
 
 	/** Removes the birds of the previous turn with a puff, so bodies never pile up */
