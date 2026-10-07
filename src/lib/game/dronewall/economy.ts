@@ -1,17 +1,16 @@
 /*
- * The helmet economy: helmets are the only currency. Fallen soldiers drop them, a tap collects
- * them before they fade, and they pay for building, upgrading (and the refund when selling).
+ * The helmet economy: helmets are the only currency. Fallen enemies drop them, they fly to the
+ * counter by themselves, and they pay for building, upgrading (and the refund when selling).
  */
 import {
-	HELMET_PICK_RADIUS,
-	HELMET_TTL_MS,
+	HELMET_FLY_MS,
+	HELMET_POP_MS,
 	SLOTS,
 	buildCost,
 	sellValue,
 	upgradeCost,
 	type DefenseKind
 } from './config';
-import { distanceBetween } from './path';
 import type { DroneWallEvent, DroneWallState, Helmet, Soldier } from './state';
 
 export type EconomyFailure = 'game-over' | 'bad-slot' | 'occupied' | 'empty' | 'max-level' | 'poor';
@@ -61,44 +60,29 @@ export function sell(state: DroneWallState, slot: number): EconomyResult {
 	return { ok: true, cost: refund };
 }
 
-/** A fallen soldier drops one helmet where it fell */
-export function dropHelmet(state: DroneWallState, soldier: Soldier, value: number): Helmet {
-	const helmet: Helmet = { id: state.nextId++, x: soldier.x, y: soldier.y, value, ageMs: 0 };
+/** A fallen enemy drops one helmet where it fell */
+export function dropHelmet(
+	state: DroneWallState,
+	enemy: Pick<Soldier, 'x' | 'y'>,
+	value: number
+): Helmet {
+	const helmet: Helmet = { id: state.nextId++, x: enemy.x, y: enemy.y, value, ageMs: 0 };
 	state.helmets.push(helmet);
 	return helmet;
 }
 
-/** Collects the helmet closest to the tap, if one is within reach */
-export function collectHelmetAt(
-	state: DroneWallState,
-	x: number,
-	y: number,
-	radius = HELMET_PICK_RADIUS
-): DroneWallEvent | null {
-	if (state.over) return null;
-	let bestIndex = -1;
-	let bestDistance = radius;
-	state.helmets.forEach((helmet, index) => {
-		const distance = distanceBetween(helmet, { x, y });
-		if (distance <= bestDistance) {
-			bestDistance = distance;
-			bestIndex = index;
-		}
-	});
-	if (bestIndex < 0) return null;
-	const [helmet] = state.helmets.splice(bestIndex, 1);
-	state.currency += helmet.value;
-	state.collected += helmet.value;
-	return { type: 'helmet-collected', x: helmet.x, y: helmet.y, value: helmet.value };
-}
-
-/** Ages the helmets and removes the ones that faded away */
-export function ageHelmets(state: DroneWallState, dtMs: number): DroneWallEvent[] {
+/**
+ * Helmets collect themselves: each pops up, flies to the counter and is added to the pocket when
+ * it lands. Ages them and returns an event for every one that landed.
+ */
+export function collectHelmets(state: DroneWallState, dtMs: number): DroneWallEvent[] {
 	const events: DroneWallEvent[] = [];
 	for (const helmet of state.helmets) helmet.ageMs += dtMs;
 	state.helmets = state.helmets.filter((helmet) => {
-		if (helmet.ageMs < HELMET_TTL_MS) return true;
-		events.push({ type: 'helmet-expired', x: helmet.x, y: helmet.y });
+		if (helmet.ageMs < HELMET_POP_MS + HELMET_FLY_MS) return true;
+		state.currency += helmet.value;
+		state.collected += helmet.value;
+		events.push({ type: 'helmet-collected', x: helmet.x, y: helmet.y, value: helmet.value });
 		return false;
 	});
 	return events;

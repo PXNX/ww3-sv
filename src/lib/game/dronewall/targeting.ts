@@ -4,7 +4,7 @@
  */
 import { SLOTS, defenseStats, type DefenseKind, type DefenseStats, type Point } from './config';
 import { ROAD, distanceBetween, pointAt, type Path } from './path';
-import type { Defense, Soldier } from './state';
+import type { Defense, Flyer, Projectile, Soldier } from './state';
 
 const isAlive = (soldier: Soldier) => soldier.hp > 0;
 
@@ -35,21 +35,83 @@ export function pickSquadTarget(
 	return best;
 }
 
-/** The drone nest picks the toughest soldier in reach (the one with the most health left) */
+/**
+ * The drone nest picks the toughest soldier in reach (the one with the most health left). Damage
+ * already on its way (`incoming`, by soldier id) is counted as gone, so a stream of drones
+ * spreads over the crowd instead of all diving onto the same soldier.
+ */
 export function pickNestTarget(
 	soldiers: readonly Soldier[],
 	origin: Point,
-	stats: DefenseStats
+	stats: DefenseStats,
+	incoming: ReadonlyMap<number, number> = NO_INCOMING
 ): Soldier | null {
 	let best: Soldier | null = null;
+	let bestHp = 0;
 	for (const soldier of inRange(soldiers, origin, stats.range)) {
-		if (
-			!best ||
-			soldier.hp > best.hp ||
-			(soldier.hp === best.hp && soldier.progress > best.progress)
-		) {
+		const hp = soldier.hp - (incoming.get(soldier.id) ?? 0);
+		if (!best || hp > bestHp || (hp === bestHp && soldier.progress > best.progress)) {
 			best = soldier;
+			bestHp = hp;
 		}
+	}
+	return best;
+}
+
+const NO_INCOMING: ReadonlyMap<number, number> = new Map();
+
+/** Damage that homing projectiles of one kind still have to deliver, by target id */
+export function incomingDamage(
+	projectiles: readonly Projectile[],
+	kind: Projectile['kind']
+): Map<number, number> {
+	const incoming = new Map<number, number>();
+	for (const projectile of projectiles) {
+		if (projectile.kind !== kind || projectile.targetId === null) continue;
+		incoming.set(projectile.targetId, (incoming.get(projectile.targetId) ?? 0) + projectile.damage);
+	}
+	return incoming;
+}
+
+/** Aerial enemies still alive and within `range` (the ones above the top edge are not in play yet) */
+export function flyersInRange(flyers: readonly Flyer[], origin: Point, range: number): Flyer[] {
+	return flyers.filter(
+		(flyer) => flyer.hp > 0 && flyer.y >= 0 && distanceBetween(origin, flyer) <= range
+	);
+}
+
+/** Distance an enemy still has to travel before it breaches the line */
+export function remainingDistance(enemy: Soldier | Flyer): number {
+	return 'air' in enemy ? enemy.length - enemy.progress : ROAD.length - enemy.progress;
+}
+
+/** The aerial enemy closest to the line in reach, for squads (which hurt aircraft less) */
+export function pickAirTarget(
+	flyers: readonly Flyer[],
+	origin: Point,
+	range: number
+): Flyer | null {
+	let best: Flyer | null = null;
+	for (const flyer of flyersInRange(flyers, origin, range)) {
+		if (!best || remainingDistance(flyer) < remainingDistance(best)) best = flyer;
+	}
+	return best;
+}
+
+/**
+ * The Patriot shoots the aerial enemy closest to the line that is not already doomed by missiles
+ * in the air; with nothing left to shoot at it holds fire.
+ */
+export function pickPatriotTarget(
+	flyers: readonly Flyer[],
+	origin: Point,
+	stats: DefenseStats,
+	incoming: ReadonlyMap<number, number> = NO_INCOMING
+): Flyer | null {
+	let best: Flyer | null = null;
+	for (const flyer of flyersInRange(flyers, origin, stats.range)) {
+		if (flyer.hp - (incoming.get(flyer.id) ?? 0) <= 0) continue;
+		if (!best || remainingDistance(flyer) < remainingDistance(best)) best = flyer;
 	}
 	return best;
 }

@@ -4,14 +4,15 @@
  * simulation state is a plain object read by the canvas every frame; only what the page chrome
  * shows is reactive, synced after each step.
  */
-import { SLOTS, STARTING_LIVES, type DefenseKind } from '#lib/game/dronewall/config.js';
 import {
-	build,
-	collectHelmetAt,
-	sell,
-	upgrade,
-	type EconomyResult
-} from '#lib/game/dronewall/economy.js';
+	HELMET_TARGET,
+	SLOTS,
+	STARTING_LIVES,
+	type DefenseKind,
+	type EnemyKind,
+	type Point
+} from '#lib/game/dronewall/config.js';
+import { build, sell, upgrade, type EconomyResult } from '#lib/game/dronewall/economy.js';
 import { drawScenePreview, type Effect, type SceneExtras } from '#lib/game/dronewall/render.js';
 import {
 	createGame,
@@ -28,7 +29,14 @@ import type { SoundId } from '#lib/sound/sounds.js';
 export type DroneWallStatus = 'ready' | 'playing' | 'paused' | 'over';
 
 export type DroneWallBanner =
-	{ kind: 'incoming'; wave: number } | { kind: 'cleared'; bonus: number } | { kind: 'breach' };
+	| { kind: 'incoming'; wave: number }
+	| { kind: 'cleared'; bonus: number }
+	| { kind: 'breach' }
+	| { kind: 'air' };
+
+/** The game speeds the player can cycle through with one button */
+export const GAME_SPEEDS = [1, 2, 4] as const;
+export type GameSpeed = (typeof GAME_SPEEDS)[number];
 
 const SCORE_KEY = ['dronewall', 'score'] as const;
 const WAVE_KEY = ['dronewall', 'wave'] as const;
@@ -62,6 +70,10 @@ export class DroneWallGame {
 	banner = $state<DroneWallBanner | null>(null);
 	/** Counts up when an action fails for lack of helmets, so the counter can shake */
 	brokeCount = $state(0);
+	/** Counts up whenever a helmet lands on the counter, so the counter can bump */
+	collectPulse = $state(0);
+	/** How many simulation steps run per frame: x1, x2 or x4 */
+	speed = $state<GameSpeed>(1);
 	best = $state<number | null>(null);
 	bestWave = $state<number | null>(null);
 	isNewBest = $state(false);
@@ -69,6 +81,8 @@ export class DroneWallGame {
 	/** Simulation state, deliberately not reactive */
 	state: DroneWallState = createGame();
 	effects: Effect[] = [];
+	/** Where collected helmets fly to, in world units; the canvas measures the real counter */
+	helmetTarget: Point = HELMET_TARGET;
 
 	readonly reducedMotion: boolean;
 	#random: Random = createRandom(1);
@@ -142,28 +156,28 @@ export class DroneWallGame {
 		return this.#spend((slot) => sell(this.state, slot), 'thud');
 	}
 
-	/** A tap or click on the field at a world position: picks up a helmet if one is there */
-	tap(x: number, y: number): boolean {
-		if (this.status !== 'playing') return false;
-		const event = collectHelmetAt(this.state, x, y);
-		if (!event) return false;
-		this.#handle(event);
-		this.#syncChrome();
-		return true;
+	/** One button, three states: x1, then x2, then x4, then back to x1 */
+	cycleSpeed(): GameSpeed {
+		this.speed = GAME_SPEEDS[(GAME_SPEEDS.indexOf(this.speed) + 1) % GAME_SPEEDS.length];
+		return this.speed;
 	}
 
-	/** One fixed step: called by the canvas game loop */
+	/** One fixed step of the canvas game loop: runs `speed` simulation steps */
 	update(dtMs: number) {
-		this.#ageEffects(dtMs);
 		if (this.status !== 'playing') return;
+		// Sounds are spaced in real time, however fast the game runs
 		this.#soundClock += dtMs;
-		const events = stepGame(this.state, this.#random, dtMs);
-		for (const event of events) this.#handle(event);
+		for (let i = 0; i < this.speed && this.status === 'playing'; i++) {
+			this.#ageEffects(dtMs);
+			const events = stepGame(this.state, this.#random, dtMs);
+			for (const event of events) this.#handle(event);
+		}
 		this.#syncChrome();
 	}
 
 	sceneExtras(): SceneExtras {
 		return {
+			helmetTarget: this.helmetTarget,
 			effects: this.effects,
 			selectedSlot: this.selectedSlot,
 			showEmptySlots: this.status === 'playing' || this.status === 'paused'
@@ -203,18 +217,7 @@ export class DroneWallGame {
 				break;
 			case 'soldier-fell': {
 				// Bloodless: the soldier tumbles away and a poof marks the spot
-				const sideways = (this.#flavor() * 2 - 1) * 70;
-				this.effects.push({
-					kind: 'tumble',
-					x: event.x,
-					y: event.y,
-					vx: this.reducedMotion ? 0 : sideways,
-					vy: this.reducedMotion ? -40 : -150 - this.#flavor() * 70,
-					spin: this.reducedMotion ? 0 : (this.#flavor() < 0.5 ? -1 : 1) * (6 + this.#flavor() * 5),
-					soldier: event.kind,
-					ageMs: 0,
-					durationMs: 750 * short + 150
-				});
+				this.#tumble(event.x, event.y, event.kind);
 				this.effects.push({
 					kind: 'poof',
 					x: event.x,
@@ -226,26 +229,35 @@ export class DroneWallGame {
 				this.#play('pop', SOUND_GAP_MS);
 				break;
 			}
-			case 'helmet-collected':
+			case 'flyer-spawned':
+				this.#showBanner({ kind: 'air' }, 1300);
+				this.#play('alarm', 1500);
+				break;
+			case 'flyer-fell':
+				// The wreck spins away and goes up in a blast
+				this.#tumble(event.x, event.y, event.kind);
 				this.effects.push({
-					kind: 'popup',
+					kind: 'blast',
 					x: event.x,
 					y: event.y,
+					size: event.kind === 'heli' ? 30 : 20,
+					ageMs: 0,
+					durationMs: 520 * short + 100
+				});
+				this.#play('explosion-small', SOUND_GAP_MS);
+				break;
+			case 'helmet-collected':
+				// The helmet has just landed on the counter
+				this.collectPulse += 1;
+				this.effects.push({
+					kind: 'popup',
+					x: this.helmetTarget.x,
+					y: this.helmetTarget.y + 30,
 					text: `+${event.value}`,
 					ageMs: 0,
 					durationMs: 650 * short + 150
 				});
-				this.#play('pickup', 0);
-				break;
-			case 'helmet-expired':
-				this.effects.push({
-					kind: 'poof',
-					x: event.x,
-					y: event.y,
-					size: 14,
-					ageMs: 0,
-					durationMs: 300
-				});
+				this.#play('pickup', SOUND_GAP_MS);
 				break;
 			case 'leak':
 				this.effects.push({
@@ -260,12 +272,35 @@ export class DroneWallGame {
 				this.#play('alarm', 0);
 				break;
 			case 'squad-shot':
-				this.effects.push(tracer(event, false));
+				this.effects.push(tracer(event));
 				this.#play('click', SOUND_GAP_MS);
 				break;
-			case 'drone-strike':
-				this.effects.push(tracer(event, true));
+			case 'drone-launched':
 				this.#play('zap', SOUND_GAP_MS);
+				break;
+			case 'missile-launched':
+				this.#play('patriot-launch', SOUND_GAP_MS);
+				break;
+			case 'projectile-hit':
+				this.effects.push({
+					kind: 'blast',
+					x: event.x,
+					y: event.y,
+					size: event.kind === 'missile' ? 24 : 13,
+					ageMs: 0,
+					durationMs: (event.kind === 'missile' ? 420 : 280) * short + 80
+				});
+				this.#play(event.kind === 'missile' ? 'explosion-small' : 'explosion-tiny', SOUND_GAP_MS);
+				break;
+			case 'projectile-lost':
+				this.effects.push({
+					kind: 'poof',
+					x: event.x,
+					y: event.y,
+					size: 14,
+					ageMs: 0,
+					durationMs: 300
+				});
 				break;
 			case 'shell-launched':
 				this.#play('thud', SOUND_GAP_MS);
@@ -293,6 +328,23 @@ export class DroneWallGame {
 		if (last !== undefined && gapMs > 0 && this.#soundClock - last < gapMs) return;
 		this.#lastSound[id] = this.#soundClock;
 		soundManager().play(id);
+	}
+
+	/** An enemy thrown into the air, spinning away */
+	#tumble(x: number, y: number, kind: EnemyKind) {
+		const short = this.reducedMotion ? 0.5 : 1;
+		const sideways = (this.#flavor() * 2 - 1) * 70;
+		this.effects.push({
+			kind: 'tumble',
+			x,
+			y,
+			vx: this.reducedMotion ? 0 : sideways,
+			vy: this.reducedMotion ? -40 : -150 - this.#flavor() * 70,
+			spin: this.reducedMotion ? 0 : (this.#flavor() < 0.5 ? -1 : 1) * (6 + this.#flavor() * 5),
+			soldier: kind,
+			ageMs: 0,
+			durationMs: 750 * short + 150
+		});
 	}
 
 	#showBanner(banner: DroneWallBanner, durationMs: number) {
@@ -334,18 +386,14 @@ export class DroneWallGame {
 	}
 }
 
-function tracer(
-	event: { fromX: number; fromY: number; toX: number; toY: number },
-	drone: boolean
-): Effect {
+function tracer(event: { fromX: number; fromY: number; toX: number; toY: number }): Effect {
 	return {
 		kind: 'tracer',
 		x1: event.fromX,
-		y1: event.fromY - (drone ? 13 : 2),
+		y1: event.fromY - 2,
 		x2: event.toX,
 		y2: event.toY,
-		drone,
 		ageMs: 0,
-		durationMs: drone ? 260 : 110
+		durationMs: 110
 	};
 }

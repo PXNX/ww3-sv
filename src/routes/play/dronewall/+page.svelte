@@ -12,6 +12,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
 	import { DroneWallGame } from '#lib/stores/dronewallGame.svelte.js';
+	import IconFastForward from '~icons/lucide/fast-forward';
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
@@ -67,23 +68,22 @@
 		<div
 			class="flex w-full items-center gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1 shadow-[3px_3px_0_var(--color-ink)]"
 		>
-			{#key game.brokeCount}
-				<span
-					class="inline-flex shrink-0 items-center gap-1 font-display text-2xl leading-none font-bold tabular-nums {game.brokeCount >
-					0
-						? 'shake'
-						: ''}"
-					role="img"
-					aria-label={m.dronewall_helmets_label({ count: game.helmets })}
-				>
-					<DroneWallDefense kind="helmet" class="size-7" />
-					<span aria-hidden="true">{game.helmets}</span>
-				</span>
-			{/key}
+			<!-- One button, three speeds: x1, x2, x4 -->
+			<button
+				type="button"
+				class="btn-chunky shrink-0 gap-1 px-2 py-0.5 text-base tabular-nums {game.speed > 1
+					? 'bg-explosion-yellow'
+					: ''}"
+				aria-label={m.dronewall_speed_label({ speed: game.speed })}
+				onclick={() => game.cycleSpeed()}
+			>
+				<IconFastForward class="size-4" aria-hidden="true" />
+				<span aria-hidden="true">×{game.speed}</span>
+			</button>
 
 			<p
 				dir="auto"
-				class="min-h-8 flex-1 text-center font-display text-base leading-tight font-bold sm:text-lg"
+				class="min-h-8 flex-1 text-center font-display text-sm leading-tight font-bold sm:text-lg"
 				aria-live="off"
 			>
 				{waveStatus}
@@ -106,6 +106,7 @@
 		<p>{m.dronewall_tutorial_goal()}</p>
 		<p>{m.dronewall_tutorial_build()}</p>
 		<p>{m.dronewall_tutorial_helmets()}</p>
+		<p>{m.dronewall_tutorial_air()}</p>
 		<ul class="flex flex-col gap-2">
 			<li class="flex items-center gap-2">
 				<DroneWallDefense kind="squad" class="size-9 shrink-0" />
@@ -126,12 +127,19 @@
 				</span>
 			</li>
 			<li class="flex items-center gap-2">
+				<DroneWallDefense kind="patriot" class="size-9 shrink-0" />
+				<span>
+					<strong>{m.dronewall_patriot_name()}</strong>: {m.dronewall_patriot_role()}
+				</span>
+			</li>
+			<li class="flex items-center gap-2">
 				<DroneWallDefense kind="trench" class="size-9 shrink-0" />
 				<span>
 					<strong>{m.dronewall_trench_name()}</strong>: {m.dronewall_trench_role()}
 				</span>
 			</li>
 		</ul>
+		<p>{m.dronewall_tutorial_speed()}</p>
 		<p class="hidden text-sm sm:block">{m.dronewall_keyboard_hint()}</p>
 	</TutorialModal>
 
@@ -166,30 +174,3 @@
 		</dl>
 	</GameOverModal>
 </GameShell>
-
-<style>
-	.shake {
-		animation: shake 360ms ease-in-out;
-	}
-
-	@keyframes shake {
-		20% {
-			translate: -4px 0;
-		}
-		40% {
-			translate: 4px 0;
-		}
-		60% {
-			translate: -3px 0;
-		}
-		80% {
-			translate: 2px 0;
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.shake {
-			animation: none;
-		}
-	}
-</style>

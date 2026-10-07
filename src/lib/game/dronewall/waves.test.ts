@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { createRandom } from '#lib/game/random.js';
-import { generateWave, waveComposition, waveSize } from './waves';
+import { generateWave, isFlyerSpawn, waveComposition, waveSize } from './waves';
 
 const count = (wave: number, kind: string) =>
 	generateWave(wave, createRandom(5)).filter((entry) => entry.kind === kind).length;
+
+/** The soldiers of a wave: the platoons, without the aircraft */
+const ground = (wave: number, seed: number) =>
+	generateWave(wave, createRandom(seed)).filter((entry) => !isFlyerSpawn(entry));
 
 describe('wave generator', () => {
 	it('makes the same wave for the same seed and a different one for another seed', () => {
@@ -17,6 +21,8 @@ describe('wave generator', () => {
 			expect(count(wave, 'grunt')).toBe(composition.grunts);
 			expect(count(wave, 'scout')).toBe(composition.scouts);
 			expect(count(wave, 'brute')).toBe(composition.brutes);
+			expect(count(wave, 'shahed')).toBe(composition.shaheds);
+			expect(count(wave, 'heli')).toBe(composition.helis);
 			expect(generateWave(wave, createRandom(5))).toHaveLength(waveSize(wave));
 		}
 	});
@@ -43,7 +49,7 @@ describe('wave generator', () => {
 	});
 
 	it('walks in clumps: platoons are separated by clear gaps', () => {
-		const entries = generateWave(6, createRandom(3));
+		const entries = ground(6, 3);
 		const gaps = entries.slice(1).map((entry, i) => entry.atMs - entries[i].atMs);
 		const big = gaps.filter((gap) => gap > 2500);
 		expect(big.length).toBe(waveComposition(6).platoons - 1);
@@ -62,7 +68,7 @@ describe('wave generator', () => {
 	});
 
 	it('puts brutes at the back of their platoon', () => {
-		const entries = generateWave(7, createRandom(2));
+		const entries = ground(7, 2);
 		const platoonStarts = [0];
 		entries.forEach((entry, i) => {
 			if (i > 0 && entry.atMs - entries[i - 1].atMs > 2500) platoonStarts.push(i);
@@ -74,6 +80,31 @@ describe('wave generator', () => {
 			if (firstBrute >= 0) {
 				expect(kinds.slice(firstBrute).every((kind) => kind === 'brute')).toBe(true);
 			}
+		}
+	});
+
+	it('brings aircraft from wave 3 and helicopters from wave 7', () => {
+		expect(waveComposition(2).shaheds).toBe(0);
+		expect(waveComposition(3).shaheds).toBeGreaterThan(0);
+		expect(waveComposition(6).helis).toBe(0);
+		expect(waveComposition(7).helis).toBeGreaterThan(0);
+	});
+
+	it('leaves the ground part of a wave alone when aircraft join', () => {
+		const ground3 = ground(3, 9).map((entry) => entry.atMs);
+		const all = generateWave(3, createRandom(9));
+		expect(all.filter((entry) => !isFlyerSpawn(entry)).map((entry) => entry.atMs)).toEqual(ground3);
+	});
+
+	it('spreads aircraft over the wave, on flight lines inside the field', () => {
+		const entries = generateWave(10, createRandom(4));
+		const air = entries.filter(isFlyerSpawn);
+		expect(air.length).toBe(waveComposition(10).shaheds + waveComposition(10).helis);
+		const lastGround = ground(10, 4).at(-1)!.atMs;
+		for (const flyer of air) {
+			expect(flyer.atMs).toBeGreaterThan(0);
+			expect(flyer.atMs).toBeLessThan(lastGround);
+			expect(Math.abs(flyer.exitLane)).toBeLessThanOrEqual(1);
 		}
 	});
 });

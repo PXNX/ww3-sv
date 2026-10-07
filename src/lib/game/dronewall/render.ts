@@ -4,8 +4,10 @@
  * Fallen soldiers tumble away and breaches or blasts end in a white poof.
  */
 import {
-	HELMET_BLINK_MS,
-	HELMET_TTL_MS,
+	FLYERS,
+	HELMET_FLY_MS,
+	HELMET_POP_MS,
+	HELMET_TARGET,
 	LINE_Y,
 	MAX_LEVEL,
 	PATH_POINTS,
@@ -14,10 +16,14 @@ import {
 	WORLD_HEIGHT,
 	WORLD_WIDTH,
 	defenseStats,
+	isFlyerKind,
+	type EnemyKind,
+	type FlyerKind,
+	type Point,
 	type SoldierKind
 } from './config';
 import { ROAD, pointAt } from './path';
-import type { Defense, DroneWallState, Helmet, Shell, Soldier } from './state';
+import type { Defense, DroneWallState, Flyer, Helmet, Projectile, Shell, Soldier } from './state';
 
 // Design tokens (src/lib/styles/tokens.css); a canvas cannot read Tailwind utilities
 const INK = '#111111';
@@ -25,9 +31,10 @@ const PAPER = '#ffffff';
 const SAND = '#e8e1bc';
 const FLAG_BLUE = '#4fa8d8';
 const TIE_RED = '#e5484d';
-const MUSTARD = '#ddb93c';
 const YELLOW = '#f5c83a';
 const SANDBAG = '#cdbb7e';
+const SOVIET_GREEN = '#6f7d3c';
+const SOVIET_GREEN_DARK = '#55612e';
 const FIELD = '#8c9d69';
 const FIELD_DARK = '#7c8c5c';
 const ROAD_FILL = '#e8dca8';
@@ -41,7 +48,7 @@ export type Effect =
 			vx: number;
 			vy: number;
 			spin: number;
-			soldier: SoldierKind;
+			soldier: EnemyKind;
 			ageMs: number;
 			durationMs: number;
 	  }
@@ -54,12 +61,13 @@ export type Effect =
 			y1: number;
 			x2: number;
 			y2: number;
-			drone: boolean;
 			ageMs: number;
 			durationMs: number;
 	  };
 
 export interface SceneExtras {
+	/** Where collected helmets fly to, in world units */
+	helmetTarget: Point;
 	effects: readonly Effect[];
 	/** Slot whose range ring is shown, or null */
 	selectedSlot: number | null;
@@ -67,7 +75,12 @@ export interface SceneExtras {
 	showEmptySlots: boolean;
 }
 
-const NO_EXTRAS: SceneExtras = { effects: [], selectedSlot: null, showEmptySlots: false };
+const NO_EXTRAS: SceneExtras = {
+	helmetTarget: HELMET_TARGET,
+	effects: [],
+	selectedSlot: null,
+	showEmptySlots: false
+};
 
 function inkEllipse(
 	ctx: CanvasRenderingContext2D,
@@ -366,6 +379,70 @@ function drawNest(
 	ctx.fill();
 }
 
+/** A Patriot launcher: a truck bed with four canisters that swing toward the aircraft */
+function drawPatriot(
+	ctx: CanvasRenderingContext2D,
+	x: number,
+	y: number,
+	defense: Defense,
+	t: number
+) {
+	inkEllipse(ctx, x, y + 10, 23, 9, SANDBAG);
+	// The truck bed and a radar dish on a post
+	ctx.beginPath();
+	ctx.roundRect(x - 18, y + 1, 36, 10, 3);
+	ctx.fillStyle = SOVIET_GREEN_DARK;
+	ctx.fill();
+	ctx.lineWidth = 2;
+	ctx.strokeStyle = INK;
+	ctx.stroke();
+	for (const dx of [-11, 11]) inkEllipse(ctx, x + dx, y + 12, 3.6, 3.6, '#2f343b', 1.5);
+	const dish = Math.sin(t / 500) * 0.4;
+	ctx.save();
+	ctx.translate(x + 15, y - 1);
+	ctx.rotate(dish);
+	ctx.fillStyle = '#d9d6c3';
+	ctx.beginPath();
+	ctx.ellipse(0, -5, 2.6, 6.5, 0, 0, Math.PI * 2);
+	ctx.fill();
+	ctx.stroke();
+	ctx.restore();
+	// Four canisters, tilted toward the target (never pointing at the ground)
+	const angle = Math.min(-0.35, Math.max(-Math.PI + 0.35, defense.aim));
+	const kick = defense.firedMs > 0 ? -2 : 0;
+	ctx.save();
+	ctx.translate(x - 2, y - 2);
+	ctx.rotate(angle);
+	for (const dy of [-6.5, -2.2, 2.2, 6.5]) {
+		ctx.fillStyle = '#e8e4d0';
+		ctx.fillRect(-4 + kick, dy - 1.8, 22, 3.6);
+		ctx.lineWidth = 1.5;
+		ctx.strokeRect(-4 + kick, dy - 1.8, 22, 3.6);
+		ctx.fillStyle = TIE_RED;
+		ctx.fillRect(15 + kick, dy - 1.8, 3, 3.6);
+	}
+	ctx.restore();
+	if (defense.firedMs > 90) {
+		const flash = defense.firedMs / 160;
+		ctx.beginPath();
+		ctx.arc(x - 2 + Math.cos(angle) * 22, y - 2 + Math.sin(angle) * 22, 9 * flash, 0, Math.PI * 2);
+		ctx.fillStyle = PAPER;
+		ctx.fill();
+		ctx.lineWidth = 2;
+		ctx.stroke();
+	}
+	// The crew, peeking over the bed
+	const peek = Math.sin(t / 380) * 0.8;
+	inkEllipse(ctx, x - 14, y + 2 + peek, 6.5, 6.5, FLAG_BLUE);
+	ctx.beginPath();
+	ctx.ellipse(x - 14, y - 2 + peek, 6.5, 4.6, 0, Math.PI, 0);
+	ctx.closePath();
+	ctx.fillStyle = '#4d5a38';
+	ctx.fill();
+	ctx.lineWidth = 1.8;
+	ctx.stroke();
+}
+
 function drawTrench(ctx: CanvasRenderingContext2D, x: number, y: number, defense: Defense) {
 	// A dug-in strip with sandbags along its lip
 	ctx.beginPath();
@@ -430,6 +507,9 @@ function drawDefense(
 			break;
 		case 'nest':
 			drawNest(ctx, x, y, defense, timeMs);
+			break;
+		case 'patriot':
+			drawPatriot(ctx, x, y, defense, timeMs);
 			break;
 		case 'trench':
 			drawTrench(ctx, x, y, defense);
@@ -521,42 +601,120 @@ function drawSoldier(ctx: CanvasRenderingContext2D, soldier: Soldier, timeMs: nu
 	ctx.restore();
 }
 
-function drawHelmetPickup(ctx: CanvasRenderingContext2D, helmet: Helmet, timeMs: number) {
-	const left = HELMET_TTL_MS - helmet.ageMs;
-	const blinking = left < HELMET_BLINK_MS;
-	if (blinking && Math.floor(left / 110) % 2 === 0) return;
-	const pop = Math.min(1, helmet.ageMs / 160);
-	const scale = (helmet.value > 1 ? 1.35 : 1) * (0.5 + 0.5 * pop);
-	const bob = Math.sin(timeMs / 190 + helmet.id) * 2.2;
-	ctx.save();
-	ctx.translate(helmet.x, helmet.y - 6 + bob);
-	ctx.scale(scale, scale);
-	// Glow ring that invites a tap
+/** A five-pointed star centred on (x, y) as the current path */
+function starPath(
+	ctx: CanvasRenderingContext2D,
+	x: number,
+	y: number,
+	outer: number,
+	inner: number
+) {
 	ctx.beginPath();
-	ctx.arc(0, 2, 15 + Math.sin(timeMs / 150) * 1.5, 0, Math.PI * 2);
-	ctx.fillStyle = 'rgba(255,255,255,0.45)';
-	ctx.fill();
-	// The dome, brim and a shine
+	for (let i = 0; i < 10; i++) {
+		const radius = i % 2 === 0 ? outer : inner;
+		const angle = -Math.PI / 2 + (i * Math.PI) / 5;
+		const px = x + Math.cos(angle) * radius;
+		const py = y + Math.sin(angle) * radius;
+		if (i === 0) ctx.moveTo(px, py);
+		else ctx.lineTo(px, py);
+	}
+	ctx.closePath();
+}
+
+/** A Soviet steel helmet (olive dome, narrow brim, rivet, red star) about (0, 0), 28 units wide */
+function drawSovietHelmet(ctx: CanvasRenderingContext2D) {
+	// The dome
 	ctx.beginPath();
 	ctx.ellipse(0, 3, 11, 10, 0, Math.PI, 0);
 	ctx.closePath();
-	ctx.fillStyle = MUSTARD;
+	ctx.fillStyle = SOVIET_GREEN;
 	ctx.fill();
 	ctx.lineWidth = 2.2;
 	ctx.strokeStyle = INK;
 	ctx.stroke();
+	// The narrow brim
 	ctx.beginPath();
-	ctx.roundRect(-14, 2, 28, 5, 2.5);
-	ctx.fillStyle = YELLOW;
+	ctx.roundRect(-14, 2, 28, 4.5, 2.2);
+	ctx.fillStyle = SOVIET_GREEN_DARK;
 	ctx.fill();
 	ctx.stroke();
-	ctx.beginPath();
-	ctx.arc(-4, -2, 3, Math.PI, Math.PI * 1.6);
-	ctx.lineWidth = 2;
-	ctx.strokeStyle = PAPER;
+	// The red star on the front, and the top rivet
+	starPath(ctx, 0, -2.6, 4.6, 1.9);
+	ctx.fillStyle = TIE_RED;
+	ctx.fill();
+	ctx.lineWidth = 1.2;
 	ctx.stroke();
+	ctx.beginPath();
+	ctx.arc(0, -8.6, 1.3, 0, Math.PI * 2);
+	ctx.fillStyle = SOVIET_GREEN_DARK;
+	ctx.fill();
+	ctx.stroke();
+	// A shine
+	ctx.beginPath();
+	ctx.arc(-6.2, -0.5, 3.4, Math.PI * 1.05, Math.PI * 1.45);
+	ctx.lineWidth = 1.8;
+	ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+	ctx.stroke();
+}
+
+const easeOutBack = (t: number) => 1 + 2.7 * Math.pow(t - 1, 3) + 1.7 * Math.pow(t - 1, 2);
+const smoothstep = (t: number) => t * t * (3 - 2 * t);
+
+/**
+ * A dropped helmet pops up where the soldier fell, then arcs to the helmet counter, trailing
+ * sparkles and shrinking a little as it goes in (the game adds it to the pocket when it lands).
+ */
+function drawHelmetPickup(
+	ctx: CanvasRenderingContext2D,
+	helmet: Helmet,
+	timeMs: number,
+	target: Point
+) {
+	const size = helmet.value > 1 ? 1.3 : 1;
+	let x = helmet.x;
+	let y = helmet.y - 6;
+	let scale: number;
+	let spin = 0;
+
+	if (helmet.ageMs < HELMET_POP_MS) {
+		// A little hop with a bounce
+		const p = helmet.ageMs / HELMET_POP_MS;
+		scale = Math.max(0.05, easeOutBack(p));
+		y -= Math.sin(p * Math.PI) * 14;
+	} else {
+		const q = Math.min(1, (helmet.ageMs - HELMET_POP_MS) / HELMET_FLY_MS);
+		const e = smoothstep(q);
+		const at = (amount: number) => ({
+			x: helmet.x + (target.x - helmet.x) * amount,
+			// The arc lifts the helmet up before it drops into the counter
+			y: helmet.y - 6 + (target.y - (helmet.y - 6)) * amount - Math.sin(Math.PI * amount) * 36
+		});
+		// Sparkles trail behind the helmet
+		for (let i = 3; i >= 1; i--) {
+			const trail = at(Math.max(0, e - i * 0.07));
+			ctx.beginPath();
+			ctx.arc(trail.x, trail.y + 2, 5 - i, 0, Math.PI * 2);
+			ctx.fillStyle = `rgba(245,200,58,${0.55 - i * 0.14})`;
+			ctx.fill();
+		}
+		({ x, y } = at(e));
+		scale = 1 - 0.3 * e;
+		spin = Math.sin(q * Math.PI) * 0.45;
+	}
+
+	ctx.save();
+	ctx.translate(x, y);
+	ctx.rotate(spin);
+	ctx.scale(scale * size, scale * size);
+	// A soft glow so the helmet reads against the field
+	ctx.beginPath();
+	ctx.arc(0, 2, 15 + Math.sin(timeMs / 150) * 1.2, 0, Math.PI * 2);
+	ctx.fillStyle = 'rgba(255,255,255,0.4)';
+	ctx.fill();
+	drawSovietHelmet(ctx);
 	ctx.restore();
-	if (helmet.value > 1) {
+
+	if (helmet.value > 1 && helmet.ageMs < HELMET_POP_MS + 120) {
 		ctx.font = `700 12px ${DISPLAY_FONT}`;
 		ctx.textAlign = 'center';
 		ctx.textBaseline = 'middle';
@@ -564,9 +722,209 @@ function drawHelmetPickup(ctx: CanvasRenderingContext2D, helmet: Helmet, timeMs:
 		ctx.strokeStyle = INK;
 		ctx.fillStyle = PAPER;
 		const text = `×${helmet.value}`;
-		ctx.strokeText(text, helmet.x, helmet.y + 14 + bob);
-		ctx.fillText(text, helmet.x, helmet.y + 14 + bob);
+		ctx.strokeText(text, helmet.x, helmet.y + 14);
+		ctx.fillText(text, helmet.x, helmet.y + 14);
 	}
+}
+
+/** The body of an aerial enemy about (0, 0), flying toward the bottom of the field */
+function drawFlyerBody(ctx: CanvasRenderingContext2D, kind: FlyerKind, t: number, flash: boolean) {
+	const r = FLYERS[kind].radius;
+	if (kind === 'shahed') {
+		// A delta-wing kamikaze drone with a buzzing propeller and a grumpy face
+		const buzz = Math.sin(t / 22) > 0 ? 1 : 0.6;
+		ctx.beginPath();
+		ctx.ellipse(0, -r * 1.05, r * 0.7 * buzz, r * 0.2, 0, 0, Math.PI * 2);
+		ctx.fillStyle = 'rgba(255,255,255,0.7)';
+		ctx.fill();
+		ctx.lineWidth = 1.5;
+		ctx.strokeStyle = INK;
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(0, r * 1.15);
+		ctx.lineTo(r * 1.25, -r * 0.85);
+		ctx.lineTo(0, -r * 0.45);
+		ctx.lineTo(-r * 1.25, -r * 0.85);
+		ctx.closePath();
+		ctx.fillStyle = flash ? PAPER : '#b9b4a0';
+		ctx.fill();
+		ctx.lineWidth = 2.2;
+		ctx.stroke();
+		for (const dx of [-0.26, 0.26]) {
+			ctx.beginPath();
+			ctx.arc(dx * r, r * 0.12, r * 0.17, 0, Math.PI * 2);
+			ctx.fillStyle = PAPER;
+			ctx.fill();
+			ctx.beginPath();
+			ctx.arc(dx * r, r * 0.2, r * 0.08, 0, Math.PI * 2);
+			ctx.fillStyle = INK;
+			ctx.fill();
+		}
+		ctx.beginPath();
+		ctx.moveTo(-r * 0.48, -r * 0.05);
+		ctx.lineTo(-r * 0.1, r * 0.06);
+		ctx.moveTo(r * 0.48, -r * 0.05);
+		ctx.lineTo(r * 0.1, r * 0.06);
+		ctx.lineWidth = 1.5;
+		ctx.stroke();
+		// A red band on each wing
+		ctx.beginPath();
+		ctx.moveTo(-r * 0.8, -r * 0.55);
+		ctx.lineTo(-r * 1.1, -r * 0.75);
+		ctx.moveTo(r * 0.8, -r * 0.55);
+		ctx.lineTo(r * 1.1, -r * 0.75);
+		ctx.lineWidth = 3;
+		ctx.strokeStyle = TIE_RED;
+		ctx.stroke();
+		return;
+	}
+	// A helicopter: tail boom up, canopy with eyes down, spinning rotor on top
+	ctx.beginPath();
+	ctx.roundRect(-r * 0.12, -r * 1.9, r * 0.24, r * 1.2, 2);
+	ctx.fillStyle = flash ? PAPER : '#59604d';
+	ctx.fill();
+	ctx.lineWidth = 2;
+	ctx.strokeStyle = INK;
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.ellipse(0, -r * 1.85, r * 0.45, r * 0.12, t / 35, 0, Math.PI * 2);
+	ctx.fillStyle = 'rgba(255,255,255,0.7)';
+	ctx.fill();
+	ctx.stroke();
+	inkEllipse(ctx, 0, 0, r * 0.95, r * 0.85, flash ? PAPER : '#6b705f', 2.4);
+	// The canopy glass with angry eyes
+	ctx.beginPath();
+	ctx.ellipse(0, r * 0.28, r * 0.68, r * 0.5, 0, 0, Math.PI * 2);
+	ctx.fillStyle = flash ? PAPER : '#9fc4d6';
+	ctx.fill();
+	ctx.lineWidth = 1.8;
+	ctx.stroke();
+	for (const dx of [-0.3, 0.3]) {
+		ctx.beginPath();
+		ctx.arc(dx * r, r * 0.3, r * 0.15, 0, Math.PI * 2);
+		ctx.fillStyle = PAPER;
+		ctx.fill();
+		ctx.beginPath();
+		ctx.arc(dx * r, r * 0.36, r * 0.07, 0, Math.PI * 2);
+		ctx.fillStyle = INK;
+		ctx.fill();
+	}
+	ctx.beginPath();
+	ctx.moveTo(-r * 0.5, r * 0.1);
+	ctx.lineTo(-r * 0.12, r * 0.2);
+	ctx.moveTo(r * 0.5, r * 0.1);
+	ctx.lineTo(r * 0.12, r * 0.2);
+	ctx.lineWidth = 1.5;
+	ctx.stroke();
+	// The main rotor: two blades and a faint disc
+	ctx.beginPath();
+	ctx.arc(0, -r * 0.1, r * 1.9, 0, Math.PI * 2);
+	ctx.fillStyle = 'rgba(255,255,255,0.18)';
+	ctx.fill();
+	ctx.save();
+	ctx.translate(0, -r * 0.1);
+	ctx.rotate(t / 45);
+	ctx.lineWidth = 3;
+	ctx.lineCap = 'round';
+	ctx.strokeStyle = INK;
+	ctx.beginPath();
+	ctx.moveTo(-r * 1.9, 0);
+	ctx.lineTo(r * 1.9, 0);
+	ctx.stroke();
+	ctx.restore();
+	ctx.lineCap = 'butt';
+	inkEllipse(ctx, 0, -r * 0.1, 2.6, 2.6, '#2f343b', 1.4);
+}
+
+function drawFlyer(ctx: CanvasRenderingContext2D, flyer: Flyer, timeMs: number) {
+	const r = FLYERS[flyer.kind].radius;
+	// Its shadow slides over the ground below
+	ctx.beginPath();
+	ctx.ellipse(flyer.x + 8, flyer.y + r * 2.1, r * 0.95, r * 0.4, 0, 0, Math.PI * 2);
+	ctx.fillStyle = 'rgba(17,17,17,0.22)';
+	ctx.fill();
+	ctx.save();
+	ctx.translate(flyer.x, flyer.y + Math.sin(timeMs / 170 + flyer.id) * 1.5);
+	drawFlyerBody(ctx, flyer.kind, timeMs + flyer.id * 37, flyer.hitMs > 0);
+	if (flyer.hp < flyer.maxHp) {
+		const w = r * 2;
+		ctx.fillStyle = PAPER;
+		ctx.fillRect(-w / 2, -r * 2.3, w, 4);
+		ctx.fillStyle = flyer.hp / flyer.maxHp > 0.4 ? '#6ac05c' : TIE_RED;
+		ctx.fillRect(-w / 2, -r * 2.3, w * Math.max(0, flyer.hp / flyer.maxHp), 4);
+		ctx.lineWidth = 1.2;
+		ctx.strokeStyle = INK;
+		ctx.strokeRect(-w / 2, -r * 2.3, w, 4);
+	}
+	ctx.restore();
+}
+
+/** An FPV drone (a small quadcopter) or a Patriot missile, pointing the way it flies */
+function drawProjectile(ctx: CanvasRenderingContext2D, p: Projectile, timeMs: number) {
+	const dx = Math.cos(p.angle);
+	const dy = Math.sin(p.angle);
+	// A short trail behind it
+	ctx.lineCap = 'round';
+	ctx.beginPath();
+	ctx.moveTo(p.x, p.y);
+	ctx.lineTo(
+		p.x - dx * (p.kind === 'missile' ? 20 : 12),
+		p.y - dy * (p.kind === 'missile' ? 20 : 12)
+	);
+	ctx.lineWidth = p.kind === 'missile' ? 5 : 3;
+	ctx.strokeStyle = p.kind === 'missile' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.5)';
+	ctx.stroke();
+	ctx.lineCap = 'butt';
+
+	ctx.save();
+	ctx.translate(p.x, p.y);
+	if (p.kind === 'missile') {
+		ctx.rotate(p.angle);
+		// The flame flickers behind the body
+		ctx.beginPath();
+		ctx.ellipse(-9 - Math.sin(timeMs / 30) * 1.5, 0, 4.5, 2.6, 0, 0, Math.PI * 2);
+		ctx.fillStyle = YELLOW;
+		ctx.fill();
+		ctx.beginPath();
+		ctx.roundRect(-8, -2.6, 15, 5.2, 2.2);
+		ctx.fillStyle = '#e8e4d0';
+		ctx.fill();
+		ctx.lineWidth = 1.8;
+		ctx.strokeStyle = INK;
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(7, -2.6);
+		ctx.lineTo(11.5, 0);
+		ctx.lineTo(7, 2.6);
+		ctx.closePath();
+		ctx.fillStyle = TIE_RED;
+		ctx.fill();
+		ctx.stroke();
+	} else {
+		// Four rotor blurs around a dark body; it tilts into the dive
+		ctx.rotate(p.angle * 0.15);
+		const spin = Math.sin(timeMs / 24 + p.id) > 0 ? 3.2 : 2.4;
+		for (const [rx, ry] of [
+			[-5, -4],
+			[5, -4],
+			[-5, 4],
+			[5, 4]
+		]) {
+			ctx.beginPath();
+			ctx.ellipse(rx, ry, spin, 1.6, 0, 0, Math.PI * 2);
+			ctx.fillStyle = 'rgba(255,255,255,0.8)';
+			ctx.fill();
+			ctx.lineWidth = 1;
+			ctx.strokeStyle = INK;
+			ctx.stroke();
+		}
+		inkEllipse(ctx, 0, 0, 4.2, 3, '#3b4048', 1.5);
+		ctx.beginPath();
+		ctx.arc(0, 0, 1.2, 0, Math.PI * 2);
+		ctx.fillStyle = TIE_RED;
+		ctx.fill();
+	}
+	ctx.restore();
 }
 
 function drawShell(ctx: CanvasRenderingContext2D, shell: Shell) {
@@ -627,7 +985,8 @@ function drawEffect(ctx: CanvasRenderingContext2D, effect: Effect) {
 			ctx.globalAlpha = 1 - p * p;
 			ctx.translate(x, y);
 			ctx.rotate(effect.spin * seconds);
-			drawBlob(ctx, effect.soldier, effect.ageMs, 0, false, false);
+			if (isFlyerKind(effect.soldier)) drawFlyerBody(ctx, effect.soldier, effect.ageMs, false);
+			else drawBlob(ctx, effect.soldier, effect.ageMs, 0, false, false);
 			ctx.restore();
 			break;
 		}
@@ -671,14 +1030,11 @@ function drawEffect(ctx: CanvasRenderingContext2D, effect: Effect) {
 			ctx.beginPath();
 			ctx.moveTo(effect.x1, effect.y1);
 			ctx.lineTo(effect.x2, effect.y2);
-			ctx.lineWidth = effect.drone ? 4 : 2.5;
-			ctx.strokeStyle = effect.drone ? 'rgba(255,255,255,0.9)' : YELLOW;
-			if (effect.drone) ctx.setLineDash([3, 6]);
+			ctx.lineWidth = 2.5;
+			ctx.strokeStyle = YELLOW;
 			ctx.stroke();
-			ctx.setLineDash([]);
 			ctx.lineCap = 'butt';
 			ctx.globalAlpha = 1;
-			if (effect.drone) drawPoof(ctx, effect.x2, effect.y2, 22, p);
 			break;
 	}
 }
@@ -711,8 +1067,13 @@ export function drawScene(
 		if (defense && defense.kind !== 'trench') drawDefense(ctx, slot, defense, state.timeMs);
 	});
 	for (const shell of state.shells) drawShell(ctx, shell);
+	// Aircraft fly above everything on the ground, and the projectiles above them
+	for (const flyer of state.flyers) drawFlyer(ctx, flyer, state.timeMs);
+	for (const projectile of state.projectiles) drawProjectile(ctx, projectile, state.timeMs);
 	for (const effect of extras.effects) drawEffect(ctx, effect);
-	for (const helmet of state.helmets) drawHelmetPickup(ctx, helmet, state.timeMs);
+	for (const helmet of state.helmets) {
+		drawHelmetPickup(ctx, helmet, state.timeMs, extras.helmetTarget);
+	}
 	ctx.restore();
 }
 

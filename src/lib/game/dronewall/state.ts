@@ -8,6 +8,7 @@ import {
 	STARTING_HELMETS,
 	STARTING_LIVES,
 	type DefenseKind,
+	type FlyerKind,
 	type SoldierKind
 } from './config';
 import type { SpawnEntry } from './waves';
@@ -29,6 +30,47 @@ export interface Soldier {
 	slow: number;
 	/** Hit flash, counts down */
 	hitMs: number;
+}
+
+/** An aerial enemy: flies a straight line from above the field to the line, ignoring the road */
+export interface Flyer {
+	id: number;
+	kind: FlyerKind;
+	/** Tells it apart from a Soldier */
+	air: true;
+	hp: number;
+	maxHp: number;
+	/** Base speed in units per second, including this flyer's own variation */
+	speed: number;
+	/** Entry and exit x of the flight line */
+	fromX: number;
+	toX: number;
+	/** Distance flown, and the total length of the flight */
+	progress: number;
+	length: number;
+	/** Sideways wobble phase (also moves it a little off the straight line) */
+	phase: number;
+	x: number;
+	y: number;
+	hitMs: number;
+}
+
+export type ProjectileKind = 'fpv' | 'missile';
+
+/** A homing FPV drone (from a nest, chases soldiers) or Patriot missile (chases flyers) */
+export interface Projectile {
+	id: number;
+	kind: ProjectileKind;
+	x: number;
+	y: number;
+	/** Heading in radians (0 = right, PI / 2 = down) */
+	angle: number;
+	/** The enemy it chases, or null once it has lost it */
+	targetId: number | null;
+	damage: number;
+	/** Cruise speed in units per second */
+	speed: number;
+	ageMs: number;
 }
 
 export interface Defense {
@@ -75,8 +117,10 @@ export interface DroneWallState {
 	queue: SpawnEntry[];
 	queueIndex: number;
 	soldiers: Soldier[];
+	flyers: Flyer[];
 	helmets: Helmet[];
 	shells: Shell[];
+	projectiles: Projectile[];
 	/** One entry per slot, null when empty */
 	defenses: (Defense | null)[];
 	/** Helmets in the player's pocket: the only currency */
@@ -101,8 +145,10 @@ export function createGame(): DroneWallState {
 		queue: [],
 		queueIndex: 0,
 		soldiers: [],
+		flyers: [],
 		helmets: [],
 		shells: [],
+		projectiles: [],
 		defenses: SLOTS.map(() => null),
 		currency: STARTING_HELMETS,
 		lives: STARTING_LIVES,
@@ -118,11 +164,15 @@ export type DroneWallEvent =
 	| { type: 'wave-started'; wave: number }
 	| { type: 'wave-cleared'; wave: number; bonus: number }
 	| { type: 'soldier-fell'; x: number; y: number; kind: SoldierKind }
+	| { type: 'flyer-spawned'; kind: FlyerKind }
+	| { type: 'flyer-fell'; x: number; y: number; kind: FlyerKind }
 	| { type: 'helmet-collected'; x: number; y: number; value: number }
-	| { type: 'helmet-expired'; x: number; y: number }
 	| { type: 'leak'; x: number; y: number }
 	| { type: 'squad-shot'; slot: number; fromX: number; fromY: number; toX: number; toY: number }
-	| { type: 'drone-strike'; slot: number; fromX: number; fromY: number; toX: number; toY: number }
+	| { type: 'drone-launched'; slot: number; x: number; y: number }
+	| { type: 'missile-launched'; slot: number; x: number; y: number }
+	| { type: 'projectile-hit'; kind: ProjectileKind; x: number; y: number }
+	| { type: 'projectile-lost'; kind: ProjectileKind; x: number; y: number }
 	| { type: 'shell-launched'; slot: number; fromX: number; fromY: number; toX: number; toY: number }
 	| { type: 'shell-landed'; x: number; y: number; radius: number }
 	| { type: 'game-over' };

@@ -1,18 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { SLOTS, defenseStats } from './config';
+import { LINE_Y, SLOTS, defenseStats } from './config';
 import { ROAD, distanceBetween, pointAt } from './path';
 import type { Defense } from './state';
 import {
+	incomingDamage,
 	inRange,
 	mineDpsAt,
+	pickAirTarget,
 	pickMortarAim,
 	pickNestTarget,
+	pickPatriotTarget,
 	pickSquadTarget,
 	predictPosition,
+	remainingDistance,
 	slowAt,
 	splashDamage
 } from './targeting';
-import { soldierAt } from './testHelpers';
+import { flyerAt, soldierAt } from './testHelpers';
 
 const origin = SLOTS[2];
 // Progress values of road points near SLOTS[2] (100, 165): the row at y = 100 and the row at y = 230
@@ -67,6 +71,71 @@ describe('drone nest targeting', () => {
 		const a = soldierAt(ROW_ONE);
 		const b = soldierAt(ROW_ONE + 15);
 		expect(pickNestTarget([a, b], origin, stats)).toBe(b);
+	});
+});
+
+describe('drone nest spreading', () => {
+	const stats = defenseStats('nest', 1);
+
+	it('counts damage already on its way, so the next drone picks another soldier', () => {
+		const a = soldierAt(ROW_ONE, 'brute');
+		const b = soldierAt(ROW_ONE + 12, 'brute');
+		expect(pickNestTarget([a, b], origin, stats)).toBe(b);
+		const incoming = new Map([[b.id, 40]]);
+		expect(pickNestTarget([a, b], origin, stats, incoming)).toBe(a);
+	});
+
+	it('adds up the damage of the projectiles of one kind only', () => {
+		const drone = {
+			id: 1,
+			kind: 'fpv',
+			x: 0,
+			y: 0,
+			angle: 0,
+			targetId: 7,
+			damage: 18,
+			speed: 1,
+			ageMs: 0
+		} as const;
+		const incoming = incomingDamage(
+			[
+				drone,
+				{ ...drone, id: 2 },
+				{ ...drone, id: 3, kind: 'missile' },
+				{ ...drone, id: 4, targetId: null }
+			],
+			'fpv'
+		);
+		expect(incoming.get(7)).toBe(36);
+		expect(incoming.size).toBe(1);
+	});
+});
+
+describe('anti-air targeting', () => {
+	const stats = defenseStats('patriot', 1);
+
+	it('goes for the aircraft closest to the line, and ignores those out of range or not yet in play', () => {
+		const high = flyerAt(120, 120, 'heli');
+		const low = flyerAt(140, 200, 'shahed');
+		const far = flyerAt(340, 500, 'shahed');
+		const above = flyerAt(120, -20, 'shahed');
+		expect(remainingDistance(low)).toBeLessThan(remainingDistance(high));
+		expect(pickPatriotTarget([high, low, far, above], origin, stats)).toBe(low);
+		expect(pickAirTarget([high, far], origin, stats.range)).toBe(high);
+		expect(pickPatriotTarget([far, above], origin, stats)).toBeNull();
+	});
+
+	it('skips an aircraft that missiles in the air will already destroy', () => {
+		const doomed = flyerAt(140, 200, 'shahed', { hp: 30 });
+		const other = flyerAt(120, 120, 'heli');
+		const incoming = new Map([[doomed.id, 30]]);
+		expect(pickPatriotTarget([doomed, other], origin, stats, incoming)).toBe(other);
+		expect(pickPatriotTarget([doomed], origin, stats, incoming)).toBeNull();
+	});
+
+	it('measures a soldier by the road left and an aircraft by the flight left', () => {
+		expect(remainingDistance(soldierAt(ROAD.length - 50))).toBeCloseTo(50);
+		expect(remainingDistance(flyerAt(100, LINE_Y))).toBeCloseTo(0);
 	});
 });
 

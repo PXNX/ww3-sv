@@ -1,7 +1,7 @@
 /* Shared helpers for the Drone Wall unit tests */
-import { SOLDIERS, type SoldierKind } from './config';
+import { FLYERS, LINE_Y, SOLDIERS, type FlyerKind, type SoldierKind } from './config';
 import { ROAD, pointAt } from './path';
-import type { Soldier } from './state';
+import type { Flyer, Soldier } from './state';
 
 let nextId = 1000;
 
@@ -24,6 +24,34 @@ export function soldierAt(
 		x: sample.x,
 		y: sample.y,
 		slow: 1,
+		hitMs: 0,
+		...overrides
+	};
+}
+
+/** An aerial enemy flying straight down at x, with its y given (the flight runs from y = -30 to the line) */
+export function flyerAt(
+	x: number,
+	y: number,
+	kind: FlyerKind = 'shahed',
+	overrides: Partial<Flyer> = {}
+): Flyer {
+	const stats = FLYERS[kind];
+	const length = LINE_Y + 30;
+	return {
+		id: nextId++,
+		kind,
+		air: true,
+		hp: stats.hp,
+		maxHp: stats.hp,
+		speed: stats.speed,
+		fromX: x,
+		toX: x,
+		progress: y + 30,
+		length,
+		phase: 0,
+		x,
+		y,
 		hitMs: 0,
 		...overrides
 	};

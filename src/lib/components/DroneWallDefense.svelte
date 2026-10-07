@@ -1,6 +1,6 @@
 <!--
-	Small cartoon icons for the Drone Wall build menu: the four defenses and the helmet that pays
-	for them. Original shapes with thick ink outlines; the squad's patch is a generic round badge.
+	Small cartoon icons for the Drone Wall build menu: the five defenses and the Soviet helmet that
+	pays for them. Original shapes with thick ink outlines; the squad's patch is a generic round badge.
 -->
 <script lang="ts">
 	import type { DefenseKind } from '#lib/game/dronewall/config.js';
@@ -25,9 +25,14 @@
 	aria-hidden="true"
 >
 	{#if kind === 'helmet'}
-		<path d="M5 20a11 10 0 0 1 22 0z" fill="var(--color-mustard)" />
-		<rect x="2.5" y="19" width="27" height="5" rx="2.5" fill="var(--color-explosion-yellow)" />
-		<path d="M10 12a8 7 0 0 1 5-3" stroke="var(--color-paper)" />
+		<path d="M5 20a11 10 0 0 1 22 0z" fill="#6f7d3c" />
+		<rect x="2.5" y="19" width="27" height="4.5" rx="2.2" fill="#55612e" />
+		<path
+			d="M16 10.8l1 2.83 2.99.07-2.37 1.83.8 2.87L16 16.7l-2.42 1.7.8-2.87L12 13.7l2.99-.07z"
+			fill="var(--color-tie-red)"
+			stroke-width="1.2"
+		/>
+		<path d="M8.5 15a8 7 0 0 1 3-3.5" stroke="var(--color-paper)" stroke-width="1.6" />
 	{:else if kind === 'squad'}
 		<ellipse cx="16" cy="26" rx="13" ry="4.5" fill="#cdbb7e" />
 		<ellipse cx="16" cy="19" rx="9" ry="9.5" fill="var(--color-flag-blue)" />
@@ -52,6 +57,19 @@
 		<path d="M16 13L7 10M16 13l9-3" stroke-width="1.6" />
 		<ellipse cx="16" cy="13" rx="6" ry="4" fill="#3b4048" />
 		<circle cx="16" cy="13" r="1.5" fill="#6ef07a" stroke-width="0" />
+	{:else if kind === 'patriot'}
+		<ellipse cx="16" cy="27" rx="13" ry="3.8" fill="#cdbb7e" />
+		<rect x="3" y="20" width="26" height="7" rx="2.5" fill="#55612e" />
+		<circle cx="8" cy="27" r="2.4" fill="#2f343b" stroke-width="1.5" />
+		<circle cx="24" cy="27" r="2.4" fill="#2f343b" stroke-width="1.5" />
+		<g transform="rotate(-50 14 19)">
+			<rect x="10" y="9" width="18" height="3" fill="#e8e4d0" stroke-width="1.5" />
+			<rect x="10" y="12.5" width="18" height="3" fill="#e8e4d0" stroke-width="1.5" />
+			<rect x="10" y="16" width="18" height="3" fill="#e8e4d0" stroke-width="1.5" />
+			<rect x="10" y="19.5" width="18" height="3" fill="#e8e4d0" stroke-width="1.5" />
+			<path d="M24 9v13.5" stroke="var(--color-tie-red)" stroke-width="2.4" />
+		</g>
+		<circle cx="6" cy="19" r="3.6" fill="var(--color-flag-blue)" />
 	{:else}
 		<rect x="3" y="13" width="26" height="12" rx="5" fill="#6f5b3d" />
 		<path d="M7 20l4-3 5 3 5-3 4 3" stroke-opacity="0.45" />

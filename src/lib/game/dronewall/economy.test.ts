@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-	HELMET_PICK_RADIUS,
-	HELMET_TTL_MS,
+	HELMET_FLY_MS,
+	HELMET_POP_MS,
 	MAX_LEVEL,
 	SELL_REFUND,
 	STARTING_HELMETS,
@@ -10,13 +10,13 @@ import {
 	totalSpent,
 	upgradeCost
 } from './config';
-import { ageHelmets, build, collectHelmetAt, dropHelmet, sell, upgrade } from './economy';
+import { build, collectHelmets, dropHelmet, sell, upgrade } from './economy';
 import { createGame } from './state';
 import { soldierAt } from './testHelpers';
 
 describe('costs', () => {
 	it('every defense can be built with the starting helmets and costs more to upgrade', () => {
-		for (const kind of ['squad', 'mortar', 'nest', 'trench'] as const) {
+		for (const kind of ['squad', 'mortar', 'nest', 'patriot', 'trench'] as const) {
 			expect(buildCost(kind)).toBeLessThanOrEqual(STARTING_HELMETS);
 			expect(upgradeCost(kind, 1)).toBeGreaterThan(0);
 			expect(upgradeCost(kind, MAX_LEVEL)).toBeNull();
@@ -108,34 +108,25 @@ describe('helmets', () => {
 		expect(helmet).toMatchObject({ x: soldier.x, y: soldier.y, value: 3 });
 	});
 
-	it('collects the closest helmet in reach and pays its value', () => {
+	it('collects itself: pops up, flies to the counter, then pays its value', () => {
 		const state = createGame();
-		const near = dropHelmet(state, soldierAt(300), 1);
-		const far = dropHelmet(state, soldierAt(310), 1);
-		const event = collectHelmetAt(state, near.x + 2, near.y);
-		expect(event).toMatchObject({ type: 'helmet-collected', value: 1 });
-		expect(state.currency).toBe(STARTING_HELMETS + 1);
-		expect(state.collected).toBe(1);
-		expect(state.helmets).toEqual([far]);
-	});
-
-	it('ignores taps that miss', () => {
-		const state = createGame();
-		const helmet = dropHelmet(state, soldierAt(300), 1);
-		expect(collectHelmetAt(state, helmet.x + HELMET_PICK_RADIUS + 5, helmet.y)).toBeNull();
-		expect(state.helmets).toHaveLength(1);
+		dropHelmet(state, soldierAt(300, 'brute'), 3);
+		expect(collectHelmets(state, HELMET_POP_MS + HELMET_FLY_MS - 1)).toEqual([]);
 		expect(state.currency).toBe(STARTING_HELMETS);
-	});
-
-	it('fades away when nobody collects it in time', () => {
-		const state = createGame();
-		dropHelmet(state, soldierAt(300), 1);
-		expect(ageHelmets(state, HELMET_TTL_MS - 1)).toEqual([]);
 		expect(state.helmets).toHaveLength(1);
-		const events = ageHelmets(state, 2);
+		const events = collectHelmets(state, 2);
 		expect(events).toHaveLength(1);
-		expect(events[0].type).toBe('helmet-expired');
+		expect(events[0]).toMatchObject({ type: 'helmet-collected', value: 3 });
+		expect(state.currency).toBe(STARTING_HELMETS + 3);
+		expect(state.collected).toBe(3);
 		expect(state.helmets).toHaveLength(0);
-		expect(state.currency).toBe(STARTING_HELMETS);
+	});
+
+	it('never fades away: every dropped helmet ends up in the pocket', () => {
+		const state = createGame();
+		for (let i = 0; i < 5; i++) dropHelmet(state, soldierAt(300 + i * 10), 1);
+		for (let i = 0; i < 100; i++) collectHelmets(state, 20);
+		expect(state.currency).toBe(STARTING_HELMETS + 5);
+		expect(state.helmets).toHaveLength(0);
 	});
 });
