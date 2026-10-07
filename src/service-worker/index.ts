@@ -1,20 +1,19 @@
-/// <reference types="@sveltejs/kit" />
-/// <reference no-default-lib="true"/>
-/// <reference lib="esnext" />
-/// <reference lib="webworker" />
-
 /*
  * Makes the app installable and playable offline: the built app, the static assets (sprites,
  * sounds, fonts) and every prerendered page are cached on install, and pages fall back to the
  * cache when the network is unavailable. A new deployment gets a new cache name, so old files
  * never linger.
  */
-import { build, files, prerendered, version } from '$service-worker';
-
-const sw = self as unknown as ServiceWorkerGlobalScope;
+import { version } from '$app/env';
+import { assets, immutable, prerendered } from '$app/manifest';
+import { resolve } from '$app/paths';
+import { self as sw } from '$app/service-worker';
 
 const CACHE = `ww3-${version}`;
-const PRECACHE = [...build, ...files, ...prerendered];
+// Manifest paths are relative to the base path; resolve() turns them into root-relative URLs
+const PRECACHE = [...immutable, ...assets, ...prerendered].map(({ path }) =>
+	resolve(path as never)
+);
 
 sw.addEventListener('install', (event) => {
 	event.waitUntil(

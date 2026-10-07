@@ -58,7 +58,7 @@ Import `version` from `$app/env`, application asset metadata from `$app/manifest
 
 #### Files to review
 
-- [ ] `src/service-worker.ts`
+- [x] `src/service-worker/index.ts`
 
 ### Create a TypeScript project for the service worker
 
@@ -74,7 +74,7 @@ Exclude the service worker from the root tsconfig and ensure `src/service-worker
 
 #### Files to review
 
-- [ ] `src/service-worker.ts`
+- [x] `src/service-worker/index.ts`
 
 ### CORS for static assets in development is handled by Vite
 
