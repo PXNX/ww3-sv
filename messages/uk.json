@@ -668,5 +668,9 @@
 	"runcomrade_stat_stumbles": "Завади",
 	"runcomrade_stat_helmets": "Каски",
 	"runcomrade_stat_bowls": "Миски рису",
-	"runcomrade_distance_value": "{distance} м"
+	"runcomrade_distance_value": "{distance} м",
+	"runcomrade_tutorial_weather": "Одні ділянки ведуть крізь рожевий світанок із довгими тінями, інші крізь густий темний туман. Туман скорочує огляд і може сховати далекий дрон, але перешкоди завжди з’являються вчасно, а дзижчання не зникає.",
+	"runcomrade_cameo_label": "Останній погляд назад",
+	"runcomrade_cameo_alt": "Великий план бігуна з круглими очима, відкритим ротом і краплями поту",
+	"runcomrade_cameo_message": "Він озирнувся на секунду довше, ніж варто. Дрон не кліпнув."
 }

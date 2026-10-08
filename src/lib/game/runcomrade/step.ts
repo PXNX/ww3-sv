@@ -21,7 +21,17 @@ import {
 	type Lane,
 	type ObstacleKind
 } from './config';
-import { closeIn, knockBack, stepDrone } from './drone';
+import {
+	closeIn,
+	closeness,
+	followRunner,
+	knockBack,
+	stepDrone,
+	stepMenace,
+	swoopedThrough
+} from './drone';
+import { stepGlance } from './glance';
+import { fogHidesDrone, weatherAt } from './weather';
 import { extendField, inTallSunflowers, nearestLane, pruneField, speedAt } from './patterns';
 import { absorbHit, applyPickup, isBoosted, reaches, speedFactor, tickPower } from './pickups';
 import { isAirborne, isDucking, type RunEvent, type RunState } from './state';
@@ -114,7 +124,9 @@ export function stepGame(state: RunState, random: Random, dtMs: number): RunEven
 
 	// The drone
 	const lane = nearestLane(runner.x);
-	state.hidden = inTallSunflowers(state.field, state.distance, lane, HIDE_TAIL);
+	state.covered = inTallSunflowers(state.field, state.distance, lane, HIDE_TAIL);
+	state.weather = weatherAt(state.weatherPlan, state.distance);
+	state.hidden = state.covered || fogHidesDrone(state.weather, state.drone.gap);
 	if (stepDrone(state.drone, dtMs, isBoosted(state.power)).contact) {
 		if (absorbHit(state.power)) {
 			state.shieldBlocks += 1;
@@ -126,6 +138,14 @@ export function stepGame(state: RunState, random: Random, dtMs: number): RunEven
 		}
 		knockBack(state.drone);
 	}
+
+	if (followRunner(state.drone, lane, dtMs)) {
+		events.push({ type: 'drone-maneuver', kind: 'lane', gap: state.drone.gap, x: state.drone.x });
+	}
+	if (stepMenace(state.drone, dtMs)) {
+		events.push({ type: 'drone-maneuver', kind: 'swoop', gap: state.drone.gap, x: state.drone.x });
+	}
+	stepGlance(state.glance, dtMs, closeness(state.drone.gap), state.hidden);
 
 	if (state.lives <= 0) {
 		state.over = true;
@@ -163,12 +183,20 @@ function collideWithObstacles(state: RunState, events: RunEvent[]) {
 
 function stumble(state: RunState, kind: ObstacleKind, lane: Lane, events: RunEvent[]) {
 	const runner = state.runner;
+	const before = state.drone.gap;
 	closeIn(state.drone, kind);
 	runner.stumbleMs = STUMBLE_ANIM_MS;
 	runner.slowMs = SLOW_MS;
 	runner.graceMs = STUMBLE_GRACE_MS;
 	state.stumbles += 1;
 	events.push({ type: 'stumble', kind, lane, gap: state.drone.gap });
+	// The drone dives at the runner; a stumble that brings it through a swoop distance is a swoop
+	events.push({
+		type: 'drone-maneuver',
+		kind: swoopedThrough(before, state.drone.gap) ? 'swoop' : 'close-in',
+		gap: state.drone.gap,
+		x: state.drone.x
+	});
 }
 
 function collectPickups(state: RunState, events: RunEvent[]) {

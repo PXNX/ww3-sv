@@ -57,7 +57,8 @@ export type SoundId =
 	| 'ability-boomerang'
 	| 'blocks-place'
 	| 'blocks-clear'
-	| 'drone-buzz';
+	| 'drone-buzz'
+	| 'drone-brzzz';
 
 /** Intensity runs from 0 to 1 and lets one sound scale (louder, higher) with how hard something happened */
 type SoundEffect = (ctx: AudioContext, dest: AudioNode, intensity: number) => void;
@@ -674,5 +675,37 @@ export const SOUNDS: Record<SoundId, SoundEffect> = {
 			q: 4,
 			gain: 0.03 + intensity * 0.06
 		});
+	},
+
+	// A drone maneuvering: a short "brzzz" that whines up and drops away again, with a gritty rasp
+	// riding on it. Intensity (how close the drone is) makes it higher and louder.
+	'drone-brzzz': (ctx, dest, intensity) => {
+		const low = 190 + intensity * 130;
+		const high = low * 2.3;
+		tone(ctx, dest, {
+			frequency: low,
+			glideTo: high,
+			duration: 0.16,
+			type: 'sawtooth',
+			gain: 0.05 + intensity * 0.1
+		});
+		tone(ctx, dest, {
+			frequency: high,
+			glideTo: low * 0.8,
+			duration: 0.2,
+			type: 'sawtooth',
+			gain: 0.04 + intensity * 0.09,
+			delay: 0.15
+		});
+		for (let pulse = 0; pulse < 5; pulse++) {
+			noise(ctx, dest, {
+				duration: 0.045,
+				filterType: 'bandpass',
+				filterFrequency: 1500 + pulse * 220,
+				q: 3,
+				gain: 0.04 + intensity * 0.07,
+				delay: pulse * 0.07
+			});
+		}
 	}
 };

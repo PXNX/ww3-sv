@@ -304,6 +304,12 @@ export interface RunnerPose {
 	boost: boolean;
 	/** The runner blinks while it cannot be hurt */
 	alpha: number;
+	/** 0 to 1: how far the head is turned back over the shoulder with a shocked face */
+	glance: number;
+	/** Draw the shocked face as a still picture (no moving sweat drops), for reduced motion */
+	still: boolean;
+	/** Seconds, for the little animations */
+	time: number;
 }
 
 export const IDLE_POSE: RunnerPose = {
@@ -313,8 +319,61 @@ export const IDLE_POSE: RunnerPose = {
 	tilt: 0,
 	shield: false,
 	boost: false,
-	alpha: 1
+	alpha: 1,
+	glance: 0,
+	still: true,
+	time: 0
 };
+
+/** The comic shocked face he shows when he glances back: wide eyes, open mouth, sweat drops */
+function drawShockedFace(ctx: Ctx, amount: number, pose: RunnerPose) {
+	ctx.save();
+	ctx.translate(-2 * amount, -77);
+	ctx.scale(amount, 1);
+	ctx.beginPath();
+	ctx.ellipse(0, 0, 9.5, 10, 0, 0, Math.PI * 2);
+	fillStroke(ctx, '#fbd9b8', 1, 1.8);
+	// Wide eyes with tiny pupils, looking back
+	for (const side of [-1, 1]) {
+		ctx.beginPath();
+		ctx.ellipse(side * 3.8, -2, 3.3, 4.3, 0, 0, Math.PI * 2);
+		fillStroke(ctx, PAPER, 1, 1.3);
+		ctx.beginPath();
+		ctx.arc(side * 3.8 - 0.8, -1.5, 1.2, 0, Math.PI * 2);
+		ctx.fillStyle = INK;
+		ctx.fill();
+		// Raised eyebrow
+		ctx.beginPath();
+		ctx.moveTo(side * 3.8 - 3, -9);
+		ctx.quadraticCurveTo(side * 3.8, -11.5, side * 3.8 + 3, -9);
+		ctx.lineWidth = 1.4;
+		ctx.strokeStyle = INK;
+		ctx.stroke();
+	}
+	// Open mouth
+	ctx.beginPath();
+	ctx.ellipse(0, 6, 3.2, 4.2, 0, 0, Math.PI * 2);
+	fillStroke(ctx, '#5a1a1a', 1, 1.4);
+	ctx.restore();
+	// Sweat drops flying off, or hanging still
+	ctx.save();
+	ctx.globalAlpha *= amount;
+	[
+		[-18, -86],
+		[18, -82],
+		[-16, -70]
+	].forEach(([dx, dy], index) => {
+		const fall = pose.still ? 0 : (pose.time * 26 + index * 7) % 9;
+		const x = dx + Math.sign(dx) * fall * 0.4;
+		const y = dy + fall;
+		ctx.beginPath();
+		ctx.moveTo(x, y - 5);
+		ctx.quadraticCurveTo(x + 4, y + 1, x, y + 3);
+		ctx.quadraticCurveTo(x - 4, y + 1, x, y - 5);
+		fillStroke(ctx, '#8fd0ff', 1, 1.2);
+	});
+	ctx.restore();
+}
 
 /** The cartoon soldier seen from behind: helmet, backpack, swinging arms and legs */
 export function drawRunner(ctx: Ctx, x: number, y: number, s: number, pose: RunnerPose) {
@@ -379,6 +438,7 @@ export function drawRunner(ctx: Ctx, x: number, y: number, s: number, pose: Runn
 	ctx.beginPath();
 	ctx.arc(0, -78, 11, 0, Math.PI * 2);
 	fillStroke(ctx, SKIN, 1, 2.2);
+	if (pose.glance > 0.2) drawShockedFace(ctx, Math.min(1, (pose.glance - 0.2) / 0.8), pose);
 	ctx.beginPath();
 	ctx.arc(0, -81, 13, Math.PI * 0.98, Math.PI * 0.02);
 	ctx.closePath();

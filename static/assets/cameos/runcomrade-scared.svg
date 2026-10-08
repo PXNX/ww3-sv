@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Close-up of the Run Comrade runner's scared face">
+	<!-- Original generic cartoon soldier, not a real person. Same face as the in-game look-back: wide eyes, open mouth, sweat drops -->
+	<g stroke="#111111" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+		<rect x="14" y="12" width="172" height="172" rx="18" fill="#111111" transform="translate(6 6)"/>
+		<rect x="14" y="12" width="172" height="172" rx="18" fill="#F3E9C3"/>
+		<!-- Sunflower field behind him -->
+		<g stroke-width="3">
+			<circle cx="36" cy="40" r="11" fill="#F5C83A"/><circle cx="36" cy="40" r="5" fill="#6B4423"/>
+			<circle cx="168" cy="50" r="9" fill="#F5C83A"/><circle cx="168" cy="50" r="4" fill="#6B4423"/>
+			<circle cx="164" cy="150" r="10" fill="#F5C83A"/><circle cx="164" cy="150" r="4.5" fill="#6B4423"/>
+		</g>
+		<!-- Shoulders and backpack straps -->
+		<path d="M40 184 Q40 150 100 148 Q160 150 160 184 Z" fill="#5F6F3C"/>
+		<path d="M70 150 L66 184 M130 150 L134 184" fill="none" stroke-width="7" stroke="#A58B53"/>
+		<path d="M84 140 L116 140 L118 154 Q100 164 82 154 Z" fill="#FBD9B8"/>
+		<!-- Ears -->
+		<ellipse cx="44" cy="96" rx="9" ry="13" fill="#FBD9B8"/>
+		<ellipse cx="156" cy="96" rx="9" ry="13" fill="#FBD9B8"/>
+		<!-- Face -->
+		<ellipse cx="100" cy="94" rx="54" ry="54" fill="#FBD9B8"/>
+		<!-- Helmet with a generic round patch -->
+		<path d="M42 82 Q42 28 100 26 Q158 28 158 82 Q100 66 42 82 Z" fill="#5F6F3C"/>
+		<path d="M34 84 Q100 62 166 84 Q166 96 156 94 Q100 78 44 94 Q34 96 34 84 Z" fill="#46532B"/>
+		<circle cx="128" cy="46" r="9" fill="#E5484D" stroke-width="3"/>
+		<path d="M60 44 Q72 34 88 32" fill="none" stroke="#FFFFFF" stroke-opacity="0.4" stroke-width="5"/>
+		<!-- Raised eyebrows -->
+		<path d="M58 98 Q76 84 94 98" fill="none" stroke-width="4"/>
+		<path d="M106 98 Q124 84 142 98" fill="none" stroke-width="4"/>
+		<!-- Wide eyes with tiny pupils -->
+		<ellipse cx="76" cy="116" rx="15" ry="19" fill="#FFFFFF" stroke-width="3.5"/>
+		<ellipse cx="124" cy="116" rx="15" ry="19" fill="#FFFFFF" stroke-width="3.5"/>
+		<circle cx="72" cy="118" r="4.5" fill="#111111" stroke="none"/>
+		<circle cx="120" cy="118" r="4.5" fill="#111111" stroke="none"/>
+		<!-- Open mouth -->
+		<ellipse cx="100" cy="156" rx="13" ry="17" fill="#5A1A1A" stroke-width="3.5"/>
+		<ellipse cx="100" cy="164" rx="7" ry="6" fill="#E5484D" stroke="none"/>
+		<!-- Sweat drops -->
+		<g fill="#8FD0FF" stroke-width="3">
+			<path d="M26 108 Q36 124 26 132 Q16 124 26 108 Z"/>
+			<path d="M176 92 Q186 108 176 116 Q166 108 176 92 Z"/>
+			<path d="M32 146 Q40 158 32 164 Q24 158 32 146 Z"/>
+		</g>
+	</g>
+</svg>

@@ -374,3 +374,50 @@ describe('tall sunflowers', () => {
 		expect(state.hidden).toBe(false);
 	});
 });
+
+describe('drone maneuvers', () => {
+	const maneuvers = (events: RunEvent[]) =>
+		events.filter(
+			(event): event is Extract<RunEvent, { type: 'drone-maneuver' }> =>
+				event.type === 'drone-maneuver'
+		);
+
+	it('reports a lane maneuver when the drone follows the runner over', () => {
+		const state = emptyRun();
+		command(state, 'left');
+		const events = run(state, 800);
+		expect(maneuvers(events).map((event) => event.kind)).toEqual(['lane']);
+		expect(state.drone.lane).toBe(0);
+	});
+
+	it('reports a swoop when a stumble brings the drone through a swoop distance', () => {
+		const state = emptyRun();
+		state.drone.gap = 7.5;
+		addObstacle(state, 'ditch', 1, 12);
+		const events = runTo(state, 14);
+		expect(maneuvers(events)).toMatchObject([{ kind: 'swoop' }]);
+	});
+
+	it('reports a plain close-in for a small step nearer', () => {
+		const state = emptyRun();
+		state.drone.gap = 12;
+		addObstacle(state, 'arm', 1, 12);
+		const events = runTo(state, 14);
+		expect(maneuvers(events)).toMatchObject([{ kind: 'close-in' }]);
+		expect(maneuvers(events)[0].gap).toBeLessThan(12);
+	});
+
+	it('swoops now and then while the drone is on the runner heels', () => {
+		const state = emptyRun();
+		state.drone.gap = 2;
+		const events = run(state, 5600);
+		expect(
+			maneuvers(events).filter((event) => event.kind === 'swoop').length
+		).toBeGreaterThanOrEqual(1);
+	});
+
+	it('stays quiet when nothing happens', () => {
+		const state = emptyRun();
+		expect(maneuvers(run(state, 3000))).toEqual([]);
+	});
+});

@@ -30,7 +30,9 @@ import {
 	drawTractorArm,
 	type RunnerPose
 } from './art';
-import { densityAt } from './patterns';
+import { densityAt, speedAt } from './patterns';
+import { glanceAmount } from './glance';
+import { opacityAt, visibility } from './weather';
 import { HORIZON_Y, RUNNER_Y, groundY, laneX, scaleAt } from './projection';
 import { isAirborne, isDucking, type RunState } from './state';
 
@@ -72,13 +74,47 @@ function hash(a: number, b: number): number {
 	return ((h ^ (h >>> 15)) >>> 0) / 4294967296;
 }
 
+/** Blends two #rrggbb colors */
+export function mixColor(from: string, to: string, amount: number): string {
+	const t = Math.min(1, Math.max(0, amount));
+	const channel = (hex: string, index: number) =>
+		parseInt(hex.slice(1 + index * 2, 3 + index * 2), 16);
+	const part = (index: number) =>
+		Math.round(channel(from, index) + (channel(to, index) - channel(from, index)) * t);
+	return '#' + [0, 1, 2].map((index) => part(index).toString(16).padStart(2, '0')).join('');
+}
+
+/** A long, soft morning shadow stretching away from the low sun (to the left) */
+function drawLongShadow(
+	ctx: CanvasRenderingContext2D,
+	x: number,
+	y: number,
+	s: number,
+	dawn: number,
+	width: number
+) {
+	if (dawn < 0.05) return;
+	ctx.beginPath();
+	ctx.ellipse(
+		x - width * 0.9 * s * dawn,
+		y + 2 * s,
+		width * s * (0.4 + dawn * 1.1),
+		5 * s,
+		0,
+		0,
+		Math.PI * 2
+	);
+	ctx.fillStyle = `rgba(60, 30, 70, ${0.22 * dawn})`;
+	ctx.fill();
+}
+
 type Item =
 	| { z: number; kind: 'flower'; lane: number; height: number; seed: number }
 	| { z: number; kind: 'ditch' | 'arm' | 'mine'; lane: Lane }
 	| { z: number; kind: 'helmet' | 'rice'; lane: Lane }
 	| { z: number; kind: 'runner' };
 
-export function runnerPose(state: RunState): RunnerPose {
+export function runnerPose(state: RunState, reducedMotion = true): RunnerPose {
 	const runner = state.runner;
 	const t = runner.jumpMs >= 0 ? Math.min(1, runner.jumpMs / JUMP_MS) : 0;
 	const hop = 4 * t * (1 - t);
@@ -91,7 +127,11 @@ export function runnerPose(state: RunState): RunnerPose {
 		tilt: stumbling ? Math.sin((runner.stumbleMs / STUMBLE_ANIM_MS) * Math.PI * 5) * 0.32 : 0,
 		shield: state.power.shield,
 		boost: state.power.boostMs > 0,
-		alpha: grace && Math.floor(runner.graceMs / (STUMBLE_GRACE_MS / 7)) % 2 === 0 ? 0.45 : 1
+		alpha: grace && Math.floor(runner.graceMs / (STUMBLE_GRACE_MS / 7)) % 2 === 0 ? 0.45 : 1,
+		// With reduced motion the glance is a still shocked pose instead of a turn
+		glance: reducedMotion ? (glanceAmount(state.glance) > 0 ? 1 : 0) : glanceAmount(state.glance),
+		still: reducedMotion,
+		time: reducedMotion ? 0 : state.timeMs / 1000
 	};
 }
 
@@ -160,21 +200,25 @@ function collectItems(state: RunState): Item[] {
 
 function drawGround(ctx: CanvasRenderingContext2D, state: RunState) {
 	// Sky
+	const { dawn, fog } = state.weather;
 	const sky = ctx.createLinearGradient(0, 0, 0, HORIZON_Y);
-	sky.addColorStop(0, '#7cc7ea');
-	sky.addColorStop(1, '#e9f1cf');
+	sky.addColorStop(0, mixColor(mixColor('#7cc7ea', '#e58aa8', dawn), '#7c8591', fog));
+	sky.addColorStop(1, mixColor(mixColor('#e9f1cf', '#ffc98a', dawn), '#aeb5bb', fog));
 	ctx.fillStyle = sky;
 	ctx.fillRect(0, 0, WORLD_WIDTH, HORIZON_Y + 1);
 	// Sun
 	ctx.beginPath();
-	ctx.arc(WORLD_WIDTH - 70, 52, 24, 0, Math.PI * 2);
-	ctx.fillStyle = YELLOW;
+	ctx.save();
+	ctx.globalAlpha = 1 - fog * 0.85;
+	ctx.arc(WORLD_WIDTH - 70, 52 + dawn * (HORIZON_Y - 74), 24 + dawn * 10, 0, Math.PI * 2);
+	ctx.fillStyle = mixColor(YELLOW, '#ff8f45', dawn);
 	ctx.fill();
 	ctx.lineWidth = 3;
 	ctx.strokeStyle = INK;
 	ctx.stroke();
+	ctx.restore();
 	// Clouds
-	ctx.fillStyle = PAPER;
+	ctx.fillStyle = mixColor(PAPER, '#ffd6c4', dawn);
 	for (const [cx, cy, r] of [
 		[70, 48, 17],
 		[96, 54, 13],
@@ -240,11 +284,17 @@ function drawItem(ctx: CanvasRenderingContext2D, state: RunState, item: Item, ex
 	const s = scaleAt(ahead);
 	const y = groundY(ahead);
 	const time = extras.reducedMotion ? 0 : state.timeMs / 1000;
+	const dawn = state.weather.dawn;
 	if (item.kind === 'runner') {
-		drawRunner(ctx, laneX(state.runner.x, 0), RUNNER_Y, 1, runnerPose(state));
+		const runnerX = laneX(state.runner.x, 0);
+		drawLongShadow(ctx, runnerX, RUNNER_Y, 1, dawn, 40);
+		drawRunner(ctx, runnerX, RUNNER_Y, 1, runnerPose(state, extras.reducedMotion));
 		return;
 	}
-	const fade = ahead > VIEW_AHEAD - 8 ? Math.max(0, (VIEW_AHEAD - ahead) / 8) : 1;
+	// Fog fades things out, but never closer than a runner needs to see them
+	const fade = opacityAt(ahead, visibility(state.weather, speedAt(state.distance)));
+	if (fade <= 0) return;
+	drawLongShadow(ctx, laneX(item.lane, ahead), y, s, dawn, item.kind === 'flower' ? 24 : 38);
 	if (fade < 1) ctx.globalAlpha = fade;
 	if (item.kind === 'flower') {
 		const x = laneX(item.lane, ahead);
@@ -272,6 +322,32 @@ function drawItem(ctx: CanvasRenderingContext2D, state: RunState, item: Item, ex
 	if (fade < 1) ctx.globalAlpha = 1;
 }
 
+/**
+ * Fog haze over the far field, the dark tint of heavy fog and the warm light of dawn. Fog only
+ * shades the distance and darkens a little: things near the runner stay readable.
+ */
+function drawAtmosphere(ctx: CanvasRenderingContext2D, state: RunState, extras: SceneExtras) {
+	const { dawn, fog } = state.weather;
+	if (fog > 0.01) {
+		// A slow drift in the density, skipped for reduced motion
+		const drift = extras.reducedMotion ? 1 : 1 + 0.06 * Math.sin(state.timeMs / 1100);
+		const reach = groundY(visibility(state.weather, speedAt(state.distance)) * 0.5);
+		const haze = ctx.createLinearGradient(0, 0, 0, reach);
+		const alpha = Math.min(1, fog * 0.9 * drift);
+		haze.addColorStop(0, `rgba(190, 196, 204, ${alpha * 0.55})`);
+		haze.addColorStop(HORIZON_Y / reach, `rgba(190, 196, 204, ${alpha})`);
+		haze.addColorStop(1, 'rgba(190, 196, 204, 0)');
+		ctx.fillStyle = haze;
+		ctx.fillRect(0, 0, WORLD_WIDTH, reach);
+		ctx.fillStyle = `rgba(10, 16, 34, ${0.4 * fog})`;
+		ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+	}
+	if (dawn > 0.01) {
+		ctx.fillStyle = `rgba(255, 140, 80, ${0.16 * dawn})`;
+		ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+	}
+}
+
 /** Where the chasing drone hangs on screen, null while it is too far away to see */
 export function dronePlacement(state: RunState): { x: number; y: number; scale: number } | null {
 	if (state.hidden) return null;
@@ -279,7 +355,7 @@ export function dronePlacement(state: RunState): { x: number; y: number; scale: 
 	if (state.drone.gap >= 9) return null;
 	const wobble = Math.sin(state.drone.phase * 3.1) * 16 * (1 - close * 0.5);
 	return {
-		x: laneX(state.runner.x, 0) + wobble,
+		x: laneX(state.drone.x, 0) + wobble,
 		y: WORLD_HEIGHT + 30 - close * 170,
 		scale: 0.75 + close * 0.85
 	};
@@ -364,6 +440,7 @@ export function drawScene(
 	ctx.clip();
 	drawGround(ctx, state);
 	for (const item of collectItems(state)) drawItem(ctx, state, item, extras);
+	drawAtmosphere(ctx, state, extras);
 
 	const drone = dronePlacement(state);
 	if (drone) {
@@ -376,9 +453,11 @@ export function drawScene(
 			ctx.fillStyle = glow;
 			ctx.fillRect(0, WORLD_HEIGHT - 90, WORLD_WIDTH, 90);
 		}
+		ctx.globalAlpha = 1 - state.weather.fog * 0.35;
 		drawDrone(ctx, drone.x, drone.y, drone.scale, state.drone.phase);
+		ctx.globalAlpha = 1;
 	}
-	if (state.hidden) drawCover(ctx, state, extras);
+	if (state.covered) drawCover(ctx, state, extras);
 
 	drawEffects(ctx, extras.effects);
 	ctx.restore();

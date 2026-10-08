@@ -6,7 +6,13 @@
  */
 import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
 import { BOOST_MS, STARTING_LIVES } from '#lib/game/runcomrade/config.js';
-import { buzzIntensity, buzzIntervalMs } from '#lib/game/runcomrade/drone.js';
+import {
+	buzzIntensity,
+	buzzIntervalMs,
+	dronePan,
+	maneuverIntensity,
+	maneuverSoundDue
+} from '#lib/game/runcomrade/drone.js';
 import { laneX, RUNNER_Y } from '#lib/game/runcomrade/projection.js';
 import { drawScenePreview, type Effect, type SceneExtras } from '#lib/game/runcomrade/render.js';
 import { createGame, scoreOf, type RunEvent, type RunState } from '#lib/game/runcomrade/state.js';
@@ -56,6 +62,8 @@ export class RunComradeGame {
 	#scores: () => Highscores;
 	#seed: () => number;
 	#buzzMs = 0;
+	#clockMs = 0;
+	#lastManeuverMs: number | null = null;
 
 	constructor({
 		reducedMotion = false,
@@ -76,11 +84,14 @@ export class RunComradeGame {
 	}
 
 	start() {
-		this.#random = createRandom(this.#seed());
-		this.state = createGame();
+		const seed = this.#seed();
+		this.#random = createRandom(seed);
+		this.state = createGame(seed);
 		this.effects = [];
 		this.isNewBest = false;
 		this.#buzzMs = 1200;
+		this.#clockMs = 0;
+		this.#lastManeuverMs = null;
 		this.#syncChrome();
 		this.status = 'playing';
 	}
@@ -108,6 +119,7 @@ export class RunComradeGame {
 	update(dtMs: number) {
 		this.#ageEffects(dtMs);
 		if (this.status !== 'playing') return;
+		this.#clockMs += dtMs;
 		this.#apply(stepGame(this.state, this.#random, dtMs));
 		this.#buzz(dtMs);
 	}
@@ -192,6 +204,14 @@ export class RunComradeGame {
 				break;
 			case 'game-over':
 				this.#finish();
+				break;
+			case 'drone-maneuver':
+				// A short, distinct brzzz, never stacked, and the steady buzz waits for it to finish
+				if (maneuverSoundDue(this.#clockMs, this.#lastManeuverMs)) {
+					this.#lastManeuverMs = this.#clockMs;
+					soundManager().play('drone-brzzz', maneuverIntensity(event.gap), dronePan(event.x));
+					this.#buzzMs = Math.max(this.#buzzMs, 450);
+				}
 				break;
 			case 'jump':
 			case 'duck':

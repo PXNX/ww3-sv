@@ -11,8 +11,10 @@ import {
 	type PickupKind
 } from './config';
 import { createDrone, type Drone } from './drone';
+import { createGlance, type Glance } from './glance';
 import { createField, createGenerator, type Field, type Generator } from './patterns';
 import { createPower, type Power } from './pickups';
+import { createWeatherPlan, type Weather, type WeatherPlan } from './weather';
 
 export interface Runner {
 	/** The lane the runner is heading for */
@@ -45,8 +47,14 @@ export interface RunState {
 	power: Power;
 	field: Field;
 	generator: Generator;
-	/** The runner is among tall sunflowers, so the drone is out of sight */
+	/** The runner is among tall sunflowers */
+	covered: boolean;
+	/** The drone is out of sight: behind tall sunflowers or in thick fog (its buzz stays) */
 	hidden: boolean;
+	glance: Glance;
+	weatherPlan: WeatherPlan;
+	/** Weather and light at the runner's distance */
+	weather: Weather;
 	stumbles: number;
 	contacts: number;
 	shieldBlocks: number;
@@ -67,7 +75,8 @@ export function createRunner(): Runner {
 	};
 }
 
-export function createGame(): RunState {
+/** The seed also decides the weather and when the runner glances back; the course has its own random */
+export function createGame(seed = 1): RunState {
 	return {
 		timeMs: 0,
 		distance: 0,
@@ -79,7 +88,11 @@ export function createGame(): RunState {
 		power: createPower(),
 		field: createField(),
 		generator: createGenerator(),
+		covered: false,
 		hidden: false,
+		glance: createGlance(seed),
+		weatherPlan: createWeatherPlan(seed),
+		weather: { dawn: 0, fog: 0 },
 		stumbles: 0,
 		contacts: 0,
 		shieldBlocks: 0,
@@ -112,5 +125,6 @@ export type RunEvent =
 	| { type: 'shield-block'; source: 'obstacle' | 'drone' }
 	| { type: 'pickup'; kind: PickupKind; lane: Lane }
 	| { type: 'boost-end' }
+	| { type: 'drone-maneuver'; kind: 'lane' | 'swoop' | 'close-in'; gap: number; x: number }
 	| { type: 'contact'; lives: number }
 	| { type: 'game-over' };

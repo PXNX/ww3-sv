@@ -10,11 +10,20 @@ import {
 	STUMBLE_CLOSE
 } from './config';
 import {
+	DRONE_LANE_DELAY_MS,
+	MANEUVER_SOUND_GAP_MS,
+	MENACE_EVERY_MS,
 	buzzIntensity,
 	buzzIntervalMs,
 	closeIn,
 	closeness,
 	createDrone,
+	dronePan,
+	followRunner,
+	maneuverIntensity,
+	maneuverSoundDue,
+	stepMenace,
+	swoopedThrough,
 	knockBack,
 	stepDrone
 } from './drone';
@@ -140,5 +149,74 @@ describe('buzz', () => {
 
 	it('is louder when tall sunflowers hide the drone', () => {
 		expect(buzzIntensity(6, true)).toBeGreaterThan(buzzIntensity(6, false));
+	});
+});
+
+describe('maneuvers', () => {
+	it('follows the runner into another lane a moment later, and says so once', () => {
+		const drone = createDrone();
+		let changes = 0;
+		for (let t = 0; t < DRONE_LANE_DELAY_MS - 2 * STEP; t += STEP) {
+			if (followRunner(drone, 0, STEP)) changes += 1;
+		}
+		expect(changes).toBe(0);
+		expect(drone.lane).toBe(1);
+		for (let t = 0; t < 4 * STEP; t += STEP) {
+			if (followRunner(drone, 0, STEP)) changes += 1;
+		}
+		expect(changes).toBe(1);
+		expect(drone.lane).toBe(0);
+		for (let t = 0; t < 1000; t += STEP) {
+			if (followRunner(drone, 0, STEP)) changes += 1;
+		}
+		expect(drone.x).toBe(0);
+		expect(changes).toBe(1);
+	});
+
+	it('does not follow a runner who changes lane and straight back', () => {
+		const drone = createDrone();
+		let changes = 0;
+		for (let t = 0; t < 200; t += STEP) if (followRunner(drone, 2, STEP)) changes += 1;
+		for (let t = 0; t < 2000; t += STEP) if (followRunner(drone, 1, STEP)) changes += 1;
+		expect(changes).toBe(0);
+		expect(drone.lane).toBe(1);
+	});
+
+	it('swoops when a stumble brings it through a swoop distance, not for a small move', () => {
+		expect(swoopedThrough(9, 5.8)).toBe(true);
+		expect(swoopedThrough(5.8, 2.6)).toBe(true);
+		expect(swoopedThrough(9, 7)).toBe(false);
+		expect(swoopedThrough(5, 4)).toBe(false);
+		expect(swoopedThrough(2.5, 5)).toBe(false);
+	});
+
+	it('menaces now and then only while it is close', () => {
+		const far = createDrone();
+		let farSwoops = 0;
+		for (let t = 0; t < 20_000; t += STEP) if (stepMenace(far, STEP)) farSwoops += 1;
+		expect(farSwoops).toBe(0);
+		const near = createDrone();
+		near.gap = 2;
+		let nearSwoops = 0;
+		for (let t = 0; t < MENACE_EVERY_MS * 3 + 100; t += STEP) {
+			if (stepMenace(near, STEP)) nearSwoops += 1;
+		}
+		expect(nearSwoops).toBe(3);
+	});
+
+	it('throttles maneuver sounds so bursts never stack', () => {
+		expect(maneuverSoundDue(0, null)).toBe(true);
+		expect(maneuverSoundDue(MANEUVER_SOUND_GAP_MS - 1, 0)).toBe(false);
+		expect(maneuverSoundDue(MANEUVER_SOUND_GAP_MS, 0)).toBe(true);
+	});
+
+	it('is louder and higher the closer the drone, and pans with its lane', () => {
+		expect(maneuverIntensity(1)).toBeGreaterThan(maneuverIntensity(9));
+		expect(maneuverIntensity(0)).toBeLessThanOrEqual(1);
+		expect(maneuverIntensity(12)).toBeGreaterThan(0);
+		expect(dronePan(0)).toBeLessThan(0);
+		expect(dronePan(1)).toBe(0);
+		expect(dronePan(2)).toBeGreaterThan(0);
+		expect(Math.abs(dronePan(9))).toBeLessThanOrEqual(0.7);
 	});
 });

@@ -668,5 +668,9 @@
 	"runcomrade_stat_stumbles": "التعثّرات",
 	"runcomrade_stat_helmets": "الخوذات",
 	"runcomrade_stat_bowls": "أوعية الأرز",
-	"runcomrade_distance_value": "{distance} م"
+	"runcomrade_distance_value": "{distance} م",
+	"runcomrade_tutorial_weather": "بعض المقاطع تمرّ بفجر وردي بظلال طويلة، وبعضها بضباب كثيف وداكن. الضباب يقصّر الرؤية وقد يخفي مسيّرة بعيدة، لكن العقبات تظهر دائمًا في الوقت المناسب، والطنين لا يختفي أبدًا.",
+	"runcomrade_cameo_label": "آخر نظرة إلى الخلف",
+	"runcomrade_cameo_alt": "لقطة قريبة للعدّاء بعينين واسعتين وفم مفتوح وقطرات عرق",
+	"runcomrade_cameo_message": "نظر إلى الخلف ثانية أطول من اللازم. والمسيّرة لم ترمش."
 }

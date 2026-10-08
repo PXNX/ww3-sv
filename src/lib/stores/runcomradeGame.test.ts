@@ -145,6 +145,36 @@ describe('RunComradeGame', () => {
 		manager.play = original;
 	});
 
+	it('plays a drone maneuver burst, panned to its lane, and never two within the throttle', async () => {
+		const { soundManager } = await import('#lib/sound/soundManager.svelte.js');
+		const manager = soundManager();
+		const played: { id: string; intensity?: number; pan?: number }[] = [];
+		const original = manager.play.bind(manager);
+		manager.play = (id, intensity, pan) => {
+			played.push({ id, intensity, pan });
+			return original(id, intensity, pan);
+		};
+		const { game } = newGame();
+		startQuiet(game);
+		game.state.drone.gap = 11;
+		// The drone follows a lane change 350 ms later. A second change right after the first burst
+		// would be followed while the throttle is still running, so it must stay silent.
+		game.command('left');
+		for (let t = 0; t < 400; t += STEP) game.update(STEP);
+		game.command('right');
+		for (let t = 0; t < 700; t += STEP) game.update(STEP);
+		const bursts = played.filter((entry) => entry.id === 'drone-brzzz');
+		expect(game.state.drone.lane).toBe(1);
+		expect(bursts).toHaveLength(1);
+		expect(bursts[0].pan).toBeLessThan(0);
+		expect(bursts[0].intensity).toBeGreaterThan(0);
+		// once the throttle has passed, the next maneuver sounds again
+		game.command('left');
+		for (let t = 0; t < 600; t += STEP) game.update(STEP);
+		expect(played.filter((entry) => entry.id === 'drone-brzzz')).toHaveLength(2);
+		manager.play = original;
+	});
+
 	it('has messages in every language', () => {
 		expect(missingMessages(['runcomrade_', 'mode_runcomrade_'])).toEqual([]);
 	});
