@@ -347,6 +347,7 @@
 	"chess_card_used": "Gespielt",
 	"chess_card_pick_target": "Tippe auf eine der markierten gegnerischen Figuren.",
 	"chess_card_play": "Karte spielen",
+	"chess_card_close": "Schließen",
 	"chess_cards_hint": "Ziehe eine Figur oder spiele stattdessen eine Karte. Karten übrig: {count}.",
 	"chess_cards_none": "Keine Karten mehr. Nur noch Figuren.",
 	"chess_board_label": "Schachbrett",

@@ -347,6 +347,7 @@
 	"chess_card_used": "مستخدمة",
 	"chess_card_pick_target": "اضغط على إحدى قطع الخصم المميّزة.",
 	"chess_card_play": "العب البطاقة",
+	"chess_card_close": "إغلاق",
 	"chess_cards_hint": "حرّك قطعة، أو العب بطاقة بدلًا من ذلك. البطاقات المتبقية: {count}.",
 	"chess_cards_none": "لا بطاقات متبقية. القطع فقط الآن.",
 	"chess_board_label": "رقعة الشطرنج",
