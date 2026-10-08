@@ -19,14 +19,14 @@ import {
 import { flyerAt, soldierAt } from './testHelpers';
 
 const origin = SLOTS[2];
-// Progress values of road points near SLOTS[2] (100, 165): the row at y = 100 and the row at y = 230
-const ROW_ONE = 120 + 100; // on the first long row, around x = 150
-const ROW_TWO = 120 + 260 + 130 + 190; // on the second row, around x = 120
+// Progress values of road points near SLOTS[2] (100, 190): the row at y = 120 and the row at y = 260
+const ROW_ONE = 140 + 50; // on the first long row, around x = 100
+const ROW_TWO = 140 + 260 + 140 + 190; // on the second row, around x = 120
 
 describe('range filter', () => {
 	it('keeps living soldiers in range and drops the rest', () => {
 		const near = soldierAt(ROW_ONE);
-		const far = soldierAt(ROW_ONE + 600);
+		const far = soldierAt(ROW_ONE + 900);
 		const dead = soldierAt(ROW_ONE, 'grunt', { hp: 0 });
 		const offscreen = soldierAt(0);
 		const found = inRange([near, far, dead, offscreen], origin, 120);

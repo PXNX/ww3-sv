@@ -141,16 +141,16 @@ describe('marching', () => {
 		const free = emptyWave();
 		const slowed = emptyWave();
 		build(slowed, 2, 'trench');
-		const a = soldierAt(150);
-		const b = soldierAt(150);
+		const a = soldierAt(190);
+		const b = soldierAt(190);
 		free.soldiers.push(a);
 		slowed.soldiers.push(b);
-		for (let i = 0; i < 120; i++) {
+		for (let i = 0; i < 60; i++) {
 			stepGame(free, random(), STEP_MS);
 			stepGame(slowed, random(), STEP_MS);
 		}
 		expect(b.slow).toBeLessThan(1);
-		expect(b.progress - 150).toBeLessThan((a.progress - 150) * 0.8);
+		expect(b.progress - 190).toBeLessThan((a.progress - 190) * 0.8);
 	});
 });
 
@@ -274,6 +274,29 @@ describe('defenses in action', () => {
 		);
 	});
 
+	it('rifles do half damage to a shield and a third to an armored car; drones ignore armor', () => {
+		const bullets = (kind: 'grunt' | 'shield' | 'btr') => {
+			const state = emptyWave();
+			build(state, 2, 'squad');
+			const target = soldierAt(190, kind, { speed: 0 });
+			state.soldiers.push(target);
+			runUntil(state, (all) => all.some((e) => e.type === 'squad-shot'), 60);
+			return target.maxHp - target.hp;
+		};
+		const dealt = defenseStats('squad', 1).damage;
+		expect(bullets('grunt')).toBe(dealt);
+		expect(bullets('shield')).toBeCloseTo(dealt * SOLDIERS.shield.armor);
+		expect(bullets('btr')).toBeCloseTo(dealt * SOLDIERS.btr.armor);
+
+		const state = emptyWave();
+		state.currency = 500;
+		build(state, 2, 'nest');
+		const car = soldierAt(190, 'btr', { speed: 0 });
+		state.soldiers.push(car);
+		runUntil(state, (all) => all.some((e) => e.type === 'projectile-hit'), 600);
+		expect(car.maxHp - car.hp).toBe(defenseStats('nest', 1).damage);
+	});
+
 	it('a squad goes for whatever is closest to breaking through, aircraft included', () => {
 		const state = emptyWave();
 		build(state, 2, 'squad');
@@ -356,7 +379,7 @@ describe('aerial enemies', () => {
 
 	it('a flyer reaching the line costs a heart, like a soldier', () => {
 		const state = emptyWave();
-		state.flyers.push(flyerAt(200, LINE_Y - 0.1, 'heli', { progress: 549.9 }));
+		state.flyers.push(flyerAt(200, LINE_Y - 0.1, 'heli'));
 		const events = stepGame(state, random(), STEP_MS);
 		expect(events.map((e) => e.type)).toContain('leak');
 		expect(state.lives).toBe(STARTING_LIVES - 1);
