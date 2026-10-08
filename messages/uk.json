@@ -347,6 +347,7 @@
 	"chess_card_used": "Використано",
 	"chess_card_pick_target": "Торкнися однієї з підсвічених ворожих фігур.",
 	"chess_card_play": "Зіграти картку",
+	"chess_card_close": "Закрити",
 	"chess_cards_hint": "Піди фігурою або зіграй натомість картку. Карток лишилось: {count}.",
 	"chess_cards_none": "Карток не лишилось. Тепер лише фігури.",
 	"chess_board_label": "Шахова дошка",

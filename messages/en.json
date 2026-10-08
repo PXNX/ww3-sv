@@ -347,6 +347,7 @@
 	"chess_card_used": "Used",
 	"chess_card_pick_target": "Tap one of the highlighted enemy pieces.",
 	"chess_card_play": "Play card",
+	"chess_card_close": "Close",
 	"chess_cards_hint": "Move a piece, or play a card instead. Cards left: {count}.",
 	"chess_cards_none": "No cards left. Only pieces now.",
 	"chess_board_label": "Chess board",
