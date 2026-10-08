@@ -668,5 +668,9 @@
 	"runcomrade_stat_stumbles": "Stolperer",
 	"runcomrade_stat_helmets": "Helme",
 	"runcomrade_stat_bowls": "Reisschalen",
-	"runcomrade_distance_value": "{distance} m"
+	"runcomrade_distance_value": "{distance} m",
+	"runcomrade_tutorial_weather": "Manche Abschnitte führen durch ein rosa Morgenrot mit langen Schatten, andere durch dichten, dunklen Nebel. Nebel verkürzt die Sicht und kann eine ferne Drohne verbergen, aber Hindernisse erscheinen immer rechtzeitig, und das Summen bleibt.",
+	"runcomrade_cameo_label": "Letzter Blick zurück",
+	"runcomrade_cameo_alt": "Nahaufnahme des Läufers mit weit aufgerissenen Augen, offenem Mund und Schweißtropfen",
+	"runcomrade_cameo_message": "Er hat eine Sekunde zu lange zurückgeschaut. Die Drohne hat nicht geblinzelt."
 }

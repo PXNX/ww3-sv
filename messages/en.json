@@ -668,5 +668,9 @@
 	"runcomrade_stat_stumbles": "Stumbles",
 	"runcomrade_stat_helmets": "Helmets",
 	"runcomrade_stat_bowls": "Rice bowls",
-	"runcomrade_distance_value": "{distance} m"
+	"runcomrade_distance_value": "{distance} m",
+	"runcomrade_tutorial_weather": "Some stretches run through a pink dawn with long shadows, others through thick, dark fog. Fog shortens your view and can hide a faraway drone, but obstacles always show up in time, and the buzz never goes away.",
+	"runcomrade_cameo_label": "Last look back",
+	"runcomrade_cameo_alt": "Close-up of the runner with wide eyes, an open mouth and sweat drops",
+	"runcomrade_cameo_message": "He looked back one second too long. The drone did not blink."
 }

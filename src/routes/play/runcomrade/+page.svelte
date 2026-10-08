@@ -10,6 +10,7 @@
 	import { STARTING_LIVES } from '#lib/game/runcomrade/config.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
+	import { cameoAsset } from '#lib/theme/cameos.js';
 	import { RunComradeGame } from '#lib/stores/runcomradeGame.svelte.js';
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconPause from '~icons/lucide/pause';
@@ -17,6 +18,13 @@
 
 	const game = new RunComradeGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_runcomrade_name();
+	// The game-over cameo is always the runner's own scared face, never the shared roster
+	const scaredCameo = {
+		image: cameoAsset('runcomrade-scared.svg'),
+		alt: m.runcomrade_cameo_alt(),
+		message: m.runcomrade_cameo_message(),
+		label: m.runcomrade_cameo_label()
+	};
 
 	// The how-to-play screen opens on the first visit and whenever the help button is tapped
 	let showTutorial = $state(false);
@@ -146,6 +154,7 @@
 			</li>
 		</ul>
 		<p>{m.runcomrade_tutorial_field()}</p>
+		<p>{m.runcomrade_tutorial_weather()}</p>
 		<p class="hidden text-sm sm:block">{m.runcomrade_keyboard_hint()}</p>
 	</TutorialModal>
 
@@ -155,6 +164,7 @@
 		{modeName}
 		isNewBest={game.isNewBest}
 		title={m.runcomrade_gameover_title()}
+		customCameo={scaredCameo}
 		drawBoard={game.drawBoard}
 		onRetry={() => game.start()}
 	>

@@ -668,5 +668,9 @@
 	"runcomrade_stat_stumbles": "Заминки",
 	"runcomrade_stat_helmets": "Каски",
 	"runcomrade_stat_bowls": "Миски риса",
-	"runcomrade_distance_value": "{distance} м"
+	"runcomrade_distance_value": "{distance} м",
+	"runcomrade_tutorial_weather": "Одни участки ведут через розовый рассвет с длинными тенями, другие через густой тёмный туман. Туман сокращает обзор и может скрыть далёкий дрон, но препятствия всегда появляются вовремя, а жужжание не исчезает.",
+	"runcomrade_cameo_label": "Последний взгляд назад",
+	"runcomrade_cameo_alt": "Крупный план бегуна с круглыми глазами, открытым ртом и каплями пота",
+	"runcomrade_cameo_message": "Он оглянулся на секунду дольше, чем стоило. Дрон не моргнул."
 }

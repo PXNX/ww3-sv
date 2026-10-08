@@ -668,5 +668,9 @@
 	"runcomrade_stat_stumbles": "لغزش‌ها",
 	"runcomrade_stat_helmets": "کلاه‌خودها",
 	"runcomrade_stat_bowls": "کاسه‌های برنج",
-	"runcomrade_distance_value": "{distance} متر"
+	"runcomrade_distance_value": "{distance} متر",
+	"runcomrade_tutorial_weather": "بعضی بخش‌ها از میان سپیده‌دمی صورتی با سایه‌های بلند می‌گذرند و بعضی از میان مه غلیظ و تاریک. مه دید را کوتاه می‌کند و می‌تواند پهپاد دور را پنهان کند، اما مانع‌ها همیشه به‌موقع پیدا می‌شوند و وزوز هرگز قطع نمی‌شود.",
+	"runcomrade_cameo_label": "آخرین نگاه به عقب",
+	"runcomrade_cameo_alt": "نمای نزدیک دونده با چشمان گشاد، دهان باز و قطره‌های عرق",
+	"runcomrade_cameo_message": "او یک ثانیه بیش از حد به عقب نگاه کرد. پهپاد پلک هم نزد."
 }

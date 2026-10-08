@@ -30,17 +30,27 @@ class SoundManager {
 
 	/**
 	 * Plays a sound effect; silently does nothing when muted or when audio is unavailable. The
-	 * optional intensity (0 to 1) lets sounds such as impacts scale with how hard something was.
+	 * optional intensity (0 to 1) lets sounds such as impacts scale with how hard something was,
+	 * and the optional pan (-1 left to 1 right) places a sound in the stereo field.
 	 */
-	play(id: SoundId, intensity = 1) {
+	play(id: SoundId, intensity = 1, pan = 0) {
 		if (this.muted) return;
 		const context = this.#ensureContext();
 		if (!context) return;
 		try {
-			SOUNDS[id](context, this.#master!, Math.min(1, Math.max(0, intensity)));
+			SOUNDS[id](context, this.#destination(context, pan), Math.min(1, Math.max(0, intensity)));
 		} catch {
 			// Best-effort: a sound glitch should never break gameplay
 		}
+	}
+
+	/** The master gain, or a stereo panner in front of it when the sound is placed to one side */
+	#destination(context: AudioContext, pan: number): AudioNode {
+		if (pan === 0 || typeof context.createStereoPanner !== 'function') return this.#master!;
+		const panner = context.createStereoPanner();
+		panner.pan.value = Math.min(1, Math.max(-1, pan));
+		panner.connect(this.#master!);
+		return panner;
 	}
 
 	setMuted(muted: boolean) {
