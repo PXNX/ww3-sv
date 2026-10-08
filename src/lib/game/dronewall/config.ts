@@ -48,23 +48,23 @@ export const MAP_DEFS: readonly MapDef[] = [
 		id: 'serpentine',
 		points: pts([
 			[50, -20],
-			[50, 115],
-			[310, 115],
-			[310, 265],
-			[50, 265],
-			[50, 420],
-			[310, 420],
+			[50, 120],
+			[310, 120],
+			[310, 260],
+			[50, 260],
+			[50, 400],
+			[310, 400],
 			[310, 600]
 		]),
 		slots: pts([
-			[130, 45],
-			[240, 45],
+			[130, 50],
+			[240, 50],
 			[100, 190],
 			[205, 190],
-			[150, 342],
-			[255, 342],
-			[110, 495],
-			[215, 495],
+			[150, 330],
+			[255, 330],
+			[110, 465],
+			[215, 465],
 			[235, 555]
 		]),
 		theme: {
@@ -94,7 +94,7 @@ export const MAP_DEFS: readonly MapDef[] = [
 			[240, 360],
 			[240, 490],
 			[120, 545],
-			[180, 50],
+			[180, 60],
 			[270, 60]
 		]),
 		theme: {
@@ -382,9 +382,9 @@ const DEFENSE_STATS: Record<DefenseKind, readonly DefenseStats[]> = {
 	],
 	// Slows the crowd; the upgrades add mines
 	trench: [
-		{ ...NONE, range: 72, slow: 0.58 },
-		{ ...NONE, range: 80, slow: 0.46, dps: 3 },
-		{ ...NONE, range: 88, slow: 0.36, dps: 8 }
+		{ ...NONE, range: 76, slow: 0.58 },
+		{ ...NONE, range: 84, slow: 0.46, dps: 3 },
+		{ ...NONE, range: 92, slow: 0.36, dps: 8 }
 	],
 	// Infantry that patrol around the post and block and fight soldiers in melee
 	azov: [

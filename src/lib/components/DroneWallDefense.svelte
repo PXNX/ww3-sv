@@ -78,7 +78,14 @@
 		<path d="M5 15a9 7 0 0 1 18 0z" fill="#4d5a38" />
 		<circle cx="10.5" cy="17" r="1.6" fill="var(--color-paper)" stroke-width="1.2" />
 		<circle cx="17.5" cy="17" r="1.6" fill="var(--color-paper)" stroke-width="1.2" />
-		<rect x="5" y="22" width="18" height="3" fill="var(--color-explosion-yellow)" stroke-width="1.5" />
+		<rect
+			x="5"
+			y="22"
+			width="18"
+			height="3"
+			fill="var(--color-explosion-yellow)"
+			stroke-width="1.5"
+		/>
 	{:else if kind === 'leopard'}
 		<ellipse cx="16" cy="28" rx="14" ry="3" fill="#cdbb7e" />
 		<rect x="2.5" y="19" width="27" height="8" rx="4" fill="#2f343b" />

@@ -21,6 +21,9 @@ describe('wave generator', () => {
 			expect(count(wave, 'grunt')).toBe(composition.grunts);
 			expect(count(wave, 'scout')).toBe(composition.scouts);
 			expect(count(wave, 'brute')).toBe(composition.brutes);
+			expect(count(wave, 'runner')).toBe(composition.runners);
+			expect(count(wave, 'shield')).toBe(composition.shields);
+			expect(count(wave, 'btr')).toBe(composition.btrs);
 			expect(count(wave, 'shahed')).toBe(composition.shaheds);
 			expect(count(wave, 'heli')).toBe(composition.helis);
 			expect(generateWave(wave, createRandom(5))).toHaveLength(waveSize(wave));
@@ -67,20 +70,30 @@ describe('wave generator', () => {
 		}
 	});
 
-	it('puts brutes at the back of their platoon', () => {
-		const entries = ground(7, 2);
-		const platoonStarts = [0];
-		entries.forEach((entry, i) => {
-			if (i > 0 && entry.atMs - entries[i - 1].atMs > 2500) platoonStarts.push(i);
-		});
-		platoonStarts.push(entries.length);
-		for (let p = 0; p < platoonStarts.length - 1; p++) {
-			const kinds = entries.slice(platoonStarts[p], platoonStarts[p + 1]).map((e) => e.kind);
-			const firstBrute = kinds.indexOf('brute');
-			if (firstBrute >= 0) {
-				expect(kinds.slice(firstBrute).every((kind) => kind === 'brute')).toBe(true);
+	it('puts the heavy ones (brutes, armored cars) at the back of their platoon', () => {
+		const heavy = (kind: string) => kind === 'brute' || kind === 'btr';
+		for (const seed of [2, 5, 9]) {
+			const entries = ground(12, seed);
+			const platoonStarts = [0];
+			entries.forEach((entry, i) => {
+				if (i > 0 && entry.atMs - entries[i - 1].atMs > 2500) platoonStarts.push(i);
+			});
+			platoonStarts.push(entries.length);
+			for (let p = 0; p < platoonStarts.length - 1; p++) {
+				const kinds = entries.slice(platoonStarts[p], platoonStarts[p + 1]).map((e) => e.kind);
+				const firstHeavy = kinds.findIndex(heavy);
+				if (firstHeavy >= 0) expect(kinds.slice(firstHeavy).every(heavy)).toBe(true);
 			}
 		}
+	});
+
+	it('brings new enemies over time: runners from wave 4, shields from 5, armored cars from 8', () => {
+		expect(waveComposition(3)).toMatchObject({ runners: 0, shields: 0, btrs: 0 });
+		expect(waveComposition(4).runners).toBeGreaterThan(0);
+		expect(waveComposition(4).shields).toBe(0);
+		expect(waveComposition(5).shields).toBeGreaterThan(0);
+		expect(waveComposition(7).btrs).toBe(0);
+		expect(waveComposition(8).btrs).toBeGreaterThan(0);
 	});
 
 	it('brings aircraft from wave 3 and helicopters from wave 7', () => {

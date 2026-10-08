@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import DroneWallCanvas from '#lib/components/DroneWallCanvas.svelte';
 	import DroneWallDefense from '#lib/components/DroneWallDefense.svelte';
-	import DroneWallPanel from '#lib/components/DroneWallPanel.svelte';
+	import DroneWallMapPicker from '#lib/components/DroneWallMapPicker.svelte';
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import LivesBar from '#lib/components/LivesBar.svelte';
@@ -63,7 +63,7 @@
 	<!-- The HUD, the playfield and the build panel share one width, as wide as the height allows -->
 	<section
 		class="mx-auto flex w-full flex-col items-center gap-2"
-		style:max-width="max(17rem, min(100%, calc((100dvh - 21rem) * 0.643)))"
+		style:max-width="max(17rem, min(100%, calc((100dvh - 13.5rem) * 0.5625)))"
 	>
 		<div
 			class="flex w-full items-center gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1 shadow-[3px_3px_0_var(--color-ink)]"
@@ -93,8 +93,6 @@
 		</div>
 
 		<DroneWallCanvas {game} />
-
-		<DroneWallPanel {game} />
 	</section>
 
 	<TutorialModal
@@ -107,6 +105,7 @@
 		<p>{m.dronewall_tutorial_build()}</p>
 		<p>{m.dronewall_tutorial_helmets()}</p>
 		<p>{m.dronewall_tutorial_air()}</p>
+		<p>{m.dronewall_tutorial_armor()}</p>
 		<ul class="flex flex-col gap-2">
 			<li class="flex items-center gap-2">
 				<DroneWallDefense kind="squad" class="size-9 shrink-0" />
@@ -130,6 +129,18 @@
 				<DroneWallDefense kind="patriot" class="size-9 shrink-0" />
 				<span>
 					<strong>{m.dronewall_patriot_name()}</strong>: {m.dronewall_patriot_role()}
+				</span>
+			</li>
+			<li class="flex items-center gap-2">
+				<DroneWallDefense kind="azov" class="size-9 shrink-0" />
+				<span>
+					<strong>{m.dronewall_azov_name()}</strong>: {m.dronewall_azov_role()}
+				</span>
+			</li>
+			<li class="flex items-center gap-2">
+				<DroneWallDefense kind="leopard" class="size-9 shrink-0" />
+				<span>
+					<strong>{m.dronewall_leopard_name()}</strong>: {m.dronewall_leopard_role()}
 				</span>
 			</li>
 			<li class="flex items-center gap-2">
@@ -172,5 +183,6 @@
 				<dd class="text-2xl font-bold tabular-nums">{game.collected}</dd>
 			</div>
 		</dl>
+		<DroneWallMapPicker {game} />
 	</GameOverModal>
 </GameShell>

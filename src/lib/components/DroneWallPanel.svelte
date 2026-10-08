@@ -61,9 +61,11 @@
 				<li class="contents">
 					<button
 						type="button"
-						class="btn-chunky h-full flex-col gap-0 px-0.5 py-1 text-[0.7rem] leading-tight sm:text-xs {afford(cost)
-								? 'bg-paper'
-								: 'bg-sand opacity-70'}"
+						class="btn-chunky h-full flex-col gap-0 px-0.5 py-1 text-[0.7rem] leading-tight sm:text-xs {afford(
+							cost
+						)
+							? 'bg-paper'
+							: 'bg-sand opacity-70'}"
 						aria-disabled={!afford(cost)}
 						onclick={() => game.build(kind)}
 					>

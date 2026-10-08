@@ -93,6 +93,23 @@ describe('DroneWallGame', () => {
 		expect(game.effects.some((effect) => effect.kind === 'popup')).toBe(true);
 	});
 
+	it('shows the picked map before the game, and plays the next game on it', () => {
+		const { game } = newGame();
+		expect(game.state.map.id).toBe('serpentine');
+		game.selectMap('lightning');
+		expect(game.mapId).toBe('lightning');
+		expect(game.state.map.id).toBe('lightning');
+		expect(game.state.defenses).toHaveLength(game.state.map.slots.length);
+		game.start();
+		expect(game.state.map.id).toBe('lightning');
+		// No switching in the middle of a game
+		game.selectMap('riverbend');
+		expect(game.mapId).toBe('lightning');
+		// Selecting a spot only works for spots of this map
+		game.select(99);
+		expect(game.selectedSlot).toBeNull();
+	});
+
 	it('cycles the game speed with one button: x1, x2, x4 and around', () => {
 		const { game } = newGame();
 		expect(game.speed).toBe(1);
