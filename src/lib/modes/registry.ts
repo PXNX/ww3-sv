@@ -20,6 +20,7 @@ import IconRoute from '~icons/lucide/route';
 import IconLandmark from '~icons/lucide/landmark';
 import IconCat from '~icons/lucide/cat';
 import IconZap from '~icons/lucide/zap';
+import IconGauge from '~icons/lucide/gauge';
 
 export type ModeId =
 	| 'blocks'
@@ -39,7 +40,8 @@ export type ModeId =
 	| 'beltroad'
 	| 'maze'
 	| 'purrpentagram'
-	| 'energiewende';
+	| 'energiewende'
+	| 'centrifuge';
 
 interface ModeBase {
 	id: ModeId;
@@ -220,5 +222,14 @@ export const MODES: readonly GameMode[] = [
 		tileClass: 'bg-explosion-yellow',
 		name: m.mode_energiewende_name,
 		description: m.mode_energiewende_description
+	},
+	{
+		id: 'centrifuge',
+		status: 'playable',
+		href: '/play/centrifuge',
+		icon: IconGauge,
+		tileClass: 'bg-sky',
+		name: m.mode_centrifuge_name,
+		description: m.mode_centrifuge_description
 	}
 ];
