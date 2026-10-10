@@ -18,6 +18,7 @@ import IconMegaphone from '~icons/lucide/megaphone';
 import IconFootprints from '~icons/lucide/footprints';
 import IconRoute from '~icons/lucide/route';
 import IconLandmark from '~icons/lucide/landmark';
+import IconCat from '~icons/lucide/cat';
 
 export type ModeId =
 	| 'blocks'
@@ -35,7 +36,8 @@ export type ModeId =
 	| 'whack'
 	| 'runcomrade'
 	| 'beltroad'
-	| 'maze';
+	| 'maze'
+	| 'purrpentagram';
 
 interface ModeBase {
 	id: ModeId;
@@ -198,5 +200,14 @@ export const MODES: readonly GameMode[] = [
 		tileClass: 'bg-banner-slate',
 		name: m.mode_maze_name,
 		description: m.mode_maze_description
+	},
+	{
+		id: 'purrpentagram',
+		status: 'playable',
+		href: '/play/purrpentagram',
+		icon: IconCat,
+		tileClass: 'bg-tie-red',
+		name: m.mode_purrpentagram_name,
+		description: m.mode_purrpentagram_description
 	}
 ];

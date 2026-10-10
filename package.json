@@ -17,6 +17,11 @@
 		"test": "bun run i18n:compile && vitest run",
 		"test:watch": "bun run i18n:compile && vitest"
 	},
+	"dependencies": {
+		"@fontsource/aref-ruqaa": "5.3.0",
+		"@fontsource/cinzel-decorative": "5.3.0",
+		"@fontsource/kurale": "5.3.0"
+	},
 	"devDependencies": {
 		"@eslint/compat": "2.1.1",
 		"@eslint/js": "10.0.1",

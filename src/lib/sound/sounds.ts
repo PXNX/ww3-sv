@@ -61,7 +61,15 @@ export type SoundId =
 	| 'blocks-place'
 	| 'blocks-clear'
 	| 'drone-buzz'
-	| 'drone-brzzz';
+	| 'drone-brzzz'
+	| 'cat-hiss'
+	| 'cat-flick'
+	| 'thunder'
+	| 'door-creak'
+	| 'draft'
+	| 'candle-snuff'
+	| 'ritual-line'
+	| 'ritual-burst';
 
 /** Intensity runs from 0 to 1 and lets one sound scale (louder, higher) with how hard something happened */
 type SoundEffect = (ctx: AudioContext, dest: AudioNode, intensity: number) => void;
@@ -711,5 +719,162 @@ export const SOUNDS: Record<SoundId, SoundEffect> = {
 				delay: pulse * 0.07
 			});
 		}
+	},
+
+	// A cat's hiss: a long airy "sshh" with a spit at the start. Intensity makes it louder.
+	'cat-hiss': (ctx, dest, intensity) => {
+		noise(ctx, dest, {
+			duration: 0.55,
+			filterType: 'highpass',
+			filterFrequency: 3200,
+			filterTo: 2000,
+			q: 0.8,
+			gain: 0.12 + intensity * 0.16,
+			attack: 0.04
+		});
+		noise(ctx, dest, {
+			duration: 0.08,
+			filterType: 'bandpass',
+			filterFrequency: 5200,
+			q: 2,
+			gain: 0.16 + intensity * 0.1
+		});
+	},
+
+	// A tail swishing past: a short, soft whoosh
+	'cat-flick': (ctx, dest) =>
+		noise(ctx, dest, {
+			duration: 0.16,
+			filterType: 'bandpass',
+			filterFrequency: 2200,
+			filterTo: 900,
+			q: 1.1,
+			gain: 0.09,
+			attack: 0.03
+		}),
+
+	// A rolling rumble with a crack in front of it
+	thunder: (ctx, dest) => {
+		noise(ctx, dest, {
+			duration: 0.14,
+			filterType: 'highpass',
+			filterFrequency: 900,
+			gain: 0.3
+		});
+		noise(ctx, dest, {
+			duration: 2.3,
+			filterType: 'lowpass',
+			filterFrequency: 220,
+			filterTo: 50,
+			gain: 0.55,
+			attack: 0.08,
+			delay: 0.05
+		});
+		noise(ctx, dest, {
+			duration: 1.3,
+			filterType: 'lowpass',
+			filterFrequency: 160,
+			filterTo: 45,
+			gain: 0.35,
+			attack: 0.2,
+			delay: 0.55
+		});
+	},
+
+	// A door creaking open: a resonant filter sweeping up over a low, grating moan
+	'door-creak': (ctx, dest) => {
+		noise(ctx, dest, {
+			duration: 0.95,
+			filterType: 'bandpass',
+			filterFrequency: 420,
+			filterTo: 1150,
+			q: 16,
+			gain: 0.3,
+			attack: 0.15
+		});
+		tone(ctx, dest, {
+			frequency: 118,
+			glideTo: 86,
+			duration: 0.9,
+			type: 'sawtooth',
+			gain: 0.05,
+			attack: 0.2
+		});
+	},
+
+	// A cold draught from an open window: a slow breath of wind
+	draft: (ctx, dest) =>
+		noise(ctx, dest, {
+			duration: 1.9,
+			filterType: 'bandpass',
+			filterFrequency: 380,
+			filterTo: 760,
+			q: 1.6,
+			gain: 0.2,
+			attack: 0.6
+		}),
+
+	// A candle pinched out: a short puff of air
+	'candle-snuff': (ctx, dest) =>
+		noise(ctx, dest, {
+			duration: 0.2,
+			filterType: 'bandpass',
+			filterFrequency: 3000,
+			filterTo: 1400,
+			q: 0.9,
+			gain: 0.2,
+			attack: 0.02
+		}),
+
+	// One line of the pentagram taking light: a dark rising swell with a hiss of sparks. Intensity
+	// (how far along the star we are) lifts the pitch, so the five lines climb.
+	'ritual-line': (ctx, dest, intensity) => {
+		const base = 150 + intensity * 140;
+		tone(ctx, dest, {
+			frequency: base,
+			glideTo: base * 2,
+			duration: 0.5,
+			type: 'sine',
+			gain: 0.2,
+			attack: 0.05
+		});
+		tone(ctx, dest, {
+			frequency: base * 1.5,
+			glideTo: base * 3,
+			duration: 0.45,
+			type: 'triangle',
+			gain: 0.08,
+			attack: 0.08
+		});
+		noise(ctx, dest, {
+			duration: 0.35,
+			filterType: 'highpass',
+			filterFrequency: 4500,
+			gain: 0.07,
+			attack: 0.1
+		});
+	},
+
+	// The star complete: a deep boom, a swell of noise and a minor chord blooming over it
+	'ritual-burst': (ctx, dest) => {
+		tone(ctx, dest, { frequency: 92, glideTo: 36, duration: 1.5, type: 'sine', gain: 0.5 });
+		noise(ctx, dest, {
+			duration: 1.7,
+			filterType: 'lowpass',
+			filterFrequency: 1600,
+			filterTo: 90,
+			gain: 0.3,
+			attack: 0.03
+		});
+		[293.66, 349.23, 440, 587.33].forEach((frequency, index) =>
+			tone(ctx, dest, {
+				frequency,
+				duration: 2.2,
+				type: 'triangle',
+				gain: 0.07,
+				attack: 0.25,
+				delay: 0.08 + index * 0.05
+			})
+		);
 	}
 };
