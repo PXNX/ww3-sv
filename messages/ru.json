@@ -348,8 +348,6 @@
 	"chess_card_pick_target": "Нажми на одну из подсвеченных вражеских фигур.",
 	"chess_card_play": "Сыграть карту",
 	"chess_card_close": "Закрыть",
-	"chess_cards_hint": "Сделай ход фигурой или сыграй вместо этого карту. Карт осталось: {count}.",
-	"chess_cards_none": "Карт не осталось. Теперь только фигуры.",
 	"chess_board_label": "Шахматная доска",
 	"chess_piece_pawn": "пешка",
 	"chess_piece_knight": "конь",

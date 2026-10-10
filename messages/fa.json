@@ -348,8 +348,6 @@
 	"chess_card_pick_target": "روی یکی از مهره‌های دشمن که مشخص شده‌اند بزن.",
 	"chess_card_play": "کارت را بازی کن",
 	"chess_card_close": "بستن",
-	"chess_cards_hint": "یک مهره حرکت بده یا به‌جایش یک کارت بازی کن. کارت‌های باقی‌مانده: {count}.",
-	"chess_cards_none": "کارتی نمانده. فقط مهره‌ها.",
 	"chess_board_label": "صفحه‌ی شطرنج",
 	"chess_piece_pawn": "پیاده",
 	"chess_piece_knight": "اسب",
