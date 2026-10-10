@@ -99,7 +99,6 @@
 	];
 
 	const armed = $derived(game.armedCard);
-	const remaining = $derived(game.cardSlots.filter((id) => id !== null).length);
 
 	/** The card shown in full in the dialog, if any */
 	let viewing: CardId | null = $state(null);
@@ -189,7 +188,7 @@
 {/snippet}
 
 <section class="flex flex-col gap-1" aria-label={m.chess_cards_label()}>
-	<ul class="flex justify-center px-1 pt-7 pb-0.5">
+	<ul class="flex justify-center px-1 pt-3 pb-0.5">
 		{#each game.cardSlots as id, index (index)}
 			{@const fan = FAN[index % FAN.length]}
 			<li
@@ -230,16 +229,12 @@
 			<p class="font-semibold">{cardDescription(armed)}</p>
 			<p class="font-bold text-tie-red">{m.chess_card_pick_target()}</p>
 		{:else if game.notice}
-			<!-- What the last card did, in the same spot as the hint so no extra row is needed -->
+			<!-- What the last card did, under the hand -->
 			{#key game.noticeKey}
 				<p class="sticker pop-in px-3 py-1 font-bold" style:--tilt="-1deg">
 					{noticeText(game.notice)}
 				</p>
 			{/key}
-		{:else if remaining > 0}
-			<p>{m.chess_cards_hint({ count: remaining })}</p>
-		{:else}
-			<p>{m.chess_cards_none()}</p>
 		{/if}
 	</div>
 </section>
