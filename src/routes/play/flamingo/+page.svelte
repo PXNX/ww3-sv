@@ -34,7 +34,12 @@
 	const canPause = $derived(game.status === 'playing' || game.status === 'paused');
 </script>
 
-<GameShell title={m.mode_flamingo_name()} score={game.score} best={game.best}>
+<GameShell
+	title={m.mode_flamingo_name()}
+	score={game.score}
+	best={game.best}
+	confirmLeave={canPause}
+>
 	{#snippet actions()}
 		<button
 			type="button"

@@ -33,7 +33,12 @@
 	);
 </script>
 
-<GameShell title={modeName} score={game.score} best={game.bestScore}>
+<GameShell
+	title={modeName}
+	score={game.score}
+	best={game.bestScore}
+	confirmLeave={game.status === 'playing' || game.status === 'paused'}
+>
 	{#snippet actions()}
 		<button
 			type="button"

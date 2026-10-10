@@ -7,6 +7,9 @@
 import { playClip, playRandomClip } from './clips';
 import { noise, sequence, tone, voice } from './synth';
 
+/** Seconds the sung "Welcome to Ukraine" fades out over, so the recording doesn't end abruptly */
+const WELCOME_FADE_OUT = 2;
+
 export type SoundId =
 	| 'ui-tap'
 	| 'ui-toggle'
@@ -252,7 +255,8 @@ export const SOUNDS: Record<SoundId, SoundEffect> = {
 	'fake-news': (ctx, dest) => playClip(ctx, dest, 'fake-news'),
 
 	// A recorded sung "Welcome to Ukraine" line, for a three-star win in Fury
-	'welcome-to-ukraine': (ctx, dest) => playClip(ctx, dest, 'welcome-to-ukraine'),
+	'welcome-to-ukraine': (ctx, dest) =>
+		playClip(ctx, dest, 'welcome-to-ukraine', 0.8, WELCOME_FADE_OUT),
 
 	// A gruff, wheezy "ha ha ha ha" in a low male voice: the first ha punches in high and loud,
 	// then each one comes a little softer, lower and further apart, ending in a breathy exhale

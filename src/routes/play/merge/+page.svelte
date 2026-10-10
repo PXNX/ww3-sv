@@ -69,7 +69,12 @@
 
 <svelte:window onkeydown={onKeyDown} />
 
-<GameShell title={m.mode_merge_name()} score={game.state.score} best={game.best}>
+<GameShell
+	title={m.mode_merge_name()}
+	score={game.state.score}
+	best={game.best}
+	confirmLeave={!game.over && game.state.moves > 0}
+>
 	{#snippet actions()}
 		<button
 			type="button"

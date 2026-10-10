@@ -90,7 +90,12 @@
 
 <svelte:window onkeydown={onKeyDown} />
 
-<GameShell title={m.mode_chess_name()} score={game.score} best={game.best}>
+<GameShell
+	title={m.mode_chess_name()}
+	score={game.score}
+	best={game.best}
+	confirmLeave={!game.over && game.moveCount > 0}
+>
 	{#snippet actions()}
 		<button
 			type="button"

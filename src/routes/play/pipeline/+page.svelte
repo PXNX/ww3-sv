@@ -68,6 +68,7 @@
 	title={m.mode_pipeline_name()}
 	score={picking ? undefined : shownScore}
 	best={picking ? undefined : game.best}
+	confirmLeave={!picking && running}
 >
 	{#snippet actions()}
 		{#if !picking}
