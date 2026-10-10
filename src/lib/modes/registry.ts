@@ -17,6 +17,7 @@ import IconRadar from '~icons/lucide/radar';
 import IconMegaphone from '~icons/lucide/megaphone';
 import IconFootprints from '~icons/lucide/footprints';
 import IconRoute from '~icons/lucide/route';
+import IconLandmark from '~icons/lucide/landmark';
 
 export type ModeId =
 	| 'blocks'
@@ -33,7 +34,8 @@ export type ModeId =
 	| 'slice'
 	| 'whack'
 	| 'runcomrade'
-	| 'beltroad';
+	| 'beltroad'
+	| 'maze';
 
 interface ModeBase {
 	id: ModeId;
@@ -187,5 +189,14 @@ export const MODES: readonly GameMode[] = [
 		tileClass: 'bg-skin',
 		name: m.mode_beltroad_name,
 		description: m.mode_beltroad_description
+	},
+	{
+		id: 'maze',
+		status: 'playable',
+		href: '/play/maze',
+		icon: IconLandmark,
+		tileClass: 'bg-banner-slate',
+		name: m.mode_maze_name,
+		description: m.mode_maze_description
 	}
 ];
