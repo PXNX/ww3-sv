@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Cartoon of a woman with long black hair, disgusted with a raised eyebrow">
+	<!-- Original cartoon archetype (not a real person): flat colours, thick outlines -->
+	<rect width="200" height="200" fill="#DDE2C2"/>
+	<g stroke="#1c1c1c" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
+		<path d="M30 210 Q12 130 34 74 Q54 18 100 18 Q148 18 166 74 Q188 130 170 210 Z" fill="#17171C"/>
+		<path d="M28 230 Q36 162 100 158 Q164 162 172 230 Z" fill="#3E6B4A"/>
+		<path d="M82 160 L100 186 L118 160 Z" fill="#F8F4EA"/>
+		<rect x="86" y="130" width="28" height="32" rx="8" fill="#EFD6BC"/>
+		<ellipse cx="100" cy="88" rx="46" ry="50" fill="#EFD6BC"/>
+		<path d="M52 82 Q54 34 100 30 Q146 34 148 82 Q128 56 100 58 Q72 56 52 82 Z" fill="#17171C"/>
+		<path d="M54 84 Q40 130 44 196 Q26 196 28 150 Q28 110 40 80 Z M146 84 Q160 130 156 196 Q174 196 172 150 Q172 110 160 80 Z" fill="#17171C"/>
+		<path d="M62 78 Q76 66 90 76" fill="none" stroke-width="3.5"/>
+		<path d="M112 80 Q124 82 138 78" fill="none" stroke-width="3.5"/>
+		<path d="M66 90 Q76 84 86 90 L86 94 L66 94 Z M114 90 Q124 84 134 90 L134 94 L114 94 Z" fill="#FFFFFF" stroke-width="2.5"/>
+		<circle cx="82" cy="91" r="3.4" fill="#17171C" stroke="none"/>
+		<circle cx="130" cy="91" r="3.4" fill="#17171C" stroke="none"/>
+		<path d="M66 94 L86 94 M114 94 L134 94" fill="none" stroke-width="3.5"/>
+		<path d="M96 98 Q102 108 96 112" fill="none" stroke-width="2.5"/>
+		<path d="M82 128 Q92 120 102 124 Q112 128 120 120" fill="none" stroke="#B5424C" stroke-width="4"/>
+		<path d="M90 106 Q100 102 110 106" fill="none" stroke-width="2.2"/>
+		<circle cx="64" cy="108" r="7" fill="#EDB5A0" stroke="none"/>
+		<circle cx="136" cy="108" r="7" fill="#EDB5A0" stroke="none"/>
+		<path d="M92 176 Q100 170 108 176 Q100 182 92 176 Z" fill="#7BC27E" stroke-width="2.5"/>
+	</g>
+</svg>

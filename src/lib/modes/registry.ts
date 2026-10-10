@@ -19,6 +19,7 @@ import IconFootprints from '~icons/lucide/footprints';
 import IconRoute from '~icons/lucide/route';
 import IconLandmark from '~icons/lucide/landmark';
 import IconCat from '~icons/lucide/cat';
+import IconZap from '~icons/lucide/zap';
 
 export type ModeId =
 	| 'blocks'
@@ -37,7 +38,8 @@ export type ModeId =
 	| 'runcomrade'
 	| 'beltroad'
 	| 'maze'
-	| 'purrpentagram';
+	| 'purrpentagram'
+	| 'energiewende';
 
 interface ModeBase {
 	id: ModeId;
@@ -209,5 +211,14 @@ export const MODES: readonly GameMode[] = [
 		tileClass: 'bg-tie-red',
 		name: m.mode_purrpentagram_name,
 		description: m.mode_purrpentagram_description
+	},
+	{
+		id: 'energiewende',
+		status: 'playable',
+		href: '/play/energiewende',
+		icon: IconZap,
+		tileClass: 'bg-explosion-yellow',
+		name: m.mode_energiewende_name,
+		description: m.mode_energiewende_description
 	}
 ];

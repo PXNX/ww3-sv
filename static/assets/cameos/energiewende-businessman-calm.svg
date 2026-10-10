@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Cartoon of a stout businessman in a tight suit, content">
+	<!-- Original cartoon archetype (not a real person): flat colours, thick outlines -->
+	<rect width="200" height="200" fill="#C9D6E8"/>
+	<g transform="translate(25 -1) scale(0.75)" stroke="#1c1c1c" stroke-width="4.6" stroke-linejoin="round" stroke-linecap="round">
+		<path d="M14 230 Q18 150 100 146 Q182 150 186 230 Z" fill="#2C3140"/>
+		<path d="M78 148 L100 178 L122 148 Z" fill="#FFFFFF"/>
+		<ellipse cx="100" cy="198" rx="78" ry="50" fill="#2C3140"/>
+		<path d="M100 178 L110 188 L106 232 L100 238 L94 232 L90 188 Z" fill="#C8232C"/>
+		<circle cx="56" cy="196" r="3.5" fill="#E8C34A" stroke-width="2"/>
+		<circle cx="144" cy="196" r="3.5" fill="#E8C34A" stroke-width="2"/>
+		<path d="M70 164 Q100 184 130 164" fill="none" stroke="#E8C34A" stroke-width="3"/>
+		<ellipse cx="100" cy="146" rx="42" ry="17" fill="#F2B79A"/>
+		<ellipse cx="40" cy="88" rx="9" ry="13" fill="#F2B79A"/>
+		<ellipse cx="160" cy="88" rx="9" ry="13" fill="#F2B79A"/>
+		<ellipse cx="100" cy="84" rx="60" ry="54" fill="#F2B79A"/>
+		<path d="M42 78 Q36 56 50 48 Q50 64 52 80 Z M158 78 Q164 56 150 48 Q150 64 148 80 Z" fill="#6B4A2B" stroke-width="2.5"/>
+		<path d="M64 40 Q100 22 136 40 M70 34 Q100 20 130 34" fill="none" stroke="#6B4A2B" stroke-width="2.5"/>
+		<circle cx="64" cy="100" r="11" fill="#EE9E86" stroke="none"/>
+		<circle cx="136" cy="100" r="11" fill="#EE9E86" stroke="none"/>
+		<path d="M64 72 Q76 62 88 72 M112 72 Q124 62 136 72" fill="none" stroke-width="4"/>
+		<path d="M64 80 Q76 90 88 80 M112 80 Q124 90 136 80" fill="none" stroke-width="3.5"/>
+		<path d="M96 88 Q100 94 104 88 Q100 86 96 88 Z" fill="#E59B80" stroke-width="2.5"/>
+		<path d="M72 104 Q100 98 128 104 Q116 112 100 108 Q84 112 72 104 Z" fill="#6B4A2B"/>
+		<path d="M82 116 Q100 132 118 116" fill="none" stroke-width="3.5"/>
+		<path d="M142 132 L158 132 M150 124 L150 140" fill="none" stroke="#E8C34A" stroke-width="3"/>
+	</g>
+</svg>

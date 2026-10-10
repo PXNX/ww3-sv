@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Cartoon of a stout businessman in a tight suit, outraged and shouting">
+	<!-- Original cartoon archetype (not a real person): flat colours, thick outlines -->
+	<rect width="200" height="200" fill="#F0B9AE"/>
+	<g transform="translate(25 -1) scale(0.75)" stroke="#1c1c1c" stroke-width="4.6" stroke-linejoin="round" stroke-linecap="round">
+		<path d="M14 230 Q18 150 100 146 Q182 150 186 230 Z" fill="#2C3140"/>
+		<path d="M78 148 L100 178 L122 148 Z" fill="#FFFFFF"/>
+		<ellipse cx="100" cy="198" rx="78" ry="50" fill="#2C3140"/>
+		<path d="M100 178 L110 188 L106 232 L100 238 L94 232 L90 188 Z" fill="#C8232C"/>
+		<circle cx="56" cy="196" r="3.5" fill="#E8C34A" stroke-width="2"/>
+		<circle cx="144" cy="196" r="3.5" fill="#E8C34A" stroke-width="2"/>
+		<path d="M70 164 Q100 184 130 164" fill="none" stroke="#E8C34A" stroke-width="3"/>
+		<ellipse cx="100" cy="146" rx="42" ry="17" fill="#E4605A"/>
+		<ellipse cx="40" cy="88" rx="9" ry="13" fill="#E4605A"/>
+		<ellipse cx="160" cy="88" rx="9" ry="13" fill="#E4605A"/>
+		<ellipse cx="100" cy="84" rx="60" ry="54" fill="#E4605A"/>
+		<path d="M42 78 Q30 54 48 44 Q50 62 52 80 Z M158 78 Q170 54 152 44 Q150 62 148 80 Z" fill="#6B4A2B" stroke-width="2.5"/>
+		<path d="M66 36 Q70 20 76 34 M92 30 Q98 14 106 30 M122 34 Q130 20 134 38" fill="none" stroke="#6B4A2B" stroke-width="3"/>
+		<path d="M60 56 L92 70 M108 70 L140 56" fill="none" stroke="#6B4A2B" stroke-width="7"/>
+		<ellipse cx="78" cy="80" rx="12" ry="9" fill="#FFFFFF"/>
+		<ellipse cx="122" cy="80" rx="12" ry="9" fill="#FFFFFF"/>
+		<circle cx="80" cy="81" r="3.6" fill="#1c1c1c" stroke="none"/>
+		<circle cx="120" cy="81" r="3.6" fill="#1c1c1c" stroke="none"/>
+		<path d="M96 90 Q100 96 104 90 Q100 88 96 90 Z" fill="#C8453F" stroke-width="2.5"/>
+		<path d="M70 104 Q100 98 130 104 Q116 110 100 106 Q84 110 70 104 Z" fill="#6B4A2B"/>
+		<path d="M72 114 Q100 108 128 114 Q124 148 100 150 Q76 148 72 114 Z" fill="#7A1620"/>
+		<path d="M76 114 Q100 109 124 114 L122 122 Q100 117 78 122 Z" fill="#FFFFFF" stroke-width="2.5"/>
+		<path d="M88 138 Q100 128 112 138 Q106 146 94 146 Z" fill="#E5737A" stroke-width="2.5"/>
+		<g stroke="#C8232C" stroke-width="3.5" fill="none"><path d="M134 40 Q142 40 142 48 M150 40 Q150 48 142 48 M134 58 Q142 58 142 50 M150 58 Q150 50 142 50"/></g>
+		<path d="M30 40 Q16 38 18 26 Q30 20 36 30 M170 40 Q184 38 182 26 Q170 20 164 30" fill="#FFFFFF" stroke-width="3"/>
+		<path d="M174 100 Q190 96 192 112 M26 100 Q10 96 8 112" fill="none" stroke-width="3"/>
+	</g>
+</svg>
