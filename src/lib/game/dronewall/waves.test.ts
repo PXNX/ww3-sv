@@ -1,13 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { createRandom } from '#lib/game/random.js';
-import { generateWave, isFlyerSpawn, waveComposition, waveSize } from './waves';
+import { generateWave, hasRush, isFlyerSpawn, rushStart, waveComposition, waveSize } from './waves';
 
-const count = (wave: number, kind: string) =>
-	generateWave(wave, createRandom(5)).filter((entry) => entry.kind === kind).length;
+/** Entries of a kind, not counting the soldiers of the mass assault */
+const count = (wave: number, kind: string, crowd = 1) =>
+	generateWave(wave, createRandom(5), crowd).filter((entry) => entry.kind === kind && !entry.rush)
+		.length;
 
-/** The soldiers of a wave: the platoons, without the aircraft */
+/** The soldiers of a wave: the platoons, without the aircraft and the mass assault */
 const ground = (wave: number, seed: number) =>
-	generateWave(wave, createRandom(seed)).filter((entry) => !isFlyerSpawn(entry));
+	generateWave(wave, createRandom(seed)).filter((entry) => !isFlyerSpawn(entry) && !entry.rush);
+
+/** The size of a wave without its mass assault */
+const platoonSize = (wave: number) => waveSize(wave) - waveComposition(wave).rush;
 
 describe('wave generator', () => {
 	it('makes the same wave for the same seed and a different one for another seed', () => {
@@ -26,6 +31,13 @@ describe('wave generator', () => {
 			expect(count(wave, 'btr')).toBe(composition.btrs);
 			expect(count(wave, 'shahed')).toBe(composition.shaheds);
 			expect(count(wave, 'heli')).toBe(composition.helis);
+			expect(count(wave, 'buggy')).toBe(composition.buggies);
+			expect(count(wave, 'medic')).toBe(composition.medics);
+			expect(count(wave, 'officer')).toBe(composition.officers);
+			expect(count(wave, 'sapper')).toBe(composition.sappers);
+			expect(count(wave, 'tank')).toBe(composition.tanks);
+			expect(count(wave, 'bomber')).toBe(composition.bombers);
+			expect(count(wave, 'swarm')).toBe(composition.swarms);
 			expect(generateWave(wave, createRandom(5))).toHaveLength(waveSize(wave));
 		}
 	});
@@ -39,7 +51,7 @@ describe('wave generator', () => {
 
 	it('grows from wave to wave', () => {
 		for (let wave = 1; wave < 15; wave++) {
-			expect(waveSize(wave + 1)).toBeGreaterThan(waveSize(wave));
+			expect(platoonSize(wave + 1)).toBeGreaterThan(platoonSize(wave));
 		}
 	});
 
@@ -71,7 +83,7 @@ describe('wave generator', () => {
 	});
 
 	it('puts the heavy ones (brutes, armored cars) at the back of their platoon', () => {
-		const heavy = (kind: string) => kind === 'brute' || kind === 'btr';
+		const heavy = (kind: string) => kind === 'brute' || kind === 'btr' || kind === 'tank';
 		for (const seed of [2, 5, 9]) {
 			const entries = ground(12, seed);
 			const platoonStarts = [0];
@@ -112,12 +124,64 @@ describe('wave generator', () => {
 	it('spreads aircraft over the wave, on flight lines inside the field', () => {
 		const entries = generateWave(10, createRandom(4));
 		const air = entries.filter(isFlyerSpawn);
-		expect(air.length).toBe(waveComposition(10).shaheds + waveComposition(10).helis);
+		const c = waveComposition(10);
+		expect(air.length).toBe(c.shaheds + c.helis + c.bombers + c.swarms);
 		const lastGround = ground(10, 4).at(-1)!.atMs;
 		for (const flyer of air) {
 			expect(flyer.atMs).toBeGreaterThan(0);
 			expect(flyer.atMs).toBeLessThan(lastGround);
 			expect(Math.abs(flyer.exitLane)).toBeLessThanOrEqual(1);
 		}
+	});
+});
+
+describe('new enemies and the mass assault', () => {
+	it('brings support and heavy troops over time', () => {
+		expect(waveComposition(5).buggies).toBeGreaterThan(0);
+		expect(waveComposition(5).medics).toBe(0);
+		expect(waveComposition(6).medics).toBeGreaterThan(0);
+		expect(waveComposition(6).officers).toBe(0);
+		expect(waveComposition(7).officers).toBeGreaterThan(0);
+		expect(waveComposition(8).sappers).toBe(0);
+		expect(waveComposition(9).sappers).toBeGreaterThan(0);
+		expect(waveComposition(11).tanks).toBe(0);
+		expect(waveComposition(12).tanks).toBeGreaterThan(0);
+		expect(waveComposition(9).bombers).toBe(0);
+		expect(waveComposition(10).bombers).toBeGreaterThan(0);
+	});
+
+	it('sends a swarm of drones every third wave from wave 6 on', () => {
+		expect(waveComposition(6).swarms).toBeGreaterThan(0);
+		expect(waveComposition(7).swarms).toBe(0);
+		expect(waveComposition(9).swarms).toBeGreaterThan(0);
+		const swarm = generateWave(6, createRandom(2)).filter((entry) => entry.kind === 'swarm');
+		const times = swarm.map((entry) => entry.atMs);
+		// They arrive as a cloud, not spread over the wave
+		expect(Math.max(...times) - Math.min(...times)).toBeLessThan(2500);
+	});
+
+	it('has a sudden mass assault every fourth wave from wave 6', () => {
+		expect([5, 6, 7, 9, 10, 14].map(hasRush)).toEqual([false, true, false, false, true, true]);
+		expect(waveComposition(6).rush).toBeGreaterThan(10);
+		expect(waveComposition(7).rush).toBe(0);
+		expect(rushStart(generateWave(7, createRandom(1)))).toBeNull();
+	});
+
+	it('packs the mass assault into a few seconds, in the middle of the wave', () => {
+		const entries = generateWave(6, createRandom(3));
+		const rush = entries.filter((entry) => entry.rush);
+		expect(rush).toHaveLength(waveComposition(6).rush);
+		expect(rushStart(entries)).toBe(rush[0].atMs);
+		const span = Math.max(...rush.map((entry) => entry.atMs)) - rush[0].atMs;
+		expect(span).toBeLessThan(waveComposition(6).rush * 180);
+		const last = ground(6, 3).at(-1)!.atMs;
+		expect(rush[0].atMs).toBeGreaterThan(last * 0.3);
+		expect(rush[0].atMs).toBeLessThan(last);
+	});
+
+	it('sends bigger crowds on maps with a longer road', () => {
+		expect(waveSize(5, 1.5)).toBeGreaterThan(waveSize(5) * 1.3);
+		expect(generateWave(5, createRandom(1), 1.5)).toHaveLength(waveSize(5, 1.5));
+		expect(count(5, 'grunt', 1.5)).toBe(waveComposition(5, 1.5).grunts);
 	});
 });

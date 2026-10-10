@@ -26,6 +26,9 @@ export function soldierAt(
 		slow: 1,
 		hitMs: 0,
 		engaged: false,
+		frozenMs: 0,
+		thawMs: 0,
+		rally: 1,
 		...overrides
 	};
 }
@@ -48,6 +51,7 @@ export function flyerAt(
 		speed: stats.speed,
 		fromX: x,
 		toX: x,
+		toY: LINE_Y,
 		progress: y + 30,
 		length,
 		phase: 0,

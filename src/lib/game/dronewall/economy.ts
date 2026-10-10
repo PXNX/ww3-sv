@@ -6,13 +6,15 @@ import {
 	HELMET_FLY_MS,
 	HELMET_POP_MS,
 	buildCost,
+	eliteTier,
 	sellValue,
 	upgradeCost,
 	type DefenseKind
 } from './config';
 import type { DroneWallEvent, DroneWallState, Helmet, Soldier } from './state';
 
-export type EconomyFailure = 'game-over' | 'bad-slot' | 'occupied' | 'empty' | 'max-level' | 'poor';
+export type EconomyFailure =
+	'game-over' | 'bad-slot' | 'occupied' | 'empty' | 'max-level' | 'poor' | 'locked' | 'cooldown';
 
 export type EconomyResult = { ok: true; cost: number } | { ok: false; reason: EconomyFailure };
 
@@ -44,6 +46,8 @@ export function upgrade(state: DroneWallState, slot: number): EconomyResult {
 	if (!canAfford(state, cost)) return fail('poor');
 	state.currency -= cost;
 	defense.level += 1;
+	// The first elite defense unlocks the powers; higher elite tiers make them stronger
+	state.eliteRank = Math.max(state.eliteRank, eliteTier(defense.level));
 	return { ok: true, cost };
 }
 
