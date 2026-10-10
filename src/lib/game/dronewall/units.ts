@@ -5,6 +5,7 @@
  * block the road; when a unit falls, the post sends a new one after a while.
  */
 import { SOLDIERS, defenseStats, isGarrison, type DefenseStats, type Point } from './config';
+import { WEATHER } from './weather';
 import { damageSoldier } from './damage';
 import { distanceBetween } from './path';
 import type { Defense, DroneWallEvent, DroneWallState, Soldier, Unit } from './state';
@@ -66,7 +67,10 @@ function updateUnit(
 		unit.hp = Math.min(stats.unitHp, unit.hp + Math.max(0, stats.unitHp - unit.maxHp));
 		unit.maxHp = stats.unitHp;
 	}
-	const step = (stats.unitSpeed * dtMs) / 1000;
+	// Rain bogs the tank down, snow slows the infantry
+	const weather = WEATHER[state.weather];
+	const going = unit.kind === 'leopard' ? weather.vehicleSpeed : weather.friendlyInfantrySpeed;
+	const step = (stats.unitSpeed * going * dtMs) / 1000;
 
 	// Keep the soldier it is fighting while it stays in reach of the post, else pick the closest
 	let target =

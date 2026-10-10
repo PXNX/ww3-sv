@@ -1,11 +1,14 @@
 /*
- * Drone Wall: fixed numbers and tables. The field is a portrait world of WORLD_WIDTH by
- * WORLD_HEIGHT units. Soldiers enter at the top, follow one winding road and lose the player a
- * heart when they reach the end of it (the Ukrainian line at the bottom). There are several maps,
- * each with its own road, defense slots and scenery.
+ * Drone Wall: fixed numbers and tables. The field is WORLD_WIDTH units wide and as tall as the map
+ * says: most maps are one screen (WORLD_HEIGHT) high, the big ones are several screens high and
+ * scroll. Soldiers enter at the top, follow one winding road and lose the player a heart when they
+ * reach the end of it (the Ukrainian line at the bottom). Every map has its own road, defense
+ * slots, scenery and climate.
  */
+import { smooth } from './roadShape';
 
 export const WORLD_WIDTH = 360;
+/** The height of one screen of the field; small maps are exactly this tall, big ones a multiple */
 export const WORLD_HEIGHT = 640;
 
 export interface Point {
@@ -13,10 +16,15 @@ export interface Point {
 	y: number;
 }
 
-/** The Ukrainian line: soldiers that reach this height (the end of the road) breach it */
+/** The Ukrainian line of the standard maps: soldiers that reach this height breach it */
 export const LINE_Y = 600;
+/** The strip below the line (the flag colours) is this tall on every map */
+export const LINE_DEPTH = WORLD_HEIGHT - LINE_Y;
 
-export type DecorKind = 'tree' | 'pine' | 'rock' | 'bush' | 'cactus';
+export type WeatherKind = 'clear' | 'fog' | 'rain' | 'snow';
+
+export type DecorKind =
+	'tree' | 'pine' | 'rock' | 'bush' | 'cactus' | 'ruin' | 'wreck' | 'hay' | 'stump';
 
 export interface MapTheme {
 	field: string;
@@ -28,10 +36,29 @@ export interface MapTheme {
 	leaves: readonly string[];
 }
 
-export type MapId = 'serpentine' | 'riverbend' | 'lightning' | 'switchbacks';
+export type MapId =
+	| 'serpentine'
+	| 'riverbend'
+	| 'lightning'
+	| 'switchbacks'
+	| 'ridge'
+	| 'oxbow'
+	| 'barricades'
+	| 'longmarch'
+	| 'blackforest'
+	| 'tundra'
+	| 'metropolis';
 
 export interface MapDef {
 	id: MapId;
+	/** How tall the field is, in world units; above WORLD_HEIGHT the map scrolls */
+	height: number;
+	/** Where the road ends and the line is: soldiers that reach this height breach it */
+	lineY: number;
+	/** Multiplier on the number of enemies per wave (long roads send bigger crowds) */
+	crowd: number;
+	/** The weather this map gets, as a bag to draw from (more copies, more often) */
+	climate: readonly WeatherKind[];
 	/** The road, as a polyline. It starts above the field and ends on the line. */
 	points: readonly Point[];
 	/** Fixed defense positions, all within reach of the road */
@@ -39,13 +66,25 @@ export interface MapDef {
 	theme: MapTheme;
 }
 
+export function isTallMap(map: Pick<MapDef, 'height'>): boolean {
+	return map.height > WORLD_HEIGHT;
+}
+
 const pts = (list: readonly (readonly [number, number])[]): Point[] =>
 	list.map(([x, y]) => ({ x, y }));
+
+/** A road from corner points, with the corners cut `rounds` times (0 keeps them sharp) */
+const road = (list: readonly (readonly [number, number])[], rounds = 0): Point[] =>
+	smooth(pts(list), rounds);
 
 export const MAP_DEFS: readonly MapDef[] = [
 	// Three long rows with a turn at each end
 	{
 		id: 'serpentine',
+		height: WORLD_HEIGHT,
+		lineY: LINE_Y,
+		crowd: 1,
+		climate: ['clear', 'clear', 'rain', 'fog'],
 		points: pts([
 			[50, -20],
 			[50, 120],
@@ -78,6 +117,10 @@ export const MAP_DEFS: readonly MapDef[] = [
 	// Down the left bank, up the middle and down the right one
 	{
 		id: 'riverbend',
+		height: WORLD_HEIGHT,
+		lineY: LINE_Y,
+		crowd: 1,
+		climate: ['clear', 'clear', 'rain', 'fog'],
 		points: pts([
 			[60, -20],
 			[60, 470],
@@ -108,6 +151,10 @@ export const MAP_DEFS: readonly MapDef[] = [
 	// Sharp diagonal zigzags
 	{
 		id: 'lightning',
+		height: WORLD_HEIGHT,
+		lineY: LINE_Y,
+		crowd: 1,
+		climate: ['clear', 'snow', 'snow', 'fog'],
 		points: pts([
 			[310, -20],
 			[310, 80],
@@ -138,6 +185,10 @@ export const MAP_DEFS: readonly MapDef[] = [
 	// Many short rows, tight turns
 	{
 		id: 'switchbacks',
+		height: WORLD_HEIGHT,
+		lineY: LINE_Y,
+		crowd: 1,
+		climate: ['clear', 'clear', 'clear', 'fog'],
 		points: pts([
 			[180, -20],
 			[180, 90],
@@ -171,6 +222,349 @@ export const MAP_DEFS: readonly MapDef[] = [
 			decor: ['cactus', 'rock', 'bush'],
 			leaves: ['#6f9a52', '#8aa85a']
 		}
+	},
+	// A mountain pass: one long diagonal S between rocks and pines
+	{
+		id: 'ridge',
+		height: WORLD_HEIGHT,
+		lineY: LINE_Y,
+		crowd: 1,
+		climate: ['clear', 'fog', 'fog', 'snow'],
+		points: road(
+			[
+				[300, -20],
+				[300, 70],
+				[120, 135],
+				[60, 235],
+				[170, 305],
+				[285, 355],
+				[300, 455],
+				[180, 525],
+				[180, 600]
+			],
+			2
+		),
+		slots: pts([
+			[185, 46],
+			[329, 104],
+			[40, 147],
+			[203, 250],
+			[78, 320],
+			[327, 329],
+			[223, 426],
+			[130, 511],
+			[240, 569]
+		]),
+		theme: {
+			field: '#a7b39a',
+			stripe: '#98a58c',
+			road: '#d8cfb4',
+			decor: ['pine', 'rock', 'rock', 'stump'],
+			leaves: ['#4a6b52', '#587a5e']
+		}
+	},
+	// A lazy river bend: a smooth meander through wet green fields
+	{
+		id: 'oxbow',
+		height: WORLD_HEIGHT,
+		lineY: LINE_Y,
+		crowd: 1,
+		climate: ['clear', 'rain', 'rain', 'fog'],
+		points: road(
+			[
+				[90, -20],
+				[90, 150],
+				[270, 215],
+				[270, 365],
+				[90, 430],
+				[90, 520],
+				[200, 560],
+				[200, 600]
+			],
+			3
+		),
+		slots: pts([
+			[152, 48],
+			[277, 168],
+			[85, 198],
+			[206, 273],
+			[326, 337],
+			[113, 359],
+			[230, 443],
+			[88, 569],
+			[262, 582]
+		]),
+		theme: {
+			field: '#9fb878',
+			stripe: '#8fa968',
+			road: '#e6dbb0',
+			decor: ['tree', 'bush', 'hay', 'tree'],
+			leaves: ['#6da055', '#7bb064']
+		}
+	},
+	// A ruined town: three long streets joined by sharp U-turns
+	{
+		id: 'barricades',
+		height: WORLD_HEIGHT,
+		lineY: LINE_Y,
+		crowd: 1.1,
+		climate: ['clear', 'rain', 'fog'],
+		points: road(
+			[
+				[40, -20],
+				[40, 545],
+				[130, 545],
+				[130, 95],
+				[220, 95],
+				[220, 545],
+				[310, 545],
+				[310, 600]
+			],
+			1
+		),
+		slots: pts([
+			[82, 48],
+			[260, 91],
+			[92, 201],
+			[282, 276],
+			[168, 288],
+			[78, 357],
+			[282, 388],
+			[182, 429],
+			[330, 498],
+			[168, 557]
+		]),
+		theme: {
+			field: '#b0a898',
+			stripe: '#a29a8a',
+			road: '#e2d9bd',
+			decor: ['ruin', 'wreck', 'rock', 'ruin'],
+			leaves: ['#7d7766', '#8a8472']
+		}
+	},
+	// Big map: a long zigzag across the steppe, almost two screens high
+	{
+		id: 'longmarch',
+		height: 1120,
+		lineY: 1080,
+		crowd: 1.25,
+		climate: ['clear', 'clear', 'rain', 'fog'],
+		points: road(
+			[
+				[60, -20],
+				[60, 100],
+				[300, 200],
+				[300, 300],
+				[60, 400],
+				[60, 500],
+				[300, 600],
+				[300, 700],
+				[60, 800],
+				[60, 900],
+				[300, 1000],
+				[300, 1080]
+			],
+			2
+		),
+		slots: pts([
+			[103, 46],
+			[240, 108],
+			[329, 205],
+			[159, 209],
+			[254, 361],
+			[38, 363],
+			[145, 436],
+			[282, 532],
+			[75, 567],
+			[259, 651],
+			[146, 697],
+			[271, 774],
+			[30, 786],
+			[214, 908],
+			[321, 958],
+			[78, 969],
+			[249, 1049]
+		]),
+		theme: {
+			field: '#cfc27a',
+			stripe: '#c1b46b',
+			road: '#efe3b5',
+			decor: ['hay', 'bush', 'tree', 'stump'],
+			leaves: ['#8fa84f', '#a3b85a']
+		}
+	},
+	// Big map: a winding road through a dark forest, over two screens high
+	{
+		id: 'blackforest',
+		height: 1400,
+		lineY: 1360,
+		crowd: 1.35,
+		climate: ['fog', 'fog', 'rain', 'clear'],
+		points: road(
+			[
+				[180, -20],
+				[180, 120],
+				[300, 230],
+				[300, 330],
+				[70, 430],
+				[70, 560],
+				[290, 670],
+				[290, 790],
+				[60, 900],
+				[60, 1020],
+				[280, 1130],
+				[280, 1250],
+				[180, 1310],
+				[180, 1360]
+			],
+			3
+		),
+		slots: pts([
+			[118, 49],
+			[289, 136],
+			[161, 180],
+			[193, 308],
+			[329, 327],
+			[40, 423],
+			[206, 439],
+			[210, 583],
+			[67, 615],
+			[328, 675],
+			[211, 707],
+			[131, 798],
+			[293, 844],
+			[32, 872],
+			[146, 933],
+			[30, 1011],
+			[280, 1072],
+			[136, 1127],
+			[322, 1202],
+			[268, 1329],
+			[118, 1342]
+		]),
+		theme: {
+			field: '#4d6b45',
+			stripe: '#456139',
+			road: '#cbb98e',
+			decor: ['pine', 'pine', 'tree', 'stump', 'rock'],
+			leaves: ['#2f5a3c', '#38694a', '#2a4d36']
+		}
+	},
+	// Big map: a frozen plain with long lazy bends, deep in snow
+	{
+		id: 'tundra',
+		height: 1280,
+		lineY: 1240,
+		crowd: 1.3,
+		climate: ['snow', 'snow', 'snow', 'fog', 'clear'],
+		points: road(
+			[
+				[60, -20],
+				[60, 200],
+				[300, 300],
+				[300, 520],
+				[60, 620],
+				[60, 840],
+				[300, 940],
+				[300, 1100],
+				[180, 1190],
+				[180, 1240]
+			],
+			3
+		),
+		slots: pts([
+			[102, 48],
+			[30, 161],
+			[239, 209],
+			[99, 277],
+			[206, 337],
+			[330, 338],
+			[251, 452],
+			[132, 524],
+			[277, 586],
+			[170, 644],
+			[34, 647],
+			[125, 758],
+			[283, 876],
+			[54, 880],
+			[171, 932],
+			[237, 1040],
+			[329, 1120],
+			[259, 1209],
+			[118, 1222]
+		]),
+		theme: {
+			field: '#e6eef2',
+			stripe: '#d6e2e9',
+			road: '#bfae92',
+			decor: ['pine', 'rock', 'stump', 'pine'],
+			leaves: ['#3f6b52', '#4d7a5e']
+		}
+	},
+	// Big map: a ruined city of sharp street corners, the longest road of all
+	{
+		id: 'metropolis',
+		height: 1600,
+		lineY: 1560,
+		crowd: 1.8,
+		climate: ['clear', 'rain', 'fog', 'snow'],
+		points: pts([
+			[320, -20],
+			[320, 110],
+			[40, 110],
+			[40, 260],
+			[250, 260],
+			[250, 380],
+			[90, 380],
+			[90, 520],
+			[320, 520],
+			[320, 680],
+			[40, 680],
+			[40, 820],
+			[250, 820],
+			[250, 950],
+			[90, 950],
+			[90, 1090],
+			[320, 1090],
+			[320, 1240],
+			[40, 1240],
+			[40, 1380],
+			[220, 1380],
+			[220, 1560]
+		]),
+		slots: pts([
+			[44, 48],
+			[280, 68],
+			[112, 162],
+			[232, 218],
+			[100, 302],
+			[312, 368],
+			[174, 442],
+			[38, 516],
+			[262, 572],
+			[148, 618],
+			[80, 722],
+			[224, 778],
+			[312, 900],
+			[170, 908],
+			[38, 950],
+			[162, 1048],
+			[318, 1048],
+			[44, 1178],
+			[232, 1178],
+			[320, 1292],
+			[156, 1302],
+			[40, 1422],
+			[172, 1432],
+			[262, 1528]
+		]),
+		theme: {
+			field: '#9a9a92',
+			stripe: '#8d8d86',
+			road: '#d6cfba',
+			decor: ['ruin', 'wreck', 'ruin', 'rock'],
+			leaves: ['#6f6f66', '#7c7c72']
+		}
 	}
 ];
 
@@ -196,17 +590,47 @@ export const HELMET_FLY_MS = 640;
 /** Where the helmet counter sits on the field, until the page measures the real spot */
 export const HELMET_TARGET: Point = { x: WORLD_WIDTH - 42, y: 22 };
 
-export type DefenseKind = 'squad' | 'mortar' | 'nest' | 'patriot' | 'trench' | 'azov' | 'leopard';
+export type DefenseKind =
+	| 'squad'
+	| 'mortar'
+	| 'nest'
+	| 'patriot'
+	| 'trench'
+	| 'azov'
+	| 'leopard'
+	| 'himars'
+	| 'sniper'
+	| 'jammer'
+	| 'gepard'
+	| 'pion';
+/** In build-menu order */
 export const DEFENSE_KINDS: readonly DefenseKind[] = [
 	'squad',
+	'trench',
 	'mortar',
 	'nest',
 	'patriot',
-	'trench',
+	'gepard',
+	'sniper',
 	'azov',
-	'leopard'
+	'leopard',
+	'jammer',
+	'himars',
+	'pion'
 ];
-export const MAX_LEVEL = 3;
+
+/** Levels 1 to 3 are the normal ones, 4 to 6 are the elite upgrades (elite I, II and III) */
+export const NORMAL_LEVELS = 3;
+export const MAX_LEVEL = 6;
+
+export function isElite(level: number): boolean {
+	return level > NORMAL_LEVELS;
+}
+
+/** 0 for a normal level, 1 to 3 for the elite levels */
+export function eliteTier(level: number): number {
+	return Math.max(0, Math.min(MAX_LEVEL, Math.floor(level)) - NORMAL_LEVELS);
+}
 
 /** Defenses that send units walking around the post to fight soldiers in melee */
 export type GarrisonKind = 'azov' | 'leopard';
@@ -215,7 +639,25 @@ export function isGarrison(kind: DefenseKind): kind is GarrisonKind {
 	return kind === 'azov' || kind === 'leopard';
 }
 
-export type SoldierKind = 'scout' | 'grunt' | 'brute' | 'runner' | 'shield' | 'btr';
+/** Defenses that lob shells, rockets or heavy rounds at a spot on the road */
+export type ArtilleryKind = 'mortar' | 'himars' | 'pion';
+
+export function isArtillery(kind: DefenseKind): kind is ArtilleryKind {
+	return kind === 'mortar' || kind === 'himars' || kind === 'pion';
+}
+
+export type SoldierKind =
+	| 'scout'
+	| 'grunt'
+	| 'brute'
+	| 'runner'
+	| 'shield'
+	| 'btr'
+	| 'medic'
+	| 'officer'
+	| 'sapper'
+	| 'tank'
+	| 'buggy';
 
 export interface SoldierStats {
 	hp: number;
@@ -231,22 +673,146 @@ export interface SoldierStats {
 	meleeDps: number;
 	/** Share of an assault squad's bullet damage that gets through (1 = all of it) */
 	armor: number;
+	/** Armored cars, tanks and buggies: rain bogs them down (and snow does not) */
+	vehicle: boolean;
+	/** Hearts lost when it breaches the line */
+	leak: number;
 }
 
 export const SOLDIERS: Record<SoldierKind, SoldierStats> = {
-	scout: { hp: 16, speed: 68, value: 1, radius: 8, points: 10, meleeDps: 4, armor: 1 },
-	grunt: { hp: 34, speed: 40, value: 1, radius: 10, points: 10, meleeDps: 6, armor: 1 },
-	brute: { hp: 150, speed: 25, value: 3, radius: 15, points: 40, meleeDps: 18, armor: 1 },
+	scout: {
+		hp: 16,
+		speed: 68,
+		value: 1,
+		radius: 8,
+		points: 10,
+		meleeDps: 4,
+		armor: 1,
+		vehicle: false,
+		leak: 1
+	},
+	grunt: {
+		hp: 34,
+		speed: 40,
+		value: 1,
+		radius: 10,
+		points: 10,
+		meleeDps: 6,
+		armor: 1,
+		vehicle: false,
+		leak: 1
+	},
+	brute: {
+		hp: 150,
+		speed: 25,
+		value: 3,
+		radius: 15,
+		points: 40,
+		meleeDps: 18,
+		armor: 1,
+		vehicle: false,
+		leak: 1
+	},
 	// Very fast and fragile
-	runner: { hp: 12, speed: 108, value: 1, radius: 7, points: 10, meleeDps: 3, armor: 1 },
+	runner: {
+		hp: 12,
+		speed: 108,
+		value: 1,
+		radius: 7,
+		points: 10,
+		meleeDps: 3,
+		armor: 1,
+		vehicle: false,
+		leak: 1
+	},
 	// Hides behind a shield: rifles do half damage, mortars and mines do not care
-	shield: { hp: 62, speed: 34, value: 2, radius: 11, points: 20, meleeDps: 8, armor: 0.5 },
+	shield: {
+		hp: 62,
+		speed: 34,
+		value: 2,
+		radius: 11,
+		points: 20,
+		meleeDps: 8,
+		armor: 0.5,
+		vehicle: false,
+		leak: 1
+	},
 	// An armored car: huge, slow, rifles barely scratch it (FPV drones and mortars do)
-	btr: { hp: 360, speed: 20, value: 6, radius: 19, points: 80, meleeDps: 28, armor: 0.35 }
+	btr: {
+		hp: 360,
+		speed: 20,
+		value: 6,
+		radius: 19,
+		points: 80,
+		meleeDps: 28,
+		armor: 0.35,
+		vehicle: true,
+		leak: 1
+	},
+	// Patches up the soldiers around it
+	medic: {
+		hp: 42,
+		speed: 36,
+		value: 2,
+		radius: 10,
+		points: 25,
+		meleeDps: 3,
+		armor: 1,
+		vehicle: false,
+		leak: 1
+	},
+	// Shouts the soldiers around it into a faster march
+	officer: {
+		hp: 90,
+		speed: 34,
+		value: 3,
+		radius: 11,
+		points: 40,
+		meleeDps: 8,
+		armor: 0.8,
+		vehicle: false,
+		leak: 1
+	},
+	// Fast and sneaky: trenches do not slow it and mines do not hurt it
+	sapper: {
+		hp: 30,
+		speed: 56,
+		value: 2,
+		radius: 8.5,
+		points: 20,
+		meleeDps: 5,
+		armor: 1,
+		vehicle: false,
+		leak: 1
+	},
+	// A main battle tank: the toughest thing on the road, and a breach costs two hearts
+	tank: {
+		hp: 520,
+		speed: 23,
+		value: 8,
+		radius: 21,
+		points: 130,
+		meleeDps: 40,
+		armor: 0.25,
+		vehicle: true,
+		leak: 2
+	},
+	// A fast light buggy with a gunner on the back
+	buggy: {
+		hp: 64,
+		speed: 98,
+		value: 2,
+		radius: 11,
+		points: 25,
+		meleeDps: 9,
+		armor: 0.7,
+		vehicle: true,
+		leak: 1
+	}
 };
 
 /** Aerial enemies ignore the road and fly straight from the top edge at the line */
-export type FlyerKind = 'shahed' | 'heli';
+export type FlyerKind = 'shahed' | 'heli' | 'bomber' | 'swarm';
 export type EnemyKind = SoldierKind | FlyerKind;
 
 export interface FlyerStats {
@@ -256,13 +822,19 @@ export interface FlyerStats {
 	value: number;
 	radius: number;
 	points: number;
+	/** Hearts lost when it gets through */
+	leak: number;
 }
 
 export const FLYERS: Record<FlyerKind, FlyerStats> = {
 	// A fast kamikaze drone
-	shahed: { hp: 30, speed: 62, value: 1, radius: 9, points: 15 },
+	shahed: { hp: 30, speed: 62, value: 1, radius: 9, points: 15, leak: 1 },
 	// A slow, tough helicopter
-	heli: { hp: 150, speed: 36, value: 3, radius: 15, points: 50 }
+	heli: { hp: 150, speed: 36, value: 3, radius: 15, points: 50, leak: 1 },
+	// A huge, slow bomber that takes a lot of missiles, and costs two hearts when it gets through
+	bomber: { hp: 520, speed: 24, value: 9, radius: 24, points: 140, leak: 2 },
+	// Tiny cheap kamikaze drones that come in a cloud and make a Patriot waste its missiles
+	swarm: { hp: 9, speed: 92, value: 1, radius: 6, points: 5, leak: 1 }
 };
 
 export function isFlyerKind(kind: EnemyKind): kind is FlyerKind {
@@ -280,22 +852,32 @@ export function hpScale(wave: number): number {
 export interface DefenseStats {
 	/** Targeting range from the slot centre */
 	range: number;
-	/** Mortars cannot hit anything closer than this */
+	/** Artillery cannot hit anything closer than this */
 	minRange: number;
 	/** Time between shots */
 	intervalMs: number;
-	/** Damage per shot (at the centre of a mortar blast) */
+	/** Damage per shot (at the centre of a blast) */
 	damage: number;
-	/** Mortar blast radius */
+	/** Artillery blast radius */
 	splashRadius: number;
-	/** Mortar shell flight time */
+	/** Artillery shell flight time */
 	flightMs: number;
-	/** Trench: speed multiplier for soldiers inside range (1 = no slow) */
+	/**
+	 * Trench: speed multiplier for soldiers inside range (1 = no slow). Jammer: the same for
+	 * aerial enemies.
+	 */
 	slow: number;
-	/** Trench: mine damage per second to every soldier inside range */
+	/** Trench: mine damage per second to every soldier inside range. Jammer: to every aircraft. */
 	dps: number;
 	/** Nest drones and Patriot missiles: flight speed in units per second */
 	speed: number;
+	/** Shots, drones, missiles or rockets fired at different targets with every shot */
+	volley: number;
+	/** Share of an enemy's armor that this shot ignores (snipers) */
+	pierce: number;
+	/** Share of the damage that hits aerial enemies and ground enemies (0 = cannot shoot them) */
+	air: number;
+	ground: number;
 	/**
 	 * Garrisons (units that fight in melee): `range` is how far from the post they chase, `damage`
 	 * is per hit and `intervalMs` is the time to replace a fallen unit
@@ -312,7 +894,8 @@ export interface DefenseStats {
 	cleave: boolean;
 }
 
-const NONE = {
+const NONE: DefenseStats = {
+	range: 0,
 	minRange: 0,
 	splashRadius: 0,
 	flightMs: 0,
@@ -321,6 +904,10 @@ const NONE = {
 	speed: 0,
 	intervalMs: 0,
 	damage: 0,
+	volley: 1,
+	pierce: 0,
+	air: 0,
+	ground: 1,
 	unitCount: 0,
 	unitHp: 0,
 	unitSpeed: 0,
@@ -330,13 +917,13 @@ const NONE = {
 	cleave: false
 };
 
-/** Stats by level, index 0 is level 1 */
-const DEFENSE_STATS: Record<DefenseKind, readonly DefenseStats[]> = {
+/** The normal levels (1 to 3) by hand; index 0 is level 1 */
+const NORMAL_STATS: Record<DefenseKind, readonly DefenseStats[]> = {
 	// Close range, steady fire
 	squad: [
-		{ ...NONE, range: 88, intervalMs: 420, damage: 8 },
-		{ ...NONE, range: 96, intervalMs: 360, damage: 10 },
-		{ ...NONE, range: 104, intervalMs: 300, damage: 13 }
+		{ ...NONE, range: 88, intervalMs: 420, damage: 8, air: SQUAD_AIR_FACTOR },
+		{ ...NONE, range: 96, intervalMs: 360, damage: 10, air: SQUAD_AIR_FACTOR },
+		{ ...NONE, range: 104, intervalMs: 300, damage: 13, air: SQUAD_AIR_FACTOR }
 	],
 	// Slow, long range, area damage
 	mortar: [
@@ -466,18 +1053,185 @@ const DEFENSE_STATS: Record<DefenseKind, readonly DefenseStats[]> = {
 			unitRegen: 10,
 			cleave: true
 		}
+	],
+	// A rocket launcher truck: a salvo of rockets fired from far away, then a long reload
+	himars: [
+		{
+			...NONE,
+			range: 290,
+			minRange: 80,
+			intervalMs: 8000,
+			damage: 30,
+			splashRadius: 38,
+			flightMs: 1000,
+			volley: 4
+		},
+		{
+			...NONE,
+			range: 300,
+			minRange: 80,
+			intervalMs: 7000,
+			damage: 36,
+			splashRadius: 40,
+			flightMs: 1000,
+			volley: 4
+		},
+		{
+			...NONE,
+			range: 315,
+			minRange: 80,
+			intervalMs: 6200,
+			damage: 44,
+			splashRadius: 44,
+			flightMs: 1000,
+			volley: 5
+		}
+	],
+	// A sniper team: one precise shot that picks the toughest soldier and ignores most armor
+	sniper: [
+		{ ...NONE, range: 195, intervalMs: 2600, damage: 65, pierce: 0.55 },
+		{ ...NONE, range: 205, intervalMs: 2200, damage: 85, pierce: 0.65 },
+		{ ...NONE, range: 215, intervalMs: 1900, damage: 110, pierce: 0.75 }
+	],
+	// An electronic warfare station: aircraft in its field crawl and take damage
+	jammer: [
+		{ ...NONE, range: 120, slow: 0.65, dps: 3 },
+		{ ...NONE, range: 135, slow: 0.55, dps: 6 },
+		{ ...NONE, range: 150, slow: 0.45, dps: 10 }
+	],
+	// A Gepard flak tank: a hail of rounds that shreds aircraft, and barely scratches the ground
+	gepard: [
+		{ ...NONE, range: 150, intervalMs: 150, damage: 7, air: 1, ground: 0.3 },
+		{ ...NONE, range: 162, intervalMs: 130, damage: 8, air: 1, ground: 0.3 },
+		{ ...NONE, range: 175, intervalMs: 110, damage: 10, air: 1, ground: 0.3 }
+	],
+	// Heavy long-range artillery: a huge round every now and then from across the whole field
+	pion: [
+		{
+			...NONE,
+			range: 330,
+			minRange: 110,
+			intervalMs: 11000,
+			damage: 170,
+			splashRadius: 58,
+			flightMs: 1500
+		},
+		{
+			...NONE,
+			range: 345,
+			minRange: 110,
+			intervalMs: 9500,
+			damage: 220,
+			splashRadius: 64,
+			flightMs: 1500
+		},
+		{
+			...NONE,
+			range: 360,
+			minRange: 110,
+			intervalMs: 8200,
+			damage: 280,
+			splashRadius: 70,
+			flightMs: 1500
+		}
 	]
 };
 
-/** Helmet costs: [build, upgrade to level 2, upgrade to level 3] */
-const DEFENSE_COSTS: Record<DefenseKind, readonly [number, number, number]> = {
-	squad: [10, 12, 20],
-	mortar: [20, 18, 28],
-	nest: [16, 16, 26],
-	patriot: [22, 18, 28],
-	trench: [8, 10, 16],
-	azov: [18, 16, 24],
-	leopard: [30, 26, 38]
+/**
+ * The elite upgrades (levels 4 to 6) are built from the last normal level: every elite tier
+ * multiplies power, speed of fire, reach and toughness, and some defenses get something new on
+ * top, such as a bigger volley, more units or stronger mines.
+ */
+interface Tier {
+	power: number;
+	rate: number;
+	reach: number;
+	tough: number;
+}
+
+const TIERS: readonly Tier[] = [
+	{ power: 1.3, rate: 0.88, reach: 1.06, tough: 1.5 },
+	{ power: 1.6, rate: 0.78, reach: 1.12, tough: 2.2 },
+	{ power: 2, rate: 0.68, reach: 1.18, tough: 3.2 }
+];
+
+type PerTier = readonly [number, number, number];
+
+interface EliteExtra {
+	volley?: PerTier;
+	unitCount?: PerTier;
+	pierce?: PerTier;
+	slow?: PerTier;
+	dps?: PerTier;
+}
+
+const ELITE_EXTRA: Record<DefenseKind, EliteExtra> = {
+	squad: { volley: [1, 2, 2] },
+	mortar: { volley: [1, 2, 2] },
+	nest: { volley: [2, 2, 3] },
+	patriot: { volley: [1, 2, 2] },
+	trench: { slow: [0.3, 0.25, 0.2], dps: [12, 18, 26] },
+	azov: { unitCount: [4, 4, 5] },
+	leopard: { unitCount: [1, 2, 2] },
+	himars: { volley: [6, 7, 8] },
+	sniper: { volley: [1, 2, 2], pierce: [0.85, 0.92, 1] },
+	jammer: { slow: [0.38, 0.3, 0.24], dps: [14, 20, 28] },
+	gepard: { volley: [1, 1, 2] },
+	pion: { volley: [1, 2, 2] }
+};
+
+function eliteStats(kind: DefenseKind, tier: number): DefenseStats {
+	const base = NORMAL_STATS[kind][NORMAL_LEVELS - 1];
+	const { power, rate, reach, tough } = TIERS[tier - 1];
+	const extra = ELITE_EXTRA[kind];
+	const volley = extra.volley?.[tier - 1] ?? base.volley;
+	// A bigger volley already multiplies the damage dealt, so the shots themselves grow less
+	const damageGrowth = volley > base.volley ? 1 + (power - 1) * 0.6 : power;
+	return {
+		...base,
+		range: Math.round(base.range * reach),
+		intervalMs: Math.round(base.intervalMs * rate),
+		damage: Math.round(base.damage * damageGrowth),
+		splashRadius: Math.round(base.splashRadius * (1 + (reach - 1) * 1.5)),
+		speed: Math.round(base.speed * (1 + (reach - 1) * 0.5)),
+		volley,
+		pierce: extra.pierce?.[tier - 1] ?? base.pierce,
+		slow: extra.slow?.[tier - 1] ?? base.slow,
+		dps: extra.dps?.[tier - 1] ?? base.dps,
+		unitCount: extra.unitCount?.[tier - 1] ?? base.unitCount,
+		unitHp: Math.round(base.unitHp * tough),
+		unitSpeed: Math.round(base.unitSpeed * (1 + (reach - 1) * 0.8)),
+		unitReach: Math.round(base.unitReach * (1 + (reach - 1) * 0.8)),
+		unitAttackMs: Math.round(base.unitAttackMs * rate),
+		unitRegen: Math.round(base.unitRegen * tough)
+	};
+}
+
+/** Stats by level, index 0 is level 1 */
+const DEFENSE_STATS: Record<DefenseKind, readonly DefenseStats[]> = Object.fromEntries(
+	(Object.keys(NORMAL_STATS) as DefenseKind[]).map((kind) => [
+		kind,
+		[...NORMAL_STATS[kind], ...[1, 2, 3].map((tier) => eliteStats(kind, tier))]
+	])
+) as unknown as Record<DefenseKind, readonly DefenseStats[]>;
+
+/** Helmet costs: [build, then the upgrade to each of levels 2 to 6] */
+const DEFENSE_COSTS: Record<
+	DefenseKind,
+	readonly [number, number, number, number, number, number]
+> = {
+	squad: [10, 12, 20, 34, 48, 66],
+	trench: [8, 10, 16, 26, 38, 52],
+	mortar: [20, 18, 28, 44, 60, 80],
+	nest: [16, 16, 26, 40, 56, 76],
+	patriot: [22, 18, 28, 44, 60, 82],
+	gepard: [20, 16, 24, 38, 54, 72],
+	sniper: [14, 14, 22, 34, 48, 64],
+	azov: [18, 16, 24, 38, 52, 70],
+	leopard: [30, 26, 38, 56, 76, 100],
+	jammer: [18, 16, 24, 34, 46, 62],
+	himars: [40, 30, 44, 62, 84, 110],
+	pion: [38, 30, 44, 62, 84, 110]
 };
 
 /** Share of the spent helmets that comes back when a defense is sold */
@@ -507,4 +1261,54 @@ export function totalSpent(kind: DefenseKind, level: number): number {
 
 export function sellValue(kind: DefenseKind, level: number): number {
 	return Math.floor(totalSpent(kind, level) * SELL_REFUND);
+}
+
+/*
+ * Powers: things the player calls in by hand, for helmets. Each unlocks once a defense has been
+ * promoted to an elite level for the first time (the highest elite tier ever reached is the
+ * "elite rank"), and the higher the rank the harder they hit.
+ */
+export type PowerKind = 'airstrike' | 'stormshadow';
+export const POWER_KINDS: readonly PowerKind[] = ['airstrike', 'stormshadow'];
+
+export interface PowerDef {
+	cost: number;
+	cooldownMs: number;
+	/** Elite rank (1 to 3) needed before the power can be called */
+	unlockRank: number;
+}
+
+export const POWERS: Record<PowerKind, PowerDef> = {
+	airstrike: { cost: 45, cooldownMs: 40000, unlockRank: 1 },
+	stormshadow: { cost: 60, cooldownMs: 55000, unlockRank: 2 }
+};
+
+/** F-16s fly across the field and carpet-bomb a band of it; more bombs at a higher elite rank */
+export const AIRSTRIKE = {
+	/** Half the height of the bombed band */
+	halfBand: 80,
+	radius: 40,
+	damage: 85,
+	/** Time the jets take to cross the field */
+	crossMs: 1100,
+	/** Time a bomb takes to fall */
+	fallMs: 520,
+	/** Bombs by elite rank 1 to 3 */
+	bombs: [8, 11, 14],
+	/** Damage multiplier by elite rank */
+	rankDamage: [1, 1.25, 1.5]
+} as const;
+
+/** A Storm Shadow cruise missile: one huge blast on one spot */
+export const STORM_SHADOW = {
+	radius: 76,
+	damage: 420,
+	flightMs: 1500,
+	/** Damage multiplier by elite rank 1 to 3 */
+	rankDamage: [1, 1, 1.35]
+} as const;
+
+/** Powers keep up with the enemies: their damage grows with the wave */
+export function powerScale(wave: number): number {
+	return 0.5 + 0.5 * hpScale(wave);
 }

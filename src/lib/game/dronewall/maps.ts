@@ -1,10 +1,10 @@
 /*
  * The maps of Drone Wall, ready to play on: the road as a Path, and a fixed scatter of scenery
- * (trees, rocks, cacti) on the empty ground, the same every time for a map.
+ * (trees, rocks, ruins) on the empty ground, the same every time for a map.
  */
 import {
-	LINE_Y,
 	MAP_DEFS,
+	WORLD_HEIGHT,
 	WORLD_WIDTH,
 	type DecorKind,
 	type MapDef,
@@ -56,9 +56,11 @@ function distanceToPath(point: Point, path: Path): number {
 function scatterDecor(map: MapDef, road: Path, seed: number): Decor[] {
 	const random = lcg(seed);
 	const props: Decor[] = [];
-	for (let attempt = 0; attempt < 400 && props.length < 18; attempt++) {
+	// Bigger maps get more scenery, about the same amount per screen
+	const wanted = Math.round((18 * map.height) / WORLD_HEIGHT);
+	for (let attempt = 0; attempt < wanted * 25 && props.length < wanted; attempt++) {
 		const x = 14 + random() * (WORLD_WIDTH - 28);
-		const y = 14 + random() * (LINE_Y - 30);
+		const y = 14 + random() * (map.lineY - 30);
 		const spot = { x, y };
 		if (distanceToPath(spot, road) < 36) continue;
 		if (map.slots.some((slot) => distanceBetween(slot, spot) < 40)) continue;

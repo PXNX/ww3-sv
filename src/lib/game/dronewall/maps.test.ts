@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-	LINE_Y,
 	MAP_DEFS,
 	MAP_IDS,
 	WORLD_HEIGHT,
 	WORLD_WIDTH,
 	defenseStats,
+	isTallMap,
 	type Point
 } from './config';
 import { getMap, MAPS } from './maps';
@@ -39,30 +39,31 @@ describe('maps', () => {
 	it.each(MAP_DEFS.map((map) => map.id))(
 		'%s: the road enters above the field and ends on the line',
 		(id) => {
-			const { points } = getMap(id);
+			const { points, lineY, height } = getMap(id);
+			expect(lineY).toBe(height - 40);
 			expect(points[0].y).toBeLessThan(0);
-			expect(points[points.length - 1].y).toBe(LINE_Y);
+			expect(points[points.length - 1].y).toBe(lineY);
 			for (const point of points) {
 				expect(point.x).toBeGreaterThanOrEqual(0);
 				expect(point.x).toBeLessThanOrEqual(WORLD_WIDTH);
-				expect(point.y).toBeLessThanOrEqual(LINE_Y);
+				expect(point.y).toBeLessThanOrEqual(lineY);
 			}
 			const road = createPath(points);
 			const end = pointAt(road, road.length);
-			expect(end.y).toBe(LINE_Y);
+			expect(end.y).toBe(lineY);
 		}
 	);
 
 	it.each(MAP_DEFS.map((map) => map.id))(
 		'%s: every spot is clear of the road, in reach of it and not crowded',
 		(id) => {
-			const { points, slots } = getMap(id);
+			const { points, slots, lineY } = getMap(id);
 			expect(slots.length).toBeGreaterThanOrEqual(7);
 			slots.forEach((slot, index) => {
 				expect(slot.x).toBeGreaterThanOrEqual(24);
 				expect(slot.x).toBeLessThanOrEqual(WORLD_WIDTH - 24);
 				expect(slot.y).toBeGreaterThanOrEqual(24);
-				expect(slot.y).toBeLessThan(LINE_Y - 10);
+				expect(slot.y).toBeLessThan(lineY - 10);
 				const road = distanceToRoad(slot, points);
 				// Not on the road, and close enough for the basic trench to reach it
 				expect(road).toBeGreaterThanOrEqual(34);
@@ -84,9 +85,31 @@ describe('maps', () => {
 					expect(distanceBetween(slot, prop)).toBeGreaterThanOrEqual(40);
 				}
 				expect(prop.x > WORLD_WIDTH - 110 && prop.y < 50).toBe(false);
-				expect(prop.y).toBeLessThan(WORLD_HEIGHT);
+				expect(prop.y).toBeLessThan(map.lineY);
 			}
 		}
+	});
+
+	it('has plenty of maps, some of them several screens high and scrolling', () => {
+		expect(MAP_IDS.length).toBeGreaterThanOrEqual(10);
+		const tall = MAP_DEFS.filter(isTallMap);
+		expect(tall.length).toBeGreaterThanOrEqual(3);
+		for (const map of MAP_DEFS) {
+			expect(map.height).toBeGreaterThanOrEqual(WORLD_HEIGHT);
+			if (isTallMap(map)) {
+				expect(map.height).toBeGreaterThanOrEqual(WORLD_HEIGHT * 1.5);
+				// A bigger map has more spots and sends bigger crowds
+				expect(map.slots.length).toBeGreaterThanOrEqual(14);
+				expect(map.crowd).toBeGreaterThan(1);
+			}
+			expect(map.climate.length).toBeGreaterThan(0);
+		}
+	});
+
+	it('scatters more scenery on a tall map', () => {
+		expect(getMap('metropolis').decor.length).toBeGreaterThan(
+			getMap('serpentine').decor.length * 1.8
+		);
 	});
 
 	it('looks the same every time for a map', () => {

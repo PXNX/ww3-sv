@@ -6,13 +6,20 @@
  */
 import {
 	HELMET_TARGET,
+	POWERS,
+	POWER_KINDS,
 	STARTING_LIVES,
+	WORLD_HEIGHT,
+	eliteTier,
 	type DefenseKind,
 	type EnemyKind,
 	type MapId,
-	type Point
+	type Point,
+	type PowerKind,
+	type WeatherKind
 } from '#lib/game/dronewall/config.js';
 import { build, sell, upgrade, type EconomyResult } from '#lib/game/dronewall/economy.js';
+import { callPower, isPowerUnlocked } from '#lib/game/dronewall/powers.js';
 import { drawScenePreview, type Effect, type SceneExtras } from '#lib/game/dronewall/render.js';
 import {
 	createGame,
@@ -32,7 +39,10 @@ export type DroneWallBanner =
 	| { kind: 'incoming'; wave: number }
 	| { kind: 'cleared'; bonus: number }
 	| { kind: 'breach' }
-	| { kind: 'air' };
+	| { kind: 'air' }
+	| { kind: 'weather'; weather: WeatherKind }
+	| { kind: 'rush'; started: boolean }
+	| { kind: 'unlock'; power: PowerKind };
 
 /** The game speeds the player can cycle through with one button */
 export const GAME_SPEEDS = [1, 2, 4] as const;
@@ -74,6 +84,16 @@ export class DroneWallGame {
 	collectPulse = $state(0);
 	/** How many simulation steps run per frame: x1, x2 or x4 */
 	speed = $state<GameSpeed>(1);
+	/** The weather now, and the forecast for the next wave */
+	weather = $state<WeatherKind>('clear');
+	forecast = $state<WeatherKind>('clear');
+	/** Which powers are unlocked, and the whole seconds left until each can be called again */
+	powerUnlocked = $state<Record<PowerKind, boolean>>({ airstrike: false, stormshadow: false });
+	powerSeconds = $state<Record<PowerKind, number>>({ airstrike: 0, stormshadow: 0 });
+	/** The power being aimed (the next tap on the field calls it), or null */
+	armed = $state<PowerKind | null>(null);
+	/** On big maps the view follows the front of the attack while this is on */
+	follow = $state(true);
 	/** The map for the next game (and the one on show before it starts) */
 	mapId = $state<MapId>('serpentine');
 	best = $state<number | null>(null);
@@ -85,6 +105,10 @@ export class DroneWallGame {
 	effects: Effect[] = [];
 	/** Where collected helmets fly to, in world units; the canvas measures the real counter */
 	helmetTarget: Point = HELMET_TARGET;
+	/** The slice of the field on screen, in world units (the canvas of a big map scrolls) */
+	view: { top: number; bottom: number } = { top: 0, bottom: WORLD_HEIGHT };
+	/** Where the player is pointing while aiming a power, in world units */
+	aimPoint: Point | null = null;
 
 	readonly reducedMotion: boolean;
 	#random: Random = createRandom(1);
@@ -116,6 +140,7 @@ export class DroneWallGame {
 	selectMap(id: MapId) {
 		if (this.status === 'playing' || this.status === 'paused') return;
 		this.mapId = id;
+		this.view = { top: 0, bottom: WORLD_HEIGHT };
 		if (this.status === 'ready') {
 			this.state = createGame(id);
 			this.revision += 1;
@@ -129,6 +154,9 @@ export class DroneWallGame {
 		this.state = createGame(this.mapId);
 		this.effects = [];
 		this.selectedSlot = null;
+		this.armed = null;
+		this.aimPoint = null;
+		this.follow = true;
 		this.banner = null;
 		this.#bannerMs = 0;
 		this.isNewBest = false;
@@ -153,6 +181,7 @@ export class DroneWallGame {
 	/** Selects a slot to build on or manage; selecting it again closes the panel */
 	select(slot: number | null) {
 		if (slot !== null && !this.state.map.slots[slot]) return;
+		this.armed = null;
 		this.selectedSlot = slot === this.selectedSlot ? null : slot;
 	}
 
@@ -161,11 +190,81 @@ export class DroneWallGame {
 	}
 
 	upgrade(): EconomyResult {
-		return this.#spend((slot) => upgrade(this.state, slot), 'chime');
+		const slot = this.selectedSlot;
+		const before = this.state.eliteRank;
+		const result = this.#spend((slot) => upgrade(this.state, slot), 'chime');
+		const defense = slot === null ? null : this.state.defenses[slot];
+		if (result.ok && slot !== null && defense && eliteTier(defense.level) > 0) {
+			// Going elite deserves a fanfare, and the first one unlocks a power
+			const spot = this.state.map.slots[slot];
+			this.effects.push({
+				kind: 'ring',
+				x: spot.x,
+				y: spot.y,
+				size: 54,
+				ageMs: 0,
+				durationMs: this.reducedMotion ? 300 : 650
+			});
+			this.#play('chime-big', 0);
+			if (this.state.eliteRank > before) {
+				for (const power of POWER_KINDS) {
+					if (POWERS[power].unlockRank === this.state.eliteRank) {
+						this.#showBanner({ kind: 'unlock', power }, 2600);
+					}
+				}
+			}
+		}
+		return result;
 	}
 
 	sell(): EconomyResult {
 		return this.#spend((slot) => sell(this.state, slot), 'thud');
+	}
+
+	/** Tapping a power button aims it (the next tap on the field calls it); tapping it again cancels */
+	arm(power: PowerKind): boolean {
+		if (this.status !== 'playing') return false;
+		if (this.armed === power) {
+			this.armed = null;
+			return false;
+		}
+		if (!isPowerUnlocked(this.state, power) || this.state.powers[power].cooldownMs > 0) {
+			this.#play('ui-error', 0);
+			return false;
+		}
+		if (this.state.currency < POWERS[power].cost) {
+			this.brokeCount += 1;
+			this.#play('ui-error', 0);
+			return false;
+		}
+		this.selectedSlot = null;
+		this.armed = power;
+		this.#play('ui-toggle', 0);
+		return true;
+	}
+
+	disarm() {
+		this.armed = null;
+		this.aimPoint = null;
+	}
+
+	/** Calls the armed power on a spot of the field (world units) */
+	callArmed(x: number, y: number): EconomyResult {
+		const power = this.armed;
+		if (power === null || this.status !== 'playing') return { ok: false, reason: 'bad-slot' };
+		const events: DroneWallEvent[] = [];
+		const result = callPower(this.state, power, x, y, events);
+		if (result.ok) {
+			this.armed = null;
+			this.aimPoint = null;
+			this.revision += 1;
+			for (const event of events) this.#handle(event);
+			this.#syncChrome();
+		} else {
+			if (result.reason === 'poor') this.brokeCount += 1;
+			this.#play('ui-error', 0);
+		}
+		return result;
 	}
 
 	/** One button, three states: x1, then x2, then x4, then back to x1 */
@@ -192,7 +291,13 @@ export class DroneWallGame {
 			helmetTarget: this.helmetTarget,
 			effects: this.effects,
 			selectedSlot: this.selectedSlot,
-			showEmptySlots: this.status === 'playing' || this.status === 'paused'
+			showEmptySlots: this.status === 'playing' || this.status === 'paused',
+			viewTop: this.view.top,
+			viewBottom: this.view.bottom,
+			strikePreview:
+				this.armed && this.aimPoint
+					? { power: this.armed, x: this.aimPoint.x, y: this.aimPoint.y }
+					: null
 		};
 	}
 
@@ -223,6 +328,44 @@ export class DroneWallGame {
 				this.#showBanner({ kind: 'incoming', wave: event.wave }, 1700);
 				this.#play('alarm', 0);
 				break;
+			case 'weather-changed':
+				// The weather banner takes the place of the wave banner a moment later
+				this.#showBanner({ kind: 'weather', weather: event.weather }, 2600);
+				this.#play(
+					event.weather === 'rain' ? 'thunder' : event.weather === 'snow' ? 'draft' : 'whoosh',
+					0
+				);
+				break;
+			case 'rush-warning':
+				this.#showBanner({ kind: 'rush', started: false }, 2400);
+				this.#play('alarm', 0);
+				break;
+			case 'rush-started':
+				this.#showBanner({ kind: 'rush', started: true }, 2200);
+				this.#play('alarm', 0);
+				break;
+			case 'soldier-froze':
+				this.effects.push({
+					kind: 'frost',
+					x: event.x,
+					y: event.y,
+					size: 26,
+					ageMs: 0,
+					durationMs: 600 * short + 100
+				});
+				this.#play('impact-ice', SOUND_GAP_MS * 2);
+				break;
+			case 'power-called':
+				this.effects.push({
+					kind: 'ring',
+					x: event.x,
+					y: event.y,
+					size: event.power === 'stormshadow' ? 80 : 120,
+					ageMs: 0,
+					durationMs: 700 * short + 100
+				});
+				this.#play(event.power === 'stormshadow' ? 'patriot-launch' : 'whoosh', 0);
+				break;
 			case 'wave-cleared':
 				this.#showBanner({ kind: 'cleared', bonus: event.bonus }, 2200);
 				this.#play('chime-big', 0);
@@ -234,7 +377,7 @@ export class DroneWallGame {
 					kind: 'poof',
 					x: event.x,
 					y: event.y,
-					size: event.kind === 'brute' ? 34 : 24,
+					size: BIG_ENEMIES.has(event.kind) ? 36 : event.kind === 'brute' ? 34 : 24,
 					ageMs: 0,
 					durationMs: 420 * short + 100
 				});
@@ -285,7 +428,7 @@ export class DroneWallGame {
 					kind: 'blast',
 					x: event.x,
 					y: event.y,
-					size: event.kind === 'heli' ? 30 : 20,
+					size: event.kind === 'bomber' ? 40 : event.kind === 'heli' ? 30 : 20,
 					ageMs: 0,
 					durationMs: 520 * short + 100
 				});
@@ -318,7 +461,7 @@ export class DroneWallGame {
 				break;
 			case 'squad-shot':
 				this.effects.push(tracer(event));
-				this.#play('click', SOUND_GAP_MS);
+				this.#play(event.weapon === 'sniper' ? 'fire' : 'click', SOUND_GAP_MS);
 				break;
 			case 'drone-launched':
 				this.#play('zap', SOUND_GAP_MS);
@@ -348,7 +491,7 @@ export class DroneWallGame {
 				});
 				break;
 			case 'shell-launched':
-				this.#play('thud', SOUND_GAP_MS);
+				this.#play(event.kind === 'rocket' ? 'patriot-launch' : 'thud', SOUND_GAP_MS);
 				break;
 			case 'shell-landed':
 				this.effects.push({
@@ -357,9 +500,19 @@ export class DroneWallGame {
 					y: event.y,
 					size: event.radius * 0.7,
 					ageMs: 0,
-					durationMs: 520 * short + 100
+					durationMs: (event.kind === 'cruise' ? 800 : 520) * short + 100
 				});
-				this.#play('explosion-small', SOUND_GAP_MS);
+				if (event.kind === 'cruise') {
+					this.effects.push({
+						kind: 'ring',
+						x: event.x,
+						y: event.y,
+						size: event.radius * 1.6,
+						ageMs: 0,
+						durationMs: 600 * short + 100
+					});
+				}
+				this.#play(event.kind === 'cruise' ? 'explosion-big' : 'explosion-small', SOUND_GAP_MS);
 				break;
 			case 'game-over':
 				this.#finish();
@@ -416,6 +569,14 @@ export class DroneWallGame {
 		this.prepSeconds = Math.max(0, Math.ceil(this.state.prepMs / 1000));
 		this.kills = this.state.kills;
 		this.collected = this.state.collected;
+		this.weather = this.state.weather;
+		this.forecast = this.state.forecast;
+		for (const power of POWER_KINDS) {
+			this.powerUnlocked[power] = isPowerUnlocked(this.state, power);
+			this.powerSeconds[power] = Math.ceil(this.state.powers[power].cooldownMs / 1000);
+		}
+		// Aiming ends when the power cannot be called any more
+		if (this.armed && this.powerSeconds[this.armed] > 0) this.armed = null;
 	}
 
 	#finish() {
@@ -427,9 +588,13 @@ export class DroneWallGame {
 		this.bestWave = waveResult.best;
 		this.banner = null;
 		this.selectedSlot = null;
+		this.armed = null;
 		this.status = 'over';
 	}
 }
+
+/** Armored vehicles fall with a bigger puff */
+const BIG_ENEMIES: ReadonlySet<EnemyKind> = new Set(['btr', 'tank']);
 
 function tracer(event: { fromX: number; fromY: number; toX: number; toY: number }): Effect {
 	return {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STARTING_HELMETS, STARTING_LIVES, buildCost } from '#lib/game/dronewall/config.js';
+import { POWERS, STARTING_HELMETS, STARTING_LIVES, buildCost } from '#lib/game/dronewall/config.js';
 import { dropHelmet } from '#lib/game/dronewall/economy.js';
 import { ROAD } from '#lib/game/dronewall/path.js';
 import { soldierAt } from '#lib/game/dronewall/testHelpers.js';
@@ -170,6 +170,96 @@ describe('DroneWallGame', () => {
 		expect(game.lives).toBe(STARTING_LIVES);
 		expect(game.score).toBe(0);
 		expect(game.isNewBest).toBe(false);
+	});
+});
+
+describe('DroneWallGame powers, elite levels and weather', () => {
+	function playing() {
+		const { game } = newGame();
+		game.start();
+		game.state.currency = 500;
+		return game;
+	}
+
+	it('locks the powers until a defense goes elite, then announces the unlock', () => {
+		const game = playing();
+		expect(game.powerUnlocked).toEqual({ airstrike: false, stormshadow: false });
+		expect(game.arm('airstrike')).toBe(false);
+		game.select(2);
+		game.build('squad');
+		game.upgrade();
+		game.upgrade();
+		expect(game.powerUnlocked.airstrike).toBe(false);
+		game.upgrade();
+		expect(game.state.defenses[2]?.level).toBe(4);
+		expect(game.powerUnlocked).toEqual({ airstrike: true, stormshadow: false });
+		expect(game.banner).toEqual({ kind: 'unlock', power: 'airstrike' });
+		// The promotion gets a shock-wave ring
+		expect(game.effects.some((effect) => effect.kind === 'ring')).toBe(true);
+	});
+
+	it('aims a power, then calls it with a tap on the field and pays for it', () => {
+		const game = playing();
+		game.state.eliteRank = 1;
+		game.update(STEP);
+		expect(game.arm('airstrike')).toBe(true);
+		expect(game.armed).toBe('airstrike');
+		game.aimPoint = { x: 100, y: 300 };
+		expect(game.sceneExtras().strikePreview).toEqual({ power: 'airstrike', x: 100, y: 300 });
+		const before = game.state.currency;
+		expect(game.callArmed(100, 300).ok).toBe(true);
+		expect(game.armed).toBeNull();
+		expect(game.helmets).toBe(before - POWERS.airstrike.cost);
+		expect(game.state.shells.length).toBeGreaterThan(0);
+		expect(game.powerSeconds.airstrike).toBeGreaterThan(0);
+		// Recharging: it cannot be aimed again
+		expect(game.arm('airstrike')).toBe(false);
+	});
+
+	it('tapping the armed power again, picking a spot or ending the game cancels the aim', () => {
+		const game = playing();
+		game.state.eliteRank = 2;
+		game.arm('airstrike');
+		expect(game.arm('airstrike')).toBe(false);
+		expect(game.armed).toBeNull();
+		game.arm('stormshadow');
+		game.select(1);
+		expect(game.armed).toBeNull();
+		game.arm('stormshadow');
+		game.disarm();
+		expect(game.armed).toBeNull();
+	});
+
+	it('too few helmets shake the counter instead of arming', () => {
+		const game = playing();
+		game.state.eliteRank = 1;
+		game.state.currency = POWERS.airstrike.cost - 1;
+		game.update(STEP);
+		expect(game.arm('airstrike')).toBe(false);
+		expect(game.brokeCount).toBe(1);
+		expect(game.armed).toBeNull();
+	});
+
+	it('shows the weather and the forecast, and a banner when the weather changes', () => {
+		const game = playing();
+		game.state.forecast = 'rain';
+		game.state.prepMs = 1;
+		game.update(STEP);
+		game.update(STEP);
+		expect(game.weather).toBe('rain');
+		expect(game.banner?.kind === 'weather' || game.banner?.kind === 'incoming').toBe(true);
+		expect(['clear', 'fog', 'rain', 'snow']).toContain(game.forecast);
+	});
+
+	it('keeps the view slice for drawing and starts a new game on a tall map with the follow mode on', () => {
+		const { game } = newGame();
+		game.selectMap('metropolis');
+		expect(game.state.map.height).toBeGreaterThan(1000);
+		game.follow = false;
+		game.start();
+		expect(game.follow).toBe(true);
+		game.view = { top: 400, bottom: 1040 };
+		expect(game.sceneExtras()).toMatchObject({ viewTop: 400, viewBottom: 1040 });
 	});
 });
 

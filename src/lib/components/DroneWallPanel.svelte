@@ -1,6 +1,6 @@
 <!--
 	The build panel, shown over the playfield while a spot is selected: an empty spot offers the
-	seven defenses, a built one shows what it is and offers upgrade and sell. Everything costs
+	twelve defenses, a built one shows what it is and offers upgrade and sell. Past level 3 the upgrades are elite promotions, which look and read differently. Everything costs
 	helmets (the only currency). A button that is too expensive stays tappable so the helmet
 	counter can shake, and says so to screen readers through aria-disabled. Selling asks once more
 	(the same two-tap confirmation as restarting in Chess and Merge), since the defense is gone for good.
@@ -9,38 +9,22 @@
 	import {
 		DEFENSE_KINDS,
 		MAX_LEVEL,
+		NORMAL_LEVELS,
 		buildCost,
+		eliteTier,
 		sellValue,
-		upgradeCost,
-		type DefenseKind
+		upgradeCost
 	} from '#lib/game/dronewall/config.js';
 	import { onDestroy } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import type { DroneWallGame } from '#lib/stores/dronewallGame.svelte.js';
 	import DroneWallDefense from './DroneWallDefense.svelte';
+	import { DEFENSE_NAMES as NAMES, DEFENSE_ROLES as ROLES } from './droneWallText.js';
 	import IconArrowUp from '~icons/lucide/arrow-big-up';
+	import IconStar from '~icons/lucide/star';
 	import IconCoins from '~icons/lucide/hand-coins';
 
 	let { game }: { game: DroneWallGame } = $props();
-
-	const NAMES: Record<DefenseKind, () => string> = {
-		squad: m.dronewall_squad_name,
-		mortar: m.dronewall_mortar_name,
-		nest: m.dronewall_nest_name,
-		patriot: m.dronewall_patriot_name,
-		trench: m.dronewall_trench_name,
-		azov: m.dronewall_azov_name,
-		leopard: m.dronewall_leopard_name
-	};
-	const ROLES: Record<DefenseKind, () => string> = {
-		squad: m.dronewall_squad_role,
-		mortar: m.dronewall_mortar_role,
-		nest: m.dronewall_nest_role,
-		patriot: m.dronewall_patriot_role,
-		trench: m.dronewall_trench_role,
-		azov: m.dronewall_azov_role,
-		leopard: m.dronewall_leopard_role
-	};
 
 	const defense = $derived.by(() => {
 		void game.revision;
@@ -49,6 +33,9 @@
 		return built ? { kind: built.kind, level: built.level } : null;
 	});
 	const next = $derived(defense ? upgradeCost(defense.kind, defense.level) : null);
+	const elite = $derived(defense ? eliteTier(defense.level) : 0);
+	/** The next upgrade is the first or a further elite promotion */
+	const promoting = $derived(defense !== null && defense.level >= NORMAL_LEVELS);
 	const afford = (cost: number) => game.helmets >= cost;
 
 	const CONFIRM_MS = 3000;
@@ -107,14 +94,21 @@
 		</ul>
 	{:else}
 		<div class="flex items-center gap-2">
-			<DroneWallDefense kind={defense.kind} class="size-11 shrink-0" />
+			<DroneWallDefense kind={defense.kind} {elite} class="size-11 shrink-0" />
 			<div class="min-w-0 flex-1 leading-tight">
 				<p class="font-display text-base font-bold">{NAMES[defense.kind]()}</p>
 				<p dir="auto" class="text-xs">{ROLES[defense.kind]()}</p>
-				<p class="text-xs font-bold">
-					{defense.level >= MAX_LEVEL
-						? m.dronewall_level_max({ level: defense.level })
-						: m.dronewall_level({ level: defense.level })}
+				<p class="flex items-center gap-1 text-xs font-bold {elite > 0 ? 'text-tie-red' : ''}">
+					{#if elite > 0}
+						{#each Array.from({ length: elite }, (_, i) => i) as star (star)}
+							<IconStar class="size-3.5 fill-explosion-yellow" aria-hidden="true" />
+						{/each}
+						{defense.level >= MAX_LEVEL
+							? m.dronewall_level_elite_max({ rank: elite })
+							: m.dronewall_level_elite({ rank: elite })}
+					{:else}
+						{m.dronewall_level({ level: defense.level })}
+					{/if}
 				</p>
 			</div>
 			<div class="flex shrink-0 flex-col gap-1">
@@ -122,13 +116,20 @@
 					<button
 						type="button"
 						class="btn-chunky px-2 py-0.5 text-sm {afford(next)
-							? 'bg-explosion-yellow'
+							? promoting
+								? 'bg-tie-red'
+								: 'bg-explosion-yellow'
 							: 'bg-sand opacity-70'}"
 						aria-disabled={!afford(next)}
 						onclick={() => game.upgrade()}
 					>
-						<IconArrowUp class="size-4" aria-hidden="true" />
-						{m.dronewall_upgrade()}
+						{#if promoting}
+							<IconStar class="size-4" aria-hidden="true" />
+							{m.dronewall_upgrade_elite()}
+						{:else}
+							<IconArrowUp class="size-4" aria-hidden="true" />
+							{m.dronewall_upgrade()}
+						{/if}
 						<span class="flex items-center gap-0.5" aria-label={m.dronewall_cost({ cost: next })}>
 							<DroneWallDefense kind="helmet" class="size-4" />
 							{next}

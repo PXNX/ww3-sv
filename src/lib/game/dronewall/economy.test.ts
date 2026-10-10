@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	HELMET_FLY_MS,
+	DEFENSE_KINDS,
 	HELMET_POP_MS,
 	MAX_LEVEL,
 	SELL_REFUND,
@@ -16,8 +17,11 @@ import { soldierAt } from './testHelpers';
 
 describe('costs', () => {
 	it('every defense can be built with the starting helmets and costs more to upgrade', () => {
-		for (const kind of ['squad', 'mortar', 'nest', 'patriot', 'trench'] as const) {
-			expect(buildCost(kind)).toBeLessThanOrEqual(STARTING_HELMETS);
+		for (const kind of DEFENSE_KINDS) {
+			// The expensive artillery needs a few helmets from the first kills
+			expect(buildCost(kind)).toBeLessThanOrEqual(
+				kind === 'squad' || kind === 'trench' ? STARTING_HELMETS : 45
+			);
 			expect(upgradeCost(kind, 1)).toBeGreaterThan(0);
 			expect(upgradeCost(kind, MAX_LEVEL)).toBeNull();
 			expect(upgradeCost(kind, 0)).toBeNull();
@@ -64,8 +68,7 @@ describe('building and upgrading', () => {
 		const state = createGame();
 		state.currency = 500;
 		build(state, 0, 'nest');
-		expect(upgrade(state, 0).ok).toBe(true);
-		expect(upgrade(state, 0).ok).toBe(true);
+		for (let level = 2; level <= MAX_LEVEL; level++) expect(upgrade(state, 0).ok).toBe(true);
 		expect(state.defenses[0]?.level).toBe(MAX_LEVEL);
 		expect(upgrade(state, 0)).toEqual({ ok: false, reason: 'max-level' });
 		expect(state.currency).toBe(500 - totalSpent('nest', MAX_LEVEL));
