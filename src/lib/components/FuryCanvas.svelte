@@ -142,7 +142,9 @@
 		if (canvas) observer.observe(canvas);
 		resize();
 		const stopHidden = onAppHidden(() => game.setPaused(true));
+		window.addEventListener('pointerdown', onOutsidePointerDown);
 		return () => {
+			window.removeEventListener('pointerdown', onOutsidePointerDown);
 			observer.disconnect();
 			stopHidden();
 			loop.pause();
@@ -177,6 +179,17 @@
 		canvas.setPointerCapture(event.pointerId);
 		canvas.focus({ preventScroll: true });
 		onPointerMove(event);
+	}
+
+	// On desktop the slingshot is often pulled with the mouse beyond the canvas, so the next click
+	// (the bird's ability) lands outside it too. Mouse only: a touch outside the canvas is a scroll.
+	function onOutsidePointerDown(event: PointerEvent) {
+		if (event.pointerType !== 'mouse' || event.button !== 0) return;
+		if (game.paused || game.phase !== 'flying') return;
+		const target = event.target;
+		if (!(target instanceof Element) || target === canvas) return;
+		if (target.closest('button, a, input, select, textarea, label, dialog, [role="button"]')) return;
+		game.useAbility();
 	}
 
 	function onPointerMove(event: PointerEvent) {
