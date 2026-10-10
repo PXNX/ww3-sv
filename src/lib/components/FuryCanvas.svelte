@@ -188,7 +188,8 @@
 		if (game.paused || game.phase !== 'flying') return;
 		const target = event.target;
 		if (!(target instanceof Element) || target === canvas) return;
-		if (target.closest('button, a, input, select, textarea, label, dialog, [role="button"]')) return;
+		if (target.closest('button, a, input, select, textarea, label, dialog, [role="button"]'))
+			return;
 		game.useAbility();
 	}
 
