@@ -16,6 +16,7 @@ import IconParking from '~icons/lucide/square-parking';
 import IconRadar from '~icons/lucide/radar';
 import IconMegaphone from '~icons/lucide/megaphone';
 import IconFootprints from '~icons/lucide/footprints';
+import IconRoute from '~icons/lucide/route';
 
 export type ModeId =
 	| 'blocks'
@@ -31,7 +32,8 @@ export type ModeId =
 	| 'parking'
 	| 'slice'
 	| 'whack'
-	| 'runcomrade';
+	| 'runcomrade'
+	| 'beltroad';
 
 interface ModeBase {
 	id: ModeId;
@@ -176,5 +178,14 @@ export const MODES: readonly GameMode[] = [
 		tileClass: 'bg-mustard',
 		name: m.mode_runcomrade_name,
 		description: m.mode_runcomrade_description
+	},
+	{
+		id: 'beltroad',
+		status: 'playable',
+		href: '/play/beltroad',
+		icon: IconRoute,
+		tileClass: 'bg-skin',
+		name: m.mode_beltroad_name,
+		description: m.mode_beltroad_description
 	}
 ];
