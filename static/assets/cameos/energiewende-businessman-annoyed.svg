@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Cartoon of a stout businessman in a tight suit, annoyed">
+	<!-- Original cartoon archetype (not a real person): flat colours, thick outlines -->
+	<rect width="200" height="200" fill="#E6D3B8"/>
+	<g transform="translate(25 -1) scale(0.75)" stroke="#1c1c1c" stroke-width="4.6" stroke-linejoin="round" stroke-linecap="round">
+		<path d="M14 230 Q18 150 100 146 Q182 150 186 230 Z" fill="#2C3140"/>
+		<path d="M78 148 L100 178 L122 148 Z" fill="#FFFFFF"/>
+		<ellipse cx="100" cy="198" rx="78" ry="50" fill="#2C3140"/>
+		<path d="M100 178 L110 188 L106 232 L100 238 L94 232 L90 188 Z" fill="#C8232C"/>
+		<circle cx="56" cy="196" r="3.5" fill="#E8C34A" stroke-width="2"/>
+		<circle cx="144" cy="196" r="3.5" fill="#E8C34A" stroke-width="2"/>
+		<path d="M70 164 Q100 184 130 164" fill="none" stroke="#E8C34A" stroke-width="3"/>
+		<ellipse cx="100" cy="146" rx="42" ry="17" fill="#EEA48C"/>
+		<ellipse cx="40" cy="88" rx="9" ry="13" fill="#EEA48C"/>
+		<ellipse cx="160" cy="88" rx="9" ry="13" fill="#EEA48C"/>
+		<ellipse cx="100" cy="84" rx="60" ry="54" fill="#EEA48C"/>
+		<path d="M42 78 Q36 56 50 48 Q50 64 52 80 Z M158 78 Q164 56 150 48 Q150 64 148 80 Z" fill="#6B4A2B" stroke-width="2.5"/>
+		<path d="M64 40 Q100 22 136 40 M70 34 Q100 20 130 34" fill="none" stroke="#6B4A2B" stroke-width="2.5"/>
+		<circle cx="64" cy="102" r="11" fill="#E88F7A" stroke="none"/>
+		<circle cx="136" cy="102" r="11" fill="#E88F7A" stroke="none"/>
+		<path d="M62 58 L90 66 M110 62 L138 52" fill="none" stroke="#6B4A2B" stroke-width="6"/>
+		<ellipse cx="78" cy="78" rx="12" ry="9" fill="#FFFFFF"/>
+		<ellipse cx="122" cy="78" rx="12" ry="9" fill="#FFFFFF"/>
+		<circle cx="82" cy="79" r="3.6" fill="#1c1c1c" stroke="none"/>
+		<circle cx="126" cy="79" r="3.6" fill="#1c1c1c" stroke="none"/>
+		<path d="M64 72 L92 72 M108 72 L136 72" fill="none" stroke-width="5" stroke="#EEA48C"/>
+		<path d="M64 74 L92 74 M108 74 L136 74" fill="none" stroke-width="3"/>
+		<path d="M96 90 Q100 96 104 90 Q100 88 96 90 Z" fill="#E59B80" stroke-width="2.5"/>
+		<path d="M72 106 Q100 100 128 106 Q116 114 100 110 Q84 114 72 106 Z" fill="#6B4A2B"/>
+		<path d="M80 128 Q90 120 100 126 Q110 132 120 124" fill="none" stroke-width="3.5"/>
+		<path d="M156 56 Q164 70 156 76 Q148 70 156 56 Z" fill="#8FD0EE" stroke-width="2.5"/>
+	</g>
+</svg>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Cartoon of a woman with long black hair, utterly disgusted with her tongue out">
+	<!-- Original cartoon archetype (not a real person): flat colours, thick outlines -->
+	<rect width="200" height="200" fill="#B9D9A8"/>
+	<g stroke="#1c1c1c" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
+		<path d="M26 210 Q6 130 30 74 Q52 14 100 14 Q150 14 170 74 Q194 130 174 210 Z" fill="#17171C"/>
+		<path d="M28 230 Q36 162 100 158 Q164 162 172 230 Z" fill="#3E6B4A"/>
+		<path d="M82 160 L100 186 L118 160 Z" fill="#F8F4EA"/>
+		<rect x="86" y="130" width="28" height="32" rx="8" fill="#DCE0B8"/>
+		<ellipse cx="100" cy="88" rx="46" ry="50" fill="#E3E6BE"/>
+		<path d="M52 82 Q54 34 100 30 Q146 34 148 82 Q128 56 100 58 Q72 56 52 82 Z" fill="#17171C"/>
+		<path d="M54 84 Q40 130 44 196 Q26 196 28 150 Q28 110 40 80 Z M146 84 Q160 130 156 196 Q174 196 172 150 Q172 110 160 80 Z" fill="#17171C"/>
+		<path d="M60 70 L90 80 M110 80 L140 70" fill="none" stroke-width="4.5"/>
+		<path d="M66 90 Q78 100 88 90 M112 90 Q122 100 134 90" fill="none" stroke-width="4"/>
+		<path d="M92 100 Q100 94 108 100 M94 106 Q100 100 106 106" fill="none" stroke-width="2.5"/>
+		<path d="M78 116 Q100 108 122 116 Q122 140 100 142 Q78 140 78 116 Z" fill="#8B1E2B"/>
+		<path d="M84 117 Q100 112 116 117 L115 123 Q100 119 85 123 Z" fill="#FFFFFF" stroke-width="2.5"/>
+		<path d="M92 134 Q94 158 100 158 Q106 158 108 134 Z" fill="#E5737A"/>
+		<path d="M100 138 L100 150" fill="none" stroke-width="2.2"/>
+		<circle cx="62" cy="106" r="8" fill="#9FCB8A" stroke="none"/>
+		<circle cx="138" cy="106" r="8" fill="#9FCB8A" stroke="none"/>
+		<path d="M172 44 Q182 52 174 62 Q166 70 176 80 M186 40 Q194 50 188 58" fill="none" stroke="#5E8F4E" stroke-width="3"/>
+		<path d="M28 44 Q18 52 26 62 Q34 70 24 80 M14 40 Q6 50 12 58" fill="none" stroke="#5E8F4E" stroke-width="3"/>
+		<path d="M92 176 Q100 170 108 176 Q100 182 92 176 Z" fill="#7BC27E" stroke-width="2.5"/>
+	</g>
+</svg>
