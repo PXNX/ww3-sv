@@ -228,7 +228,12 @@
 	onpointercancel={(event) => dragger.pointerCancel(event)}
 />
 
-<GameShell title={m.mode_blocks_name()} score={game.score} best={game.best}>
+<GameShell
+	title={m.mode_blocks_name()}
+	score={game.score}
+	best={game.best}
+	confirmLeave={!game.over && game.score > 0}
+>
 	<div class="flex items-end gap-3">
 		<CharacterMascot pose={MOOD_POSE[game.mood]} class="w-16 shrink-0 -rotate-3 sm:w-20" />
 		<div

@@ -2,7 +2,8 @@
 	The build panel, shown over the playfield while a spot is selected: an empty spot offers the
 	seven defenses, a built one shows what it is and offers upgrade and sell. Everything costs
 	helmets (the only currency). A button that is too expensive stays tappable so the helmet
-	counter can shake, and says so to screen readers through aria-disabled.
+	counter can shake, and says so to screen readers through aria-disabled. Selling asks once more
+	(the same two-tap confirmation as restarting in Chess and Merge), since the defense is gone for good.
 -->
 <script lang="ts">
 	import {
@@ -13,6 +14,7 @@
 		upgradeCost,
 		type DefenseKind
 	} from '#lib/game/dronewall/config.js';
+	import { onDestroy } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import type { DroneWallGame } from '#lib/stores/dronewallGame.svelte.js';
 	import DroneWallDefense from './DroneWallDefense.svelte';
@@ -48,6 +50,30 @@
 	});
 	const next = $derived(defense ? upgradeCost(defense.kind, defense.level) : null);
 	const afford = (cost: number) => game.helmets >= cost;
+
+	const CONFIRM_MS = 3000;
+	let confirmingSell = $state(false);
+	let confirmTimer: ReturnType<typeof setTimeout> | undefined;
+	onDestroy(() => clearTimeout(confirmTimer));
+
+	// Picking another spot, or upgrading, drops a pending sale
+	$effect(() => {
+		void game.selectedSlot;
+		void game.revision;
+		clearTimeout(confirmTimer);
+		confirmingSell = false;
+	});
+
+	function sell() {
+		clearTimeout(confirmTimer);
+		if (confirmingSell) {
+			confirmingSell = false;
+			game.sell();
+			return;
+		}
+		confirmingSell = true;
+		confirmTimer = setTimeout(() => (confirmingSell = false), CONFIRM_MS);
+	}
 </script>
 
 <div
@@ -109,9 +135,14 @@
 						</span>
 					</button>
 				{/if}
-				<button type="button" class="btn-chunky px-2 py-0.5 text-sm" onclick={() => game.sell()}>
+				<button
+					type="button"
+					class="btn-chunky px-2 py-0.5 text-sm"
+					class:bg-explosion-yellow={confirmingSell}
+					onclick={sell}
+				>
 					<IconCoins class="size-4" aria-hidden="true" />
-					{m.dronewall_sell()}
+					{confirmingSell ? m.dronewall_sell_confirm() : m.dronewall_sell()}
 					<span class="flex items-center gap-0.5">
 						<DroneWallDefense kind="helmet" class="size-4" />
 						+{sellValue(defense.kind, defense.level)}

@@ -84,7 +84,7 @@
 	}
 </script>
 
-<GameShell {title}>
+<GameShell {title} confirmLeave={playing && !showWin}>
 	{#snippet actions()}
 		<button
 			type="button"

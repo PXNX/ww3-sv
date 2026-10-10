@@ -50,14 +50,29 @@ function loadClip(ctx: AudioContext, id: ClipId): Promise<AudioBuffer> {
 	return promise;
 }
 
-/** Plays a recorded clip; a fetch/decode failure is swallowed, same as a synthesized glitch */
-export function playClip(ctx: AudioContext, dest: AudioNode, id: ClipId, gain = 0.8): void {
+/**
+ * Plays a recorded clip; a fetch/decode failure is swallowed, same as a synthesized glitch. With
+ * fadeOut (seconds) the clip's last stretch fades to silence instead of ending abruptly.
+ */
+export function playClip(
+	ctx: AudioContext,
+	dest: AudioNode,
+	id: ClipId,
+	gain = 0.8,
+	fadeOut = 0
+): void {
 	loadClip(ctx, id)
 		.then((buffer) => {
 			const source = ctx.createBufferSource();
 			source.buffer = buffer;
 			const envelope = ctx.createGain();
 			envelope.gain.value = gain;
+			if (fadeOut > 0) {
+				const end = ctx.currentTime + buffer.duration;
+				const fade = Math.min(fadeOut, buffer.duration);
+				envelope.gain.setValueAtTime(gain, end - fade);
+				envelope.gain.linearRampToValueAtTime(0, end);
+			}
 			source.connect(envelope).connect(dest);
 			source.start();
 		})

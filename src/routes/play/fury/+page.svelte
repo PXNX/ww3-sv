@@ -53,7 +53,12 @@
 	}
 </script>
 
-<GameShell {title} score={playing ? game.score : undefined} best={playing ? game.best : undefined}>
+<GameShell
+	{title}
+	score={playing ? game.score : undefined}
+	best={playing ? game.best : undefined}
+	confirmLeave={playing && !game.showWin && !game.showFail}
+>
 	{#snippet actions()}
 		{#if playing}
 			<button

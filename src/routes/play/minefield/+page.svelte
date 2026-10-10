@@ -110,6 +110,7 @@
 	title={m.mode_minefield_name()}
 	score={picking ? undefined : game.score}
 	best={picking ? undefined : game.bestScore}
+	confirmLeave={!picking && game.phase === 'playing'}
 >
 	{#snippet actions()}
 		{#if !picking}

@@ -31,7 +31,12 @@
 	);
 </script>
 
-<GameShell title={m.mode_convoy_name()} score={game.score} best={game.best}>
+<GameShell
+	title={m.mode_convoy_name()}
+	score={game.score}
+	best={game.best}
+	confirmLeave={game.status === 'running' || game.status === 'paused'}
+>
 	{#snippet actions()}
 		{#if game.status === 'running' || game.status === 'paused'}
 			<button type="button" class="btn-chunky px-3 py-1 text-sm" onclick={() => game.togglePause()}>

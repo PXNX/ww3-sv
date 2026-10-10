@@ -62,18 +62,32 @@ class SoundManager {
 		this.setMuted(!this.muted);
 	}
 
+	#createMaster(context: AudioContext): GainNode {
+		const master = context.createGain();
+		master.gain.value = 0.5;
+		master.connect(context.destination);
+		return master;
+	}
+
+	/**
+	 * Silences everything that is still playing, such as a long voice line when the player leaves
+	 * a game. Sounds already started are cut off from the output, and later ones go through a
+	 * fresh master gain, so the next page sounds as usual.
+	 */
+	stopAll() {
+		if (!this.#master) return;
+		this.#master.disconnect();
+		this.#master = null;
+	}
+
 	#ensureContext(): AudioContext | null {
 		if (typeof window === 'undefined') return null;
 		const AudioContextClass =
 			window.AudioContext ??
 			(window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
 		if (!AudioContextClass) return null;
-		if (!this.#ctx) {
-			this.#ctx = new AudioContextClass();
-			this.#master = this.#ctx.createGain();
-			this.#master.gain.value = 0.5;
-			this.#master.connect(this.#ctx.destination);
-		}
+		if (!this.#ctx) this.#ctx = new AudioContextClass();
+		if (!this.#master) this.#master = this.#createMaster(this.#ctx);
 		if (this.#ctx.state === 'suspended') void this.#ctx.resume();
 		return this.#ctx;
 	}
