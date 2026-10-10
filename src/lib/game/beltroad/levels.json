@@ -1,0 +1,748 @@
+[
+	{
+		"id": "b01",
+		"tier": "easy",
+		"width": 4,
+		"height": 4,
+		"pairs": [
+			{
+				"port": "shanghai",
+				"a": [0, 1],
+				"b": [3, 3]
+			},
+			{
+				"port": "piraeus",
+				"a": [0, 0],
+				"b": [3, 1]
+			},
+			{
+				"port": "hamburg",
+				"a": [2, 1],
+				"b": [1, 2]
+			}
+		],
+		"solution": ["RRDDLDR", "DDDR", "UR"]
+	},
+	{
+		"id": "b02",
+		"tier": "easy",
+		"width": 4,
+		"height": 4,
+		"pairs": [
+			{
+				"port": "hamburg",
+				"a": [3, 1],
+				"b": [1, 0]
+			},
+			{
+				"port": "shanghai",
+				"a": [0, 3],
+				"b": [0, 0]
+			},
+			{
+				"port": "piraeus",
+				"a": [2, 1],
+				"b": [1, 3]
+			},
+			{
+				"port": "djibouti",
+				"a": [2, 2],
+				"b": [2, 3]
+			}
+		],
+		"solution": ["LUU", "LLL", "URR", "DRU"]
+	},
+	{
+		"id": "b03",
+		"tier": "easy",
+		"width": 5,
+		"height": 5,
+		"pairs": [
+			{
+				"port": "rotterdam",
+				"a": [4, 0],
+				"b": [2, 0]
+			},
+			{
+				"port": "singapore",
+				"a": [2, 1],
+				"b": [2, 4]
+			},
+			{
+				"port": "colombo",
+				"a": [3, 4],
+				"b": [2, 3]
+			},
+			{
+				"port": "djibouti",
+				"a": [3, 1],
+				"b": [1, 3]
+			}
+		],
+		"solution": ["UU", "ULURRRRDD", "DLUU", "DRUUUR"]
+	},
+	{
+		"id": "b04",
+		"tier": "easy",
+		"width": 5,
+		"height": 5,
+		"pairs": [
+			{
+				"port": "shanghai",
+				"a": [2, 4],
+				"b": [4, 4]
+			},
+			{
+				"port": "hamburg",
+				"a": [0, 2],
+				"b": [2, 3]
+			},
+			{
+				"port": "mombasa",
+				"a": [2, 0],
+				"b": [0, 1]
+			},
+			{
+				"port": "trieste",
+				"a": [4, 2],
+				"b": [2, 1]
+			}
+		],
+		"solution": ["DLDR", "RRDLD", "UUR", "LLURRUULD"]
+	},
+	{
+		"id": "b05",
+		"tier": "easy",
+		"width": 5,
+		"height": 5,
+		"pairs": [
+			{
+				"port": "piraeus",
+				"a": [4, 2],
+				"b": [4, 0]
+			},
+			{
+				"port": "trieste",
+				"a": [0, 3],
+				"b": [3, 2]
+			},
+			{
+				"port": "colombo",
+				"a": [1, 1],
+				"b": [0, 4]
+			},
+			{
+				"port": "mombasa",
+				"a": [3, 4],
+				"b": [2, 1]
+			},
+			{
+				"port": "rotterdam",
+				"a": [4, 4],
+				"b": [3, 3]
+			}
+		],
+		"solution": ["LL", "LLLDDDRR", "RRRU", "ULLL", "LU"]
+	},
+	{
+		"id": "b06",
+		"tier": "easy",
+		"width": 5,
+		"height": 5,
+		"pairs": [
+			{
+				"port": "piraeus",
+				"a": [1, 2],
+				"b": [2, 4]
+			},
+			{
+				"port": "trieste",
+				"a": [1, 3],
+				"b": [3, 3]
+			},
+			{
+				"port": "singapore",
+				"a": [4, 2],
+				"b": [3, 4]
+			},
+			{
+				"port": "mombasa",
+				"a": [3, 2],
+				"b": [0, 0]
+			},
+			{
+				"port": "hamburg",
+				"a": [1, 0],
+				"b": [4, 0]
+			}
+		],
+		"solution": ["URRDD", "DD", "RRU", "ULUUL", "DDRDL"]
+	},
+	{
+		"id": "b07",
+		"tier": "medium",
+		"width": 6,
+		"height": 6,
+		"pairs": [
+			{
+				"port": "shanghai",
+				"a": [1, 1],
+				"b": [2, 3]
+			},
+			{
+				"port": "rotterdam",
+				"a": [1, 3],
+				"b": [3, 4]
+			},
+			{
+				"port": "mombasa",
+				"a": [0, 4],
+				"b": [3, 5]
+			},
+			{
+				"port": "colombo",
+				"a": [3, 2],
+				"b": [0, 3]
+			},
+			{
+				"port": "piraeus",
+				"a": [3, 3],
+				"b": [5, 2]
+			}
+		],
+		"solution": ["RDR", "RDD", "RDDD", "DLDLUURULUURRR", "DRRDLLL"]
+	},
+	{
+		"id": "b08",
+		"tier": "medium",
+		"width": 6,
+		"height": 6,
+		"pairs": [
+			{
+				"port": "mombasa",
+				"a": [3, 4],
+				"b": [4, 2]
+			},
+			{
+				"port": "rotterdam",
+				"a": [1, 4],
+				"b": [3, 3]
+			},
+			{
+				"port": "hamburg",
+				"a": [5, 1],
+				"b": [2, 4]
+			},
+			{
+				"port": "colombo",
+				"a": [5, 0],
+				"b": [1, 1]
+			},
+			{
+				"port": "djibouti",
+				"a": [3, 2],
+				"b": [1, 0]
+			}
+		],
+		"solution": ["DLL", "RULLDDD", "RRRRUUUL", "URULURU", "UUULLD"]
+	},
+	{
+		"id": "b09",
+		"tier": "medium",
+		"width": 6,
+		"height": 6,
+		"pairs": [
+			{
+				"port": "piraeus",
+				"a": [1, 3],
+				"b": [0, 4]
+			},
+			{
+				"port": "singapore",
+				"a": [2, 3],
+				"b": [1, 1]
+			},
+			{
+				"port": "trieste",
+				"a": [5, 3],
+				"b": [0, 1]
+			},
+			{
+				"port": "rotterdam",
+				"a": [4, 3],
+				"b": [3, 1]
+			},
+			{
+				"port": "djibouti",
+				"a": [4, 5],
+				"b": [3, 2]
+			},
+			{
+				"port": "mombasa",
+				"a": [0, 5],
+				"b": [3, 5]
+			}
+		],
+		"solution": ["LURR", "LLU", "LLLUUUUUR", "LLU", "DLUULL", "DLDRD"]
+	},
+	{
+		"id": "b10",
+		"tier": "medium",
+		"width": 6,
+		"height": 6,
+		"pairs": [
+			{
+				"port": "trieste",
+				"a": [3, 5],
+				"b": [1, 0]
+			},
+			{
+				"port": "colombo",
+				"a": [1, 2],
+				"b": [2, 0]
+			},
+			{
+				"port": "piraeus",
+				"a": [2, 2],
+				"b": [1, 3]
+			},
+			{
+				"port": "djibouti",
+				"a": [1, 4],
+				"b": [4, 3]
+			},
+			{
+				"port": "hamburg",
+				"a": [4, 0],
+				"b": [4, 2]
+			},
+			{
+				"port": "mombasa",
+				"a": [4, 1],
+				"b": [3, 0]
+			}
+		],
+		"solution": ["UUULLLLLD", "LDL", "DRUU", "DDDRDLLU", "DRRU", "UL"]
+	},
+	{
+		"id": "b11",
+		"tier": "medium",
+		"width": 7,
+		"height": 7,
+		"pairs": [
+			{
+				"port": "shanghai",
+				"a": [3, 5],
+				"b": [0, 2]
+			},
+			{
+				"port": "piraeus",
+				"a": [2, 5],
+				"b": [5, 1]
+			},
+			{
+				"port": "trieste",
+				"a": [2, 2],
+				"b": [4, 1]
+			},
+			{
+				"port": "djibouti",
+				"a": [5, 6],
+				"b": [3, 2]
+			},
+			{
+				"port": "mombasa",
+				"a": [4, 6],
+				"b": [4, 3]
+			},
+			{
+				"port": "colombo",
+				"a": [4, 4],
+				"b": [2, 4]
+			}
+		],
+		"solution": ["RUUULLLL", "ULLLLULDDDDDDRU", "LDD", "DLLLLUUU", "LDLLU", "ULUR"]
+	},
+	{
+		"id": "b12",
+		"tier": "medium",
+		"width": 7,
+		"height": 7,
+		"pairs": [
+			{
+				"port": "shanghai",
+				"a": [2, 6],
+				"b": [1, 5]
+			},
+			{
+				"port": "hamburg",
+				"a": [4, 0],
+				"b": [2, 5]
+			},
+			{
+				"port": "piraeus",
+				"a": [6, 2],
+				"b": [5, 0]
+			},
+			{
+				"port": "trieste",
+				"a": [5, 2],
+				"b": [5, 5]
+			},
+			{
+				"port": "colombo",
+				"a": [4, 5],
+				"b": [2, 2]
+			},
+			{
+				"port": "djibouti",
+				"a": [3, 2],
+				"b": [1, 3]
+			}
+		],
+		"solution": ["UULD", "UUUURRRRDDR", "LLU", "LURRRDLDRRRUL", "RULLLUL", "LUURR"]
+	},
+	{
+		"id": "b13",
+		"tier": "hard",
+		"width": 7,
+		"height": 7,
+		"pairs": [
+			{
+				"port": "mombasa",
+				"a": [3, 1],
+				"b": [4, 6]
+			},
+			{
+				"port": "djibouti",
+				"a": [5, 3],
+				"b": [4, 5]
+			},
+			{
+				"port": "trieste",
+				"a": [5, 4],
+				"b": [4, 2]
+			},
+			{
+				"port": "rotterdam",
+				"a": [1, 0],
+				"b": [5, 2]
+			},
+			{
+				"port": "colombo",
+				"a": [0, 0],
+				"b": [0, 2]
+			},
+			{
+				"port": "singapore",
+				"a": [0, 3],
+				"b": [2, 5]
+			},
+			{
+				"port": "piraeus",
+				"a": [2, 4],
+				"b": [1, 1]
+			}
+		],
+		"solution": ["URDRRRRD", "DRRRULU", "ULL", "DDDRDLDRRU", "RR", "RDRURDDL", "LULL"]
+	},
+	{
+		"id": "b14",
+		"tier": "hard",
+		"width": 7,
+		"height": 7,
+		"pairs": [
+			{
+				"port": "singapore",
+				"a": [6, 5],
+				"b": [4, 4]
+			},
+			{
+				"port": "djibouti",
+				"a": [5, 2],
+				"b": [6, 4]
+			},
+			{
+				"port": "hamburg",
+				"a": [5, 3],
+				"b": [3, 4]
+			},
+			{
+				"port": "mombasa",
+				"a": [2, 4],
+				"b": [5, 0]
+			},
+			{
+				"port": "piraeus",
+				"a": [2, 1],
+				"b": [4, 0]
+			},
+			{
+				"port": "trieste",
+				"a": [2, 0],
+				"b": [0, 0]
+			},
+			{
+				"port": "colombo",
+				"a": [3, 6],
+				"b": [0, 1]
+			},
+			{
+				"port": "rotterdam",
+				"a": [2, 6],
+				"b": [0, 4]
+			}
+		],
+		"solution": ["RUULDLU", "DRR", "UUR", "LLDDLDDLU", "DLD", "UU", "LUULLULDLU", "UULL"]
+	},
+	{
+		"id": "b15",
+		"tier": "hard",
+		"width": 8,
+		"height": 8,
+		"pairs": [
+			{
+				"port": "shanghai",
+				"a": [4, 4],
+				"b": [7, 1]
+			},
+			{
+				"port": "hamburg",
+				"a": [2, 3],
+				"b": [5, 4]
+			},
+			{
+				"port": "singapore",
+				"a": [4, 1],
+				"b": [2, 2]
+			},
+			{
+				"port": "trieste",
+				"a": [2, 1],
+				"b": [5, 1]
+			},
+			{
+				"port": "mombasa",
+				"a": [1, 1],
+				"b": [0, 5]
+			},
+			{
+				"port": "piraeus",
+				"a": [0, 6],
+				"b": [1, 6]
+			},
+			{
+				"port": "colombo",
+				"a": [6, 5],
+				"b": [1, 5]
+			},
+			{
+				"port": "rotterdam",
+				"a": [6, 4],
+				"b": [6, 7]
+			}
+		],
+		"solution": [
+			"LLDRDDLULLDR",
+			"DRRDDL",
+			"URU",
+			"LDDDR",
+			"LURRDRURR",
+			"RDL",
+			"RURULURULLLUR",
+			"DRRRU"
+		]
+	},
+	{
+		"id": "b16",
+		"tier": "hard",
+		"width": 8,
+		"height": 8,
+		"pairs": [
+			{
+				"port": "djibouti",
+				"a": [5, 3],
+				"b": [6, 2]
+			},
+			{
+				"port": "trieste",
+				"a": [6, 3],
+				"b": [3, 6]
+			},
+			{
+				"port": "singapore",
+				"a": [3, 7],
+				"b": [4, 5]
+			},
+			{
+				"port": "hamburg",
+				"a": [5, 5],
+				"b": [4, 1]
+			},
+			{
+				"port": "piraeus",
+				"a": [3, 1],
+				"b": [1, 3]
+			},
+			{
+				"port": "mombasa",
+				"a": [2, 3],
+				"b": [0, 7]
+			},
+			{
+				"port": "shanghai",
+				"a": [0, 6],
+				"b": [2, 1]
+			},
+			{
+				"port": "colombo",
+				"a": [2, 0],
+				"b": [5, 0]
+			},
+			{
+				"port": "rotterdam",
+				"a": [6, 7],
+				"b": [6, 0]
+			}
+		],
+		"solution": [
+			"LLDR",
+			"RRRURULU",
+			"ULLDD",
+			"LUULDLL",
+			"RUUR",
+			"RURRRU",
+			"LLLLLLDRD",
+			"DDD",
+			"DLLLLLLLU"
+		]
+	},
+	{
+		"id": "b17",
+		"tier": "hard",
+		"width": 8,
+		"height": 8,
+		"pairs": [
+			{
+				"port": "singapore",
+				"a": [5, 6],
+				"b": [4, 4]
+			},
+			{
+				"port": "shanghai",
+				"a": [4, 6],
+				"b": [7, 6]
+			},
+			{
+				"port": "hamburg",
+				"a": [2, 0],
+				"b": [7, 5]
+			},
+			{
+				"port": "trieste",
+				"a": [2, 2],
+				"b": [1, 0]
+			},
+			{
+				"port": "colombo",
+				"a": [3, 2],
+				"b": [6, 3]
+			},
+			{
+				"port": "djibouti",
+				"a": [4, 2],
+				"b": [6, 4]
+			},
+			{
+				"port": "mombasa",
+				"a": [2, 6],
+				"b": [4, 3]
+			},
+			{
+				"port": "piraeus",
+				"a": [1, 4],
+				"b": [2, 5]
+			},
+			{
+				"port": "rotterdam",
+				"a": [0, 4],
+				"b": [1, 6]
+			}
+		],
+		"solution": [
+			"DLUUL",
+			"RDDDL",
+			"DDDDDRRRRR",
+			"LURRULLLD",
+			"LDDDRR",
+			"DRRD",
+			"RDLLLULDD",
+			"RD",
+			"RRRDL"
+		]
+	},
+	{
+		"id": "b18",
+		"tier": "hard",
+		"width": 8,
+		"height": 8,
+		"pairs": [
+			{
+				"port": "hamburg",
+				"a": [0, 2],
+				"b": [1, 0]
+			},
+			{
+				"port": "mombasa",
+				"a": [2, 0],
+				"b": [5, 2]
+			},
+			{
+				"port": "rotterdam",
+				"a": [6, 2],
+				"b": [7, 3]
+			},
+			{
+				"port": "trieste",
+				"a": [6, 6],
+				"b": [7, 4]
+			},
+			{
+				"port": "singapore",
+				"a": [5, 6],
+				"b": [1, 7]
+			},
+			{
+				"port": "piraeus",
+				"a": [6, 4],
+				"b": [0, 7]
+			},
+			{
+				"port": "shanghai",
+				"a": [0, 4],
+				"b": [5, 4]
+			},
+			{
+				"port": "colombo",
+				"a": [3, 2],
+				"b": [1, 4]
+			},
+			{
+				"port": "djibouti",
+				"a": [3, 1],
+				"b": [6, 3]
+			}
+		],
+		"solution": [
+			"RDLDLUULD",
+			"DDDDDRUUR",
+			"DR",
+			"RDLLL",
+			"RUUUU",
+			"RUURUUUUR",
+			"RDDDLDD",
+			"RURU",
+			"DRRDD"
+		]
+	}
+]
