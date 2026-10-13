@@ -7,15 +7,12 @@ import { createRandom, type Random } from '#lib/game/random.js';
 import { generateCats, RESTING_MOOD, type CatProfile } from './cats';
 import { FIRST_EVENT_MS, STARTING_LIVES } from './config';
 import { catHearts, ritualScore } from './scoring';
-import type { PetStroke } from './petting';
 import type { Animation, RoomEvent } from './reactions';
 import { assignSeats, generateRiddle, type Riddle } from './riddle';
 
-/** What a cat is doing besides sitting: the room's reactions plus the tail flick a scrub causes */
-export type MotionKind = Animation | 'flick';
-
+/** What a cat is doing besides sitting: how it reacts to what happens in the room */
 export interface Motion {
-	kind: MotionKind;
+	kind: Animation;
 	remainingMs: number;
 }
 
@@ -36,20 +33,16 @@ export interface CatState {
 	/** The purr that is sounding right now (0 to 1); follows purrTarget with some inertia */
 	purr: number;
 	purrTarget: number;
-	/** The stroke in progress, if the cat is being petted */
-	stroke: PetStroke | null;
-	/** Time since the last pointer sample of the stroke */
-	idleMs: number;
+	/** A finger is on the cat right now */
+	held: boolean;
+	/** The keyboard pet is still counting as petting for this much longer */
+	keyPetMs: number;
+	/** How long the cat has been petted lately; the purr follows it, and it fades when the petting stops */
+	petMs: number;
 	motion: Motion | null;
-	/** Petting is ignored while the cat sulks after a hiss */
-	sulkMs: number;
-	scrubCooldownMs: number;
-	sinceScrubMs: number;
 	nameShown: boolean;
 	pitchShown: boolean;
 	observed: Observation[];
-	/** Counts up with every tail flick, so the view can restart the animation */
-	flicks: number;
 }
 
 export interface RoomEventState {
@@ -84,7 +77,6 @@ export type RitualEvent =
 	| { type: 'reaction'; cat: number; animation: Animation }
 	| { type: 'name-shown'; cat: number }
 	| { type: 'pitch-shown'; cat: number }
-	| { type: 'scrub'; cat: number; hiss: boolean }
 	| { type: 'line'; from: number; to: number; index: number }
 	| { type: 'mistake'; from: number; to: number; livesLeft: number }
 	| { type: 'not-ready'; cat: number }
@@ -100,16 +92,13 @@ export function createCatState(profile: CatProfile, seat: number): CatState {
 		happiness: 0,
 		purr: 0,
 		purrTarget: 0,
-		stroke: null,
-		idleMs: 0,
+		held: false,
+		keyPetMs: 0,
+		petMs: 0,
 		motion: null,
-		sulkMs: 0,
-		scrubCooldownMs: 0,
-		sinceScrubMs: Infinity,
 		nameShown: false,
 		pitchShown: false,
-		observed: [],
-		flicks: 0
+		observed: []
 	};
 }
 

@@ -8,19 +8,17 @@ import {
 	CALM_PER_S,
 	HAPPINESS_PER_S,
 	HIDE_RECOVER_MOOD,
+	KEY_PET_MS,
 	MOOD_DRIFT_PER_S,
 	NAME_HAPPINESS,
-	PET_IDLE_MS,
+	PET_FORGET_RATE,
 	PITCH_HAPPINESS,
 	PURR_FALL_PER_S,
 	PURR_RISE_PER_S,
-	SCRUB_COOLDOWN_MS,
-	SCRUB_HISS_WINDOW_MS,
-	SULK_MS,
 	UNSETTLED_MOOD
 } from './config';
 import { RESTING_MOOD } from './cats';
-import { petSample, purrVolume, startStroke, type PetSample } from './petting';
+import { purrVolume } from './petting';
 import {
 	blocksSeat,
 	drawEvent,
@@ -34,9 +32,9 @@ import type { CatState, RitualEvent, RitualState } from './state';
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
-/** A cat can be petted unless it is off chasing something or sulking after a hiss */
+/** A cat can be petted unless it is off chasing something */
 export function canPet(cat: CatState): boolean {
-	return cat.motion?.kind !== 'chase' && cat.sulkMs <= 0;
+	return cat.motion?.kind !== 'chase';
 }
 
 /** A cat can be joined into the star when it is on its seat and calm enough to take part */
@@ -44,57 +42,25 @@ export function canLink(cat: CatState): boolean {
 	return !blocksSeat(cat.motion?.kind ?? null) && cat.mood >= UNSETTLED_MOOD;
 }
 
+/** A finger lands on the cat: it is petted for as long as the finger stays */
 export function beginPet(state: RitualState, catId: number): void {
 	const cat = state.cats[catId];
-	if (cat && state.phase === 'playing') cat.stroke = startStroke();
+	if (cat && state.phase === 'playing') cat.held = true;
 }
 
-/** The finger moved inside the cat's circle */
-export function petMove(state: RitualState, catId: number, sample: PetSample): RitualEvent[] {
-	const cat = state.cats[catId];
-	if (!cat || state.phase !== 'playing' || !canPet(cat)) return [];
-	cat.stroke = petSample(cat.stroke ?? startStroke(), sample);
-	cat.idleMs = 0;
-	if (cat.stroke.feel !== 'scrub') {
-		cat.purrTarget = purrVolume(cat.stroke.distance, cat.stroke.speed);
-		return [];
-	}
-
-	// Scrubbing: no purr, and the cat shows what it thinks of it
-	cat.purrTarget = 0;
-	if (cat.scrubCooldownMs > 0) return [];
-	cat.scrubCooldownMs = SCRUB_COOLDOWN_MS;
-	const hiss = cat.sinceScrubMs < SCRUB_HISS_WINDOW_MS;
-	cat.sinceScrubMs = 0;
-	if (hiss) {
-		cat.motion = { kind: 'hiss', remainingMs: 900 };
-		cat.sulkMs = SULK_MS;
-		cat.happiness = clamp01(cat.happiness - 0.06);
-		cat.mood = clamp01(cat.mood - 0.1);
-		cat.stroke = startStroke();
-	} else {
-		cat.motion = { kind: 'flick', remainingMs: 600 };
-		cat.flicks += 1;
-	}
-	return [{ type: 'scrub', cat: catId, hiss }];
-}
-
-/** The finger lifted or left the circle: the purr fades out and the next stroke starts from nothing */
+/** The finger lifted or left the circle: the purr fades out */
 export function endPet(state: RitualState, catId: number): void {
 	const cat = state.cats[catId];
 	if (!cat) return;
-	cat.stroke = null;
-	cat.purrTarget = 0;
+	cat.held = false;
+	cat.keyPetMs = 0;
 }
 
-/** A keyboard "pet": adds a gentle stretch of stroke, so holding the key keeps the purr going */
-export function nudgePet(state: RitualState, catId: number, units = 130): void {
+/** A keyboard "pet": counts as petting for a moment, so holding the key keeps the purr going */
+export function nudgePet(state: RitualState, catId: number): void {
 	const cat = state.cats[catId];
 	if (!cat || state.phase !== 'playing' || !canPet(cat)) return;
-	const stroke = cat.stroke ?? startStroke();
-	cat.stroke = { ...stroke, distance: stroke.distance + units, speed: 200, feel: 'gentle' };
-	cat.idleMs = 0;
-	cat.purrTarget = purrVolume(cat.stroke.distance, cat.stroke.speed);
+	cat.keyPetMs = KEY_PET_MS;
 }
 
 function mistake(state: RitualState, from: number, to: number): RitualEvent[] {
@@ -167,7 +133,8 @@ function startRoomEvent(state: RitualState, kind: RoomEvent, random: Random): Ri
 		else cat.observed.push(seen);
 		if (result.animation === 'ignore') continue;
 		cat.motion = { kind: result.animation, remainingMs: result.durationMs };
-		if (result.animation !== 'doze') cat.purrTarget = 0;
+		// A startled cat has to be settled again from the start
+		if (result.animation !== 'doze') cat.petMs = 0;
 		events.push({ type: 'reaction', cat: cat.profile.id, animation: result.animation });
 	}
 	return events;
@@ -175,10 +142,7 @@ function startRoomEvent(state: RitualState, kind: RoomEvent, random: Random): Ri
 
 function stepCat(cat: CatState, dtMs: number, events: RitualEvent[]): void {
 	const dt = dtMs / 1000;
-	cat.sulkMs = Math.max(0, cat.sulkMs - dtMs);
-	cat.scrubCooldownMs = Math.max(0, cat.scrubCooldownMs - dtMs);
-	cat.sinceScrubMs += dtMs;
-	cat.idleMs += dtMs;
+	cat.keyPetMs = Math.max(0, cat.keyPetMs - dtMs);
 
 	if (cat.motion) {
 		cat.motion.remainingMs -= dtMs;
@@ -189,7 +153,9 @@ function stepCat(cat: CatState, dtMs: number, events: RitualEvent[]): void {
 		}
 	}
 
-	if (!canPet(cat) || cat.idleMs > PET_IDLE_MS) cat.purrTarget = 0;
+	const petted = (cat.held || cat.keyPetMs > 0) && canPet(cat);
+	cat.petMs = petted ? cat.petMs + dtMs : Math.max(0, cat.petMs - dtMs * PET_FORGET_RATE);
+	cat.purrTarget = petted ? purrVolume(cat.petMs) : 0;
 	const rate = cat.purr < cat.purrTarget ? PURR_RISE_PER_S : PURR_FALL_PER_S;
 	const gap = cat.purrTarget - cat.purr;
 	cat.purr = clamp01(cat.purr + Math.sign(gap) * Math.min(Math.abs(gap), rate * dt));

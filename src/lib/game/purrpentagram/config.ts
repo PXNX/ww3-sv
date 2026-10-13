@@ -13,24 +13,13 @@ export const STAR_RADIUS = 335;
 /** Radius of the circle around a cat: petting happens inside it, the star stroke leaves it */
 export const CAT_RADIUS = 105;
 
-// Petting: a slow stroke purrs, a scrubbing one annoys
-/** Slower than this is not a stroke at all */
-export const MIN_PET_SPEED = 30;
-/** Up to this speed the stroke counts as gentle and keeps the purr at full strength */
-export const GENTLE_MAX_SPEED = 420;
-/** Faster than this is scrubbing: the cat flicks its tail or hisses */
-export const SCRUB_SPEED = 820;
-/** Gentle distance (units) after which the purr has reached about two thirds of its volume */
-export const PURR_RAMP_DISTANCE = 900;
-/** The speed estimate follows each new sample by this share, so one jittery event cannot spike it */
-export const SPEED_SMOOTHING = 0.45;
-/** Without a pointer sample for this long, the stroke has stopped */
-export const PET_IDLE_MS = 160;
-/** A scrub flicks the tail; a second one within this time makes the cat hiss */
-export const SCRUB_HISS_WINDOW_MS = 2600;
-/** Scrubs closer together than this count as one */
-export const SCRUB_COOLDOWN_MS = 650;
-export const SULK_MS = 1400;
+// Petting: keep a finger on the cat and it purrs, louder the longer you stay
+/** Petting time after which the purr has reached about two thirds of its volume */
+export const PURR_RAMP_MS = 1500;
+/** The petting built up fades this many times faster than it grew once the finger lifts */
+export const PET_FORGET_RATE = 1.5;
+/** A keyboard pet counts as petting for this long, so holding the key keeps the purr going */
+export const KEY_PET_MS = 160;
 
 // Mood and happiness (both 0 to 1)
 export const PURR_RISE_PER_S = 1.3;

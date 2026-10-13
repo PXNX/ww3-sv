@@ -54,12 +54,12 @@ const seat = (game: PurrPentagramGame, cat: number): Point =>
 	seatPosition(game.state.cats[cat].seat);
 
 /** Drags from one cat's seat to another's, the way a finger would */
-function stroke(game: PurrPentagramGame, from: number, to: number, t = 0) {
+function stroke(game: PurrPentagramGame, from: number, to: number) {
 	const start = seat(game, from);
 	const end = seat(game, to);
-	expect(game.pointerDown(start, t)).toBe(true);
-	game.pointerMove({ x: start.x + 150, y: start.y }, t + 20);
-	game.pointerMove({ x: end.x, y: end.y }, t + 60);
+	expect(game.pointerDown(start)).toBe(true);
+	game.pointerMove({ x: start.x + 150, y: start.y });
+	game.pointerMove({ x: end.x, y: end.y });
 	game.pointerUp(end);
 }
 
@@ -69,7 +69,7 @@ describe('PurrPentagramGame', () => {
 		expect(game.status).toBe('ready');
 		game.update(STEP);
 		expect(game.state.elapsedMs).toBe(0);
-		expect(game.pointerDown(seat(game, 0), 0)).toBe(false);
+		expect(game.pointerDown(seat(game, 0))).toBe(false);
 
 		game.start();
 		const target = [...game.state.riddle.target];
@@ -83,27 +83,26 @@ describe('PurrPentagramGame', () => {
 		const { game, mixer } = newGame();
 		game.start();
 		const before = mixer.unlocked;
-		game.pointerDown(seat(game, 0), 0);
+		game.pointerDown(seat(game, 0));
 		expect(mixer.unlocked).toBeGreaterThan(before);
 	});
 
-	it('pets a cat that is stroked slowly inside its circle, and the purr grows', () => {
+	it('pets a cat while the finger stays in its circle, and the purr grows', () => {
 		const { game } = newGame();
 		game.start();
 		const centre = seat(game, 0);
-		expect(game.pointerDown({ x: centre.x - 40, y: centre.y }, 0)).toBe(true);
-		let clock = 0;
+		expect(game.pointerDown({ x: centre.x - 40, y: centre.y })).toBe(true);
+		// Some wiggling around inside the circle makes no difference
 		let x = -40;
 		for (let i = 0; i < 180; i++) {
-			clock += STEP;
 			x += 3.3 * (i % 40 < 20 ? 1 : -1);
-			game.pointerMove({ x: centre.x + x, y: centre.y }, clock);
+			game.pointerMove({ x: centre.x + x, y: centre.y });
 			game.update(STEP);
 		}
 		expect(game.state.cats[0].purr).toBeGreaterThan(0.2);
 		expect(game.drag).toBeNull();
 		game.pointerUp({ x: centre.x + x, y: centre.y });
-		expect(game.state.cats[0].stroke).toBeNull();
+		expect(game.state.cats[0].held).toBe(false);
 	});
 
 	it('leaves petting for the star stroke when the finger drags out of the circle', () => {
@@ -111,11 +110,12 @@ describe('PurrPentagramGame', () => {
 		game.start();
 		const from = seat(game, 0);
 		const to = seat(game, 1);
-		game.pointerDown(from, 0);
-		game.pointerMove({ x: from.x + 200, y: from.y }, 30);
+		game.pointerDown(from);
+		expect(game.state.cats[0].held).toBe(true);
+		game.pointerMove({ x: from.x + 200, y: from.y });
 		expect(game.drag).not.toBeNull();
-		expect(game.state.cats[0].stroke).toBeNull();
-		game.pointerMove(to, 60);
+		expect(game.state.cats[0].held).toBe(false);
+		game.pointerMove(to);
 		expect(game.drag?.over).toBe(1);
 		game.pointerCancel();
 		expect(game.drag).toBeNull();
@@ -124,18 +124,18 @@ describe('PurrPentagramGame', () => {
 	it('ignores a touch that lands outside every cat', () => {
 		const { game } = newGame();
 		game.start();
-		expect(game.pointerDown({ x: 500, y: 520 }, 0)).toBe(false);
+		expect(game.pointerDown({ x: 500, y: 520 })).toBe(false);
 	});
 
 	it('draws the star with the right strokes and wins, scores and keeps the best', () => {
 		const { game, scores } = newGame();
 		game.start();
 		const { target } = game.state.riddle;
-		for (let i = 0; i < 4; i++) stroke(game, target[i], target[i + 1], i * 100);
+		for (let i = 0; i < 4; i++) stroke(game, target[i], target[i + 1]);
 		// Five cats are joined, but the star is open until the last one goes back to the first
 		expect(game.status).toBe('playing');
 		expect(game.state.chain).toEqual(target);
-		stroke(game, target[4], target[0], 500);
+		stroke(game, target[4], target[0]);
 		expect(game.status).toBe('won');
 		expect(game.state.closed).toBe(true);
 		expect(game.score).toBeGreaterThan(0);
@@ -150,11 +150,11 @@ describe('PurrPentagramGame', () => {
 		stroke(game, target[1], target[0]);
 		expect(game.lives).toBe(STARTING_LIVES - 1);
 		expect(game.notice?.kind).toBe('mistake');
-		stroke(game, target[1], target[0], 200);
-		stroke(game, target[1], target[0], 400);
+		stroke(game, target[1], target[0]);
+		stroke(game, target[1], target[0]);
 		expect(game.status).toBe('over');
 		expect(game.lives).toBe(0);
-		expect(game.pointerDown(seat(game, 0), 0)).toBe(false);
+		expect(game.pointerDown(seat(game, 0))).toBe(false);
 	});
 
 	it('says so, and costs nothing, when a cat is too upset to be joined', () => {
@@ -194,7 +194,7 @@ describe('PurrPentagramGame', () => {
 		const elapsed = game.state.elapsedMs;
 		game.update(STEP);
 		expect(game.state.elapsedMs).toBe(elapsed);
-		expect(game.pointerDown(seat(game, 0), 0)).toBe(false);
+		expect(game.pointerDown(seat(game, 0))).toBe(false);
 		game.resume();
 		game.update(STEP);
 		expect(game.state.elapsedMs).toBeGreaterThan(elapsed);
@@ -204,8 +204,8 @@ describe('PurrPentagramGame', () => {
 		const { game, mixer } = newGame();
 		game.start();
 		const { target } = game.state.riddle;
-		for (let i = 0; i < 4; i++) stroke(game, target[i], target[i + 1], i * 100);
-		stroke(game, target[4], target[0], 500);
+		for (let i = 0; i < 4; i++) stroke(game, target[i], target[i + 1]);
+		stroke(game, target[4], target[0]);
 		expect(game.status).toBe('won');
 		expect(mixer.finaleStarted).toBe(0);
 

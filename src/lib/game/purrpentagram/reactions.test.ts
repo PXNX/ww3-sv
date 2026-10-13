@@ -56,7 +56,7 @@ describe('blocksSeat', () => {
 		expect(blocksSeat('hide')).toBe(true);
 		expect(blocksSeat('chase')).toBe(true);
 		expect(blocksSeat('hiss')).toBe(false);
-		expect(blocksSeat('flick')).toBe(false);
+		expect(blocksSeat('stare')).toBe(false);
 		expect(blocksSeat(null)).toBe(false);
 	});
 });

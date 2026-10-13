@@ -66,8 +66,7 @@
 	const NOTICES: Record<NoticeKind, () => string> = {
 		mistake: m.purr_notice_mistake,
 		'not-ready': m.purr_notice_not_ready,
-		'out-of-turn': m.purr_notice_out_of_turn,
-		'too-fast': m.purr_notice_too_fast
+		'out-of-turn': m.purr_notice_out_of_turn
 	};
 </script>
 
@@ -122,7 +121,12 @@
 			<LivesBar lives={game.lives} max={STARTING_LIVES} class="shrink-0 text-xl" />
 		</div>
 
-		<PurrRiddleCard riddle={ritual.riddle} calm={game.reducedMotion} />
+		<PurrRiddleCard
+			riddle={ritual.riddle}
+			calm={game.reducedMotion}
+			joined={ritual.chain.length}
+			closed={ritual.closed}
+		/>
 
 		<PurrPentagramBoard {game}>
 			<PurrFinalePanel part="banner" {...finale} />
@@ -142,7 +146,7 @@
 	>
 		<p>{m.purr_tutorial_goal()}</p>
 		<p>{m.purr_tutorial_petting()}</p>
-		<p>{m.purr_tutorial_scrub()}</p>
+		<p>{m.purr_tutorial_clues()}</p>
 		<p>{m.purr_tutorial_star()}</p>
 		<p>{m.purr_tutorial_room()}</p>
 		<ul class="flex flex-col gap-1.5 text-sm">

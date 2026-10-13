@@ -11,7 +11,7 @@ import { EVENT_GAP_MAX_MS, EVENT_GAP_MIN_MS } from './config';
 export const ROOM_EVENTS = ['candles', 'dim', 'draft', 'thunder', 'laser', 'creak'] as const;
 export type RoomEvent = (typeof ROOM_EVENTS)[number];
 
-/** What a cat can do in answer to an event (a tail flick, which only comes from petting, is separate) */
+/** What a cat can do in answer to an event */
 export const ANIMATIONS = ['ignore', 'flinch', 'hide', 'chase', 'hiss', 'stare', 'doze'] as const;
 export type Animation = (typeof ANIMATIONS)[number];
 
@@ -99,7 +99,7 @@ export function reaction(cat: Pick<CatProfile, 'personality'>, event: RoomEvent)
 }
 
 /** Whether a motion takes the cat out of reach, so it cannot be picked for the star stroke */
-export function blocksSeat(motion: Animation | 'flick' | null): boolean {
+export function blocksSeat(motion: Animation | null): boolean {
 	return motion === 'hide' || motion === 'chase';
 }
 

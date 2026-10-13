@@ -63,7 +63,6 @@ export type SoundId =
 	| 'drone-buzz'
 	| 'drone-brzzz'
 	| 'cat-hiss'
-	| 'cat-flick'
 	| 'thunder'
 	| 'door-creak'
 	| 'draft'
@@ -740,18 +739,6 @@ export const SOUNDS: Record<SoundId, SoundEffect> = {
 			gain: 0.16 + intensity * 0.1
 		});
 	},
-
-	// A tail swishing past: a short, soft whoosh
-	'cat-flick': (ctx, dest) =>
-		noise(ctx, dest, {
-			duration: 0.16,
-			filterType: 'bandpass',
-			filterFrequency: 2200,
-			filterTo: 900,
-			q: 1.1,
-			gain: 0.09,
-			attack: 0.03
-		}),
 
 	// A rolling rumble with a crack in front of it
 	thunder: (ctx, dest) => {

@@ -5,14 +5,13 @@ import {
 	HIDE_RECOVER_MOOD,
 	NAME_HAPPINESS,
 	PITCH_HAPPINESS,
-	SCRUB_COOLDOWN_MS,
 	STARTING_LIVES,
 	UNSETTLED_MOOD
 } from './config';
 import { EVENT_DURATION_MS } from './reactions';
 import { catHearts } from './scoring';
 import { createRitual, scoreOf, totalHearts, type RitualEvent, type RitualState } from './state';
-import { beginPet, canLink, canPet, connect, endPet, nudgePet, petMove, stepRitual } from './step';
+import { beginPet, canLink, canPet, connect, endPet, nudgePet, stepRitual } from './step';
 
 const STEP = 1000 / 60;
 
@@ -28,24 +27,14 @@ function run(state: RitualState, random: () => number, ms: number): RitualEvent[
 	return events;
 }
 
-/** Pets a cat with a steady gentle stroke for `ms`, the way a finger would */
-function pet(state: RitualState, random: () => number, id: number, ms: number, speed = 200) {
+/** Keeps a finger on a cat for `ms`; the finger stays down afterwards, like a hand that rests there */
+function pet(state: RitualState, random: () => number, id: number, ms: number) {
 	beginPet(state, id);
-	let x = 0;
-	petMove(state, id, { x, y: 0, t: 0 });
-	let clock = 0;
-	const events: RitualEvent[] = [];
-	for (let t = 0; t < ms; t += STEP) {
-		clock += STEP;
-		x += (speed * STEP) / 1000;
-		events.push(...petMove(state, id, { x, y: 0, t: clock }));
-		events.push(...stepRitual(state, random, STEP));
-	}
-	return events;
+	return run(state, random, ms);
 }
 
 describe('petting a cat', () => {
-	it('builds up the purr the longer the stroke goes on', () => {
+	it('builds up the purr the longer the finger stays', () => {
 		const { state, random } = setup();
 		pet(state, random, 0, 500);
 		const early = state.cats[0].purr;
@@ -82,35 +71,29 @@ describe('petting a cat', () => {
 		expect(state.cats[1].pitchShown).toBe(false);
 	});
 
-	it('flicks the tail at a first scrub and hisses at the next, with no purr', () => {
+	it('never makes the cat hiss by itself', () => {
 		const { state, random } = setup();
-		beginPet(state, 0);
-		petMove(state, 0, { x: 0, y: 0, t: 0 });
-		let clock = 0;
-		let x = 0;
-		const events: RitualEvent[] = [];
-		for (let i = 0; i < 90; i++) {
-			clock += STEP;
-			x += i % 2 === 0 ? 60 : -60;
-			events.push(...petMove(state, 0, { x, y: 0, t: clock }));
-			events.push(...stepRitual(state, random, STEP));
-		}
-		const scrubs = events.filter((e) => e.type === 'scrub');
-		expect(scrubs.length).toBeGreaterThanOrEqual(2);
-		expect(scrubs[0]).toMatchObject({ cat: 0, hiss: false });
-		expect(scrubs[1]).toMatchObject({ cat: 0, hiss: true });
-		expect(state.cats[0].purr).toBeLessThan(0.05);
-		expect(SCRUB_COOLDOWN_MS).toBeGreaterThan(0);
+		state.nextEventMs = Infinity;
+		const events = pet(state, random, 0, 6000);
+		expect(events.filter((e) => e.type === 'reaction' && e.animation === 'hiss')).toEqual([]);
+		expect(state.cats[0].motion?.kind).not.toBe('hiss');
+		expect(state.cats[0].mood).toBeGreaterThanOrEqual(0.5);
 	});
 
-	it('ignores petting while the cat sulks after a hiss', () => {
-		const { state } = setup();
+	it('purrs for a finger that rests on the cat without moving', () => {
+		const { state, random } = setup();
+		pet(state, random, 0, 800);
+		expect(state.cats[0].purr).toBeGreaterThan(0.3);
+	});
+
+	it('does not pet a cat that is off chasing the dot', () => {
+		const { state, random } = setup();
 		const cat = state.cats[0];
-		cat.sulkMs = 800;
+		cat.motion = { kind: 'chase', remainingMs: 60000 };
 		expect(canPet(cat)).toBe(false);
-		petMove(state, 0, { x: 0, y: 0, t: 0 });
-		petMove(state, 0, { x: 50, y: 0, t: 100 });
-		expect(cat.purrTarget).toBe(0);
+		pet(state, random, 0, 1000);
+		expect(cat.purr).toBe(0);
+		expect(cat.petMs).toBe(0);
 	});
 
 	it('purrs for a keyboard nudge, and keeps going while the key is held', () => {

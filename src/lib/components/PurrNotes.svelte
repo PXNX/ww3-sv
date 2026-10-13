@@ -1,5 +1,5 @@
 <!--
-	The player's notes on the five cats: the coat they can see, the name once the cat has shown its
+	The player's notes on the five cats: each cat's face and coat, the name once the cat has shown its
 	tag, how deep its purr is once it has settled into a steady one, how happy it is (its hearts, in
 	deep red) and every reaction to the room that has been seen so far. Everything the riddle can
 	ask about is collected here, so nothing depends on remembering or on hearing alone.
@@ -8,8 +8,8 @@
 	import { MAX_HEARTS, catHearts } from '#lib/game/purrpentagram/scoring.js';
 	import type { RitualState } from '#lib/game/purrpentagram/state.js';
 	import { m } from '#lib/paraglide/messages.js';
-	import { COAT_COLORS } from '#lib/theme/purrCoats.js';
 	import { coatText, eventText, reactionText } from '#lib/theme/purrText.js';
+	import PurrCat from './PurrCat.svelte';
 	import IconHeartFilled from '~icons/fluent/heart-24-filled';
 	import IconHeartOutline from '~icons/fluent/heart-24-regular';
 
@@ -28,13 +28,19 @@
 			{@const hearts = catHearts(cat.happiness)}
 			<li class="flex flex-col gap-0.5 rounded-md border-2 border-ink bg-sand px-2 py-1">
 				<div class="flex items-center gap-2">
-					<span
-						class="size-5 shrink-0 rounded-full border-2 border-ink"
-						style:background={COAT_COLORS[cat.profile.coat].fur}
+					<!-- The same little face as on the board, so the cat is easy to find there -->
+					<svg
+						viewBox="-62 -112 124 130"
+						class="size-10 shrink-0 rounded-full border-2 border-ink bg-[#2b1440]"
 						aria-hidden="true"
-					></span>
-					<span dir="auto" class="min-w-0 flex-1 truncate text-sm font-bold">
-						{cat.nameShown ? cat.profile.name : coatText(cat.profile.coat)}
+					>
+						<PurrCat {cat} calm compact />
+					</svg>
+					<span dir="auto" class="flex min-w-0 flex-1 flex-col text-sm leading-tight">
+						<span class="truncate font-bold">{coatText(cat.profile.coat)}</span>
+						{#if cat.nameShown}
+							<span class="truncate text-xs">{cat.profile.name}</span>
+						{/if}
 					</span>
 					{#if cat.pitchShown}
 						<span

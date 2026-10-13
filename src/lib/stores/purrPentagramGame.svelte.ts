@@ -1,6 +1,6 @@
 /*
- * Purr Pentagram game store: wraps the pure ritual logic with the player's pointer gestures (a slow
- * stroke inside a cat's circle pets it, dragging out of the circle draws the star), the sounds,
+ * Purr Pentagram game store: wraps the pure ritual logic with the player's pointer gestures (a finger
+ * held on a cat pets it, dragging out of the circle draws the star), the sounds,
  * the sustained purrs and the finale music, the reduce-motion setting and the personal best.
  *
  * The ritual state is reactive on purpose: the board is a small SVG that redraws from it, and only
@@ -21,14 +21,7 @@ import {
 	type RitualEvent,
 	type RitualState
 } from '#lib/game/purrpentagram/state.js';
-import {
-	beginPet,
-	connect,
-	endPet,
-	nudgePet,
-	petMove,
-	stepRitual
-} from '#lib/game/purrpentagram/step.js';
+import { beginPet, connect, endPet, nudgePet, stepRitual } from '#lib/game/purrpentagram/step.js';
 import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
 import { prefersReducedMotion } from '#lib/game/loop.js';
 import { highscores, type Highscores } from '#lib/services/highscore.js';
@@ -41,7 +34,7 @@ import type { RoomEvent } from '#lib/game/purrpentagram/reactions.js';
 export type PurrPentagramStatus = 'ready' | 'playing' | 'paused' | 'won' | 'over';
 
 /** A short line of feedback under the board; the page turns the kind into text */
-export type NoticeKind = 'mistake' | 'not-ready' | 'out-of-turn' | 'too-fast';
+export type NoticeKind = 'mistake' | 'not-ready' | 'out-of-turn';
 
 const SCORE_KEY = ['purrpentagram', 'score'] as const;
 const MOTION_KEY = 'purrpentagram:reduce-motion';
@@ -197,25 +190,22 @@ export class PurrPentagramGame {
 	}
 
 	/** A finger went down: petting begins when it landed inside a cat's circle */
-	pointerDown(point: Point, t: number): boolean {
+	pointerDown(point: Point): boolean {
 		if (this.status !== 'playing') return false;
 		this.unlockAudio();
 		const cat = circleAt(point, this.#centres());
 		if (cat === null) return false;
 		this.#gesture = { cat, mode: 'pet' };
 		beginPet(this.state, cat);
-		this.#apply(petMove(this.state, cat, { ...point, t }));
 		return true;
 	}
 
-	pointerMove(point: Point, t: number) {
+	pointerMove(point: Point) {
 		const gesture = this.#gesture;
 		if (!gesture || this.status !== 'playing') return;
 		if (gesture.mode === 'pet') {
-			if (insideCircle(point, this.#centres()[gesture.cat], CAT_RADIUS)) {
-				this.#apply(petMove(this.state, gesture.cat, { ...point, t }));
-				return;
-			}
+			// Anywhere inside the circle is petting; it only changes when the finger leaves
+			if (insideCircle(point, this.#centres()[gesture.cat], CAT_RADIUS)) return;
 			// Out of the circle: this is the star stroke now, and petting stops
 			gesture.mode = 'stroke';
 			endPet(this.state, gesture.cat);
@@ -362,10 +352,6 @@ export class PurrPentagramGame {
 				break;
 			case 'pitch-shown':
 				this.#play('chime');
-				break;
-			case 'scrub':
-				this.#play(event.hiss ? 'cat-hiss' : 'cat-flick');
-				if (event.hiss) this.#say('too-fast');
 				break;
 			case 'line':
 				this.#play('ritual-line', (event.index + 1) / 4);

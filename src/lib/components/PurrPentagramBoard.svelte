@@ -1,6 +1,6 @@
 <!--
 	Purr Pentagram playfield: one square SVG with the room (rug, candles, window, door), the five
-	cats on the points of the star, the lines the player has drawn and the finale glow. A slow stroke
+	cats on the points of the star, the lines the player has drawn and the finale glow. A finger held
 	inside a cat's circle pets it; dragging out of the circle draws the star stroke. The cats are
 	also buttons for the keyboard: Space pets, Enter joins them into the star.
 
@@ -92,6 +92,12 @@
 		return { x: (look.laser.x - seats[index].x) * 0.62, y: (look.laser.y - seats[index].y) * 0.62 };
 	}
 
+	/** The place of the cat in the star drawn so far (1 to 5), or null while it has not been joined */
+	function stepOf(index: number): number | null {
+		const place = ritual.chain.indexOf(index);
+		return place < 0 ? null : place + 1;
+	}
+
 	function catLabel(index: number): string {
 		const cat = ritual.cats[index];
 		const name = cat.nameShown ? `, ${cat.profile.name}` : '';
@@ -113,7 +119,7 @@
 		if (!event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return;
 		const point = toField(event);
 		if (!point) return;
-		if (game.pointerDown(point, event.timeStamp)) {
+		if (game.pointerDown(point)) {
 			svg?.setPointerCapture(event.pointerId);
 			event.preventDefault();
 		}
@@ -121,12 +127,8 @@
 
 	function onPointerMove(event: PointerEvent) {
 		if (!event.isPrimary) return;
-		// A coalesced event is a real sample of the finger's path, so use them all for a true speed
-		const samples = event.getCoalescedEvents?.() ?? [];
-		for (const sample of samples.length > 0 ? samples : [event]) {
-			const point = toField(sample);
-			if (point) game.pointerMove(point, sample.timeStamp);
-		}
+		const point = toField(event);
+		if (point) game.pointerMove(point);
 	}
 
 	function onPointerUp(event: PointerEvent) {
@@ -221,25 +223,6 @@
 		<!-- The room -->
 		<rect width={FIELD} height={FIELD} fill="#150a22" />
 		<circle cx="500" cy="510" r="470" fill="url(#rug)" stroke="#6b3f8c" stroke-width="6" />
-		<circle
-			cx="500"
-			cy="510"
-			r="440"
-			fill="none"
-			stroke="#6b3f8c"
-			stroke-opacity="0.5"
-			stroke-width="2"
-			stroke-dasharray="4 14"
-		/>
-		<circle
-			cx="500"
-			cy="510"
-			r="335"
-			fill="none"
-			stroke="#8a5bb0"
-			stroke-opacity="0.18"
-			stroke-width="2"
-		/>
 
 		<!-- The window, top left: the curtains billow when a draft comes in -->
 		<g transform="translate(24 24)">
@@ -393,6 +376,7 @@
 					{calm}
 					eyes={stage?.eyes ?? 0}
 					anchored={game.anchor === index}
+					step={stepOf(index)}
 					offset={wander(index)}
 				/>
 			</g>
