@@ -2,7 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { APP_NAME } from '#lib/config.js';
-	import type { CameoId } from '#lib/theme/cameos.js';
+	import type { LeaderId } from '#lib/theme/leaders.js';
 	import CameoLineup from '#lib/components/CameoLineup.svelte';
 	import InstallPwaHint from '#lib/components/InstallPwaHint.svelte';
 	import LocaleSwitcher from '#lib/components/LocaleSwitcher.svelte';
@@ -10,7 +10,7 @@
 	import SoundToggle from '#lib/components/SoundToggle.svelte';
 	import UpdatePwaHint from '#lib/components/UpdatePwaHint.svelte';
 
-	let leader: CameoId | null = $state(null);
+	let leader: LeaderId | null = $state(null);
 </script>
 
 <main

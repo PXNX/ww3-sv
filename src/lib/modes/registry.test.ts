@@ -1,5 +1,6 @@
+import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { CAMEOS } from '#lib/theme/cameos.js';
+import { LEADERS } from '#lib/theme/leaders.js';
 import { MODES, modeById, modesFeaturing } from './registry';
 
 describe('mode leaders', () => {
@@ -9,19 +10,39 @@ describe('mode leaders', () => {
 		}
 	});
 
-	it('features every roster leader in at least one mode, so no filter comes up empty', () => {
-		for (const cameo of CAMEOS) {
-			expect(modesFeaturing(cameo.id).length, cameo.id).toBeGreaterThan(0);
+	it('features every leader in at least one mode, so no filter comes up empty', () => {
+		for (const leader of LEADERS) {
+			expect(modesFeaturing(leader.id).length, leader.id).toBeGreaterThan(0);
 		}
 	});
 
+	it('leaves the cat ritual and the centrifuge without a country', () => {
+		expect(modeById('purrpentagram').leaders).toEqual([]);
+		expect(modeById('centrifuge').leaders).toEqual([]);
+	});
+
 	it('filters by leader and keeps registry order', () => {
-		const ids = modesFeaturing('xi').map((mode) => mode.id);
-		expect(ids).toEqual(['blocks', 'merge', 'beltroad']);
+		expect(modesFeaturing('xi').map((mode) => mode.id)).toEqual(['whack', 'beltroad']);
+		expect(modesFeaturing('trump').map((mode) => mode.id)).toEqual([
+			'blocks',
+			'minefield',
+			'convoy',
+			'merge',
+			'venezuela'
+		]);
 	});
 
 	it('looks a mode up by id and rejects an unknown one', () => {
-		expect(modeById('chess').leaders[0]).toBe('putin');
+		expect(modeById('chess').leaders).toEqual(['zelensky', 'putin']);
 		expect(() => modeById('nope' as never)).toThrow('Unknown mode');
+	});
+});
+
+describe('leader artwork', () => {
+	it('has a portrait and a flag file for every leader', () => {
+		for (const leader of LEADERS) {
+			expect(existsSync(`static${leader.portrait}`), `${leader.id} portrait`).toBe(true);
+			expect(existsSync(`static${leader.flag}`), `${leader.id} flag`).toBe(true);
+		}
 	});
 });

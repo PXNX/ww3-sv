@@ -11,8 +11,7 @@ import {
 	guestPortrait,
 	pickCameo,
 	pickCameoMessage,
-	putinPortrait,
-	reactionPortrait
+	putinPortrait
 } from './cameos';
 
 describe('cameos', () => {
@@ -105,11 +104,5 @@ describe('cameos', () => {
 		expect(pickCameo(() => 0).id).toBe('xi');
 		expect(pickCameo(() => 0.999999).id).toBe('macron');
 		expect(pickCameo(() => 0, 'xi').id).toBe('zelensky');
-	});
-
-	it('shows Putin furious when the player won and calm when the player lost', () => {
-		expect(reactionPortrait('putin', 'won')).toBe('/assets/cameos/putin-angry.svg');
-		expect(reactionPortrait('putin', 'lost')).toBe(cameoPortrait('putin'));
-		expect(reactionPortrait('merz', 'won')).toBe(cameoPortrait('merz'));
 	});
 });

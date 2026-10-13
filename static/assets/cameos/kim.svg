@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Caricature of Kim Jong Un">
+	<!-- Original cartoon caricature, flat colours and thin outlines with big soft heads in the style of the freeonis videos; not traced from any reference -->
+	<g stroke="#1c1c1c" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
+		<path d="M30 206 Q36 150 100 148 Q164 150 170 206 Z" fill="#3B4048"/>
+		<path d="M84 140 L84 156 L100 164 L116 156 L116 140 Z" fill="#2C3036"/>
+		<path d="M100 164 L100 206" fill="none" stroke-width="2.5"/>
+		<circle cx="100" cy="176" r="2.5" fill="#D9A93B" stroke-width="1.5"/>
+		<circle cx="100" cy="190" r="2.5" fill="#D9A93B" stroke-width="1.5"/>
+		<circle cx="132" cy="170" r="5" fill="#D7263D" stroke-width="2"/>
+		<circle cx="132" cy="170" r="1.8" fill="#FFD84A" stroke="none"/>
+		<path d="M84 126 L116 126 L116 146 L84 146 Z" fill="#F6D5B4"/>
+		<ellipse cx="38" cy="92" rx="8" ry="13" fill="#F6D5B4"/>
+		<ellipse cx="162" cy="92" rx="8" ry="13" fill="#F6D5B4"/>
+		<ellipse cx="100" cy="88" rx="64" ry="56" fill="#F6D5B4"/>
+		<path d="M40 100 Q44 134 100 140 Q156 134 160 100 Q150 124 100 128 Q50 124 40 100 Z" fill="#E8BE9A" stroke-width="2"/>
+		<path d="M38 82 Q30 26 100 24 Q170 26 162 82 Q160 62 146 54 Q100 44 54 54 Q40 62 38 82 Z" fill="#1E1E1E"/>
+		<path d="M44 80 Q44 66 52 60 L52 84 Z" fill="#6B5648" stroke-width="1.5" opacity="0.55"/>
+		<path d="M156 80 Q156 66 148 60 L148 84 Z" fill="#6B5648" stroke-width="1.5" opacity="0.55"/>
+		<path d="M66 40 Q100 30 136 42" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.3"/>
+		<path d="M60 76 L90 72" stroke="#1E1E1E" stroke-width="6"/>
+		<path d="M110 72 L140 76" stroke="#1E1E1E" stroke-width="6"/>
+		<ellipse cx="76" cy="88" rx="9" ry="7" fill="#FFFFFF"/>
+		<circle cx="77" cy="89" r="3.2" fill="#1c1c1c" stroke="none"/>
+		<ellipse cx="124" cy="88" rx="9" ry="7" fill="#FFFFFF"/>
+		<circle cx="123" cy="89" r="3.2" fill="#1c1c1c" stroke="none"/>
+		<path d="M66 82 Q76 78 86 82 M114 82 Q124 78 134 82" fill="none" stroke-width="2"/>
+		<ellipse cx="100" cy="103" rx="8" ry="10" fill="#EDA58E"/>
+		<ellipse cx="68" cy="108" rx="9" ry="6" fill="#F3A5A0" stroke="none" opacity="0.7"/>
+		<ellipse cx="132" cy="108" rx="9" ry="6" fill="#F3A5A0" stroke="none" opacity="0.7"/>
+		<path d="M84 118 Q100 128 116 118" fill="#8E2F3A"/>
+		<path d="M90 121 Q100 125 110 121" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="butt"/>
+	</g>
+</svg>

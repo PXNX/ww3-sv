@@ -118,8 +118,13 @@ const CAMEO_FLAGS: Record<CameoId, string> = {
 	macron: 'fr'
 };
 
+/** URL of a country flag in static/assets/flags/, by lowercase country code */
+export function flagAsset(code: string): string {
+	return `${FLAG_DIRECTORY}/${code}.svg`;
+}
+
 export function cameoFlag(id: CameoId): string {
-	return `${FLAG_DIRECTORY}/${CAMEO_FLAGS[id]}.svg`;
+	return flagAsset(CAMEO_FLAGS[id]);
 }
 
 /** The mascot's flag */
@@ -129,11 +134,11 @@ export function cameoPortrait(id: CameoId): string {
 	return SUPPLIED_PORTRAITS.includes(id) ? `${CAMEO_DIRECTORY}/${id}.svg` : CAMEO_PLACEHOLDER;
 }
 
-/** Guests that appear inside a mode rather than on the game-over roster */
-export type GuestId = 'vance';
+/** Guests that appear inside a mode or on the start screen rather than on the game-over roster */
+export type GuestId = 'vance' | 'kim' | 'maduro';
 
 /** Add a guest here once its portrait is in static/assets/cameos/<id>.svg */
-const SUPPLIED_GUESTS: readonly GuestId[] = ['vance'];
+const SUPPLIED_GUESTS: readonly GuestId[] = ['vance', 'kim', 'maduro'];
 
 export function guestPortrait(id: GuestId): string {
 	return SUPPLIED_GUESTS.includes(id) ? `${CAMEO_DIRECTORY}/${id}.svg` : CAMEO_PLACEHOLDER;
@@ -144,14 +149,6 @@ export type PutinMood = 'calm' | 'angry' | 'sad';
 
 export function putinPortrait(mood: PutinMood): string {
 	return mood === 'calm' ? cameoPortrait('putin') : `${CAMEO_DIRECTORY}/putin-${mood}.svg`;
-}
-
-/**
- * A leader's portrait as they react to the player's result. Only Putin has more than one face:
- * calm when he beat you, furious when you beat him.
- */
-export function reactionPortrait(id: CameoId, outcome: 'won' | 'lost'): string {
-	return id === 'putin' ? putinPortrait(outcome === 'won' ? 'angry' : 'calm') : cameoPortrait(id);
 }
 
 /** Picks a random cameo, never the same one twice in a row and never one in `exclude` */
