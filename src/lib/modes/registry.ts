@@ -21,6 +21,7 @@ import IconLandmark from '~icons/lucide/landmark';
 import IconCat from '~icons/lucide/cat';
 import IconZap from '~icons/lucide/zap';
 import IconGauge from '~icons/lucide/gauge';
+import IconFlag from '~icons/lucide/flag-triangle-right';
 
 export type ModeId =
 	| 'blocks'
@@ -41,7 +42,8 @@ export type ModeId =
 	| 'maze'
 	| 'purrpentagram'
 	| 'energiewende'
-	| 'centrifuge';
+	| 'centrifuge'
+	| 'venezuela';
 
 interface ModeBase {
 	id: ModeId;
@@ -231,5 +233,14 @@ export const MODES: readonly GameMode[] = [
 		tileClass: 'bg-sky',
 		name: m.mode_centrifuge_name,
 		description: m.mode_centrifuge_description
+	},
+	{
+		id: 'venezuela',
+		status: 'playable',
+		href: '/play/venezuela',
+		icon: IconFlag,
+		tileClass: 'bg-mustard',
+		name: m.mode_venezuela_name,
+		description: m.mode_venezuela_description
 	}
 ];

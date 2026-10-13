@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Close-up of El Presidente, a cartoon caricature with a huge mustache, looking dizzy">
+	<!-- Original generic cartoon character, not a real person: big curly mustache, red sash, dizzy stars -->
+	<g stroke="#111111" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+		<rect x="14" y="12" width="172" height="172" rx="18" fill="#111111" transform="translate(6 6)"/>
+		<rect x="14" y="12" width="172" height="172" rx="18" fill="#F3E9C3"/>
+		<!-- Oil derrick behind him -->
+		<g stroke-width="3" fill="none" stroke="#8F6A34">
+			<path d="M26 120 L40 56 L54 120 M32 96 L48 96 M36 76 L44 76"/>
+		</g>
+		<!-- Jacket and sash -->
+		<path d="M36 184 Q36 150 100 148 Q164 150 164 184 Z" fill="#DDB93C"/>
+		<path d="M52 156 L84 152 L150 184 L112 184 Z" fill="#E5484D" stroke-width="4"/>
+		<circle cx="64" cy="170" r="7" fill="#F5C83A" stroke-width="3"/>
+		<!-- Neck -->
+		<path d="M84 140 L116 140 L118 154 Q100 164 82 154 Z" fill="#F6C9A0"/>
+		<!-- Ears -->
+		<ellipse cx="44" cy="98" rx="9" ry="13" fill="#F6C9A0"/>
+		<ellipse cx="156" cy="98" rx="9" ry="13" fill="#F6C9A0"/>
+		<!-- Face -->
+		<ellipse cx="100" cy="96" rx="54" ry="52" fill="#F6C9A0"/>
+		<!-- Hair swoop -->
+		<path d="M48 78 Q58 28 108 32 Q150 36 154 78 Q110 54 48 78 Z" fill="#1C1410"/>
+		<path d="M64 44 Q76 36 92 36" fill="none" stroke="#FFFFFF" stroke-opacity="0.35" stroke-width="5"/>
+		<!-- Eyebrows, wobbly -->
+		<path d="M58 88 Q74 80 90 92" fill="none" stroke-width="6"/>
+		<path d="M110 92 Q126 80 142 88" fill="none" stroke-width="6"/>
+		<!-- Dizzy spiral eyes -->
+		<circle cx="76" cy="108" r="15" fill="#FFFFFF" stroke-width="3.5"/>
+		<circle cx="124" cy="108" r="15" fill="#FFFFFF" stroke-width="3.5"/>
+		<path d="M76 108 m-2 0 a3 3 0 1 1 3 3 a7 7 0 1 1 -7 -7 a11 11 0 1 1 11 11" fill="none" stroke-width="2.5"/>
+		<path d="M124 108 m-2 0 a3 3 0 1 1 3 3 a7 7 0 1 1 -7 -7 a11 11 0 1 1 11 11" fill="none" stroke-width="2.5"/>
+		<!-- Nose -->
+		<ellipse cx="100" cy="124" rx="9" ry="7" fill="#EEB88C" stroke-width="3.5"/>
+		<!-- The mustache -->
+		<path d="M54 142 Q66 124 100 134 Q134 124 146 142 Q158 134 164 122 Q166 160 128 156 Q112 152 100 152 Q88 152 72 156 Q34 160 36 122 Q42 134 54 142 Z" fill="#1C1410"/>
+		<!-- Wobbly mouth under it -->
+		<path d="M90 164 Q100 158 110 164" fill="none" stroke-width="4"/>
+		<!-- Dizzy stars -->
+		<g fill="#F5C83A" stroke-width="3">
+			<path d="M30 40 l4 8 9 1 -7 6 2 9 -8 -5 -8 5 2 -9 -7 -6 9 -1 z"/>
+			<path d="M160 36 l3 7 8 1 -6 5 2 8 -7 -4 -7 4 2 -8 -6 -5 8 -1 z"/>
+		</g>
+	</g>
+</svg>
