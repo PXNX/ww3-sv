@@ -1,6 +1,6 @@
 <!--
-	Centrifuge Spin playfield: the calm face next to the spinning dial, the scares (sirens, a
-	BREAKING banner, screen shake, a looming "Something") and the one big Stabilize button. A tap
+	Centrifuge Spin playfield: the calm face next to the roulette-wheel dial, the scares (sirens, a
+	BREAKING banner, screen shake, menacing ゴゴゴ, a looming "Something") and the one big Stabilize button. A tap
 	anywhere on the field presses it, and so do Space and Enter. Shake and the other animations have
 	a still fallback for reduced motion. The field never mirrors in right-to-left languages and never
 	scrolls (touch-action: none).
@@ -13,6 +13,7 @@
 	import { bannerText, calmLine } from './centrifugeText.js';
 	import CentrifugeDial from './CentrifugeDial.svelte';
 	import CentrifugeFace from './CentrifugeFace.svelte';
+	import CentrifugeMenacing from './CentrifugeMenacing.svelte';
 	import CentrifugeSomething from './CentrifugeSomething.svelte';
 	import PauseOverlay from './PauseOverlay.svelte';
 	import IconGauge from '~icons/lucide/gauge';
@@ -134,10 +135,20 @@
 						spinning={playing}
 						reducedMotion={game.reducedMotion}
 						label={m.centrifuge_dial_label()}
+						nothingLabel={m.centrifuge_dial_nothing()}
+						somethingLabel={m.centrifuge_dial_something()}
 						class="w-[58%]"
 					/>
 				</div>
 			</div>
+
+			<!-- The menacing ゴゴゴ trembles in the corner as long as any scare is running -->
+			{#if game.scares.length > 0}
+				<CentrifugeMenacing
+					{still}
+					class="pointer-events-none absolute start-7 top-[12%] z-[15] w-[15%]"
+				/>
+			{/if}
 
 			<!-- Sirens: two light bars at the sides (a steady glow with reduced motion) -->
 			{#if siren}
