@@ -174,6 +174,8 @@
 	<GameOverModal
 		open={game.status === 'over'}
 		score={game.score}
+		mode="venezuela"
+		withCharacter={false}
 		{modeName}
 		isNewBest={game.isNewBest}
 		title={m.venezuela_gameover_title()}

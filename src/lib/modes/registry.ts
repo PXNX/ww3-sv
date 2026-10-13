@@ -268,6 +268,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/venezuela',
 		icon: IconFlag,
 		tileClass: 'bg-mustard',
+		leaders: ['mbs'],
 		name: m.mode_venezuela_name,
 		description: m.mode_venezuela_description
 	},
@@ -277,6 +278,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/sondage',
 		icon: IconVote,
 		tileClass: 'bg-flag-blue',
+		leaders: ['macron'],
 		name: m.mode_sondage_name,
 		description: m.mode_sondage_description
 	}

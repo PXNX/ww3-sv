@@ -259,6 +259,8 @@
 	<GameOverModal
 		open={game.status === 'over'}
 		score={game.score}
+		mode="sondage"
+		outcome={winnerYou ? 'won' : 'lost'}
 		{modeName}
 		isNewBest={game.isNewBest}
 		title={m.sondage_result_title()}
