@@ -11,6 +11,9 @@ export default defineConfig({
 		sveltekit({
 			preprocess: vitePreprocess(),
 
+			// Also checked whenever the app regains focus; drives the update hint on the start screen
+			version: { pollInterval: 5 * 60 * 1000 },
+
 			// Functions run on Vercel's Bun runtime; the Bun version is set by bunVersion in vercel.json
 			adapter: adapter({ runtime: 'bun1.x' })
 		}),

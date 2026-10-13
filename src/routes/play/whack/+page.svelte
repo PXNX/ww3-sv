@@ -118,6 +118,7 @@
 	<GameOverModal
 		open={game.status === 'over'}
 		score={game.score}
+		mode="whack"
 		{modeName}
 		isNewBest={game.isNewBest}
 		title={m.whack_gameover_title()}

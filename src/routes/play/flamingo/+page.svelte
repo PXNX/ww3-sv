@@ -64,6 +64,7 @@
 <GameOverModal
 	open={game.status === 'over'}
 	score={game.score}
+	mode="flamingo"
 	modeName={m.mode_flamingo_name()}
 	isNewBest={game.isNewBest}
 	title={m.flamingo_over_title()}

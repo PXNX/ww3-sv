@@ -222,6 +222,7 @@
 <GameOverModal
 	open={gameOverOpen}
 	score={game.score}
+	mode="minefield"
 	{modeName}
 	isNewBest={game.result?.isNewBestScore ?? false}
 	title={m.minefield_loss_title()}

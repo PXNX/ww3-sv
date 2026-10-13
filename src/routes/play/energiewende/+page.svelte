@@ -400,6 +400,7 @@
 	<GameOverModal
 		open={game.status === 'over'}
 		score={game.score}
+		mode="energiewende"
 		{modeName}
 		isNewBest={game.isNewBest}
 		title={m.energiewende_gameover_title()}

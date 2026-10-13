@@ -6,6 +6,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import type { ScoreCard } from '#lib/services/share.js';
 	import Confetti from './Confetti.svelte';
+	import ResultCharacter from './ResultCharacter.svelte';
 	import ParkingStars from './ParkingStars.svelte';
 	import ShareButton from './ShareButton.svelte';
 	import IconArrowRight from '~icons/lucide/arrow-right';
@@ -67,6 +68,7 @@
 		{/if}
 
 		<h2 id="parking-win-title" class="text-3xl font-bold">{m.parking_win_title()}</h2>
+		<ResultCharacter mode="parking" outcome="won" class="w-20" />
 		<ParkingStars {stars} class="size-12" />
 
 		<dl class="grid w-full grid-cols-3 gap-2 text-center">

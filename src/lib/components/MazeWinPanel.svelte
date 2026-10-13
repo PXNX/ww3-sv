@@ -7,6 +7,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import type { ScoreCard } from '#lib/services/share.js';
 	import Confetti from './Confetti.svelte';
+	import ResultCharacter from './ResultCharacter.svelte';
 	import MazeItemIcon from './MazeItemIcon.svelte';
 	import MazeStars from './MazeStars.svelte';
 	import ShareButton from './ShareButton.svelte';
@@ -66,6 +67,7 @@
 
 		<MazeItemIcon kind="permit" class="size-16" />
 		<h2 id="maze-win-title" class="text-3xl font-bold">{m.maze_win_title()}</h2>
+		<ResultCharacter mode="maze" outcome="won" class="w-20" />
 		<MazeStars {stars} class="size-12" />
 		<p class="text-sm">{m.maze_win_line()}</p>
 

@@ -172,6 +172,7 @@
 	<GameOverModal
 		open={game.status === 'over'}
 		score={game.score}
+		mode="purrpentagram"
 		{modeName}
 		isNewBest={false}
 		title={m.purr_gameover_title()}

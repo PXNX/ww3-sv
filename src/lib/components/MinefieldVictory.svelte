@@ -26,9 +26,9 @@
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import { CHARACTER_NAME } from '#lib/theme/character.js';
 	import { spriteSrc } from '#lib/theme/sprites.js';
-	import CharacterMascot from './CharacterMascot.svelte';
 	import Confetti from './Confetti.svelte';
 	import MinefieldScoreBreakdown from './MinefieldScoreBreakdown.svelte';
+	import ResultCharacter from './ResultCharacter.svelte';
 	import ShareButton from './ShareButton.svelte';
 	import IconRotate from '~icons/lucide/rotate-ccw';
 	import IconSliders from '~icons/lucide/sliders-horizontal';
@@ -91,7 +91,7 @@
 			</h2>
 
 			<div class="flex w-full items-end gap-2">
-				<CharacterMascot pose="sulking" class="w-20 shrink-0 -rotate-3 sm:w-24" />
+				<ResultCharacter mode="minefield" outcome="won" class="w-20 sm:w-24" />
 				<div
 					data-playfield
 					class="relative h-16 flex-1 overflow-hidden rounded-[10px_6px_12px_8px] border-3 border-ink bg-flag-blue"

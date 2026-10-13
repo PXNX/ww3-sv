@@ -146,9 +146,18 @@ export function putinPortrait(mood: PutinMood): string {
 	return mood === 'calm' ? cameoPortrait('putin') : `${CAMEO_DIRECTORY}/putin-${mood}.svg`;
 }
 
-/** Picks a random cameo, never the same one twice in a row */
-export function pickCameo(random: Random, previous?: CameoId): Cameo {
-	const pool = CAMEOS.length > 1 ? CAMEOS.filter((cameo) => cameo.id !== previous) : CAMEOS;
+/**
+ * A leader's portrait as they react to the player's result. Only Putin has more than one face:
+ * calm when he beat you, furious when you beat him.
+ */
+export function reactionPortrait(id: CameoId, outcome: 'won' | 'lost'): string {
+	return id === 'putin' ? putinPortrait(outcome === 'won' ? 'angry' : 'calm') : cameoPortrait(id);
+}
+
+/** Picks a random cameo, never the same one twice in a row and never one in `exclude` */
+export function pickCameo(random: Random, previous?: CameoId, exclude?: readonly CameoId[]): Cameo {
+	const allowed = exclude ? CAMEOS.filter((cameo) => !exclude.includes(cameo.id)) : CAMEOS;
+	const pool = allowed.length > 1 ? allowed.filter((cameo) => cameo.id !== previous) : allowed;
 	return pool[Math.floor(random() * pool.length)];
 }
 

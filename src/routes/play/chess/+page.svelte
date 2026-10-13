@@ -209,6 +209,8 @@
 <GameOverModal
 	open={game.over}
 	score={game.score}
+	mode="chess"
+	withCharacter={false}
 	modeName={m.mode_chess_name()}
 	isNewBest={game.isNewBest}
 	title={gameOverTitle}

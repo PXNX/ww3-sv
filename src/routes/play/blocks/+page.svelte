@@ -318,6 +318,7 @@
 <GameOverModal
 	open={game.over}
 	score={game.score}
+	mode="blocks"
 	modeName={m.mode_blocks_name()}
 	isNewBest={game.isNewBest}
 	{drawBoard}

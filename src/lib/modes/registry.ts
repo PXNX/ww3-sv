@@ -2,6 +2,7 @@ import type { Component } from 'svelte';
 import type { SvelteHTMLElements } from 'svelte/elements';
 import type { RouteId } from '$app/types';
 import { m } from '#lib/paraglide/messages.js';
+import type { CameoId } from '#lib/theme/cameos.js';
 import IconBlocks from '~icons/lucide/blocks';
 import IconBomb from '~icons/lucide/bomb';
 import IconShip from '~icons/lucide/ship';
@@ -52,6 +53,12 @@ interface ModeBase {
 	icon: Component<SvelteHTMLElements['svg']>;
 	/** Tailwind background class for the icon tile, from the design tokens */
 	tileClass: string;
+	/**
+	 * The leaders this game features. Their flags go on the start-screen card, tapping one in the
+	 * lineup filters to the games that list it, and the first one is the character that reacts on
+	 * the result sheet.
+	 */
+	leaders: readonly [CameoId, ...CameoId[]];
 	name: () => string;
 	description: () => string;
 }
@@ -71,6 +78,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/blocks',
 		icon: IconBlocks,
 		tileClass: 'bg-khaki',
+		leaders: ['xi'],
 		name: m.mode_blocks_name,
 		description: m.mode_blocks_description
 	},
@@ -80,6 +88,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/minefield',
 		icon: IconBomb,
 		tileClass: 'bg-tie-red',
+		leaders: ['khamenei', 'mbs'],
 		name: m.mode_minefield_name,
 		description: m.mode_minefield_description
 	},
@@ -89,6 +98,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/convoy',
 		icon: IconShip,
 		tileClass: 'bg-flag-blue',
+		leaders: ['khamenei'],
 		name: m.mode_convoy_name,
 		description: m.mode_convoy_description
 	},
@@ -98,6 +108,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/merge',
 		icon: IconMerge,
 		tileClass: 'bg-skin',
+		leaders: ['xi'],
 		name: m.mode_merge_name,
 		description: m.mode_merge_description
 	},
@@ -107,6 +118,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/shootdown',
 		icon: IconCrosshair,
 		tileClass: 'bg-sky',
+		leaders: ['zelensky', 'khamenei'],
 		name: m.mode_shootdown_name,
 		description: m.mode_shootdown_description
 	},
@@ -116,6 +128,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/pipeline',
 		icon: IconFuel,
 		tileClass: 'bg-mustard',
+		leaders: ['putin', 'merz'],
 		name: m.mode_pipeline_name,
 		description: m.mode_pipeline_description
 	},
@@ -125,6 +138,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/flamingo',
 		icon: IconFeather,
 		tileClass: 'bg-skin',
+		leaders: ['zelensky', 'putin'],
 		name: m.mode_flamingo_name,
 		description: m.mode_flamingo_description
 	},
@@ -134,6 +148,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/fury',
 		icon: IconBird,
 		tileClass: 'bg-explosion-yellow',
+		leaders: ['zelensky', 'putin'],
 		name: m.mode_fury_name,
 		description: m.mode_fury_description
 	},
@@ -143,6 +158,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/chess',
 		icon: IconCastle,
 		tileClass: 'bg-banner-slate',
+		leaders: ['putin'],
 		name: m.mode_chess_name,
 		description: m.mode_chess_description
 	},
@@ -152,6 +168,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/dronewall',
 		icon: IconShield,
 		tileClass: 'bg-khaki',
+		leaders: ['zelensky', 'putin'],
 		name: m.mode_dronewall_name,
 		description: m.mode_dronewall_description
 	},
@@ -161,6 +178,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/parking',
 		icon: IconParking,
 		tileClass: 'bg-sky',
+		leaders: ['erdogan', 'mbs'],
 		name: m.mode_parking_name,
 		description: m.mode_parking_description
 	},
@@ -170,6 +188,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/slice',
 		icon: IconRadar,
 		tileClass: 'bg-tie-red',
+		leaders: ['netanyahu', 'khamenei'],
 		name: m.mode_slice_name,
 		description: m.mode_slice_description
 	},
@@ -179,6 +198,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/whack',
 		icon: IconMegaphone,
 		tileClass: 'bg-explosion-yellow',
+		leaders: ['macron', 'netanyahu'],
 		name: m.mode_whack_name,
 		description: m.mode_whack_description
 	},
@@ -188,6 +208,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/runcomrade',
 		icon: IconFootprints,
 		tileClass: 'bg-mustard',
+		leaders: ['putin'],
 		name: m.mode_runcomrade_name,
 		description: m.mode_runcomrade_description
 	},
@@ -197,6 +218,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/beltroad',
 		icon: IconRoute,
 		tileClass: 'bg-skin',
+		leaders: ['xi'],
 		name: m.mode_beltroad_name,
 		description: m.mode_beltroad_description
 	},
@@ -206,6 +228,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/maze',
 		icon: IconLandmark,
 		tileClass: 'bg-banner-slate',
+		leaders: ['merz'],
 		name: m.mode_maze_name,
 		description: m.mode_maze_description
 	},
@@ -215,6 +238,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/purrpentagram',
 		icon: IconCat,
 		tileClass: 'bg-tie-red',
+		leaders: ['erdogan'],
 		name: m.mode_purrpentagram_name,
 		description: m.mode_purrpentagram_description
 	},
@@ -224,6 +248,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/energiewende',
 		icon: IconZap,
 		tileClass: 'bg-explosion-yellow',
+		leaders: ['merz', 'macron'],
 		name: m.mode_energiewende_name,
 		description: m.mode_energiewende_description
 	},
@@ -233,6 +258,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/centrifuge',
 		icon: IconGauge,
 		tileClass: 'bg-sky',
+		leaders: ['khamenei', 'netanyahu'],
 		name: m.mode_centrifuge_name,
 		description: m.mode_centrifuge_description
 	},
@@ -255,3 +281,14 @@ export const MODES: readonly GameMode[] = [
 		description: m.mode_sondage_description
 	}
 ];
+
+export function modeById(id: ModeId): GameMode {
+	const mode = MODES.find((candidate) => candidate.id === id);
+	if (!mode) throw new Error(`Unknown mode: ${id}`);
+	return mode;
+}
+
+/** The modes that feature a leader, in registry order */
+export function modesFeaturing(leader: CameoId): readonly GameMode[] {
+	return MODES.filter((mode) => mode.leaders.includes(leader));
+}

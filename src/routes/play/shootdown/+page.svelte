@@ -105,6 +105,7 @@
 	<GameOverModal
 		open={game.status === 'over'}
 		score={game.score}
+		mode="shootdown"
 		{modeName}
 		isNewBest={game.isNewBest}
 		drawBoard={game.drawBoard}

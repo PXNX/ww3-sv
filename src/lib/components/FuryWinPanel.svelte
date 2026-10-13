@@ -3,6 +3,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import type { ScoreCard } from '#lib/services/share.js';
 	import Confetti from './Confetti.svelte';
+	import ResultCharacter from './ResultCharacter.svelte';
 	import FuryStars from './FuryStars.svelte';
 	import ShareButton from './ShareButton.svelte';
 	import IconArrowRight from '~icons/lucide/arrow-right';
@@ -61,6 +62,7 @@
 		{/if}
 
 		<h2 id="fury-win-title" class="text-3xl font-bold">{m.fury_win_title()}</h2>
+		<ResultCharacter mode="fury" outcome="won" class="w-20" />
 		<FuryStars {stars} class="size-12" />
 
 		<div class="flex flex-col items-center">

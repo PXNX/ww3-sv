@@ -245,6 +245,7 @@
 	<GameOverModal
 		open={game.status === 'over'}
 		score={game.score}
+		mode="dronewall"
 		{modeName}
 		isNewBest={game.isNewBest}
 		title={m.dronewall_gameover_title()}

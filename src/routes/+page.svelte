@@ -2,11 +2,15 @@
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { APP_NAME } from '#lib/config.js';
+	import type { CameoId } from '#lib/theme/cameos.js';
 	import CameoLineup from '#lib/components/CameoLineup.svelte';
 	import InstallPwaHint from '#lib/components/InstallPwaHint.svelte';
 	import LocaleSwitcher from '#lib/components/LocaleSwitcher.svelte';
 	import ModeSelect from '#lib/components/ModeSelect.svelte';
 	import SoundToggle from '#lib/components/SoundToggle.svelte';
+	import UpdatePwaHint from '#lib/components/UpdatePwaHint.svelte';
+
+	let leader: CameoId | null = $state(null);
 </script>
 
 <main
@@ -18,6 +22,7 @@
 	</div>
 
 	<InstallPwaHint />
+	<UpdatePwaHint />
 
 	<header class="flex flex-col items-center gap-3 text-center">
 		<h1
@@ -28,13 +33,13 @@
 		<p class="text-lg font-semibold">{m.home_tagline({ location: m.location_name() })}</p>
 
 		<div class="sticker mt-2 w-full max-w-2xl bg-sand p-0" style:--tilt="-1deg">
-			<CameoLineup />
+			<CameoLineup bind:selected={leader} />
 		</div>
 	</header>
 
 	<section class="flex flex-col gap-4" aria-labelledby="choose-mode">
 		<h2 id="choose-mode" class="text-2xl font-bold">{m.home_choose_mode()}</h2>
-		<ModeSelect />
+		<ModeSelect bind:leader />
 	</section>
 
 	<footer class="text-center text-sm">

@@ -166,6 +166,7 @@
 	<GameOverModal
 		open={game.status === 'over'}
 		score={game.score}
+		mode="runcomrade"
 		{modeName}
 		isNewBest={game.isNewBest}
 		title={m.runcomrade_gameover_title()}

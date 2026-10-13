@@ -271,6 +271,7 @@
 <GameOverModal
 	open={game.result !== null}
 	score={game.result?.score ?? 0}
+	mode="pipeline"
 	modeName={`${m.mode_pipeline_name()} (${LEVEL_NAMES[game.difficulty]()})`}
 	isNewBest={game.result?.isNewBest ?? false}
 	title={m.pipeline_gameover_title()}

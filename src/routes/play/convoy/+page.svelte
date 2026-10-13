@@ -153,6 +153,7 @@
 <GameOverModal
 	open={game.status === 'over'}
 	score={game.score}
+	mode="convoy"
 	modeName={m.mode_convoy_name()}
 	isNewBest={game.isNewBest}
 	drawBoard={(context, x, y, size) => drawConvoyBoard(context, game.runner, x, y, size)}

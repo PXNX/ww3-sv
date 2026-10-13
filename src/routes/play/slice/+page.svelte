@@ -115,6 +115,7 @@
 	<GameOverModal
 		open={game.status === 'over'}
 		score={game.score}
+		mode="slice"
 		{modeName}
 		isNewBest={game.isNewBest}
 		title={m.slice_gameover_title()}

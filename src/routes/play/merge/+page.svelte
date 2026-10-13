@@ -208,6 +208,7 @@
 <GameOverModal
 	open={game.over}
 	score={game.state.score}
+	mode="merge"
 	modeName={m.mode_merge_name()}
 	isNewBest={game.isNewBest}
 	title={m.merge_gameover_title()}

@@ -103,6 +103,7 @@
 	<GameOverModal
 		open={game.status === 'over'}
 		score={game.score}
+		mode="centrifuge"
 		{modeName}
 		isNewBest={game.isNewBest}
 		title={m.centrifuge_gameover_title()}

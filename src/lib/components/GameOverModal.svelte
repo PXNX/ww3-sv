@@ -1,21 +1,20 @@
 <!--
-	Game-over screen shared by every mode (requirements Section 10): final score, a random cameo
-	portrait with its matching message, the mascot in a random game-over pose, and a Try Again button.
-	On a new personal best it adds confetti and a Share button.
+	Result screen shared by every mode (requirements Section 10): final score, a random cameo
+	portrait with its matching message, the game's character reacting to whether the player won or
+	lost, and a Try Again button. On a new personal best it adds confetti and a Share button.
 -->
 <script lang="ts" module>
 	import type { CameoId } from '#lib/theme/cameos.js';
-	import type { MascotPose } from '#lib/theme/character.js';
 
 	// Remembered across game overs so the same cameo never appears twice in a row
 	let lastCameo: CameoId | undefined;
-	let lastPose: MascotPose | undefined;
 </script>
 
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
+	import { modeById, type ModeId } from '#lib/modes/registry.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import type { ScoreCard } from '#lib/services/share.js';
 	import {
@@ -27,17 +26,20 @@
 		type Cameo,
 		type CameoOverride
 	} from '#lib/theme/cameos.js';
-	import { CHARACTER_NAME, pickGameOverPose } from '#lib/theme/character.js';
+	import { CHARACTER_NAME } from '#lib/theme/character.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
-	import CharacterMascot from './CharacterMascot.svelte';
 	import Confetti from './Confetti.svelte';
+	import ResultCharacter from './ResultCharacter.svelte';
 	import ShareButton from './ShareButton.svelte';
 	import IconRotate from '~icons/lucide/rotate-ccw';
 
 	let {
 		open,
 		score,
+		mode,
 		modeName,
+		outcome = 'lost',
+		withCharacter = true,
 		isNewBest = false,
 		title,
 		drawBoard,
@@ -47,7 +49,13 @@
 	}: {
 		open: boolean;
 		score: number;
+		/** Picks the character that reacts: the first leader the mode features */
+		mode: ModeId;
 		modeName: string;
+		/** Whether the player won or lost, which decides how the character reacts */
+		outcome?: 'won' | 'lost';
+		/** Turn off when the mode's own cameo already is that character */
+		withCharacter?: boolean;
 		isNewBest?: boolean;
 		/** Defaults to "Game over" */
 		title?: string;
@@ -66,7 +74,6 @@
 	let cameo: Cameo | undefined = $state();
 	let cameoLine = $state(0);
 	let portraitFailed = $state(false);
-	let pose: MascotPose = $state('sunk');
 
 	const portrait = $derived(
 		customCameo
@@ -97,13 +104,13 @@
 		if (!dialog) return;
 		if (open && !dialog.open) {
 			if (customCameo === undefined) {
-				cameo = pickCameo(Math.random, lastCameo);
+				// The host already fills the character slot, so the roster pick is someone else
+				const host = modeById(mode).leaders[0];
+				cameo = pickCameo(Math.random, lastCameo, withCharacter ? [host] : []);
 				cameoLine = pickCameoMessage(Math.random, cameo);
 				lastCameo = cameo.id;
 			}
 			portraitFailed = false;
-			pose = pickGameOverPose(Math.random, lastPose);
-			lastPose = pose;
 			dialog.showModal();
 			soundManager().play(isNewBest ? 'new-best' : 'game-over');
 		} else if (!open && dialog.open) {
@@ -162,7 +169,9 @@
 			</figure>
 		{/if}
 
-		<CharacterMascot {pose} class="w-24 rotate-6" />
+		{#if withCharacter}
+			<ResultCharacter {mode} {outcome} class="w-24" />
+		{/if}
 
 		<div class="flex flex-wrap items-center justify-center gap-3">
 			<button type="button" class="btn-chunky bg-tie-red text-lg" onclick={onRetry}>

@@ -143,6 +143,7 @@
 <GameOverModal
 	open={game.showFail}
 	score={game.score}
+	mode="fury"
 	modeName={m.mode_fury_name()}
 	isNewBest={false}
 	title={m.fury_fail_title()}

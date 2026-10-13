@@ -11,7 +11,8 @@ import {
 	guestPortrait,
 	pickCameo,
 	pickCameoMessage,
-	putinPortrait
+	putinPortrait,
+	reactionPortrait
 } from './cameos';
 
 describe('cameos', () => {
@@ -93,9 +94,22 @@ describe('cameos', () => {
 		}
 	});
 
+	it('never picks an excluded cameo', () => {
+		const random = createRandom(5);
+		for (let i = 0; i < 300; i++) {
+			expect(pickCameo(random, undefined, ['putin', 'xi']).id).not.toMatch(/^(putin|xi)$/);
+		}
+	});
+
 	it('handles random values at the edges of the range', () => {
 		expect(pickCameo(() => 0).id).toBe('xi');
 		expect(pickCameo(() => 0.999999).id).toBe('macron');
 		expect(pickCameo(() => 0, 'xi').id).toBe('zelensky');
+	});
+
+	it('shows Putin furious when the player won and calm when the player lost', () => {
+		expect(reactionPortrait('putin', 'won')).toBe('/assets/cameos/putin-angry.svg');
+		expect(reactionPortrait('putin', 'lost')).toBe(cameoPortrait('putin'));
+		expect(reactionPortrait('merz', 'won')).toBe(cameoPortrait('merz'));
 	});
 });
