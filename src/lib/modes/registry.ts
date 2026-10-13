@@ -22,6 +22,7 @@ import IconCat from '~icons/lucide/cat';
 import IconZap from '~icons/lucide/zap';
 import IconGauge from '~icons/lucide/gauge';
 import IconFlag from '~icons/lucide/flag-triangle-right';
+import IconVote from '~icons/lucide/vote';
 
 export type ModeId =
 	| 'blocks'
@@ -43,7 +44,8 @@ export type ModeId =
 	| 'purrpentagram'
 	| 'energiewende'
 	| 'centrifuge'
-	| 'venezuela';
+	| 'venezuela'
+	| 'sondage';
 
 interface ModeBase {
 	id: ModeId;
@@ -242,5 +244,14 @@ export const MODES: readonly GameMode[] = [
 		tileClass: 'bg-mustard',
 		name: m.mode_venezuela_name,
 		description: m.mode_venezuela_description
+	},
+	{
+		id: 'sondage',
+		status: 'playable',
+		href: '/play/sondage',
+		icon: IconVote,
+		tileClass: 'bg-flag-blue',
+		name: m.mode_sondage_name,
+		description: m.mode_sondage_description
 	}
 ];

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Close-up of La Candidate, a cartoon caricature with a drooping copper hair swoosh and a crooked navy sash, tearful after losing">
+	<!-- Original generic cartoon character, not a real person: copper hair swoosh, round glasses, navy sash -->
+	<g stroke="#111111" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+		<rect x="14" y="12" width="172" height="172" rx="18" fill="#111111" transform="translate(6 6)"/>
+		<rect x="14" y="12" width="172" height="172" rx="18" fill="#F3E9C3"/>
+		<!-- Podium banner behind her -->
+		<path d="M22 30 H62 V70 L42 60 L22 70 Z" fill="#E5484D" stroke-width="3.5"/>
+		<!-- Blazer -->
+		<path d="M30 184 Q30 148 100 144 Q170 148 170 184 Z" fill="#E8E1BC"/>
+		<!-- Navy sash across the chest -->
+		<path d="M40 184 L46 156 L96 152 L150 184 Z" fill="#1F3A6E" stroke-width="4"/>
+		<path d="M96 168 l4 8 9 1 -7 6 2 9 -8 -5 -8 5 2 -9 -7 -6 9 -1 z" fill="#F5C83A" stroke-width="2.5" transform="translate(-4 -14) scale(0.9)"/>
+		<!-- Neck -->
+		<path d="M84 134 L116 134 L118 150 Q100 160 82 150 Z" fill="#F6C9A0"/>
+		<!-- Ears -->
+		<ellipse cx="46" cy="104" rx="8" ry="12" fill="#F6C9A0"/>
+		<ellipse cx="154" cy="104" rx="8" ry="12" fill="#F6C9A0"/>
+		<!-- Face with a pointed chin -->
+		<path d="M48 92 Q48 52 100 50 Q152 52 152 92 Q152 128 100 150 Q48 128 48 92 Z" fill="#F6C9A0"/>
+		<!-- Hair swoosh -->
+		<path d="M44 100 Q30 54 84 36 Q130 24 156 56 Q168 90 150 118 Q150 78 120 66 Q84 58 58 84 Q50 92 44 100 Z" fill="#B5522B"/>
+		<path d="M70 40 Q86 30 108 32" fill="none" stroke="#FFFFFF" stroke-opacity="0.4" stroke-width="5"/>
+		<path d="M60 90 Q76 84 92 78" fill="none" stroke-width="5"/><path d="M108 78 Q124 84 140 90" fill="none" stroke-width="5"/>
+		<!-- Round glasses -->
+		<circle cx="78" cy="102" r="15" fill="#FFFFFF" fill-opacity="0.85" stroke-width="3.5"/>
+		<circle cx="122" cy="102" r="15" fill="#FFFFFF" fill-opacity="0.85" stroke-width="3.5"/>
+		<path d="M93 102 H107" fill="none" stroke-width="3.5"/>
+		<circle cx="80" cy="106" r="4.5" fill="#111111" stroke="none"/><circle cx="120" cy="106" r="4.5" fill="#111111" stroke="none"/>
+		<!-- Nose -->
+		<path d="M100 108 Q94 122 102 124" fill="none" stroke-width="3.5"/>
+		<path d="M82 146 Q100 134 118 146 Q100 140 82 146 Z" fill="#B3262D" stroke-width="3.5"/>
+		<path d="M70 118 Q64 130 70 134 Q76 130 70 118 Z" fill="#7CC4E8" stroke-width="2.5"/><path d="M132 118 Q126 130 132 134 Q138 130 132 118 Z" fill="#7CC4E8" stroke-width="2.5"/>
+	</g>
+</svg>
