@@ -1,8 +1,9 @@
 <!--
-	The calm one of Centrifuge Spin: an original "nothing ever happens" chud cartoon in a suit and bow
-	tie, with thick glasses, stubble, half-closed eyes and a flat mouth that does not change while
-	the world burns. After a lost heart he grabs his head like the guy at the roulette table. Pure
-	decoration, so the alt text is the only thing a screen reader gets.
+	The calm one of Centrifuge Spin: an original marker-drawn "nothing ever happens" chud in the
+	style of the meme: flat-top hair, thick scowling brows, rectangular glasses, a big nose and a
+	heavy frown in a plain white T-shirt. The scowl does not change while the world burns. After a
+	lost heart he grabs his head like the guy at the roulette table. Pure decoration, so the alt text
+	is the only thing a screen reader gets.
 -->
 <script lang="ts">
 	let {
@@ -14,73 +15,76 @@
 		alt: string;
 		class?: string;
 	} = $props();
-
-	/** Stubble dots along the jaw, clear of the mouth */
-	const STUBBLE: [number, number][] = [
-		[30, 90],
-		[34, 98],
-		[41, 104],
-		[50, 107],
-		[60, 109],
-		[70, 107],
-		[79, 104],
-		[86, 98],
-		[90, 90]
-	];
 </script>
 
 <svg viewBox="0 0 120 130" role="img" aria-label={alt} class={className}>
-	<g stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-		<!-- Suit, shirt and bow tie -->
-		<path d="M24 130 Q26 108 60 106 Q94 108 96 130 Z" fill="#2b2b35" />
-		<path d="M48 105 L60 122 L72 105 Z" fill="#fff" stroke-width="3" />
-		<path d="M60 110 L45 103 L45 117 Z M60 110 L75 103 L75 117 Z" fill="#111" stroke-width="2.5" />
-		<!-- Ears, head and the one lonely hair -->
-		<ellipse cx="17" cy="66" rx="7" ry="10" fill="#f6c9a0" />
-		<ellipse cx="103" cy="66" rx="7" ry="10" fill="#f6c9a0" />
-		<ellipse cx="60" cy="64" rx="43" ry="46" fill="#f6c9a0" />
-		<path d="M58 19 Q50 6 62 8 Q70 9 64 20" fill="none" stroke-width="3" />
-		<circle cx="38" cy="82" r="8" fill="#ee9e86" stroke="none" />
-		<circle cx="82" cy="82" r="8" fill="#ee9e86" stroke="none" />
-		{#each STUBBLE as [x, y] (`${x}-${y}`)}
-			<circle cx={x} cy={y} r="1.3" fill="#111" stroke="none" />
-		{/each}
+	<g stroke="#111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+		<!-- T-shirt, neck and a wavy scribble on the collar -->
+		<path d="M14 130 Q16 110 44 106 L76 106 Q104 110 106 130 Z" fill="#fff" />
+		<path d="M46 92 L47 108 M74 92 L73 108" fill="none" />
+		<path d="M47 108 Q60 122 73 108" fill="#f4e4d2" />
+		<path
+			d="M44 121 Q47 116 50 121 T56 121 T62 121 T68 121 T74 121"
+			fill="none"
+			stroke-width="1.8"
+		/>
+
+		<!-- Ears and the wide, square-jawed head -->
+		<ellipse cx="21" cy="66" rx="6" ry="10" fill="#f4e4d2" />
+		<ellipse cx="99" cy="66" rx="6" ry="10" fill="#f4e4d2" />
+		<path d="M24 40 L26 72 Q30 98 46 107 Q60 113 74 107 Q90 98 94 72 L96 40 Z" fill="#f4e4d2" />
+
+		<!-- Flat-top hair -->
+		<path
+			d="M24 44 L26 24 Q60 12 94 24 L96 44 Q92 34 76 32 Q60 30 44 32 Q28 34 24 44 Z"
+			fill="#111"
+		/>
+
+		<!-- Eye bags, nose and the deep lines beside the mouth -->
+		<path d="M32 72 Q42 76 52 72 M68 72 Q78 76 88 72" fill="none" stroke-width="2" />
+		<path d="M60 62 L55 82 Q60 87 67 82" fill="none" stroke-width="2.5" />
+		<path d="M45 80 Q42 90 48 97 M75 80 Q78 90 72 97" fill="none" stroke-width="2" />
 
 		{#if startled}
-			<!-- Wide eyes, raised brows, a small round mouth, a sweat drop and both hands on the head -->
-			<path d="M30 38 Q42 28 52 36 M68 36 Q78 28 90 38" fill="none" />
-			<circle cx="42" cy="57" r="12" fill="#fff" />
-			<circle cx="78" cy="57" r="12" fill="#fff" />
-			<circle cx="43" cy="58" r="4" fill="#111" stroke="none" />
-			<circle cx="77" cy="58" r="4" fill="#111" stroke="none" />
-			<ellipse cx="60" cy="94" rx="7" ry="9" fill="#8a3b3b" />
-			<path d="M100 44 Q106 54 100 60 Q94 54 100 44 Z" fill="#aeb4be" stroke-width="2.5" />
-			<g fill="#f6c9a0" stroke-width="3">
-				<ellipse cx="18" cy="30" rx="10" ry="13" transform="rotate(-25 18 30)" />
-				<ellipse cx="102" cy="30" rx="10" ry="13" transform="rotate(25 102 30)" />
+			<!-- Brows shot up, wide eyes behind the glasses, an open mouth and a sweat drop -->
+			<path d="M31 47 Q42 40 54 47 M66 47 Q78 40 89 47" fill="none" stroke-width="5" />
+			<circle cx="42" cy="62" r="6" fill="#fff" stroke-width="2.5" />
+			<circle cx="78" cy="62" r="6" fill="#fff" stroke-width="2.5" />
+			<circle cx="43" cy="63" r="2.4" fill="#111" stroke="none" />
+			<circle cx="77" cy="63" r="2.4" fill="#111" stroke="none" />
+			<ellipse cx="60" cy="98" rx="7" ry="8" fill="#8a3b3b" />
+			<path d="M102 46 Q108 56 102 62 Q96 56 102 46 Z" fill="#aeb4be" stroke-width="2.5" />
+		{:else}
+			<!-- Thick brows slanting down into a scowl, with the wrinkles between them -->
+			<path d="M31 45 L54 54 M89 45 L66 54" fill="none" stroke-width="6" />
+			<path d="M57 42 L56 35 M63 42 L64 35" fill="none" stroke-width="2" />
+			<circle cx="43" cy="62" r="2.6" fill="#111" stroke="none" />
+			<circle cx="77" cy="62" r="2.6" fill="#111" stroke="none" />
+			<!-- The heavy frown -->
+			<path
+				d="M46 98 Q52 90 60 92 Q68 90 74 98 Q67 106 60 106 Q53 106 46 98 Z"
+				fill="#e8a5a0"
+				stroke-width="2.5"
+			/>
+			<path d="M46 98 Q60 93 74 98" fill="none" stroke-width="2.5" />
+		{/if}
+
+		<!-- Rectangular glasses -->
+		<g fill="none" stroke-width="2.8">
+			<path d="M29 55 H55 V69 H29 Z M65 55 H91 V69 H65 Z M55 58 H65 M29 58 L21 60 M91 58 L99 60" />
+		</g>
+
+		{#if startled}
+			<!-- Both hands on the head -->
+			<g fill="#f4e4d2" stroke-width="3">
+				<ellipse cx="16" cy="34" rx="10" ry="13" transform="rotate(-25 16 34)" />
+				<ellipse cx="104" cy="34" rx="10" ry="13" transform="rotate(25 104 34)" />
 			</g>
 			<path
-				d="M10 22 L14 30 M16 18 L19 27 M24 18 L24 27 M110 22 L106 30 M104 18 L101 27 M96 18 L96 27"
+				d="M8 26 L12 34 M14 22 L17 31 M22 22 L22 31 M112 26 L108 34 M106 22 L103 31 M98 22 L98 31"
 				fill="none"
 				stroke-width="2.5"
 			/>
-		{:else}
-			<!-- Heavy lids over small pupils, flat brows, a flat mouth -->
-			<path d="M30 46 L54 46 M66 46 L90 46" fill="none" />
-			<path d="M30 58 Q42 44 54 58 Z" fill="#fff" stroke-width="3" />
-			<path d="M66 58 Q78 44 90 58 Z" fill="#fff" stroke-width="3" />
-			<circle cx="43" cy="55" r="3.2" fill="#111" stroke="none" />
-			<circle cx="77" cy="55" r="3.2" fill="#111" stroke="none" />
-			<path d="M28 59 L56 59 M64 59 L92 59" fill="none" />
-			<path d="M48 94 L72 94" fill="none" />
 		{/if}
-
-		<!-- Thick round glasses -->
-		<g fill="none" stroke-width="3">
-			<circle cx="42" cy="56" r="15" />
-			<circle cx="78" cy="56" r="15" />
-			<path d="M57 54 Q60 51 63 54 M27 54 L19 58 M93 54 L101 58" />
-		</g>
-		<path d="M58 70 Q60 76 64 71" fill="none" stroke-width="2.5" />
 	</g>
 </svg>

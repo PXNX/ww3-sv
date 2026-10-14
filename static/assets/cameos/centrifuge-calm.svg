@@ -1,39 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Cartoon of a very calm face in a suit and bow tie with glasses, stubble and heavy eyelids">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Marker cartoon of a scowling man with flat-top hair, rectangular glasses and a heavy frown">
 	<!-- Original cartoon face (not a real person): flat colours, thick outlines -->
 	<rect width="200" height="200" fill="#C9D6E8"/>
-	<g transform="translate(14 14) scale(1.5)" stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-		<path d="M24 130 Q26 108 60 106 Q94 108 96 130 Z" fill="#2B2B35"/>
-		<path d="M48 105 L60 122 L72 105 Z" fill="#FFFFFF" stroke-width="3"/>
-		<path d="M60 110 L45 103 L45 117 Z M60 110 L75 103 L75 117 Z" fill="#111111" stroke-width="2.5"/>
-		<ellipse cx="17" cy="66" rx="7" ry="10" fill="#F6C9A0"/>
-		<ellipse cx="103" cy="66" rx="7" ry="10" fill="#F6C9A0"/>
-		<ellipse cx="60" cy="64" rx="43" ry="46" fill="#F6C9A0"/>
-		<path d="M58 19 Q50 6 62 8 Q70 9 64 20" fill="none" stroke-width="3"/>
-		<circle cx="38" cy="82" r="8" fill="#EE9E86" stroke="none"/>
-		<circle cx="82" cy="82" r="8" fill="#EE9E86" stroke="none"/>
-		<g fill="#111111" stroke="none">
-			<circle cx="30" cy="90" r="1.3"/>
-			<circle cx="34" cy="98" r="1.3"/>
-			<circle cx="41" cy="104" r="1.3"/>
-			<circle cx="50" cy="107" r="1.3"/>
-			<circle cx="60" cy="109" r="1.3"/>
-			<circle cx="70" cy="107" r="1.3"/>
-			<circle cx="79" cy="104" r="1.3"/>
-			<circle cx="86" cy="98" r="1.3"/>
-			<circle cx="90" cy="90" r="1.3"/>
-		</g>
-		<path d="M30 46 L54 46 M66 46 L90 46" fill="none"/>
-		<path d="M30 58 Q42 44 54 58 Z" fill="#FFFFFF" stroke-width="3"/>
-		<path d="M66 58 Q78 44 90 58 Z" fill="#FFFFFF" stroke-width="3"/>
-		<circle cx="43" cy="55" r="3.2" fill="#111111" stroke="none"/>
-		<circle cx="77" cy="55" r="3.2" fill="#111111" stroke="none"/>
-		<path d="M28 59 L56 59 M64 59 L92 59" fill="none"/>
-		<path d="M48 94 L72 94" fill="none"/>
-		<g fill="none" stroke-width="3">
-			<circle cx="42" cy="56" r="15"/>
-			<circle cx="78" cy="56" r="15"/>
-			<path d="M57 54 Q60 51 63 54 M27 54 L19 58 M93 54 L101 58"/>
-		</g>
-		<path d="M58 70 Q60 76 64 71" fill="none" stroke-width="2.5"/>
+	<g transform="translate(14 14) scale(1.5)" stroke="#111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+		<path d="M14 130 Q16 110 44 106 L76 106 Q104 110 106 130 Z" fill="#FFFFFF"/>
+		<path d="M46 92 L47 108 M74 92 L73 108" fill="none"/>
+		<path d="M47 108 Q60 122 73 108" fill="#F4E4D2"/>
+		<path d="M44 121 Q47 116 50 121 T56 121 T62 121 T68 121 T74 121" fill="none" stroke-width="1.8"/>
+		<ellipse cx="21" cy="66" rx="6" ry="10" fill="#F4E4D2"/>
+		<ellipse cx="99" cy="66" rx="6" ry="10" fill="#F4E4D2"/>
+		<path d="M24 40 L26 72 Q30 98 46 107 Q60 113 74 107 Q90 98 94 72 L96 40 Z" fill="#F4E4D2"/>
+		<path d="M24 44 L26 24 Q60 12 94 24 L96 44 Q92 34 76 32 Q60 30 44 32 Q28 34 24 44 Z" fill="#111111"/>
+		<path d="M32 72 Q42 76 52 72 M68 72 Q78 76 88 72" fill="none" stroke-width="2"/>
+		<path d="M60 62 L55 82 Q60 87 67 82" fill="none" stroke-width="2.5"/>
+		<path d="M45 80 Q42 90 48 97 M75 80 Q78 90 72 97" fill="none" stroke-width="2"/>
+		<path d="M31 45 L54 54 M89 45 L66 54" fill="none" stroke-width="6"/>
+		<path d="M57 42 L56 35 M63 42 L64 35" fill="none" stroke-width="2"/>
+		<circle cx="43" cy="62" r="2.6" fill="#111111" stroke="none"/>
+		<circle cx="77" cy="62" r="2.6" fill="#111111" stroke="none"/>
+		<path d="M46 98 Q52 90 60 92 Q68 90 74 98 Q67 106 60 106 Q53 106 46 98 Z" fill="#E8A5A0" stroke-width="2.5"/>
+		<path d="M46 98 Q60 93 74 98" fill="none" stroke-width="2.5"/>
+		<path d="M29 55 H55 V69 H29 Z M65 55 H91 V69 H65 Z M55 58 H65 M29 58 L21 60 M91 58 L99 60" fill="none" stroke-width="2.8"/>
 	</g>
 </svg>
