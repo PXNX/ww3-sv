@@ -10,8 +10,9 @@ export const SHORTAGE_MAX = 100;
 export const HEART_RESET = 55;
 /** The first module size that counts as high-tier output: tier 3, 16 GB */
 export const HIGH_TIER = 3;
-/** Relief for the first high tier; every further tier is worth half as much again */
-export const HIGH_TIER_RELIEF = 5;
+/** Relief for the first high tier; every further tier is worth 70% more than the one before */
+export const HIGH_TIER_RELIEF = 8;
+const HIGH_TIER_GROWTH = 1.7;
 export const PERFECT_RELIEF = 1.5;
 export const WAFER_RELIEF = 10;
 /** Seconds over which the rise reaches its full time factor */
@@ -48,7 +49,7 @@ export function tickShortage(
 /** How much a freshly created memory module of this tier eases the shortage; 0 below high tier */
 export function reliefForTier(tier: number): number {
 	if (tier < HIGH_TIER) return 0;
-	return Math.round(HIGH_TIER_RELIEF * 1.5 ** (tier - HIGH_TIER));
+	return Math.round(HIGH_TIER_RELIEF * HIGH_TIER_GROWTH ** (tier - HIGH_TIER));
 }
 
 export function applyRelief(value: number, amount: number): number {

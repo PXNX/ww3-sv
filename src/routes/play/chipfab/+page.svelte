@@ -2,7 +2,7 @@
 	Chip Fab Rush (roadmap 3.13): every level has two stages. Stage A stacks a silicon wafer layer by
 	layer, Stage B merges the memory modules that wafer yields (4 GB, 8 GB, 16 GB and up). The
 	shortage meter keeps rising; big modules push it down, and when it is full a heart is lost.
-	"The Jacket", an invented tech-boss caricature, cheers, waits or sulks along the way.
+	Jason Huang of Novideo, the tech boss in the leather jacket, cheers, waits or sulks along the way.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -19,6 +19,7 @@
 		jacketFile,
 		type JacketPose
 	} from '#lib/game/chipfab/jacket.js';
+	import { formatPrice, gpuPrice, modulePrice } from '#lib/game/chipfab/price.js';
 	import { moduleLabel } from '#lib/game/chipfab/ram.js';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
 	import type { Direction } from '#lib/game/merge/mergeBoard.js';
@@ -61,7 +62,7 @@
 		sulks: m.chipfab_jacket_alt_sulks
 	};
 
-	// Game over: The Jacket cheers if the run made a big module, otherwise he sulks
+	// Game over: Jason Huang cheers if the run made a big module, otherwise he sulks
 	const cameo = $derived.by(() => {
 		const pose: JacketPose = game.topTier >= CHEER_TIER ? 'cheers' : 'sulks';
 		return {
@@ -78,6 +79,11 @@
 	});
 
 	const alarming = $derived(game.shortage >= SULK_SHORTAGE);
+	// Street prices climb with the shortage; the top module is priced per tier
+	const gpu = $derived(formatPrice(gpuPrice(game.level, game.shortage)));
+	const topPrice = $derived(
+		game.topTier > 0 ? formatPrice(modulePrice(game.topTier, game.shortage)) : '-'
+	);
 
 	const pad: { direction: Direction; label: () => string; icon: typeof IconLeft }[] = [
 		{ direction: 'left', label: m.chipfab_move_left, icon: IconLeft },
@@ -168,6 +174,9 @@
 					<span class="font-semibold">
 						· {m.chipfab_hud_top({ size: game.topTier > 0 ? moduleLabel(game.topTier) : '-' })}
 					</span>
+				</p>
+				<p dir="auto" class="font-display text-xs font-bold tabular-nums">
+					{m.chipfab_hud_prices({ ram: topPrice, gpu })}
 				</p>
 				<p dir="auto" class="truncate font-display text-xs font-semibold italic" aria-live="off">
 					{captions[game.pose]()}

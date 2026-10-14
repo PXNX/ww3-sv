@@ -1,5 +1,5 @@
 <!--
-	"The Jacket" as a HUD reaction: an invented tech-boss caricature in a black leather jacket with
+	Jason Huang of Novideo as a HUD reaction: a satirical tech-boss cartoon in a black leather jacket with
 	three poses (cheers, neutral, sulks). All three images are in the page at once, so changing the
 	pose never waits for a download; only the current one is shown.
 -->

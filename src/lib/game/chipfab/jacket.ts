@@ -1,19 +1,18 @@
 /*
- * "The Jacket": an invented tech-CEO archetype in a black leather jacket. It is a caricature of
- * a type, not of any real person, and has no real name. It reacts to the run with three poses
- * (static/assets/cameos/chipfab-jacket-<pose>.svg): it cheers on big merges and perfect stacks,
- * and sulks when the shortage is high or a heart was lost.
+ * Jason Huang of Novideo: a satirical tech-boss cartoon in a black leather jacket. He reacts to
+ * the run with three poses (static/assets/cameos/chipfab-jacket-<pose>.svg): he cheers on big
+ * merges and perfect stacks, and sulks when the shortage is high or a heart was lost.
  */
 
 export type JacketPose = 'cheers' | 'neutral' | 'sulks';
 
 export const JACKET_POSES: readonly JacketPose[] = ['cheers', 'neutral', 'sulks'];
 
-/** From this shortage percentage on, The Jacket sulks even without a fresh bad event */
+/** From this shortage percentage on, Jason Huang sulks even without a fresh bad event */
 export const SULK_SHORTAGE = 75;
-/** A merge to this tier or higher (128 GB) makes The Jacket cheer */
+/** A merge to this tier or higher (128 GB) makes Jason Huang cheer */
 export const CHEER_TIER = 6;
-/** A streak of this many perfect drops makes The Jacket cheer */
+/** A streak of this many perfect drops makes Jason Huang cheer */
 export const CHEER_STREAK = 3;
 
 export function jacketFile(pose: JacketPose): string {

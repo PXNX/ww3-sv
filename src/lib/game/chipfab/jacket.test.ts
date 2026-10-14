@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { JACKET_POSES, SULK_SHORTAGE, jacketFile, jacketPose } from './jacket';
 
-describe('The Jacket', () => {
+describe('Jason Huang', () => {
 	it('has one file per pose, all in the chipfab family', () => {
 		expect(JACKET_POSES.map(jacketFile)).toEqual([
 			'chipfab-jacket-cheers.svg',
