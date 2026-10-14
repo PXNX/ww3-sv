@@ -8,7 +8,9 @@ import { APP_DESCRIPTION, APP_NAME } from '#lib/config.js';
 import { MODES } from '#lib/modes/registry.js';
 import { m } from '#lib/paraglide/messages.js';
 
+/** Shared by the start screen and the about page; each game has its own, see OG_GAME_IMAGE_DIR */
 export const OG_IMAGE_PATH = '/og-image.png';
+export const OG_GAME_IMAGE_DIR = '/og';
 export const OG_IMAGE_WIDTH = 1200;
 export const OG_IMAGE_HEIGHT = 630;
 
@@ -17,6 +19,8 @@ const DESCRIPTION_MAX = 200;
 export interface PageMeta {
 	title: string;
 	description: string;
+	/** Preview image path, defaults to OG_IMAGE_PATH */
+	image?: string;
 }
 
 /** Cuts a long text at a word boundary so previews do not end mid-word */
@@ -37,7 +41,8 @@ function buildPages(): Map<string, PageMeta> {
 		if (mode.status !== 'playable') continue;
 		pages.set(mode.href, {
 			title: `${mode.name()} | ${APP_NAME}`,
-			description: shorten(mode.description())
+			description: shorten(mode.description()),
+			image: `${OG_GAME_IMAGE_DIR}/${mode.id}.png`
 		});
 	}
 	return pages;
@@ -84,7 +89,7 @@ export function metaTags(meta: PageMeta, pathname: string, siteUrl?: string): st
 
 	if (siteUrl) {
 		const pageUrl = new URL(pathname, siteUrl).href;
-		const imageUrl = new URL(OG_IMAGE_PATH, siteUrl).href;
+		const imageUrl = new URL(meta.image ?? OG_IMAGE_PATH, siteUrl).href;
 		tags.push(
 			`<link rel="canonical" href="${escapeAttribute(pageUrl)}" />`,
 			tag('property', 'og:url', pageUrl),
@@ -92,7 +97,7 @@ export function metaTags(meta: PageMeta, pathname: string, siteUrl?: string): st
 			tag('property', 'og:image:type', 'image/png'),
 			tag('property', 'og:image:width', OG_IMAGE_WIDTH),
 			tag('property', 'og:image:height', OG_IMAGE_HEIGHT),
-			tag('property', 'og:image:alt', `${APP_NAME}: ${APP_DESCRIPTION}`),
+			tag('property', 'og:image:alt', meta.image ? meta.title : `${APP_NAME}: ${APP_DESCRIPTION}`),
 			tag('name', 'twitter:image', imageUrl)
 		);
 	}

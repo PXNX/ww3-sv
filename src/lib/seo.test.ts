@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { MODES } from '#lib/modes/registry.js';
 import { metaTags, pageMeta } from './seo';
@@ -14,6 +15,15 @@ describe('page metadata', () => {
 	it('ignores a trailing slash and returns nothing for an unknown path', () => {
 		expect(pageMeta('/play/chess/')).toEqual(pageMeta('/play/chess'));
 		expect(pageMeta('/nope')).toBeUndefined();
+	});
+
+	it('gives every game its own preview image that exists', () => {
+		for (const mode of MODES) {
+			if (mode.status !== 'playable') continue;
+			const image = pageMeta(mode.href)!.image!;
+			expect(image, mode.id).toBe(`/og/${mode.id}.png`);
+			expect(existsSync(`static${image}`), mode.id).toBe(true);
+		}
 	});
 
 	it('keeps every description short enough for a preview', () => {
@@ -38,6 +48,9 @@ describe('meta tags', () => {
 		expect(metaTags(meta, '/about')).not.toContain('og:image');
 		const html = metaTags(meta, '/about', 'https://example.test');
 		expect(html).toContain('<link rel="canonical" href="https://example.test/about" />');
+		expect(
+			metaTags({ ...meta, image: '/og/chess.png' }, '/play/chess', 'https://example.test')
+		).toContain('content="https://example.test/og/chess.png"');
 		expect(html).toContain('property="og:image" content="https://example.test/og-image.png"');
 	});
 });
