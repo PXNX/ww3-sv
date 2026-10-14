@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { APP_NAME, APP_SHORT_NAME } from '#lib/config.js';
+import { APP_DESCRIPTION, APP_NAME, APP_SHORT_NAME } from '#lib/config.js';
 import type { RequestHandler } from './$types';
 
 // Generated here rather than kept as a static file so the app name has a single source
@@ -12,8 +12,7 @@ export const GET: RequestHandler = () =>
 		{
 			name: APP_NAME,
 			short_name: APP_SHORT_NAME,
-			description:
-				'A satirical cartoon puzzle and arcade collection about oil, shipping, and geopolitics.',
+			description: APP_DESCRIPTION,
 			id: '/',
 			start_url: '/',
 			scope: '/',

@@ -1,0 +1,65 @@
+<!--
+	Source of static/og-image.png, the 1200x630 link preview. Render it with
+	msedge --headless --screenshot=static/og-image.png --window-size=1200,630 file:///<repo>/scripts/og-image.html
+	(the images are read from ../static, so open it from this folder).
+-->
+<!doctype html>
+<meta charset="utf-8" />
+<style>
+	@font-face {
+		font-family: Baloo;
+		font-weight: 700;
+		src: url('../static/fonts/baloo-2-latin-700-normal.woff2');
+	}
+	html,
+	body {
+		margin: 0;
+		width: 1200px;
+		height: 630px;
+		overflow: hidden;
+	}
+	body {
+		background: #e8e1bc;
+		color: #111;
+		font-family: Baloo, sans-serif;
+		font-weight: 700;
+		display: flex;
+		align-items: center;
+		gap: 40px;
+		padding: 0 70px;
+		box-sizing: border-box;
+	}
+	.text {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 28px;
+	}
+	h1 {
+		margin: 0;
+		align-self: flex-start;
+		transform: rotate(1.5deg);
+		background: #6a7c9b;
+		color: #fff;
+		border: 6px solid #111;
+		border-radius: 28px 14px 24px 18px;
+		box-shadow: 10px 10px 0 #111;
+		padding: 18px 40px 6px;
+		font-size: 128px;
+		line-height: 1;
+	}
+	p {
+		margin: 0;
+		font-size: 44px;
+		line-height: 1.15;
+	}
+	img {
+		width: 360px;
+		height: 360px;
+	}
+</style>
+<div class="text">
+	<h1>World War 3</h1>
+	<p>Satirical cartoon puzzle and arcade games about oil, shipping and geopolitics.</p>
+</div>
+<img src="../static/assets/mascot/mascot-sweating.svg" alt="" />
