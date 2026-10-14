@@ -28,6 +28,7 @@ import IconAnchor from '~icons/lucide/anchor';
 import IconCpu from '~icons/lucide/cpu';
 import IconVault from '~icons/lucide/vault';
 import IconGavel from '~icons/lucide/gavel';
+import IconWind from '~icons/lucide/wind';
 
 export type ModeId =
 	| 'blocks'
@@ -54,7 +55,8 @@ export type ModeId =
 	| 'suez'
 	| 'chipfab'
 	| 'vault'
-	| 'veto';
+	| 'veto'
+	| 'balloon';
 
 interface ModeBase {
 	id: ModeId;
@@ -329,6 +331,16 @@ export const MODES: readonly GameMode[] = [
 		leaders: [],
 		name: m.mode_veto_name,
 		description: m.mode_veto_description
+	},
+	{
+		id: 'balloon',
+		status: 'playable',
+		href: '/play/balloon',
+		icon: IconWind,
+		tileClass: 'bg-sky',
+		leaders: ['xi', 'trump'],
+		name: m.mode_balloon_name,
+		description: m.mode_balloon_description
 	}
 ];
 

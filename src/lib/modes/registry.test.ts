@@ -22,13 +22,14 @@ describe('mode leaders', () => {
 	});
 
 	it('filters by leader and keeps registry order', () => {
-		expect(modesFeaturing('xi').map((mode) => mode.id)).toEqual(['whack', 'beltroad']);
+		expect(modesFeaturing('xi').map((mode) => mode.id)).toEqual(['whack', 'beltroad', 'balloon']);
 		expect(modesFeaturing('trump').map((mode) => mode.id)).toEqual([
 			'blocks',
 			'minefield',
 			'convoy',
 			'merge',
-			'venezuela'
+			'venezuela',
+			'balloon'
 		]);
 	});
 

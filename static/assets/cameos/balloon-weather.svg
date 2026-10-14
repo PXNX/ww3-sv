@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Cartoon of a round red weather balloon in sunglasses with a tiny basket">
+	<!-- Original cartoon weather balloon (not a real object): flat colours, thick outlines -->
+	<rect width="200" height="200" fill="#9EC3E6"/>
+	<path d="M20 60 Q34 46 50 56 Q62 44 78 56 Q92 56 88 68 L22 68 Z" fill="#FFFFFF" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+	<path d="M130 150 Q144 138 160 148 Q172 136 188 148 L190 160 L128 160 Z" fill="#FFFFFF" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+	<g stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+		<path d="M82 128 L92 156 M118 128 L108 156" fill="none"/>
+		<rect x="88" y="156" width="24" height="16" fill="#8A5A2B"/>
+		<ellipse cx="100" cy="84" rx="54" ry="60" fill="#E5484D"/>
+		<path d="M100 24 Q80 84 100 144 Q120 84 100 24 Z" fill="#FFFFFF"/>
+		<path d="M64 80 H92 V96 Q78 100 66 94 Z M108 80 H136 L134 94 Q122 100 108 96 Z" fill="#111"/>
+		<path d="M92 84 H108" fill="none"/>
+		<path d="M82 112 Q100 124 118 112" fill="none"/>
+	</g>
+</svg>
