@@ -29,7 +29,8 @@ describe('mode leaders', () => {
 			'convoy',
 			'merge',
 			'venezuela',
-			'balloon'
+			'balloon',
+			'leakpatrol'
 		]);
 	});
 

@@ -31,6 +31,7 @@ import IconGavel from '~icons/lucide/gavel';
 import IconWind from '~icons/lucide/wind';
 import IconSiren from '~icons/lucide/siren';
 import IconCompass from '~icons/lucide/compass';
+import IconDroplets from '~icons/lucide/droplets';
 
 export type ModeId =
 	| 'blocks'
@@ -60,7 +61,8 @@ export type ModeId =
 	| 'veto'
 	| 'balloon'
 	| 'dome'
-	| 'gpsliar';
+	| 'gpsliar'
+	| 'leakpatrol';
 
 interface ModeBase {
 	id: ModeId;
@@ -365,6 +367,16 @@ export const MODES: readonly GameMode[] = [
 		leaders: [],
 		name: m.mode_gpsliar_name,
 		description: m.mode_gpsliar_description
+	},
+	{
+		id: 'leakpatrol',
+		status: 'playable',
+		href: '/play/leakpatrol',
+		icon: IconDroplets,
+		tileClass: 'bg-banner-slate',
+		leaders: ['trump'],
+		name: m.mode_leakpatrol_name,
+		description: m.mode_leakpatrol_description
 	}
 ];
 
