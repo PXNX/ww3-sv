@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Cartoon of a worried ship captain in a green cap">
+	<!-- Original cartoon captain (not a real person): flat colours, thick outlines -->
+	<rect width="200" height="200" fill="#8FD0EA"/>
+	<path d="M0 150 Q30 138 60 150 T120 150 T200 150 L200 200 L0 200 Z" fill="#5BB4DB" stroke="#111" stroke-width="4"/>
+	<g transform="translate(14 14) scale(1.5)" stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+		<path d="M22 130 Q24 108 60 106 Q96 108 98 130 Z" fill="#FFFFFF"/>
+		<path d="M44 108 L60 122 L76 108" fill="none" stroke-width="3"/>
+		<path d="M54 112 L60 128 L66 112 Z" fill="#E5484D" stroke-width="3"/>
+		<ellipse cx="17" cy="68" rx="7" ry="10" fill="#F2C9A0"/>
+		<ellipse cx="103" cy="68" rx="7" ry="10" fill="#F2C9A0"/>
+		<ellipse cx="60" cy="66" rx="43" ry="44" fill="#F2C9A0"/>
+		<path d="M24 82 Q60 112 96 82 Q92 100 60 108 Q28 100 24 82 Z" fill="#E8E1BC"/>
+		<path d="M14 44 Q16 14 60 12 Q104 14 106 44 Z" fill="#2F9E5F"/>
+		<rect x="10" y="40" width="100" height="10" rx="4" fill="#1F6B40"/>
+		<circle cx="60" cy="30" r="8" fill="#F5C83A" stroke-width="3"/>
+		<path d="M30 56 L52 60 M90 56 L68 60" fill="none" stroke-width="3.5"/>
+		<circle cx="42" cy="68" r="5" fill="#FFFFFF" stroke-width="3"/>
+		<circle cx="78" cy="68" r="5" fill="#FFFFFF" stroke-width="3"/>
+		<circle cx="43" cy="69" r="2" fill="#111" stroke="none"/>
+		<circle cx="77" cy="69" r="2" fill="#111" stroke="none"/>
+		<path d="M48 92 Q60 86 72 92" fill="none"/>
+		<path d="M100 60 Q106 70 100 76" fill="none" stroke="#4FA8D8" stroke-width="3"/>
+	</g>
+</svg>

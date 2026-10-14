@@ -24,6 +24,7 @@ import IconZap from '~icons/lucide/zap';
 import IconGauge from '~icons/lucide/gauge';
 import IconFlag from '~icons/lucide/flag-triangle-right';
 import IconVote from '~icons/lucide/vote';
+import IconAnchor from '~icons/lucide/anchor';
 
 export type ModeId =
 	| 'blocks'
@@ -46,7 +47,8 @@ export type ModeId =
 	| 'energiewende'
 	| 'centrifuge'
 	| 'venezuela'
-	| 'sondage';
+	| 'sondage'
+	| 'suez';
 
 interface ModeBase {
 	id: ModeId;
@@ -281,6 +283,16 @@ export const MODES: readonly GameMode[] = [
 		leaders: ['macron'],
 		name: m.mode_sondage_name,
 		description: m.mode_sondage_description
+	},
+	{
+		id: 'suez',
+		status: 'playable',
+		href: '/play/suez',
+		icon: IconAnchor,
+		tileClass: 'bg-khaki',
+		leaders: [],
+		name: m.mode_suez_name,
+		description: m.mode_suez_description
 	}
 ];
 
