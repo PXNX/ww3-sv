@@ -27,6 +27,7 @@ import IconVote from '~icons/lucide/vote';
 import IconAnchor from '~icons/lucide/anchor';
 import IconCpu from '~icons/lucide/cpu';
 import IconVault from '~icons/lucide/vault';
+import IconGavel from '~icons/lucide/gavel';
 
 export type ModeId =
 	| 'blocks'
@@ -52,7 +53,8 @@ export type ModeId =
 	| 'sondage'
 	| 'suez'
 	| 'chipfab'
-	| 'vault';
+	| 'vault'
+	| 'veto';
 
 interface ModeBase {
 	id: ModeId;
@@ -317,6 +319,16 @@ export const MODES: readonly GameMode[] = [
 		leaders: [],
 		name: m.mode_vault_name,
 		description: m.mode_vault_description
+	},
+	{
+		id: 'veto',
+		status: 'playable',
+		href: '/play/veto',
+		icon: IconGavel,
+		tileClass: 'bg-flag-blue',
+		leaders: [],
+		name: m.mode_veto_name,
+		description: m.mode_veto_description
 	}
 ];
 
