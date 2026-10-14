@@ -243,6 +243,7 @@
 	"flamingo_stat_tanks": "Entflammte Tanks",
 	"flamingo_stat_best_refineries": "Meiste getroffene Ziele",
 	"flamingo_crash_net": "Flamingo gegen Drohnennetz. Das Netz gewinnt nach Punkten.",
+	"flamingo_crash_balloon": "Flamingo gegen Sperrballon. Der Ballon gewinnt nach Punkten.",
 	"flamingo_crash_radar": "Der Radarmast hat den Flamingo kommen sehen. Umgekehrt leider nicht.",
 	"flamingo_crash_pantsir": "Der Panzir-Turm hat den Flamingo zuerst gesehen. Die Luftabwehr funktioniert offenbar.",
 	"flamingo_crash_ground": "Flattern vergessen. Der Boden hat nicht vergessen, da zu sein.",

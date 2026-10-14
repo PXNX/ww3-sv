@@ -41,8 +41,10 @@ export const TAP_INTERVAL_SECONDS = 0.25;
 /** Only this share of the physically possible shift is ever used */
 export const REACH_SAFETY = 0.7;
 
-/** Bottom obstacles are radar masts or Pantsir towers; the top is always a hanging drone net */
+/** Bottom obstacles are radar masts or Pantsir towers */
 export type ColumnKind = 'radar' | 'pantsir';
+/** The top obstacle hangs from the sky: a drone net or a stack of barrage balloons */
+export type TopKind = 'net' | 'balloon';
 
 export interface GapColumn {
 	/** Left edge in world units */
@@ -50,6 +52,7 @@ export interface GapColumn {
 	gapTop: number;
 	gapBottom: number;
 	kind: ColumnKind;
+	top: TopKind;
 }
 
 export function gapCountFor(segment: number): number {
@@ -138,8 +141,11 @@ export function generateGapSequence(random: Random, segment: number, firstX: num
 			x: firstX + index * spacing,
 			gapTop: center - size / 2,
 			gapBottom: center + size / 2,
-			kind: pickOne(random, ['radar', 'pantsir'] as const)
+			kind: pickOne(random, ['radar', 'pantsir'] as const),
+			top: 'net'
 		});
 	}
+	// Picked after the gaps, so the shape of the gaps does not depend on it
+	for (const column of columns) column.top = pickOne(random, ['net', 'balloon'] as const);
 	return columns;
 }

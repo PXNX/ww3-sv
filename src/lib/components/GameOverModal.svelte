@@ -249,7 +249,12 @@
 			<div class="flex flex-wrap items-center justify-center gap-3">
 				<!-- Focus lands on the main action, not on the drag handle above it -->
 				<!-- svelte-ignore a11y_autofocus -->
-				<button type="button" class="btn-chunky bg-tie-red text-lg" autofocus onclick={onRetry}>
+				<button
+					type="button"
+					class="btn-chunky bg-tie-red text-lg focus-visible:outline-none"
+					autofocus
+					onclick={onRetry}
+				>
 					<IconRotate class="size-5" aria-hidden="true" />
 					{m.gameover_try_again()}
 				</button>

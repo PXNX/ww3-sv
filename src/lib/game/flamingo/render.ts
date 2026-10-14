@@ -665,6 +665,46 @@ function drawDroneNet(context: CanvasRenderingContext2D, column: GapColumn, time
 	}
 }
 
+const BALLOON_HEIGHT = 44;
+
+function drawBalloonStack(context: CanvasRenderingContext2D, column: GapColumn) {
+	const { x, gapTop } = column;
+	const middle = x + COLUMN_WIDTH / 2;
+	context.lineWidth = 2;
+	context.strokeStyle = INK;
+	context.beginPath();
+	context.moveTo(middle, 0);
+	context.lineTo(middle, gapTop);
+	context.stroke();
+	// Absurdly, the balloons are stacked all the way up to the sky
+	for (let bottom = gapTop; bottom > -BALLOON_HEIGHT; bottom -= BALLOON_HEIGHT) {
+		const centerY = bottom - BALLOON_HEIGHT / 2;
+		for (const fin of [-1, 1]) {
+			context.beginPath();
+			context.moveTo(x + 10, centerY);
+			context.lineTo(x + 1, centerY + fin * 15);
+			context.lineTo(x + 16, centerY + fin * 6);
+			context.closePath();
+			outlined(context, KHAKI);
+		}
+		context.beginPath();
+		context.ellipse(
+			middle + 3,
+			centerY,
+			COLUMN_WIDTH / 2 - 4,
+			BALLOON_HEIGHT / 2 - 3,
+			0,
+			0,
+			Math.PI * 2
+		);
+		outlined(context, NET);
+		context.beginPath();
+		context.arc(middle + 16, centerY - 4, 3, 0, Math.PI * 2);
+		context.fillStyle = INK;
+		context.fill();
+	}
+}
+
 function drawColumn(
 	context: CanvasRenderingContext2D,
 	column: GapColumn,
@@ -672,7 +712,8 @@ function drawColumn(
 	assets: RenderAssets
 ) {
 	const top = assets.supplied.droneNet;
-	if (top) context.drawImage(top, column.x, 0, COLUMN_WIDTH, column.gapTop);
+	if (column.top === 'balloon') drawBalloonStack(context, column);
+	else if (top) context.drawImage(top, column.x, 0, COLUMN_WIDTH, column.gapTop);
 	else drawDroneNet(context, column, time);
 
 	const bottomImage = assets.supplied[column.kind === 'radar' ? 'radarMast' : 'pantsirTower'];

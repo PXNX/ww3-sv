@@ -51,7 +51,7 @@ const REFINERY: Refinery = {
 function segmentWith(overrides: Partial<Segment> = {}): Segment {
 	return {
 		index: 0,
-		columns: [{ x: 200, gapTop: 150, gapBottom: 350, kind: 'radar' }],
+		columns: [{ x: 200, gapTop: 150, gapBottom: 350, kind: 'radar', top: 'net' }],
 		refinery: REFINERY,
 		passed: 0,
 		strike: null,
@@ -174,14 +174,15 @@ describe('ready and take-off', () => {
 describe('collision', () => {
 	const segment = segmentWith({
 		columns: [
-			{ x: 200, gapTop: 150, gapBottom: 350, kind: 'radar' },
-			{ x: 500, gapTop: 150, gapBottom: 350, kind: 'pantsir' }
+			{ x: 200, gapTop: 150, gapBottom: 350, kind: 'radar', top: 'net' },
+			{ x: 500, gapTop: 150, gapBottom: 350, kind: 'pantsir', top: 'balloon' }
 		]
 	});
 
 	it('detects drone nets above and radar masts or Pantsir towers below the gap', () => {
 		expect(findContact(segment, 220, 100)).toEqual({ kind: 'column', cause: 'net' });
 		expect(findContact(segment, 220, 400)).toEqual({ kind: 'column', cause: 'radar' });
+		expect(findContact(segment, 520, 100)).toEqual({ kind: 'column', cause: 'balloon' });
 		expect(findContact(segment, 520, 400)).toEqual({ kind: 'column', cause: 'pantsir' });
 		// Touching the edge of a column with the side of the flamingo counts
 		expect(findContact(segment, 200 - FLAMINGO_RADIUS + 1, 100)).not.toBeNull();

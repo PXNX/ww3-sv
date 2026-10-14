@@ -243,6 +243,7 @@
 	"flamingo_stat_tanks": "Tanks set ablaze",
 	"flamingo_stat_best_refineries": "Most targets struck",
 	"flamingo_crash_net": "Flamingo versus drone net. The net won on points.",
+	"flamingo_crash_balloon": "Flamingo versus barrage balloon. The balloon won on points.",
 	"flamingo_crash_radar": "The radar mast saw the flamingo coming. The flamingo did not see the radar mast.",
 	"flamingo_crash_pantsir": "The Pantsir tower spotted the flamingo first. Air defence works, apparently.",
 	"flamingo_crash_ground": "Forgot to flap. The ground did not forget to be there.",

@@ -131,6 +131,7 @@ describe('generateGapSequence', () => {
 				expect(column.x).toBe(1000 + index * spacingFor(segment));
 				expect(column.gapBottom - column.gapTop).toBe(gapSizeFor(segment, index));
 				expect(['radar', 'pantsir']).toContain(column.kind);
+				expect(['net', 'balloon']).toContain(column.top);
 			});
 		}
 	});

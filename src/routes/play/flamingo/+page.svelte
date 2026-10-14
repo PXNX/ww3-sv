@@ -17,6 +17,7 @@
 
 	const CRASH_LINES: Record<CrashCause, () => string> = {
 		net: m.flamingo_crash_net,
+		balloon: m.flamingo_crash_balloon,
 		radar: m.flamingo_crash_radar,
 		pantsir: m.flamingo_crash_pantsir,
 		ground: m.flamingo_crash_ground,

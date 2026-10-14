@@ -12,6 +12,7 @@ import {
 	generateGapSequence,
 	topRect,
 	type ColumnKind,
+	type TopKind,
 	type GapColumn
 } from './gapSequence';
 import {
@@ -52,7 +53,8 @@ export const OVER_DELAY_SECONDS = 0.8;
 export type Phase = 'ready' | 'flying' | 'tumbling' | 'over';
 export type Stage = 'gaps' | 'approach';
 /** The flare stack at a refinery is a 'flare', the mast at the other sites a 'mast' */
-export type CrashCause = 'net' | ColumnKind | 'ground' | 'flare' | 'mast' | 'missed' | 'overshoot';
+export type CrashCause =
+	TopKind | ColumnKind | 'ground' | 'flare' | 'mast' | 'missed' | 'overshoot';
 
 export interface Segment {
 	index: number;
@@ -96,7 +98,7 @@ export interface FlamingoState {
 }
 
 export type Contact =
-	| { kind: 'column'; cause: 'net' | ColumnKind }
+	| { kind: 'column'; cause: TopKind | ColumnKind }
 	| { kind: 'tank'; index: number }
 	| { kind: 'flare' }
 	| { kind: 'ground' }
@@ -149,7 +151,7 @@ export function findContact(segment: Segment, x: number, y: number): Contact | n
 	const r = FLAMINGO_RADIUS;
 	for (const column of segment.columns) {
 		if (column.x > x + r || column.x + COLUMN_WIDTH < x - r) continue;
-		if (circleHitsRect(x, y, r, topRect(column))) return { kind: 'column', cause: 'net' };
+		if (circleHitsRect(x, y, r, topRect(column))) return { kind: 'column', cause: column.top };
 		if (circleHitsRect(x, y, r, bottomRect(column))) return { kind: 'column', cause: column.kind };
 	}
 	if (!segment.strike) {
