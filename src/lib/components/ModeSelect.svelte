@@ -1,11 +1,16 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import type { RouteId } from '$app/types';
 	import { m } from '#lib/paraglide/messages.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { MODES } from '#lib/modes/registry.js';
 	import { leaderById, type LeaderId } from '#lib/theme/leaders.js';
 	import IconHourglass from '~icons/lucide/hourglass';
 	import IconX from '~icons/lucide/x';
+
+	// resolve() has one overload per route, and TypeScript gives up on matching a union of more than
+	// 25 routes against them. The registry already type-checks every href against RouteId.
+	const resolveRoute = resolve as (route: RouteId) => string;
 
 	let { leader = $bindable(null) }: { leader?: LeaderId | null } = $props();
 
@@ -74,7 +79,7 @@
 
 			{#if mode.status === 'playable'}
 				<a
-					href={resolve(mode.href)}
+					href={resolveRoute(mode.href)}
 					class="sticker sticker-interactive flex w-full flex-col items-start gap-2 p-3 active:scale-95"
 					style:--tilt="{tilt}deg"
 				>

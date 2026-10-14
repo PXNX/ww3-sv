@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Cartoon of The Jacket, a bald tech boss in round glasses and a black leather jacket, cheering with a memory chip in his raised fist">
+	<!-- The Jacket: an invented caricature of a type, not a real person. Flat colours, thick outlines -->
+	<rect width="200" height="200" fill="#F7D45A"/>
+	<circle cx="100" cy="104" r="84" fill="#FFE98C"/>
+	<g fill="#F5C83A" stroke="#111" stroke-width="3" stroke-linejoin="round">
+		<path d="M22 28 L26 38 L36 42 L26 46 L22 56 L18 46 L8 42 L18 38 Z"/>
+		<path d="M176 24 L179 32 L187 35 L179 38 L176 46 L173 38 L165 35 L173 32 Z"/>
+		<path d="M184 116 L187 123 L194 126 L187 129 L184 136 L181 129 L174 126 L181 123 Z"/>
+	</g>
+	<g transform="translate(14 14) scale(1.5)" stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+		<path d="M100 116 Q118 92 108 54" fill="none" stroke-width="19"/>
+		<path d="M100 116 Q118 92 108 54" fill="none" stroke="#1B1B1F" stroke-width="12"/>
+		<path d="M20 116 Q2 92 12 54" fill="none" stroke-width="19"/>
+		<path d="M20 116 Q2 92 12 54" fill="none" stroke="#1B1B1F" stroke-width="12"/>
+		<path d="M6 142 Q10 106 44 102 L76 102 Q110 106 114 142 Z" fill="#1B1B1F"/>
+		<path d="M46 103 L60 124 L74 103 Z" fill="#FFFFFF" stroke-width="3"/>
+		<path d="M40 103 L58 126 L44 131 L30 112 Z" fill="#2B2B33" stroke-width="3"/>
+		<path d="M80 103 L62 126 L76 131 L90 112 Z" fill="#2B2B33" stroke-width="3"/>
+		<path d="M60 128 L60 144" fill="none" stroke="#8A8A94" stroke-width="2.5"/>
+		<circle cx="108" cy="48" r="8.5" fill="#F2C9A0" stroke-width="3.5"/>
+		<circle cx="12" cy="48" r="8.5" fill="#F2C9A0" stroke-width="3.5"/>
+		<path d="M98 34 L98 30 M108 34 L108 30 M118 34 L118 30" fill="none" stroke-width="3"/>
+		<rect x="96" y="12" width="24" height="20" rx="3" fill="#2F9E5F" stroke-width="3.5"/>
+		<rect x="102" y="17" width="12" height="10" fill="#1F6B40" stroke-width="2.5"/>
+		<path d="M93 17 L96 17 M93 27 L96 27 M120 17 L123 17 M120 27 L123 27" fill="none" stroke-width="3"/>
+		<ellipse cx="17" cy="68" rx="7" ry="10" fill="#F2C9A0"/>
+		<ellipse cx="103" cy="68" rx="7" ry="10" fill="#F2C9A0"/>
+		<ellipse cx="60" cy="66" rx="43" ry="44" fill="#F2C9A0"/>
+		<ellipse cx="21" cy="58" rx="5" ry="10" fill="#B9BDC6" stroke-width="3"/>
+		<ellipse cx="99" cy="58" rx="5" ry="10" fill="#B9BDC6" stroke-width="3"/>
+		<path d="M24 82 Q60 116 96 82 Q92 100 60 108 Q28 100 24 82 Z" fill="#6B6B73" stroke="none"/>
+		<path d="M33 62 L19 60 M87 62 L101 60" fill="none" stroke-width="3"/>
+		<circle cx="42" cy="66" r="10" fill="#FFF3C4" stroke-width="3.5"/>
+		<circle cx="78" cy="66" r="10" fill="#FFF3C4" stroke-width="3.5"/>
+		<path d="M52 65 L68 65" fill="none" stroke-width="3.5"/>
+		<circle cx="43" cy="65" r="3" fill="#111" stroke="none"/>
+		<circle cx="77" cy="65" r="3" fill="#111" stroke="none"/>
+		<path d="M30 48 Q42 38 54 47 M66 47 Q78 38 90 48" fill="none" stroke-width="3.5"/>
+		<path d="M60 70 L57 80 L63 80" fill="none" stroke-width="3"/>
+		<path d="M38 88 Q60 118 82 88 Z" fill="#8B2630" stroke-width="3.5"/>
+		<path d="M42 89 L78 89 L76 94 Q60 100 44 94 Z" fill="#FFFFFF" stroke="none"/>
+		<path d="M50 105 Q60 98 70 105 Q60 111 50 105 Z" fill="#E5484D" stroke="none"/>
+	</g>
+</svg>

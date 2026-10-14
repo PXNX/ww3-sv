@@ -25,6 +25,7 @@ import IconGauge from '~icons/lucide/gauge';
 import IconFlag from '~icons/lucide/flag-triangle-right';
 import IconVote from '~icons/lucide/vote';
 import IconAnchor from '~icons/lucide/anchor';
+import IconCpu from '~icons/lucide/cpu';
 
 export type ModeId =
 	| 'blocks'
@@ -48,7 +49,8 @@ export type ModeId =
 	| 'centrifuge'
 	| 'venezuela'
 	| 'sondage'
-	| 'suez';
+	| 'suez'
+	| 'chipfab';
 
 interface ModeBase {
 	id: ModeId;
@@ -293,6 +295,16 @@ export const MODES: readonly GameMode[] = [
 		leaders: [],
 		name: m.mode_suez_name,
 		description: m.mode_suez_description
+	},
+	{
+		id: 'chipfab',
+		status: 'playable',
+		href: '/play/chipfab',
+		icon: IconCpu,
+		tileClass: 'bg-sky',
+		leaders: [],
+		name: m.mode_chipfab_name,
+		description: m.mode_chipfab_description
 	}
 ];
 

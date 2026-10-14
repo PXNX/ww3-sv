@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Cartoon of The Jacket, a bald tech boss in round glasses and a black leather jacket, sulking under a small rain cloud">
+	<!-- The Jacket: an invented caricature of a type, not a real person. Flat colours, thick outlines -->
+	<rect width="200" height="200" fill="#7D8798"/>
+	<circle cx="100" cy="112" r="84" fill="#6B7587"/>
+	<g transform="translate(14 22) scale(1.5)" stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+		<path d="M4 142 Q8 112 42 108 L78 108 Q112 112 116 142 Z" fill="#1B1B1F"/>
+		<path d="M48 109 L60 126 L72 109 Z" fill="#FFFFFF" stroke-width="3"/>
+		<path d="M36 100 L58 128 L42 133 L26 114 Z" fill="#2B2B33" stroke-width="3"/>
+		<path d="M84 100 L62 128 L78 133 L94 114 Z" fill="#2B2B33" stroke-width="3"/>
+		<path d="M60 130 L60 146" fill="none" stroke="#8A8A94" stroke-width="2.5"/>
+		<ellipse cx="17" cy="72" rx="7" ry="10" fill="#F2C9A0"/>
+		<ellipse cx="103" cy="72" rx="7" ry="10" fill="#F2C9A0"/>
+		<ellipse cx="60" cy="68" rx="43" ry="44" fill="#F2C9A0"/>
+		<ellipse cx="21" cy="62" rx="5" ry="10" fill="#B9BDC6" stroke-width="3"/>
+		<ellipse cx="99" cy="62" rx="5" ry="10" fill="#B9BDC6" stroke-width="3"/>
+		<path d="M24 84 Q60 118 96 84 Q92 102 60 110 Q28 102 24 84 Z" fill="#6B6B73" stroke="none"/>
+		<path d="M33 66 L19 64 M87 66 L101 64" fill="none" stroke-width="3"/>
+		<circle cx="42" cy="70" r="10" fill="#FFF3C4" stroke-width="3.5"/>
+		<circle cx="78" cy="70" r="10" fill="#FFF3C4" stroke-width="3.5"/>
+		<path d="M52 69 L68 69" fill="none" stroke-width="3.5"/>
+		<circle cx="43" cy="74" r="3" fill="#111" stroke="none"/>
+		<circle cx="77" cy="74" r="3" fill="#111" stroke="none"/>
+		<path d="M30 60 L53 52 M67 52 L90 60" fill="none" stroke-width="3.5"/>
+		<path d="M60 74 L57 84 L63 84" fill="none" stroke-width="3"/>
+		<path d="M46 104 Q60 92 74 104" fill="none"/>
+		<path d="M106 46 Q113 58 106 63 Q99 58 106 46 Z" fill="#4FA8D8" stroke-width="3"/>
+		<path d="M30 14 Q24 -2 42 -2 Q50 -12 64 -4 Q82 -10 88 6 Q102 6 98 18 Q96 24 86 22 L38 22 Q26 24 30 14 Z" fill="#B8BFCC" stroke-width="3.5"/>
+		<path d="M44 28 L41 36 M62 28 L59 36 M80 28 L77 36" fill="none" stroke="#4FA8D8" stroke-width="3.5"/>
+	</g>
+</svg>

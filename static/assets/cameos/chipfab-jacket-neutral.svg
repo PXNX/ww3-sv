@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Cartoon of The Jacket, a bald tech boss in round glasses and a black leather jacket, looking calm">
+	<!-- The Jacket: an invented caricature of a type, not a real person. Flat colours, thick outlines -->
+	<rect width="200" height="200" fill="#AEB4BE"/>
+	<circle cx="100" cy="104" r="84" fill="#C9CED6"/>
+	<g transform="translate(14 14) scale(1.5)" stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+		<path d="M6 142 Q10 106 44 102 L76 102 Q110 106 114 142 Z" fill="#1B1B1F"/>
+		<path d="M46 103 L60 124 L74 103 Z" fill="#FFFFFF" stroke-width="3"/>
+		<path d="M40 103 L58 126 L44 131 L30 112 Z" fill="#2B2B33" stroke-width="3"/>
+		<path d="M80 103 L62 126 L76 131 L90 112 Z" fill="#2B2B33" stroke-width="3"/>
+		<path d="M60 128 L60 144" fill="none" stroke="#8A8A94" stroke-width="2.5"/>
+		<path d="M16 124 Q18 114 28 110" fill="none" stroke="#FFFFFF" stroke-width="3" opacity="0.45"/>
+		<path d="M104 124 Q102 114 92 110" fill="none" stroke="#FFFFFF" stroke-width="3" opacity="0.45"/>
+		<ellipse cx="17" cy="68" rx="7" ry="10" fill="#F2C9A0"/>
+		<ellipse cx="103" cy="68" rx="7" ry="10" fill="#F2C9A0"/>
+		<ellipse cx="60" cy="66" rx="43" ry="44" fill="#F2C9A0"/>
+		<ellipse cx="21" cy="58" rx="5" ry="10" fill="#B9BDC6" stroke-width="3"/>
+		<ellipse cx="99" cy="58" rx="5" ry="10" fill="#B9BDC6" stroke-width="3"/>
+		<path d="M24 82 Q60 116 96 82 Q92 100 60 108 Q28 100 24 82 Z" fill="#6B6B73" stroke="none"/>
+		<path d="M33 62 L19 60 M87 62 L101 60" fill="none" stroke-width="3"/>
+		<circle cx="42" cy="66" r="10" fill="#FFF3C4" stroke-width="3.5"/>
+		<circle cx="78" cy="66" r="10" fill="#FFF3C4" stroke-width="3.5"/>
+		<path d="M52 65 L68 65" fill="none" stroke-width="3.5"/>
+		<circle cx="43" cy="67" r="2.8" fill="#111" stroke="none"/>
+		<circle cx="77" cy="67" r="2.8" fill="#111" stroke="none"/>
+		<path d="M31 50 L53 50 M67 50 L89 50" fill="none" stroke-width="3.5"/>
+		<path d="M60 70 L57 80 L63 80" fill="none" stroke-width="3"/>
+		<path d="M47 94 Q60 98 73 91" fill="none"/>
+	</g>
+</svg>
