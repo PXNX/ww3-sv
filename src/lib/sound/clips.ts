@@ -16,7 +16,8 @@ export type ClipId =
 	| 'fart'
 	| 'fake-news'
 	| 'welcome-to-ukraine'
-	| 'putin-laugh';
+	| 'putin-laugh'
+	| 'drone-fpv';
 
 const DIRECTORY = '/assets/sounds';
 
@@ -31,7 +32,8 @@ const CLIP_FILES: Record<ClipId, string> = {
 	fart: 'fart.wav',
 	'fake-news': 'fake-news.wav',
 	'welcome-to-ukraine': 'welcome-to-ukraine.mp3',
-	'putin-laugh': 'putin-laugh.mp3'
+	'putin-laugh': 'putin-laugh.mp3',
+	'drone-fpv': 'drone-fpv.mp3'
 };
 
 const buffers = new Map<AudioContext, Map<ClipId, Promise<AudioBuffer>>>();
@@ -80,6 +82,42 @@ export function playClip(
 			}
 			source.connect(envelope).connect(dest);
 			source.start(0, 0, length);
+		})
+		.catch(() => {
+			// Best-effort: a missing or undecodable clip should never break gameplay
+		});
+}
+
+/**
+ * Plays just a stretch of a longer recording, fading in and out so the cut points don't click. The
+ * start is picked at random within `startRange` (seconds into the clip), so repeats differ.
+ */
+export function playClipSlice(
+	ctx: AudioContext,
+	dest: AudioNode,
+	id: ClipId,
+	startRange: readonly [number, number],
+	length: number,
+	gain: number
+): void {
+	loadClip(ctx, id)
+		.then((buffer) => {
+			const [from, to] = startRange;
+			const offset = Math.min(
+				from + Math.random() * (to - from),
+				Math.max(0, buffer.duration - length)
+			);
+			const fade = Math.min(0.08, length / 3);
+			const now = ctx.currentTime;
+			const source = ctx.createBufferSource();
+			source.buffer = buffer;
+			const envelope = ctx.createGain();
+			envelope.gain.setValueAtTime(0, now);
+			envelope.gain.linearRampToValueAtTime(gain, now + fade);
+			envelope.gain.setValueAtTime(gain, now + length - fade);
+			envelope.gain.linearRampToValueAtTime(0, now + length);
+			source.connect(envelope).connect(dest);
+			source.start(0, offset, length);
 		})
 		.catch(() => {
 			// Best-effort: a missing or undecodable clip should never break gameplay

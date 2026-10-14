@@ -4,8 +4,8 @@
  * flavor fits the moment, so a shootdown "boss destroyed" and a merge "mega tanker" can share the
  * same triumphant chime without the catalog growing one entry per event per mode.
  */
-import { playClip, playRandomClip } from './clips';
-import { noise, sequence, tone, whine } from './synth';
+import { playClip, playClipSlice, playRandomClip } from './clips';
+import { noise, sequence, tone } from './synth';
 
 /** Seconds the sung "Welcome to Ukraine" fades out over, so the recording doesn't end abruptly */
 const WELCOME_FADE_OUT = 2;
@@ -637,37 +637,14 @@ export const SOUNDS: Record<SoundId, SoundEffect> = {
 		}
 	},
 
-	// An FPV drone close behind: the thin, high electric whine of four small motors, wavering a
-	// little as it holds station. Intensity (how near the drone is) lifts the pitch and the volume.
-	'drone-buzz': (ctx, dest, intensity) => {
-		const pitch = 520 + intensity * 330;
-		whine(ctx, dest, {
-			frequency: pitch,
-			glideTo: pitch * (1 + (Math.random() - 0.5) * 0.08),
-			duration: 0.6,
-			gain: 0.035 + intensity * 0.075
-		});
-	},
+	// A recorded FPV drone (a DJI Avata flying past), for the one chasing the runner: a slice of the
+	// steady stretch of the recording. Intensity (how near the drone is) makes it louder.
+	'drone-buzz': (ctx, dest, intensity) =>
+		playClipSlice(ctx, dest, 'drone-fpv', [10.4, 11.8], 0.9, 0.25 + intensity * 0.6),
 
-	// A drone maneuvering: the whine screams up as the motors throttle hard, then drops away again.
-	// Intensity (how close the drone is) makes it higher and louder.
-	'drone-brzzz': (ctx, dest, intensity) => {
-		const low = 560 + intensity * 300;
-		const high = low * 1.9;
-		whine(ctx, dest, {
-			frequency: low,
-			glideTo: high,
-			duration: 0.2,
-			gain: 0.05 + intensity * 0.09
-		});
-		whine(ctx, dest, {
-			frequency: high,
-			glideTo: low * 0.85,
-			duration: 0.3,
-			gain: 0.045 + intensity * 0.08,
-			delay: 0.18
-		});
-	},
+	// A drone maneuvering: the slice of the recording where it screams past and its pitch swings
+	'drone-brzzz': (ctx, dest, intensity) =>
+		playClipSlice(ctx, dest, 'drone-fpv', [3.9, 4.2], 1, 0.35 + intensity * 0.6),
 
 	// A cat's hiss: a long airy "sshh" with a spit at the start. Intensity makes it louder.
 	'cat-hiss': (ctx, dest, intensity) => {
