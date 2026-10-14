@@ -61,7 +61,13 @@
 					const col = index % board.size;
 					// Ripple outwards from the piece that completed the line
 					const distance = Math.hypot(row - feedback.origin[0], col - feedback.origin[1]);
-					return { index, row, col, kind: feedback.kinds[order], delay: Math.round(distance * RIPPLE_MS) };
+					return {
+						index,
+						row,
+						col,
+						kind: feedback.kinds[order],
+						delay: Math.round(distance * RIPPLE_MS)
+					};
 				})
 	);
 	const clearingByCell = $derived(new Map(clearing.map((entry) => [entry.index, entry])));

@@ -132,6 +132,7 @@
 	/** Pixels a finger on the jump button has to slide down to turn into a slam */
 	const SWIPE_SLAM_PX = 28;
 	/** Where each finger on the jump button went down */
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- bookkeeping only, never rendered
 	const jumpStartY = new Map<number, number>();
 
 	function onButtonDown(event: PointerEvent, action: Action) {
