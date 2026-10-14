@@ -5,9 +5,9 @@
  */
 
 /** Characters revealed per second when letters appear one by one */
-export const LETTERS_PER_SECOND = 34;
+export const LETTERS_PER_SECOND = 70;
 /** Words revealed per second for scripts that join */
-export const WORDS_PER_SECOND = 5;
+export const WORDS_PER_SECOND = 8;
 
 /** Whether a locale writes in a joining script, which must be revealed by whole words */
 export function revealsByWord(locale: string): boolean {

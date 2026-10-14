@@ -1,7 +1,7 @@
 /*
  * The five cats of a ritual. Every cat differs from the others in each trait the riddle can
- * mention (coat, name, purr pitch and personality), so any one of them is enough to point at a
- * single cat.
+ * mention (coat, look, name, purr pitch and personality), and exactly one of them is possessed, so
+ * any one of those is enough to point at a single cat.
  */
 import { shuffle, type Random } from '#lib/game/random.js';
 import { CAT_COUNT } from './config';
@@ -13,8 +13,9 @@ export const COATS = ['black', 'ginger', 'white', 'grey', 'tabby'] as const;
 export type Coat = (typeof COATS)[number];
 
 /**
- * How a cat looks apart from its coat: purely for the eye, so every cat is easy to tell apart at a
- * glance. It says nothing about the cat's personality, which has to be found out by watching.
+ * How a cat looks apart from its coat, so every cat is easy to tell apart at a glance. The riddle
+ * can name it ("the cat in the top hat"); it says nothing about the cat's personality, which has to
+ * be found out by watching.
  */
 export const QUIRKS = ['fat', 'tophat', 'crazy', 'glasses', 'crown'] as const;
 export type Quirk = (typeof QUIRKS)[number];
@@ -42,6 +43,8 @@ export interface CatProfile {
 	coat: Coat;
 	personality: Personality;
 	quirk: Quirk;
+	/** A spirit has taken this cat: glowing red eyes and a dark aura; exactly one cat in the room */
+	possessed: boolean;
 	/** 0 for the deepest purr to 4 for the highest; every cat has a different one */
 	purrRank: number;
 }
@@ -69,12 +72,14 @@ export function generateCats(random: Random): CatProfile[] {
 		random,
 		Array.from({ length: CAT_COUNT }, (_, rank) => rank)
 	);
+	const possessed = Math.floor(random() * CAT_COUNT);
 	return names.map((name, id) => ({
 		id,
 		name,
 		coat: coats[id],
 		personality: personalities[id],
 		quirk: quirks[id],
+		possessed: id === possessed,
 		purrRank: ranks[id]
 	}));
 }

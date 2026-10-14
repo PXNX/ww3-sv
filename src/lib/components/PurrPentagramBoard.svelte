@@ -30,9 +30,14 @@
 
 	onMount(() => {
 		const stopHidden = onAppHidden(() => game.pause());
+		// Another tab or app: the finale music must not play on unheard
+		const onVisibility = () =>
+			document.visibilityState === 'hidden' ? game.suspendAudio() : game.resumeAudio();
+		document.addEventListener('visibilitychange', onVisibility);
 		return () => {
 			loop.pause();
 			stopHidden();
+			document.removeEventListener('visibilitychange', onVisibility);
 			game.pointerCancel();
 		};
 	});
@@ -65,9 +70,25 @@
 		return result;
 	});
 
-	/** Colour, width and length of one line: chalk-gold while drawing, burning red-violet in the finale */
+	const CHALK = '#ffd45e';
+	const PINK = '#ff4fa3';
+
+	/**
+	 * Colour, width and length of one line: chalk-gold while drawing, burning pink in the finale. The
+	 * stroke that closes the star is pink from the moment it is drawn, since it is the one that sets
+	 * the ritual off.
+	 */
 	function lineLook(line: { from: Point; to: Point }, index: number) {
-		if (!stage) return { ...line, color: '#ffd45e', width: 7, opacity: 1, glow: 'line-glow' };
+		const closing = ritual.closed && index === lines.length - 1;
+		if (!stage) {
+			return {
+				...line,
+				color: closing ? PINK : CHALK,
+				width: closing ? 9 : 7,
+				opacity: 1,
+				glow: closing ? 'star-glow' : 'line-glow'
+			};
+		}
 		const burning = index < stage.litLines;
 		const growing = stage.igniting?.line === index ? stage.igniting.progress : 0;
 		const length = burning ? 1 : growing;
@@ -78,9 +99,9 @@
 				x: line.from.x + (line.to.x - line.from.x) * length,
 				y: line.from.y + (line.to.y - line.from.y) * length
 			},
-			color: burning ? '#ff4fa3' : growing > 0 ? '#ffb3d9' : '#ffd45e',
+			color: burning ? PINK : growing > 0 ? '#ffb3d9' : closing ? PINK : CHALK,
 			width: burning ? 9 + 3 * stage.breath : 7,
-			opacity: burning ? pulse : growing > 0 ? 1 : 0.28,
+			opacity: burning ? pulse : growing > 0 ? 1 : closing ? 0.6 : 0.28,
 			glow: burning || growing > 0 ? 'star-glow' : 'line-glow'
 		};
 	}
@@ -208,11 +229,11 @@
 				<feGaussianBlur stdDeviation="3.5" result="blur" />
 				<feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
 			</filter>
-			<filter id="line-glow" x="-10%" y="-10%" width="120%" height="120%">
+			<filter id="line-glow" filterUnits="userSpaceOnUse" x="0" y="0" width={FIELD} height={FIELD}>
 				<feGaussianBlur stdDeviation="4" result="blur" />
 				<feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
 			</filter>
-			<filter id="star-glow" x="-10%" y="-10%" width="120%" height="120%">
+			<filter id="star-glow" filterUnits="userSpaceOnUse" x="0" y="0" width={FIELD} height={FIELD}>
 				<feGaussianBlur stdDeviation="10" result="blur" />
 				<feMerge>
 					<feMergeNode in="blur" /><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" />

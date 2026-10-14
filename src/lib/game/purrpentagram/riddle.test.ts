@@ -5,13 +5,14 @@ import { CAT_COUNT } from './config';
 import { seatPosition, starSeat } from './geometry';
 import {
 	assignSeats,
-	CLUE_KINDS,
 	cluePointsAt,
 	generateRiddle,
 	isSolved,
+	LEARNED_KINDS,
 	TRAIT_IDS,
 	TRAIT_OF,
 	validateRiddle,
+	VISIBLE_KINDS,
 	type Clue
 } from './riddle';
 
@@ -26,6 +27,7 @@ describe('generateCats', () => {
 			expect(new Set(cats.map((cat) => cat.coat)).size).toBe(CAT_COUNT);
 			expect(new Set(cats.map((cat) => cat.personality)).size).toBe(CAT_COUNT);
 			expect(new Set(cats.map((cat) => cat.quirk)).size).toBe(CAT_COUNT);
+			expect(cats.filter((cat) => cat.possessed)).toHaveLength(1);
 			expect(cats.map((cat) => cat.purrRank).sort()).toEqual([0, 1, 2, 3, 4]);
 			expect(cats.map((cat) => cat.id)).toEqual([0, 1, 2, 3, 4]);
 		}
@@ -51,13 +53,17 @@ describe('the riddle validator', () => {
 		}
 	});
 
-	it('visits every cat once and mixes all four kinds of clue', () => {
+	it('visits every cat once, with a name, a purr and a habit and two different looks', () => {
 		for (const seed of SEEDS) {
 			const random = createRandom(seed);
 			const cats = generateCats(random);
 			const riddle = generateRiddle(cats, random);
 			expect([...riddle.target].sort()).toEqual([0, 1, 2, 3, 4]);
-			expect(new Set(riddle.clues.map((clue) => clue.kind))).toEqual(new Set(CLUE_KINDS));
+			const kinds = riddle.clues.map((clue) => clue.kind);
+			for (const kind of LEARNED_KINDS) expect(kinds.filter((k) => k === kind)).toHaveLength(1);
+			const looks = kinds.filter((kind) => VISIBLE_KINDS.includes(kind));
+			expect(looks).toHaveLength(2);
+			expect(new Set(looks).size).toBe(2);
 		}
 	});
 

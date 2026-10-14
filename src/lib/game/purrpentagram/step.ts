@@ -127,10 +127,6 @@ function startRoomEvent(state: RitualState, kind: RoomEvent, random: Random): Ri
 	for (const cat of state.cats) {
 		const result = reaction(cat.profile, kind);
 		cat.mood = clamp01(cat.mood + result.moodDelta);
-		const seen = { event: kind, animation: result.animation };
-		const known = cat.observed.findIndex((entry) => entry.event === kind);
-		if (known >= 0) cat.observed[known] = seen;
-		else cat.observed.push(seen);
 		if (result.animation === 'ignore') continue;
 		cat.motion = { kind: result.animation, remainingMs: result.durationMs };
 		// A startled cat has to be settled again from the start

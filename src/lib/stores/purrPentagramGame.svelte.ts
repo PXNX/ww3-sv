@@ -138,6 +138,8 @@ export class PurrPentagramGame {
 	}
 
 	start() {
+		// Whatever the last ritual's finale was playing ends with it
+		this.#mixer.stopFinale();
 		const seed = this.#seed();
 		this.#random = createRandom(seed);
 		this.state = createRitual(seed, this.#random);
@@ -264,6 +266,16 @@ export class PurrPentagramGame {
 			this.anchor = null;
 			this.#apply(connect(this.state, from, cat));
 		}
+	}
+
+	/** The player has left (another tab or app): no music or purrs in the background */
+	suspendAudio() {
+		this.#mixer.suspend();
+	}
+
+	/** The player is back */
+	resumeAudio() {
+		this.#mixer.resume();
 	}
 
 	/** Stops the sustained sound and releases the audio device; call when leaving the page */

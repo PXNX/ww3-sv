@@ -172,6 +172,32 @@ export class PurrMixer {
 		this.#schedule();
 	}
 
+	/** Fades the finale music out and gives the purrs their own bus back, for a new ritual */
+	stopFinale() {
+		clearInterval(this.#timer);
+		this.#timer = undefined;
+		const ctx = this.#ctx;
+		if (!ctx || !this.#musicBus || !this.#purrBus) return;
+		const now = ctx.currentTime;
+		this.#musicBus.gain.cancelScheduledValues(now);
+		this.#musicBus.gain.setValueAtTime(this.#musicBus.gain.value, now);
+		this.#musicBus.gain.linearRampToValueAtTime(0, now + 0.4);
+		this.#purrBus.gain.cancelScheduledValues(now);
+		this.#purrBus.gain.setValueAtTime(this.#purrBus.gain.value, now);
+		this.#purrBus.gain.linearRampToValueAtTime(1, now + 0.4);
+		this.#purrSend?.gain.setTargetAtTime(0, now, 0.2);
+	}
+
+	/** Holds all sound while the player is away (another tab or app) so nothing plays unheard */
+	suspend() {
+		if (this.#ctx?.state === 'running') void this.#ctx.suspend().catch(() => {});
+	}
+
+	/** Carries on after suspend() */
+	resume() {
+		if (!this.#stopped && this.#ctx?.state === 'suspended') void this.#ctx.resume();
+	}
+
 	/** Schedules every note that starts within the look-ahead window, looping the score forever */
 	#schedule() {
 		const ctx = this.#ctx;

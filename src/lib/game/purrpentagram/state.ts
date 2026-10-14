@@ -16,12 +16,6 @@ export interface Motion {
 	remainingMs: number;
 }
 
-/** A reaction the player has seen, kept in the notes */
-export interface Observation {
-	event: RoomEvent;
-	animation: Animation;
-}
-
 export interface CatState {
 	profile: CatProfile;
 	/** The pentagram point the cat sits on */
@@ -42,7 +36,6 @@ export interface CatState {
 	motion: Motion | null;
 	nameShown: boolean;
 	pitchShown: boolean;
-	observed: Observation[];
 }
 
 export interface RoomEventState {
@@ -97,8 +90,7 @@ export function createCatState(profile: CatProfile, seat: number): CatState {
 		petMs: 0,
 		motion: null,
 		nameShown: false,
-		pitchShown: false,
-		observed: []
+		pitchShown: false
 	};
 }
 

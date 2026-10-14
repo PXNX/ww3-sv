@@ -24,17 +24,17 @@ export const KEY_PET_MS = 160;
 // Mood and happiness (both 0 to 1)
 export const PURR_RISE_PER_S = 1.3;
 export const PURR_FALL_PER_S = 0.75;
-export const HAPPINESS_PER_S = 0.085;
+export const HAPPINESS_PER_S = 0.1;
 export const CALM_PER_S = 0.42;
 export const MOOD_DRIFT_PER_S = 0.02;
 /** Below this a cat is too upset to be picked for the star stroke until it has been petted */
 export const UNSETTLED_MOOD = 0.35;
 /** A hiding cat comes out again once its mood is back above this */
 export const HIDE_RECOVER_MOOD = 0.5;
-/** Happiness at which the cat shows its name tag */
-export const NAME_HAPPINESS = 0.45;
-/** Happiness at which the purr turns steady and the pitch gauge appears */
-export const PITCH_HAPPINESS = 0.8;
+/** Happiness at which the cat shows its name tag: its first heart */
+export const NAME_HAPPINESS = 1 / 3;
+/** Happiness at which the purr turns steady and the pitch gauge appears: its second heart */
+export const PITCH_HAPPINESS = 2 / 3;
 
 // Room events
 export const FIRST_EVENT_MS = 5500;

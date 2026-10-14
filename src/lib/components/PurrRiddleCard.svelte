@@ -4,10 +4,10 @@
 	join), and all at once with reduced motion. Screen readers get the whole riddle straight away.
 
 	The player's place in the riddle shows: the lines already joined get a tick, and the line to do
-	next is marked and says how to find that cat out (look, pet it, listen or watch the room).
+	next is marked.
 -->
 <script lang="ts">
-	import type { ClueKind, Riddle } from '#lib/game/purrpentagram/riddle.js';
+	import type { Riddle } from '#lib/game/purrpentagram/riddle.js';
 	import { revealDurationMs, revealLines, revealsByWord } from '#lib/game/purrpentagram/reveal.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
@@ -27,14 +27,6 @@
 		/** The star is closed: nothing is left to do */
 		closed?: boolean;
 	} = $props();
-
-	/** How to find out which cat a clue means: the line to do next says it */
-	const HINTS: Record<ClueKind, () => string> = {
-		coat: m.purr_hint_coat,
-		name: m.purr_hint_name,
-		purr: m.purr_hint_purr,
-		trait: m.purr_hint_trait
-	};
 
 	const lines = $derived(riddle.clues.map((clue, step) => stepText(step, clue)));
 	const byWord = revealsByWord(getLocale());
@@ -91,16 +83,8 @@
 				<span class="min-w-0 flex-1">
 					<span class="sr-only">{lines[index]}</span>
 					<span aria-hidden="true">{line.shown}<span class="opacity-0">{line.hidden}</span></span>
-					{#if next}
-						<span class="block text-xs font-normal opacity-80 sm:text-sm">
-							{HINTS[riddle.clues[index].kind]()}
-						</span>
-					{/if}
 				</span>
 			</li>
 		{/each}
 	</ol>
-	{#if !closed && joined >= riddle.clues.length}
-		<p dir="auto" class="text-center text-xs font-bold sm:text-sm">{m.purr_hint_close()}</p>
-	{/if}
 </section>

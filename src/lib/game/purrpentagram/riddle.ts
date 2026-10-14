@@ -1,12 +1,12 @@
 /*
  * The riddle: five clues, one per step of the ritual, each pointing at exactly one cat. The
- * clues are facts the player can find out in the room: the coat they see, the name on a tag a
- * happy cat shows, how deep its purr is (heard, and shown once the cat is happy) and how it reacts
- * to what happens in the room. validateRiddle() checks the whole thing, so a generated riddle can
+ * clues are facts the player can find out in the room: what the cat looks like (its coat, what it
+ * wears, whether it is possessed), the name on a tag a happy cat shows, how deep its purr is (heard,
+ * and shown once the cat is happy) and how it reacts to what happens in the room. validateRiddle() checks the whole thing, so a generated riddle can
  * never be ambiguous, and isSolved() is the single test for "the ritual is right".
  */
-import { pickOne, shuffle, type Random } from '#lib/game/random.js';
-import type { CatProfile, Coat, Personality } from './cats';
+import { shuffle, type Random } from '#lib/game/random.js';
+import type { CatProfile, Coat, Personality, Quirk } from './cats';
 import { CAT_COUNT } from './config';
 import { starSeat } from './geometry';
 import { reaction, type Animation, type RoomEvent } from './reactions';
@@ -40,13 +40,26 @@ export const TRAIT_OF: Record<Personality, TraitId> = {
 
 export type Clue =
 	| { kind: 'coat'; coat: Coat }
+	| { kind: 'quirk'; quirk: Quirk }
+	| { kind: 'possessed' }
 	| { kind: 'name'; name: string }
 	/** 0 for the deepest purr of the five, 4 for the highest */
 	| { kind: 'purr'; rank: number }
 	| { kind: 'trait'; trait: TraitId };
 
 export type ClueKind = Clue['kind'];
-export const CLUE_KINDS: readonly ClueKind[] = ['coat', 'name', 'purr', 'trait'];
+export const CLUE_KINDS: readonly ClueKind[] = [
+	'coat',
+	'quirk',
+	'possessed',
+	'name',
+	'purr',
+	'trait'
+];
+/** The clues that need the player to pet, listen and watch: every riddle has one of each */
+export const LEARNED_KINDS: readonly ClueKind[] = ['name', 'purr', 'trait'];
+/** The clues that can be read off the cat at a glance: a riddle has two different ones */
+export const VISIBLE_KINDS: readonly ClueKind[] = ['coat', 'quirk', 'possessed'];
 
 export interface Riddle {
 	/** Clue k points at the cat that is joined k-th in the ritual */
@@ -65,6 +78,10 @@ export function catMatchesClue(cat: CatProfile, clue: Clue, cats: readonly CatPr
 	switch (clue.kind) {
 		case 'coat':
 			return cat.coat === clue.coat;
+		case 'quirk':
+			return cat.quirk === clue.quirk;
+		case 'possessed':
+			return cat.possessed;
 		case 'name':
 			return cat.name === clue.name;
 		case 'purr':
@@ -85,6 +102,10 @@ function clueFor(kind: ClueKind, cat: CatProfile, cats: readonly CatProfile[]): 
 	switch (kind) {
 		case 'coat':
 			return { kind, coat: cat.coat };
+		case 'quirk':
+			return { kind, quirk: cat.quirk };
+		case 'possessed':
+			return { kind };
 		case 'name':
 			return { kind, name: cat.name };
 		case 'purr':
@@ -96,14 +117,22 @@ function clueFor(kind: ClueKind, cat: CatProfile, cats: readonly CatProfile[]): 
 
 /**
  * A fresh riddle: the cats are put in a random ritual order and each step gets a clue of its own
- * kind, with every kind used at least once so the player has to pet, listen and watch.
+ * kind: a name, a purr and a habit, so the player has to pet, listen and watch, and two different
+ * looks.
  */
 export function generateRiddle(cats: readonly CatProfile[], random: Random): Riddle {
 	const target = shuffle(
 		random,
 		cats.map((cat) => cat.id)
 	);
-	const kinds = shuffle(random, [...CLUE_KINDS, pickOne(random, CLUE_KINDS)]);
+	const looks = shuffle(random, VISIBLE_KINDS).slice(0, 2);
+	const kinds = shuffle(random, [...LEARNED_KINDS, ...looks]);
+	// Only the possessed cat can be described as possessed, so that clue goes to its step
+	const possessedAt = kinds.indexOf('possessed');
+	if (possessedAt >= 0) {
+		const step = target.findIndex((id) => cats[id].possessed);
+		[kinds[possessedAt], kinds[step]] = [kinds[step], kinds[possessedAt]];
+	}
 	const clues = target.map((id, step) => clueFor(kinds[step], cats[id], cats));
 	return { clues, target };
 }

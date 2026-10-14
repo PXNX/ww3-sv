@@ -10,15 +10,16 @@
 	import GameShell from '#lib/components/GameShell.svelte';
 	import LivesBar from '#lib/components/LivesBar.svelte';
 	import PurrFinalePanel from '#lib/components/PurrFinalePanel.svelte';
-	import PurrNotes from '#lib/components/PurrNotes.svelte';
 	import PurrPentagramBoard from '#lib/components/PurrPentagramBoard.svelte';
 	import PurrRiddleCard from '#lib/components/PurrRiddleCard.svelte';
+	import SoundToggle from '#lib/components/SoundToggle.svelte';
 	import TutorialModal from '#lib/components/TutorialModal.svelte';
 	import { STARTING_LIVES } from '#lib/game/purrpentagram/config.js';
 	import { finaleStage } from '#lib/game/purrpentagram/finale.js';
 	import { totalHearts } from '#lib/game/purrpentagram/state.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
+	import { eventText } from '#lib/theme/purrText.js';
 	import { PurrPentagramGame, type NoticeKind } from '#lib/stores/purrPentagramGame.svelte.js';
 	import IconCandle from '~icons/lucide/flame';
 	import IconDim from '~icons/lucide/moon';
@@ -52,16 +53,9 @@
 		game.status === 'won' ? finaleStage(ritual.finaleMs, game.reducedMotion).banner : 0
 	);
 
-	const finale = $derived({
-		ritual,
-		banner,
-		calm: game.reducedMotion,
-		score: game.score,
-		best: game.best,
-		isNewBest: game.isNewBest,
-		modeName,
-		onAgain: () => game.start()
-	});
+	const won = $derived(game.status === 'won');
+	// The result sheet slides up once the star has burned and the banner is in
+	const sheetOpen = $derived(game.status === 'over' || (won && banner > 0));
 
 	const NOTICES: Record<NoticeKind, () => string> = {
 		mistake: m.purr_notice_mistake,
@@ -114,6 +108,10 @@
 					{#key game.notice.id}
 						<span class="pop-in inline-block">{NOTICES[game.notice.kind]()}</span>
 					{/key}
+				{:else if ritual.event && game.status === 'playing'}
+					{#key ritual.event.kind}
+						<span class="pop-in inline-block italic">{eventText(ritual.event.kind)}</span>
+					{/key}
 				{:else}
 					<span class="opacity-70">{m.purr_hud_hint()}</span>
 				{/if}
@@ -129,13 +127,8 @@
 		/>
 
 		<PurrPentagramBoard {game}>
-			<PurrFinalePanel part="banner" {...finale} />
+			<PurrFinalePanel {banner} calm={game.reducedMotion} />
 		</PurrPentagramBoard>
-
-		{#if game.status === 'won' && banner > 0}
-			<PurrFinalePanel part="results" {...finale} />
-		{/if}
-		<PurrNotes {ritual} />
 	</section>
 
 	<TutorialModal
@@ -174,14 +167,18 @@
 	</TutorialModal>
 
 	<GameOverModal
-		open={game.status === 'over'}
+		open={sheetOpen}
 		score={game.score}
 		mode="purrpentagram"
 		{modeName}
-		isNewBest={false}
-		title={m.purr_gameover_title()}
+		outcome={won ? 'won' : 'lost'}
+		isNewBest={won && game.isNewBest}
+		title={won ? m.purr_ritual_complete() : m.purr_gameover_title()}
 		onRetry={() => game.start()}
 	>
+		{#if won}
+			<p dir="auto" class="riddle-font mb-3 text-sm leading-snug">{m.purr_win_subtitle()}</p>
+		{/if}
 		<dl class="grid grid-cols-3 gap-2 font-display text-sm">
 			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
 				<dt class="font-bold">{m.purr_stat_time()}</dt>
@@ -198,5 +195,9 @@
 				<dd class="text-2xl font-bold tabular-nums">{totalHearts(ritual)}</dd>
 			</div>
 		</dl>
+		{#if won}
+			<!-- The finale music is the point: the sheet covers the board, so it carries the mute button -->
+			<div class="mt-3 flex justify-center"><SoundToggle /></div>
+		{/if}
 	</GameOverModal>
 </GameShell>

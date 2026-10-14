@@ -1,10 +1,10 @@
 /*
- * The translated words of Purr Pentagram: which message each coat, clue, room event and reaction
+ * The translated words of Purr Pentagram: which message each coat, clue and room event
  * uses. Kept in one place so the riddle, the notes and the screen-reader labels all say the same.
  */
 import { m } from '#lib/paraglide/messages.js';
-import type { Coat } from '#lib/game/purrpentagram/cats.js';
-import type { Animation, RoomEvent } from '#lib/game/purrpentagram/reactions.js';
+import type { Coat, Quirk } from '#lib/game/purrpentagram/cats.js';
+import type { RoomEvent } from '#lib/game/purrpentagram/reactions.js';
 import type { Clue, TraitId } from '#lib/game/purrpentagram/riddle.js';
 
 const COAT: Record<Coat, () => string> = {
@@ -13,6 +13,23 @@ const COAT: Record<Coat, () => string> = {
 	white: m.purr_coat_white,
 	grey: m.purr_coat_grey,
 	tabby: m.purr_coat_tabby
+};
+
+/** The coat as the riddle puts it: a line of verse rather than a plain colour */
+const COAT_CLUE: Record<Coat, () => string> = {
+	black: m.purr_clue_coat_black,
+	ginger: m.purr_clue_coat_ginger,
+	white: m.purr_clue_coat_white,
+	grey: m.purr_clue_coat_grey,
+	tabby: m.purr_clue_coat_tabby
+};
+
+const QUIRK: Record<Quirk, () => string> = {
+	fat: m.purr_clue_quirk_fat,
+	tophat: m.purr_clue_quirk_tophat,
+	crazy: m.purr_clue_quirk_crazy,
+	glasses: m.purr_clue_quirk_glasses,
+	crown: m.purr_clue_quirk_crown
 };
 
 const TRAIT: Record<TraitId, () => string> = {
@@ -40,16 +57,6 @@ const EVENT: Record<RoomEvent, () => string> = {
 	creak: m.purr_event_creak
 };
 
-const REACTION: Record<Animation, () => string> = {
-	ignore: m.purr_reaction_ignore,
-	flinch: m.purr_reaction_flinch,
-	hide: m.purr_reaction_hide,
-	chase: m.purr_reaction_chase,
-	hiss: m.purr_reaction_hiss,
-	stare: m.purr_reaction_stare,
-	doze: m.purr_reaction_doze
-};
-
 const STEP: readonly (() => string)[] = [
 	m.purr_step_1,
 	m.purr_step_2,
@@ -58,14 +65,18 @@ const STEP: readonly (() => string)[] = [
 	m.purr_step_5
 ];
 
-/** "the black cat" */
+/** "the black cat", for the label of a cat */
 export const coatText = (coat: Coat): string => COAT[coat]();
 
-/** The words of one clue, such as "the cat named Ember" */
+/** The words of one clue, such as "the one who answers to the name Ember" */
 export function clueText(clue: Clue): string {
 	switch (clue.kind) {
 		case 'coat':
-			return COAT[clue.coat]();
+			return COAT_CLUE[clue.coat]();
+		case 'quirk':
+			return QUIRK[clue.quirk]();
+		case 'possessed':
+			return m.purr_clue_possessed();
 		case 'name':
 			return m.purr_clue_name({ name: clue.name });
 		case 'purr':
@@ -75,9 +86,8 @@ export function clueText(clue: Clue): string {
 	}
 }
 
-/** "First: the black cat" */
+/** "First, to wake the circle: the cat in a coat of midnight" */
 export const stepText = (step: number, clue: Clue): string =>
 	m.purr_riddle_line({ step: STEP[step](), clue: clueText(clue) });
 
 export const eventText = (event: RoomEvent): string => EVENT[event]();
-export const reactionText = (animation: Animation): string => REACTION[animation]();
