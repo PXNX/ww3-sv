@@ -16,6 +16,8 @@ export default defineConfig({
 	},
 	test: {
 		include: ['src/**/*.test.ts'],
-		environment: 'node'
+		environment: 'node',
+		// Heavy suites (chess AI, maze generation) exceed the 5 s default when the machine is busy
+		testTimeout: 30000
 	}
 });
