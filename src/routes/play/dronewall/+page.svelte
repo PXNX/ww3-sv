@@ -105,13 +105,14 @@
 		{/if}
 	{/snippet}
 
-	<!-- The HUD, the playfield and the build panel share one width, as wide as the height allows -->
+	<!-- The HUD and the playfield share one width: the whole width on a phone; on a wide screen up
+		to 3:4 of the height, the field then scrolls a little when it is taller than the space left -->
 	<section
-		class="mx-auto flex w-full flex-col items-center gap-2"
-		style:max-width="max(17rem, min(100%, calc((100dvh - 16.8rem) * 0.5625)))"
+		class="mx-auto flex min-h-0 w-full flex-1 flex-col items-center gap-2"
+		style:max-width="max(17rem, min(100%, calc((100dvh - 16.8rem) * 0.75)))"
 	>
 		<div
-			class="flex w-full items-center gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1 shadow-[3px_3px_0_var(--color-ink)]"
+			class="flex w-full shrink-0 items-center gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1 shadow-[3px_3px_0_var(--color-ink)]"
 		>
 			<!-- One button, three speeds: x1, x2, x4 -->
 			<button
@@ -138,7 +139,7 @@
 		</div>
 
 		<!-- The weather (the forecast while building) and the powers the elite defenses unlock -->
-		<div class="flex w-full items-stretch gap-2">
+		<div class="flex w-full shrink-0 items-stretch gap-2">
 			<p
 				class="flex min-h-9 min-w-0 flex-1 items-center gap-1.5 rounded-[10px_6px_12px_8px] border-3 border-ink bg-paper px-2 py-0.5 shadow-[2px_2px_0_var(--color-ink)]"
 				aria-label={m.dronewall_weather_now({

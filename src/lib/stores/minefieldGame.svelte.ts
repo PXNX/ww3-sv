@@ -76,6 +76,11 @@ export const bestParts = (level: DifficultyId, kind: 'score' | 'time') => [
 	kind
 ];
 
+/** Whether the screen is taller than wide; false outside the browser */
+function isPortraitScreen(): boolean {
+	return typeof window !== 'undefined' && window.innerHeight > window.innerWidth;
+}
+
 export class MinefieldGame {
 	difficultyId: DifficultyId = $state(DEFAULT_DIFFICULTY);
 	board: Board = $state.raw(createBoard(1, 1));
@@ -117,9 +122,17 @@ export class MinefieldGame {
 		this.newGame(this.#store.read(DIFFICULTY_KEY, DEFAULT_DIFFICULTY, isDifficultyId));
 	}
 
-	/** Starts a fresh board; the chosen difficulty is remembered for next time */
-	newGame(difficultyId: DifficultyId = this.difficultyId) {
-		const { columns, rows, mineDensity, submarines } = DIFFICULTIES[difficultyId];
+	/**
+	 * Starts a fresh board; the chosen difficulty is remembered for next time. On a portrait screen
+	 * the strait is turned upright (more rows than columns, same cells and mines), so the board
+	 * fills the height of a phone with bigger cells.
+	 */
+	newGame(difficultyId: DifficultyId = this.difficultyId, portrait: boolean = isPortraitScreen()) {
+		const level = DIFFICULTIES[difficultyId];
+		const { mineDensity, submarines } = level;
+		const wide = level.columns >= level.rows;
+		const columns = portrait && wide ? level.rows : level.columns;
+		const rows = portrait && wide ? level.columns : level.rows;
 		if (difficultyId !== this.difficultyId) this.#store.write(DIFFICULTY_KEY, difficultyId);
 		this.difficultyId = difficultyId;
 		this.#random = createRandom(this.#seed());

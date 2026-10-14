@@ -6,11 +6,12 @@
  */
 import type { Input } from './player';
 
-export type Action = 'left' | 'right' | 'jump';
+export type Action = 'left' | 'right' | 'jump' | 'slam';
 
 export class HeldInput {
 	#held = new Map<Action, Set<string>>();
 	#jumpPressed = false;
+	#slamPressed = false;
 
 	/** A source (a pointer id or a key code) presses or releases an action */
 	set(source: string, action: Action, down: boolean) {
@@ -20,7 +21,8 @@ export class HeldInput {
 			this.#held.set(action, sources);
 		}
 		if (down) {
-			if (action === 'jump' && sources.size === 0 && !sources.has(source)) this.#jumpPressed = true;
+			if (sources.size === 0 && action === 'jump') this.#jumpPressed = true;
+			if (sources.size === 0 && action === 'slam') this.#slamPressed = true;
 			sources.add(source);
 		} else {
 			sources.delete(source);
@@ -31,13 +33,15 @@ export class HeldInput {
 		return (this.#held.get(action)?.size ?? 0) > 0;
 	}
 
-	/** The input for the next step; reading it uses up the "jump was pressed" edge */
+	/** The input for the next step; reading it uses up the "jump/slam was pressed" edges */
 	read(): Input {
 		const left = this.isDown('left');
 		const right = this.isDown('right');
 		const move = left === right ? 0 : right ? 1 : -1;
 		const input: Input = { move, jumpHeld: this.isDown('jump'), jumpPressed: this.#jumpPressed };
+		if (this.#slamPressed) input.slamPressed = true;
 		this.#jumpPressed = false;
+		this.#slamPressed = false;
 		return input;
 	}
 
@@ -45,6 +49,7 @@ export class HeldInput {
 	clear() {
 		this.#held.clear();
 		this.#jumpPressed = false;
+		this.#slamPressed = false;
 	}
 }
 
@@ -56,5 +61,7 @@ export const KEY_ACTIONS: Readonly<Record<string, Action>> = {
 	KeyD: 'right',
 	ArrowUp: 'jump',
 	KeyW: 'jump',
-	Space: 'jump'
+	Space: 'jump',
+	ArrowDown: 'slam',
+	KeyS: 'slam'
 };

@@ -36,7 +36,8 @@ export const TANKER_HALF_WIDTH = 0.27;
 // Visible field: three lanes plus a sandy bank on each side, portrait shaped
 export const SIDE_MARGIN = 0.25;
 export const FIELD_WIDTH = LANE_COUNT + 2 * SIDE_MARGIN;
-export const FIELD_HEIGHT = 6;
+/** Tall like a phone screen, so the strait fills the page and shows what is coming from far off */
+export const FIELD_HEIGHT = 8;
 /** Distance of the tanker's center above the bottom edge of the field */
 export const TANKER_OFFSET = 1.3;
 /** How far ahead of the tanker the player can see */

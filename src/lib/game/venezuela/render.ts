@@ -20,8 +20,9 @@ import {
 	drawSpikes,
 	drawStars
 } from './art';
-import { SQUASH_S, VIEW_H, VIEW_W } from './config';
+import { SLAM_RADIUS, SQUASH_S, TWIRL_S, VIEW_H, VIEW_W } from './config';
 import { tileAt } from './level';
+import { isSprinting } from './player';
 import { barrelBox, type World } from './world';
 
 const DISPLAY_FONT = "'Baloo 2', system-ui, sans-serif";
@@ -96,13 +97,19 @@ export type Effect =
 			durationMs: number;
 	  }
 	| { kind: 'puff'; x: number; y: number; ageMs: number; durationMs: number }
-	| { kind: 'ring'; x: number; y: number; ageMs: number; durationMs: number };
+	| { kind: 'ring'; x: number; y: number; ageMs: number; durationMs: number }
+	/** The slam's shockwave, spreading along the floor */
+	| { kind: 'shock'; x: number; y: number; ageMs: number; durationMs: number }
+	/** A little cloud of dust kicked up behind a sprint or a landing */
+	| { kind: 'dust'; x: number; y: number; ageMs: number; durationMs: number };
 
 export interface SceneExtras {
 	theme: number;
 	camX: number;
 	effects: readonly Effect[];
 	reducedMotion: boolean;
+	/** Tiles the whole view is shaken by right now, 0 for still */
+	shake?: number;
 }
 
 function mix(from: string, to: string, amount: number): string {
@@ -294,6 +301,28 @@ function drawEffects(ctx: CanvasRenderingContext2D, effects: readonly Effect[], 
 			ctx.fillStyle = '#ffffff';
 			ctx.fillText(effect.text, 0, 0);
 			ctx.restore();
+		} else if (effect.kind === 'shock') {
+			ctx.save();
+			ctx.globalAlpha = 1 - t;
+			ctx.lineWidth = 0.14 * (1 - t) + 0.03;
+			ctx.strokeStyle = '#ffffff';
+			ctx.beginPath();
+			ctx.ellipse(x, effect.y - 0.05, 0.4 + t * SLAM_RADIUS, 0.12 + t * 0.35, 0, Math.PI, 0);
+			ctx.stroke();
+			ctx.strokeStyle = INK;
+			ctx.lineWidth = 0.05;
+			ctx.beginPath();
+			ctx.ellipse(x, effect.y - 0.05, 0.2 + t * SLAM_RADIUS * 0.7, 0.08 + t * 0.25, 0, Math.PI, 0);
+			ctx.stroke();
+			ctx.restore();
+		} else if (effect.kind === 'dust') {
+			ctx.save();
+			ctx.globalAlpha = 0.7 * (1 - t);
+			ctx.fillStyle = '#f3e6c8';
+			ctx.beginPath();
+			ctx.arc(x, effect.y - 0.12 - t * 0.25, 0.1 + t * 0.18, 0, Math.PI * 2);
+			ctx.fill();
+			ctx.restore();
 		} else if (effect.kind === 'ring') {
 			ctx.save();
 			ctx.globalAlpha = 1 - t;
@@ -324,6 +353,13 @@ export function drawScene(ctx: CanvasRenderingContext2D, world: World, extras: S
 
 	drawBackdrop(ctx, theme, camX, time);
 
+	ctx.save();
+	if (extras.shake && !extras.reducedMotion) {
+		ctx.translate(
+			Math.sin(world.time * 97) * extras.shake,
+			Math.cos(world.time * 83) * extras.shake
+		);
+	}
 	ctx.save();
 	ctx.translate(-camX, 0);
 	drawTiles(ctx, world, theme, camX, time);
@@ -370,12 +406,16 @@ export function drawScene(ctx: CanvasRenderingContext2D, world: World, extras: S
 			speed: Math.min(1, Math.abs(player.vx) / 4),
 			airborne: !player.onGround,
 			rising: player.vy < 0,
-			hurt: world.invuln > 1.2
+			hurt: world.invuln > 1.2,
+			twirl: extras.reducedMotion || player.twirl === 0 ? 0 : 1 - player.twirl / TWIRL_S,
+			slam: player.slam,
+			sprint: player.onGround && isSprinting(player)
 		});
 	}
 	ctx.restore();
 
 	drawEffects(ctx, extras.effects, camX);
+	ctx.restore();
 	ctx.restore();
 }
 

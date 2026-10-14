@@ -264,3 +264,21 @@ describe('star rating', () => {
 		expect(starsFor(both)).toBe(1);
 	});
 });
+
+describe('slam and combos', () => {
+	it('a slam landing squashes the grounded goons nearby, and the combo makes each worth more', () => {
+		const world = worldOf('..P.e.e.............e........');
+		steps(world, 3);
+		world.player.x = 4.6;
+		world.player.y = 4;
+		world.player.onGround = false;
+		stepWorld(world, { ...NO_INPUT, slamPressed: true });
+		const events = steps(world, 60);
+		const stomps = events.filter((event) => event.type === 'stomp');
+		expect(types(events)).toContain('slamLand');
+		expect(stomps).toHaveLength(2);
+		expect(world.walkers.map((walker) => walker.alive)).toEqual([false, false, true]);
+		expect(world.score).toBe(SCORE_STOMP + 2 * SCORE_STOMP);
+		expect(world.combo).toBe(0);
+	});
+});

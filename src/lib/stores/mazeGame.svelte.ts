@@ -30,6 +30,11 @@ export type MazeNotice =
 	| { kind: 'wall' };
 
 /** Fewest steps per size; lower is better */
+/** Whether the screen is taller than wide; false outside the browser */
+function isPortraitScreen(): boolean {
+	return typeof window !== 'undefined' && window.innerHeight > window.innerWidth;
+}
+
 export function highscoreParts(size: SizeId): string[] {
 	return ['maze', size, 'steps'];
 }
@@ -87,10 +92,18 @@ export class MazeGame {
 		return this.#scores.get(highscoreParts(size));
 	}
 
-	/** Opens a fresh maze of a size; every run gets its own doors, offices and documents */
-	start(size: SizeId, seed: number = this.#newSeed()) {
+	/**
+	 * Opens a fresh maze of a size; every run gets its own doors, offices and documents. On a
+	 * portrait screen the building stands upright (more rows than columns, same number of offices),
+	 * so it fills the height of a phone instead of leaving half of it empty.
+	 */
+	start(size: SizeId, seed: number = this.#newSeed(), portrait: boolean = isPortraitScreen()) {
 		this.size = size;
-		this.maze = generateMaze(seed, SIZES[size]);
+		const config = SIZES[size];
+		this.maze = generateMaze(
+			seed,
+			portrait ? { ...config, width: config.height, height: config.width } : config
+		);
 		this.par = parSteps(this.maze);
 		this.restart();
 		this.screen = 'play';

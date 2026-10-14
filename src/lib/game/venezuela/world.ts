@@ -1,5 +1,7 @@
 /*
  * One level being played: the player, the goons, the helicopters, the barrels, hearts and score.
+ * Goons squashed one after another without touching the ground count as a combo and are worth more
+ * each, and a slam landing sends out a shockwave that squashes the grounded goons nearby.
  * stepWorld advances everything by one fixed step and returns what happened, so the store can
  * turn events into sounds and effects and the tests can check the rules without a browser.
  */
@@ -12,6 +14,7 @@ import {
 	SCORE_FLAG,
 	SCORE_PER_HEART,
 	SCORE_STOMP,
+	SLAM_RADIUS,
 	STARTING_HEARTS,
 	STEP
 } from './config';
@@ -31,10 +34,14 @@ export type HurtCause = 'goon' | 'heli' | 'hazard' | 'fall';
 
 export type WorldEvent =
 	| { type: 'jump' }
+	| { type: 'airJump' }
 	| { type: 'land' }
 	| { type: 'bump' }
+	| { type: 'sprint' }
+	| { type: 'slam' }
+	| { type: 'slamLand'; x: number; y: number }
 	| { type: 'barrel'; x: number; y: number; points: number }
-	| { type: 'stomp'; x: number; y: number; points: number }
+	| { type: 'stomp'; x: number; y: number; points: number; combo: number }
 	| { type: 'hurt'; cause: HurtCause; x: number; y: number }
 	| { type: 'checkpoint' }
 	| { type: 'flag' }
@@ -67,6 +74,8 @@ export interface World {
 	barrelsCollected: number;
 	goonsStomped: number;
 	heartsLost: number;
+	/** Goons squashed since the player last stood on the ground */
+	combo: number;
 	/** The checkpoint lamps already lit, by index */
 	lit: boolean[];
 }
@@ -116,6 +125,7 @@ export function createWorld(level: LevelData): World {
 		barrelsCollected: 0,
 		goonsStomped: 0,
 		heartsLost: 0,
+		combo: 0,
 		lit: level.checkpoints.map(() => false)
 	};
 }
@@ -153,6 +163,24 @@ function hurt(world: World, cause: HurtCause, events: WorldEvent[]) {
 	player.vy = -9;
 	player.vx = -player.facing * 4;
 	player.canCut = false;
+	player.slam = 'none';
+}
+
+/** Squashes a goon and scores it; every further goon in the same combo is worth more */
+function squash(world: World, walker: Walker, events: WorldEvent[]) {
+	walker.alive = false;
+	walker.squashed = 0;
+	world.combo += 1;
+	world.goonsStomped += 1;
+	const points = SCORE_STOMP * world.combo;
+	world.score += points;
+	events.push({
+		type: 'stomp',
+		x: walker.x + walker.w / 2,
+		y: walker.y,
+		points,
+		combo: world.combo
+	});
 }
 
 /** A fall into a pit always costs a heart; the player comes back at the last lit lamp */
@@ -185,7 +213,23 @@ export function stepWorld(world: World, input: Input, dt: number = STEP): WorldE
 
 	const { player, level } = world;
 	const previousBottom = player.y + player.h;
-	for (const event of stepPlayer(player, input, level, PHYSICS, dt)) events.push({ type: event });
+	for (const event of stepPlayer(player, input, level, PHYSICS, dt)) {
+		if (event !== 'slamLand') {
+			events.push({ type: event });
+			continue;
+		}
+		const x = player.x + player.w / 2;
+		const feet = player.y + player.h;
+		events.push({ type: 'slamLand', x, y: feet });
+		// The shockwave: every goon standing on the same floor close by is squashed
+		for (const walker of world.walkers) {
+			if (!walker.alive || !walker.onGround) continue;
+			const dx = walker.x + walker.w / 2 - x;
+			if (Math.abs(dx) <= SLAM_RADIUS && Math.abs(walker.y + walker.h - feet) < 0.6) {
+				squash(world, walker, events);
+			}
+		}
+	}
 
 	for (const walker of world.walkers) stepWalker(walker, level, dt);
 	for (const state of world.helis) {
@@ -216,14 +260,13 @@ export function stepWorld(world: World, input: Input, dt: number = STEP): WorldE
 	for (const walker of world.walkers) {
 		if (!walker.alive || !overlaps(player, walker)) continue;
 		if (player.vy > 0 && previousBottom <= walker.y + walker.h * 0.55) {
-			walker.alive = false;
-			walker.squashed = 0;
-			world.goonsStomped += 1;
-			world.score += SCORE_STOMP;
+			squash(world, walker, events);
 			player.vy = -(input.jumpHeld ? PHYSICS.stompBounceHeld : PHYSICS.stompBounce);
 			player.canCut = false;
 			player.onGround = false;
-			events.push({ type: 'stomp', x: walker.x + walker.w / 2, y: walker.y, points: SCORE_STOMP });
+			player.slam = 'none';
+			// A stomp gives the mustache twirl back, so goons can be chained in the air
+			player.airJumps = 1;
 		} else {
 			hurt(world, 'goon', events);
 		}
@@ -235,6 +278,9 @@ export function stepWorld(world: World, input: Input, dt: number = STEP): WorldE
 	}
 
 	if (touchesHazard(level, player)) hurt(world, 'hazard', events);
+
+	// The combo ends as soon as the player stands on the ground again
+	if (world.player.onGround) world.combo = 0;
 
 	if (world.status === 'playing' && player.y > level.height + 1) fall(world, events);
 

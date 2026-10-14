@@ -24,8 +24,8 @@
 	} = $props();
 
 	const STEP_MS = 1000 / 60;
-	/** Share of the viewport height the field may take, leaving room for the header */
-	const MAX_HEIGHT_SHARE = 0.68;
+	/** Room kept under the field for its drop shadow, in CSS pixels */
+	const SHADOW_PX = 4;
 	/** Below this much total movement, a touch is a tap rather than a drag */
 	const TAP_PX = 24;
 	/** A press this close to the tanker (in lanes) only grabs it; a tap further away steers towards it */
@@ -58,9 +58,10 @@
 
 	function resize() {
 		if (!wrapper || !canvas) return;
+		// As large as the space the page leaves, keeping the field's shape
 		const width = Math.min(
-			wrapper.clientWidth,
-			(window.innerHeight * MAX_HEIGHT_SHARE * FIELD_WIDTH) / FIELD_HEIGHT
+			wrapper.clientWidth - SHADOW_PX,
+			((wrapper.clientHeight - SHADOW_PX) * FIELD_WIDTH) / FIELD_HEIGHT
 		);
 		cssWidth = Math.max(1, Math.floor(width));
 		cssHeight = Math.floor((cssWidth * FIELD_HEIGHT) / FIELD_WIDTH);
@@ -195,8 +196,8 @@
 
 <svelte:window onkeydown={onKeydown} />
 
-<div data-playfield class="flex flex-col items-center gap-3">
-	<div bind:this={wrapper} class="flex w-full justify-center">
+<div data-playfield class="flex min-h-[16rem] flex-1 flex-col items-center">
+	<div bind:this={wrapper} class="flex min-h-0 w-full flex-1 justify-center">
 		<div
 			class="relative overflow-hidden rounded-[14px_8px_16px_10px] border-3 border-ink shadow-[4px_4px_0_var(--color-ink)]"
 			style:width="{cssWidth}px"

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PHYSICS, STEP, jumpHeight } from './config';
-import { NO_INPUT, createPlayer, stepPlayer, type Input, type Player } from './player';
+import { NO_INPUT, createPlayer, isSprinting, stepPlayer, type Input, type Player } from './player';
 import { levelFrom } from './testLevel';
 
 const FLOOR = '######################';
@@ -71,12 +71,25 @@ describe('jumping', () => {
 		expect(player.onGround).toBe(true);
 	});
 
-	it('cannot jump a second time in the air', () => {
+	it('twirls once more in the air, but only once until landing', () => {
 		const player = settled();
 		stepPlayer(player, press, flat);
 		for (let i = 0; i < 10; i++) stepPlayer(player, hold, flat);
-		const events = stepPlayer(player, press, flat);
-		expect(events).not.toContain('jump');
+		const twirl = stepPlayer(player, press, flat);
+		expect(twirl).toContain('airJump');
+		expect(twirl).not.toContain('jump');
+		expect(player.vy).toBeLessThan(-10);
+		for (let i = 0; i < 5; i++) stepPlayer(player, hold, flat);
+		expect(stepPlayer(player, press, flat)).not.toContain('airJump');
+	});
+
+	it('gets the twirl back after landing', () => {
+		const player = settled();
+		stepPlayer(player, press, flat);
+		stepPlayer(player, NO_INPUT, flat);
+		stepPlayer(player, press, flat);
+		for (let i = 0; i < 120 && !player.onGround; i++) stepPlayer(player, NO_INPUT, flat);
+		expect(player.airJumps).toBe(1);
 	});
 
 	it('remembers a jump pressed just before landing (jump buffer)', () => {
@@ -193,5 +206,53 @@ describe('coyote time', () => {
 		const player = settled();
 		stepPlayer(player, { move: 0, jumpHeld: true, jumpPressed: true }, flat);
 		expect(player.coyote).toBe(0);
+	});
+});
+
+describe('sprint', () => {
+	it('kicks in after the run-up and goes past the normal top speed', () => {
+		const player = settled(flat, 1);
+		let sprinted = false;
+		for (let i = 0; i < 90; i++)
+			if (stepPlayer(player, run(1), flat).includes('sprint')) sprinted = true;
+		expect(sprinted).toBe(true);
+		expect(player.vx).toBeGreaterThan(PHYSICS.maxSpeed);
+		expect(isSprinting(player)).toBe(true);
+	});
+
+	it('stops when the direction is let go', () => {
+		const player = settled(flat, 1);
+		for (let i = 0; i < 90; i++) stepPlayer(player, run(1), flat);
+		stepPlayer(player, NO_INPUT, flat);
+		expect(player.runTime).toBe(0);
+	});
+});
+
+describe('slam', () => {
+	const slam: Input = { move: 0, jumpHeld: false, jumpPressed: false, slamPressed: true };
+
+	it('does nothing on the ground', () => {
+		const player = settled();
+		expect(stepPlayer(player, slam, flat)).not.toContain('slam');
+		expect(player.slam).toBe('none');
+	});
+
+	it('hangs in the air, then dives straight down and reports the landing', () => {
+		const player = settled();
+		stepPlayer(player, { move: 0, jumpHeld: true, jumpPressed: true }, flat);
+		for (let i = 0; i < 8; i++)
+			stepPlayer(player, { move: 0, jumpHeld: true, jumpPressed: false }, flat);
+		expect(stepPlayer(player, slam, flat)).toContain('slam');
+		const hangY = player.y;
+		stepPlayer(player, { ...run(1) }, flat);
+		expect(player.y).toBe(hangY);
+		expect(player.vx).toBe(0);
+		let landed = false;
+		for (let i = 0; i < 60 && !landed; i++) {
+			landed = stepPlayer(player, run(1), flat).includes('slamLand');
+			if (player.slam === 'dive') expect(player.vx).toBe(0);
+		}
+		expect(landed).toBe(true);
+		expect(player.slam).toBe('none');
 	});
 });

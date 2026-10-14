@@ -68,6 +68,12 @@ export interface HeroPose {
 	rising: boolean;
 	/** Draws a worried face (just hit) */
 	hurt: boolean;
+	/** 0 to 1 through the mustache twirl of the air jump, 0 when not twirling */
+	twirl?: number;
+	/** Curled up in the slam's hang, or stretched in its dive */
+	slam?: 'none' | 'hang' | 'dive';
+	/** Leaning into a sprint */
+	sprint?: boolean;
 }
 
 /** The mustachioed hero, about 0.95 tiles tall, feet at (x, y) */
@@ -75,6 +81,17 @@ export function drawHero(ctx: Ctx, x: number, y: number, pose: HeroPose) {
 	ctx.save();
 	ctx.translate(x, y);
 	ctx.scale(pose.facing, 1);
+	// The twirl spins around the middle of the body, the slam squashes or stretches it
+	if (pose.twirl) {
+		ctx.translate(0, -0.48);
+		ctx.rotate(pose.twirl * Math.PI * 2);
+		ctx.translate(0, 0.48);
+	}
+	if (pose.slam === 'hang') ctx.scale(1.15, 0.85);
+	else if (pose.slam === 'dive') ctx.scale(0.82, 1.2);
+	else if (pose.sprint) {
+		ctx.transform(1, 0, -0.18, 1, 0, 0);
+	}
 
 	const swing = pose.airborne ? 0 : Math.sin(pose.run * 16) * 0.12 * pose.speed;
 	const bob = pose.airborne ? 0 : Math.abs(Math.sin(pose.run * 16)) * 0.04 * pose.speed;

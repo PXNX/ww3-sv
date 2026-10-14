@@ -139,7 +139,7 @@
 	{#if picking}
 		<MinefieldDifficultyPicker selected={game.difficultyId} onpick={pick} />
 	{:else}
-		<div class="flex flex-wrap items-center gap-2 font-display font-bold">
+		<div class="flex shrink-0 flex-wrap items-center gap-2 font-display font-bold">
 			<span class="-rotate-1 rounded-md border-2 border-ink bg-khaki px-2 py-0.5">
 				{m.minefield_current_difficulty({ level: DIFFICULTY_NAMES[game.difficultyId]() })}
 			</span>
@@ -159,46 +159,54 @@
 			</span>
 		</div>
 
-		<TankerQueue total={TANKER_COUNT} afloat={game.tankersLeft} />
+		<div class="shrink-0">
+			<TankerQueue total={TANKER_COUNT} afloat={game.tankersLeft} />
+		</div>
 
-		<div class="flex flex-col gap-1">
-			<div data-playfield class="flex items-center justify-between px-1 text-sm font-bold">
-				<span class="flex items-center gap-1">
-					<IconArrowRight class="size-4" aria-hidden="true" />
-					{m.minefield_west_label()}
-				</span>
-				<span class="flex items-center gap-1">
-					{m.minefield_east_label()}
-					<IconArrowRight class="size-4" aria-hidden="true" />
-				</span>
-			</div>
-			<div data-playfield class="relative">
-				<MineGrid
-					board={game.board}
-					phase={game.phase}
-					tool={game.tool}
-					channel={game.channel}
-					explosionId={game.event?.kind === 'explosion' ? game.event.id : null}
-					convoyTankers={game.tankersLeft}
-					onactivate={(index) => game.activate(index)}
-					onflag={(index) => game.flag(index)}
-				/>
-				{#if game.paused}
-					<div
-						class="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-[10px_6px_12px_8px] border-3 border-ink bg-banner-slate p-4 text-center text-paper"
-					>
-						<p class="font-display text-2xl font-bold">{m.game_paused()}</p>
-						<p>{m.minefield_paused_hint()}</p>
-						<button type="button" class="btn-chunky" onclick={() => game.resume()}>
-							<IconPlay class="size-5" aria-hidden="true" />
-							{m.game_resume()}
-						</button>
-					</div>
-				{/if}
+		<!-- The strait takes all the height left over, as large as fits (1.75rem: the compass row) -->
+		<div class="flex min-h-[12rem] flex-1 items-center justify-center" style:container-type="size">
+			<div
+				class="flex w-full flex-col gap-1"
+				style:max-width="calc((100cqh - 1.75rem) * {game.board.columns / game.board.rows})"
+			>
+				<div data-playfield class="flex items-center justify-between px-1 text-sm font-bold">
+					<span class="flex items-center gap-1">
+						<IconArrowRight class="size-4" aria-hidden="true" />
+						{m.minefield_west_label()}
+					</span>
+					<span class="flex items-center gap-1">
+						{m.minefield_east_label()}
+						<IconArrowRight class="size-4" aria-hidden="true" />
+					</span>
+				</div>
+				<div data-playfield class="relative">
+					<MineGrid
+						board={game.board}
+						phase={game.phase}
+						tool={game.tool}
+						channel={game.channel}
+						explosionId={game.event?.kind === 'explosion' ? game.event.id : null}
+						convoyTankers={game.tankersLeft}
+						onactivate={(index) => game.activate(index)}
+						onflag={(index) => game.flag(index)}
+					/>
+					{#if game.paused}
+						<div
+							class="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-[10px_6px_12px_8px] border-3 border-ink bg-banner-slate p-4 text-center text-paper"
+						>
+							<p class="font-display text-2xl font-bold">{m.game_paused()}</p>
+							<p>{m.minefield_paused_hint()}</p>
+							<button type="button" class="btn-chunky" onclick={() => game.resume()}>
+								<IconPlay class="size-5" aria-hidden="true" />
+								{m.game_resume()}
+							</button>
+						</div>
+					{/if}
+				</div>
 			</div>
 		</div>
 
-		<div class="flex gap-3">
+		<div class="flex shrink-0 gap-3">
 			<FlagModeToggle
 				active={game.tool === 'flag'}
 				disabled={!game.canAct}
@@ -212,9 +220,11 @@
 			/>
 		</div>
 
-		<p class="min-h-6 text-center font-semibold" role="status" aria-live="polite">{status}</p>
+		<p class="min-h-6 shrink-0 text-center font-semibold" role="status" aria-live="polite">
+			{status}
+		</p>
 		{#if showTutorial}
-			<p class="text-sm leading-snug opacity-80">{m.minefield_help()}</p>
+			<p class="shrink-0 text-sm leading-snug opacity-80">{m.minefield_help()}</p>
 		{/if}
 	{/if}
 </GameShell>

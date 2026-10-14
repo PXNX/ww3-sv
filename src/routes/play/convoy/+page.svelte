@@ -52,7 +52,7 @@
 	{/snippet}
 
 	<section
-		class="flex flex-wrap items-center gap-2 font-display text-sm font-bold"
+		class="flex shrink-0 flex-wrap items-center gap-2 font-display text-sm font-bold"
 		aria-label={m.mode_convoy_name()}
 	>
 		<span

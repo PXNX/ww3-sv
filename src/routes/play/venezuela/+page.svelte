@@ -127,6 +127,7 @@
 		<p>{m.venezuela_tutorial_goal()}</p>
 		<p>{m.venezuela_tutorial_controls()}</p>
 		<p>{m.venezuela_tutorial_jump()}</p>
+		<p>{m.venezuela_tutorial_slam()}</p>
 		<p>{m.venezuela_tutorial_legend()}</p>
 		<ul class="flex flex-col gap-2">
 			<li class="flex items-center gap-2">

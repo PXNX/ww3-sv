@@ -90,14 +90,10 @@
 	{/snippet}
 
 	{#if playing}
-		<!-- The HUD, the maze and the buttons share one width, as wide as the height allows -->
-		<section
-			class="mx-auto flex w-full flex-col items-center gap-2"
-			style:max-width="max(16rem, min(100%, calc((100dvh - 24rem) * {game.maze.width /
-				game.maze.height})))"
-		>
+		<!-- The maze takes all the height the HUD and the buttons leave, as large as fits -->
+		<section class="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col items-center gap-2">
 			<div
-				class="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1.5 shadow-[3px_3px_0_var(--color-ink)]"
+				class="flex w-full shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1.5 shadow-[3px_3px_0_var(--color-ink)]"
 			>
 				<p role="status" class="flex items-baseline gap-3 font-display font-bold tabular-nums">
 					<span class="text-2xl leading-none">{m.maze_steps_count({ steps: game.steps })}</span>
@@ -123,19 +119,30 @@
 				</ul>
 			</div>
 
-			<MazeBoard {game} disabled={showTutorial || showWin} />
+			<div
+				class="flex min-h-[14rem] w-full flex-1 items-center justify-center"
+				style:container-type="size"
+			>
+				<!-- 1.125rem: the board's padding and border around the floor plan -->
+				<div
+					class="w-full"
+					style:max-width="calc((100cqh - 1.125rem) * {game.maze.width / game.maze.height} + 1.125rem)"
+				>
+					<MazeBoard {game} disabled={showTutorial || showWin} />
+				</div>
+			</div>
 
-			<p class="min-h-10 text-center text-sm font-bold" role="status" aria-live="polite">
+			<p class="min-h-10 shrink-0 text-center text-sm font-bold" role="status" aria-live="polite">
 				{#key game.noticeCount}
 					<span class="pop-in inline-block">{notice}</span>
 				{/key}
 			</p>
 
-			<div class="pointer-fine:hidden">
+			<div class="shrink-0 pointer-fine:hidden">
 				<MazeDpad onmove={(direction) => game.move(direction)} disabled={game.won} />
 			</div>
 
-			<div class="flex flex-wrap items-center justify-center gap-2">
+			<div class="flex shrink-0 flex-wrap items-center justify-center gap-2">
 				<button
 					type="button"
 					class="btn-chunky px-3 py-1 text-sm"

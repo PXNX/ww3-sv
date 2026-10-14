@@ -1,9 +1,11 @@
 <!--
 	El Presidente playfield: a crisp high-DPI canvas driven by the fixed-step loop, with the touch
 	controls under it. The left half of the move strip runs left, the right half runs right (a
-	finger can slide between them), and the round jump button is held for a higher jump. Each finger
-	is tracked on its own, so running and jumping work at the same time. Arrow keys or A/D run,
-	Space, Up or W jump. The playfield never mirrors in right-to-left languages and never scrolls
+	finger can slide between them); holding one side builds up into a sprint. The round jump button
+	is held for a higher jump and tapped again in the air for the mustache twirl; the slam button
+	(or a swipe down from the jump button) dives onto whatever is below. Each finger is tracked on
+	its own, so running and jumping work at the same time. Arrow keys or A/D run, Space, Up or W
+	jump, Down or S slam. The playfield never mirrors in right-to-left languages and never scrolls
 	(touch-action: none).
 -->
 <script lang="ts">
@@ -18,6 +20,7 @@
 	import PauseOverlay from './PauseOverlay.svelte';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
 	import IconArrowRight from '~icons/lucide/arrow-right';
+	import IconChevronsDown from '~icons/lucide/chevrons-down';
 	import IconChevronsUp from '~icons/lucide/chevrons-up';
 	import IconList from '~icons/lucide/list';
 	import IconPlay from '~icons/lucide/play';
@@ -77,6 +80,7 @@
 	let leftOn = $state(false);
 	let rightOn = $state(false);
 	let jumpOn = $state(false);
+	let slamOn = $state(false);
 	let moveStrip: HTMLDivElement | undefined = $state();
 
 	function showHeld() {
@@ -84,6 +88,7 @@
 		leftOn = actions.includes('left');
 		rightOn = actions.includes('right');
 		jumpOn = actions.includes('jump');
+		slamOn = actions.includes('slam');
 	}
 
 	function press(pointerId: number, action: Action) {
@@ -124,7 +129,12 @@
 		if (held.has(event.pointerId)) press(event.pointerId, sideOf(event));
 	}
 
-	function onJumpDown(event: PointerEvent) {
+	/** Pixels a finger on the jump button has to slide down to turn into a slam */
+	const SWIPE_SLAM_PX = 28;
+	/** Where each finger on the jump button went down */
+	const jumpStartY = new Map<number, number>();
+
+	function onButtonDown(event: PointerEvent, action: Action) {
 		if (event.pointerType === 'mouse' && event.button !== 0) return;
 		event.preventDefault();
 		try {
@@ -132,10 +142,22 @@
 		} catch {
 			// The pointer is already gone
 		}
-		press(event.pointerId, 'jump');
+		if (action === 'jump') jumpStartY.set(event.pointerId, event.clientY);
+		press(event.pointerId, action);
 	}
 
-	const onUp = (event: PointerEvent) => release(event.pointerId);
+	// A swipe down from the jump button slams, so the thumb never has to leave it
+	function onJumpMove(event: PointerEvent) {
+		const startY = jumpStartY.get(event.pointerId);
+		if (startY === undefined || event.clientY - startY < SWIPE_SLAM_PX) return;
+		jumpStartY.delete(event.pointerId);
+		press(event.pointerId, 'slam');
+	}
+
+	const onUp = (event: PointerEvent) => {
+		jumpStartY.delete(event.pointerId);
+		release(event.pointerId);
+	};
 
 	// Letting go of everything when the level stops running, so nothing stays held
 	$effect(() => {
@@ -234,7 +256,7 @@
 		{/if}
 	</div>
 
-	<div class="flex items-stretch justify-between gap-4">
+	<div class="flex items-stretch justify-between gap-3">
 		<div
 			bind:this={moveStrip}
 			class="flex h-20 flex-1 touch-none overflow-hidden rounded-[14px_8px_16px_10px] border-3 border-ink bg-paper shadow-[3px_3px_0_var(--color-ink)] sm:max-w-sm"
@@ -267,12 +289,29 @@
 
 		<button
 			type="button"
+			class="btn-chunky size-16 shrink-0 touch-none flex-col self-end rounded-full p-0 text-xs {slamOn
+				? 'bg-explosion-yellow'
+				: 'bg-banner-slate text-paper'}"
+			style:touch-action="none"
+			aria-label={m.venezuela_ctrl_slam()}
+			onpointerdown={(event) => onButtonDown(event, 'slam')}
+			onpointerup={onUp}
+			onpointercancel={onUp}
+			oncontextmenu={(event) => event.preventDefault()}
+		>
+			<IconChevronsDown class="size-7" aria-hidden="true" />
+			<span class="font-display font-bold">{m.venezuela_ctrl_slam()}</span>
+		</button>
+
+		<button
+			type="button"
 			class="btn-chunky size-20 shrink-0 touch-none flex-col rounded-full p-0 text-sm {jumpOn
 				? 'bg-explosion-yellow'
 				: 'bg-tie-red'}"
 			style:touch-action="none"
 			aria-label={m.venezuela_ctrl_jump()}
-			onpointerdown={onJumpDown}
+			onpointerdown={(event) => onButtonDown(event, 'jump')}
+			onpointermove={onJumpMove}
 			onpointerup={onUp}
 			onpointercancel={onUp}
 			oncontextmenu={(event) => event.preventDefault()}

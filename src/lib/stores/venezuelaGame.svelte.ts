@@ -6,6 +6,7 @@
 import { followCamera, cameraTarget } from '#lib/game/venezuela/camera.js';
 import { STARTING_HEARTS } from '#lib/game/venezuela/config.js';
 import { HeldInput, type Action } from '#lib/game/venezuela/input.js';
+import { isSprinting } from '#lib/game/venezuela/player.js';
 import { LEVEL_IDS, levelAt } from '#lib/game/venezuela/levels.js';
 import {
 	EMPTY_PROGRESS,
@@ -40,6 +41,11 @@ export function highscoreParts(levelId: string): string[] {
 /** Seconds between two helicopter rotor sounds */
 const BUZZ_EVERY_S = 0.55;
 const BUZZ_RANGE = 7;
+/** Seconds between two dust puffs behind a sprint */
+const DUST_EVERY_S = 0.07;
+/** How long and how hard (in tiles) a slam landing shakes the view */
+const SLAM_SHAKE_MS = 260;
+const SLAM_SHAKE_TILES = 0.12;
 
 export interface VenezuelaOptions {
 	reducedMotion?: boolean;
@@ -75,6 +81,8 @@ export class VenezuelaGame {
 	#scores: () => Highscores;
 	#store: () => Store;
 	#buzz = 0;
+	#dust = 0;
+	#shakeMs = 0;
 
 	constructor({
 		reducedMotion = false,
@@ -124,6 +132,8 @@ export class VenezuelaGame {
 		this.isNewBest = false;
 		this.stars = 0;
 		this.#buzz = 0;
+		this.#dust = 0;
+		this.#shakeMs = 0;
 		this.best = this.bestFor(level.id);
 		this.screen = 'play';
 		this.status = 'ready';
@@ -186,6 +196,8 @@ export class VenezuelaGame {
 			dt
 		);
 		for (const event of events) this.#handle(event);
+		this.#trail(dt);
+		this.#shakeMs = Math.max(0, this.#shakeMs - dtMs);
 		this.#sounds(dt);
 		this.#sync();
 
@@ -198,7 +210,8 @@ export class VenezuelaGame {
 			theme: this.levelIndex,
 			camX: this.camX,
 			effects: this.effects,
-			reducedMotion: this.reducedMotion
+			reducedMotion: this.reducedMotion,
+			shake: (this.#shakeMs / SLAM_SHAKE_MS) * SLAM_SHAKE_TILES
 		};
 	}
 
@@ -221,6 +234,27 @@ export class VenezuelaGame {
 			case 'jump':
 				this.#play('flap', 0.7);
 				break;
+			case 'airJump':
+				this.#play('whoosh', 0.8);
+				this.#play('flap', 0.5);
+				break;
+			case 'sprint':
+				this.#play('ability-dash', 0.6);
+				break;
+			case 'slam':
+				this.#play('ability-dive', 0.8);
+				break;
+			case 'slamLand':
+				this.#shakeMs = SLAM_SHAKE_MS;
+				this.#effect({
+					kind: 'shock',
+					x: event.x,
+					y: event.y,
+					ageMs: 0,
+					durationMs: 420 * short + 60
+				});
+				this.#play('explosion-small', 0.7);
+				break;
 			case 'bump':
 				this.#play('click');
 				break;
@@ -241,7 +275,7 @@ export class VenezuelaGame {
 					kind: 'popup',
 					x: event.x,
 					y: event.y - 0.3,
-					text: `+${event.points}`,
+					text: event.combo > 1 ? `×${event.combo} +${event.points}` : `+${event.points}`,
 					big: true,
 					ageMs: 0,
 					durationMs: 800 * short + 100
@@ -287,6 +321,21 @@ export class VenezuelaGame {
 			case 'dead':
 				break;
 		}
+	}
+
+	/** Dust kicked up behind the heels while sprinting */
+	#trail(dt: number) {
+		const { player } = this.world;
+		this.#dust -= dt;
+		if (this.reducedMotion || this.#dust > 0 || !player.onGround || !isSprinting(player)) return;
+		this.#dust = DUST_EVERY_S;
+		this.#effect({
+			kind: 'dust',
+			x: player.x + player.w / 2 - player.facing * 0.3,
+			y: player.y + player.h,
+			ageMs: 0,
+			durationMs: 380
+		});
 	}
 
 	/** The rotor of a helicopter nearby, louder the closer it is and panned to its side */

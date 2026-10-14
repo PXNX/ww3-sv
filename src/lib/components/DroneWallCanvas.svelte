@@ -7,7 +7,9 @@
 
 	Most maps are exactly one screen tall. Big maps are several screens tall: the canvas then sits in
 	a scroll box one screen high, the counter, banners, build panel and the overview strip stay put
-	over it, and the view can follow the front of the attack by itself.
+	over it, and the view can follow the front of the attack by itself. The field always uses the
+	whole width it is given; when even a one-screen map is then taller than the space left on the
+	page, it scrolls the same way.
 -->
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
@@ -44,7 +46,9 @@
 		void game.revision;
 		return game.state.map;
 	});
-	const tall = $derived(isTallMap(map));
+	const bigMap = $derived(isTallMap(map));
+	/** The field is taller than its box: a big map, or a one-screen map on a short screen */
+	const tall = $derived(bigMap || (viewHeight > 0 && scale * map.height > viewHeight + 2));
 
 	/** Slot buttons are this many world units wide, centred on the slot */
 	const SLOT_BUTTON = 46;
@@ -320,13 +324,14 @@
 
 <svelte:window onkeydown={onKey} />
 
-<div data-playfield class="flex w-full flex-col gap-3 select-none">
-	<div class="relative">
+<div data-playfield class="flex min-h-0 w-full flex-col select-none">
+	<!-- One screen in shape, but shrinks to the height the page leaves -->
+	<div class="relative aspect-[9/16] min-h-[16rem] w-full">
 		<!-- One screen tall: a big map scrolls inside this box -->
 		<div
 			bind:this={scroller}
 			bind:clientHeight={viewHeight}
-			class="aspect-[9/16] w-full [scrollbar-width:none] overscroll-contain rounded-[14px_8px_16px_10px] border-3 border-ink shadow-[4px_4px_0_var(--color-ink)] [&::-webkit-scrollbar]:hidden {tall
+			class="size-full [scrollbar-width:none] overscroll-contain rounded-[14px_8px_16px_10px] border-3 border-ink shadow-[4px_4px_0_var(--color-ink)] [&::-webkit-scrollbar]:hidden {tall
 				? 'overflow-y-auto'
 				: 'overflow-hidden'}"
 			onscroll={onScroll}
@@ -486,7 +491,7 @@
 				>
 					<p dir="auto" class="text-sm leading-snug font-semibold">{m.dronewall_ready_hint()}</p>
 					<DroneWallMapPicker {game} />
-					{#if tall}
+					{#if bigMap}
 						<p dir="auto" class="text-xs leading-snug">{m.dronewall_map_tall_hint()}</p>
 					{/if}
 					<button type="button" class="btn-chunky bg-tie-red text-xl" onclick={() => game.start()}>

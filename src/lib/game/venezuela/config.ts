@@ -34,6 +34,16 @@ export interface Physics {
 	/** Upward speed after stomping a goon; higher while jump is held */
 	stompBounce: number;
 	stompBounceHeld: number;
+	/** Upward speed of the mustache twirl, the one extra jump allowed in the air */
+	airJumpSpeed: number;
+	/** Seconds of running in one direction on the ground before the sprint kicks in */
+	sprintAfter: number;
+	/** Top running speed while sprinting, tiles per second */
+	sprintSpeed: number;
+	/** Seconds the slam hangs in the air before diving */
+	slamHang: number;
+	/** Falling speed of the slam dive */
+	slamSpeed: number;
 }
 
 export const PHYSICS: Physics = {
@@ -49,8 +59,18 @@ export const PHYSICS: Physics = {
 	coyote: 0.1,
 	jumpBuffer: 0.1,
 	stompBounce: 9,
-	stompBounceHeld: 14
+	stompBounceHeld: 14,
+	airJumpSpeed: 14,
+	sprintAfter: 0.7,
+	sprintSpeed: 9.5,
+	slamHang: 0.12,
+	slamSpeed: 26
 };
+
+/** A slam landing squashes every grounded goon this many tiles to either side */
+export const SLAM_RADIUS = 2.6;
+/** Seconds the mustache twirl animation of the air jump lasts */
+export const TWIRL_S = 0.4;
 
 /** Height of a full jump in tiles, v squared over two g */
 export function jumpHeight(physics: Physics = PHYSICS): number {
@@ -73,6 +93,7 @@ export const INVULNERABLE_S = 1.6;
 export const SQUASH_S = 0.45;
 
 export const SCORE_BARREL = 100;
+/** Points for a squashed goon, multiplied by the combo (goons squashed without touching ground) */
 export const SCORE_STOMP = 200;
 export const SCORE_FLAG = 500;
 export const SCORE_PER_HEART = 250;
