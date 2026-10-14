@@ -29,6 +29,7 @@ import IconCpu from '~icons/lucide/cpu';
 import IconVault from '~icons/lucide/vault';
 import IconGavel from '~icons/lucide/gavel';
 import IconWind from '~icons/lucide/wind';
+import IconSiren from '~icons/lucide/siren';
 
 export type ModeId =
 	| 'blocks'
@@ -56,7 +57,8 @@ export type ModeId =
 	| 'chipfab'
 	| 'vault'
 	| 'veto'
-	| 'balloon';
+	| 'balloon'
+	| 'dome';
 
 interface ModeBase {
 	id: ModeId;
@@ -341,6 +343,16 @@ export const MODES: readonly GameMode[] = [
 		leaders: ['xi', 'trump'],
 		name: m.mode_balloon_name,
 		description: m.mode_balloon_description
+	},
+	{
+		id: 'dome',
+		status: 'playable',
+		href: '/play/dome',
+		icon: IconSiren,
+		tileClass: 'bg-mustard',
+		leaders: [],
+		name: m.mode_dome_name,
+		description: m.mode_dome_description
 	}
 ];
 

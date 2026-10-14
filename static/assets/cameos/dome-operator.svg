@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Cartoon of a tired operator with a headset, a coffee mug and a big red button in front of a small dome">
+	<!-- Original cartoon operator (not a real person): flat colours, thick outlines -->
+	<rect width="200" height="200" fill="#9EC3E6"/>
+	<path d="M10 62 Q24 48 40 58 Q52 46 68 58 Q82 58 78 70 L12 70 Z" fill="#FFFFFF" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+	<g stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+		<!-- the small dome shelter in the background -->
+		<path d="M118 120 Q118 70 158 70 Q198 70 198 120 Z" fill="#A7ADB8"/>
+		<path d="M138 120 V98 M158 120 V82 M178 120 V98" fill="none"/>
+		<!-- the desk -->
+		<rect x="0" y="150" width="200" height="50" fill="#8A5A2B"/>
+		<!-- the operator: body, head, headset -->
+		<path d="M30 152 Q34 118 70 114 Q106 118 110 152 Z" fill="#6A7C9B"/>
+		<circle cx="70" cy="84" r="30" fill="#F6C9A0"/>
+		<path d="M40 82 Q40 52 70 52 Q100 52 100 82" fill="none"/>
+		<rect x="33" y="76" width="9" height="20" rx="4" fill="#E5484D"/>
+		<rect x="98" y="76" width="9" height="20" rx="4" fill="#E5484D"/>
+		<path d="M102 94 Q104 108 86 108" fill="none"/>
+		<!-- tired face: half-closed eyes, flat mouth, bags -->
+		<path d="M54 82 H64 M76 82 H86" fill="none"/>
+		<path d="M54 90 Q59 93 64 90 M76 90 Q81 93 86 90" fill="none" stroke-width="2"/>
+		<path d="M60 100 H80" fill="none"/>
+		<!-- coffee mug with steam -->
+		<rect x="122" y="130" width="22" height="22" rx="3" fill="#FFFFFF"/>
+		<path d="M144 135 Q154 135 154 142 Q154 149 144 149" fill="none"/>
+		<path d="M128 124 Q124 118 128 112 M138 124 Q134 118 138 112" fill="none" stroke-width="3"/>
+		<!-- the big red button -->
+		<rect x="156" y="140" width="38" height="12" rx="3" fill="#6D7482"/>
+		<path d="M160 140 Q160 126 175 126 Q190 126 190 140 Z" fill="#E5484D"/>
+	</g>
+</svg>
