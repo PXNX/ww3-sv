@@ -5,10 +5,14 @@
  * same triumphant chime without the catalog growing one entry per event per mode.
  */
 import { playClip, playRandomClip } from './clips';
-import { noise, sequence, tone, voice, whine } from './synth';
+import { noise, sequence, tone, whine } from './synth';
 
 /** Seconds the sung "Welcome to Ukraine" fades out over, so the recording doesn't end abruptly */
 const WELCOME_FADE_OUT = 2;
+
+/** Seconds of the recorded laugh that play (the whole recording is about 15), and its fade-out */
+const PUTIN_LAUGH_SECONDS = 4;
+const PUTIN_LAUGH_FADE_OUT = 0.6;
 
 export type SoundId =
 	| 'ui-tap'
@@ -265,35 +269,10 @@ export const SOUNDS: Record<SoundId, SoundEffect> = {
 	'welcome-to-ukraine': (ctx, dest) =>
 		playClip(ctx, dest, 'welcome-to-ukraine', 0.8, WELCOME_FADE_OUT),
 
-	// A gruff, wheezy "ha ha ha ha" in a low male voice: the first ha punches in high and loud,
-	// then each one comes a little softer, lower and further apart, ending in a breathy exhale
-	'putin-laugh': (ctx, dest) => {
-		const HA = [700, 1220, 2600] as const;
-		let at = 0;
-		for (let i = 0; i < 6; i++) {
-			const fade = 1 - i * 0.11;
-			const pitch = (172 - i * 7) * (0.97 + Math.random() * 0.06);
-			voice(ctx, dest, {
-				pitch,
-				pitchTo: pitch * 0.82,
-				duration: 0.12 + i * 0.008,
-				formants: HA,
-				gain: 0.5 * fade,
-				breath: 0.7,
-				delay: at
-			});
-			at += 0.17 + i * 0.012 + Math.random() * 0.02;
-		}
-		voice(ctx, dest, {
-			pitch: 120,
-			pitchTo: 85,
-			duration: 0.42,
-			formants: [650, 1100, 2500],
-			gain: 0.3,
-			breath: 1,
-			delay: at
-		});
-	},
+	// A recorded laugh, for taking a piece in chess. The recording runs long and a capture can
+	// follow another quickly, so it is cut to its opening stretch and faded out
+	'putin-laugh': (ctx, dest) =>
+		playClip(ctx, dest, 'putin-laugh', 0.8, PUTIN_LAUGH_FADE_OUT, PUTIN_LAUGH_SECONDS),
 
 	// A creaking stretch of leather and rubber as the slingshot is pulled back; a stronger pull
 	// creaks higher and louder

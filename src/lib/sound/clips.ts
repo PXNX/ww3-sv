@@ -15,7 +15,8 @@ export type ClipId =
 	| 'slava-ukraini'
 	| 'fart'
 	| 'fake-news'
-	| 'welcome-to-ukraine';
+	| 'welcome-to-ukraine'
+	| 'putin-laugh';
 
 const DIRECTORY = '/assets/sounds';
 
@@ -29,7 +30,8 @@ const CLIP_FILES: Record<ClipId, string> = {
 	'slava-ukraini': 'slava-ukraini.wav',
 	fart: 'fart.wav',
 	'fake-news': 'fake-news.wav',
-	'welcome-to-ukraine': 'welcome-to-ukraine.mp3'
+	'welcome-to-ukraine': 'welcome-to-ukraine.mp3',
+	'putin-laugh': 'putin-laugh.mp3'
 };
 
 const buffers = new Map<AudioContext, Map<ClipId, Promise<AudioBuffer>>>();
@@ -52,14 +54,16 @@ function loadClip(ctx: AudioContext, id: ClipId): Promise<AudioBuffer> {
 
 /**
  * Plays a recorded clip; a fetch/decode failure is swallowed, same as a synthesized glitch. With
- * fadeOut (seconds) the clip's last stretch fades to silence instead of ending abruptly.
+ * fadeOut (seconds) the clip's last stretch fades to silence instead of ending abruptly. With
+ * maxSeconds a longer recording is cut short there (the fade-out then applies to the cut).
  */
 export function playClip(
 	ctx: AudioContext,
 	dest: AudioNode,
 	id: ClipId,
 	gain = 0.8,
-	fadeOut = 0
+	fadeOut = 0,
+	maxSeconds = Infinity
 ): void {
 	loadClip(ctx, id)
 		.then((buffer) => {
@@ -67,14 +71,15 @@ export function playClip(
 			source.buffer = buffer;
 			const envelope = ctx.createGain();
 			envelope.gain.value = gain;
+			const length = Math.min(buffer.duration, maxSeconds);
 			if (fadeOut > 0) {
-				const end = ctx.currentTime + buffer.duration;
-				const fade = Math.min(fadeOut, buffer.duration);
+				const end = ctx.currentTime + length;
+				const fade = Math.min(fadeOut, length);
 				envelope.gain.setValueAtTime(gain, end - fade);
 				envelope.gain.linearRampToValueAtTime(0, end);
 			}
 			source.connect(envelope).connect(dest);
-			source.start();
+			source.start(0, 0, length);
 		})
 		.catch(() => {
 			// Best-effort: a missing or undecodable clip should never break gameplay
