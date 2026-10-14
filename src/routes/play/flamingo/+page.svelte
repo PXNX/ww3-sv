@@ -16,11 +16,12 @@
 	let showTutorial = $state(false);
 
 	const CRASH_LINES: Record<CrashCause, () => string> = {
-		balloon: m.flamingo_crash_balloon,
+		net: m.flamingo_crash_net,
 		radar: m.flamingo_crash_radar,
-		pylon: m.flamingo_crash_pylon,
+		pantsir: m.flamingo_crash_pantsir,
 		ground: m.flamingo_crash_ground,
 		flare: m.flamingo_crash_flare,
+		mast: m.flamingo_crash_mast,
 		missed: m.flamingo_crash_missed,
 		overshoot: m.flamingo_crash_overshoot
 	};

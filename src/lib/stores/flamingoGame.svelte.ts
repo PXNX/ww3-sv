@@ -6,6 +6,7 @@
 import { randomSeed } from '#lib/game/random.js';
 import {
 	createFlamingoState,
+	currentSegment,
 	gapsLeft,
 	stepFlamingo,
 	type CrashCause,
@@ -13,6 +14,7 @@ import {
 	type FlamingoState,
 	type Stage
 } from '#lib/game/flamingo/flamingoStep.js';
+import type { SiteKind } from '#lib/game/flamingo/refinery.js';
 import { highscores } from '#lib/services/highscore.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
 import type { SoundId } from '#lib/sound/sounds.js';
@@ -33,6 +35,8 @@ const REFINERIES_KEY = ['flamingo', 'refineries'];
 export class FlamingoGame {
 	status = $state<FlamingoStatus>('ready');
 	stage = $state<Stage>('gaps');
+	/** What the current segment ends in, for the approach hint */
+	site = $state<SiteKind>('refinery');
 	score = $state(0);
 	gapsLeft = $state(0);
 	gapsPassed = $state(0);
@@ -88,9 +92,10 @@ export class FlamingoGame {
 		stepFlamingo(this.sim, this.flapQueued, dt);
 		this.flapQueued = false;
 		for (const event of this.sim.events) {
-			// The fart is the sound of the crash itself; the flare is part of the refinery, so
+			// The fart is the sound of the crash itself; the flare or mast belongs to the target, so
 			// only a "dumber" crash gets it and the flare keeps the plain clank
-			const crashedDumb = event.type === 'crash' && event.cause !== 'flare';
+			const crashedDumb =
+				event.type === 'crash' && event.cause !== 'flare' && event.cause !== 'mast';
 			const sound = crashedDumb ? 'fart' : SOUNDS[event.type];
 			if (sound) soundManager().play(sound);
 			if (event.type === 'strike') soundManager().play('slava-ukraini');
@@ -103,6 +108,7 @@ export class FlamingoGame {
 	private sync(): void {
 		const sim = this.sim;
 		this.stage = sim.stage;
+		this.site = currentSegment(sim).refinery.kind;
 		this.score = sim.score;
 		this.gapsLeft = gapsLeft(sim);
 		this.gapsPassed = sim.gapsPassed;

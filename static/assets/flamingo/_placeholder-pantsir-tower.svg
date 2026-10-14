@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 160">
+	<!-- Generic placeholder air-defence tower: wheeled base, lattice mast, turret with missile pods and twin guns -->
+	<g stroke="#111111" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+		<rect x="16" y="36" width="24" height="96" fill="#7C8C5C"/>
+		<path d="M20 40 L36 70 M36 40 L20 70 M20 74 L36 104 M36 74 L20 104" stroke-width="2" fill="none"/>
+		<rect x="6" y="14" width="44" height="22" fill="#7C8C5C"/>
+		<rect x="8" y="2" width="16" height="10" fill="#C9CDD3" transform="rotate(-25 16 8)"/>
+		<path d="M34 14 L50 4 M38 18 L54 8" stroke-width="4" fill="none"/>
+		<rect x="4" y="132" width="48" height="18" fill="#5f6d44"/>
+		<circle cx="12" cy="150" r="8" fill="#3A3A3A"/>
+		<circle cx="28" cy="150" r="8" fill="#3A3A3A"/>
+		<circle cx="44" cy="150" r="8" fill="#3A3A3A"/>
+	</g>
+</svg>

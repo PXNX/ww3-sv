@@ -41,8 +41,8 @@ export const TAP_INTERVAL_SECONDS = 0.25;
 /** Only this share of the physically possible shift is ever used */
 export const REACH_SAFETY = 0.7;
 
-/** Bottom obstacles are radar masts or power pylons; the top is always a barrage balloon stack */
-export type ColumnKind = 'radar' | 'pylon';
+/** Bottom obstacles are radar masts or Pantsir towers; the top is always a hanging drone net */
+export type ColumnKind = 'radar' | 'pantsir';
 
 export interface GapColumn {
 	/** Left edge in world units */
@@ -138,7 +138,7 @@ export function generateGapSequence(random: Random, segment: number, firstX: num
 			x: firstX + index * spacing,
 			gapTop: center - size / 2,
 			gapBottom: center + size / 2,
-			kind: pickOne(random, ['radar', 'pylon'] as const)
+			kind: pickOne(random, ['radar', 'pantsir'] as const)
 		});
 	}
 	return columns;

@@ -10,6 +10,7 @@
 	import { createFixedLoop, prefersReducedMotion, type FixedLoop } from '#lib/game/loop.js';
 	import { suppliedFlamingoAssets } from '#lib/game/flamingo/assets.js';
 	import { WORLD_WIDTH } from '#lib/game/flamingo/physics.js';
+	import type { SiteKind } from '#lib/game/flamingo/refinery.js';
 	import {
 		FlamingoEffects,
 		drawScene,
@@ -29,6 +30,12 @@
 	let effects = new FlamingoEffects(false);
 	const assets: RenderAssets = { explosion: [], supplied: {} };
 
+	const approachText: Record<SiteKind, () => string> = {
+		refinery: m.flamingo_approach,
+		warehouse: m.flamingo_approach_warehouse,
+		datacenter: m.flamingo_approach_datacenter
+	};
+
 	const labels: RenderLabels = {
 		refineryNames: [
 			m.flamingo_refinery_0(),
@@ -38,9 +45,15 @@
 			m.flamingo_refinery_4(),
 			m.flamingo_refinery_5()
 		],
+		siteNames: {
+			warehouse: m.flamingo_site_warehouse(),
+			datacenter: m.flamingo_site_datacenter()
+		},
 		biggest: m.flamingo_biggest_label(),
 		strikeBiggest: m.flamingo_strike_biggest(),
 		strikeTanks: (count) => m.flamingo_strike_tanks({ count }),
+		strikeBiggestSite: m.flamingo_strike_biggest_site(),
+		strikeBuildings: (count) => m.flamingo_strike_buildings({ count }),
 		slogan: m.flamingo_strike_slogan(),
 		direction: textDirection(getLocale())
 	};
@@ -147,7 +160,7 @@
 					class="pop-in rounded-md border-3 border-ink bg-explosion-yellow px-2 py-0.5 text-sm font-bold"
 					aria-live="polite"
 				>
-					{m.flamingo_approach()}
+					{approachText[game.site]()}
 				</p>
 			{:else}
 				<p dir="auto" class="rounded-md border-2 border-ink bg-paper px-2 py-0.5 text-sm font-bold">

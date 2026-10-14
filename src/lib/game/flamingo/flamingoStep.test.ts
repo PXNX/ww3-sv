@@ -35,6 +35,7 @@ import { strikeTank, type Refinery } from './refinery';
 const TAP_STEPS = Math.round(TAP_INTERVAL_SECONDS / STEP_SECONDS);
 
 const REFINERY: Refinery = {
+	kind: 'refinery',
 	startX: 1000,
 	endX: 1228,
 	tanks: [
@@ -174,14 +175,14 @@ describe('collision', () => {
 	const segment = segmentWith({
 		columns: [
 			{ x: 200, gapTop: 150, gapBottom: 350, kind: 'radar' },
-			{ x: 500, gapTop: 150, gapBottom: 350, kind: 'pylon' }
+			{ x: 500, gapTop: 150, gapBottom: 350, kind: 'pantsir' }
 		]
 	});
 
-	it('detects barrage balloons above and masts or pylons below the gap', () => {
-		expect(findContact(segment, 220, 100)).toEqual({ kind: 'column', cause: 'balloon' });
+	it('detects drone nets above and radar masts or Pantsir towers below the gap', () => {
+		expect(findContact(segment, 220, 100)).toEqual({ kind: 'column', cause: 'net' });
 		expect(findContact(segment, 220, 400)).toEqual({ kind: 'column', cause: 'radar' });
-		expect(findContact(segment, 520, 400)).toEqual({ kind: 'column', cause: 'pylon' });
+		expect(findContact(segment, 520, 400)).toEqual({ kind: 'column', cause: 'pantsir' });
 		// Touching the edge of a column with the side of the flamingo counts
 		expect(findContact(segment, 200 - FLAMINGO_RADIUS + 1, 100)).not.toBeNull();
 	});
@@ -205,12 +206,12 @@ describe('collision', () => {
 		expect(findContact(struck, 1130, GROUND_Y - 112)).toBeNull();
 	});
 
-	it('crashes into a balloon and tumbles to the ground', () => {
+	it('crashes into a drone net and tumbles to the ground', () => {
 		const state = flyingState({ x: 150, y: 100 });
 		const events = runUntil(state, (s) => s.phase !== 'flying');
 		expect(state.phase).toBe('tumbling');
-		expect(state.crash).toBe('balloon');
-		expect(events).toContainEqual({ type: 'crash', cause: 'balloon' });
+		expect(state.crash).toBe('net');
+		expect(events).toContainEqual({ type: 'crash', cause: 'net' });
 
 		const after = runUntil(state, (s) => s.phase === 'over');
 		expect(after.map((event) => event.type)).toEqual(['landed', 'over']);
@@ -390,6 +391,34 @@ describe('whole runs', () => {
 				true
 			);
 			expect(state.gapsPassed).toBe(gapCountFor(0) + gapCountFor(1) + gapCountFor(2));
+		}
+	});
+});
+
+describe('site kinds', () => {
+	it('starts every run with a refinery, so the first target is the familiar one', () => {
+		for (let seed = 1; seed <= 200; seed++) {
+			expect(createSegment(seed, 0, FIRST_COLUMN_X).refinery.kind).toBe('refinery');
+		}
+	});
+
+	it('picks warehouses and datacenters now and then, but mostly refineries', () => {
+		const kinds = { refinery: 0, warehouse: 0, datacenter: 0 };
+		for (let seed = 1; seed <= 300; seed++) {
+			for (let index = 1; index <= 3; index++) {
+				kinds[createSegment(seed, index, FIRST_COLUMN_X).refinery.kind] += 1;
+			}
+		}
+		expect(kinds.warehouse).toBeGreaterThan(0);
+		expect(kinds.datacenter).toBeGreaterThan(0);
+		expect(kinds.refinery).toBeGreaterThan(kinds.warehouse + kinds.datacenter);
+	});
+
+	it('picks the same site for the same seed', () => {
+		for (let seed = 1; seed <= 50; seed++) {
+			expect(createSegment(seed, 2, FIRST_COLUMN_X)).toEqual(
+				createSegment(seed, 2, FIRST_COLUMN_X)
+			);
 		}
 	});
 });

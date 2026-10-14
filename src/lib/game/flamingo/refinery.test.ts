@@ -5,11 +5,14 @@ import {
 	BIGGEST_TIER,
 	CHAIN_GAP,
 	REFINERY_NAME_COUNT,
+	SITES,
 	TANK_TIERS,
 	flareRect,
 	generateRefinery,
+	siteKindFor,
 	strikeTank,
 	tankRect,
+	type SiteKind,
 	type Refinery
 } from './refinery';
 
@@ -17,6 +20,7 @@ const SEEDS = Array.from({ length: 100 }, (_, index) => index * 104729 + 1);
 
 /** Two tanks close enough to chain, then a gap, then the biggest tank on its own */
 const CRAFTED: Refinery = {
+	kind: 'refinery',
 	startX: 0,
 	endX: 312,
 	tanks: [
@@ -129,5 +133,63 @@ describe('strikeTank', () => {
 		for (let tier = 1; tier < TANK_TIERS.length; tier++) {
 			expect(TANK_TIERS[tier].points).toBeGreaterThan(TANK_TIERS[tier - 1].points);
 		}
+	});
+});
+
+const RARE_SITES: SiteKind[] = ['warehouse', 'datacenter'];
+
+describe('siteKindFor', () => {
+	it('always starts a run with a refinery', () => {
+		for (const roll of [0, 0.05, 0.2, 0.5, 0.99]) expect(siteKindFor(0, roll)).toBe('refinery');
+	});
+
+	it('makes each rarer site much less common than refineries', () => {
+		const counts = { refinery: 0, warehouse: 0, datacenter: 0 };
+		for (let step = 0; step < 1000; step++) counts[siteKindFor(1, step / 1000)] += 1;
+		expect(counts.warehouse).toBeGreaterThan(0);
+		expect(counts.datacenter).toBeGreaterThan(0);
+		expect(counts.refinery).toBeGreaterThan(counts.warehouse * 3);
+		expect(counts.refinery).toBeGreaterThan(counts.datacenter * 3);
+	});
+});
+
+describe('warehouses and datacenters', () => {
+	it('are built from the same kind of layout as refineries', () => {
+		for (const kind of RARE_SITES) {
+			for (const seed of SEEDS) {
+				const site = generateRefinery(createRandom(seed), seed % 6, 500, kind);
+				expect(site.kind).toBe(kind);
+				expect(site.tanks.length).toBeGreaterThanOrEqual(3);
+				expect(site.tanks[site.biggest].tier).toBe(BIGGEST_TIER);
+				const rects = [...site.tanks.map(tankRect), flareRect(site.flare)].sort(
+					(a, b) => a.x - b.x
+				);
+				expect(rects[0].x).toBe(500);
+				for (let index = 1; index < rects.length; index++) {
+					expect(rects[index].x).toBeGreaterThan(rects[index - 1].x + rects[index - 1].width);
+				}
+			}
+		}
+	});
+
+	it('use their own, bigger sizes and scores', () => {
+		for (const kind of RARE_SITES) {
+			const { tiers, bonus } = SITES[kind];
+			expect(tiers).not.toBe(TANK_TIERS);
+			expect(bonus).toBeGreaterThan(BIGGEST_TANK_BONUS);
+			for (let tier = 1; tier < tiers.length; tier++) {
+				expect(tiers[tier].points).toBeGreaterThan(tiers[tier - 1].points);
+				expect(tiers[tier].halfWidth).toBeGreaterThan(tiers[tier - 1].halfWidth);
+			}
+		}
+	});
+
+	it('score from their own tiers, with their own bonus for the biggest building', () => {
+		const site = generateRefinery(createRandom(11), 0, 0, 'warehouse');
+		const { tiers, bonus } = SITES.warehouse;
+		const result = strikeTank(site, site.biggest);
+		expect(result.destroyed).toHaveLength(site.tanks.length);
+		const sum = site.tanks.reduce((total, tank) => total + tiers[tank.tier].points, 0);
+		expect(result.points).toBe(sum + bonus);
 	});
 });

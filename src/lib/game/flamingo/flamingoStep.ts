@@ -25,6 +25,7 @@ import {
 import {
 	flareRect,
 	generateRefinery,
+	siteKindFor,
 	strikeTank,
 	tankRect,
 	type Refinery,
@@ -50,7 +51,8 @@ export const OVER_DELAY_SECONDS = 0.8;
 
 export type Phase = 'ready' | 'flying' | 'tumbling' | 'over';
 export type Stage = 'gaps' | 'approach';
-export type CrashCause = 'balloon' | ColumnKind | 'ground' | 'flare' | 'missed' | 'overshoot';
+/** The flare stack at a refinery is a 'flare', the mast at the other sites a 'mast' */
+export type CrashCause = 'net' | ColumnKind | 'ground' | 'flare' | 'mast' | 'missed' | 'overshoot';
 
 export interface Segment {
 	index: number;
@@ -94,11 +96,13 @@ export interface FlamingoState {
 }
 
 export type Contact =
-	| { kind: 'column'; cause: 'balloon' | ColumnKind }
+	| { kind: 'column'; cause: 'net' | ColumnKind }
 	| { kind: 'tank'; index: number }
 	| { kind: 'flare' }
 	| { kind: 'ground' }
 	| { kind: 'overshoot' };
+
+const SITE_SALT = 0x5bd1e995;
 
 /** Every segment gets its own seed, so its layout does not depend on how the run went */
 export function segmentSeed(seed: number, index: number): number {
@@ -109,7 +113,9 @@ export function createSegment(seed: number, index: number, firstColumnX: number)
 	const random = createRandom(segmentSeed(seed, index));
 	const columns = generateGapSequence(random, index, firstColumnX);
 	const last = columns[columns.length - 1];
-	const refinery = generateRefinery(random, index, last.x + COLUMN_WIDTH + REFINERY_LEAD);
+	// A separate roll picks the site, so the layouts of the gaps and buildings do not depend on it
+	const kind = siteKindFor(index, createRandom(segmentSeed(seed, index) ^ SITE_SALT)());
+	const refinery = generateRefinery(random, index, last.x + COLUMN_WIDTH + REFINERY_LEAD, kind);
 	return { index, columns, refinery, passed: 0, strike: null };
 }
 
@@ -143,7 +149,7 @@ export function findContact(segment: Segment, x: number, y: number): Contact | n
 	const r = FLAMINGO_RADIUS;
 	for (const column of segment.columns) {
 		if (column.x > x + r || column.x + COLUMN_WIDTH < x - r) continue;
-		if (circleHitsRect(x, y, r, topRect(column))) return { kind: 'column', cause: 'balloon' };
+		if (circleHitsRect(x, y, r, topRect(column))) return { kind: 'column', cause: 'net' };
 		if (circleHitsRect(x, y, r, bottomRect(column))) return { kind: 'column', cause: column.kind };
 	}
 	if (!segment.strike) {
@@ -178,14 +184,14 @@ export function predictDive(state: FlamingoState, maxSeconds = 3): Contact | nul
 	return null;
 }
 
-function crashCause(contact: Contact, stage: Stage): CrashCause {
+function crashCause(contact: Contact, stage: Stage, segment: Segment): CrashCause {
 	switch (contact.kind) {
 		case 'column':
 			return contact.cause;
 		case 'ground':
 			return stage === 'approach' ? 'missed' : 'ground';
 		case 'flare':
-			return 'flare';
+			return segment.refinery.kind === 'refinery' ? 'flare' : 'mast';
 		default:
 			return 'overshoot';
 	}
@@ -255,7 +261,7 @@ function fly(state: FlamingoState, flap: boolean, dt: number): void {
 	const contact = findContact(segment, state.x, state.y);
 	if (!contact) return;
 	if (contact.kind === 'tank') strike(state, segment, contact.index);
-	else crash(state, crashCause(contact, state.stage));
+	else crash(state, crashCause(contact, state.stage, segment));
 }
 
 function tumble(state: FlamingoState, dt: number): void {

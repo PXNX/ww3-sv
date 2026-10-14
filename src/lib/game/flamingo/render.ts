@@ -15,7 +15,7 @@ import {
 	type Segment
 } from './flamingoStep';
 import { FLAMINGO_SCREEN_X, GROUND_Y, WORLD_HEIGHT, WORLD_WIDTH } from './physics';
-import { flareRect, type FlareStack, type Refinery, type Tank } from './refinery';
+import { flareRect, type FlareStack, type Refinery, type SiteKind, type Tank } from './refinery';
 
 const INK = '#111111';
 const PAPER = '#ffffff';
@@ -27,7 +27,13 @@ const SKY = '#aeb4be';
 const MUSTARD = '#ddb93c';
 const YELLOW = '#f5c83a';
 const STEEL = '#c9cdd3';
-const BALLOON = '#dfe2e6';
+const NET = '#dfe2e6';
+const OLIVE_DARK = '#5f6d44';
+const SLATE = '#2f3640';
+const WB_PURPLE = '#a21caf';
+const WB_DARK = '#701a75';
+const YANDEX_RED = '#fc3f1d';
+const RAIN = '#5d6e86';
 const CHAR = '#3a3a3a';
 const SMOKE = '#1c1c1c';
 const PINK = '#f28db2';
@@ -45,9 +51,14 @@ export interface RenderAssets {
 
 export interface RenderLabels {
 	refineryNames: string[];
+	/** Names of the rarer sites, which have one each */
+	siteNames: Record<Exclude<SiteKind, 'refinery'>, string>;
 	biggest: string;
 	strikeBiggest: string;
 	strikeTanks: (count: number) => string;
+	/** The same two for the warehouse and the datacenter, which have no tanks */
+	strikeBiggestSite: string;
+	strikeBuildings: (count: number) => string;
 	/** Cheered over every struck tank, in the Ukrainian flag's own blue and yellow */
 	slogan: string;
 	direction: 'ltr' | 'rtl';
@@ -100,7 +111,7 @@ export class FlamingoEffects {
 	private smokeTimer = 0;
 
 	constructor(
-		private reducedMotion: boolean,
+		readonly reducedMotion: boolean,
 		seed = 1
 	) {
 		this.random = createRandom(seed);
@@ -139,10 +150,13 @@ export class FlamingoEffects {
 					for (let i = 0; i < puffs; i++) this.puff(tank.x, GROUND_Y - tank.height, size * 0.6);
 				}
 				this.popups.push({ x: event.x, y: event.y - 30, text: `+${event.result.points}`, age: 0 });
+				const tanks = refinery.kind === 'refinery';
 				if (event.result.biggestHit) {
-					this.popups.push({ x: event.x, y: event.y - 60, text: labels.strikeBiggest, age: 0 });
+					const text = tanks ? labels.strikeBiggest : labels.strikeBiggestSite;
+					this.popups.push({ x: event.x, y: event.y - 60, text, age: 0 });
 				} else if (event.result.destroyed.length > 1) {
-					const text = labels.strikeTanks(event.result.destroyed.length);
+					const count = event.result.destroyed.length;
+					const text = tanks ? labels.strikeTanks(count) : labels.strikeBuildings(count);
 					this.popups.push({ x: event.x, y: event.y - 60, text, age: 0 });
 				}
 				this.popups.push({
@@ -165,7 +179,7 @@ export class FlamingoEffects {
 						age: 0
 					});
 				}
-				if (state.crash === 'flare') this.puff(state.x, state.y, 30);
+				if (state.crash === 'flare' || state.crash === 'mast') this.puff(state.x, state.y, 30);
 				if (!this.reducedMotion) this.shake = 5;
 			}
 		}
@@ -240,7 +254,65 @@ function hash(n: number): number {
 	return s - Math.floor(s);
 }
 
-function drawCloud(context: CanvasRenderingContext2D, x: number, y: number, scale: number) {
+/** How much of each kind of weather is in the air, from 0 to 1 */
+export interface Weather {
+	rain: number;
+	dust: number;
+	haze: number;
+}
+
+export const CLEAR_WEATHER: Weather = { rain: 0, dust: 0, haze: 0 };
+
+/** Distance in world units between the centers of two weather zones */
+const WEATHER_ZONE = 1500;
+
+function zoneWeather(seed: number, zone: number): Weather {
+	// The take-off area is always clear; after that each zone gets one kind of weather, or none
+	if (zone <= 0) return CLEAR_WEATHER;
+	const roll = hash((seed % 9973) + zone * 17.3);
+	const strength = 0.6 + 0.4 * hash((seed % 9973) + zone * 5.1);
+	if (roll < 0.34) return CLEAR_WEATHER;
+	if (roll < 0.58) return { rain: strength, dust: 0, haze: 0 };
+	if (roll < 0.8) return { rain: 0, dust: strength, haze: 0 };
+	return { rain: 0, dust: 0, haze: strength };
+}
+
+/** The weather over a world position: it drifts smoothly from one zone's weather to the next */
+export function weatherAt(seed: number, worldX: number): Weather {
+	const position = worldX / WEATHER_ZONE;
+	const zone = Math.floor(position);
+	const f = position - zone;
+	const t = f * f * (3 - 2 * f);
+	const from = zoneWeather(seed, zone);
+	const to = zoneWeather(seed, zone + 1);
+	return {
+		rain: from.rain + (to.rain - from.rain) * t,
+		dust: from.dust + (to.dust - from.dust) * t,
+		haze: from.haze + (to.haze - from.haze) * t
+	};
+}
+
+function wrap(value: number, length: number): number {
+	return ((value % length) + length) % length;
+}
+
+/** Blends two #rrggbb colors */
+function mixColor(from: string, to: string, t: number): string {
+	const channel = (hex: string, index: number) =>
+		parseInt(hex.slice(1 + index * 2, 3 + index * 2), 16);
+	const mixed = [0, 1, 2].map((index) =>
+		Math.round(channel(from, index) + (channel(to, index) - channel(from, index)) * t)
+	);
+	return `rgb(${mixed.join(',')})`;
+}
+
+function drawCloud(
+	context: CanvasRenderingContext2D,
+	x: number,
+	y: number,
+	scale: number,
+	fill = PAPER
+) {
 	const bumps: [number, number, number][] = [
 		[0, 0, 18],
 		[20, -8, 22],
@@ -249,7 +321,7 @@ function drawCloud(context: CanvasRenderingContext2D, x: number, y: number, scal
 	// Outline first, then fill, so the bumps merge into one shape
 	context.lineWidth = LINE * 2;
 	context.strokeStyle = INK;
-	context.fillStyle = PAPER;
+	context.fillStyle = fill;
 	for (const pass of ['stroke', 'fill'] as const) {
 		for (const [dx, dy, r] of bumps) {
 			context.beginPath();
@@ -260,10 +332,126 @@ function drawCloud(context: CanvasRenderingContext2D, x: number, y: number, scal
 	}
 }
 
-function drawBackdrop(context: CanvasRenderingContext2D, cameraX: number) {
+function drawSun(context: CanvasRenderingContext2D, time: number) {
+	context.save();
+	context.translate(WORLD_WIDTH - 66, 72);
+	context.rotate(time * 0.25);
+	context.lineWidth = LINE;
+	context.strokeStyle = INK;
+	context.lineCap = 'round';
+	context.beginPath();
+	for (let i = 0; i < 10; i++) {
+		const a = (i / 10) * Math.PI * 2;
+		context.moveTo(Math.cos(a) * 30, Math.sin(a) * 30);
+		context.lineTo(Math.cos(a) * 40, Math.sin(a) * 40);
+	}
+	context.stroke();
+	context.beginPath();
+	context.arc(0, 0, 22, 0, Math.PI * 2);
+	outlined(context, YELLOW);
+	context.restore();
+}
+
+/** Streaks, dust and haze drawn behind the obstacles, so they never hide what can be hit */
+function drawWeather(
+	context: CanvasRenderingContext2D,
+	weather: Weather,
+	cameraX: number,
+	time: number
+) {
+	context.save();
+	if (weather.haze > 0.01) {
+		context.fillStyle = PAPER;
+		context.globalAlpha = 0.14 * weather.haze;
+		context.fillRect(0, 0, WORLD_WIDTH, GROUND_Y);
+		// Pale banks of mist drifting past
+		context.globalAlpha = 0.3 * weather.haze;
+		for (let k = 0; k < 6; k++) {
+			const x = wrap(
+				hash(k + 400) * WORLD_WIDTH * 2 - cameraX * 0.25 - time * 6,
+				WORLD_WIDTH + 300
+			);
+			context.beginPath();
+			context.ellipse(
+				x - 150,
+				110 + hash(k + 410) * 400,
+				90 + hash(k + 420) * 70,
+				16,
+				0,
+				0,
+				Math.PI * 2
+			);
+			context.fill();
+		}
+	}
+	if (weather.dust > 0.01) {
+		context.fillStyle = SAND;
+		context.globalAlpha = 0.1 * weather.dust;
+		// Stepped flat bands, thickest dust near the ground
+		for (let band = 0; band < 4; band++) {
+			const top = 300 + band * 70;
+			context.fillRect(0, top, WORLD_WIDTH, GROUND_Y - top);
+		}
+		// Wind-blown sand streaks, rushing against the direction of flight
+		context.globalAlpha = 0.75 * weather.dust;
+		context.strokeStyle = '#c4b270';
+		context.lineWidth = 2;
+		context.lineCap = 'round';
+		context.beginPath();
+		const streaks = Math.ceil(34 * weather.dust);
+		for (let i = 0; i < streaks; i++) {
+			const speed = 150 + hash(i + 500) * 110;
+			const x =
+				wrap(
+					hash(i + 510) * (WORLD_WIDTH + 120) - cameraX * 1.2 - time * speed,
+					WORLD_WIDTH + 120
+				) - 60;
+			const y = 300 + hash(i + 520) * (GROUND_Y - 310);
+			context.moveTo(x, y);
+			context.lineTo(x + 12 + hash(i + 530) * 26, y);
+		}
+		context.stroke();
+	}
+	if (weather.rain > 0.01) {
+		context.fillStyle = '#2f3b52';
+		context.globalAlpha = 0.16 * weather.rain;
+		context.fillRect(0, 0, WORLD_WIDTH, GROUND_Y);
+		context.globalAlpha = 0.6 * weather.rain;
+		context.strokeStyle = RAIN;
+		context.lineWidth = 1.5;
+		context.beginPath();
+		const drops = Math.ceil(70 * weather.rain);
+		for (let i = 0; i < drops; i++) {
+			const speed = 520 + hash(i + 300) * 180;
+			const x =
+				wrap(hash(i) * (WORLD_WIDTH + 80) - cameraX * 0.6 - time * 70, WORLD_WIDTH + 80) - 40;
+			const y = wrap(hash(i + 150) * GROUND_Y + time * speed, GROUND_Y + 20) - 20;
+			context.moveTo(x, y);
+			context.lineTo(x - 4, y + 13);
+		}
+		context.stroke();
+	}
+	context.restore();
+}
+
+function drawBackdrop(
+	context: CanvasRenderingContext2D,
+	cameraX: number,
+	weather: Weather = CLEAR_WEATHER,
+	time = 0
+) {
 	context.fillStyle = SKY;
 	context.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
+	// The sun only shows through when it is neither raining nor hazy
+	const sun = 1 - Math.min(1, weather.rain + weather.haze * 0.6);
+	if (sun > 0.02) {
+		context.globalAlpha = sun;
+		drawSun(context, time);
+		context.globalAlpha = 1;
+	}
+
+	const cloudFill = mixColor(PAPER, '#a7aeba', weather.rain);
 	const cloudOffset = cameraX * 0.3;
 	const first = Math.floor((cloudOffset - 120) / 200);
 	for (let k = first; k < first + 4; k++) {
@@ -271,7 +459,8 @@ function drawBackdrop(context: CanvasRenderingContext2D, cameraX: number) {
 			context,
 			k * 200 - cloudOffset + hash(k) * 60,
 			50 + hash(k + 99) * 170,
-			0.8 + hash(k + 7) * 0.4
+			0.8 + hash(k + 7) * 0.4,
+			cloudFill
 		);
 	}
 
@@ -286,6 +475,8 @@ function drawBackdrop(context: CanvasRenderingContext2D, cameraX: number) {
 		context.quadraticCurveTo(x + 70, GROUND_Y - height * 2, x + 160, GROUND_Y);
 		outlined(context, SAND_DARK);
 	}
+
+	drawWeather(context, weather, cameraX, time);
 }
 
 function drawGround(context: CanvasRenderingContext2D, cameraX: number) {
@@ -297,16 +488,22 @@ function drawGround(context: CanvasRenderingContext2D, cameraX: number) {
 	}
 }
 
-function drawLattice(context: CanvasRenderingContext2D, x: number, top: number, bottom: number) {
+function drawLattice(
+	context: CanvasRenderingContext2D,
+	x: number,
+	top: number,
+	bottom: number,
+	inset = 6
+) {
 	context.lineWidth = 2;
 	context.strokeStyle = INK;
 	context.beginPath();
 	for (let y = top; y < bottom; y += 36) {
 		const next = Math.min(bottom, y + 36);
-		context.moveTo(x + 6, y);
-		context.lineTo(x + COLUMN_WIDTH - 6, next);
-		context.moveTo(x + COLUMN_WIDTH - 6, y);
-		context.lineTo(x + 6, next);
+		context.moveTo(x + inset, y);
+		context.lineTo(x + COLUMN_WIDTH - inset, next);
+		context.moveTo(x + COLUMN_WIDTH - inset, y);
+		context.lineTo(x + inset, next);
 	}
 	context.stroke();
 }
@@ -332,70 +529,139 @@ function drawRadarMast(context: CanvasRenderingContext2D, column: GapColumn, tim
 	outlined(context, PAPER);
 }
 
-function drawPylon(context: CanvasRenderingContext2D, column: GapColumn) {
+/** Air-defence tower: a wheeled launcher carrying a lattice mast and a turret of missile pods and twin guns */
+function drawPantsir(context: CanvasRenderingContext2D, column: GapColumn) {
 	const { x, gapBottom } = column;
-	const armY = gapBottom + 14;
-	// Wires drooping off to both sides (decoration behind the pylon)
-	context.lineWidth = 2;
-	context.strokeStyle = INK;
+	const middle = x + COLUMN_WIDTH / 2;
+	const chassisTop = GROUND_Y - 26;
+	// Missile pods tilted outwards, behind the turret body
 	for (const side of [-1, 1]) {
-		const edge = side < 0 ? x : x + COLUMN_WIDTH;
+		context.save();
+		context.translate(middle + side * 12, gapBottom + 20);
+		context.rotate(side * 0.4);
+		box(context, -5, -18, 10, 18, STEEL);
+		context.fillStyle = INK;
+		for (const dx of [-2.5, 2.5]) {
+			context.beginPath();
+			context.arc(dx, -14, 2, 0, Math.PI * 2);
+			context.fill();
+		}
+		context.restore();
+	}
+	// Twin gun barrels between the pods
+	context.lineCap = 'round';
+	for (const [width, color] of [
+		[7, INK],
+		[3, CHAR]
+	] as const) {
+		context.lineWidth = width;
+		context.strokeStyle = color;
 		context.beginPath();
-		context.moveTo(edge, armY + 12);
-		context.quadraticCurveTo(edge + side * 30, armY + 70, edge + side * 70, armY + 110);
+		for (const dx of [-2.5, 2.5]) {
+			context.moveTo(middle + dx, gapBottom + 22);
+			context.lineTo(middle + dx, gapBottom + 3);
+		}
 		context.stroke();
 	}
-	box(context, x + 8, gapBottom + 8, COLUMN_WIDTH - 16, GROUND_Y - gapBottom - 8, STEEL);
-	drawLattice(context, x + 8, gapBottom + 30, GROUND_Y);
-	box(context, x, armY - 6, COLUMN_WIDTH, 8, STEEL);
-	for (const insulatorX of [x + 4, x + COLUMN_WIDTH - 10]) {
-		box(context, insulatorX, armY + 2, 6, 12, PAPER);
-	}
+	// Mast down to the truck
+	box(context, x + 14, gapBottom + 32, COLUMN_WIDTH - 28, chassisTop - gapBottom - 30, KHAKI);
+	drawLattice(context, x, gapBottom + 34, chassisTop, 18);
+	// Turret body with its optical sensor
+	box(context, x + 6, gapBottom + 20, COLUMN_WIDTH - 12, 16, KHAKI);
 	context.beginPath();
-	context.moveTo(x + 8, gapBottom + 8);
-	context.lineTo(x + COLUMN_WIDTH / 2, gapBottom);
-	context.lineTo(x + COLUMN_WIDTH - 8, gapBottom + 8);
-	context.closePath();
-	outlined(context, STEEL);
+	context.arc(middle, gapBottom + 28, 4, 0, Math.PI * 2);
+	outlined(context, PAPER);
+	context.fillStyle = INK;
+	context.fillRect(middle - 1, gapBottom + 27, 2, 2);
+	// Truck: chassis, cab and three wheels
+	box(context, x + 2, chassisTop, COLUMN_WIDTH - 4, 16, OLIVE_DARK);
+	box(context, x + 40, chassisTop - 8, 14, 12, OLIVE_DARK);
+	box(context, x + 46, chassisTop - 5, 6, 5, PAPER);
+	for (const wheelX of [x + 12, x + 28, x + 44]) {
+		context.beginPath();
+		context.arc(wheelX, GROUND_Y - 8, 8, 0, Math.PI * 2);
+		outlined(context, CHAR);
+		context.beginPath();
+		context.arc(wheelX, GROUND_Y - 8, 2.5, 0, Math.PI * 2);
+		context.fillStyle = PAPER;
+		context.fill();
+	}
 }
 
-const BALLOON_HEIGHT = 44;
+const NET_MESH = 20;
 
-function drawBalloonStack(context: CanvasRenderingContext2D, column: GapColumn) {
+/** A drone net hanging from the sky: a diamond mesh on edge ropes, weighted along the hem */
+function drawDroneNet(context: CanvasRenderingContext2D, column: GapColumn, time: number) {
 	const { x, gapTop } = column;
-	const middle = x + COLUMN_WIDTH / 2;
-	context.lineWidth = 2;
+	const left = x + 4;
+	const width = COLUMN_WIDTH - 8;
+	const hem = gapTop - 8;
+
+	context.save();
+	context.beginPath();
+	context.rect(left, -LINE, width, hem + LINE);
+	context.clip();
+	context.globalAlpha = 0.9;
+	context.fillStyle = NET;
+	context.fillRect(left, -LINE, width, hem + LINE);
+	context.globalAlpha = 1;
+	context.lineWidth = 1.2;
 	context.strokeStyle = INK;
 	context.beginPath();
-	context.moveTo(middle, 0);
-	context.lineTo(middle, gapTop);
+	for (let y = -width; y < hem; y += NET_MESH) {
+		context.moveTo(left, y);
+		context.lineTo(left + width, y + width);
+		context.moveTo(left + width, y);
+		context.lineTo(left, y + width);
+	}
 	context.stroke();
-	// Absurdly, the balloons are stacked all the way up to the sky
-	for (let bottom = gapTop; bottom > -BALLOON_HEIGHT; bottom -= BALLOON_HEIGHT) {
-		const centerY = bottom - BALLOON_HEIGHT / 2;
-		for (const fin of [-1, 1]) {
+	context.restore();
+
+	// A drone that has already flown into the net, now tangled up in it
+	if (hash(x * 0.37) > 0.45 && hem > 70) {
+		const droneY = 30 + hash(x * 0.11) * (hem - 60);
+		context.save();
+		context.translate(x + COLUMN_WIDTH / 2, droneY);
+		context.rotate((hash(x * 0.71) - 0.5) * 0.9);
+		context.lineCap = 'round';
+		context.lineWidth = 3;
+		context.strokeStyle = INK;
+		context.beginPath();
+		context.moveTo(-11, -5);
+		context.lineTo(11, 5);
+		context.moveTo(11, -5);
+		context.lineTo(-11, 5);
+		context.stroke();
+		for (const [dx, dy] of [
+			[-11, -5],
+			[11, 5],
+			[11, -5],
+			[-11, 5]
+		]) {
 			context.beginPath();
-			context.moveTo(x + 10, centerY);
-			context.lineTo(x + 1, centerY + fin * 15);
-			context.lineTo(x + 16, centerY + fin * 6);
-			context.closePath();
-			outlined(context, KHAKI);
+			context.ellipse(dx, dy - 2, 5, 1.8, 0, 0, Math.PI * 2);
+			outlined(context, PAPER);
 		}
+		box(context, -4, -3, 8, 6, CHAR);
+		context.restore();
+	}
+
+	// Edge ropes and the weights that keep the net hanging straight
+	context.lineWidth = LINE;
+	context.strokeStyle = INK;
+	context.beginPath();
+	for (const edge of [left, left + width]) {
+		context.moveTo(edge, 0);
+		context.lineTo(edge, hem);
+	}
+	context.moveTo(left, hem);
+	context.lineTo(left + width, hem);
+	context.stroke();
+	for (let i = 0; i < 4; i++) {
+		const sway = Math.sin(time * 2.5 + x * 0.05 + i) * 1.2;
 		context.beginPath();
-		context.ellipse(
-			middle + 3,
-			centerY,
-			COLUMN_WIDTH / 2 - 4,
-			BALLOON_HEIGHT / 2 - 3,
-			0,
-			0,
-			Math.PI * 2
-		);
-		outlined(context, BALLOON);
-		context.beginPath();
-		context.arc(middle + 16, centerY - 4, 3, 0, Math.PI * 2);
-		context.fillStyle = INK;
-		context.fill();
+		context.arc(left + (width * i) / 3, hem + 2 + sway, 4, 0, Math.PI * 2);
+		outlined(context, OLIVE_DARK);
 	}
 }
 
@@ -405,11 +671,11 @@ function drawColumn(
 	time: number,
 	assets: RenderAssets
 ) {
-	const top = assets.supplied.barrageBalloon;
+	const top = assets.supplied.droneNet;
 	if (top) context.drawImage(top, column.x, 0, COLUMN_WIDTH, column.gapTop);
-	else drawBalloonStack(context, column);
+	else drawDroneNet(context, column, time);
 
-	const bottomImage = assets.supplied[column.kind === 'radar' ? 'radarMast' : 'powerPylon'];
+	const bottomImage = assets.supplied[column.kind === 'radar' ? 'radarMast' : 'pantsirTower'];
 	if (bottomImage) {
 		context.drawImage(
 			bottomImage,
@@ -419,37 +685,34 @@ function drawColumn(
 			GROUND_Y - column.gapBottom
 		);
 	} else if (column.kind === 'radar') drawRadarMast(context, column, time);
-	else drawPylon(context, column);
+	else drawPantsir(context, column);
 }
 
-function drawTank(
+/** A charred, crumpled stump with a jagged top: what is left of any building */
+function drawStump(context: CanvasRenderingContext2D, tank: Tank) {
+	const left = tank.x - tank.halfWidth;
+	const width = tank.halfWidth * 2;
+	const stump = GROUND_Y - tank.height * 0.5;
+	context.beginPath();
+	context.moveTo(left, GROUND_Y);
+	context.lineTo(left, stump + 6);
+	for (let i = 1; i <= 6; i++) {
+		context.lineTo(left + (width * i) / 6, stump + (i % 2 === 0 ? 8 : -6));
+	}
+	context.lineTo(left + width, GROUND_Y);
+	context.closePath();
+	outlined(context, CHAR);
+}
+
+function drawStorageTank(
 	context: CanvasRenderingContext2D,
 	tank: Tank,
 	isBiggest: boolean,
-	destroyed: boolean,
 	assets: RenderAssets
 ) {
 	const left = tank.x - tank.halfWidth;
 	const width = tank.halfWidth * 2;
 	const top = GROUND_Y - tank.height;
-
-	if (destroyed) {
-		const image = assets.supplied.tankDestroyed;
-		if (image) return context.drawImage(image, left, top, width, tank.height);
-		// A charred, crumpled stump with a jagged top
-		const stump = GROUND_Y - tank.height * 0.5;
-		context.beginPath();
-		context.moveTo(left, GROUND_Y);
-		context.lineTo(left, stump + 6);
-		for (let i = 1; i <= 6; i++) {
-			context.lineTo(left + (width * i) / 6, stump + (i % 2 === 0 ? 8 : -6));
-		}
-		context.lineTo(left + width, GROUND_Y);
-		context.closePath();
-		outlined(context, CHAR);
-		return;
-	}
-
 	const image = assets.supplied.tank;
 	if (image) return context.drawImage(image, left, top, width, tank.height);
 	box(context, left, top + 8, width, tank.height - 8, PAPER);
@@ -472,6 +735,134 @@ function drawTank(
 	context.beginPath();
 	context.ellipse(tank.x, top + 8, tank.halfWidth, 8, 0, 0, Math.PI * 2);
 	outlined(context, PAPER);
+}
+
+/** White letters with a dark edge, so they read on any wall */
+function drawLetters(
+	context: CanvasRenderingContext2D,
+	text: string,
+	x: number,
+	y: number,
+	size: number,
+	edge: string
+) {
+	context.font = `800 ${size}px ${DISPLAY_FONT}`;
+	context.textAlign = 'center';
+	context.textBaseline = 'middle';
+	context.lineJoin = 'round';
+	context.lineWidth = 4;
+	context.strokeStyle = edge;
+	context.strokeText(text, x, y);
+	context.fillStyle = PAPER;
+	context.fillText(text, x, y);
+}
+
+/** A purple fulfilment hall with roller doors; the bigger ones carry big white letters */
+function drawWarehouse(context: CanvasRenderingContext2D, tank: Tank) {
+	const left = tank.x - tank.halfWidth;
+	const width = tank.halfWidth * 2;
+	const top = GROUND_Y - tank.height;
+	box(context, left, top, width, tank.height, WB_PURPLE);
+	box(context, left - 3, top, width + 6, 9, WB_DARK);
+
+	const doors = Math.max(1, Math.floor(width / 40));
+	const doorWidth = Math.min(26, width / doors - 10);
+	const gap = (width - doors * doorWidth) / (doors + 1);
+	context.lineWidth = 1.5;
+	for (let i = 0; i < doors; i++) {
+		const doorX = left + gap * (i + 1) + doorWidth * i;
+		box(context, doorX, GROUND_Y - 22, doorWidth, 22, PAPER);
+		context.lineWidth = 1.5;
+		context.beginPath();
+		for (const y of [GROUND_Y - 15, GROUND_Y - 8]) {
+			context.moveTo(doorX, y);
+			context.lineTo(doorX + doorWidth, y);
+		}
+		context.stroke();
+	}
+
+	const wallMiddle = top + 9 + (tank.height - 9 - 22) / 2;
+	if (tank.tier >= 2) {
+		drawLetters(context, 'WB', tank.x, wallMiddle, tank.tier === 3 ? 30 : 20, WB_DARK);
+	} else {
+		// A taped-up parcel on the smaller halls
+		box(context, tank.x - 7, wallMiddle - 6, 14, 12, PAPER);
+		context.lineWidth = 1.5;
+		context.beginPath();
+		context.moveTo(tank.x, wallMiddle - 6);
+		context.lineTo(tank.x, wallMiddle + 6);
+		context.stroke();
+	}
+}
+
+/** A pale server block with a red roof band, rows of blinking racks and a round badge on the big one */
+function drawDatacenter(
+	context: CanvasRenderingContext2D,
+	tank: Tank,
+	isBiggest: boolean,
+	time: number
+) {
+	const left = tank.x - tank.halfWidth;
+	const width = tank.halfWidth * 2;
+	const top = GROUND_Y - tank.height;
+	box(context, left, top, width, tank.height, '#e4e8ee');
+	box(context, left - 2, top, width + 4, 8, YANDEX_RED);
+
+	const columns = Math.max(1, Math.floor((width - 8) / 12));
+	const start = tank.x - (columns * 12 - 4) / 2;
+	for (let y = top + 14; y + 8 <= GROUND_Y - 20; y += 12) {
+		for (let i = 0; i < columns; i++) {
+			const cellX = start + i * 12;
+			context.fillStyle = SLATE;
+			context.fillRect(cellX, y, 8, 8);
+			// Each rack blinks on its own beat
+			const lit = Math.sin(time * 4 + hash(cellX * 3.1 + y) * 20) > 0;
+			context.fillStyle = lit ? YELLOW : YANDEX_RED;
+			context.fillRect(cellX + 5, y + 2, 2, 2);
+		}
+	}
+	box(context, tank.x - 6, GROUND_Y - 14, 12, 14, SLATE);
+
+	if (isBiggest) {
+		const radius = Math.min(17, width * 0.22);
+		const badgeY = top + 8 + (tank.height - 8) * 0.42;
+		context.beginPath();
+		context.arc(tank.x, badgeY, radius, 0, Math.PI * 2);
+		outlined(context, YANDEX_RED);
+		context.font = `800 ${Math.round(radius * 1.5)}px ${DISPLAY_FONT}`;
+		context.textAlign = 'center';
+		context.textBaseline = 'middle';
+		context.fillStyle = PAPER;
+		context.fillText('Я', tank.x, badgeY + 1);
+	}
+}
+
+function drawTank(
+	context: CanvasRenderingContext2D,
+	tank: Tank,
+	isBiggest: boolean,
+	destroyed: boolean,
+	assets: RenderAssets,
+	kind: SiteKind = 'refinery',
+	time = 0
+) {
+	if (destroyed) {
+		const image = kind === 'refinery' ? assets.supplied.tankDestroyed : undefined;
+		if (image) {
+			const top = GROUND_Y - tank.height;
+			return context.drawImage(
+				image,
+				tank.x - tank.halfWidth,
+				top,
+				tank.halfWidth * 2,
+				tank.height
+			);
+		}
+		return drawStump(context, tank);
+	}
+	if (kind === 'warehouse') drawWarehouse(context, tank);
+	else if (kind === 'datacenter') drawDatacenter(context, tank, isBiggest, time);
+	else drawStorageTank(context, tank, isBiggest, assets);
 }
 
 function drawFlare(
@@ -505,21 +896,63 @@ function drawFlare(
 	context.fill();
 }
 
+/** The mast beside a warehouse or datacenter: banded in the company's colors, with a blinking light */
+function drawMast(
+	context: CanvasRenderingContext2D,
+	flare: FlareStack,
+	time: number,
+	kind: SiteKind
+) {
+	const rect = flareRect(flare);
+	const color = kind === 'warehouse' ? WB_PURPLE : YANDEX_RED;
+	box(context, rect.x, rect.y + 8, rect.width, GROUND_Y - rect.y - 8, PAPER);
+	context.fillStyle = color;
+	for (let y = rect.y + 8; y < GROUND_Y; y += 40) {
+		context.fillRect(rect.x + LINE / 2, y, rect.width - LINE, Math.min(20, GROUND_Y - y));
+	}
+	if (kind === 'datacenter') {
+		// Antenna braces in the white sections
+		context.lineWidth = 1.5;
+		context.strokeStyle = INK;
+		context.beginPath();
+		for (let y = rect.y + 28; y < GROUND_Y - 20; y += 40) {
+			context.moveTo(rect.x + 2, y);
+			context.lineTo(rect.x + rect.width - 2, y + 20);
+			context.moveTo(rect.x + rect.width - 2, y);
+			context.lineTo(rect.x + 2, y + 20);
+		}
+		context.stroke();
+	}
+	const on = Math.sin(time * 6) > -0.3;
+	context.beginPath();
+	context.arc(flare.x, rect.y + 6, 6, 0, Math.PI * 2);
+	outlined(context, on ? color : PAPER);
+}
+
+const SIGN_FILL: Record<SiteKind, string> = {
+	refinery: PAPER,
+	warehouse: WB_PURPLE,
+	datacenter: YANDEX_RED
+};
+
 function drawSign(context: CanvasRenderingContext2D, refinery: Refinery, labels: RenderLabels) {
 	const x = refinery.startX - 90;
 	const y = GROUND_Y - 96;
+	const { kind } = refinery;
 	box(context, x + 14, y + 30, 6, 66, KHAKI);
 	box(context, x + 100, y + 30, 6, 66, KHAKI);
 	context.save();
 	context.translate(x + 60, y + 20);
 	context.rotate(-0.04);
-	box(context, -60, -18, 120, 40, PAPER);
-	context.fillStyle = INK;
+	box(context, -60, -18, 120, 40, SIGN_FILL[kind]);
+	context.fillStyle = kind === 'refinery' ? INK : PAPER;
 	context.font = `700 12px ${DISPLAY_FONT}`;
 	context.textAlign = 'center';
 	context.textBaseline = 'middle';
 	context.direction = labels.direction;
-	context.fillText(labels.refineryNames[refinery.nameIndex] ?? '', 0, 2, 110);
+	const name =
+		kind === 'refinery' ? labels.refineryNames[refinery.nameIndex] : labels.siteNames[kind];
+	context.fillText(name ?? '', 0, 2, 110);
 	context.restore();
 }
 
@@ -556,10 +989,11 @@ function drawRefinery(
 ) {
 	const { refinery, strike } = segment;
 	drawSign(context, refinery, labels);
-	drawFlare(context, refinery.flare, time, assets);
+	if (refinery.kind === 'refinery') drawFlare(context, refinery.flare, time, assets);
+	else drawMast(context, refinery.flare, time, refinery.kind);
 	refinery.tanks.forEach((tank, index) => {
 		const destroyed = strike?.destroyed.includes(index) ?? false;
-		drawTank(context, tank, index === refinery.biggest, destroyed, assets);
+		drawTank(context, tank, index === refinery.biggest, destroyed, assets, refinery.kind, time);
 		if (index === target && !strike) {
 			// Dashed outline on the tank a dive would hit right now
 			context.save();
@@ -828,7 +1262,9 @@ export function drawScene(
 
 	context.save();
 	context.translate(shakeX, shakeY);
-	drawBackdrop(context, cameraX);
+	// Weather depends on how far the flamingo has flown, so it is the same on every run of a seed
+	const weather = weatherAt(state.seed, cameraX + WORLD_WIDTH / 2);
+	drawBackdrop(context, cameraX, weather, effects.reducedMotion ? 0 : state.time);
 
 	context.save();
 	context.translate(-cameraX, 0);
