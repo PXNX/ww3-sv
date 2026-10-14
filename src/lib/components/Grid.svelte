@@ -18,6 +18,13 @@
 		[1, 1]
 	] as const;
 
+	/** How long the ripple takes to move on by one cell */
+	const RIPPLE_MS = 40;
+	/** The dash of light is slightly faster than the ripple, so it arrives before the cells break */
+	const DASH_MS_PER_CELL = 32;
+	/** Length of a dash and its tail, in percent of the board */
+	const DASH_REACH = 34;
+
 	let {
 		board,
 		preview,
@@ -54,7 +61,7 @@
 					const col = index % board.size;
 					// Ripple outwards from the piece that completed the line
 					const distance = Math.hypot(row - feedback.origin[0], col - feedback.origin[1]);
-					return { index, row, col, kind: feedback.kinds[order], delay: Math.round(distance * 40) };
+					return { index, row, col, kind: feedback.kinds[order], delay: Math.round(distance * RIPPLE_MS) };
 				})
 	);
 	const clearingByCell = $derived(new Map(clearing.map((entry) => [entry.index, entry])));
@@ -68,6 +75,20 @@
 			col: mean(clearing.map((entry) => entry.col))
 		};
 	});
+
+	/**
+	 * The two dashes of one line, leaving the cell where the piece landed (`at`, as an index along the
+	 * line) in opposite directions. Both run until they have left the board, at the same speed.
+	 */
+	function dashRuns(at: number) {
+		const from = ((at + 0.5) / board.size) * 100;
+		const run = (forward: boolean) => {
+			const to = forward ? 100 + DASH_REACH : -DASH_REACH;
+			const ms = Math.round((Math.abs(to - from) / 100) * board.size * DASH_MS_PER_CELL);
+			return { forward, from, to, ms };
+		};
+		return [run(true), run(false)];
+	}
 
 	// A short jolt of the whole board, harder for bigger clears
 	$effect(() => {
@@ -242,22 +263,47 @@
 						style:top="{((feedback.origin[0] + 0.5) / board.size) * 100}%"
 						style:--reach={Math.min(feedback.lines, 3) * 0.5 + 1.5}
 					></span>
-					<!-- And a faint streak runs along every completed row and column -->
+					<!-- And a dash of light shoots both ways along every completed row and column, one
+					     step ahead of the cells it is about to break -->
 					{#each feedback.rows as row (`r${row}`)}
 						<span
-							class="blocks-sweep-row absolute right-0 left-0"
+							class="blocks-lane absolute right-0 left-0"
 							style:top="{(row / board.size) * 100}%"
 							style:height="{100 / board.size}%"
-							style:transform-origin="{((feedback.origin[1] + 0.5) / board.size) * 100}% 50%"
-						></span>
+							style:--delay="{Math.abs(row - feedback.origin[0]) * RIPPLE_MS}ms"
+							style:--reach="{DASH_REACH}%"
+						>
+							<span class="blocks-lane-glow absolute inset-0"></span>
+							{#each dashRuns(feedback.origin[1]) as run (run.forward)}
+								<span
+									class="blocks-dash blocks-dash-row absolute"
+									class:forward={run.forward}
+									style:--from="{run.from}%"
+									style:--to="{run.to}%"
+									style:--dur="{run.ms}ms"
+								></span>
+							{/each}
+						</span>
 					{/each}
 					{#each feedback.cols as col (`c${col}`)}
 						<span
-							class="blocks-sweep-col absolute top-0 bottom-0"
+							class="blocks-lane absolute top-0 bottom-0"
 							style:left="{(col / board.size) * 100}%"
 							style:width="{100 / board.size}%"
-							style:transform-origin="50% {((feedback.origin[0] + 0.5) / board.size) * 100}%"
-						></span>
+							style:--delay="{Math.abs(col - feedback.origin[1]) * RIPPLE_MS}ms"
+							style:--reach="{DASH_REACH}%"
+						>
+							<span class="blocks-lane-glow absolute inset-0"></span>
+							{#each dashRuns(feedback.origin[0]) as run (run.forward)}
+								<span
+									class="blocks-dash blocks-dash-col absolute"
+									class:forward={run.forward}
+									style:--from="{run.from}%"
+									style:--to="{run.to}%"
+									style:--dur="{run.ms}ms"
+								></span>
+							{/each}
+						</span>
 					{/each}
 				</span>
 			{/key}
@@ -374,43 +420,113 @@
 		animation: blocks-blast 520ms ease-out both;
 	}
 
-	/* A light streak that stretches out from the placed piece along a cleared line and fades */
-	@keyframes blocks-sweep-row {
+	/* A dash of light: a white-hot head with a glowing tail that shoots along a cleared line. The
+	   head sits at the animated edge (--from to --to, in percent of the board) and the tail trails
+	   behind it; it is only visible while it travels. */
+	@keyframes blocks-dash-x {
 		0% {
-			scale: 0.05 1;
-			opacity: 0.7;
+			left: var(--from);
+			opacity: 0;
+		}
+		8% {
+			opacity: 1;
+		}
+		85% {
+			opacity: 1;
 		}
 		100% {
-			scale: 1 1;
+			left: var(--to);
 			opacity: 0;
 		}
 	}
 
-	@keyframes blocks-sweep-col {
+	@keyframes blocks-dash-y {
 		0% {
-			scale: 1 0.05;
-			opacity: 0.7;
+			top: var(--from);
+			opacity: 0;
+		}
+		8% {
+			opacity: 1;
+		}
+		85% {
+			opacity: 1;
 		}
 		100% {
-			scale: 1 1;
+			top: var(--to);
 			opacity: 0;
 		}
 	}
 
-	.blocks-sweep-row,
-	.blocks-sweep-col {
-		--sweep: rgb(255 244 200 / 0.75);
+	/* The line itself lights up for a moment as the dash passes through */
+	@keyframes blocks-lane-glow {
+		0% {
+			opacity: 0;
+		}
+		20% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0;
+		}
+	}
+
+	.blocks-lane {
 		pointer-events: none;
 	}
 
-	.blocks-sweep-row {
-		background: linear-gradient(to bottom, transparent, var(--sweep) 50%, transparent);
-		animation: blocks-sweep-row 420ms ease-out both;
+	.blocks-lane-glow {
+		background: radial-gradient(
+			closest-side at 50% 50%,
+			rgb(255 244 200 / 0.55),
+			rgb(255 214 69 / 0.18) 70%,
+			transparent
+		);
+		animation: blocks-lane-glow 520ms ease-out var(--delay) both;
 	}
 
-	.blocks-sweep-col {
-		background: linear-gradient(to right, transparent, var(--sweep) 50%, transparent);
-		animation: blocks-sweep-col 420ms ease-out both;
+	.blocks-dash {
+		opacity: 0;
+		/* The glow follows the painted pixels, so the faded tail does not get a boxy halo */
+		filter: drop-shadow(0 0 5px rgb(255 214 69)) drop-shadow(0 0 2px white);
+	}
+
+	.blocks-dash-row {
+		top: 36%;
+		height: 28%;
+		width: var(--reach);
+		border-radius: 999px;
+		/* The head (right) is white, then the tail fades through yellow into nothing */
+		background:
+			radial-gradient(circle at right center, white 0 35%, transparent 36%),
+			linear-gradient(to right, transparent, rgb(255 214 69 / 0.75) 65%, white);
+		translate: -100% 0;
+		animation: blocks-dash-x var(--dur) linear var(--delay) both;
+	}
+
+	.blocks-dash-row:not(.forward) {
+		background:
+			radial-gradient(circle at left center, white 0 35%, transparent 36%),
+			linear-gradient(to left, transparent, rgb(255 214 69 / 0.75) 65%, white);
+		translate: 0 0;
+	}
+
+	.blocks-dash-col {
+		left: 36%;
+		width: 28%;
+		height: var(--reach);
+		border-radius: 999px;
+		background:
+			radial-gradient(circle at center bottom, white 0 35%, transparent 36%),
+			linear-gradient(to bottom, transparent, rgb(255 214 69 / 0.75) 65%, white);
+		translate: 0 -100%;
+		animation: blocks-dash-y var(--dur) linear var(--delay) both;
+	}
+
+	.blocks-dash-col:not(.forward) {
+		background:
+			radial-gradient(circle at center top, white 0 35%, transparent 36%),
+			linear-gradient(to top, transparent, rgb(255 214 69 / 0.75) 65%, white);
+		translate: 0 0;
 	}
 
 	@keyframes blocks-dust {
@@ -465,8 +581,7 @@
 	@media (prefers-reduced-motion: reduce) {
 		.blocks-clear,
 		.blocks-blast,
-		.blocks-sweep-row,
-		.blocks-sweep-col,
+		.blocks-lane,
 		.blocks-popup {
 			display: none;
 		}
