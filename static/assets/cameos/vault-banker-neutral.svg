@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Cartoon of the banker, a stern man in a grey suit, with a perfectly neutral face">
+	<!-- The Banker: an invented caricature of a type, not a real person. Flat colours, thick outlines -->
+	<rect width="200" height="200" fill="#AEB4BE"/>
+	<circle cx="100" cy="104" r="84" fill="#C9CED6"/>
+	<g transform="translate(14 14) scale(1.5)" stroke="#111" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+		<path d="M8 120 Q10 92 40 88 L80 88 Q110 92 112 120 Z" fill="#7D8594"/>
+		<path d="M46 88 L60 108 L74 88 Z" fill="#FFFFFF" stroke-width="3"/>
+		<path d="M57 98 L63 98 L65 118 L60 122 L55 118 Z" fill="#2B3A55" stroke-width="3"/>
+		<path d="M60 88 V98" stroke-width="3"/>
+		<ellipse cx="24" cy="58" rx="6" ry="9" fill="#F2C9A0"/>
+		<ellipse cx="96" cy="58" rx="6" ry="9" fill="#F2C9A0"/>
+		<ellipse cx="60" cy="56" rx="36" ry="38" fill="#F2C9A0"/>
+		<path d="M25 46 Q22 14 60 11 Q98 14 95 46 Q92 24 74 20 Q56 24 38 20 Q28 24 25 46 Z" fill="#B9BDC6"/>
+		<circle cx="43" cy="58" r="3.2" fill="#111" stroke="none"/>
+		<circle cx="77" cy="58" r="3.2" fill="#111" stroke="none"/>
+		<path d="M31 49 L54 49" stroke-width="5"/>
+		<path d="M66 49 L89 49" stroke-width="5"/>
+		<path d="M60 60 L56 74 L62 75" stroke-width="3"/>
+		<path d="M46 85 H74"/>
+	</g>
+</svg>

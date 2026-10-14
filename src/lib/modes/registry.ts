@@ -26,6 +26,7 @@ import IconFlag from '~icons/lucide/flag-triangle-right';
 import IconVote from '~icons/lucide/vote';
 import IconAnchor from '~icons/lucide/anchor';
 import IconCpu from '~icons/lucide/cpu';
+import IconVault from '~icons/lucide/vault';
 
 export type ModeId =
 	| 'blocks'
@@ -50,7 +51,8 @@ export type ModeId =
 	| 'venezuela'
 	| 'sondage'
 	| 'suez'
-	| 'chipfab';
+	| 'chipfab'
+	| 'vault';
 
 interface ModeBase {
 	id: ModeId;
@@ -305,6 +307,16 @@ export const MODES: readonly GameMode[] = [
 		leaders: [],
 		name: m.mode_chipfab_name,
 		description: m.mode_chipfab_description
+	},
+	{
+		id: 'vault',
+		status: 'playable',
+		href: '/play/vault',
+		icon: IconVault,
+		tileClass: 'bg-explosion-yellow',
+		leaders: [],
+		name: m.mode_vault_name,
+		description: m.mode_vault_description
 	}
 ];
 
