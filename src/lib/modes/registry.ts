@@ -30,6 +30,7 @@ import IconVault from '~icons/lucide/vault';
 import IconGavel from '~icons/lucide/gavel';
 import IconWind from '~icons/lucide/wind';
 import IconSiren from '~icons/lucide/siren';
+import IconCompass from '~icons/lucide/compass';
 
 export type ModeId =
 	| 'blocks'
@@ -58,7 +59,8 @@ export type ModeId =
 	| 'vault'
 	| 'veto'
 	| 'balloon'
-	| 'dome';
+	| 'dome'
+	| 'gpsliar';
 
 interface ModeBase {
 	id: ModeId;
@@ -353,6 +355,16 @@ export const MODES: readonly GameMode[] = [
 		leaders: [],
 		name: m.mode_dome_name,
 		description: m.mode_dome_description
+	},
+	{
+		id: 'gpsliar',
+		status: 'playable',
+		href: '/play/gpsliar',
+		icon: IconCompass,
+		tileClass: 'bg-flag-blue',
+		leaders: [],
+		name: m.mode_gpsliar_name,
+		description: m.mode_gpsliar_description
 	}
 ];
 

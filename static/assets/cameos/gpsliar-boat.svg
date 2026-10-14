@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Cartoon of a little red cargo boat with a puzzled captain, parked on an airport runway">
+	<!-- Original cartoon cargo boat (not a real vessel): flat colours, thick outlines -->
+	<rect width="200" height="200" fill="#9EC3E6"/>
+	<rect x="0" y="118" width="200" height="82" fill="#6C727A"/>
+	<g stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-dasharray="18 14">
+		<path d="M0 176 H200" fill="none"/>
+	</g>
+	<g stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+		<path d="M118 40 L150 46 L178 40 L150 54 Z" fill="#FFFFFF"/>
+		<path d="M138 52 L146 64 M158 52 L152 64" fill="none"/>
+		<path d="M24 118 H176 L156 166 H46 Z" fill="#E5484D"/>
+		<rect x="40" y="96" width="34" height="22" fill="#8A5A2B"/>
+		<rect x="78" y="82" width="54" height="36" fill="#FFFFFF"/>
+		<rect x="90" y="90" width="12" height="12" fill="#9EC3E6"/>
+		<rect x="108" y="90" width="12" height="12" fill="#9EC3E6"/>
+		<circle cx="105" cy="68" r="14" fill="#F6C9A0"/>
+		<path d="M89 64 Q105 44 121 64 Z" fill="#2B3A55"/>
+		<path d="M89 64 H121" fill="none"/>
+		<circle cx="100" cy="70" r="2" fill="#111"/>
+		<circle cx="111" cy="70" r="2" fill="#111"/>
+		<path d="M100 77 Q105 73 110 77" fill="none"/>
+		<path d="M54 134 Q66 128 78 134 M96 134 Q108 128 120 134" fill="none" stroke-width="3"/>
+	</g>
+</svg>
