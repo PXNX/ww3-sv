@@ -189,6 +189,79 @@ export function voice(ctx: AudioContext, dest: AudioNode, options: VoiceOptions)
 	});
 }
 
+export interface WhineOptions {
+	/** Hz of the first motor; the others sit a little above it, like four motors never quite in sync */
+	frequency: number;
+	glideTo?: number;
+	/** Seconds */
+	duration: number;
+	gain?: number;
+	/** Seconds before this whine starts, relative to now */
+	delay?: number;
+}
+
+/** How far each of the four motors sits above the first, as a ratio */
+const MOTOR_SPREAD = [1, 1.034, 1.071, 1.109] as const;
+
+/**
+ * The high electric whine of an FPV quadcopter: four sawtooth "motors" at slightly different
+ * pitches, each wobbling with a fast ripple, squeezed through a resonant band so it rings like
+ * spinning props, over a thin hiss of rotor air.
+ */
+export function whine(ctx: AudioContext, dest: AudioNode, options: WhineOptions): void {
+	const { frequency, glideTo = frequency, duration, gain = 0.1, delay = 0 } = options;
+	const start = ctx.currentTime + delay;
+	const end = start + duration;
+	const attack = Math.min(0.06, duration / 3);
+
+	const envelope = ctx.createGain();
+	envelope.gain.setValueAtTime(0, start);
+	envelope.gain.linearRampToValueAtTime(gain, start + attack);
+	envelope.gain.setValueAtTime(gain, end - attack * 2);
+	envelope.gain.linearRampToValueAtTime(0, end);
+
+	// The airframe and props ring in a narrow band that follows the motors' pitch
+	const resonance = ctx.createBiquadFilter();
+	resonance.type = 'bandpass';
+	resonance.Q.value = 2.2;
+	resonance.frequency.setValueAtTime(frequency * 3, start);
+	resonance.frequency.exponentialRampToValueAtTime(Math.max(1, glideTo * 3), end);
+	resonance.connect(envelope).connect(dest);
+
+	MOTOR_SPREAD.forEach((spread, index) => {
+		const motor = ctx.createOscillator();
+		motor.type = 'sawtooth';
+		motor.frequency.setValueAtTime(frequency * spread, start);
+		motor.frequency.exponentialRampToValueAtTime(Math.max(1, glideTo * spread), end);
+
+		// A quick uneven ripple, a different speed per motor, as the controller keeps correcting them
+		const ripple = ctx.createOscillator();
+		ripple.frequency.value = 23 + index * 7;
+		const depth = ctx.createGain();
+		depth.gain.value = frequency * spread * 0.012;
+		ripple.connect(depth).connect(motor.frequency);
+
+		const level = ctx.createGain();
+		level.gain.value = 0.25;
+		motor.connect(level).connect(resonance);
+
+		motor.start(start);
+		ripple.start(start);
+		motor.stop(end + 0.02);
+		ripple.stop(end + 0.02);
+	});
+
+	noise(ctx, dest, {
+		duration,
+		filterType: 'bandpass',
+		filterFrequency: glideTo * 5,
+		q: 1.5,
+		gain: gain * 0.35,
+		attack,
+		delay
+	});
+}
+
 /** A short melodic phrase; each note's `delay` is relative to when the sequence is triggered */
 export function sequence(ctx: AudioContext, dest: AudioNode, notes: readonly ToneOptions[]): void {
 	for (const note of notes) tone(ctx, dest, note);

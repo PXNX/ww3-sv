@@ -5,7 +5,7 @@
  * same triumphant chime without the catalog growing one entry per event per mode.
  */
 import { playClip, playRandomClip } from './clips';
-import { noise, sequence, tone, voice } from './synth';
+import { noise, sequence, tone, voice, whine } from './synth';
 
 /** Seconds the sung "Welcome to Ukraine" fades out over, so the recording doesn't end abruptly */
 const WELCOME_FADE_OUT = 2;
@@ -658,66 +658,36 @@ export const SOUNDS: Record<SoundId, SoundEffect> = {
 		}
 	},
 
-	// An FPV drone buzzing close behind: a few fast rasping pulses over a whine. Intensity (how near
-	// the drone is) lifts the pitch and the volume.
+	// An FPV drone close behind: the thin, high electric whine of four small motors, wavering a
+	// little as it holds station. Intensity (how near the drone is) lifts the pitch and the volume.
 	'drone-buzz': (ctx, dest, intensity) => {
-		const pitch = 170 + intensity * 120;
-		for (let pulse = 0; pulse < 4; pulse++) {
-			tone(ctx, dest, {
-				frequency: pitch,
-				glideTo: pitch * 1.05,
-				duration: 0.07,
-				type: 'sawtooth',
-				gain: 0.04 + intensity * 0.08,
-				delay: pulse * 0.075
-			});
-		}
-		tone(ctx, dest, {
-			frequency: pitch * 4.02,
-			glideTo: pitch * 4.3,
-			duration: 0.3,
-			type: 'square',
-			gain: 0.012 + intensity * 0.03
-		});
-		noise(ctx, dest, {
-			duration: 0.3,
-			filterType: 'bandpass',
-			filterFrequency: 1200 + intensity * 600,
-			q: 4,
-			gain: 0.03 + intensity * 0.06
+		const pitch = 520 + intensity * 330;
+		whine(ctx, dest, {
+			frequency: pitch,
+			glideTo: pitch * (1 + (Math.random() - 0.5) * 0.08),
+			duration: 0.6,
+			gain: 0.035 + intensity * 0.075
 		});
 	},
 
-	// A drone maneuvering: a short "brzzz" that whines up and drops away again, with a gritty rasp
-	// riding on it. Intensity (how close the drone is) makes it higher and louder.
+	// A drone maneuvering: the whine screams up as the motors throttle hard, then drops away again.
+	// Intensity (how close the drone is) makes it higher and louder.
 	'drone-brzzz': (ctx, dest, intensity) => {
-		const low = 190 + intensity * 130;
-		const high = low * 2.3;
-		tone(ctx, dest, {
+		const low = 560 + intensity * 300;
+		const high = low * 1.9;
+		whine(ctx, dest, {
 			frequency: low,
 			glideTo: high,
-			duration: 0.16,
-			type: 'sawtooth',
-			gain: 0.05 + intensity * 0.1
-		});
-		tone(ctx, dest, {
-			frequency: high,
-			glideTo: low * 0.8,
 			duration: 0.2,
-			type: 'sawtooth',
-			gain: 0.04 + intensity * 0.09,
-			delay: 0.15
+			gain: 0.05 + intensity * 0.09
 		});
-		for (let pulse = 0; pulse < 5; pulse++) {
-			noise(ctx, dest, {
-				duration: 0.045,
-				filterType: 'bandpass',
-				filterFrequency: 1500 + pulse * 220,
-				q: 3,
-				gain: 0.04 + intensity * 0.07,
-				delay: pulse * 0.07
-			});
-		}
+		whine(ctx, dest, {
+			frequency: high,
+			glideTo: low * 0.85,
+			duration: 0.3,
+			gain: 0.045 + intensity * 0.08,
+			delay: 0.18
+		});
 	},
 
 	// A cat's hiss: a long airy "sshh" with a spit at the start. Intensity makes it louder.
