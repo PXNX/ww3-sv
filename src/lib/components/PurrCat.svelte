@@ -1,6 +1,6 @@
 <!--
 	One cat of Purr Pentagram, drawn in SVG around its own origin (the board moves it to its seat):
-	the cat itself, the petting ring that glows with the purr, and under it the name tag, the three
+	the cat itself, the petting ring that glows with the purr, little hearts floating up while it purrs, and under it the name tag, the three
 	hearts of its happiness and, once it has been petted happy, a gauge of how deep its purr is. The
 	tag is a "?" until the cat has warmed up enough to show its name: that is how the player learns
 	that there is a name to be found.
@@ -69,7 +69,7 @@
 	class:purring={purr > 0.1}
 	data-motion={motion}
 	style:--lean="{lean}deg"
-	style:--shake="{(1.6 + purr * 3.6).toFixed(2)}px"
+	style:--shake="{(0.4 + purr * 0.9).toFixed(2)}px"
 >
 	<!-- The petting ring: it glows with the purr and turns red while the cat is too upset to be joined -->
 	<circle
@@ -346,6 +346,26 @@
 			>
 		{/if}
 
+		{#if purr > 0.3}
+			<g aria-hidden="true">
+				{#each [-34, 0, 34] as x, i (x)}
+					{#if purr > 0.3 + i * 0.2}
+						<text
+							class="heart"
+							{x}
+							y={-112 - i * 3}
+							text-anchor="middle"
+							fill="#c0143c"
+							stroke="#4a0510"
+							stroke-width="1.5"
+							font-size="22"
+							style:animation-delay="{i * 0.35}s">♥</text
+						>
+					{/if}
+				{/each}
+			</g>
+		{/if}
+
 		{#if cat.nameShown}
 			<g class="tag">
 				<rect
@@ -489,9 +509,9 @@
 		animation: aura 1.1s ease-in-out infinite alternate;
 	}
 
-	/* A purring cat trembles all over, the more the louder it purrs */
+	/* A purring cat trembles a little, the more the louder it purrs */
 	.cat.purring .life {
-		animation: purr 75ms linear infinite alternate;
+		animation: purr 85ms linear infinite alternate;
 	}
 
 	.cat.purring .head {
@@ -591,6 +611,10 @@
 		animation: bounce 900ms ease-in-out infinite;
 	}
 
+	.heart {
+		animation: rise 1.6s ease-out infinite;
+	}
+
 	.tag {
 		animation: pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 		transform-origin: 0 77px;
@@ -617,19 +641,19 @@
 
 	@keyframes purr {
 		from {
-			transform: translate(calc(var(--shake) * -1), 0) rotate(-0.7deg);
+			transform: translate(calc(var(--shake) * -1), 0) rotate(-0.15deg);
 		}
 		to {
-			transform: translate(var(--shake), calc(var(--shake) * 0.35)) rotate(0.7deg);
+			transform: translate(var(--shake), calc(var(--shake) * 0.3)) rotate(0.15deg);
 		}
 	}
 
 	@keyframes purr-head {
 		from {
-			transform: translateY(calc(var(--shake) * -0.3)) rotate(-1.2deg);
+			transform: translateY(calc(var(--shake) * -0.25)) rotate(-0.3deg);
 		}
 		to {
-			transform: translateY(calc(var(--shake) * 0.3)) rotate(1.2deg);
+			transform: translateY(calc(var(--shake) * 0.25)) rotate(0.3deg);
 		}
 	}
 
@@ -753,6 +777,20 @@
 		}
 	}
 
+	@keyframes rise {
+		0% {
+			transform: translateY(10px);
+			opacity: 0;
+		}
+		30% {
+			opacity: 1;
+		}
+		100% {
+			transform: translateY(-14px);
+			opacity: 0;
+		}
+	}
+
 	@keyframes pop {
 		0% {
 			transform: scale(0.3);
@@ -782,7 +820,12 @@
 	.cat.calm .spiral,
 	.cat.calm .zzz,
 	.cat.calm .bang,
+	.cat.calm .heart,
 	.cat.calm .tag {
 		animation: none;
+	}
+
+	.cat.calm .heart {
+		opacity: 0.9;
 	}
 </style>

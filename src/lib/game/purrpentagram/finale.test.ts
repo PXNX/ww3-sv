@@ -56,6 +56,21 @@ describe('finaleStage', () => {
 		expect(late.candles).toBe(1);
 	});
 
+	it('raises the horned cat in the middle of the star with the burst, not before', () => {
+		const lineEnd = LINE_MS * CAT_COUNT;
+		expect(finaleStage(lineEnd - 1).demon).toBe(0);
+		const rising = finaleStage(lineEnd + BURST_MS * 0.45).demon;
+		expect(rising).toBeGreaterThan(0);
+		expect(rising).toBeLessThan(1);
+		expect(finaleStage(lineEnd + BURST_MS).demon).toBe(1);
+	});
+
+	it('shows the horned cat without any rising when motion is reduced', () => {
+		const lineEnd = LINE_MS * CAT_COUNT;
+		expect(finaleStage(lineEnd - 1, true).demon).toBe(0);
+		expect(finaleStage(lineEnd + 1, true).demon).toBe(1);
+	});
+
 	it('keeps breathing forever, with a slow pulse between dim and bright', () => {
 		const start = LINE_MS * CAT_COUNT + BURST_MS;
 		const samples = Array.from(

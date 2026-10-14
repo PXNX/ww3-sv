@@ -12,7 +12,6 @@
 	import PurrFinalePanel from '#lib/components/PurrFinalePanel.svelte';
 	import PurrPentagramBoard from '#lib/components/PurrPentagramBoard.svelte';
 	import PurrRiddleCard from '#lib/components/PurrRiddleCard.svelte';
-	import SoundToggle from '#lib/components/SoundToggle.svelte';
 	import TutorialModal from '#lib/components/TutorialModal.svelte';
 	import { STARTING_LIVES } from '#lib/game/purrpentagram/config.js';
 	import { finaleStage } from '#lib/game/purrpentagram/finale.js';
@@ -195,9 +194,5 @@
 				<dd class="text-2xl font-bold tabular-nums">{totalHearts(ritual)}</dd>
 			</div>
 		</dl>
-		{#if won}
-			<!-- The finale music is the point: the sheet covers the board, so it carries the mute button -->
-			<div class="mt-3 flex justify-center"><SoundToggle /></div>
-		{/if}
 	</GameOverModal>
 </GameShell>

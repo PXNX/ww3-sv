@@ -20,6 +20,7 @@
 	import { coatText } from '#lib/theme/purrText.js';
 	import PauseOverlay from './PauseOverlay.svelte';
 	import PurrCat from './PurrCat.svelte';
+	import PurrDemonCat from './PurrDemonCat.svelte';
 	import IconPlay from '~icons/lucide/play';
 
 	let { game, children }: { game: PurrPentagramGame; children?: Snippet } = $props();
@@ -359,6 +360,9 @@
 				filter="url(#{drawn.glow})"
 			/>
 		{/each}
+
+		<!-- The horned cat that rises in the middle of the finished star -->
+		<PurrDemonCat appear={stage?.demon ?? 0} breath={stage?.breath ?? 0} {calm} />
 
 		<!-- The stroke being dragged -->
 		{#if game.drag}

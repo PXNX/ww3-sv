@@ -30,6 +30,8 @@ export interface FinaleStage {
 	eyes: number;
 	/** How far the candles have flared (0 to 1) */
 	candles: number;
+	/** How far the horned cat has risen in the middle of the star (0 to 1) */
+	demon: number;
 	/** The slow breathing pulse (0 to 1); a steady glow when motion is reduced */
 	breath: number;
 	/** Opacity of the "Ritual Complete" banner (0 to 1) */
@@ -75,6 +77,8 @@ export function finaleStage(elapsedMs: number, reducedMotion = false): FinaleSta
 		halo: clamp01(0.15 + 0.85 * buildUp),
 		eyes: clamp01((t - lineEnd) / BURST_MS),
 		candles: clamp01(buildUp * 1.2),
+		// It rises with the burst; with reduced motion it is simply there once the last line is lit
+		demon: reducedMotion ? (sinceLines >= 0 ? 1 : 0) : clamp01(sinceLines / (BURST_MS * 0.9)),
 		breath,
 		banner: clamp01((t - BANNER_DELAY_MS) / 700)
 	};
