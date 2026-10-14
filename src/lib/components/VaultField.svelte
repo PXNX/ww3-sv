@@ -92,7 +92,7 @@
 		{#key game.toast.id}
 			<p
 				dir="auto"
-				class="pointer-events-none notice absolute inset-x-2 top-3 z-10 text-center font-display text-2xl leading-tight font-bold text-paper [-webkit-text-stroke:5px_var(--color-ink)] [paint-order:stroke] sm:text-3xl"
+				class="notice pointer-events-none absolute inset-x-2 top-3 z-10 text-center font-display text-2xl leading-tight font-bold text-paper [-webkit-text-stroke:5px_var(--color-ink)] [paint-order:stroke] sm:text-3xl"
 				aria-live="polite"
 			>
 				{game.toast.text}
