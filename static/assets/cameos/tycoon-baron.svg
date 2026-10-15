@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Cartoon of a plump oil baron in a top hat with a monocle and a long cigar, hugging a barrel">
+	<!-- Original cartoon character (not a real person): flat colours, thick outlines -->
+	<rect width="200" height="200" fill="#F2D488"/>
+	<g stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+		<!-- distant derricks -->
+		<path d="M20 150 L32 100 L44 150 M24 136 H40 M27 120 H37" fill="none" stroke-width="3"/>
+		<path d="M160 150 L170 108 L180 150 M164 136 H176" fill="none" stroke-width="3"/>
+		<!-- ground -->
+		<rect x="0" y="160" width="200" height="40" fill="#8A5A2B"/>
+		<!-- body in a pinstripe waistcoat -->
+		<path d="M44 172 Q40 120 100 112 Q160 120 156 172 Z" fill="#3F4A66"/>
+		<path d="M100 114 V172 M78 124 V172 M122 124 V172" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.5"/>
+		<path d="M88 122 L100 150 L112 122" fill="#FFFFFF"/>
+		<circle cx="100" cy="158" r="4" fill="#F5C83A"/>
+		<!-- head -->
+		<circle cx="100" cy="82" r="34" fill="#F6C9A0"/>
+		<!-- top hat -->
+		<rect x="62" y="66" width="76" height="9" rx="4" fill="#1B1B1B"/>
+		<rect x="72" y="26" width="56" height="44" rx="4" fill="#1B1B1B"/>
+		<rect x="72" y="54" width="56" height="9" fill="#E5484D"/>
+		<!-- monocle, eyes, moustache and a self-satisfied smile -->
+		<circle cx="116" cy="82" r="10" fill="#FFFFFF" fill-opacity="0.6"/>
+		<path d="M126 86 Q132 100 128 112" fill="none" stroke-width="2.5"/>
+		<circle cx="86" cy="82" r="3" fill="#111"/>
+		<circle cx="116" cy="82" r="3" fill="#111"/>
+		<path d="M82 98 Q100 90 118 98 Q100 104 82 98 Z" fill="#6B4423"/>
+		<path d="M88 106 Q100 114 112 106" fill="none"/>
+		<!-- cigar with smoke -->
+		<path d="M110 104 L146 98" fill="none" stroke-width="7" stroke="#8A5A2B"/>
+		<circle cx="148" cy="97" r="4" fill="#E5484D" stroke-width="2"/>
+		<path d="M154 88 Q162 78 154 68 Q146 60 154 50" fill="none" stroke="#FFFFFF" stroke-width="3"/>
+		<!-- the barrel he hugs -->
+		<path d="M22 172 Q16 140 24 112 L72 112 Q80 140 74 172 Z" fill="#2A2A2A"/>
+		<path d="M20 128 H76 M18 156 H78" fill="none" stroke="#F5C83A" stroke-width="3"/>
+		<ellipse cx="48" cy="112" rx="24" ry="6" fill="#4A4A4A"/>
+		<!-- arm over the barrel -->
+		<path d="M60 130 Q72 124 80 138" fill="#3F4A66"/>
+	</g>
+</svg>

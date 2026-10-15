@@ -1,0 +1,249 @@
+import { describe, expect, it } from 'vitest';
+import {
+	ACHIEVEMENTS,
+	OFFLINE_CAP_MS,
+	OFFLINE_EFFICIENCY,
+	PRESTIGE_BONUS,
+	PRESTIGE_UNIT,
+	PRODUCERS,
+	UPGRADES
+} from '#lib/game/tycoon/config.js';
+import { SAVE_KEY } from '#lib/game/tycoon/save.js';
+import { createHighscores } from '#lib/services/highscore.js';
+import { createStore, type KeyValueStorage } from '#lib/services/storage.js';
+import { loadMessages, missingMessages } from '#lib/testing/messages.js';
+import { AUTOSAVE_MS, BEST_KEY, TycoonGame } from './tycoonGame.svelte';
+
+function memoryStorage(initial: Record<string, string> = {}): KeyValueStorage {
+	const data = new Map(Object.entries(initial));
+	return {
+		getItem: (key) => data.get(key) ?? null,
+		setItem: (key, value) => void data.set(key, value),
+		removeItem: (key) => void data.delete(key)
+	};
+}
+
+function setup(storage = memoryStorage(), start = 1_000_000) {
+	const store = createStore(storage);
+	const scores = createHighscores(store);
+	const clock = { now: start };
+	const game = new TycoonGame({
+		store: () => store,
+		scores: () => scores,
+		seed: () => 7,
+		now: () => clock.now
+	});
+	return { game, store, scores, clock, storage };
+}
+
+describe('TycoonGame', () => {
+	it('starts empty and running, with a first tap that pumps one barrel', () => {
+		const { game } = setup();
+		expect(game.status).toBe('playing');
+		expect(game.barrels).toBe(0);
+		expect(game.tap()).toBe(1);
+		expect(game.barrels).toBe(1);
+		expect(game.taps).toBe(1);
+		expect(game.achievementIds).toContain('first_tap');
+	});
+
+	it('buys producers, which then pump on every step', () => {
+		const { game } = setup();
+		for (let i = 0; i < 15; i++) game.tap();
+		expect(game.buy('pumpjack', 1)).toBe(1);
+		expect(game.owned.pumpjack).toBe(1);
+		// The taps unlocked the first achievement, so the last few are worth a little more
+		expect(game.barrels).toBeLessThan(1);
+		expect(game.buy('pumpjack', 1)).toBe(0);
+		const before = game.barrels;
+		game.update(10_000);
+		expect(game.barrels - before).toBeCloseTo(1.01, 6);
+		expect(game.perSecond).toBeCloseTo(0.101, 9);
+	});
+
+	it('buys with the chosen amount and shows affordable upgrades', () => {
+		const { game } = setup();
+		game.state.barrels = 1000;
+		game.buyAmount = 'max';
+		const bought = game.buy('pumpjack');
+		expect(bought).toBeGreaterThan(5);
+		game.state.barrels = 500;
+		game.update(0);
+		expect(game.availableIds).toContain('click_bucket');
+		expect(game.buyUpgrade('click_bucket')).toBe(true);
+		expect(game.availableIds).not.toContain('click_bucket');
+		expect(game.tapGain).toBeCloseTo(2 * 1.01, 9);
+	});
+
+	it('does nothing while paused, and picks up where it stopped', () => {
+		const { game } = setup();
+		game.state.owned.tanker = 10;
+		game.pause();
+		expect(game.tap()).toBe(0);
+		expect(game.buy('pumpjack')).toBe(0);
+		game.update(10_000);
+		expect(game.barrels).toBe(0);
+		game.resume();
+		game.update(1000);
+		expect(game.barrels).toBeCloseTo(10, 6);
+	});
+
+	it('answers a crisis and blocks taps during a protest', () => {
+		const { game } = setup();
+		game.state.owned.tanker = 10;
+		game.state.barrels = 100_000;
+		game.state.event = { kind: 'protest', remainingMs: 10_000 };
+		game.update(0);
+		expect(game.event?.kind).toBe('protest');
+		game.choose('b');
+		expect(game.event).toBeNull();
+		expect(game.effects.map((effect) => effect.id)).toEqual(['protest']);
+		expect(game.tap()).toBe(0);
+	});
+
+	it('nationalizes only when it pays, and keeps the points', () => {
+		const { game } = setup();
+		expect(game.nationalize()).toBe(false);
+		game.state.runTotal = 4 * PRESTIGE_UNIT;
+		game.state.barrels = 5;
+		game.update(0);
+		expect(game.pendingPoints).toBe(2);
+		expect(game.nationalize()).toBe(true);
+		expect(game.prestigePoints).toBe(2);
+		expect(game.barrels).toBe(0);
+		expect(game.multiplier).toBeCloseTo(1 + 2 * PRESTIGE_BONUS, 9);
+	});
+});
+
+describe('TycoonGame persistence', () => {
+	it('saves on purchases and loads the same game back', () => {
+		const first = setup();
+		first.game.state.barrels = 1000;
+		first.game.buy('tanker', 3);
+		first.game.tap();
+		first.game.save();
+		const second = setup(first.storage);
+		second.game.load();
+		expect(second.game.owned.tanker).toBe(3);
+		expect(second.game.taps).toBe(1);
+		expect(second.game.loaded).toBe(true);
+	});
+
+	it('saves by itself every few seconds', () => {
+		const { game, storage } = setup();
+		game.tap();
+		expect(storage.getItem(`ww3:${SAVE_KEY}`)).toBeNull();
+		for (let elapsed = 0; elapsed < AUTOSAVE_MS; elapsed += 100) game.update(100);
+		expect(JSON.parse(storage.getItem(`ww3:${SAVE_KEY}`)!).taps).toBe(1);
+	});
+
+	it('credits the time between sessions, with a welcome-back report', () => {
+		const first = setup(memoryStorage(), 1_000_000);
+		first.game.state.owned.tanker = 10;
+		first.game.save();
+		const second = setup(first.storage, 1_000_000 + 600_000);
+		second.game.load();
+		expect(second.game.welcome?.creditedMs).toBe(600_000);
+		expect(second.game.barrels).toBeCloseTo(10 * 600 * OFFLINE_EFFICIENCY, 6);
+		second.game.dismissWelcome();
+		expect(second.game.welcome).toBeNull();
+	});
+
+	it('caps the credited time and says so', () => {
+		const first = setup(memoryStorage(), 1_000_000);
+		first.game.state.owned.tanker = 10;
+		first.game.save();
+		const second = setup(first.storage, 1_000_000 + OFFLINE_CAP_MS * 5);
+		second.game.load();
+		expect(second.game.welcome?.capped).toBe(true);
+		expect(second.game.barrels).toBeCloseTo(10 * (OFFLINE_CAP_MS / 1000) * OFFLINE_EFFICIENCY, 3);
+	});
+
+	it('skips the report for a short absence and for nothing earned', () => {
+		const first = setup(memoryStorage(), 1_000_000);
+		first.game.state.owned.tanker = 10;
+		first.game.save();
+		const quick = setup(first.storage, 1_000_000 + 5000);
+		quick.game.load();
+		expect(quick.game.welcome).toBeNull();
+		expect(quick.game.barrels).toBeGreaterThan(0);
+		const empty = setup(memoryStorage(), 1_000_000);
+		empty.game.save();
+		const later = setup(empty.storage, 1_000_000 + 3_600_000);
+		later.game.load();
+		expect(later.game.welcome).toBeNull();
+	});
+
+	it('credits a hidden tab when it comes back', () => {
+		const { game, clock } = setup();
+		game.state.owned.tanker = 10;
+		game.away();
+		clock.now += 120_000;
+		game.back();
+		expect(game.welcome?.creditedMs).toBe(120_000);
+		expect(game.barrels).toBeCloseTo(10 * 120 * OFFLINE_EFFICIENCY, 6);
+		// Coming back twice does not credit twice
+		game.back();
+		expect(game.barrels).toBeCloseTo(10 * 120 * OFFLINE_EFFICIENCY, 6);
+	});
+
+	it('starts a fresh game from a corrupt save instead of crashing', () => {
+		const corrupt = ['{"version":1,"barrels":', 'null', '"text"', '{"version":99}', '[1,2]'];
+		for (const raw of corrupt) {
+			const { game } = setup(memoryStorage({ [`ww3:${SAVE_KEY}`]: raw }));
+			expect(() => game.load()).not.toThrow();
+			expect(game.barrels).toBe(0);
+			expect(game.loaded).toBe(true);
+			expect(game.tap()).toBe(1);
+		}
+	});
+
+	it('keeps the best lifetime total and survives a reset', () => {
+		const { game, scores, storage } = setup();
+		game.state.lifetime = 5000;
+		game.state.barrels = 5000;
+		game.save();
+		expect(scores.get(BEST_KEY)).toBe(5000);
+		expect(game.best).toBe(5000);
+		game.reset();
+		expect(game.barrels).toBe(0);
+		expect(scores.get(BEST_KEY)).toBe(5000);
+		expect(JSON.parse(storage.getItem(`ww3:${SAVE_KEY}`)!).lifetime).toBe(0);
+	});
+
+	it('works without any storage at all', () => {
+		const game = new TycoonGame({
+			store: () => createStore(null),
+			scores: () => createHighscores(createStore(null)),
+			seed: () => 1
+		});
+		game.load();
+		game.tap();
+		expect(() => game.save()).not.toThrow();
+		expect(game.barrels).toBe(1);
+	});
+});
+
+describe('Oil Tycoon messages', () => {
+	it('has messages in every language', () => {
+		expect(missingMessages(['tycoon_', 'mode_tycoon_'])).toEqual([]);
+	});
+
+	it('names every producer, upgrade and achievement the game defines', () => {
+		const en = loadMessages('en');
+		const missing: string[] = [];
+		for (const producer of PRODUCERS) {
+			for (const part of ['name', 'flavor']) {
+				if (!en[`tycoon_producer_${producer.id}_${part}`]) missing.push(producer.id + part);
+			}
+		}
+		for (const upgrade of UPGRADES) {
+			if (upgrade.kind !== 'producer' && !en[`tycoon_upgrade_${upgrade.id}`])
+				missing.push(upgrade.id);
+		}
+		for (const achievement of ACHIEVEMENTS) {
+			if (!en[`tycoon_ach_name_${achievement.id}`]) missing.push(achievement.id);
+		}
+		expect(missing).toEqual([]);
+	});
+});
