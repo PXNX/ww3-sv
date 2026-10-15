@@ -34,6 +34,7 @@ import IconCompass from '~icons/lucide/compass';
 import IconDroplets from '~icons/lucide/droplets';
 import IconDrill from '~icons/lucide/drill';
 import IconSpellCheck from '~icons/lucide/spell-check';
+import IconLeaf from '~icons/lucide/leaf';
 
 export type ModeId =
 	| 'blocks'
@@ -66,7 +67,8 @@ export type ModeId =
 	| 'gpsliar'
 	| 'leakpatrol'
 	| 'tycoon'
-	| 'wordle';
+	| 'wordle'
+	| 'maple';
 
 interface ModeBase {
 	id: ModeId;
@@ -401,6 +403,16 @@ export const MODES: readonly GameMode[] = [
 		leaders: [],
 		name: m.mode_wordle_name,
 		description: m.mode_wordle_description
+	},
+	{
+		id: 'maple',
+		status: 'playable',
+		href: '/play/maple',
+		icon: IconLeaf,
+		tileClass: 'bg-mustard',
+		leaders: [],
+		name: m.mode_maple_name,
+		description: m.mode_maple_description
 	}
 ];
 

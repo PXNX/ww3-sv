@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Cartoon of an apologetic moose in a tiny tariff hat in a maple syrup warehouse, next to a toppled barrel">
+	<!-- Original cartoon moose (not a real person or animal portrait): flat colours, thick outlines -->
+	<rect width="200" height="200" fill="#E8E1BC"/>
+	<rect x="0" y="150" width="200" height="50" fill="#C9C09A"/>
+	<g stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+		<rect x="0" y="20" width="200" height="14" fill="#8A5A2B"/>
+		<rect x="0" y="62" width="200" height="14" fill="#8A5A2B"/>
+		<path d="M52 56 L40 24 M46 40 L30 36 M60 50 L56 28 M72 46 L82 30" fill="none" stroke-width="6"/>
+		<path d="M148 56 L160 24 M154 40 L170 36 M140 50 L144 28 M128 46 L118 30" fill="none" stroke-width="6"/>
+		<ellipse cx="100" cy="132" rx="52" ry="34" fill="#6B4423"/>
+		<rect x="62" y="152" width="14" height="30" rx="4" fill="#4A2F17"/>
+		<rect x="124" y="152" width="14" height="30" rx="4" fill="#4A2F17"/>
+		<ellipse cx="100" cy="84" rx="30" ry="28" fill="#8A5A2B"/>
+		<ellipse cx="100" cy="104" rx="20" ry="14" fill="#A8743A"/>
+		<circle cx="90" cy="108" r="3" fill="#111"/>
+		<circle cx="110" cy="108" r="3" fill="#111"/>
+		<circle cx="86" cy="80" r="4" fill="#111"/>
+		<circle cx="114" cy="80" r="4" fill="#111"/>
+		<path d="M82 70 Q86 64 92 68 M118 70 Q114 64 108 68" fill="none" stroke-width="3"/>
+		<path d="M84 126 Q100 118 116 126" fill="none" stroke-width="3"/>
+		<path d="M88 62 L100 40 L112 62 Z" fill="#FFFFFF"/>
+		<path d="M89 56 H111" fill="none" stroke="#E5484D" stroke-width="5"/>
+		<ellipse cx="160" cy="164" rx="22" ry="16" fill="#C8791A"/>
+		<path d="M142 160 Q160 168 178 160" fill="none"/>
+		<path d="M178 168 Q192 172 196 180" fill="none" stroke="#C8791A" stroke-width="6"/>
+	</g>
+</svg>
