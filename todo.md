@@ -64,22 +64,6 @@ Check against the modes that landed outside this plan (chess, purrpentagram, bal
 
 Done: **1.3** the older pause overlays (convoy, minefield, pipeline, fury, flamingo, shootdown) now use the shared `PauseOverlay` (commit `06bbcbd`).
 
-- [ ] **1.4 Guardrail audit: decision needed, then land.** The audit is finished and committed on the local branch `audit/guardrails` (commit `9261a60`), but it is NOT on main. It rewrites content that the owner added on purpose, so it needs a go or no-go per item:
-  - Renames `Azov Brigade` to a generic `Volunteer Brigade` in Drone Wall (ids, keys and all six texts).
-  - Removes the real brands Wildberries and Yandex (text, "WB" lettering, red "Я" logo) from Flamingo Flight.
-  - Reverts `Jason Huang of Novideo` in Chip Fab Rush back to the nameless archetype "The Jacket" (undoes `fb684ab`).
-  - Renames the Pokémon ball cards in 4D Chess (Gotcha, Great, Ultra and Master Ball) to Lasso, Fishing Net, Trawl Net and Dragnet, with new icons.
-  - Replaces "Sharpie" with "marker" in Leak Patrol, and turns the red cross on the Drone Wall medic into a green plus (the red cross is a protected emblem).
-  - Adds a "Credits and licences" section to the About page in six locales, the OFL texts for three fonts in `static/fonts/`, and `src/lib/contentGuardrails.test.ts` (scans for removed names, blood terms, blood-red SVG colours, platformer look-alike shapes, embedded images in SVGs and missing licence files; 15 of its 38 checks fail without the renames).
-  - Suggested way forward: cherry-pick the parts the owner accepts, and relax the test's name list for the rest. The credits section, font licences and the red cross fix are uncontroversial.
-- [ ] **1.4 Judgement calls from the audit, nothing changed yet:**
-  - Third-party sounds with unknown provenance: `putin-laugh.mp3` (tagged www.voicy.network, a meme soundboard, a real person's voice), `slava-ukraini.wav`, `welcome-to-ukraine.mp3`. The About page says nothing about sound credits until the source and licence are known.
-  - Weapon and product names kept as descriptive: Patriot, HIMARS, Javelin, Bayraktar, Leopard 2, Gepard, Pion, Storm Shadow, F-16, Pantsir, Zircon, Kinzhal, Geran, Kalibr, "Iron Dome Juggler".
-  - Game-brand look-alikes: "Sanctions Wordle" (NYT trademark), "Whack-a-Spokesperson" (Whac-A-Mole), "Magyar's Birds" (Angry Birds style).
-  - Fury "Topple every golden dome": onion domes in the style of Russian churches, which could read as attacking religious buildings.
-  - Stereotypes aimed at nations rather than governments: red fez on the Erdoğan cameo, Swiss banker/cheese/watches, Canadian moose, Finnish herring and sauna, French croissants, tea jokes for Iran and Turkey.
-  - Others: Soviet helmet with a red star and Ukraine's trident on a portrait, Drone Wall snipers prioritising medics, "Passierschein B-38" and "Ever Stuck" as nods to existing works.
-  - Bug: the ru `cameo_erdogan_3` text ends in an odd "Гость: {characterName}".
 - [ ] **1.5 Persian and Arabic RTL review** of the HUD for every mode (the playfield must stay LTR). Not started. Plan: run each play route at 390x844 in fa and ar in a headless browser, check clipped or overflowing text, physical left/right Tailwind classes that should be logical (`ms-`/`me-`/`start-`/`end-`), arrows that should flip, Latin names inside RTL text, fonts with missing glyphs, and the LivesBar order. Previous checks only covered English and sometimes German or Persian.
 - [ ] **Section 4, step 8: About page, consent, PWA and general polish** "as in the existing commit plan". Not started. Only the satire note and a small `/about` route exist. Needs: finish the About page (credits, privacy note about local storage, version), decide whether a consent notice is needed for a client-only app, check the manifest, service worker, offline behaviour and install hint, and a polish pass.
 - [ ] **1.3** Decide whether the idle game (Oil Tycoon) and the puzzle modes without lives (Parking, Belt & Road, Maze, Wordle) need a shared "result panel" instead of per-mode panels.
