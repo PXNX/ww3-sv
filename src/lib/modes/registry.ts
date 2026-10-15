@@ -33,6 +33,7 @@ import IconSiren from '~icons/lucide/siren';
 import IconCompass from '~icons/lucide/compass';
 import IconDroplets from '~icons/lucide/droplets';
 import IconDrill from '~icons/lucide/drill';
+import IconSpellCheck from '~icons/lucide/spell-check';
 
 export type ModeId =
 	| 'blocks'
@@ -64,7 +65,8 @@ export type ModeId =
 	| 'dome'
 	| 'gpsliar'
 	| 'leakpatrol'
-	| 'tycoon';
+	| 'tycoon'
+	| 'wordle';
 
 interface ModeBase {
 	id: ModeId;
@@ -389,6 +391,16 @@ export const MODES: readonly GameMode[] = [
 		leaders: [],
 		name: m.mode_tycoon_name,
 		description: m.mode_tycoon_description
+	},
+	{
+		id: 'wordle',
+		status: 'playable',
+		href: '/play/wordle',
+		icon: IconSpellCheck,
+		tileClass: 'bg-khaki',
+		leaders: [],
+		name: m.mode_wordle_name,
+		description: m.mode_wordle_description
 	}
 ];
 
