@@ -3,6 +3,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
+	import PauseOverlay from '#lib/components/PauseOverlay.svelte';
 	import PipelineDifficultyPicker, {
 		LEVEL_NAMES
 	} from '#lib/components/PipelineDifficultyPicker.svelte';
@@ -187,7 +188,7 @@
 			{/if}
 		</div>
 
-		<div class="relative">
+		<div class="relative rounded-2xl">
 			<PipelineGrid
 				{view}
 				gameId={game.gameId}
@@ -235,23 +236,7 @@
 			</PipelineGrid>
 
 			{#if game.paused}
-				<div
-					class="absolute inset-0 z-20 grid place-items-center rounded-2xl bg-sand/90"
-					role="dialog"
-					aria-label={m.game_paused()}
-				>
-					<div class="sticker flex flex-col items-center gap-3 p-5" style:--tilt="-2deg">
-						<h2 class="text-3xl font-bold">{m.game_paused()}</h2>
-						<button
-							type="button"
-							class="btn-chunky bg-flag-blue text-lg"
-							onclick={() => game.resume()}
-						>
-							<IconPlay class="size-5" aria-hidden="true" />
-							{m.game_resume()}
-						</button>
-					</div>
-				</div>
+				<PauseOverlay cover hint="" onResume={() => game.resume()} />
 			{/if}
 		</div>
 

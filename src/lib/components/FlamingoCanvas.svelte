@@ -19,7 +19,7 @@
 	} from '#lib/game/flamingo/render.js';
 	import { explosionFrames, loadImage } from '#lib/theme/sprites.js';
 	import type { FlamingoGame } from '#lib/stores/flamingoGame.svelte.js';
-	import IconPlay from '~icons/lucide/play';
+	import PauseOverlay from './PauseOverlay.svelte';
 
 	let { game, showTutorial = false }: { game: FlamingoGame; showTutorial?: boolean } = $props();
 
@@ -193,18 +193,6 @@
 	{/if}
 
 	{#if game.status === 'paused'}
-		<div class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-ink/40">
-			<p dir="auto" class="sticker px-4 py-1 font-display text-3xl font-bold" style:--tilt="1.5deg">
-				{m.game_paused()}
-			</p>
-			<button
-				type="button"
-				class="btn-chunky bg-explosion-yellow text-lg"
-				onclick={() => game.resume()}
-			>
-				<IconPlay class="size-5" aria-hidden="true" />
-				{m.game_resume()}
-			</button>
-		</div>
+		<PauseOverlay onResume={() => game.resume()} />
 	{/if}
 </div>

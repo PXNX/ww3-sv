@@ -6,6 +6,7 @@
 	import FuryWinPanel from '#lib/components/FuryWinPanel.svelte';
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
+	import PauseOverlay from '#lib/components/PauseOverlay.svelte';
 	import { drawScene, fitCamera } from '#lib/game/fury/furyRender.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
 	import { FuryGame } from '#lib/stores/furyGame.svelte.js';
@@ -27,11 +28,6 @@
 			? `${m.mode_fury_name()} · ${m.fury_level_label({ number: game.levelIndex + 1 })}`
 			: m.mode_fury_name()
 	);
-
-	let resumeButton: HTMLButtonElement | undefined = $state();
-	$effect(() => {
-		if (game.paused) resumeButton?.focus();
-	});
 
 	/** Draws the final field into the share card */
 	function drawBoard(context: CanvasRenderingContext2D, x: number, y: number, size: number) {
@@ -82,42 +78,25 @@
 		<div class="relative">
 			<FuryCanvas {game} {showTutorial} />
 			{#if game.paused}
-				<div
-					class="absolute inset-0 flex items-start justify-center bg-ink/30 pt-10"
-					role="dialog"
-					aria-modal="true"
-					aria-labelledby="fury-paused-title"
-				>
-					<div class="sticker flex flex-col items-center gap-3 p-5" style:--tilt="-1.5deg">
-						<h2 id="fury-paused-title" class="text-2xl font-bold">{m.game_paused()}</h2>
-						<button
-							bind:this={resumeButton}
-							type="button"
-							class="btn-chunky min-w-44 bg-khaki"
-							onclick={() => game.setPaused(false)}
-						>
-							<IconPlay class="size-5" aria-hidden="true" />
-							{m.game_resume()}
-						</button>
-						<button type="button" class="btn-chunky min-w-44" onclick={() => game.retry()}>
-							<IconRotate class="size-5" aria-hidden="true" />
-							{m.fury_restart()}
-						</button>
-						<button type="button" class="btn-chunky min-w-44" onclick={() => game.backToSelect()}>
-							<IconList class="size-5" aria-hidden="true" />
-							{m.fury_back_to_levels()}
-						</button>
-						<label class="flex min-h-11 items-center gap-2 font-semibold">
-							<input
-								type="checkbox"
-								class="checkbox border-3 border-ink"
-								checked={game.settings.longPreview}
-								onchange={(event) => game.setLongPreview(event.currentTarget.checked)}
-							/>
-							{m.fury_long_preview()}
-						</label>
-					</div>
-				</div>
+				<PauseOverlay hint="" onResume={() => game.setPaused(false)}>
+					<button type="button" class="btn-chunky min-w-44" onclick={() => game.retry()}>
+						<IconRotate class="size-5" aria-hidden="true" />
+						{m.fury_restart()}
+					</button>
+					<button type="button" class="btn-chunky min-w-44" onclick={() => game.backToSelect()}>
+						<IconList class="size-5" aria-hidden="true" />
+						{m.fury_back_to_levels()}
+					</button>
+					<label class="flex min-h-11 items-center gap-2 font-semibold">
+						<input
+							type="checkbox"
+							class="checkbox border-3 border-ink"
+							checked={game.settings.longPreview}
+							onchange={(event) => game.setLongPreview(event.currentTarget.checked)}
+						/>
+						{m.fury_long_preview()}
+					</label>
+				</PauseOverlay>
 			{/if}
 		</div>
 	{:else}

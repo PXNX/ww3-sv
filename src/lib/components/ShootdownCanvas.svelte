@@ -10,6 +10,7 @@
 	import { LAUNCHER_TOP, WORLD_HEIGHT, WORLD_WIDTH } from '#lib/game/shootdown/shootdownStep.js';
 	import { drawScene, loadSceneSprites } from '#lib/game/shootdown/render.js';
 	import type { ShootdownGame } from '#lib/stores/shootdownGame.svelte.js';
+	import PauseOverlay from './PauseOverlay.svelte';
 	import IconPlay from '~icons/lucide/play';
 
 	let { game, showTutorial = false }: { game: ShootdownGame; showTutorial?: boolean } = $props();
@@ -175,7 +176,7 @@
 			{/if}
 		</div>
 
-		{#if game.status === 'ready' || game.status === 'paused'}
+		{#if game.status === 'ready'}
 			<div
 				class="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-[14px_8px_16px_10px] bg-ink/35 p-5"
 			>
@@ -183,32 +184,18 @@
 					class="sticker pop-in flex max-w-xs flex-col items-center gap-3 p-4 text-center"
 					style:--tilt="-1.5deg"
 				>
-					{#if game.status === 'ready'}
-						{#if showTutorial}
-							<p class="leading-snug font-semibold">{m.shootdown_how_to()}</p>
-							<p class="hidden text-sm sm:block">{m.shootdown_keyboard_hint()}</p>
-						{/if}
-						<button
-							type="button"
-							class="btn-chunky bg-tie-red text-xl"
-							onclick={() => game.start()}
-						>
-							<IconPlay class="size-5" aria-hidden="true" />
-							{m.shootdown_start()}
-						</button>
-					{:else}
-						<p class="font-display text-2xl font-bold">{m.game_paused()}</p>
-						<button
-							type="button"
-							class="btn-chunky bg-explosion-yellow text-xl"
-							onclick={() => game.resume()}
-						>
-							<IconPlay class="size-5" aria-hidden="true" />
-							{m.game_resume()}
-						</button>
+					{#if showTutorial}
+						<p class="leading-snug font-semibold">{m.shootdown_how_to()}</p>
+						<p class="hidden text-sm sm:block">{m.shootdown_keyboard_hint()}</p>
 					{/if}
+					<button type="button" class="btn-chunky bg-tie-red text-xl" onclick={() => game.start()}>
+						<IconPlay class="size-5" aria-hidden="true" />
+						{m.shootdown_start()}
+					</button>
 				</div>
 			</div>
+		{:else if game.status === 'paused'}
+			<PauseOverlay onResume={() => game.resume()} />
 		{/if}
 	</div>
 </div>

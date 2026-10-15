@@ -3,7 +3,8 @@
 	it covers that wrapper with a dimmed layer and shows "Paused" with a Resume button, which gets
 	focus so keyboard players can resume with Enter. Modes render it while paused, for example
 	`{#if game.paused}<PauseOverlay onResume={() => game.resume()} />{/if}`, and can add their own
-	buttons (restart, back to levels) through the children snippet.
+	buttons (restart, back to levels) through the children snippet. Modes where studying the board
+	while paused would be an advantage pass `cover` to hide the playfield behind a solid layer.
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
@@ -15,6 +16,7 @@
 		title,
 		hint,
 		resumeLabel,
+		cover = false,
 		children
 	}: {
 		onResume: () => void;
@@ -24,6 +26,8 @@
 		hint?: string;
 		/** Defaults to "Resume" */
 		resumeLabel?: string;
+		/** Hides the playfield behind a solid layer instead of dimming it */
+		cover?: boolean;
 		/** Extra buttons or controls shown under the Resume button */
 		children?: Snippet;
 	} = $props();
@@ -36,7 +40,9 @@
 </script>
 
 <div
-	class="absolute inset-0 z-20 flex items-center justify-center rounded-[inherit] bg-ink/40 p-4"
+	class="pointer-events-auto absolute inset-0 z-20 flex items-center justify-center rounded-[inherit] p-4 {cover
+		? 'bg-banner-slate'
+		: 'bg-ink/40'}"
 	role="dialog"
 	aria-modal="true"
 	aria-labelledby="pause-overlay-title"

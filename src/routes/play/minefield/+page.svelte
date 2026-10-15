@@ -9,6 +9,7 @@
 	} from '#lib/components/MinefieldDifficultyPicker.svelte';
 	import MinefieldScoreBreakdown from '#lib/components/MinefieldScoreBreakdown.svelte';
 	import MinefieldVictory from '#lib/components/MinefieldVictory.svelte';
+	import PauseOverlay from '#lib/components/PauseOverlay.svelte';
 	import SubmarineTool from '#lib/components/SubmarineTool.svelte';
 	import TankerQueue from '#lib/components/TankerQueue.svelte';
 	import { onAppHidden, prefersReducedMotion } from '#lib/game/loop.js';
@@ -179,7 +180,7 @@
 						<IconArrowRight class="size-4" aria-hidden="true" />
 					</span>
 				</div>
-				<div data-playfield class="relative">
+				<div data-playfield class="relative rounded-[10px_6px_12px_8px]">
 					<MineGrid
 						board={game.board}
 						phase={game.phase}
@@ -191,16 +192,7 @@
 						onflag={(index) => game.flag(index)}
 					/>
 					{#if game.paused}
-						<div
-							class="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-[10px_6px_12px_8px] border-3 border-ink bg-banner-slate p-4 text-center text-paper"
-						>
-							<p class="font-display text-2xl font-bold">{m.game_paused()}</p>
-							<p>{m.minefield_paused_hint()}</p>
-							<button type="button" class="btn-chunky" onclick={() => game.resume()}>
-								<IconPlay class="size-5" aria-hidden="true" />
-								{m.game_resume()}
-							</button>
-						</div>
+						<PauseOverlay cover hint={m.minefield_paused_hint()} onResume={() => game.resume()} />
 					{/if}
 				</div>
 			</div>

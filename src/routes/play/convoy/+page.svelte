@@ -7,6 +7,7 @@
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import LivesBar from '#lib/components/LivesBar.svelte';
+	import PauseOverlay from '#lib/components/PauseOverlay.svelte';
 	import { MAX_HULL } from '#lib/game/convoy/constants.js';
 	import { drawConvoyBoard } from '#lib/game/convoy/drawScene.js';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
@@ -115,16 +116,7 @@
 				</button>
 			</div>
 		{:else if game.status === 'paused'}
-			<div
-				class="sticker pointer-events-auto flex flex-col items-center gap-3 p-4 text-center"
-				style:--tilt="1.5deg"
-			>
-				<p class="font-display text-2xl font-bold">{m.game_paused()}</p>
-				<button type="button" class="btn-chunky bg-flag-blue text-lg" onclick={() => game.resume()}>
-					<IconPlay class="size-5" aria-hidden="true" />
-					{m.game_resume()}
-				</button>
-			</div>
+			<PauseOverlay onResume={() => game.resume()} />
 		{:else if game.status === 'running'}
 			{#if game.nearMisses > 0}
 				{#key game.nearMisses}
