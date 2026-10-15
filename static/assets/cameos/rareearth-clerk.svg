@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Cartoon of a weary export office clerk with a huge rubber stamp, a tower of forms and a window that says Closed">
+	<!-- Original cartoon clerk (not a real person): flat colours, thick outlines -->
+	<rect width="200" height="200" fill="#CFE3EA"/>
+	<g stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+		<!-- the counter window with a closed sign -->
+		<rect x="14" y="24" width="172" height="104" rx="6" fill="#E8E1BC"/>
+		<rect x="30" y="38" width="140" height="64" rx="4" fill="#AEB4BE"/>
+		<path d="M30 70 H170" fill="none" stroke-width="3"/>
+		<rect x="70" y="14" width="60" height="22" rx="4" fill="#E5484D"/>
+		<path d="M80 25 H120" fill="none" stroke="#FFFFFF" stroke-width="4"/>
+		<!-- the desk -->
+		<rect x="0" y="150" width="200" height="50" fill="#8A5A2B"/>
+		<!-- tower of forms on the left -->
+		<rect x="12" y="116" width="44" height="12" fill="#FFFFFF"/>
+		<rect x="16" y="104" width="40" height="12" fill="#FFFFFF"/>
+		<rect x="10" y="92" width="46" height="12" fill="#FFFFFF"/>
+		<rect x="18" y="130" width="40" height="20" fill="#FFFFFF"/>
+		<path d="M24 98 H44 M26 110 H46 M22 122 H42" fill="none" stroke-width="2"/>
+		<!-- the clerk: body, head, glasses, tie -->
+		<path d="M70 152 Q76 112 108 108 Q140 112 146 152 Z" fill="#6A7C9B"/>
+		<path d="M108 112 L100 126 L108 146 L116 126 Z" fill="#E5484D"/>
+		<circle cx="108" cy="82" r="28" fill="#F6C9A0"/>
+		<path d="M82 78 Q84 54 108 54 Q132 54 134 78 Q120 66 108 66 Q96 66 82 78 Z" fill="#7C8C5C"/>
+		<circle cx="97" cy="84" r="8" fill="#FFFFFF" stroke-width="3"/>
+		<circle cx="119" cy="84" r="8" fill="#FFFFFF" stroke-width="3"/>
+		<path d="M105 84 H111" fill="none" stroke-width="3"/>
+		<path d="M95 84 H99 M117 84 H121" fill="none" stroke-width="3"/>
+		<path d="M96 100 Q108 96 120 100" fill="none" stroke-width="3"/>
+		<!-- the huge stamp in the raised hand -->
+		<path d="M140 128 Q158 120 160 100" fill="none"/>
+		<rect x="148" y="66" width="28" height="12" rx="3" fill="#8A5A2B"/>
+		<rect x="154" y="78" width="16" height="16" fill="#8A5A2B"/>
+		<rect x="146" y="94" width="32" height="10" rx="3" fill="#E5484D"/>
+		<!-- the stamped paper on the desk -->
+		<rect x="120" y="156" width="56" height="30" fill="#FFFFFF"/>
+		<path d="M128 168 H168 M128 176 H156" fill="none" stroke-width="2"/>
+		<circle cx="160" cy="176" r="9" fill="none" stroke="#E5484D" stroke-width="3"/>
+	</g>
+</svg>

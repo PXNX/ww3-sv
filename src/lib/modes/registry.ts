@@ -35,6 +35,7 @@ import IconDroplets from '~icons/lucide/droplets';
 import IconDrill from '~icons/lucide/drill';
 import IconSpellCheck from '~icons/lucide/spell-check';
 import IconLeaf from '~icons/lucide/leaf';
+import IconContainer from '~icons/lucide/container';
 
 export type ModeId =
 	| 'blocks'
@@ -68,7 +69,8 @@ export type ModeId =
 	| 'leakpatrol'
 	| 'tycoon'
 	| 'wordle'
-	| 'maple';
+	| 'maple'
+	| 'rareearth';
 
 interface ModeBase {
 	id: ModeId;
@@ -413,6 +415,16 @@ export const MODES: readonly GameMode[] = [
 		leaders: [],
 		name: m.mode_maple_name,
 		description: m.mode_maple_description
+	},
+	{
+		id: 'rareearth',
+		status: 'playable',
+		href: '/play/rareearth',
+		icon: IconContainer,
+		tileClass: 'bg-skin',
+		leaders: [],
+		name: m.mode_rareearth_name,
+		description: m.mode_rareearth_description
 	}
 ];
 
