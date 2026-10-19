@@ -102,3 +102,40 @@ Done: **1.3** the older pause overlays (convoy, minefield, pipeline, fury, flami
 - [ ] The local `main` checkout in `C:\dev\OLD\ww3-sv` is behind `origin/main` and had uncommitted `messages/*.json` changes. Commit or stash them, then pull. Expect conflicts in `messages/*.json` and `src/lib/modes/registry.ts` because every mode appends there.
 - [ ] Consider an automatic way to avoid merge conflicts in `registry.ts` and `messages/*.json` (for example one message file per mode merged at build time), since every new mode touches both.
 - [ ] `bun run check` regenerates the gitignored `project.inlang/.lix` folder, which `prettier --check` then flags. Add it to `.prettierignore`.
+
+# ww3-sv: open items (as of 2026-10-15)
+
+Full specs for every mode: `C:\dev\OLD\ww3-new-modes-plan.md`.
+
+## Done (on `origin/main`)
+
+| Mode                | id           | Commit    |
+| ------------------- | ------------ | --------- |
+| Wandering Balloon   | `balloon`    | `45e7f55` |
+| GPS Liar            | `gpsliar`    | `cddc969` |
+| Leak Patrol         | `leakpatrol` | `60fbf28` |
+| Maple Reserve Heist | `maple`      | `78d3083` |
+
+## Still to implement
+
+| #   | Mode                 | id           | Country / leaders                         | Core idea                                                                                                                                                                                          |
+| --- | -------------------- | ------------ | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 5   | Iceberg Curling      | `curling`    | Greenland, `['trump']`                    | Curling physics against the realtor's "For Sale" sign, sweeping, seals and a lost penguin, 8 ends with stars                                                                                       |
+| 6   | Starlink Kill Switch | `killswitch` | Ukraine / Russia, `['zelensky', 'putin']` | You play Elon Musk: cut the satellite link of drones before they reach the refinery, leave civilians alone, geofence power-up, your own posts flip the rules; needs a new Elon Musk caricature SVG |
+| 7   | Hermit Hackers       | `hackers`    | North Korea, `['kim']`                    | Retro terminal: Mastermind to crack fictional crypto accounts, alternating with Lights Out on a power-plant breaker panel, trace meter, quota                                                      |
+| 8   | Gig Saboteur         | `sabotage`   | Russia, `['putin']`                       | Bumbling 50-euro messenger-channel hire, top-down stealth on a timer (power line, depot, shell factory), ends with a wanted poster; 9 levels with stars                                            |
+
+To continue: resume the workflow with `MODES.slice(0, 8)` (the four finished modes replay from cache).
+
+## Follow-ups on the finished modes
+
+- **No playtest in a browser for any of the four.** Only unit tests, svelte-check, lint and build ran. Play each once on phone and desktop and check art, feel and balance.
+- **Balloon:** tuning in `src/lib/game/balloon/config.ts` (track 5600 ≈ 90 s; the fastest wind layer is too quick for photos, which is intentional but may frustrate).
+- **GPS Liar:** no foghorn sound (no matching SoundId exists); the tanker is deliberately hidden from the chart.
+- **Leak Patrol:** no own game-over cameo, it reuses the shared Trump cameo; balance numbers are first pass (a fix takes 4.5 s of holding, waves last 18 s).
+- **Maple Reserve Heist:** no pause button (turn-based, has a Wait button instead); early levels are easy; tile colour `bg-mustard` is shared with `dome`.
+- **Shared:** every mode with leaders edits `src/lib/modes/registry.test.ts`, so expect merge conflicts there when several people add modes in parallel.
+
+## Ideas not chosen yet (from the brainstorm)
+
+Coalition Tower (Italy), Carnival Rush (Brazil), Last Train (Japan), Douze Points (Eurovision), Sauna Sisu (Finland), Sisyphus Bailout (Greece), Rubber Army (USA 1944), Baltic Elves (Lithuania), Phishing Trip (Estonia), Six Fingers (Ukraine), DMZ Sort (South Korea), Rooftop Dish (Iran).
