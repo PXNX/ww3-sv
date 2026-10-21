@@ -36,6 +36,7 @@ import IconDrill from '~icons/lucide/drill';
 import IconSpellCheck from '~icons/lucide/spell-check';
 import IconLeaf from '~icons/lucide/leaf';
 import IconContainer from '~icons/lucide/container';
+import IconSwords from '~icons/lucide/swords';
 
 export type ModeId =
 	| 'blocks'
@@ -70,7 +71,8 @@ export type ModeId =
 	| 'tycoon'
 	| 'wordle'
 	| 'maple'
-	| 'rareearth';
+	| 'rareearth'
+	| 'raid';
 
 interface ModeBase {
 	id: ModeId;
@@ -425,6 +427,16 @@ export const MODES: readonly GameMode[] = [
 		leaders: [],
 		name: m.mode_rareearth_name,
 		description: m.mode_rareearth_description
+	},
+	{
+		id: 'raid',
+		status: 'playable',
+		href: '/play/raid',
+		icon: IconSwords,
+		tileClass: 'bg-tie-red',
+		leaders: [],
+		name: m.mode_raid_name,
+		description: m.mode_raid_description
 	}
 ];
 

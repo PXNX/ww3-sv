@@ -19,6 +19,7 @@
 		best,
 		actions,
 		confirmLeave = false,
+		wide = false,
 		children
 	}: {
 		title: string;
@@ -28,6 +29,8 @@
 		actions?: Snippet;
 		/** True while a game is in progress: the back link then needs a second tap to leave */
 		confirmLeave?: boolean;
+		/** Landscape games: use the full width and drop the banner on short (sideways phone) screens */
+		wide?: boolean;
 		children: Snippet;
 	} = $props();
 
@@ -58,7 +61,9 @@
 </svelte:head>
 
 <main
-	class="mx-auto flex h-dvh max-w-3xl flex-col gap-2 overflow-hidden px-2 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:gap-3 sm:px-3 sm:pt-[calc(0.75rem+env(safe-area-inset-top))] sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
+	class="mx-auto flex h-dvh {wide
+		? 'max-w-none'
+		: 'max-w-3xl'} flex-col gap-2 overflow-hidden px-2 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:gap-3 sm:px-3 sm:pt-[calc(0.75rem+env(safe-area-inset-top))] sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
 >
 	<div class="flex items-center justify-between gap-2">
 		<a
@@ -80,7 +85,9 @@
 	</div>
 
 	<header
-		class="flex items-center justify-between gap-3 rounded-[14px_8px_16px_10px] border-3 border-ink bg-banner-slate px-3 py-1.5 text-paper shadow-[4px_4px_0_var(--color-ink)] sm:px-4 sm:py-2"
+		class="{wide
+			? '[@media(max-height:520px)]:hidden'
+			: ''} flex items-center justify-between gap-3 rounded-[14px_8px_16px_10px] border-3 border-ink bg-banner-slate px-3 py-1.5 text-paper shadow-[4px_4px_0_var(--color-ink)] sm:px-4 sm:py-2"
 	>
 		<h1 class="text-xl leading-tight font-bold sm:text-2xl lg:text-3xl">{title}</h1>
 		{#if score !== undefined}
