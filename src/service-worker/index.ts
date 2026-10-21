@@ -59,6 +59,10 @@ async function respond(request: Request, url: URL): Promise<Response> {
 	if (PRECACHE.includes(url.pathname) && request.mode !== 'navigate') {
 		const cached = await cache.match(url.pathname);
 		if (cached) return cached;
+		// Missed during install (static assets may fail there): cache it now so it works offline later
+		const response = await fetch(request);
+		if (response.ok) await cache.put(url.pathname, response.clone());
+		return response;
 	}
 
 	try {

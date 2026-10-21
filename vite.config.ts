@@ -14,6 +14,10 @@ export default defineConfig({
 			// Also checked whenever the app regains focus; drives the update hint on the start screen
 			version: { pollInterval: 5 * 60 * 1000 },
 
+			// Absolute asset URLs, so the start page the service worker serves offline for an unknown
+			// deep URL still finds its scripts and styles
+			paths: { relative: false },
+
 			// Functions run on Vercel's Bun runtime; the Bun version is set by bunVersion in vercel.json
 			adapter: adapter({ runtime: 'bun1.x' })
 		}),
