@@ -1,5 +1,5 @@
 /* Shared shapes of the idle game's state. The state is a plain object the rules mutate. */
-import type { ProducerId } from './config.js';
+import type { PerkId, ProducerId } from './config.js';
 
 export type EventKind = 'spike' | 'sanctions' | 'pipeline' | 'protest';
 
@@ -38,8 +38,15 @@ export interface TycoonState {
 	lifetime: number;
 	taps: number;
 	owned: Record<ProducerId, number>;
+	/** Time into each producer's current cycle, in milliseconds */
+	progress: Record<ProducerId, number>;
+	/** Barrels each producer has pumped in its current cycle, paid out when the cycle ends */
+	pending: Record<ProducerId, number>;
 	upgrades: string[];
+	/** Every prestige point ever earned (decides the permanent multiplier; spending never lowers it) */
 	prestigePoints: number;
+	/** Levels bought in the nationalization shop; they survive nationalizing */
+	perks: Record<PerkId, number>;
 	prestiges: number;
 	achievements: string[];
 	/** Crises the player has answered, and sanctions they dodged by reflagging */

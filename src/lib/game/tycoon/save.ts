@@ -6,11 +6,12 @@
  */
 import type { Random } from '#lib/game/random.js';
 import type { Store } from '#lib/services/storage.js';
-import { MAX_OWNED, PRODUCER_IDS, ACHIEVEMENTS, UPGRADES } from './config.js';
+import { MAX_OWNED, PERKS, PRODUCER_IDS, ACHIEVEMENTS, UPGRADES } from './config.js';
+import { cycleMs } from './economy.js';
 import { createState } from './state.js';
 import type { TycoonState } from './types.js';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 export const SAVE_KEY = 'tycoon:save';
 
 export interface SaveData {
@@ -22,8 +23,12 @@ export interface SaveData {
 	lifetime: number;
 	taps: number;
 	owned: Record<string, number>;
+	/** Time into each producer's cycle, and what the cycle has pumped so far */
+	progress: Record<string, number>;
+	pending: Record<string, number>;
 	upgrades: string[];
 	prestigePoints: number;
+	perks: Record<string, number>;
 	prestiges: number;
 	achievements: string[];
 	eventsHandled: number;
@@ -39,8 +44,11 @@ export function serialize(state: TycoonState, now: number): SaveData {
 		lifetime: state.lifetime,
 		taps: state.taps,
 		owned: { ...state.owned },
+		progress: { ...state.progress },
+		pending: { ...state.pending },
 		upgrades: [...state.upgrades],
 		prestigePoints: state.prestigePoints,
+		perks: { ...state.perks },
 		prestiges: state.prestiges,
 		achievements: [...state.achievements],
 		eventsHandled: state.eventsHandled,
@@ -66,6 +74,8 @@ function knownIds(value: unknown, known: readonly string[]): string[] {
 /** Steps an older save up to the current version; undefined when it cannot be read */
 function migrate(raw: Record<string, unknown>): Record<string, unknown> | undefined {
 	if (raw.version === SAVE_VERSION) return raw;
+	// Version 1 knew no production cycles and no shop: they start empty
+	if (raw.version === 1) return { ...raw, version: 2, progress: {}, pending: {}, perks: {} };
 	// Future versions (or no version at all) are not understood: better a fresh start than a guess
 	return undefined;
 }
@@ -90,10 +100,11 @@ export function parseSave(
 	if (runTotal === undefined || lifetime === undefined) return null;
 
 	const state = createState(random);
+	// The bank can hold more than the run pumped (the start money of the shop is not pumped), but
+	// all runs together are never less than this one
 	state.barrels = barrels;
-	// Totals can never be lower than what is in the bank
-	state.runTotal = Math.max(runTotal, barrels);
-	state.lifetime = Math.max(lifetime, state.runTotal);
+	state.runTotal = runTotal;
+	state.lifetime = Math.max(lifetime, runTotal);
 	state.taps = Math.floor(amount(data.taps) ?? 0);
 	state.prestigePoints = Math.floor(amount(data.prestigePoints) ?? 0);
 	state.prestiges = Math.floor(amount(data.prestiges) ?? 0);
@@ -101,8 +112,17 @@ export function parseSave(
 	state.sanctionsEvaded = Math.floor(amount(data.sanctionsEvaded) ?? 0);
 
 	const owned = isRecord(data.owned) ? data.owned : {};
+	const progress = isRecord(data.progress) ? data.progress : {};
+	const pending = isRecord(data.pending) ? data.pending : {};
 	for (const id of PRODUCER_IDS) {
 		state.owned[id] = Math.min(MAX_OWNED, Math.floor(amount(owned[id]) ?? 0));
+		if (state.owned[id] === 0) continue;
+		state.progress[id] = Math.min(cycleMs(state, id), amount(progress[id]) ?? 0);
+		state.pending[id] = amount(pending[id]) ?? 0;
+	}
+	const perks = isRecord(data.perks) ? data.perks : {};
+	for (const def of PERKS) {
+		state.perks[def.id] = Math.min(def.maxLevel, Math.floor(amount(perks[def.id]) ?? 0));
 	}
 	state.upgrades = knownIds(
 		data.upgrades,

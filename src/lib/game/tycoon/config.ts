@@ -10,7 +10,10 @@ export const PRODUCER_IDS = [
 	'lobbyist',
 	'shadowfleet',
 	'paperwork',
-	'summit'
+	'summit',
+	'offshore',
+	'cartel',
+	'arctic'
 ] as const;
 
 export type ProducerId = (typeof PRODUCER_IDS)[number];
@@ -19,19 +22,30 @@ export interface ProducerDef {
 	id: ProducerId;
 	/** Price of the first unit, in barrels */
 	baseCost: number;
-	/** Barrels per second one unit makes before any multiplier */
+	/** Barrels per second one unit makes before any multiplier, on average over a cycle */
 	baseCps: number;
+	/**
+	 * How long one production cycle lasts before any speed bonus. What a producer pumps during a
+	 * cycle is paid out in one go at its end, so the bigger producers pay rarer but larger sums.
+	 */
+	cycleMs: number;
 }
 
 export const PRODUCERS: readonly ProducerDef[] = [
-	{ id: 'pumpjack', baseCost: 15, baseCps: 0.1 },
-	{ id: 'tanker', baseCost: 100, baseCps: 1 },
-	{ id: 'refinery', baseCost: 1_100, baseCps: 8 },
-	{ id: 'lobbyist', baseCost: 12_000, baseCps: 47 },
-	{ id: 'shadowfleet', baseCost: 130_000, baseCps: 260 },
-	{ id: 'paperwork', baseCost: 1_400_000, baseCps: 1_400 },
-	{ id: 'summit', baseCost: 20_000_000, baseCps: 7_800 }
+	{ id: 'pumpjack', baseCost: 15, baseCps: 0.1, cycleMs: 1_000 },
+	{ id: 'tanker', baseCost: 100, baseCps: 1, cycleMs: 2_000 },
+	{ id: 'refinery', baseCost: 1_100, baseCps: 8, cycleMs: 3_000 },
+	{ id: 'lobbyist', baseCost: 12_000, baseCps: 47, cycleMs: 5_000 },
+	{ id: 'shadowfleet', baseCost: 130_000, baseCps: 260, cycleMs: 8_000 },
+	{ id: 'paperwork', baseCost: 1_400_000, baseCps: 1_400, cycleMs: 12_000 },
+	{ id: 'summit', baseCost: 20_000_000, baseCps: 7_800, cycleMs: 18_000 },
+	{ id: 'offshore', baseCost: 330_000_000, baseCps: 44_000, cycleMs: 25_000 },
+	{ id: 'cartel', baseCost: 5_100_000_000, baseCps: 260_000, cycleMs: 35_000 },
+	{ id: 'arctic', baseCost: 75_000_000_000, baseCps: 1_600_000, cycleMs: 50_000 }
 ];
+
+/** No speed bonus makes a cycle shorter than this */
+export const MIN_CYCLE_MS = 200;
 
 /** Every unit bought makes the next one this much dearer */
 export const COST_GROWTH = 1.15;
@@ -51,8 +65,36 @@ export const PRESTIGE_UNIT = 1_000_000;
 /** Every prestige point adds this much to the permanent multiplier */
 export const PRESTIGE_BONUS = 0.05;
 
-/** Every achievement adds this much to the global multiplier */
-export const ACHIEVEMENT_BONUS = 0.01;
+/** Discounts from achievements never make producers cheaper than this share of their price */
+export const MIN_PRICE_FACTOR = 0.5;
+
+// The nationalization shop: permanent investments bought with prestige points
+export const PERK_IDS = ['growth', 'output', 'speed', 'tap', 'seed', 'offline'] as const;
+
+export type PerkId = (typeof PERK_IDS)[number];
+
+export interface PerkDef {
+	id: PerkId;
+	maxLevel: number;
+	/** Points the first level costs; every further level costs costGrowth times as much */
+	baseCost: number;
+	costGrowth: number;
+	/**
+	 * What one level does. growth: taken off the price rise per unit; output, speed and tap: a
+	 * bonus share; offline: added to the offline rate; seed: the barrels a run starts with at the
+	 * first level, ten times as many per further level
+	 */
+	value: number;
+}
+
+export const PERKS: readonly PerkDef[] = [
+	{ id: 'growth', maxLevel: 5, baseCost: 2, costGrowth: 2, value: 0.01 },
+	{ id: 'output', maxLevel: 25, baseCost: 1, costGrowth: 1.4, value: 0.1 },
+	{ id: 'speed', maxLevel: 10, baseCost: 2, costGrowth: 1.6, value: 0.1 },
+	{ id: 'tap', maxLevel: 10, baseCost: 1, costGrowth: 1.5, value: 0.5 },
+	{ id: 'seed', maxLevel: 6, baseCost: 1, costGrowth: 2.5, value: 100 },
+	{ id: 'offline', maxLevel: 5, baseCost: 2, costGrowth: 1.8, value: 0.1 }
+];
 
 // Offline progress
 /** Away time beyond this is not credited */
@@ -197,30 +239,68 @@ export type AchievementKind =
 	| 'upgrades'
 	| 'events'
 	| 'evaded'
-	| 'prestige';
+	| 'prestige'
+	| 'perks';
+
+/**
+ * The small permanent boost an achievement unlocks. tap, output and speed: a bonus share;
+ * discount: a share off producer prices; producer: a bonus share for one producer's output.
+ * Boosts of the same kind add up.
+ */
+export type AchievementReward =
+	| { kind: 'tap' | 'output' | 'speed' | 'discount'; value: number }
+	| { kind: 'producer'; value: number; producer: ProducerId };
 
 export interface AchievementDef {
 	id: string;
 	kind: AchievementKind;
 	threshold: number;
+	reward: AchievementReward;
 }
 
 export const ACHIEVEMENTS: readonly AchievementDef[] = [
-	{ id: 'first_tap', kind: 'taps', threshold: 1 },
-	{ id: 'tapper', kind: 'taps', threshold: 100 },
-	{ id: 'tap_master', kind: 'taps', threshold: 1_000 },
-	{ id: 'kilo', kind: 'lifetime', threshold: 1_000 },
-	{ id: 'mega', kind: 'lifetime', threshold: 1_000_000 },
-	{ id: 'giga', kind: 'lifetime', threshold: 1_000_000_000 },
-	{ id: 'tera', kind: 'lifetime', threshold: 1_000_000_000_000 },
-	{ id: 'stack', kind: 'owned', threshold: 10 },
-	{ id: 'hoard', kind: 'owned', threshold: 50 },
-	{ id: 'diversified', kind: 'producers', threshold: PRODUCER_IDS.length },
-	{ id: 'flow', kind: 'cps', threshold: 1_000 },
-	{ id: 'torrent', kind: 'cps', threshold: 1_000_000 },
-	{ id: 'paper_trail', kind: 'upgrades', threshold: 10 },
-	{ id: 'crisis_manager', kind: 'events', threshold: 10 },
-	{ id: 'loophole', kind: 'evaded', threshold: 3 },
-	{ id: 'nationalised', kind: 'prestige', threshold: 1 },
-	{ id: 'serial_nationaliser', kind: 'prestige', threshold: 5 }
+	{ id: 'first_tap', kind: 'taps', threshold: 1, reward: { kind: 'tap', value: 0.05 } },
+	{ id: 'tapper', kind: 'taps', threshold: 100, reward: { kind: 'tap', value: 0.1 } },
+	{ id: 'tap_master', kind: 'taps', threshold: 1_000, reward: { kind: 'tap', value: 0.15 } },
+	{ id: 'tap_legend', kind: 'taps', threshold: 10_000, reward: { kind: 'tap', value: 0.25 } },
+	{ id: 'kilo', kind: 'lifetime', threshold: 1e3, reward: { kind: 'output', value: 0.02 } },
+	{ id: 'mega', kind: 'lifetime', threshold: 1e6, reward: { kind: 'output', value: 0.03 } },
+	{ id: 'giga', kind: 'lifetime', threshold: 1e9, reward: { kind: 'output', value: 0.05 } },
+	{ id: 'tera', kind: 'lifetime', threshold: 1e12, reward: { kind: 'output', value: 0.05 } },
+	{ id: 'peta', kind: 'lifetime', threshold: 1e15, reward: { kind: 'output', value: 0.1 } },
+	{ id: 'stack', kind: 'owned', threshold: 10, reward: { kind: 'discount', value: 0.02 } },
+	{ id: 'hoard', kind: 'owned', threshold: 50, reward: { kind: 'discount', value: 0.03 } },
+	{ id: 'centurion', kind: 'owned', threshold: 100, reward: { kind: 'discount', value: 0.05 } },
+	{
+		id: 'diversified',
+		kind: 'producers',
+		threshold: PRODUCER_IDS.length,
+		reward: { kind: 'output', value: 0.1 }
+	},
+	{ id: 'flow', kind: 'cps', threshold: 1e3, reward: { kind: 'speed', value: 0.05 } },
+	{ id: 'torrent', kind: 'cps', threshold: 1e6, reward: { kind: 'speed', value: 0.05 } },
+	{ id: 'gusher', kind: 'cps', threshold: 1e9, reward: { kind: 'speed', value: 0.1 } },
+	{
+		id: 'paper_trail',
+		kind: 'upgrades',
+		threshold: 10,
+		reward: { kind: 'producer', value: 0.25, producer: 'paperwork' }
+	},
+	{ id: 'crisis_manager', kind: 'events', threshold: 10, reward: { kind: 'output', value: 0.05 } },
+	{
+		id: 'loophole',
+		kind: 'evaded',
+		threshold: 3,
+		reward: { kind: 'producer', value: 0.25, producer: 'shadowfleet' }
+	},
+	{ id: 'nationalised', kind: 'prestige', threshold: 1, reward: { kind: 'output', value: 0.05 } },
+	{
+		id: 'serial_nationaliser',
+		kind: 'prestige',
+		threshold: 5,
+		reward: { kind: 'speed', value: 0.05 }
+	},
+	{ id: 'state_owned', kind: 'prestige', threshold: 10, reward: { kind: 'speed', value: 0.1 } },
+	{ id: 'investor', kind: 'perks', threshold: 10, reward: { kind: 'tap', value: 0.25 } },
+	{ id: 'magnate', kind: 'perks', threshold: 30, reward: { kind: 'output', value: 0.1 } }
 ];

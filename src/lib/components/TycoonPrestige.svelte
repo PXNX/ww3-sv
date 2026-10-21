@@ -1,12 +1,13 @@
 <!--
 	"Nationalize and restart": the prestige panel. It shows what a restart would pay, asks for a
-	confirmation in a dialog with the oil baron's (fictional, cartoon) comment, and lists the
-	lifetime statistics. A small "reset progress" button at the bottom wipes the whole save after a
+	confirmation in a dialog with the oil baron's (fictional, cartoon) comment, offers the shop of
+	state investments the points buy, and lists the lifetime statistics. A small "reset progress" button at the bottom wipes the whole save after a
 	second tap.
 -->
 <script lang="ts">
 	import { onDestroy } from 'svelte';
-	import { PRESTIGE_BONUS, PRESTIGE_UNIT } from '#lib/game/tycoon/config.js';
+	import { PERKS, PRESTIGE_BONUS, PRESTIGE_UNIT } from '#lib/game/tycoon/config.js';
+	import { perkCost } from '#lib/game/tycoon/economy.js';
 	import { formatBig, formatCount, formatMultiplier } from '#lib/game/tycoon/format.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -14,6 +15,7 @@
 	import { cameoAsset } from '#lib/theme/cameos.js';
 	import IconCrown from '~icons/lucide/crown';
 	import IconRotate from '~icons/lucide/rotate-ccw';
+	import { perkEffectText, perkName } from './tycoonText.js';
 
 	let { game }: { game: TycoonGame } = $props();
 
@@ -82,6 +84,62 @@
 				{m.tycoon_prestige_locked({ amount: formatBig(PRESTIGE_UNIT, locale) })}
 			</p>
 		{/if}
+	</div>
+
+	<div class="flex flex-col gap-2">
+		<div class="flex flex-wrap items-baseline justify-between gap-x-3">
+			<h2 dir="auto" class="font-display text-xl font-bold">{m.tycoon_perks_title()}</h2>
+			<p dir="auto" class="font-display text-sm font-bold tabular-nums">
+				{m.tycoon_perks_points({ points: formatCount(game.spendablePoints, locale) })}
+			</p>
+		</div>
+		<p dir="auto" class="text-sm leading-snug">{m.tycoon_perks_text()}</p>
+		<ul class="flex flex-col gap-2">
+			{#each PERKS as perk (perk.id)}
+				{@const level = game.perks[perk.id]}
+				{@const maxed = level >= perk.maxLevel}
+				{@const cost = perkCost(perk, level)}
+				{@const affordable = !maxed && game.spendablePoints >= cost}
+				<li>
+					<button
+						type="button"
+						class="btn-chunky flex w-full items-center gap-3 px-3 py-2 text-start {maxed
+							? 'bg-khaki'
+							: 'bg-paper'}"
+						class:opacity-60={!affordable && !maxed}
+						disabled={!affordable}
+						aria-label={maxed
+							? `${perkName(perk.id)}: ${m.tycoon_perk_maxed()}`
+							: m.tycoon_perk_buy_label({
+									level: formatCount(level + 1, locale),
+									name: perkName(perk.id),
+									cost: formatCount(cost, locale)
+								})}
+						onclick={() => game.buyPerk(perk.id)}
+					>
+						<span class="flex min-w-0 flex-1 flex-col">
+							<span dir="auto" class="font-display text-base leading-tight font-bold">
+								{perkName(perk.id)}
+							</span>
+							<span dir="auto" class="text-xs leading-tight tabular-nums">
+								{perkEffectText(perk.id, level, maxed)}
+							</span>
+							<span dir="auto" class="text-xs leading-tight font-semibold tabular-nums">
+								{m.tycoon_perk_level({
+									level: formatCount(level, locale),
+									max: formatCount(perk.maxLevel, locale)
+								})}
+							</span>
+						</span>
+						<span class="shrink-0 font-display text-base font-bold tabular-nums" dir="auto">
+							{maxed
+								? m.tycoon_perk_maxed()
+								: m.tycoon_perk_cost({ cost: formatCount(cost, locale) })}
+						</span>
+					</button>
+				</li>
+			{/each}
+		</ul>
 	</div>
 
 	<dl class="grid grid-cols-2 gap-2 font-display text-sm">

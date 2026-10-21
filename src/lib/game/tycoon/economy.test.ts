@@ -1,18 +1,28 @@
 import { describe, expect, it } from 'vitest';
 import { createRandom } from '#lib/game/random.js';
-import { COST_GROWTH, MAX_OWNED, PRODUCERS, UPGRADES } from './config.js';
+import { ACHIEVEMENTS, COST_GROWTH, MAX_OWNED, PERKS, PRODUCERS, UPGRADES } from './config.js';
 import {
+	achievementBonus,
+	availablePoints,
 	availableUpgrades,
 	calmProduction,
+	cycleMs,
 	globalMultiplier,
 	maxAffordable,
+	offlineEfficiency,
+	perkCost,
+	pointsSpent,
 	prestigeGain,
 	prestigeMultiplier,
+	pricing,
 	producerCost,
 	producerDef,
 	producerOutput,
 	productionPerSecond,
-	tapValue
+	seedBarrels,
+	speedMultiplier,
+	tapValue,
+	unitOutput
 } from './economy.js';
 import { createState } from './state.js';
 
@@ -84,13 +94,15 @@ describe('production', () => {
 		expect(producerOutput(state, 'pumpjack')).toBe(0);
 	});
 
-	it('applies prestige, achievements and global upgrades to everything', () => {
+	it('applies prestige, achievement and shop boosts and global upgrades to everything', () => {
 		const state = fresh();
 		state.owned.pumpjack = 10;
 		state.prestigePoints = 10;
-		state.achievements = ['first_tap', 'tapper'];
+		// Two output boosts (+2% and +3%) and a tap boost that does not touch the output
+		state.achievements = ['kilo', 'mega', 'first_tap'];
+		state.perks.output = 2;
 		state.upgrades.push('global_regulator');
-		const expected = 1.5 * 1.02 * 1.25;
+		const expected = 1.5 * 1.05 * 1.2 * 1.25;
 		expect(globalMultiplier(state)).toBeCloseTo(expected, 9);
 		expect(productionPerSecond(state)).toBeCloseTo(1 * expected, 9);
 	});
@@ -180,5 +192,107 @@ describe('prestige math', () => {
 		expect(prestigeMultiplier(0)).toBe(1);
 		expect(prestigeMultiplier(10)).toBeCloseTo(1.5, 9);
 		expect(prestigeMultiplier(-3)).toBe(1);
+	});
+});
+
+describe('production cycles and speed', () => {
+	it('makes the bigger producers take longer', () => {
+		for (let i = 1; i < PRODUCERS.length; i++) {
+			expect(PRODUCERS[i].cycleMs).toBeGreaterThan(PRODUCERS[i - 1].cycleMs);
+		}
+	});
+
+	it('shortens the cycles with speed boosts, which raises the output by as much', () => {
+		const state = fresh();
+		state.owned.tanker = 10;
+		const before = productionPerSecond(state);
+		state.perks.speed = 5;
+		state.achievements.push('flow');
+		const speed = 1.5 * 1.05;
+		expect(speedMultiplier(state)).toBeCloseTo(speed, 9);
+		expect(cycleMs(state, 'tanker')).toBeCloseTo(tanker.cycleMs / speed, 9);
+		expect(productionPerSecond(state)).toBeCloseTo(before * speed, 9);
+		// What one cycle pays stays the same
+		expect((unitOutput(state, 'tanker') * cycleMs(state, 'tanker')) / 1000).toBeCloseTo(
+			(tanker.baseCps * tanker.cycleMs) / 1000,
+			9
+		);
+	});
+});
+
+describe('achievement boosts', () => {
+	it('add up per kind and only count when unlocked', () => {
+		const state = fresh();
+		expect(achievementBonus(state, 'tap')).toBe(0);
+		state.achievements = ['first_tap', 'tapper', 'kilo'];
+		expect(achievementBonus(state, 'tap')).toBeCloseTo(0.15, 9);
+		expect(achievementBonus(state, 'output')).toBeCloseTo(0.02, 9);
+		expect(tapValue(state)).toBeCloseTo(1.15 * 1.02, 9);
+	});
+
+	it('boost a single producer', () => {
+		const state = fresh();
+		state.owned.shadowfleet = 1;
+		state.owned.paperwork = 1;
+		const fleet = producerOutput(state, 'shadowfleet');
+		const paper = producerOutput(state, 'paperwork');
+		state.achievements = ['loophole'];
+		expect(producerOutput(state, 'shadowfleet')).toBeCloseTo(fleet * 1.25, 6);
+		expect(producerOutput(state, 'paperwork')).toBeCloseTo(paper, 6);
+	});
+
+	it('discount producer prices', () => {
+		const state = fresh();
+		state.achievements = ['stack', 'hoard'];
+		expect(pricing(state).factor).toBeCloseTo(0.95, 9);
+		expect(producerCost(tanker, 0, 1, pricing(state))).toBe(95);
+	});
+
+	it('all grant a boost', () => {
+		for (const achievement of ACHIEVEMENTS) expect(achievement.reward.value).toBeGreaterThan(0);
+	});
+});
+
+describe('nationalization shop', () => {
+	it('never makes a level cheaper than the one before', () => {
+		for (const perk of PERKS) {
+			for (let level = 1; level < perk.maxLevel; level++) {
+				expect(perkCost(perk, level)).toBeGreaterThanOrEqual(perkCost(perk, level - 1));
+			}
+		}
+	});
+
+	it('counts what was spent against the points, never below zero', () => {
+		const state = fresh();
+		state.prestigePoints = 10;
+		state.perks.output = 2;
+		state.perks.growth = 1;
+		// Output: 1 + ceil(1.4) = 3, growth: 2
+		expect(pointsSpent(state.perks)).toBe(5);
+		expect(availablePoints(state)).toBe(5);
+		state.prestigePoints = 1;
+		expect(availablePoints(state)).toBe(0);
+	});
+
+	it('flattens the price curve', () => {
+		const state = fresh();
+		state.perks.growth = 3;
+		const flat = pricing(state);
+		expect(flat.growth).toBeCloseTo(COST_GROWTH - 0.03, 9);
+		expect(producerCost(tanker, 10, 1, flat)).toBeLessThan(producerCost(tanker, 10));
+		const count = maxAffordable(tanker, 10, 1e6, flat);
+		expect(producerCost(tanker, 10, count, flat)).toBeLessThanOrEqual(1e6);
+		expect(producerCost(tanker, 10, count + 1, flat)).toBeGreaterThan(1e6);
+	});
+
+	it('boosts taps, the start money and the offline rate', () => {
+		const state = fresh();
+		state.perks.tap = 2;
+		expect(tapValue(state)).toBeCloseTo(2, 9);
+		expect(seedBarrels(state)).toBe(0);
+		state.perks.seed = 3;
+		expect(seedBarrels(state)).toBe(10_000);
+		state.perks.offline = 5;
+		expect(offlineEfficiency(state)).toBe(1);
 	});
 });

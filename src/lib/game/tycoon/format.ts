@@ -71,3 +71,14 @@ export function formatDuration(ms: number, locale: string): string {
 	if (minutes > 0) return unit(minutes, 'minute');
 	return unit(seconds, 'second');
 }
+
+/** The length of a production cycle, such as "2 s" or "0.8 s" (one decimal below ten seconds) */
+export function formatCycle(ms: number, locale: string): string {
+	const seconds = Math.max(0, ms / 1000);
+	return formatter(locale, {
+		style: 'unit',
+		unit: 'second',
+		unitDisplay: 'narrow',
+		maximumFractionDigits: seconds < 10 ? 1 : 0
+	}).format(seconds);
+}

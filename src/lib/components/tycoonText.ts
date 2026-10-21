@@ -1,5 +1,16 @@
-/* Translated names and descriptions for the oil tycoon's producers, upgrades, achievements and crises */
-import type { AchievementDef, ProducerId, UpgradeDef } from '#lib/game/tycoon/config.js';
+/*
+ * Translated names and descriptions for the oil tycoon's producers, upgrades, achievements, the
+ * nationalization shop and crises
+ */
+import type {
+	AchievementDef,
+	AchievementReward,
+	PerkId,
+	ProducerId,
+	UpgradeDef
+} from '#lib/game/tycoon/config.js';
+import { COST_GROWTH, OFFLINE_EFFICIENCY } from '#lib/game/tycoon/config.js';
+import { perkEffect } from '#lib/game/tycoon/economy.js';
 import { formatBig, formatCount, formatMultiplier } from '#lib/game/tycoon/format.js';
 import type { EffectId, EventKind, EventOutcome } from '#lib/game/tycoon/types.js';
 import { m } from '#lib/paraglide/messages.js';
@@ -12,7 +23,10 @@ const PRODUCER_NAMES: Record<ProducerId, () => string> = {
 	lobbyist: m.tycoon_producer_lobbyist_name,
 	shadowfleet: m.tycoon_producer_shadowfleet_name,
 	paperwork: m.tycoon_producer_paperwork_name,
-	summit: m.tycoon_producer_summit_name
+	summit: m.tycoon_producer_summit_name,
+	offshore: m.tycoon_producer_offshore_name,
+	cartel: m.tycoon_producer_cartel_name,
+	arctic: m.tycoon_producer_arctic_name
 };
 
 const PRODUCER_FLAVORS: Record<ProducerId, () => string> = {
@@ -22,7 +36,10 @@ const PRODUCER_FLAVORS: Record<ProducerId, () => string> = {
 	lobbyist: m.tycoon_producer_lobbyist_flavor,
 	shadowfleet: m.tycoon_producer_shadowfleet_flavor,
 	paperwork: m.tycoon_producer_paperwork_flavor,
-	summit: m.tycoon_producer_summit_flavor
+	summit: m.tycoon_producer_summit_flavor,
+	offshore: m.tycoon_producer_offshore_flavor,
+	cartel: m.tycoon_producer_cartel_flavor,
+	arctic: m.tycoon_producer_arctic_flavor
 };
 
 export function producerName(id: ProducerId): string {
@@ -75,20 +92,27 @@ const ACHIEVEMENT_NAMES: Record<string, () => string> = {
 	first_tap: m.tycoon_ach_name_first_tap,
 	tapper: m.tycoon_ach_name_tapper,
 	tap_master: m.tycoon_ach_name_tap_master,
+	tap_legend: m.tycoon_ach_name_tap_legend,
 	kilo: m.tycoon_ach_name_kilo,
 	mega: m.tycoon_ach_name_mega,
 	giga: m.tycoon_ach_name_giga,
 	tera: m.tycoon_ach_name_tera,
+	peta: m.tycoon_ach_name_peta,
 	stack: m.tycoon_ach_name_stack,
 	hoard: m.tycoon_ach_name_hoard,
+	centurion: m.tycoon_ach_name_centurion,
 	diversified: m.tycoon_ach_name_diversified,
 	flow: m.tycoon_ach_name_flow,
 	torrent: m.tycoon_ach_name_torrent,
+	gusher: m.tycoon_ach_name_gusher,
 	paper_trail: m.tycoon_ach_name_paper_trail,
 	crisis_manager: m.tycoon_ach_name_crisis_manager,
 	loophole: m.tycoon_ach_name_loophole,
 	nationalised: m.tycoon_ach_name_nationalised,
-	serial_nationaliser: m.tycoon_ach_name_serial_nationaliser
+	serial_nationaliser: m.tycoon_ach_name_serial_nationaliser,
+	state_owned: m.tycoon_ach_name_state_owned,
+	investor: m.tycoon_ach_name_investor,
+	magnate: m.tycoon_ach_name_magnate
 };
 
 export function achievementName(id: string): string {
@@ -118,6 +142,75 @@ export function achievementDescription(def: AchievementDef): string {
 			return m.tycoon_ach_desc_evaded({ count });
 		case 'prestige':
 			return m.tycoon_ach_desc_prestige({ count });
+		case 'perks':
+			return m.tycoon_ach_desc_perks({ count });
+	}
+}
+
+/** The boost an achievement unlocks, such as "+5% per tap" */
+export function achievementReward(reward: AchievementReward): string {
+	const percent = formatCount(reward.value * 100, getLocale());
+	switch (reward.kind) {
+		case 'tap':
+			return m.tycoon_ach_reward_tap({ percent });
+		case 'output':
+			return m.tycoon_ach_reward_output({ percent });
+		case 'speed':
+			return m.tycoon_ach_reward_speed({ percent });
+		case 'discount':
+			return m.tycoon_ach_reward_discount({ percent });
+		case 'producer':
+			return m.tycoon_ach_reward_producer({ percent, producer: producerName(reward.producer) });
+	}
+}
+
+const PERK_NAMES: Record<PerkId, () => string> = {
+	growth: m.tycoon_perk_growth_name,
+	output: m.tycoon_perk_output_name,
+	speed: m.tycoon_perk_speed_name,
+	tap: m.tycoon_perk_tap_name,
+	seed: m.tycoon_perk_seed_name,
+	offline: m.tycoon_perk_offline_name
+};
+
+export function perkName(id: PerkId): string {
+	return PERK_NAMES[id]();
+}
+
+/** What a perk does at a level, as a short value such as "+30%" or "1K" */
+function perkValue(id: PerkId, level: number): string {
+	const locale = getLocale();
+	const effect = perkEffect(id, level);
+	switch (id) {
+		case 'growth':
+			return `${formatCount((COST_GROWTH - effect - 1) * 100, locale)}%`;
+		case 'seed':
+			return formatBig(effect, locale);
+		case 'offline':
+			return `${formatCount(Math.min(1, OFFLINE_EFFICIENCY + effect) * 100, locale)}%`;
+		default:
+			return `+${formatCount(effect * 100, locale)}%`;
+	}
+}
+
+/** What a perk does now and, unless it is maxed, at the next level: "Per tap: +50% → +100%" */
+export function perkEffectText(id: PerkId, level: number, maxed: boolean): string {
+	const value = maxed
+		? perkValue(id, level)
+		: `${perkValue(id, level)} → ${perkValue(id, level + 1)}`;
+	switch (id) {
+		case 'growth':
+			return m.tycoon_perk_growth_effect({ value });
+		case 'output':
+			return m.tycoon_perk_output_effect({ value });
+		case 'speed':
+			return m.tycoon_perk_speed_effect({ value });
+		case 'tap':
+			return m.tycoon_perk_tap_effect({ value });
+		case 'seed':
+			return m.tycoon_perk_seed_effect({ value });
+		case 'offline':
+			return m.tycoon_perk_offline_effect({ value });
 	}
 }
 

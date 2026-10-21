@@ -1,8 +1,8 @@
 <!--
 	Oil Tycoon Idle Clicker (roadmap 3.16): tap the derrick to pump barrels, buy pumpjacks, tankers,
-	lobbyists and a shadow fleet that pump for you, survive random crises (price spikes, sanctions,
-	pipeline maintenance, protests) with a quick decision, and nationalize and restart for a
-	permanent multiplier. The game saves itself, credits the time away, and has no lives and no
+	lobbyists and a shadow fleet that pump for you in cycles, survive random crises (price spikes,
+	sanctions, pipeline maintenance, protests) with a quick decision, unlock achievements with small
+	boosts, and nationalize and restart for a permanent multiplier and points to invest. The game saves itself, credits the time away, and has no lives and no
 	game over, so there is no end screen and no pause overlay: the help screen simply pauses it.
 -->
 <script lang="ts">
@@ -16,6 +16,7 @@
 	import {
 		achievementDescription,
 		achievementName,
+		achievementReward,
 		effectIsGood,
 		effectLabel,
 		upgradeEffect,
@@ -23,7 +24,6 @@
 	} from '#lib/components/tycoonText.js';
 	import { createFixedLoop, prefersReducedMotion } from '#lib/game/loop.js';
 	import {
-		ACHIEVEMENT_BONUS,
 		ACHIEVEMENTS,
 		COST_GROWTH,
 		OFFLINE_CAP_MS,
@@ -119,6 +119,15 @@
 		})
 	);
 	const secondsLeft = (ms: number) => Math.max(1, Math.ceil(ms / 1000));
+	// The boosts the unlocked achievements add up to, as whole percents
+	const boosts = $derived(
+		Object.fromEntries(
+			Object.entries(game.achievementBoosts).map(([kind, value]) => [
+				kind,
+				formatCount(value * 100, locale)
+			])
+		) as Record<keyof typeof game.achievementBoosts, string>
+	);
 </script>
 
 <GameShell title={modeName}>
@@ -247,7 +256,7 @@
 						{entry.label()}
 						{#if entry.id === 'upgrades' && availableUpgrades.length > 0}
 							({availableUpgrades.length})
-						{:else if entry.id === 'prestige' && game.pendingPoints >= 1}
+						{:else if entry.id === 'prestige' && (game.pendingPoints >= 1 || game.canInvest)}
 							!
 						{/if}
 					</span>
@@ -324,9 +333,11 @@
 				<p dir="auto" class="text-sm font-semibold">
 					{m.tycoon_achievements_summary({
 						count: formatCount(game.achievementIds.length, locale),
-						total: formatCount(ACHIEVEMENTS.length, locale),
-						percent: formatCount(ACHIEVEMENT_BONUS * 100, locale)
+						total: formatCount(ACHIEVEMENTS.length, locale)
 					})}
+				</p>
+				<p dir="auto" class="text-xs font-semibold tabular-nums">
+					{m.tycoon_achievements_boosts(boosts)}
 				</p>
 				<ul class="grid grid-cols-1 gap-2 sm:grid-cols-2">
 					{#each ACHIEVEMENTS as achievement (achievement.id)}
@@ -351,6 +362,9 @@
 								</span>
 								<span dir="auto" class="text-xs leading-tight">
 									{achievementDescription(achievement)}
+								</span>
+								<span dir="auto" class="text-xs leading-tight font-bold">
+									{achievementReward(achievement.reward)}
 								</span>
 							</span>
 						</li>
@@ -378,10 +392,7 @@
 			})}
 		</p>
 		<p>
-			{m.tycoon_tutorial_prestige({
-				percent: formatCount(PRESTIGE_BONUS * 100, locale),
-				bonus: formatCount(ACHIEVEMENT_BONUS * 100, locale)
-			})}
+			{m.tycoon_tutorial_prestige({ percent: formatCount(PRESTIGE_BONUS * 100, locale) })}
 		</p>
 	</TutorialModal>
 </GameShell>

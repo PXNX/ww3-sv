@@ -1,11 +1,12 @@
 <!--
-	One producer in the shop: icon, name, a line of flavor text, how many are owned and what each
-	makes, and a buy button with the price for the chosen amount (1, 10 or as many as affordable).
+	One producer in the shop: icon, name, a line of flavor text, how many are owned and what their
+	cycle pays, a bar that fills as the cycle runs, and a buy button with the price for the chosen
+	amount (1, 10 or as many as affordable).
 -->
 <script lang="ts">
 	import type { ProducerId } from '#lib/game/tycoon/config.js';
 	import { maxAffordable, producerCost, producerDef } from '#lib/game/tycoon/economy.js';
-	import { formatBig, formatCount } from '#lib/game/tycoon/format.js';
+	import { formatBig, formatCount, formatCycle } from '#lib/game/tycoon/format.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import type { TycoonGame } from '#lib/stores/tycoonGame.svelte.js';
@@ -19,13 +20,18 @@
 	const owned = $derived(game.owned[id]);
 	// "Max" buys what the barrels allow, but always shows the price of at least one unit
 	const count = $derived(
-		game.buyAmount === 'max' ? Math.max(1, maxAffordable(def, owned, game.barrels)) : game.buyAmount
+		game.buyAmount === 'max'
+			? Math.max(1, maxAffordable(def, owned, game.barrels, game.pricing))
+			: game.buyAmount
 	);
-	const cost = $derived(producerCost(def, owned, count));
+	const cost = $derived(producerCost(def, owned, count, game.pricing));
 	const affordable = $derived(game.barrels >= cost);
 	const sanctioned = $derived(game.cut.includes(id));
 	const name = $derived(producerName(id));
-	const each = $derived(game.eachOutput[id]);
+	const cycle = $derived(game.cycles[id]);
+	// What one cycle pays: for all owned units, or for the first one before any is bought
+	const payout = $derived((game.eachOutput[id] * Math.max(1, owned) * cycle) / 1000);
+	const progress = $derived(owned > 0 ? game.progress[id] : 0);
 </script>
 
 <li>
@@ -55,7 +61,20 @@
 			<span dir="auto" class="text-xs leading-tight font-semibold tabular-nums">
 				{m.tycoon_producer_owned({ count: formatCount(owned, locale) })}
 				·
-				{m.tycoon_producer_each({ amount: formatBig(each, locale, 1) })}
+				{m.tycoon_producer_cycle({
+					amount: formatBig(payout, locale, 1),
+					time: formatCycle(cycle, locale)
+				})}
+			</span>
+			<span
+				class="mt-1 h-2 overflow-hidden rounded-full border-2 border-ink bg-sand"
+				aria-hidden="true"
+				dir="ltr"
+			>
+				<span
+					class="block h-full rounded-full {sanctioned ? 'bg-tie-red' : 'bg-khaki'}"
+					style:width="{progress * 100}%"
+				></span>
 			</span>
 		</span>
 		<span class="flex shrink-0 flex-col items-end font-display leading-tight font-bold" dir="ltr">

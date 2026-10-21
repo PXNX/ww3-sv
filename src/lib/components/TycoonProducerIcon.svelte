@@ -6,8 +6,11 @@
 	import IconGhost from '~icons/lucide/ghost';
 	import IconBriefcase from '~icons/lucide/briefcase';
 	import IconLandmark from '~icons/lucide/landmark';
+	import IconHandshake from '~icons/lucide/handshake';
 	import IconShip from '~icons/lucide/ship';
+	import IconSnowflake from '~icons/lucide/snowflake';
 	import IconStamp from '~icons/lucide/stamp';
+	import IconWaves from '~icons/lucide/waves';
 
 	let { id, class: className = '' }: { id: ProducerId; class?: string } = $props();
 </script>
@@ -24,6 +27,12 @@
 	<IconGhost class={className} aria-hidden="true" />
 {:else if id === 'paperwork'}
 	<IconStamp class={className} aria-hidden="true" />
-{:else}
+{:else if id === 'summit'}
 	<IconLandmark class={className} aria-hidden="true" />
+{:else if id === 'offshore'}
+	<IconWaves class={className} aria-hidden="true" />
+{:else if id === 'cartel'}
+	<IconHandshake class={className} aria-hidden="true" />
+{:else}
+	<IconSnowflake class={className} aria-hidden="true" />
 {/if}

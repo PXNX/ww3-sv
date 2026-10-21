@@ -1,29 +1,40 @@
 /*
- * The idle game's rules: creating a state, tapping, buying, the production tick, offline progress,
- * achievements and prestige. The state is a plain object; every function that changes it returns
+ * The idle game's rules: creating a state, tapping, buying, the production cycles, offline
+ * progress, achievements, the nationalization shop and prestige. The state is a plain object; every function that changes it returns
  * the events the store turns into toasts and sounds.
  */
 import type { Random } from '#lib/game/random.js';
 import {
 	ACHIEVEMENTS,
 	OFFLINE_CAP_MS,
-	OFFLINE_EFFICIENCY,
 	EVENT_AFTER_RETURN_MS,
+	PERK_IDS,
 	PRODUCER_IDS,
 	PRODUCERS,
 	type AchievementDef,
+	type PerkId,
 	type ProducerId
 } from './config.js';
 import {
+	availablePoints,
 	calmProduction,
+	cycleMs,
 	hasUpgrade,
+	isCut,
 	maxAffordable,
+	offlineEfficiency,
+	perkCost,
+	perkDef,
 	prestigeGain,
+	pricing,
 	producerCost,
 	producerDef,
+	producerOutput,
 	productionPerSecond,
 	requirementMet,
+	seedBarrels,
 	tapValue,
+	totalPerkLevels,
 	upgradeDef
 } from './economy.js';
 import { firstEventDelay, nextEventDelay, stepEvents } from './events.js';
@@ -31,6 +42,10 @@ import type { TycoonEvent, TycoonState } from './types.js';
 
 export function emptyOwned(): Record<ProducerId, number> {
 	return Object.fromEntries(PRODUCER_IDS.map((id) => [id, 0])) as Record<ProducerId, number>;
+}
+
+export function emptyPerks(): Record<PerkId, number> {
+	return Object.fromEntries(PERK_IDS.map((id) => [id, 0])) as Record<PerkId, number>;
 }
 
 /** A brand-new game; the random source only decides when the first crisis comes */
@@ -41,8 +56,11 @@ export function createState(random: Random): TycoonState {
 		lifetime: 0,
 		taps: 0,
 		owned: emptyOwned(),
+		progress: emptyOwned(),
+		pending: emptyOwned(),
 		upgrades: [],
 		prestigePoints: 0,
+		perks: emptyPerks(),
 		prestiges: 0,
 		achievements: [],
 		eventsHandled: 0,
@@ -75,9 +93,11 @@ export function buyProducer(
 ): { bought: number; events: TycoonEvent[] } {
 	const def = producerDef(id);
 	const owned = state.owned[id];
-	const wanted = amount === 'max' ? maxAffordable(def, owned, state.barrels) : Math.floor(amount);
+	const prices = pricing(state);
+	const wanted =
+		amount === 'max' ? maxAffordable(def, owned, state.barrels, prices) : Math.floor(amount);
 	if (wanted <= 0) return { bought: 0, events: [] };
-	const cost = producerCost(def, owned, wanted);
+	const cost = producerCost(def, owned, wanted, prices);
 	if (!(cost <= state.barrels)) return { bought: 0, events: [] };
 	state.barrels -= cost;
 	state.owned[id] = owned + wanted;
@@ -119,6 +139,8 @@ function achieved(state: TycoonState, def: AchievementDef): boolean {
 			return state.sanctionsEvaded >= def.threshold;
 		case 'prestige':
 			return state.prestiges >= def.threshold;
+		case 'perks':
+			return totalPerkLevels(state) >= def.threshold;
 	}
 }
 
@@ -133,12 +155,42 @@ export function checkAchievements(state: TycoonState): TycoonEvent[] {
 	return events;
 }
 
+/**
+ * Runs the production cycles for a while: every producer fills its cycle with what it pumps (at the
+ * rate of the moment, so a crisis counts while it lasts) and pays the cycle out when it ends. A
+ * sanctioned producer stands still. Returns the barrels paid out.
+ */
+export function runCycles(state: TycoonState, dtMs: number): number {
+	let paid = 0;
+	for (const producer of PRODUCERS) {
+		const id = producer.id;
+		if (state.owned[id] === 0 || isCut(state, id)) continue;
+		const rate = producerOutput(state, id) / 1000;
+		const cycle = cycleMs(state, id);
+		let left = dtMs;
+		while (left > 0) {
+			// A cycle can be past its end when a speed bonus shortened it: it ends right away
+			const room = Math.max(0, cycle - state.progress[id]);
+			if (left < room) {
+				state.pending[id] += rate * left;
+				state.progress[id] += left;
+				break;
+			}
+			paid += state.pending[id] + rate * room;
+			state.pending[id] = 0;
+			state.progress[id] = 0;
+			left -= room;
+		}
+	}
+	state.barrels += paid;
+	state.runTotal += paid;
+	state.lifetime += paid;
+	return paid;
+}
+
 /** One fixed step: the wells produce, crises run their course */
 export function stepGame(state: TycoonState, dtMs: number, random: Random): TycoonEvent[] {
-	const made = (productionPerSecond(state) * dtMs) / 1000;
-	state.barrels += made;
-	state.runTotal += made;
-	state.lifetime += made;
+	runCycles(state, dtMs);
 	const events = stepEvents(state, dtMs, random);
 	events.push(...checkAchievements(state));
 	return events;
@@ -166,7 +218,7 @@ export function applyOffline(
 ): { report: OfflineReport; events: TycoonEvent[] } {
 	const away = Number.isFinite(elapsedMs) ? Math.max(0, elapsedMs) : 0;
 	const creditedMs = Math.min(away, OFFLINE_CAP_MS);
-	const barrels = (calmProduction(state) * creditedMs * OFFLINE_EFFICIENCY) / 1000;
+	const barrels = (calmProduction(state) * creditedMs * offlineEfficiency(state)) / 1000;
 	state.barrels += barrels;
 	state.runTotal += barrels;
 	state.lifetime += barrels;
@@ -181,6 +233,23 @@ export function applyOffline(
 	};
 }
 
+/**
+ * Buys the next level of a perk in the nationalization shop with prestige points. The points stay
+ * counted for the permanent multiplier; only what is left to spend goes down.
+ */
+export function buyPerk(
+	state: TycoonState,
+	id: PerkId
+): { bought: boolean; events: TycoonEvent[] } {
+	const def = perkDef(id);
+	const level = state.perks[id];
+	if (level >= def.maxLevel || availablePoints(state) < perkCost(def, level)) {
+		return { bought: false, events: [] };
+	}
+	state.perks[id] = level + 1;
+	return { bought: true, events: checkAchievements(state) };
+}
+
 /** Prestige points a nationalization would pay right now */
 export function pendingPrestige(state: TycoonState): number {
 	return prestigeGain(state.runTotal);
@@ -192,16 +261,19 @@ export function canPrestige(state: TycoonState): boolean {
 
 /**
  * "Nationalize and restart": the run's barrels turn into permanent prestige points; barrels,
- * producers, upgrades and crises start over. Achievements, points and statistics stay.
+ * producers, upgrades and crises start over (with the start money the shop pays for).
+ * Achievements, points, perks and statistics stay.
  */
 export function prestige(state: TycoonState, random: Random): TycoonEvent[] {
 	const points = pendingPrestige(state);
 	if (points < 1) return [];
 	state.prestigePoints += points;
 	state.prestiges += 1;
-	state.barrels = 0;
+	state.barrels = seedBarrels(state);
 	state.runTotal = 0;
 	state.owned = emptyOwned();
+	state.progress = emptyOwned();
+	state.pending = emptyOwned();
 	state.upgrades = [];
 	state.event = null;
 	state.effects = [];

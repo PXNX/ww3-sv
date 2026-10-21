@@ -120,19 +120,23 @@ describe('save and load', () => {
 				...data,
 				barrels: 500,
 				runTotal: 10,
-				lifetime: 20,
+				lifetime: 5,
 				taps: -5,
 				prestigePoints: 'lots',
 				owned: { pumpjack: 1e12, tanker: -3, refinery: 2.9, nonsense: 5, lobbyist: Number.NaN },
 				upgrades: ['click_bucket', 'click_bucket', 'cheat_upgrade', 7, null],
-				achievements: 'all'
+				achievements: 'all',
+				perks: { output: 99, tap: -1, speed: 1.5, cheat: 3 },
+				progress: { pumpjack: 1e9, tanker: 500 },
+				pending: { pumpjack: -4 }
 			},
 			random()
 		);
 		expect(loaded).not.toBeNull();
 		const state = loaded!.state;
-		expect(state.runTotal).toBe(500);
-		expect(state.lifetime).toBe(500);
+		// The bank may hold start money the run never pumped, but all runs cover this one
+		expect(state.runTotal).toBe(10);
+		expect(state.lifetime).toBe(10);
 		expect(state.taps).toBe(0);
 		expect(state.prestigePoints).toBe(0);
 		expect(state.owned.pumpjack).toBe(MAX_OWNED);
@@ -141,6 +145,11 @@ describe('save and load', () => {
 		expect(state.owned.lobbyist).toBe(0);
 		expect(state.upgrades).toEqual(['click_bucket']);
 		expect(state.achievements).toEqual([]);
+		expect(state.perks).toEqual({ growth: 0, output: 25, speed: 1, tap: 0, seed: 0, offline: 0 });
+		// No cycle runs past its end, and a producer that is not owned has no cycle going
+		expect(state.progress.pumpjack).toBe(1000);
+		expect(state.progress.tanker).toBe(0);
+		expect(state.pending.pumpjack).toBe(0);
 		expect(Object.keys(state.owned).sort()).toEqual(
 			Object.keys(createState(random()).owned).sort()
 		);
@@ -160,5 +169,19 @@ describe('save and load', () => {
 		writeSave(store, played(), 1);
 		clearSave(store);
 		expect(readSave(store, random())).toBeNull();
+	});
+});
+
+describe('save migration', () => {
+	it('loads a version 1 save with empty cycles and no investments', () => {
+		const data = serialize(played(), 100) as unknown as Record<string, unknown>;
+		delete data.progress;
+		delete data.pending;
+		delete data.perks;
+		const loaded = parseSave({ ...data, version: 1 }, random());
+		expect(loaded).not.toBeNull();
+		expect(loaded!.state.barrels).toBe(12_345.5);
+		expect(Object.values(loaded!.state.perks).every((level) => level === 0)).toBe(true);
+		expect(Object.values(loaded!.state.progress).every((ms) => ms === 0)).toBe(true);
 	});
 });

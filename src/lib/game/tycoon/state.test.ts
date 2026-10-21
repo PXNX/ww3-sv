@@ -11,6 +11,7 @@ import {
 import { producerCost, producerDef, productionPerSecond, tapValue } from './economy.js';
 import {
 	applyOffline,
+	buyPerk,
 	buyProducer,
 	buyUpgrade,
 	canPrestige,
@@ -18,6 +19,7 @@ import {
 	createState,
 	pendingPrestige,
 	prestige,
+	runCycles,
 	stepGame,
 	tap
 } from './state.js';
@@ -81,7 +83,7 @@ describe('buying', () => {
 });
 
 describe('production tick', () => {
-	it('earns output times elapsed time, however finely it is stepped', () => {
+	it('earns output times elapsed time over whole cycles, however finely it is stepped', () => {
 		const a = fresh();
 		a.owned.tanker = 9;
 		const b = fresh();
@@ -101,6 +103,74 @@ describe('production tick', () => {
 		const state = fresh();
 		stepGame(state, 60_000, random());
 		expect(state.barrels).toBe(0);
+	});
+});
+
+describe('production cycles', () => {
+	it('pays a cycle out in one go when it ends', () => {
+		const state = fresh();
+		state.owned.refinery = 2;
+		const cycle = producerDef('refinery').cycleMs;
+		expect(runCycles(state, cycle - 1)).toBe(0);
+		expect(state.barrels).toBe(0);
+		expect(state.pending.refinery).toBeGreaterThan(0);
+		const paid = runCycles(state, 1);
+		expect(paid).toBeCloseTo((2 * 8 * cycle) / 1000, 9);
+		expect(state.barrels).toBeCloseTo(paid, 9);
+		expect(state.progress.refinery).toBe(0);
+		expect(state.pending.refinery).toBe(0);
+	});
+
+	it('pays several cycles when a long step covers them', () => {
+		const state = fresh();
+		state.owned.pumpjack = 10;
+		expect(runCycles(state, 3_500)).toBeCloseTo(3, 9);
+		expect(state.progress.pumpjack).toBeCloseTo(500, 9);
+	});
+
+	it('stands still while a sanction cuts the producer', () => {
+		const state = fresh();
+		state.owned.tanker = 1;
+		runCycles(state, 1000);
+		state.effects.push({
+			id: 'sanctioned',
+			remainingMs: 5000,
+			durationMs: 5000,
+			prodMult: 1,
+			clickMult: 1,
+			producer: 'tanker'
+		});
+		expect(runCycles(state, 5000)).toBe(0);
+		expect(state.progress.tanker).toBe(1000);
+	});
+
+	it('ends a cycle at once when a speed bonus made it shorter than its progress', () => {
+		const state = fresh();
+		state.owned.summit = 1;
+		runCycles(state, 15_000);
+		state.perks.speed = 10;
+		expect(runCycles(state, STEP_MS)).toBeGreaterThan(0);
+	});
+});
+
+describe('nationalization shop', () => {
+	it('buys a level with spare points, up to the maximum', () => {
+		const state = fresh();
+		expect(buyPerk(state, 'tap').bought).toBe(false);
+		state.prestigePoints = 100;
+		expect(buyPerk(state, 'tap').bought).toBe(true);
+		expect(state.perks.tap).toBe(1);
+		expect(state.prestigePoints).toBe(100);
+		state.perks.growth = 5;
+		expect(buyPerk(state, 'growth').bought).toBe(false);
+	});
+
+	it('unlocks the investor achievement', () => {
+		const state = fresh();
+		state.prestigePoints = 1000;
+		const ids: string[] = [];
+		for (let i = 0; i < 10; i++) ids.push(...achievementIds(buyPerk(state, 'output').events));
+		expect(ids).toEqual(['investor']);
 	});
 });
 
@@ -211,6 +281,21 @@ describe('prestige', () => {
 		// 10 points are +50 percent, the achievement adds a little on top
 		expect(productionPerSecond(state)).toBeGreaterThan(before * 1.5);
 		expect(productionPerSecond(state)).toBeLessThan(before * 1.6);
+	});
+
+	it('keeps the investments and starts the run with the start money', () => {
+		const state = fresh();
+		state.prestigePoints = 50;
+		state.perks.seed = 2;
+		state.owned.tanker = 3;
+		runCycles(state, 1000);
+		state.runTotal = PRESTIGE_UNIT;
+		prestige(state, random());
+		expect(state.perks.seed).toBe(2);
+		expect(state.barrels).toBe(1000);
+		expect(state.runTotal).toBe(0);
+		expect(state.progress.tanker).toBe(0);
+		expect(state.pending.tanker).toBe(0);
 	});
 
 	it('adds up over several restarts, each paying for its own run only', () => {

@@ -56,9 +56,13 @@ describe('TycoonGame', () => {
 		expect(game.barrels).toBeLessThan(1);
 		expect(game.buy('pumpjack', 1)).toBe(0);
 		const before = game.barrels;
-		game.update(10_000);
-		expect(game.barrels - before).toBeCloseTo(1.01, 6);
-		expect(game.perSecond).toBeCloseTo(0.101, 9);
+		// A pumpjack pays at the end of each one-second cycle
+		game.update(900);
+		expect(game.barrels).toBe(before);
+		expect(game.progress.pumpjack).toBeCloseTo(0.9, 9);
+		game.update(9_100);
+		expect(game.barrels - before).toBeCloseTo(1, 6);
+		expect(game.perSecond).toBeCloseTo(0.1, 9);
 	});
 
 	it('buys with the chosen amount and shows affordable upgrades', () => {
@@ -72,7 +76,8 @@ describe('TycoonGame', () => {
 		expect(game.availableIds).toContain('click_bucket');
 		expect(game.buyUpgrade('click_bucket')).toBe(true);
 		expect(game.availableIds).not.toContain('click_bucket');
-		expect(game.tapGain).toBeCloseTo(2 * 1.01, 9);
+		// Buying ten pumpjacks unlocked a price discount, which leaves the taps alone
+		expect(game.tapGain).toBeCloseTo(2, 9);
 	});
 
 	it('does nothing while paused, and picks up where it stopped', () => {
@@ -84,8 +89,8 @@ describe('TycoonGame', () => {
 		game.update(10_000);
 		expect(game.barrels).toBe(0);
 		game.resume();
-		game.update(1000);
-		expect(game.barrels).toBeCloseTo(10, 6);
+		game.update(2000);
+		expect(game.barrels).toBeCloseTo(20, 6);
 	});
 
 	it('answers a crisis and blocks taps during a protest', () => {
@@ -112,6 +117,22 @@ describe('TycoonGame', () => {
 		expect(game.prestigePoints).toBe(2);
 		expect(game.barrels).toBe(0);
 		expect(game.multiplier).toBeCloseTo(1 + 2 * PRESTIGE_BONUS, 9);
+	});
+
+	it('spends points on investments that survive nationalizing', () => {
+		const { game } = setup();
+		game.state.prestigePoints = 3;
+		game.update(0);
+		expect(game.spendablePoints).toBe(3);
+		expect(game.buyPerk('seed')).toBe(true);
+		expect(game.buyPerk('seed')).toBe(false);
+		expect(game.spendablePoints).toBe(2);
+		expect(game.prestigePoints).toBe(3);
+		game.state.runTotal = PRESTIGE_UNIT;
+		expect(game.nationalize()).toBe(true);
+		expect(game.perks.seed).toBe(1);
+		expect(game.barrels).toBe(100);
+		expect(game.runTotal).toBe(0);
 	});
 });
 

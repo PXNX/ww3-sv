@@ -6,22 +6,37 @@
  * An idle game has no lives and no game over, so there is no end screen: the game saves itself,
  * keeps running until the tab is left, and credits the time away when the player returns.
  */
-import { PRODUCERS, STEP_MS, WELCOME_MIN_MS, type ProducerId } from '#lib/game/tycoon/config.js';
 import {
-	achievementMultiplier,
+	PERKS,
+	PRODUCERS,
+	STEP_MS,
+	WELCOME_MIN_MS,
+	type PerkId,
+	type ProducerId
+} from '#lib/game/tycoon/config.js';
+import {
+	achievementBonus,
+	availablePoints,
 	availableUpgrades,
+	cycleMs,
+	perkCost,
 	globalMultiplier,
 	prestigeMultiplier,
-	producerMultiplier,
+	pricing,
 	productionPerSecond,
-	tapValue
+	speedMultiplier,
+	tapValue,
+	unitOutput,
+	type Pricing
 } from '#lib/game/tycoon/economy.js';
 import { canChoose, choiceCost, resolveEvent, spikeSellValue } from '#lib/game/tycoon/events.js';
 import { clearSave, readSave, writeSave } from '#lib/game/tycoon/save.js';
 import {
 	applyOffline,
+	buyPerk,
 	buyProducer,
 	buyUpgrade,
+	emptyPerks,
 	canPrestige,
 	createState,
 	pendingPrestige,
@@ -85,20 +100,32 @@ export class TycoonGame {
 	owned = $state.raw<Record<ProducerId, number>>(createState(createRandom(1)).owned);
 	/** Barrels per second one unit of each producer makes (upgrades and multipliers, no crisis) */
 	eachOutput = $state.raw<Record<ProducerId, number>>(createState(createRandom(1)).owned);
+	/** How long a cycle of each producer lasts, and how far the current one is (0 to 1) */
+	cycles = $state.raw<Record<ProducerId, number>>(createState(createRandom(1)).owned);
+	progress = $state.raw<Record<ProducerId, number>>(createState(createRandom(1)).owned);
+	/** How producer prices behave right now (the shop and achievement discounts) */
+	pricing = $state.raw<Pricing>({ growth: 1, factor: 1 });
+	speed = $state(1);
 	/** Producers silenced by sanctions right now */
 	cut = $state.raw<ProducerId[]>([]);
 	upgradeIds = $state.raw<string[]>([]);
 	/** Upgrades that are unlocked and not yet bought */
 	availableIds = $state.raw<string[]>([]);
 	achievementIds = $state.raw<string[]>([]);
+	/** What the unlocked achievements add up to, per kind of boost (shares, 0.05 is 5 percent) */
+	achievementBoosts = $state.raw({ tap: 0, output: 0, speed: 0, discount: 0 });
 	prestigePoints = $state(0);
+	/** Points left to spend in the nationalization shop, and the levels bought there */
+	spendablePoints = $state(0);
+	perks = $state.raw<Record<PerkId, number>>(emptyPerks());
+	/** Whether the spare points buy at least one more level */
+	canInvest = $state(false);
 	prestiges = $state(0);
 	/** Points a nationalization would pay right now */
 	pendingPoints = $state(0);
 	multiplier = $state(1);
-	/** Product of prestige, achievements and global upgrades */
+	/** Product of prestige, achievements, the shop and global upgrades */
 	totalMultiplier = $state(1);
-	achievementBonus = $state(1);
 	event = $state.raw<PendingEvent | null>(null);
 	effects = $state.raw<ActiveEffect[]>([]);
 	/** Barrels the paying answer of the current crisis costs, and whether the player can pay */
@@ -239,6 +266,21 @@ export class TycoonGame {
 		return bought;
 	}
 
+	/** Buys the next level of a perk in the nationalization shop */
+	buyPerk(id: PerkId): boolean {
+		if (this.status !== 'playing') return false;
+		const { bought, events } = buyPerk(this.state, id);
+		if (bought) {
+			this.#play('chime-big', 60);
+			this.#handleAll(events);
+			this.#sync();
+			this.save();
+		} else {
+			this.#play('ui-error', 200);
+		}
+		return bought;
+	}
+
 	/** The player answers the crisis */
 	choose(choice: EventChoice) {
 		if (this.status !== 'playing' || !this.state.event) return;
@@ -348,25 +390,43 @@ export class TycoonGame {
 		this.sanctionsEvaded = state.sanctionsEvaded;
 		this.owned = { ...state.owned };
 		this.totalMultiplier = globalMultiplier(state);
-		this.eachOutput = Object.fromEntries(
-			PRODUCERS.map((def) => [
-				def.id,
-				def.baseCps * producerMultiplier(state, def.id) * this.totalMultiplier
-			])
-		) as Record<ProducerId, number>;
+		this.eachOutput = byProducer((id) => unitOutput(state, id));
+		this.cycles = byProducer((id) => cycleMs(state, id));
+		this.progress = byProducer((id) => Math.min(1, state.progress[id] / this.cycles[id]));
+		this.pricing = pricing(state);
+		this.speed = speedMultiplier(state);
 		this.cut = state.effects.flatMap((effect) => (effect.producer ? [effect.producer] : []));
 		this.upgradeIds = [...state.upgrades];
 		this.availableIds = availableUpgrades(state).map((upgrade) => upgrade.id);
 		this.achievementIds = [...state.achievements];
+		this.achievementBoosts = {
+			tap: achievementBonus(state, 'tap'),
+			output: achievementBonus(state, 'output'),
+			speed: achievementBonus(state, 'speed'),
+			discount: achievementBonus(state, 'discount')
+		};
 		this.prestigePoints = state.prestigePoints;
+		this.spendablePoints = availablePoints(state);
+		this.perks = { ...state.perks };
+		this.canInvest = PERKS.some(
+			(def) =>
+				state.perks[def.id] < def.maxLevel &&
+				perkCost(def, state.perks[def.id]) <= this.spendablePoints
+		);
 		this.prestiges = state.prestiges;
 		this.pendingPoints = pendingPrestige(state);
 		this.multiplier = prestigeMultiplier(state.prestigePoints);
-		this.achievementBonus = achievementMultiplier(state.achievements.length);
 		this.event = state.event ? { ...state.event } : null;
 		this.effects = state.effects.map((effect) => ({ ...effect }));
 		this.eventCost = state.event ? choiceCost(state, state.event) : 0;
 		this.canPayEvent = state.event ? canChoose(state, 'a') : true;
 		this.sellValue = spikeSellValue(state);
 	}
+}
+
+function byProducer(value: (id: ProducerId) => number): Record<ProducerId, number> {
+	return Object.fromEntries(PRODUCERS.map((def) => [def.id, value(def.id)])) as Record<
+		ProducerId,
+		number
+	>;
 }
