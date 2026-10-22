@@ -5,7 +5,7 @@
 -->
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages.js';
-	import { MAP_IDS, RARITY_COLOR, STASH_SIZE, type MapId } from '#lib/game/raid/config.js';
+	import { MAP_IDS, RARITY_COLOR, STASH_SIZE, WEAPONS, type MapId } from '#lib/game/raid/config.js';
 	import {
 		gearScore,
 		helmetHp,
@@ -25,6 +25,7 @@
 		MAP_DESCRIPTIONS,
 		MAP_NAMES,
 		RARITY_NAMES,
+		SKILL_NAMES,
 		WEAPON_TRAITS
 	} from './raidText';
 	import IconCoins from '~icons/lucide/coins';
@@ -56,7 +57,13 @@
 	}
 
 	function traitLine(item: GearItem): string | null {
-		return item.type === 'weapon' ? WEAPON_TRAITS[item.kind]() : null;
+		if (item.type !== 'weapon') return null;
+		const [first, second] = WEAPONS[item.kind].skills;
+		const skills = m.raid_lobby_skills({
+			first: SKILL_NAMES[first](),
+			second: SKILL_NAMES[second]()
+		});
+		return `${WEAPON_TRAITS[item.kind]()} · ${skills}`;
 	}
 
 	/** Whether a stash item beats what is in the slot it would go into */

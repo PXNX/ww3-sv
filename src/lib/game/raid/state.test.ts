@@ -1,13 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { createRandom } from '#lib/game/random.js';
 import {
+	DASH_MS,
+	DASH_SPEED,
 	FIRST_BOSS_MS,
-	HEAL_COOLDOWN_MS,
+	MAX_MINES,
+	MINE_ARM_MS,
+	NOVA_BULLETS,
 	PLAYER_SPEED,
 	REVIVE_HEALTH_SHARE,
 	WEAPONS,
+	SKILL_COOLDOWN_MS,
 	rewardMultiplier,
-	threatHp
+	threatHp,
+	type WeaponKind
 } from './config';
 import { makeArmor, makeWeapon } from './items';
 import { newProfile } from './profile';
@@ -22,17 +28,18 @@ import {
 	spawnEnemy,
 	stepRaid,
 	swapWeapon,
-	useGrenade,
-	useHeal,
+	useSkill,
 	type RaidEvent,
 	type RaidState
 } from './state';
 
 const STEP = 1000 / 60;
 
-/** A raid where nothing spawns unless the test places it */
-function quietRaid(level = 1): RaidState {
-	const state = createRaid('sunflower', newProfile().loadout, level);
+/** A raid where nothing spawns unless the test places it, optionally holding another weapon */
+function quietRaid(level = 1, weapon?: WeaponKind): RaidState {
+	const loadout = newProfile().loadout;
+	if (weapon) loadout.primary = makeWeapon(weapon);
+	const state = createRaid('sunflower', loadout, level);
 	state.spawnMs = Infinity;
 	state.nextBossMs = Infinity;
 	return state;
@@ -134,26 +141,136 @@ describe('attacking', () => {
 });
 
 describe('skills', () => {
-	it('heals with the rifle only, then waits for the cooldown', () => {
+	it("uses the held weapon's skills, each with its own cooldown", () => {
 		const state = quietRaid();
 		state.player.hp = 20;
-		expect(useHeal(state)).toHaveLength(1);
+		expect(count(useSkill(state, 0), 'heal')).toBe(1);
 		expect(state.player.hp).toBeGreaterThan(20);
-		expect(useHeal(state)).toEqual([]);
-		run(state, HEAL_COOLDOWN_MS + 50);
+		expect(useSkill(state, 0)).toEqual([]);
+		run(state, SKILL_COOLDOWN_MS.heal + 50);
+		expect(useSkill(state, 0)).toHaveLength(2);
+		// The marksman rifle brings other skills on the same buttons
 		swapWeapon(state);
-		expect(useHeal(state)).toEqual([]);
+		expect(useSkill(state, 0)[0]).toEqual({ type: 'skill', skill: 'focus' });
 	});
 
 	it('throws a grenade that hurts everything in the blast', () => {
 		const state = quietRaid();
 		const a = placeEnemy(state, 200, 0);
 		const b = placeEnemy(state, 230, 40);
-		expect(count(useGrenade(state), 'grenade-throw')).toBe(1);
+		expect(useSkill(state, 1)[0]).toEqual({ type: 'skill', skill: 'grenade' });
 		const events = run(state, 1000);
 		expect(count(events, 'grenade-burst')).toBe(1);
 		expect(a.hp).toBeLessThan(a.maxHp);
 		expect(b.hp).toBeLessThan(b.maxHp);
+	});
+});
+
+describe('weapon skills', () => {
+	const tough = (state: RaidState, dx: number, dy = 0) => {
+		const enemy = placeEnemy(state, dx, dy);
+		enemy.hp = enemy.maxHp = 1e6;
+		return enemy;
+	};
+
+	it('focus makes the next three shots certain critical hits', () => {
+		const state = quietRaid(1, 'marksman');
+		tough(state, 150);
+		useSkill(state, 0);
+		setFiring(state, true);
+		const hits = run(state, 2600).filter((event) => event.type === 'hit');
+		expect(hits.slice(0, 3).every((event) => event.type === 'hit' && event.crit)).toBe(true);
+		expect(state.player.focusShots).toBe(0);
+	});
+
+	it('rail shot pierces every enemy in the line', () => {
+		const state = quietRaid(1, 'marksman');
+		const enemies = [90, 140, 190].map((dx) => tough(state, dx));
+		useSkill(state, 1);
+		run(state, 500);
+		for (const enemy of enemies) expect(enemy.hp).toBeLessThan(enemy.maxHp);
+	});
+
+	it('dash covers ground fast and nothing can hit during it', () => {
+		const state = quietRaid(1, 'shotgun');
+		const startX = state.player.x;
+		setMove(state, 1, 0);
+		useSkill(state, 0);
+		expect(state.player.invulnerableMs).toBeGreaterThan(DASH_MS);
+		run(state, DASH_MS);
+		expect(state.player.x - startX).toBeGreaterThan(DASH_SPEED * (DASH_MS / 1000) * 0.8);
+	});
+
+	it('blast hurts and shoves what is in front, but not what is behind', () => {
+		const state = quietRaid(1, 'shotgun');
+		const front = tough(state, 110);
+		const behind = tough(state, -140);
+		const before = front.x;
+		const events = useSkill(state, 1);
+		expect(count(events, 'blast')).toBe(1);
+		expect(front.hp).toBeLessThan(front.maxHp);
+		expect(front.x).toBeGreaterThan(before);
+		expect(behind.hp).toBe(behind.maxHp);
+	});
+
+	it('overdrive fires the SMG much faster', () => {
+		const shots = (overdrive: boolean) => {
+			const state = quietRaid(1, 'smg');
+			tough(state, 150);
+			if (overdrive) useSkill(state, 0);
+			setFiring(state, true);
+			return count(run(state, 3000), 'shot');
+		};
+		expect(shots(true)).toBeGreaterThan(shots(false) * 2);
+	});
+
+	it('nova sends a ring of bullets in every direction', () => {
+		const state = quietRaid(1, 'smg');
+		const around = [
+			[150, 0],
+			[-150, 0],
+			[0, 150],
+			[0, -150]
+		].map(([dx, dy]) => tough(state, dx, dy));
+		useSkill(state, 1);
+		expect(state.bullets).toHaveLength(NOVA_BULLETS);
+		run(state, 500);
+		for (const enemy of around) expect(enemy.hp).toBeLessThan(enemy.maxHp);
+	});
+
+	it('barrage sends a rocket at each nearby enemy', () => {
+		const state = quietRaid(1, 'launcher');
+		const targets = [
+			[200, 0],
+			[-200, 40],
+			[0, 220]
+		].map(([dx, dy]) => tough(state, dx, dy));
+		useSkill(state, 0);
+		run(state, 1200);
+		for (const enemy of targets) expect(enemy.hp).toBeLessThan(enemy.maxHp);
+	});
+
+	it('mines arm, wait for an enemy, explode, and never pile up past the limit', () => {
+		const state = quietRaid(1, 'launcher');
+		useSkill(state, 1);
+		expect(state.mines).toHaveLength(1);
+		const mine = state.mines[0];
+		run(state, MINE_ARM_MS + 100);
+		expect(state.mines).toHaveLength(1);
+		const enemy = tough(state, 0, 0);
+		enemy.x = mine.x + 10;
+		enemy.y = mine.y;
+		const events = run(state, 50);
+		expect(count(events, 'mine-burst')).toBe(1);
+		expect(enemy.hp).toBeLessThan(enemy.maxHp);
+		expect(state.mines).toHaveLength(0);
+
+		for (let i = 0; i < MAX_MINES + 2; i++) {
+			state.player.skillMs.mine = 0;
+			state.player.x += 60;
+			useSkill(state, 1);
+		}
+		expect(state.mines).toHaveLength(MAX_MINES);
 	});
 });
 

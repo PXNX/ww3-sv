@@ -9,6 +9,8 @@ import {
 	BOSS_SLAM_RADIUS,
 	BOSS_SLAM_WINDUP_MS,
 	GRENADE_FUSE_MS,
+	MINE_ARM_MS,
+	MINE_TRIGGER_RADIUS,
 	GRENADE_RADIUS,
 	PLAYER_RADIUS,
 	RARITY_COLOR,
@@ -19,7 +21,7 @@ import {
 } from './config';
 import type { GearItem } from './items';
 import type { Decor, Obstacle } from './maps';
-import type { Enemy, Loot, RaidState } from './state';
+import type { Bullet, Enemy, Loot, Mine, RaidState } from './state';
 
 const INK = '#111111';
 const PAPER = '#ffffff';
@@ -34,6 +36,17 @@ export type Effect =
 			text: string;
 			color: string;
 			size: number;
+			ageMs: number;
+			durationMs: number;
+	  }
+	| {
+			kind: 'cone';
+			x: number;
+			y: number;
+			angle: number;
+			spread: number;
+			radius: number;
+			color: string;
 			ageMs: number;
 			durationMs: number;
 	  }
@@ -131,6 +144,7 @@ function drawWorld(
 	for (const enemy of state.enemies) {
 		if (enemy.archetype === 'boss' && enemy.slamWindupMs > 0) drawSlamWarning(context, enemy);
 	}
+	for (const mine of state.mines) drawMine(context, mine, time);
 	for (const loot of state.loot) {
 		if (visible(camera, loot.x, loot.y, 60)) drawLoot(context, loot, time);
 	}
@@ -150,8 +164,7 @@ function drawWorld(
 	for (const obstacle of map.obstacles) {
 		if (visible(camera, obstacle.x, obstacle.y, obstacle.r + 20)) drawObstacle(context, obstacle);
 	}
-	for (const bullet of state.bullets)
-		drawBullet(context, bullet.x, bullet.y, bullet.vx, bullet.vy, bullet.kind, bullet.crit);
+	for (const bullet of state.bullets) drawBullet(context, bullet);
 	for (const bullet of state.enemyBullets) {
 		circle(context, bullet.x, bullet.y, bullet.big ? 8 : 6, '#ff6a2b', 2.5);
 		circle(context, bullet.x - 1.5, bullet.y - 1.5, 2, YELLOW, 0);
@@ -521,6 +534,25 @@ function drawPlayer(context: CanvasRenderingContext2D, state: RaidState, time: n
 	const weapon = loadout[player.held];
 	const look = WEAPON_LOOK[weapon.kind];
 
+	// Skill cues: speed lines while dashing, an orange glow in overdrive
+	if (player.dashMs > 0) {
+		context.strokeStyle = 'rgba(17, 17, 17, 0.45)';
+		context.lineWidth = 3;
+		context.beginPath();
+		for (const side of [-10, 0, 10]) {
+			const sx = x - player.dashY * side;
+			const sy = y + player.dashX * side;
+			context.moveTo(sx - player.dashX * 26, sy - player.dashY * 26);
+			context.lineTo(sx - player.dashX * 60, sy - player.dashY * 60);
+		}
+		context.stroke();
+	}
+	if (player.overdriveMs > 0) {
+		context.globalAlpha = 0.35 + Math.sin(time / 70) * 0.1;
+		circle(context, x, y, PLAYER_RADIUS + 12, '#ff8a2b', 0);
+		context.globalAlpha = player.invulnerableMs > 0 && Math.floor(time / 90) % 2 === 0 ? 0.55 : 1;
+	}
+
 	// Boots
 	if (player.moving) {
 		const swing = Math.sin(player.stepPhase) * 6;
@@ -563,6 +595,23 @@ function drawPlayer(context: CanvasRenderingContext2D, state: RaidState, time: n
 	context.stroke();
 	eyes(context, x, y - 4, player.aim, 4, 2.6, false);
 	context.globalAlpha = 1;
+
+	// Focus: a red crosshair over the head with one dot per certain crit left
+	if (player.focusShots > 0) {
+		const cy = y - PLAYER_RADIUS - 16;
+		context.strokeStyle = RED;
+		context.lineWidth = 2.5;
+		context.beginPath();
+		context.arc(x, cy, 8, 0, Math.PI * 2);
+		context.moveTo(x - 12, cy);
+		context.lineTo(x + 12, cy);
+		context.moveTo(x, cy - 12);
+		context.lineTo(x, cy + 12);
+		context.stroke();
+		for (let i = 0; i < player.focusShots; i++) {
+			circle(context, x - 8 + i * 8, cy - 18, 3, RED, 1.5);
+		}
+	}
 
 	if (player.invulnerableMs > 0) {
 		context.beginPath();
@@ -973,18 +1022,28 @@ function drawSlamWarning(context: CanvasRenderingContext2D, boss: Enemy) {
 // ---------------------------------------------------------------------------------------------
 // Shots, loot, effects
 
-function drawBullet(
-	context: CanvasRenderingContext2D,
-	x: number,
-	y: number,
-	vx: number,
-	vy: number,
-	kind: WeaponKind,
-	crit: boolean
-) {
+function drawBullet(context: CanvasRenderingContext2D, bullet: Bullet) {
+	const { x, y, vx, vy, kind, crit } = bullet;
 	const angle = Math.atan2(vy, vx);
 	facingFrame(context, x, y, angle, () => {
-		if (kind === 'launcher') {
+		if (bullet.rail) {
+			context.lineCap = 'round';
+			context.lineWidth = 12;
+			context.strokeStyle = INK;
+			context.beginPath();
+			context.moveTo(-90, 0);
+			context.lineTo(0, 0);
+			context.stroke();
+			context.lineWidth = 7;
+			context.strokeStyle = RED;
+			context.stroke();
+			context.lineWidth = 2.5;
+			context.strokeStyle = PAPER;
+			context.stroke();
+			context.lineCap = 'butt';
+			return;
+		}
+		if (kind === 'launcher' && bullet.splash > 0) {
 			roundRect(context, -12, -5, 22, 10, 5, '#55603a', 2);
 			circle(context, 10, 0, 4, RED, 1.5);
 			context.fillStyle = 'rgba(245, 200, 58, 0.8)';
@@ -1004,6 +1063,24 @@ function drawBullet(
 		context.stroke();
 		context.lineCap = 'butt';
 	});
+}
+
+/** A landmine: a flat disc whose light blinks once armed */
+function drawMine(context: CanvasRenderingContext2D, mine: Mine, time: number) {
+	const armed = mine.ageMs >= MINE_ARM_MS;
+	if (armed) {
+		context.beginPath();
+		context.arc(mine.x, mine.y, MINE_TRIGGER_RADIUS, 0, Math.PI * 2);
+		context.setLineDash([4, 6]);
+		context.lineWidth = 2;
+		context.strokeStyle = 'rgba(229, 72, 77, 0.5)';
+		context.stroke();
+		context.setLineDash([]);
+	}
+	circle(context, mine.x, mine.y, 13, '#4b5320', 3);
+	circle(context, mine.x, mine.y, 7, '#6b7340', 2);
+	const lit = !armed || Math.floor((time + mine.id * 97) / 300) % 2 === 0;
+	circle(context, mine.x, mine.y, 3, lit ? RED : '#5a1a1a', 0);
 }
 
 function drawGrenade(
@@ -1139,6 +1216,23 @@ function drawLoot(context: CanvasRenderingContext2D, loot: Loot, time: number) {
 
 function drawEffect(context: CanvasRenderingContext2D, effect: Effect) {
 	const t = effect.ageMs / effect.durationMs;
+	if (effect.kind === 'cone') {
+		context.globalAlpha = Math.max(0, 0.6 * (1 - t));
+		context.beginPath();
+		context.moveTo(effect.x, effect.y);
+		context.arc(
+			effect.x,
+			effect.y,
+			effect.radius * (0.4 + 0.6 * t),
+			effect.angle - effect.spread / 2,
+			effect.angle + effect.spread / 2
+		);
+		context.closePath();
+		context.fillStyle = effect.color;
+		context.fill();
+		context.globalAlpha = 1;
+		return;
+	}
 	if (effect.kind === 'ring') {
 		context.globalAlpha = Math.max(0, 1 - t);
 		context.beginPath();

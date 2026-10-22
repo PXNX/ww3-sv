@@ -2,8 +2,8 @@
 	Raid playfield: a crisp high-DPI canvas that fills the space it gets (landscape), driven by the
 	fixed-step loop, with the HUD and the touch controls laid over it. Dragging anywhere on the
 	field opens a floating stick to walk. The big weapon button at the bottom right attacks (tap
-	or hold; every shot aims at the closest enemy), and the skills sit in an arc towards its top
-	left: heal, grenade and the weapon swap. Keys work too. The playfield never mirrors in
+	or hold; every shot aims at the closest enemy), and the held weapon's two skills and the
+	weapon swap sit in an arc towards its top left. Keys work too. The playfield never mirrors in
 	right-to-left languages and never scrolls.
 -->
 <script lang="ts">
@@ -16,8 +16,15 @@
 	import LivesBar from './LivesBar.svelte';
 	import PauseOverlay from './PauseOverlay.svelte';
 	import RaidItemIcon from './RaidItemIcon.svelte';
-	import { BOSS_NAMES, formatTime, itemName, RARITY_NAMES, WEAPON_NAMES } from './raidText';
-	import IconBomb from '~icons/lucide/bomb';
+	import RaidSkillIcon from './RaidSkillIcon.svelte';
+	import {
+		BOSS_NAMES,
+		formatTime,
+		itemName,
+		RARITY_NAMES,
+		SKILL_NAMES,
+		WEAPON_NAMES
+	} from './raidText';
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
 	import IconRepeat from '~icons/lucide/repeat';
 	import IconCoins from '~icons/lucide/coins';
@@ -154,7 +161,9 @@
 
 	// --- Keyboard ------------------------------------------------------------------------------------
 
-	const held = new Set<string>();
+	/** Movement keys held down, read every step */
+	let held: Record<string, boolean> = {};
+	const isHeld = (...codes: string[]) => codes.some((code) => held[code]);
 	let keyAttack = false;
 
 	const isInteractive = (target: EventTarget | null) =>
@@ -163,17 +172,13 @@
 
 	function applyKeys() {
 		if (stick) return;
-		const x =
-			(held.has('ArrowRight') || held.has('KeyD') ? 1 : 0) -
-			(held.has('ArrowLeft') || held.has('KeyA') ? 1 : 0);
-		const y =
-			(held.has('ArrowDown') || held.has('KeyS') ? 1 : 0) -
-			(held.has('ArrowUp') || held.has('KeyW') ? 1 : 0);
+		const x = (isHeld('ArrowRight', 'KeyD') ? 1 : 0) - (isHeld('ArrowLeft', 'KeyA') ? 1 : 0);
+		const y = (isHeld('ArrowDown', 'KeyS') ? 1 : 0) - (isHeld('ArrowUp', 'KeyW') ? 1 : 0);
 		game.move(x, y);
 	}
 
 	function releaseAll() {
-		held.clear();
+		held = {};
 		stick = null;
 		attackPointer = null;
 		keyAttack = false;
@@ -206,10 +211,10 @@
 				if (!event.repeat) game.swap();
 				return;
 			case 'KeyE':
-				if (!event.repeat) game.heal();
+				if (!event.repeat) game.skill(0);
 				return;
 			case 'KeyR':
-				if (!event.repeat) game.grenade();
+				if (!event.repeat) game.skill(1);
 				return;
 			case 'KeyF':
 				if (!event.repeat) game.equipFound();
@@ -217,12 +222,12 @@
 		}
 		if (event.code.startsWith('Arrow') || ['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(event.code)) {
 			event.preventDefault();
-			held.add(event.code);
+			held[event.code] = true;
 		}
 	}
 
 	function onKeyUp(event: KeyboardEvent) {
-		held.delete(event.code);
+		held[event.code] = false;
 		if ((event.code === 'Space' || event.code === 'KeyJ') && keyAttack) {
 			keyAttack = false;
 			game.attack(false);
@@ -405,28 +410,18 @@
 			>
 		</button>
 
-		<button
-			type="button"
-			class="skill absolute flex touch-none items-center justify-center rounded-full border-3 border-ink bg-paper shadow-[2px_2px_0_var(--color-ink)]"
-			style="{arcSpot(180)} {cooldownStyle(game.healCooldown)}"
-			disabled={!game.abilities}
-			title={game.abilities ? m.raid_button_heal() : m.raid_skills_rifle_only()}
-			aria-label={m.raid_button_heal()}
-			onpointerdown={skill(() => game.heal())}
-		>
-			<IconHeartPulse class="size-7 text-tie-red" aria-hidden="true" />
-		</button>
-		<button
-			type="button"
-			class="skill absolute flex touch-none items-center justify-center rounded-full border-3 border-ink bg-paper shadow-[2px_2px_0_var(--color-ink)]"
-			style="{arcSpot(135)} {cooldownStyle(game.grenadeCooldown)}"
-			disabled={!game.abilities}
-			title={game.abilities ? m.raid_button_grenade() : m.raid_skills_rifle_only()}
-			aria-label={m.raid_button_grenade()}
-			onpointerdown={skill(() => game.grenade())}
-		>
-			<IconBomb class="size-7" aria-hidden="true" />
-		</button>
+		{#each game.skills as id, slot (id)}
+			<button
+				type="button"
+				class="skill absolute flex touch-none items-center justify-center rounded-full border-3 border-ink bg-paper shadow-[2px_2px_0_var(--color-ink)]"
+				style="{arcSpot(slot === 0 ? 180 : 135)} {cooldownStyle(game.skillCooldowns[slot])}"
+				title={SKILL_NAMES[id]()}
+				aria-label={SKILL_NAMES[id]()}
+				onpointerdown={skill(() => game.skill(slot === 0 ? 0 : 1))}
+			>
+				<RaidSkillIcon skill={id} />
+			</button>
+		{/each}
 		<button
 			type="button"
 			class="skill absolute flex touch-none items-center justify-center rounded-full border-3 border-ink bg-sky shadow-[2px_2px_0_var(--color-ink)]"
@@ -480,13 +475,8 @@
 
 <style>
 	.attack:active,
-	.skill:active:not(:disabled) {
+	.skill:active {
 		scale: 0.92;
-	}
-
-	.skill:disabled {
-		opacity: 0.4;
-		filter: grayscale(1);
 	}
 
 	.hurt {

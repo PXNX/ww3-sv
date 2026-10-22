@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createRandom } from '#lib/game/random.js';
-import { MAX_ITEM_LEVEL, RARITIES, WEAPONS } from './config';
+import { MAX_ITEM_LEVEL, RARITIES, SKILL_IDS, WEAPON_KINDS, WEAPONS } from './config';
 import {
 	atLeast,
 	damageTakenFactor,
@@ -20,14 +20,20 @@ import {
 
 describe('weapons', () => {
 	it('starts the rifle with the heal and grenade, and the marksman with the high crit chance', () => {
-		expect(WEAPONS.rifle.abilities).toBe(true);
-		expect(WEAPONS.marksman.abilities).toBe(false);
+		expect(WEAPONS.rifle.skills).toEqual(['heal', 'grenade']);
 		const highestOther = Math.max(
 			...Object.entries(WEAPONS)
 				.filter(([kind]) => kind !== 'marksman')
 				.map(([, spec]) => spec.critChance)
 		);
 		expect(WEAPONS.marksman.critChance).toBeGreaterThan(highestOther * 4);
+	});
+
+	it('gives every weapon two skills of its own', () => {
+		const skills = Object.values(WEAPONS).flatMap((spec) => spec.skills);
+		expect(skills).toHaveLength(WEAPON_KINDS.length * 2);
+		expect(new Set(skills).size).toBe(skills.length);
+		expect([...skills].sort()).toEqual([...SKILL_IDS].sort());
 	});
 
 	it('grows with rarity, item level and player level', () => {

@@ -1,10 +1,10 @@
 /*
  * The raid simulation: one plain state object that stepRaid advances in fixed steps and the
  * renderer reads. The player walks with a stick or the keys and attacks by tapping or holding the
- * weapon button; every shot aims itself at the closest enemy in sight (as in mo.co). Abilities,
- * the weapon swap and the revive are commands. Enemies stream in from beyond the camera, tougher and more often the
- * longer the raid lasts, and every defeat can drop loot. Each step returns events for sounds and
- * effects.
+ * weapon button; every shot aims itself at the closest enemy in sight (as in mo.co). Each weapon
+ * brings two skills; they, the weapon swap and the revive are commands. Enemies stream in from
+ * beyond the camera, tougher and more often the longer the raid lasts, and every defeat can drop
+ * loot. Each step returns events for sounds and effects.
  */
 import { pickWeighted, randomInt, type Random } from '#lib/game/random.js';
 import {
@@ -18,13 +18,34 @@ import {
 	ENEMY_BULLET_SPEED,
 	FIRST_BOSS_MS,
 	GEAR_PICKUP_RADIUS,
-	GRENADE_COOLDOWN_MS,
+	BARRAGE_RANGE,
+	BARRAGE_ROCKETS,
+	BLAST_ANGLE,
+	BLAST_DAMAGE_FACTOR,
+	BLAST_PUSH,
+	BLAST_RADIUS,
+	DASH_MS,
+	DASH_SPEED,
+	FOCUS_SHOTS,
 	GRENADE_DAMAGE_FACTOR,
 	GRENADE_FUSE_MS,
 	GRENADE_RADIUS,
 	GRENADE_THROW_RANGE,
-	HEAL_COOLDOWN_MS,
 	HEAL_SHARE,
+	MAX_MINES,
+	MINE_ARM_MS,
+	MINE_DAMAGE_FACTOR,
+	MINE_LIFETIME_MS,
+	MINE_RADIUS,
+	MINE_TRIGGER_RADIUS,
+	NOVA_BULLETS,
+	NOVA_DAMAGE_FACTOR,
+	OVERDRIVE_FIRE_FACTOR,
+	OVERDRIVE_MS,
+	RAILSHOT_DAMAGE_FACTOR,
+	RAILSHOT_RANGE,
+	SKILL_COOLDOWN_MS,
+	SKILL_IDS,
 	HIT_GRACE_MS,
 	LOOT_LIFETIME_MS,
 	MAGNET_RADIUS,
@@ -54,6 +75,7 @@ import {
 	type Archetype,
 	type ArmorSlot,
 	type MapId,
+	type SkillId,
 	type Variant,
 	type WeaponKind
 } from './config';
@@ -88,8 +110,16 @@ export interface Player {
 	/** A tap that came in during the reload, fired as soon as the weapon is ready */
 	fireQueued: boolean;
 	fireMs: number;
-	healMs: number;
-	grenadeMs: number;
+	/** Cooldown left per skill */
+	skillMs: Record<SkillId, number>;
+	/** Focus: this many coming shots are certain critical hits */
+	focusShots: number;
+	/** Overdrive: faster fire while above 0 */
+	overdriveMs: number;
+	/** Dash: time left and direction */
+	dashMs: number;
+	dashX: number;
+	dashY: number;
 	graceMs: number;
 	invulnerableMs: number;
 	/** Counts up while walking, drives the walk cycle */
@@ -132,6 +162,8 @@ export interface Bullet {
 	pierceLeft: number;
 	splash: number;
 	kind: WeaponKind;
+	/** A rail shot: drawn as a long beam */
+	rail: boolean;
 	/** Enemies this bullet already hit, so a piercing shot hits each one once */
 	hit: number[];
 }
@@ -149,6 +181,14 @@ export interface EnemyBullet {
 export interface Grenade {
 	fromX: number;
 	fromY: number;
+	x: number;
+	y: number;
+	ageMs: number;
+	damage: number;
+}
+
+export interface Mine {
+	id: number;
 	x: number;
 	y: number;
 	ageMs: number;
@@ -180,6 +220,7 @@ export interface RaidState {
 	bullets: Bullet[];
 	enemyBullets: EnemyBullet[];
 	grenades: Grenade[];
+	mines: Mine[];
 	loot: Loot[];
 	input: MoveInput;
 	spawnMs: number;
@@ -215,7 +256,9 @@ export type RaidEvent =
 	| { type: 'player-hit'; damage: number }
 	| { type: 'enemy-shot'; x: number; y: number }
 	| { type: 'heal'; amount: number; source: 'ability' | 'medkit' }
-	| { type: 'grenade-throw' }
+	| { type: 'skill'; skill: SkillId }
+	| { type: 'blast'; x: number; y: number; angle: number }
+	| { type: 'mine-burst'; x: number; y: number }
 	| { type: 'grenade-burst'; x: number; y: number }
 	| { type: 'boss-spawn'; variant: Variant }
 	| { type: 'boss-windup'; x: number; y: number }
@@ -239,10 +282,13 @@ export function heldWeapon(state: RaidState) {
 	return state.loadout[state.player.held];
 }
 
-/** The held weapon carries the heal and the grenade */
-export function hasAbilities(state: RaidState): boolean {
-	return WEAPONS[heldWeapon(state).kind].abilities;
+/** The two skills of the held weapon */
+export function heldSkills(state: RaidState): readonly [SkillId, SkillId] {
+	return WEAPONS[heldWeapon(state).kind].skills;
 }
+
+const readySkills = () =>
+	Object.fromEntries(SKILL_IDS.map((skill) => [skill, 0])) as Record<SkillId, number>;
 
 export function scoreOf(state: RaidState): number {
 	return Math.floor(state.timeMs / 1000) * SCORE_PER_SECOND + Math.floor(state.xp);
@@ -268,8 +314,12 @@ export function createRaid(mapId: MapId, loadout: Loadout, playerLevel: number):
 			firing: false,
 			fireQueued: false,
 			fireMs: 0,
-			healMs: 0,
-			grenadeMs: 0,
+			skillMs: readySkills(),
+			focusShots: 0,
+			overdriveMs: 0,
+			dashMs: 0,
+			dashX: 0,
+			dashY: 0,
 			graceMs: 0,
 			invulnerableMs: 0,
 			stepPhase: 0
@@ -279,6 +329,7 @@ export function createRaid(mapId: MapId, loadout: Loadout, playerLevel: number):
 		bullets: [],
 		enemyBullets: [],
 		grenades: [],
+		mines: [],
 		loot: [],
 		input: { x: 0, y: 0 },
 		spawnMs: 900,
@@ -322,32 +373,172 @@ export function swapWeapon(state: RaidState): RaidEvent[] {
 	return [{ type: 'swap', kind: heldWeapon(state).kind }];
 }
 
-export function useHeal(state: RaidState): RaidEvent[] {
-	const { player } = state;
-	if (!active(state) || !hasAbilities(state) || player.healMs > 0) return [];
-	const amount = Math.min(player.maxHp - player.hp, Math.round(player.maxHp * HEAL_SHARE));
-	player.hp += amount;
-	player.healMs = HEAL_COOLDOWN_MS;
-	return [{ type: 'heal', amount, source: 'ability' }];
+/** Fires one of the held weapon's two skills (0 or 1) if it is off cooldown */
+export function useSkill(state: RaidState, slot: 0 | 1): RaidEvent[] {
+	const skill = heldSkills(state)[slot];
+	if (!active(state) || state.player.skillMs[skill] > 0) return [];
+	const events: RaidEvent[] = [{ type: 'skill', skill }];
+	SKILLS[skill](state, events);
+	state.player.skillMs[skill] = SKILL_COOLDOWN_MS[skill];
+	return events;
 }
 
-export function useGrenade(state: RaidState): RaidEvent[] {
+/** Shot damage of the held weapon, the base the skills scale from */
+const heldDamage = (state: RaidState) => weaponDamage(heldWeapon(state), state.playerLevel);
+
+/** Where the player aims a skill: the nearest enemy in sight, or straight ahead */
+function aimAngle(state: RaidState, range: number): number {
 	const { player } = state;
-	if (!active(state) || !hasAbilities(state) || player.grenadeMs > 0) return [];
-	const target = nearestEnemy(state, GRENADE_THROW_RANGE, false);
-	const x = target ? target.x : player.x + Math.cos(player.aim) * 200;
-	const y = target ? target.y : player.y + Math.sin(player.aim) * 200;
-	state.grenades.push({
-		fromX: player.x,
-		fromY: player.y,
-		x: Math.max(0, Math.min(state.map.width, x)),
-		y: Math.max(0, Math.min(state.map.height, y)),
-		ageMs: 0,
-		damage: weaponDamage(heldWeapon(state), state.playerLevel) * GRENADE_DAMAGE_FACTOR
-	});
-	player.grenadeMs = GRENADE_COOLDOWN_MS;
-	return [{ type: 'grenade-throw' }];
+	const target = nearestEnemy(state, range);
+	return target ? Math.atan2(target.y - player.y, target.x - player.x) : player.aim;
 }
+
+function pushBullet(
+	state: RaidState,
+	angle: number,
+	speed: number,
+	fields: Partial<Bullet> & Pick<Bullet, 'damage' | 'rangeLeft'>
+) {
+	const { player } = state;
+	state.bullets.push({
+		x: player.x + Math.cos(angle) * (PLAYER_RADIUS + 6),
+		y: player.y + Math.sin(angle) * (PLAYER_RADIUS + 6),
+		vx: Math.cos(angle) * speed,
+		vy: Math.sin(angle) * speed,
+		crit: false,
+		pierceLeft: 0,
+		splash: 0,
+		kind: heldWeapon(state).kind,
+		rail: false,
+		hit: [],
+		...fields
+	});
+}
+
+/** What each skill does */
+const SKILLS: Record<SkillId, (state: RaidState, events: RaidEvent[]) => void> = {
+	// Service Rifle: field medkit and frag grenade
+	heal(state, events) {
+		const { player } = state;
+		const amount = Math.min(player.maxHp - player.hp, Math.round(player.maxHp * HEAL_SHARE));
+		player.hp += amount;
+		events.push({ type: 'heal', amount, source: 'ability' });
+	},
+	grenade(state) {
+		const { player } = state;
+		const target = nearestEnemy(state, GRENADE_THROW_RANGE, false);
+		const x = target ? target.x : player.x + Math.cos(player.aim) * 200;
+		const y = target ? target.y : player.y + Math.sin(player.aim) * 200;
+		state.grenades.push({
+			fromX: player.x,
+			fromY: player.y,
+			x: Math.max(0, Math.min(state.map.width, x)),
+			y: Math.max(0, Math.min(state.map.height, y)),
+			ageMs: 0,
+			damage: heldDamage(state) * GRENADE_DAMAGE_FACTOR
+		});
+	},
+	// Marksman Rifle: certain crits for a few shots, and one beam through everything in line
+	focus(state) {
+		state.player.focusShots = FOCUS_SHOTS;
+		state.player.fireMs = 0;
+	},
+	railshot(state, events) {
+		const spec = WEAPONS[heldWeapon(state).kind];
+		const angle = aimAngle(state, RAILSHOT_RANGE);
+		state.player.aim = angle;
+		pushBullet(state, angle, 2600, {
+			damage: heldDamage(state) * RAILSHOT_DAMAGE_FACTOR * spec.critMultiplier,
+			crit: true,
+			rangeLeft: RAILSHOT_RANGE,
+			pierceLeft: 99,
+			rail: true
+		});
+		events.push({ type: 'shot', kind: heldWeapon(state).kind });
+	},
+	// Shotgun: an untouchable dodge, and a cone that hurts and shoves
+	dash(state) {
+		const { player, input } = state;
+		const moving = Math.hypot(input.x, input.y) > 0.05;
+		const angle = moving ? Math.atan2(input.y, input.x) : player.aim;
+		player.dashX = Math.cos(angle);
+		player.dashY = Math.sin(angle);
+		player.dashMs = DASH_MS;
+		player.invulnerableMs = Math.max(player.invulnerableMs, DASH_MS + 80);
+	},
+	blast(state, events) {
+		const { player } = state;
+		const angle = aimAngle(state, BLAST_RADIUS + 60);
+		player.aim = angle;
+		events.push({ type: 'blast', x: player.x, y: player.y, angle });
+		const damage = heldDamage(state) * BLAST_DAMAGE_FACTOR;
+		for (const enemy of state.enemies) {
+			const dx = enemy.x - player.x;
+			const dy = enemy.y - player.y;
+			const distance = Math.hypot(dx, dy);
+			if (distance > BLAST_RADIUS + enemy.radius) continue;
+			let off = Math.abs(Math.atan2(dy, dx) - angle) % (Math.PI * 2);
+			if (off > Math.PI) off = Math.PI * 2 - off;
+			// Anything pressed right against the player is hit whichever way it stands
+			if (off > BLAST_ANGLE / 2 && distance > enemy.radius + PLAYER_RADIUS + 10) continue;
+			if (distance > 0.001 && enemy.archetype !== 'boss') {
+				enemy.x += (dx / distance) * BLAST_PUSH;
+				enemy.y += (dy / distance) * BLAST_PUSH;
+				resolveCircle(enemy, enemy.radius, state.map.obstacles, state.map.width, state.map.height);
+			}
+			damageEnemy(state, enemy, damage, false, events);
+		}
+		state.enemies = state.enemies.filter((enemy) => enemy.hp > 0);
+	},
+	// SMG: much faster fire for a while, and a ring of bullets in every direction
+	overdrive(state) {
+		state.player.overdriveMs = OVERDRIVE_MS;
+	},
+	nova(state, events) {
+		const damage = heldDamage(state) * NOVA_DAMAGE_FACTOR;
+		for (let i = 0; i < NOVA_BULLETS; i++) {
+			pushBullet(state, state.player.aim + (i / NOVA_BULLETS) * Math.PI * 2, 900, {
+				damage,
+				rangeLeft: 320
+			});
+		}
+		events.push({ type: 'shot', kind: heldWeapon(state).kind });
+	},
+	// Rocket Launcher: a rocket at each of the nearest enemies, and landmines
+	barrage(state, events) {
+		const { player } = state;
+		const splash = WEAPONS[heldWeapon(state).kind].splash || 80;
+		const targets = state.enemies
+			.map((enemy) => ({ enemy, distance: Math.hypot(enemy.x - player.x, enemy.y - player.y) }))
+			.filter(({ distance }) => distance < BARRAGE_RANGE)
+			.sort((a, b) => a.distance - b.distance)
+			.slice(0, BARRAGE_ROCKETS);
+		for (let i = 0; i < BARRAGE_ROCKETS; i++) {
+			const target = targets.length > 0 ? targets[i % targets.length] : null;
+			const spreadOut = (i - (BARRAGE_ROCKETS - 1) / 2) * (target ? 0.05 : 0.3);
+			const angle =
+				(target ? Math.atan2(target.enemy.y - player.y, target.enemy.x - player.x) : player.aim) +
+				spreadOut;
+			pushBullet(state, angle, 620, {
+				damage: heldDamage(state),
+				rangeLeft: target ? target.distance + 10 : BARRAGE_RANGE,
+				splash
+			});
+		}
+		events.push({ type: 'shot', kind: heldWeapon(state).kind });
+	},
+	mine(state) {
+		const { player } = state;
+		if (state.mines.length >= MAX_MINES) state.mines.shift();
+		state.mines.push({
+			id: state.nextId++,
+			x: player.x,
+			y: player.y,
+			ageMs: 0,
+			damage: heldDamage(state) * MINE_DAMAGE_FACTOR
+		});
+	}
+};
 
 /** Gets back up once per raid, with a shockwave that clears some room */
 export function revive(state: RaidState): RaidEvent[] {
@@ -435,6 +626,7 @@ export function stepRaid(state: RaidState, random: Random, dtMs: number): RaidEv
 	firePlayer(state, random, events);
 	moveBullets(state, dt, events);
 	updateGrenades(state, dtMs, events);
+	updateMines(state, dtMs, events);
 	updateEnemies(state, random, dtMs, events);
 	moveEnemyBullets(state, dtMs, events);
 	updateLoot(state, dtMs, events);
@@ -444,6 +636,13 @@ export function stepRaid(state: RaidState, random: Random, dtMs: number): RaidEv
 
 function movePlayer(state: RaidState, dt: number) {
 	const { player, input, map } = state;
+	if (player.dashMs > 0) {
+		player.moving = true;
+		player.x += player.dashX * DASH_SPEED * dt;
+		player.y += player.dashY * DASH_SPEED * dt;
+		resolveCircle(player, PLAYER_RADIUS, map.obstacles, map.width, map.height);
+		return;
+	}
 	const speed = Math.hypot(input.x, input.y);
 	player.moving = speed > 0.05;
 	if (!player.moving) return;
@@ -456,8 +655,11 @@ function movePlayer(state: RaidState, dt: number) {
 function tickCooldowns(state: RaidState, dtMs: number) {
 	const { player } = state;
 	player.fireMs = Math.max(0, player.fireMs - dtMs);
-	player.healMs = Math.max(0, player.healMs - dtMs);
-	player.grenadeMs = Math.max(0, player.grenadeMs - dtMs);
+	for (const skill of SKILL_IDS) {
+		player.skillMs[skill] = Math.max(0, player.skillMs[skill] - dtMs);
+	}
+	player.overdriveMs = Math.max(0, player.overdriveMs - dtMs);
+	player.dashMs = Math.max(0, player.dashMs - dtMs);
 	player.graceMs = Math.max(0, player.graceMs - dtMs);
 	player.invulnerableMs = Math.max(0, player.invulnerableMs - dtMs);
 }
@@ -488,7 +690,9 @@ function firePlayer(state: RaidState, random: Random, events: RaidEvent[]) {
 	if (!(player.firing || player.fireQueued) || player.fireMs > 0) return;
 
 	player.fireQueued = false;
-	player.fireMs = spec.fireMs;
+	player.fireMs = spec.fireMs * (player.overdriveMs > 0 ? OVERDRIVE_FIRE_FACTOR : 1);
+	const focused = player.focusShots > 0;
+	if (focused) player.focusShots -= 1;
 	const damage = weaponDamage(weapon, state.playerLevel);
 	for (let i = 0; i < spec.pellets; i++) {
 		const offset =
@@ -496,7 +700,7 @@ function firePlayer(state: RaidState, random: Random, events: RaidEvent[]) {
 				? -spec.spread / 2 + (spec.spread * i) / (spec.pellets - 1) + (random() - 0.5) * 0.08
 				: (random() - 0.5) * spec.spread;
 		const angle = player.aim + offset;
-		const crit = random() < spec.critChance;
+		const crit = focused || random() < spec.critChance;
 		state.bullets.push({
 			x: player.x + Math.cos(angle) * (PLAYER_RADIUS + 6),
 			y: player.y + Math.sin(angle) * (PLAYER_RADIUS + 6),
@@ -508,6 +712,7 @@ function firePlayer(state: RaidState, random: Random, events: RaidEvent[]) {
 			pierceLeft: spec.pierce,
 			splash: spec.splash,
 			kind: weapon.kind,
+			rail: false,
 			hit: []
 		});
 	}
@@ -523,7 +728,8 @@ function moveBullets(state: RaidState, dt: number, events: RaidEvent[]) {
 		bullet.x += bullet.vx * dt;
 		bullet.y += bullet.vy * dt;
 		bullet.rangeLeft -= Math.hypot(bullet.vx, bullet.vy) * dt;
-		let alive = bullet.rangeLeft > 0;
+		const spent = bullet.rangeLeft <= 0;
+		let alive = true;
 
 		if (alive) {
 			for (const enemy of state.enemies) {
@@ -553,8 +759,12 @@ function moveBullets(state: RaidState, dt: number, events: RaidEvent[]) {
 				explode(state, bullet.x, bullet.y, bullet.splash, bullet.damage, bullet.crit, events);
 			alive = false;
 		}
-		if (alive && bullet.rangeLeft <= 0 && bullet.splash > 0) {
-			explode(state, bullet.x, bullet.y, bullet.splash, bullet.damage, bullet.crit, events);
+		// Rockets that reach the end of their flight still go off
+		if (alive && spent) {
+			if (bullet.splash > 0) {
+				explode(state, bullet.x, bullet.y, bullet.splash, bullet.damage, bullet.crit, events);
+			}
+			alive = false;
 		}
 		if (alive) kept.push(bullet);
 	}
@@ -592,6 +802,28 @@ function updateGrenades(state: RaidState, dtMs: number, events: RaidEvent[]) {
 		explode(state, grenade.x, grenade.y, GRENADE_RADIUS, grenade.damage, false, events);
 	}
 	state.grenades = kept;
+	state.enemies = state.enemies.filter((enemy) => enemy.hp > 0);
+}
+
+function updateMines(state: RaidState, dtMs: number, events: RaidEvent[]) {
+	const kept: Mine[] = [];
+	for (const mine of state.mines) {
+		mine.ageMs += dtMs;
+		if (mine.ageMs > MINE_LIFETIME_MS) continue;
+		const triggered =
+			mine.ageMs >= MINE_ARM_MS &&
+			state.enemies.some(
+				(enemy) =>
+					Math.hypot(enemy.x - mine.x, enemy.y - mine.y) < enemy.radius + MINE_TRIGGER_RADIUS
+			);
+		if (!triggered) {
+			kept.push(mine);
+			continue;
+		}
+		events.push({ type: 'mine-burst', x: mine.x, y: mine.y });
+		explode(state, mine.x, mine.y, MINE_RADIUS, mine.damage, false, events);
+	}
+	state.mines = kept;
 	state.enemies = state.enemies.filter((enemy) => enemy.hp > 0);
 }
 

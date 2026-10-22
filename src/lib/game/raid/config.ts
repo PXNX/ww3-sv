@@ -60,6 +60,21 @@ export const POWER_PER_ITEM_LEVEL = 0.1;
 export const WEAPON_KINDS = ['rifle', 'marksman', 'shotgun', 'smg', 'launcher'] as const;
 export type WeaponKind = (typeof WEAPON_KINDS)[number];
 
+/** Every weapon brings two skills, shown on the buttons around the attack button */
+export const SKILL_IDS = [
+	'heal',
+	'grenade',
+	'focus',
+	'railshot',
+	'dash',
+	'blast',
+	'overdrive',
+	'nova',
+	'barrage',
+	'mine'
+] as const;
+export type SkillId = (typeof SKILL_IDS)[number];
+
 export interface WeaponSpec {
 	/** Damage per projectile at common rarity, level 1 */
 	damage: number;
@@ -77,8 +92,8 @@ export interface WeaponSpec {
 	splash: number;
 	/** How many enemies one projectile passes through after the first */
 	pierce: number;
-	/** The weapon carries the field medkit and frag grenade abilities */
-	abilities: boolean;
+	/** The two skills on the buttons around the attack button while this weapon is held */
+	skills: readonly [SkillId, SkillId];
 }
 
 export const WEAPONS: Record<WeaponKind, WeaponSpec> = {
@@ -94,7 +109,7 @@ export const WEAPONS: Record<WeaponKind, WeaponSpec> = {
 		critMultiplier: 1.6,
 		splash: 0,
 		pierce: 0,
-		abilities: true
+		skills: ['heal', 'grenade']
 	},
 	// Slow and precise: nearly every other shot is a critical hit
 	marksman: {
@@ -108,7 +123,7 @@ export const WEAPONS: Record<WeaponKind, WeaponSpec> = {
 		critMultiplier: 2.6,
 		splash: 0,
 		pierce: 1,
-		abilities: false
+		skills: ['focus', 'railshot']
 	},
 	shotgun: {
 		damage: 8,
@@ -121,7 +136,7 @@ export const WEAPONS: Record<WeaponKind, WeaponSpec> = {
 		critMultiplier: 1.6,
 		splash: 0,
 		pierce: 0,
-		abilities: false
+		skills: ['dash', 'blast']
 	},
 	smg: {
 		damage: 4.5,
@@ -134,7 +149,7 @@ export const WEAPONS: Record<WeaponKind, WeaponSpec> = {
 		critMultiplier: 1.6,
 		splash: 0,
 		pierce: 0,
-		abilities: false
+		skills: ['overdrive', 'nova']
 	},
 	launcher: {
 		damage: 24,
@@ -147,20 +162,60 @@ export const WEAPONS: Record<WeaponKind, WeaponSpec> = {
 		critMultiplier: 1.6,
 		splash: 85,
 		pierce: 0,
-		abilities: false
+		skills: ['barrage', 'mine']
 	}
 };
 
-/** Field medkit: heals a share of maximum health */
+export const SKILL_COOLDOWN_MS: Record<SkillId, number> = {
+	heal: 14000,
+	grenade: 9000,
+	focus: 10000,
+	railshot: 8000,
+	dash: 5000,
+	blast: 8000,
+	overdrive: 13000,
+	nova: 8000,
+	barrage: 11000,
+	mine: 6000
+};
+
+/** Field medkit (rifle): heals a share of maximum health */
 export const HEAL_SHARE = 0.35;
-export const HEAL_COOLDOWN_MS = 14000;
-/** Frag grenade: thrown at the nearest enemy (or straight ahead) and bursts after a short fuse */
-export const GRENADE_COOLDOWN_MS = 9000;
+/** Frag grenade (rifle): thrown at the nearest enemy (or straight ahead), bursts after a fuse */
 export const GRENADE_RADIUS = 125;
 export const GRENADE_FUSE_MS = 650;
 export const GRENADE_THROW_RANGE = 380;
-/** Grenade damage as a multiple of the rifle's shot damage */
+/** Grenade damage as a multiple of the held weapon's shot damage */
 export const GRENADE_DAMAGE_FACTOR = 5;
+/** Focus (marksman): the next shots are all critical hits */
+export const FOCUS_SHOTS = 3;
+/** Rail shot (marksman): one long shot through every enemy in its path */
+export const RAILSHOT_DAMAGE_FACTOR = 4;
+export const RAILSHOT_RANGE = 760;
+/** Dash (shotgun): a quick, untouchable dodge */
+export const DASH_MS = 190;
+export const DASH_SPEED = 900;
+/** Point-blank blast (shotgun): a cone that hurts and shoves everything in front */
+export const BLAST_RADIUS = 175;
+export const BLAST_ANGLE = Math.PI / 2;
+export const BLAST_DAMAGE_FACTOR = 7;
+export const BLAST_PUSH = 130;
+/** Overdrive (SMG): fires much faster for a while */
+export const OVERDRIVE_MS = 5000;
+export const OVERDRIVE_FIRE_FACTOR = 0.4;
+/** Bullet nova (SMG): a ring of bullets in every direction */
+export const NOVA_BULLETS = 24;
+export const NOVA_DAMAGE_FACTOR = 2.5;
+/** Barrage (launcher): a rocket at each of the nearest enemies */
+export const BARRAGE_ROCKETS = 5;
+export const BARRAGE_RANGE = 460;
+/** Landmine (launcher): arms after a moment and goes off when an enemy steps close */
+export const MINE_ARM_MS = 400;
+export const MINE_TRIGGER_RADIUS = 34;
+export const MINE_RADIUS = 120;
+export const MINE_DAMAGE_FACTOR = 4;
+export const MINE_LIFETIME_MS = 30_000;
+export const MAX_MINES = 3;
 
 // ---------------------------------------------------------------------------------------------
 // Armour

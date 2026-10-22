@@ -1,5 +1,5 @@
 /* Translated names of the raid's maps, bosses, weapons, armour and rarities */
-import type { MapId, Rarity, WeaponKind } from '#lib/game/raid/config.js';
+import type { MapId, Rarity, SkillId, WeaponKind } from '#lib/game/raid/config.js';
 import type { GearItem } from '#lib/game/raid/items.js';
 import { m } from '#lib/paraglide/messages.js';
 
@@ -55,3 +55,29 @@ export function formatTime(ms: number): string {
 	const seconds = Math.floor(ms / 1000);
 	return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 }
+
+export const SKILL_NAMES: Record<SkillId, () => string> = {
+	heal: m.raid_skill_heal,
+	grenade: m.raid_skill_grenade,
+	focus: m.raid_skill_focus,
+	railshot: m.raid_skill_railshot,
+	dash: m.raid_skill_dash,
+	blast: m.raid_skill_blast,
+	overdrive: m.raid_skill_overdrive,
+	nova: m.raid_skill_nova,
+	barrage: m.raid_skill_barrage,
+	mine: m.raid_skill_mine
+};
+
+export const SKILL_HINTS: Record<SkillId, () => string> = {
+	heal: m.raid_skill_heal_hint,
+	grenade: m.raid_skill_grenade_hint,
+	focus: m.raid_skill_focus_hint,
+	railshot: m.raid_skill_railshot_hint,
+	dash: m.raid_skill_dash_hint,
+	blast: m.raid_skill_blast_hint,
+	overdrive: m.raid_skill_overdrive_hint,
+	nova: m.raid_skill_nova_hint,
+	barrage: m.raid_skill_barrage_hint,
+	mine: m.raid_skill_mine_hint
+};

@@ -4,17 +4,20 @@
  * simulation state is a plain object read by the canvas every frame; only what the page chrome
  * shows is reactive, synced after each step.
  */
-import { BOSS_NAMES, itemName, WEAPON_NAMES } from '#lib/components/raidText.js';
+import { BOSS_NAMES, itemName, SKILL_NAMES, WEAPON_NAMES } from '#lib/components/raidText.js';
 import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
 import {
-	GRENADE_COOLDOWN_MS,
+	BLAST_ANGLE,
+	BLAST_RADIUS,
 	GRENADE_RADIUS,
-	HEAL_COOLDOWN_MS,
+	MINE_RADIUS,
 	RARITY_COLOR,
 	REVIVE_BLAST_RADIUS,
 	BOSS_SLAM_RADIUS,
+	SKILL_COOLDOWN_MS,
 	WEAPONS,
 	type MapId,
+	type SkillId,
 	type Variant,
 	type WeaponKind
 } from '#lib/game/raid/config.js';
@@ -38,15 +41,14 @@ import {
 	currentBoss,
 	equipFromHaul,
 	giveUp,
-	hasAbilities,
+	heldSkills,
 	revive,
 	scoreOf,
 	setFiring,
 	setMove,
 	stepRaid,
 	swapWeapon,
-	useGrenade,
-	useHeal,
+	useSkill,
 	type RaidEvent,
 	type RaidState
 } from '#lib/game/raid/state.js';
@@ -108,10 +110,10 @@ export class RaidGame {
 	heldKind = $state<WeaponKind>('rifle');
 	otherKind = $state<WeaponKind>('marksman');
 	heldLevel = $state(1);
-	abilities = $state(true);
-	/** Share of the cooldown still to go, 0 when ready */
-	healCooldown = $state(0);
-	grenadeCooldown = $state(0);
+	/** The held weapon's two skills, on the buttons around the attack button */
+	skills = $state<readonly [SkillId, SkillId]>(['heal', 'grenade']);
+	/** Share of each skill's cooldown still to go, 0 when ready */
+	skillCooldowns = $state<readonly [number, number]>([0, 0]);
 	fireCooldown = $state(0);
 	boss = $state<{ share: number; variant: Variant } | null>(null);
 	/** The last piece of gear picked up, offered for equipping for a few seconds */
@@ -131,7 +133,8 @@ export class RaidGame {
 	#scores: () => Highscores;
 	#seed: () => number;
 	#foundMs = 0;
-	#soundAt = new Map<SoundId, number>();
+	/** When each sound last played, on the raid clock */
+	#soundAt: Partial<Record<SoundId, number>> = {};
 	#clockMs = 0;
 
 	constructor({
@@ -221,7 +224,7 @@ export class RaidGame {
 		this.isNewBest = false;
 		this.best = this.#scores().get(scoreKey(map));
 		this.#clockMs = 0;
-		this.#soundAt.clear();
+		this.#soundAt = {};
 		this.#syncChrome();
 		this.status = 'playing';
 	}
@@ -255,12 +258,9 @@ export class RaidGame {
 		if (this.status === 'playing') this.#apply(swapWeapon(this.state));
 	}
 
-	heal() {
-		if (this.status === 'playing') this.#apply(useHeal(this.state));
-	}
-
-	grenade() {
-		if (this.status === 'playing') this.#apply(useGrenade(this.state));
+	/** One of the held weapon's two skills */
+	skill(slot: 0 | 1) {
+		if (this.status === 'playing') this.#apply(useSkill(this.state, slot));
 	}
 
 	revive() {
@@ -373,8 +373,26 @@ export class RaidGame {
 				if (event.source === 'ability') this.#ring(player.x, player.y, 70, '#5bd16b', 500);
 				this.#play('sparkle');
 				break;
-			case 'grenade-throw':
-				this.#play('whoosh');
+			case 'skill':
+				this.#skillCue(event.skill);
+				break;
+			case 'blast':
+				this.effects.push({
+					kind: 'cone',
+					x: event.x,
+					y: event.y,
+					angle: event.angle,
+					spread: BLAST_ANGLE,
+					radius: BLAST_RADIUS,
+					color: '#ff8a2b',
+					ageMs: 0,
+					durationMs: 320
+				});
+				this.#play('explosion-small');
+				break;
+			case 'mine-burst':
+				this.#ring(event.x, event.y, MINE_RADIUS, '#ff8a2b', 520);
+				this.#play('mine-explosion');
 				break;
 			case 'grenade-burst':
 				this.#ring(event.x, event.y, GRENADE_RADIUS, '#ff8a2b', 520);
@@ -477,11 +495,31 @@ export class RaidGame {
 		}
 	}
 
+	/** The skill's name pops up over the player, with a sound that fits it */
+	#skillCue(skill: SkillId) {
+		const { player } = this.state;
+		const sounds: Record<SkillId, SoundId> = {
+			heal: 'sparkle',
+			grenade: 'whoosh',
+			focus: 'ability-dive',
+			railshot: 'zap',
+			dash: 'ability-dash',
+			blast: 'fire',
+			overdrive: 'ability-split',
+			nova: 'ability-blast',
+			barrage: 'patriot-launch',
+			mine: 'click'
+		};
+		if (skill !== 'heal')
+			this.#text(player.x, player.y - 46, SKILL_NAMES[skill](), '#ffffff', 18, 900);
+		this.#play(sounds[skill]);
+	}
+
 	#play(id: SoundId, intensity = 1) {
-		const last = this.#soundAt.get(id);
+		const last = this.#soundAt[id];
 		if (last !== undefined && this.#clockMs - last < SOUND_GAP_MS && this.status === 'playing')
 			return;
-		this.#soundAt.set(id, this.#clockMs);
+		this.#soundAt[id] = this.#clockMs;
 		soundManager().play(id, intensity);
 	}
 
@@ -501,11 +539,16 @@ export class RaidGame {
 		this.heldKind = held.kind;
 		this.heldLevel = held.level;
 		this.otherKind = loadout[player.held === 'primary' ? 'secondary' : 'primary'].kind;
-		this.abilities = hasAbilities(state);
 		// Rounded to twentieths, so the HUD only updates when it visibly changes
 		const share = (left: number, total: number) => Math.ceil((left / total) * 20) / 20;
-		this.healCooldown = share(player.healMs, HEAL_COOLDOWN_MS);
-		this.grenadeCooldown = share(player.grenadeMs, GRENADE_COOLDOWN_MS);
+		const skills = heldSkills(state);
+		if (skills[0] !== this.skills[0] || skills[1] !== this.skills[1]) this.skills = skills;
+		const cooldowns = skills.map((skill) =>
+			share(player.skillMs[skill], SKILL_COOLDOWN_MS[skill])
+		) as unknown as readonly [number, number];
+		if (cooldowns[0] !== this.skillCooldowns[0] || cooldowns[1] !== this.skillCooldowns[1]) {
+			this.skillCooldowns = cooldowns;
+		}
 		this.fireCooldown = share(player.fireMs, WEAPONS[held.kind].fireMs);
 		const boss = currentBoss(state);
 		this.boss = boss

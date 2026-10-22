@@ -5,10 +5,19 @@
 	import RaidCanvas from '#lib/components/RaidCanvas.svelte';
 	import RaidItemIcon from '#lib/components/RaidItemIcon.svelte';
 	import RaidLobby from '#lib/components/RaidLobby.svelte';
+	import RaidSkillIcon from '#lib/components/RaidSkillIcon.svelte';
 	import TutorialModal from '#lib/components/TutorialModal.svelte';
-	import { formatTime, itemName, RARITY_NAMES } from '#lib/components/raidText.js';
+	import {
+		formatTime,
+		itemName,
+		RARITY_NAMES,
+		SKILL_HINTS,
+		SKILL_NAMES,
+		WEAPON_NAMES,
+		WEAPON_TRAITS
+	} from '#lib/components/raidText.js';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
-	import { RARITIES, RARITY_COLOR } from '#lib/game/raid/config.js';
+	import { RARITIES, RARITY_COLOR, WEAPON_KINDS, WEAPONS } from '#lib/game/raid/config.js';
 	import type { GearItem } from '#lib/game/raid/items.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
@@ -149,15 +158,21 @@
 		<p>{m.raid_tutorial_goal()}</p>
 		<p>{m.raid_tutorial_controls()}</p>
 		<p>{m.raid_tutorial_weapons()}</p>
-		<ul class="flex flex-col gap-2">
-			<li class="flex items-center gap-2">
-				<RaidItemIcon kind="rifle" rarity="common" class="size-10 shrink-0" />
-				<span><strong>{m.raid_weapon_rifle()}</strong> {m.raid_weapon_rifle_trait()}</span>
-			</li>
-			<li class="flex items-center gap-2">
-				<RaidItemIcon kind="marksman" rarity="common" class="size-10 shrink-0" />
-				<span><strong>{m.raid_weapon_marksman()}</strong> {m.raid_weapon_marksman_trait()}</span>
-			</li>
+		<ul class="flex flex-col gap-3">
+			{#each WEAPON_KINDS as kind (kind)}
+				<li class="flex flex-col gap-1">
+					<span class="flex items-center gap-2">
+						<RaidItemIcon {kind} rarity="common" class="size-10 shrink-0" />
+						<span><strong>{WEAPON_NAMES[kind]()}</strong> {WEAPON_TRAITS[kind]()}</span>
+					</span>
+					{#each WEAPONS[kind].skills as skill (skill)}
+						<span class="flex items-center gap-2 ps-12 text-sm">
+							<RaidSkillIcon {skill} class="size-5 shrink-0" />
+							<span><strong>{SKILL_NAMES[skill]()}:</strong> {SKILL_HINTS[skill]()}</span>
+						</span>
+					{/each}
+				</li>
+			{/each}
 		</ul>
 		<p>{m.raid_tutorial_variants()}</p>
 		<p>{m.raid_tutorial_loot()}</p>

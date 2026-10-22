@@ -139,6 +139,19 @@ describe('RaidGame', () => {
 		expect(game.found).toBeNull();
 	});
 
+	it('shows the held weapon’s two skills and their cooldowns', () => {
+		const { game } = newGame();
+		quietStart(game);
+		expect(game.skills).toEqual(['heal', 'grenade']);
+		game.skill(1);
+		expect(game.skillCooldowns[1]).toBe(1);
+		game.swap();
+		expect(game.skills).toEqual(['focus', 'railshot']);
+		expect(game.skillCooldowns).toEqual([0, 0]);
+		game.skill(0);
+		expect(game.state.player.focusShots).toBeGreaterThan(0);
+	});
+
 	it('has its messages in every language', () => {
 		expect(missingMessages(['raid_', 'mode_raid_'])).toEqual([]);
 	});
