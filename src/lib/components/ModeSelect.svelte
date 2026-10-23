@@ -59,10 +59,15 @@
 				<img
 					src="/cards/{mode.id}.webp"
 					alt=""
-					class="pointer-events-none absolute inset-0 -z-10 size-full object-cover object-top opacity-25"
+					class="pointer-events-none absolute inset-0 -z-10 size-full object-cover object-top opacity-45"
 					loading="lazy"
 					draggable="false"
 				/>
+				<!-- Darkens the side the logo and title sit on, so the white title stays readable -->
+				<span
+					class="pointer-events-none absolute inset-0 -z-10 bg-linear-to-r from-ink/80 via-ink/40 to-transparent"
+					aria-hidden="true"
+				></span>
 				{#if mode.leaders.length > 0}
 					<span class="absolute top-2 right-2 flex flex-wrap justify-end gap-1" aria-hidden="true">
 						{#each mode.leaders as id (id)}
@@ -76,23 +81,30 @@
 					</span>
 					<span class="sr-only">{m.mode_features({ names: featured(mode.leaders) })}</span>
 				{/if}
-				<span class="mt-6 rounded-xl border-3 border-ink p-3 {mode.tileClass}" aria-hidden="true">
+				<span
+					class="mt-auto rounded-xl border-3 border-ink p-3 {mode.tileClass}"
+					aria-hidden="true"
+				>
 					<Icon class="size-12" stroke-width="2.5" />
 				</span>
-				<h3 class="text-center text-lg leading-tight font-bold">{mode.name()}</h3>
+				<h3
+					class="text-lg leading-tight font-bold text-paper [text-shadow:0_2px_0_var(--color-ink)]"
+				>
+					{mode.name()}
+				</h3>
 			{/snippet}
 
 			{#if mode.status === 'playable'}
 				<a
 					href={resolveRoute(mode.href)}
-					class="sticker sticker-interactive relative isolate flex w-full flex-col items-center gap-2 overflow-hidden p-3 active:scale-95"
+					class="sticker sticker-interactive relative isolate flex min-h-40 w-full flex-col items-start gap-2 overflow-hidden bg-ink p-3 active:scale-95"
 					style:--tilt="{tilt}deg"
 				>
 					{@render card()}
 				</a>
 			{:else}
 				<div
-					class="sticker relative isolate flex w-full flex-col items-center gap-2 overflow-hidden p-3 opacity-80"
+					class="sticker relative isolate flex min-h-40 w-full flex-col items-start gap-2 overflow-hidden bg-ink p-3 opacity-80"
 					style:--tilt="{tilt}deg"
 				>
 					{@render card()}
