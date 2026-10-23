@@ -2,7 +2,7 @@
  * Generates the Belt & Road: Fill Grid levels into src/lib/game/beltroad/levels.json.
  *
  *   bun scripts/generate-beltroad-levels.ts
- *   bun run format        (prettier lays the JSON out)
+ *   bun run format        (bun fmt lays the JSON out)
  *
  * Every level starts from a solved board: a random Hamiltonian path through the grid cut into one
  * route per port pair (see generate.ts), so a solution exists by construction. The generator then

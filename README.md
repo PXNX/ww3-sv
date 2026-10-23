@@ -30,8 +30,8 @@ The development server runs on <http://localhost:3021>.
 | ---------------------- | ----------------------------------------------------------------- |
 | `bun run dev`          | Development server                                                |
 | `bun run check`        | Compiles the message files, then Svelte and TypeScript type check |
-| `bun run lint`         | Prettier check and ESLint                                         |
-| `bun run format`       | Formats all files with Prettier                                   |
+| `bun run lint`         | `bun fmt --check` and ESLint                                      |
+| `bun run format`       | Formats all files with `bun fmt`                                  |
 | `bun run test`         | Vitest unit tests (single run)                                    |
 | `bun run test:watch`   | Vitest in watch mode                                              |
 | `bun run build`        | Production build using the Vercel adapter                         |

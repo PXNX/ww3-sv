@@ -2,7 +2,7 @@
  * Generates the 30 Tanker Parking levels into src/lib/game/parking/levels.json.
  *
  *   bun scripts/generate-parking-levels.ts
- *   bun run format        (prettier lays the JSON out)
+ *   bun run format        (bun fmt lays the JSON out)
  *   bun scripts/generate-parking-levels.ts --reformat   (rewrites the layout only, no search)
  *
  * Every level gets a target par (the fewest moves, as computed by the BFS solver). The generator
