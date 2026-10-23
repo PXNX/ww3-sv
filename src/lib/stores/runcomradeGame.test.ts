@@ -119,6 +119,69 @@ describe('RunComradeGame', () => {
 		expect(scores.get(['runcomrade', 'distance'])).toBe(game.distance);
 	});
 
+	it('revives a finished run with one heart, keeping the score and pushing the drone back', () => {
+		const { game } = newGame();
+		startQuiet(game);
+		game.revive();
+		expect(game.status).toBe('playing');
+		expect(game.lives).toBe(STARTING_LIVES);
+
+		game.state.distance = 120;
+		game.state.lives = 1;
+		game.state.drone.gap = 0;
+		// An obstacle right ahead would trip the runner straight back into the drone's reach
+		game.state.field.rows.push({
+			id: 99,
+			z: 121,
+			cells: ['mine', 'mine', 'mine'],
+			spent: [false, false, false]
+		});
+		game.update(STEP);
+		expect(game.status).toBe('over');
+		const score = game.score;
+		const distance = game.distance;
+
+		game.revive();
+		expect(game.status).toBe('playing');
+		expect(game.lives).toBe(1);
+		expect(game.score).toBe(score);
+		expect(game.distance).toBe(distance);
+		expect(game.state.field.rows.some((row) => row.id === 99)).toBe(false);
+		expect(game.state.drone.gap).toBeGreaterThan(5);
+
+		// Even a drone right on the runner holds off for a moment after the revival
+		game.state.drone.gap = 0;
+		for (let t = 0; t < 1000; t += STEP) game.update(STEP);
+		expect(game.status).toBe('playing');
+		expect(game.distance).toBeGreaterThan(distance);
+	});
+
+	it('can revive again and records the longer run as the best when it ends', () => {
+		const { game, scores } = newGame();
+		startQuiet(game);
+		game.state.distance = 100;
+		game.state.lives = 1;
+		game.state.drone.gap = 0;
+		game.update(STEP);
+		expect(game.isNewBest).toBe(true);
+		const first = game.score;
+
+		for (let round = 0; round < 2; round++) {
+			game.revive();
+			game.state.distance += 100;
+			game.state.drone.graceMs = 0;
+			game.state.drone.gap = 0;
+			game.update(STEP);
+			expect(game.status).toBe('over');
+			expect(game.lives).toBe(0);
+			expect(game.isNewBest).toBe(true);
+		}
+		expect(game.score).toBeGreaterThan(first + 150);
+		expect(scores.get(['runcomrade', 'score'])).toBe(game.score);
+		expect(scores.get(['runcomrade', 'distance'])).toBe(game.distance);
+		expect(game.best).toBe(game.score);
+	});
+
 	it('is deterministic for a seed', () => {
 		const run = () => {
 			const { game } = newGame();

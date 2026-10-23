@@ -11,6 +11,7 @@ import {
 	grabShip,
 	multiplierFor,
 	releaseShip,
+	reviveRunner,
 	runnerNauticalMiles,
 	runnerScore,
 	steer,
@@ -83,6 +84,8 @@ export class ConvoyGame {
 	#random: Random = createRandom(1);
 	#scores: () => Highscores;
 	#seed: () => number;
+	/** The stored best when the run started, so a revived run is not compared against itself */
+	#bestBeforeRun: number | null = null;
 
 	constructor({
 		reducedMotion = false,
@@ -102,12 +105,22 @@ export class ConvoyGame {
 
 	start() {
 		this.#random = createRandom(this.#seed());
+		this.#bestBeforeRun = this.#scores().get(SCORE_KEY);
 		this.runner = createRunner();
 		this.effects = [];
 		this.shakeMs = 0;
 		this.isNewBest = false;
 		this.nearMisses = 0;
 		this.shieldSaves = 0;
+		this.#sync();
+		this.status = 'running';
+	}
+
+	/** Continues a finished run with one hull point (a bought revival; any number per run) */
+	revive() {
+		if (this.status !== 'over') return;
+		this.runner = reviveRunner(this.runner);
+		this.shakeMs = 0;
 		this.#sync();
 		this.status = 'running';
 	}
@@ -187,9 +200,10 @@ export class ConvoyGame {
 	#finish() {
 		this.status = 'over';
 		const scores = this.#scores();
-		const result = scores.submit(SCORE_KEY, this.score);
-		this.isNewBest = result.isNewBest;
-		this.best = result.best;
+		this.best = scores.submit(SCORE_KEY, this.score).best;
+		// After a revival the stored best may be this very run, so compare with the best before it
+		this.isNewBest =
+			this.#bestBeforeRun === null ? this.score > 0 : this.score > this.#bestBeforeRun;
 		this.bestDistance = scores.submit(DISTANCE_KEY, this.distance).best;
 	}
 }

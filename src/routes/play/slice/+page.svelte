@@ -121,6 +121,7 @@
 		title={m.slice_gameover_title()}
 		drawBoard={game.drawBoard}
 		onRetry={() => game.start()}
+		onRevive={() => game.revive()}
 	>
 		<dl class="grid grid-cols-2 gap-2 font-display text-sm">
 			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">

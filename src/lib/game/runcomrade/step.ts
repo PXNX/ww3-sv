@@ -14,6 +14,8 @@ import {
 	OBSTACLE_HALF_DEPTH,
 	PICKUP_SCORE,
 	REQUIRED_ACTION,
+	REVIVE_CLEAR_AHEAD,
+	REVIVE_GRACE_MS,
 	SLOW_MS,
 	STUMBLE_ANIM_MS,
 	STUMBLE_GRACE_MS,
@@ -24,6 +26,7 @@ import {
 import {
 	closeIn,
 	closeness,
+	createDrone,
 	followRunner,
 	knockBack,
 	stepDrone,
@@ -70,6 +73,30 @@ export function command(state: RunState, action: Command): RunEvent[] {
 			return events;
 		}
 	}
+}
+
+/**
+ * A bought revival after the last heart is gone: the same run goes on with one heart. The drone is
+ * pushed back to its starting gap and holds off for a moment, and the obstacles the runner is on or
+ * about to reach are cleared so it does not stumble straight back into the drone's reach. Returns
+ * false (and changes nothing) unless the run is over.
+ */
+export function revive(state: RunState): boolean {
+	if (!state.over) return false;
+	state.over = false;
+	state.lives = 1;
+	const runner = state.runner;
+	runner.stumbleMs = 0;
+	runner.slowMs = 0;
+	const drone = createDrone();
+	drone.lane = state.drone.lane;
+	drone.x = state.drone.x;
+	drone.graceMs = REVIVE_GRACE_MS;
+	state.drone = drone;
+	const from = state.distance - 1;
+	const to = state.distance + REVIVE_CLEAR_AHEAD;
+	state.field.rows = state.field.rows.filter((row) => row.z < from || row.z > to);
+	return true;
 }
 
 /** Whether the runner's current move gets it past this kind of obstacle without a stumble */

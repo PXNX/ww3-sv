@@ -16,7 +16,7 @@ import {
 import { laneX, RUNNER_Y } from '#lib/game/runcomrade/projection.js';
 import { drawScenePreview, type Effect, type SceneExtras } from '#lib/game/runcomrade/render.js';
 import { createGame, scoreOf, type RunEvent, type RunState } from '#lib/game/runcomrade/state.js';
-import { command, stepGame, type Command } from '#lib/game/runcomrade/step.js';
+import { command, revive, stepGame, type Command } from '#lib/game/runcomrade/step.js';
 import { m } from '#lib/paraglide/messages.js';
 import { highscores, type Highscores } from '#lib/services/highscore.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
@@ -92,6 +92,19 @@ export class RunComradeGame {
 		this.#buzzMs = 1200;
 		this.#clockMs = 0;
 		this.#lastManeuverMs = null;
+		this.#syncChrome();
+		this.status = 'playing';
+	}
+
+	/**
+	 * A bought revival after the run ended: the same run goes on with one heart, the drone pushed
+	 * back. Can be bought again each time; the bests were already recorded and are submitted again,
+	 * with the longer run, when it ends.
+	 */
+	revive() {
+		if (this.status !== 'over' || !revive(this.state)) return;
+		this.isNewBest = false;
+		this.#buzzMs = 1200;
 		this.#syncChrome();
 		this.status = 'playing';
 	}

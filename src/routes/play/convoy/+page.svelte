@@ -151,6 +151,7 @@
 	isNewBest={game.isNewBest}
 	drawBoard={(context, x, y, size) => drawConvoyBoard(context, game.runner, x, y, size)}
 	onRetry={() => game.start()}
+	onRevive={() => game.revive()}
 >
 	<dl class="grid grid-cols-3 gap-2 text-center">
 		<div class="rounded-[10px_6px_12px_8px] border-3 border-ink bg-paper p-2">

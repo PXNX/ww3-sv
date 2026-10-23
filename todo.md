@@ -103,6 +103,15 @@ Done: **1.3** the older pause overlays (convoy, minefield, pipeline, fury, flami
 - [ ] Consider an automatic way to avoid merge conflicts in `registry.ts` and `messages/*.json` (for example one message file per mode merged at build time), since every new mode touches both.
 - [ ] `bun run check` regenerates the gitignored `project.inlang/.lix` folder, which `prettier --check` then flags. Add it to `.prettierignore`.
 
+## 7. Future monetization
+
+- [ ] Release the current state as version 1.0 on GitHub: bump `version` in `package.json`, tag the commit `v1.0.0` and publish a GitHub release with that tag and label.
+- [ ] Telegram login through a Telegram bot, modelled on [pxnx/ptb-rw](https://github.com/pxnx/ptb-rw) and [pxnx/ptb-psyops](https://github.com/pxnx/ptb-psyops) (python-telegram-bot).
+- [ ] Payments with Telegram Stars inside the app to buy a revival.
+- [ ] Monthly Pro subscription (paid with Telegram Stars): skips watching ads once ads exist, and includes 10 free revivals per month.
+- [ ] Database design: check whether the app and its backend can be hosted serverless as a Telegram Web App, see [Telegram: serverless bots](https://core.telegram.org/bots/serverless). Needs to store accounts, Stars purchases, subscriptions, revivals left this month and, later, the shared points wallet.
+- [ ] Wire up the open monetization TODOs in the code: the rewarded ad before the bonus shots in Black Sea Fleet Hunt (`fleethunt`), and moving its points into a shared wallet so they can be spent as currency in other games.
+
 # ww3-sv: open items (as of 2026-10-15)
 
 Full specs for every mode: `C:\dev\OLD\ww3-new-modes-plan.md`.

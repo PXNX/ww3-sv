@@ -37,6 +37,7 @@ import IconSpellCheck from '~icons/lucide/spell-check';
 import IconLeaf from '~icons/lucide/leaf';
 import IconContainer from '~icons/lucide/container';
 import IconSwords from '~icons/lucide/swords';
+import IconRocket from '~icons/lucide/rocket';
 
 export type ModeId =
 	| 'blocks'
@@ -72,7 +73,8 @@ export type ModeId =
 	| 'wordle'
 	| 'maple'
 	| 'rareearth'
-	| 'raid';
+	| 'raid'
+	| 'fleethunt';
 
 interface ModeBase {
 	id: ModeId;
@@ -437,6 +439,16 @@ export const MODES: readonly GameMode[] = [
 		leaders: [],
 		name: m.mode_raid_name,
 		description: m.mode_raid_description
+	},
+	{
+		id: 'fleethunt',
+		status: 'playable',
+		href: '/play/fleethunt',
+		icon: IconRocket,
+		tileClass: 'bg-flag-blue',
+		leaders: ['zelensky', 'putin'],
+		name: m.mode_fleethunt_name,
+		description: m.mode_fleethunt_description
 	}
 ];
 

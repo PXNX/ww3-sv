@@ -69,6 +69,59 @@ describe('ConvoyGame', () => {
 		expect(game.isNewBest).toBe(false);
 	});
 
+	it('revives a finished run where it ended, any number of times', () => {
+		const { game, scores } = newGame();
+		game.revive();
+		expect(game.status).toBe('ready');
+		game.start();
+		game.revive();
+		expect(game.status).toBe('running');
+		expect(game.hull).toBe(3);
+
+		for (let round = 0; round < 2; round++) {
+			sinkSoon(game);
+			for (let i = 0; i < 120 && game.status === 'running'; i++) game.update(STEP);
+			expect(game.status).toBe('over');
+			const { score, distance } = game;
+			const travelled = game.runner.distance;
+
+			game.revive();
+			expect(game.status).toBe('running');
+			expect(game.hull).toBe(1);
+			expect(game.score).toBe(score);
+			expect(game.distance).toBe(distance);
+			// The grace period carries the tanker safely on
+			for (let i = 0; i < 60; i++) game.update(STEP);
+			expect(game.status).toBe('running');
+			expect(game.runner.distance).toBeGreaterThan(travelled);
+			for (let i = 0; i < 120; i++) game.update(STEP);
+		}
+
+		// The run ends again: the best is the final score and still counts as a new best
+		sinkSoon(game);
+		for (let i = 0; i < 120 && game.status === 'running'; i++) game.update(STEP);
+		expect(game.status).toBe('over');
+		expect(game.isNewBest).toBe(true);
+		expect(game.best).toBe(game.score);
+		expect(scores.get(['convoy', 'score'])).toBe(game.score);
+		expect(scores.get(['convoy', 'distance'])).toBe(game.distance);
+	});
+
+	it('does not call a revived run a new best when an earlier run scored more', () => {
+		const { game, scores } = newGame();
+		scores.submit(['convoy', 'score'], 1_000_000);
+		game.start();
+		sinkSoon(game);
+		for (let i = 0; i < 120 && game.status === 'running'; i++) game.update(STEP);
+		game.revive();
+		for (let i = 0; i < 60; i++) game.update(STEP);
+		sinkSoon(game);
+		for (let i = 0; i < 120 && game.status === 'running'; i++) game.update(STEP);
+		expect(game.status).toBe('over');
+		expect(game.isNewBest).toBe(false);
+		expect(game.best).toBe(1_000_000);
+	});
+
 	it('shakes the screen on a hit unless reduced motion is on', () => {
 		for (const reducedMotion of [false, true]) {
 			const scores = createHighscores(createStore(memoryStorage()));

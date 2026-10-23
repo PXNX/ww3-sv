@@ -73,6 +73,7 @@
 	title={m.flamingo_over_title()}
 	drawBoard={drawShareScene}
 	onRetry={() => game.newGame()}
+	onRevive={() => game.revive()}
 >
 	{#if game.crash}
 		<p class="mb-2 italic">{CRASH_LINES[game.crash]()}</p>

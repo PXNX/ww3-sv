@@ -82,6 +82,9 @@ export const STUMBLE_CLOSE: Record<ObstacleKind, number> = {
 };
 /** After a contact the drone cannot touch the runner again for this long */
 export const CONTACT_GRACE_MS = 1400;
+/** A bought revival clears the course this far ahead, and the drone holds off this long */
+export const REVIVE_CLEAR_AHEAD = 15;
+export const REVIVE_GRACE_MS = 2500;
 /** The drone stays hidden for this long after the runner leaves a tall sunflower patch */
 export const HIDE_TAIL = 2;
 

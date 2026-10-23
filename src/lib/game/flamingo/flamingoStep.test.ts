@@ -7,6 +7,7 @@ import {
 	OVER_DELAY_SECONDS,
 	OVERSHOOT_MARGIN,
 	READY_Y,
+	REVIVE_APPROACH_LEAD,
 	STRIKE_BOUNCE_VELOCITY,
 	createFlamingoState,
 	createSegment,
@@ -14,6 +15,7 @@ import {
 	findContact,
 	gapsLeft,
 	predictDive,
+	reviveFlamingo,
 	stepFlamingo,
 	type Contact,
 	type FlamingoEvent,
@@ -421,5 +423,114 @@ describe('site kinds', () => {
 				createSegment(seed, 2, FIRST_COLUMN_X)
 			);
 		}
+	});
+});
+
+describe('revival', () => {
+	function crashed(state: FlamingoState): FlamingoState {
+		runUntil(state, (s) => s.phase === 'over');
+		return state;
+	}
+
+	it('only revives a run that is over', () => {
+		const state = flyingState({ x: 150, y: 300 });
+		expect(reviveFlamingo(state)).toBe(false);
+		expect(state.phase).toBe('flying');
+	});
+
+	it('keeps the score and clears the column that brought the flamingo down', () => {
+		const state = crashed(flyingState({ x: 150, y: 100, score: 40, gapsPassed: 4 }));
+		expect(state.crash).toBe('net');
+		const x = state.x;
+
+		expect(reviveFlamingo(state)).toBe(true);
+		expect(state.phase).toBe('ready');
+		expect(state.crash).toBeNull();
+		expect(state.landedSeconds).toBeNull();
+		expect(state.y).toBe(READY_Y);
+		expect(state.x).toBe(x);
+		expect(state.score).toBe(40);
+		expect(state.gapsPassed).toBe(4);
+		expect(gapsLeft(state)).toBe(0);
+
+		// Hovers until the next flap, then flies on without crashing straight away
+		runUntil(
+			state,
+			() => false,
+			() => false,
+			30
+		);
+		expect(state.phase).toBe('ready');
+		runUntil(
+			state,
+			(s) => s.phase !== 'ready' && s.phase !== 'flying',
+			(s) => s.y > READY_Y,
+			120
+		);
+		expect(state.phase).toBe('flying');
+	});
+
+	it('only clears the columns just ahead', () => {
+		const columns = [
+			{ x: 200, gapTop: 150, gapBottom: 350, kind: 'radar' as const, top: 'net' as const },
+			{ x: 700, gapTop: 150, gapBottom: 350, kind: 'pantsir' as const, top: 'balloon' as const }
+		];
+		const state = crashed(flyingState({ x: 150, y: 100, segments: [segmentWith({ columns })] }));
+		reviveFlamingo(state);
+		expect(currentSegment(state).columns).toEqual([columns[1]]);
+		expect(gapsLeft(state)).toBe(1);
+	});
+
+	it('goes back in front of the site after a failed dive, for another try', () => {
+		const state = flyingState({
+			x: REFINERY.endX,
+			y: 150,
+			vy: FLAP_VELOCITY,
+			stage: 'approach',
+			score: 80,
+			segments: [segmentWith({ passed: 1 })]
+		});
+		runUntil(
+			state,
+			(s) => s.phase === 'over',
+			(s) => s.phase === 'flying' && s.y > 150
+		);
+		expect(state.crash).toBe('overshoot');
+
+		reviveFlamingo(state);
+		expect(state.stage).toBe('approach');
+		expect(state.x).toBe(REFINERY.startX - REVIVE_APPROACH_LEAD);
+		expect(findContact(currentSegment(state), state.x, state.y)).toBeNull();
+
+		runUntil(state, (s) => s.refineriesStruck > 0 || s.phase === 'tumbling', autopilot());
+		expect(state.refineriesStruck).toBe(1);
+		expect(state.score).toBeGreaterThan(80);
+	});
+
+	it('keeps the flamingo where it is when it fell short of the site', () => {
+		const state = crashed(
+			flyingState({
+				x: 600,
+				y: GROUND_Y - 30,
+				stage: 'approach',
+				segments: [segmentWith({ passed: 1 })]
+			})
+		);
+		expect(state.crash).toBe('missed');
+		const x = state.x;
+		reviveFlamingo(state);
+		expect(state.x).toBe(x);
+	});
+
+	it('can revive the same run again and again', () => {
+		const state = createFlamingoState(9);
+		stepFlamingo(state, true);
+		for (let revival = 0; revival < 3; revival++) {
+			crashed(state);
+			expect(reviveFlamingo(state)).toBe(true);
+			stepFlamingo(state, true);
+			expect(state.phase).toBe('flying');
+		}
+		expect(state.segments[0].index).toBe(0);
 	});
 });

@@ -60,6 +60,10 @@ export const REDUCED_MOTION_RAMP_FACTOR = 0.5;
 export const MAX_HULL = 3;
 export const INVULNERABLE_MS = 1400;
 export const ESCORT_INVULNERABLE_MS = 600;
+/** A bought revival: a longer grace period than a normal hit, so the player can find their bearings */
+export const REVIVE_INVULNERABLE_MS = 2500;
+/** A revival also clears every obstacle up to this far ahead of the tanker, in world units */
+export const REVIVE_CLEAR_AHEAD = 3;
 
 // Scoring
 export const POINTS_PER_UNIT = 10;

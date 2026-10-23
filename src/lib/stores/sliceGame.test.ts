@@ -120,6 +120,74 @@ describe('SliceGame', () => {
 		expect(game.isNewBest).toBe(false);
 	});
 
+	it('revives a finished run with one heart and a clear sky, keeping the score', () => {
+		const { game } = newGame();
+		game.revive();
+		expect(game.status).toBe('ready');
+		game.start();
+		game.revive();
+		expect(game.status).toBe('playing');
+		expect(game.lives).toBe(STARTING_LIVES);
+
+		game.state.spawner.nextMs = 0;
+		game.state.lives = 1;
+		park(game, 'kinzhal', 60, 200);
+		park(game, 'balloon', 200, 200);
+		park(game, 'geran', 400, 200);
+		game.pointerDown(20, 200);
+		game.pointerMove(240, 200);
+		expect(game.status).toBe('over');
+		const score = game.score;
+		const time = game.state.timeMs;
+		expect(score).toBe(THREATS.kinzhal.points);
+
+		game.revive();
+		expect(game.status).toBe('playing');
+		expect(game.lives).toBe(1);
+		expect(game.score).toBe(score);
+		expect(game.sliced).toBe(1);
+		expect(game.decoysHit).toBe(1);
+		expect(game.state.timeMs).toBe(time);
+		expect(game.state.flyers).toHaveLength(0);
+		expect(game.state.trail.points).toHaveLength(0);
+		expect(game.state.spawner.nextMs).toBeGreaterThan(0);
+		// The grace period: nothing is launched on the very next step
+		game.update(STEP);
+		expect(game.state.flyers).toHaveLength(0);
+		expect(game.status).toBe('playing');
+	});
+
+	it('can revive the same run again and keeps it a new best when it ends', () => {
+		const { game, scores } = newGame();
+		game.start();
+		game.state.spawner.nextMs = Infinity;
+		for (let round = 1; round <= 2; round++) {
+			game.state.lives = 1;
+			park(game, 'kinzhal', 60, 200);
+			park(game, 'balloon', 200, 200);
+			game.pointerDown(20, 200);
+			game.pointerMove(240, 200);
+			expect(game.status).toBe('over');
+			expect(game.isNewBest).toBe(true);
+			expect(scores.get(['slice', 'score'])).toBe(THREATS.kinzhal.points * round);
+			game.revive();
+			expect(game.status).toBe('playing');
+		}
+
+		// Ending again without scoring more still reports the run's best
+		park(game, 'balloon', 100, 200);
+		game.pointerDown(60, 200);
+		game.pointerMove(140, 200);
+		expect(game.status).toBe('over');
+		expect(game.score).toBe(THREATS.kinzhal.points * 2);
+		expect(game.isNewBest).toBe(true);
+		expect(game.best).toBe(game.score);
+
+		game.start();
+		expect(game.isNewBest).toBe(false);
+		expect(game.score).toBe(0);
+	});
+
 	it('loses hearts to threats that get away', () => {
 		const { game } = newGame();
 		game.start();

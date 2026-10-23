@@ -49,6 +49,10 @@ export const STRIKE_BOUNCE_VELOCITY = -560;
 export const CRASH_HOP_VELOCITY = -240;
 /** How long the flamingo lies on the ground before the run is over */
 export const OVER_DELAY_SECONDS = 0.8;
+/** A revival clears every column that starts within this distance ahead of the flamingo */
+export const REVIVE_CLEARANCE = 260;
+/** A revival on an approach puts the flamingo back this far before the site for another dive */
+export const REVIVE_APPROACH_LEAD = 160;
 
 export type Phase = 'ready' | 'flying' | 'tumbling' | 'over';
 export type Stage = 'gaps' | 'approach';
@@ -314,6 +318,42 @@ export function stepFlamingo(state: FlamingoState, flap: boolean, dt = STEP_SECO
 			tumble(state, dt);
 			break;
 	}
+}
+
+/**
+ * Continues a run that is over, keeping the score and progress. The flamingo hovers again until
+ * the next flap, as at the start: in the gaps the columns just ahead are cleared away, and on an
+ * approach it goes back in front of the site, so the next dive is a fresh try.
+ * Returns whether the run was over and has been revived.
+ */
+export function reviveFlamingo(state: FlamingoState): boolean {
+	if (state.phase !== 'over') return false;
+	const segment = currentSegment(state);
+	if (state.stage === 'gaps') {
+		let clear = segment.passed;
+		while (
+			clear < segment.columns.length &&
+			segment.columns[clear].x < state.x + REVIVE_CLEARANCE
+		) {
+			clear += 1;
+		}
+		segment.columns = [
+			...segment.columns.slice(0, segment.passed),
+			...segment.columns.slice(clear)
+		];
+	} else {
+		const last = segment.columns[segment.columns.length - 1];
+		const afterColumns = last ? last.x + COLUMN_WIDTH + FLAMINGO_RADIUS + 1 : -Infinity;
+		const beforeSite = Math.min(state.x, segment.refinery.startX - REVIVE_APPROACH_LEAD);
+		state.x = Math.max(afterColumns, beforeSite);
+	}
+	state.phase = 'ready';
+	state.y = READY_Y;
+	state.vy = 0;
+	state.crash = null;
+	state.landedSeconds = null;
+	state.events = [];
+	return true;
 }
 
 /** Gaps still to clear before the current segment's refinery */

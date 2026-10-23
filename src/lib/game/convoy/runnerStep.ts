@@ -25,6 +25,8 @@ import {
 	PATTERN_GAP,
 	POINTS_PER_UNIT,
 	REDUCED_MOTION_RAMP_FACTOR,
+	REVIVE_CLEAR_AHEAD,
+	REVIVE_INVULNERABLE_MS,
 	SHORE_MAX_LANES_BLOCKED,
 	SHORE_MIN_LANES_BLOCKED,
 	SHORE_NARROW_MAX_MS,
@@ -41,6 +43,7 @@ import {
 	TANKER_HALF_WIDTH,
 	TANKER_OFFSET,
 	isHazard,
+	isObstacle,
 	type ItemKind,
 	type Lane
 } from './constants';
@@ -500,6 +503,31 @@ export function stepRunner(
 		(obstacle) => !removed.has(obstacle.id) && obstacle.y > draft.distance - TANKER_OFFSET - 1
 	);
 	return draft;
+}
+
+/**
+ * Refloats a sunk tanker so the same run goes on: one hull point, a grace period and the water
+ * just ahead swept clear, so whatever sank it cannot do so again straight away. Score, distance
+ * and everything else carry over.
+ */
+export function reviveRunner(state: RunnerState): RunnerState {
+	if (!state.over) return state;
+	return {
+		...state,
+		hull: 1,
+		over: false,
+		invulnerableMs: REVIVE_INVULNERABLE_MS,
+		// Settled in its lane and back in the player's hands
+		x: state.lane,
+		slideFrom: state.lane,
+		slideElapsedMs: state.slideDurationMs,
+		dragX: null,
+		slipping: false,
+		obstacles: state.obstacles.filter(
+			(obstacle) => !isObstacle(obstacle.kind) || obstacle.y > state.distance + REVIVE_CLEAR_AHEAD
+		),
+		events: []
+	};
 }
 
 export function runnerScore(state: RunnerState): number {

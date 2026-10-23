@@ -6,7 +6,7 @@
 import { STARTING_LIVES, specOf } from '#lib/game/slice/config.js';
 import { drawScenePreview, type Effect, type SceneExtras } from '#lib/game/slice/render.js';
 import { createGame, type SliceEvent, type SliceState } from '#lib/game/slice/state.js';
-import { sliceWithTrail, stepGame } from '#lib/game/slice/step.js';
+import { reviveGame, sliceWithTrail, stepGame } from '#lib/game/slice/step.js';
 import { addTrailPoint, beginSwipe } from '#lib/game/slice/trail.js';
 import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
 import { highscores, type Highscores } from '#lib/services/highscore.js';
@@ -78,6 +78,14 @@ export class SliceGame {
 		this.isNewBest = false;
 		this.#soundClock = 0;
 		this.#lastSound = {};
+		this.#syncChrome();
+		this.status = 'playing';
+	}
+
+	/** A bought revival: the same run goes on with one heart and a clear sky */
+	revive() {
+		if (this.status !== 'over') return;
+		reviveGame(this.state);
 		this.#syncChrome();
 		this.status = 'playing';
 	}
@@ -237,7 +245,8 @@ export class SliceGame {
 		this.#syncChrome();
 		const scoreResult = this.#scores().submit(SCORE_KEY, this.state.score);
 		const comboResult = this.#scores().submit(COMBO_KEY, this.state.bestCombo);
-		this.isNewBest = scoreResult.isNewBest;
+		// After a revival the stored best may already be this run's own score, so stay a new best
+		this.isNewBest = this.isNewBest || scoreResult.isNewBest;
 		this.best = scoreResult.best;
 		this.bestComboEver = comboResult.best;
 		this.status = 'over';

@@ -12,9 +12,9 @@ import {
 	specOf
 } from './config';
 import { breakCombo, registerSlice, sliceScore } from './scoring';
-import { stepSpawner } from './spawner';
+import { FIRST_VOLLEY_MS, stepSpawner } from './spawner';
 import type { Flyer, SliceEvent, SliceState } from './state';
-import { pruneTrail, trailHits, trailSegments } from './trail';
+import { clearTrail, pruneTrail, trailHits, trailSegments } from './trail';
 import type { Random } from '#lib/game/random.js';
 
 /** Where the nose points: along the flight for missiles, a gentle rock for decoys */
@@ -130,6 +130,21 @@ function halvesStep(state: SliceState, dtMs: number) {
 	state.halves = state.halves.filter(
 		(half) => half.ageMs < HALF_LIFE_MS && half.y < WORLD_HEIGHT + 80
 	);
+}
+
+/**
+ * Brings a finished run back with one heart: score, counts and time (so the difficulty) are
+ * kept, while every flyer still in the air is cleared and the next volley waits at least as long
+ * as the first one of a run, so the player is not hit again straight away.
+ */
+export function reviveGame(state: SliceState) {
+	if (!state.over) return;
+	state.over = false;
+	state.lives = 1;
+	state.flyers = [];
+	clearTrail(state.trail);
+	breakCombo(state.combo);
+	state.spawner.nextMs = Math.max(state.spawner.nextMs, FIRST_VOLLEY_MS);
 }
 
 export function stepGame(state: SliceState, random: Random, dtMs: number): SliceEvent[] {

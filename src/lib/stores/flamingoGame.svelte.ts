@@ -8,6 +8,7 @@ import {
 	createFlamingoState,
 	currentSegment,
 	gapsLeft,
+	reviveFlamingo,
 	stepFlamingo,
 	type CrashCause,
 	type FlamingoEvent,
@@ -15,7 +16,7 @@ import {
 	type Stage
 } from '#lib/game/flamingo/flamingoStep.js';
 import type { SiteKind } from '#lib/game/flamingo/refinery.js';
-import { highscores } from '#lib/services/highscore.js';
+import { highscores, type Highscores } from '#lib/services/highscore.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
 import type { SoundId } from '#lib/sound/sounds.js';
 
@@ -53,15 +54,19 @@ export class FlamingoGame {
 	sim: FlamingoState;
 	private flapQueued = false;
 
-	constructor(seed = randomSeed()) {
+	/** Injected for tests; defaults to the browser's local high scores */
+	private scores: () => Highscores;
+
+	constructor(seed = randomSeed(), scores: () => Highscores = highscores) {
+		this.scores = scores;
 		this.sim = createFlamingoState(seed);
 		this.sync();
 	}
 
 	/** Reads the stored bests; call once in the browser */
 	loadBests(): void {
-		this.best = highscores().get(SCORE_KEY);
-		this.bestRefineries = highscores().get(REFINERIES_KEY);
+		this.best = this.scores().get(SCORE_KEY);
+		this.bestRefineries = this.scores().get(REFINERIES_KEY);
 	}
 
 	newGame(seed = randomSeed()): void {
@@ -70,6 +75,17 @@ export class FlamingoGame {
 		this.status = 'ready';
 		this.isNewBest = false;
 		this.round += 1;
+		this.sync();
+	}
+
+	/**
+	 * Continues the run that just ended (a bought revival): same score and progress, and the
+	 * flamingo hovers again until the next flap. Allowed any number of times per run.
+	 */
+	revive(): void {
+		if (this.status !== 'over' || !reviveFlamingo(this.sim)) return;
+		this.flapQueued = false;
+		this.status = 'ready';
 		this.sync();
 	}
 
@@ -119,9 +135,10 @@ export class FlamingoGame {
 
 	private finish(): void {
 		this.status = 'over';
-		const score = highscores().submit(SCORE_KEY, this.score);
-		const refineries = highscores().submit(REFINERIES_KEY, this.refineriesStruck);
-		this.isNewBest = score.isNewBest;
+		const score = this.scores().submit(SCORE_KEY, this.score);
+		const refineries = this.scores().submit(REFINERIES_KEY, this.refineriesStruck);
+		// After a revival the best may already have been beaten earlier in this run
+		this.isNewBest ||= score.isNewBest;
 		this.best = score.best;
 		this.bestRefineries = refineries.best;
 	}

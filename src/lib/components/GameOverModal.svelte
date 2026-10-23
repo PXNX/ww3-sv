@@ -32,6 +32,7 @@
 	import Confetti from './Confetti.svelte';
 	import ResultCharacter from './ResultCharacter.svelte';
 	import ShareButton from './ShareButton.svelte';
+	import IconHeartPulse from '~icons/lucide/heart-pulse';
 	import IconRotate from '~icons/lucide/rotate-ccw';
 
 	let {
@@ -46,6 +47,7 @@
 		drawBoard,
 		customCameo,
 		onRetry,
+		onRevive,
 		children
 	}: {
 		open: boolean;
@@ -67,6 +69,8 @@
 		 */
 		customCameo?: CameoOverride | null;
 		onRetry: () => void;
+		/** Modes that can be continued pass this: it shows the button to buy a revival */
+		onRevive?: () => void;
 		/** Mode-specific extra stats, shown under the score */
 		children?: Snippet;
 	} = $props();
@@ -244,6 +248,14 @@
 
 			{#if withCharacter && open}
 				<ResultCharacter {mode} {outcome} class="w-24" />
+			{/if}
+
+			{#if onRevive}
+				<!-- TODO: charge the revival in Telegram Stars (or take one from the Pro subscription's monthly allowance) before calling onRevive -->
+				<button type="button" class="btn-chunky bg-khaki text-lg" onclick={onRevive}>
+					<IconHeartPulse class="size-5" aria-hidden="true" />
+					{m.gameover_revive()}
+				</button>
 			{/if}
 
 			<div class="flex flex-wrap items-center justify-center gap-3">

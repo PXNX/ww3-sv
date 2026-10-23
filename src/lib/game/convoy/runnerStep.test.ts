@@ -11,6 +11,8 @@ import {
 	MAX_SPEED,
 	NAUTICAL_MILES_PER_UNIT,
 	POINTS_PER_UNIT,
+	REVIVE_CLEAR_AHEAD,
+	REVIVE_INVULNERABLE_MS,
 	SLICK_SLIDE_MS,
 	START_SPEED,
 	type ItemKind,
@@ -25,6 +27,7 @@ import {
 	makeObstacle,
 	multiplierFor,
 	releaseShip,
+	reviveRunner,
 	runnerNauticalMiles,
 	runnerScore,
 	shipRange,
@@ -232,6 +235,53 @@ describe('collisions and hull', () => {
 		const later = run(state, 1000);
 		expect(later.distance).toBe(state.distance);
 		expect(steer(later, 1)).toBe(later);
+	});
+
+	it('revives a sunk tanker with one hull point and clears the water just ahead', () => {
+		const sunk = run(
+			runnerWith(
+				[
+					{ kind: 'mine', lane: 1, ahead: 1 },
+					{ kind: 'drone', lane: 1, ahead: 1.6 },
+					{ kind: 'barrel', lane: 3, ahead: 2 },
+					{ kind: 'gunboat', lane: 2, ahead: REVIVE_CLEAR_AHEAD + 2 }
+				],
+				{ hull: 1 }
+			),
+			400
+		);
+		expect(sunk.over).toBe(true);
+		expect(reviveRunner(createRunner())).toEqual(createRunner());
+
+		const revived = reviveRunner(sunk);
+		expect(revived.over).toBe(false);
+		expect(revived.hull).toBe(1);
+		expect(revived.invulnerableMs).toBe(REVIVE_INVULNERABLE_MS);
+		expect(revived.distance).toBe(sunk.distance);
+		expect(revived.points).toBe(sunk.points);
+		// Hazards right ahead are gone; pickups and the far gunboat stay
+		expect(revived.obstacles.map((obstacle) => obstacle.kind).sort()).toEqual([
+			'barrel',
+			'gunboat'
+		]);
+
+		const later = run(revived, 1000);
+		expect(later.over).toBe(false);
+		expect(later.distance).toBeGreaterThan(revived.distance);
+	});
+
+	it('can sink again after a revival once the grace period is over', () => {
+		const revived = reviveRunner(
+			run(runnerWith([{ kind: 'mine', lane: 1, ahead: 1 }], { hull: 1 }), 400)
+		);
+		const calm = run(revived, REVIVE_INVULNERABLE_MS + 100);
+		expect(calm.invulnerableMs).toBe(0);
+		const sunk = run(
+			{ ...calm, obstacles: [makeObstacle(99, 'mine', calm.lane, calm.distance + 1)] },
+			800
+		);
+		expect(sunk.over).toBe(true);
+		expect(reviveRunner(sunk).hull).toBe(1);
 	});
 
 	it('dodges a hazard in another lane', () => {
