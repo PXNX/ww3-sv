@@ -7,6 +7,7 @@
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import PauseOverlay from '#lib/components/PauseOverlay.svelte';
+	import RotateHint from '#lib/components/RotateHint.svelte';
 	import { drawScene, fitCamera } from '#lib/game/fury/furyRender.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
 	import { FuryGame } from '#lib/stores/furyGame.svelte.js';
@@ -54,6 +55,7 @@
 	score={playing ? game.score : undefined}
 	best={playing ? game.best : undefined}
 	confirmLeave={playing && !game.showWin && !game.showFail}
+	immersive={playing}
 >
 	{#snippet actions()}
 		{#if playing}
@@ -75,8 +77,9 @@
 	{/snippet}
 
 	{#if playing}
-		<div class="relative">
+		<div class="relative flex min-h-0 flex-1 flex-col">
 			<FuryCanvas {game} {showTutorial} />
+			<RotateHint />
 			{#if game.paused}
 				<PauseOverlay hint="" onResume={() => game.setPaused(false)}>
 					<button type="button" class="btn-chunky min-w-44" onclick={() => game.retry()}>

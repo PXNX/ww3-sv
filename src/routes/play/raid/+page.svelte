@@ -93,6 +93,7 @@
 	score={inRaid ? game.score : undefined}
 	best={game.best}
 	wide
+	immersive={inRaid}
 	confirmLeave={game.status === 'playing' || game.status === 'paused' || game.status === 'down'}
 >
 	{#snippet actions()}
@@ -123,7 +124,7 @@
 			<RaidCanvas {game} />
 			{#if portrait && !rotateDismissed && game.status !== 'over'}
 				<div
-					class="absolute inset-0 z-30 flex items-center justify-center rounded-[14px_8px_16px_10px] bg-banner-slate p-4"
+					class="absolute inset-0 z-30 flex items-center justify-center bg-banner-slate p-4"
 					role="dialog"
 					aria-modal="true"
 					aria-labelledby="raid-rotate-title"

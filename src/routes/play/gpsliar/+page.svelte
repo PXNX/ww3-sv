@@ -12,6 +12,7 @@
 	import GpsLiarLevelSelect from '#lib/components/GpsLiarLevelSelect.svelte';
 	import GpsLiarWinPanel from '#lib/components/GpsLiarWinPanel.svelte';
 	import LivesBar from '#lib/components/LivesBar.svelte';
+	import RotateHint from '#lib/components/RotateHint.svelte';
 	import TutorialModal from '#lib/components/TutorialModal.svelte';
 	import { cargoName, levelName } from '#lib/components/gpsliarText.js';
 	import { STARTING_HEARTS } from '#lib/game/gpsliar/config.js';
@@ -59,6 +60,7 @@
 	score={playing ? game.score : undefined}
 	best={playing ? game.best : undefined}
 	confirmLeave={running}
+	immersive={playing}
 >
 	{#snippet actions()}
 		<button
@@ -94,13 +96,10 @@
 	{/snippet}
 
 	{#if playing}
-		<!-- The HUD and the playfield share one width, as wide as the height allows -->
-		<section
-			class="mx-auto flex w-full flex-col items-center gap-2"
-			style:max-width="max(18rem, min(100%, calc((100dvh - 19rem) * 1.4)))"
-		>
+		<!-- The playfield fills the screen; the HUD floats over its top under the page controls -->
+		<section class="relative flex min-h-0 flex-1 flex-col">
 			<div
-				class="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1 shadow-[3px_3px_0_var(--color-ink)]"
+				class="pointer-events-none absolute inset-x-2 top-(--hud-top) z-10 mx-auto flex max-w-xl flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1 shadow-[3px_3px_0_var(--color-ink)]"
 			>
 				<LivesBar lives={game.hearts} max={STARTING_HEARTS} class="shrink-0 text-xl" />
 				<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
@@ -117,6 +116,7 @@
 			</div>
 
 			<GpsLiarCanvas {game} levelName={levelName(game.levelIndex)} />
+			<RotateHint />
 		</section>
 	{:else}
 		<GpsLiarLevelSelect {game} />

@@ -143,56 +143,66 @@
 
 <svelte:window onkeydown={onKeyDown} />
 
+<!-- The whole page takes taps; the field keeps its shape, as large as fits, centered on it -->
 <div
 	data-playfield
-	class="relative mx-auto aspect-[9/16] w-full max-w-[calc((100dvh-10rem)*9/16)] min-w-64 touch-none overflow-hidden rounded-[16px_8px_14px_10px] border-3 border-ink bg-sky shadow-[4px_4px_0_var(--color-ink)] select-none"
+	class="[container-type:size] flex min-h-0 flex-1 touch-none items-center justify-center bg-banner-slate select-none"
 	role="application"
 	aria-label={m.flamingo_playfield_label()}
 	onpointerdown={onPointerDown}
 >
-	<canvas bind:this={canvas} class="block size-full" aria-hidden="true"></canvas>
+	<div class="relative aspect-[9/16] w-[min(100cqw,calc(100cqh*9/16))] overflow-hidden bg-sky">
+		<canvas bind:this={canvas} class="block size-full" aria-hidden="true"></canvas>
 
-	{#if game.status === 'playing' || game.status === 'paused'}
-		<div class="pointer-events-none absolute inset-x-0 top-2 flex justify-center px-2">
-			{#if game.stage === 'approach'}
-				<p
-					dir="auto"
-					class="pop-in rounded-md border-3 border-ink bg-explosion-yellow px-2 py-0.5 text-sm font-bold"
-					aria-live="polite"
-				>
-					{approachText[game.site]()}
-				</p>
-			{:else}
-				<p dir="auto" class="rounded-md border-2 border-ink bg-paper px-2 py-0.5 text-sm font-bold">
-					{m.flamingo_gaps_left({ count: game.gapsLeft })}
-				</p>
-			{/if}
-		</div>
-	{/if}
-
-	{#if game.status === 'ready'}
-		<div
-			class="pointer-events-none absolute inset-x-3 bottom-24 flex flex-col items-center gap-2 text-center"
-		>
-			<p
-				dir="auto"
-				class="pop-in sticker px-4 py-1 font-display text-2xl font-bold"
-				style:--tilt="-2deg"
+		{#if game.status === 'playing' || game.status === 'paused'}
+			<!-- Clear of the floating page controls when the field reaches the top of the screen -->
+			<div
+				class="pointer-events-none absolute inset-x-0 flex justify-center px-2"
+				style:top="max(0.5rem, calc(var(--hud-top) - (100cqh - min(100cqh, 100cqw * 16 / 9)) / 2))"
 			>
-				{m.flamingo_tap_to_start()}
-			</p>
-			{#if showTutorial}
+				{#if game.stage === 'approach'}
+					<p
+						dir="auto"
+						class="pop-in rounded-md border-3 border-ink bg-explosion-yellow px-2 py-0.5 text-sm font-bold"
+						aria-live="polite"
+					>
+						{approachText[game.site]()}
+					</p>
+				{:else}
+					<p
+						dir="auto"
+						class="rounded-md border-2 border-ink bg-paper px-2 py-0.5 text-sm font-bold"
+					>
+						{m.flamingo_gaps_left({ count: game.gapsLeft })}
+					</p>
+				{/if}
+			</div>
+		{/if}
+
+		{#if game.status === 'ready'}
+			<div
+				class="pointer-events-none absolute inset-x-3 bottom-24 flex flex-col items-center gap-2 text-center"
+			>
 				<p
 					dir="auto"
-					class="rounded-md border-2 border-ink bg-paper px-2 py-1 text-sm leading-snug"
+					class="pop-in sticker px-4 py-1 font-display text-2xl font-bold"
+					style:--tilt="-2deg"
 				>
-					{m.flamingo_controls_hint()}
+					{m.flamingo_tap_to_start()}
 				</p>
-			{/if}
-		</div>
-	{/if}
+				{#if showTutorial}
+					<p
+						dir="auto"
+						class="rounded-md border-2 border-ink bg-paper px-2 py-1 text-sm leading-snug"
+					>
+						{m.flamingo_controls_hint()}
+					</p>
+				{/if}
+			</div>
+		{/if}
 
-	{#if game.status === 'paused'}
-		<PauseOverlay onResume={() => game.resume()} />
-	{/if}
+		{#if game.status === 'paused'}
+			<PauseOverlay onResume={() => game.resume()} />
+		{/if}
+	</div>
 </div>

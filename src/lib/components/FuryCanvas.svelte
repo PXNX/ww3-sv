@@ -250,34 +250,49 @@
 	});
 </script>
 
-<div class="flex flex-col gap-3">
+<!-- The canvas fills the page; the aim, hints, squad and trick button float over it -->
+<div data-playfield class="relative min-h-0 flex-1 overflow-hidden">
+	<canvas
+		bind:this={canvas}
+		class="absolute inset-0 block size-full touch-none bg-sky select-none focus-visible:outline-3 focus-visible:outline-offset-[-6px] focus-visible:outline-tie-red focus-visible:outline-dashed"
+		tabindex="0"
+		aria-label={m.fury_canvas_label()}
+		onpointerdown={onPointerDown}
+		onpointermove={onPointerMove}
+		onpointerup={onPointerUp}
+		onpointercancel={onPointerCancel}
+		onkeydown={onKeyDown}
+	></canvas>
+
 	<div
-		data-playfield
-		class="relative overflow-hidden rounded-[14px_8px_16px_10px] border-3 border-ink shadow-[4px_4px_0_var(--color-ink)]"
+		class="pointer-events-none absolute inset-x-2 top-(--hud-top) flex flex-col items-start gap-1.5"
 	>
-		<canvas
-			bind:this={canvas}
-			class="block aspect-[10/7] w-full touch-none bg-sky select-none focus-visible:outline-3 focus-visible:outline-offset-[-6px] focus-visible:outline-tie-red focus-visible:outline-dashed"
-			style:max-height="min(68dvh, calc(100dvh - 15rem))"
-			tabindex="0"
-			aria-label={m.fury_canvas_label()}
-			onpointerdown={onPointerDown}
-			onpointermove={onPointerMove}
-			onpointerup={onPointerUp}
-			onpointercancel={onPointerCancel}
-			onkeydown={onKeyDown}
-		></canvas>
 		{#if aimText}
-			<p
-				class="pointer-events-none absolute top-2 left-2 rounded-md border-2 border-ink bg-paper px-2 py-0.5 text-sm font-bold tabular-nums"
-			>
+			<p class="rounded-md border-2 border-ink bg-paper px-2 py-0.5 text-sm font-bold tabular-nums">
 				{aimText}
 			</p>
 		{/if}
+		{#if game.currentBird || showTutorial}
+			<div
+				class="flex max-w-md flex-col gap-1 rounded-md border-2 border-ink bg-paper/90 px-2 py-1"
+			>
+				{#if game.currentBird}
+					<p class="text-sm font-semibold">
+						{birdName(game.currentBird)}: {birdHint(game.currentBird)}
+					</p>
+				{/if}
+				{#if showTutorial}
+					<p class="text-xs">{m.fury_controls_hint()}</p>
+					<p class="hidden text-xs sm:block">{m.fury_keyboard_hint()}</p>
+				{/if}
+			</div>
+		{/if}
 	</div>
 
-	<div class="flex flex-wrap items-center justify-between gap-3">
-		<div class="flex flex-col gap-1">
+	<div
+		class="pointer-events-none absolute inset-x-2 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] flex flex-wrap items-end justify-between gap-2"
+	>
+		<div class="flex flex-col gap-1 rounded-md border-2 border-ink bg-paper/90 px-2 py-1">
 			<span class="text-xs font-bold uppercase">{m.fury_squad_label()}</span>
 			<ol
 				class="flex flex-wrap items-center gap-1.5"
@@ -303,28 +318,23 @@
 			</ol>
 		</div>
 
-		<p class="rounded-md border-2 border-ink bg-paper px-2 py-1 font-display font-bold">
-			{m.fury_domes_left({ count: game.domesRemaining })}
-		</p>
+		<div class="ms-auto flex items-end gap-2">
+			<p class="rounded-md border-2 border-ink bg-paper px-2 py-1 font-display font-bold">
+				{m.fury_domes_left({ count: game.domesRemaining })}
+			</p>
 
-		{#if game.canUseAbility}
-			<button
-				type="button"
-				class="pop-in btn-chunky min-h-12 bg-explosion-yellow"
-				onclick={() => game.useAbility()}
-			>
-				<IconSparkles class="size-5" aria-hidden="true" />
-				{m.fury_ability_button()}
-			</button>
-		{/if}
+			{#if game.canUseAbility}
+				<button
+					type="button"
+					class="pop-in btn-chunky pointer-events-auto min-h-12 bg-explosion-yellow"
+					onclick={() => game.useAbility()}
+				>
+					<IconSparkles class="size-5" aria-hidden="true" />
+					{m.fury_ability_button()}
+				</button>
+			{/if}
+		</div>
 	</div>
 
-	{#if game.currentBird}
-		<p class="font-semibold">{birdName(game.currentBird)}: {birdHint(game.currentBird)}</p>
-	{/if}
-	{#if showTutorial}
-		<p class="text-sm">{m.fury_controls_hint()}</p>
-		<p class="text-sm">{m.fury_keyboard_hint()}</p>
-	{/if}
 	<p class="sr-only" role="status" aria-live="polite">{announcementText}</p>
 </div>

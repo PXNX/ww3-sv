@@ -256,7 +256,7 @@
 <div data-playfield class="relative h-full min-h-0 w-full flex-1 select-none">
 	<canvas
 		bind:this={canvas}
-		class="block h-full w-full touch-none rounded-[14px_8px_16px_10px] border-3 border-ink shadow-[4px_4px_0_var(--color-ink)]"
+		class="block h-full w-full touch-none"
 		style:touch-action="none"
 		aria-label={m.raid_playfield_label()}
 		onpointerdown={onStickDown}
@@ -268,16 +268,14 @@
 
 	{#key game.hurtCount}
 		{#if game.hurtCount > 0 && game.status === 'playing'}
-			<div
-				class="hurt pointer-events-none absolute inset-0 rounded-[14px_8px_16px_10px] border-8 border-tie-red"
-			></div>
+			<div class="hurt pointer-events-none absolute inset-0 border-8 border-tie-red"></div>
 		{/if}
 	{/key}
 
 	{#if game.status !== 'lobby'}
 		<!-- HUD: health, revive, time and threat on the left; XP, gold and kills on the right -->
 		<div
-			class="pointer-events-none absolute inset-x-2 top-2 flex items-start justify-between gap-2"
+			class="pointer-events-none absolute inset-x-2 top-(--hud-top) flex items-start justify-between gap-2"
 		>
 			<div class="flex flex-col gap-1">
 				<div
@@ -344,7 +342,7 @@
 	{#if game.found && (game.status === 'playing' || game.status === 'paused')}
 		{@const item = game.found.item}
 		<div
-			class="pop-in absolute top-[5.25rem] left-2 flex max-w-[15rem] items-center gap-2 rounded-xl border-3 bg-paper p-2 shadow-[3px_3px_0_var(--color-ink)]"
+			class="pop-in absolute top-[calc(var(--hud-top)+4.75rem)] left-2 flex max-w-[15rem] items-center gap-2 rounded-xl border-3 bg-paper p-2 shadow-[3px_3px_0_var(--color-ink)]"
 			style:border-color={RARITY_COLOR[item.rarity]}
 		>
 			<RaidItemIcon
@@ -442,7 +440,7 @@
 		<PauseOverlay onResume={() => game.resume()} />
 	{:else if game.status === 'down'}
 		<div
-			class="absolute inset-0 z-20 flex items-center justify-center rounded-[14px_8px_16px_10px] bg-tie-red/40 p-4"
+			class="absolute inset-0 z-20 flex items-center justify-center bg-tie-red/40 p-4"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="raid-down-title"

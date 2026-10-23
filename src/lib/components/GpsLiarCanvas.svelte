@@ -1,6 +1,6 @@
 <!--
-	GPS Liar playfield: a crisp high-DPI canvas driven by the fixed-step loop, with the cross-check
-	button under it. Drag a finger (or hold the mouse) anywhere on the sea to steer toward it: the
+	GPS Liar playfield: a crisp high-DPI canvas driven by the fixed-step loop, as large as the screen
+	allows, with the cross-check button floating at the bottom. Drag a finger (or hold the mouse) anywhere on the sea to steer toward it: the
 	farther from the boat, the harder the push. Arrow keys or WASD steer, C or Space cross-checks.
 	The playfield never mirrors in right-to-left languages and never scrolls (touch-action: none).
 -->
@@ -134,11 +134,14 @@
 
 <svelte:window onkeydown={onKeyDown} onkeyup={onKeyUp} />
 
-<div data-playfield class="flex w-full flex-col gap-3 select-none">
-	<div class="relative">
+<div
+	data-playfield
+	class="[container-type:size] relative flex min-h-0 flex-1 items-center justify-center bg-banner-slate select-none"
+>
+	<div class="relative aspect-[14/10] w-[min(100cqw,calc(100cqh*14/10))]">
 		<canvas
 			bind:this={canvas}
-			class="block aspect-[14/10] w-full touch-none rounded-[14px_8px_16px_10px] border-3 border-ink shadow-[4px_4px_0_var(--color-ink)]"
+			class="block size-full touch-none"
 			style:touch-action="none"
 			aria-label={m.gpsliar_playfield_label()}
 			onpointerdown={onDown}
@@ -152,15 +155,13 @@
 		<!-- A red flash around the field whenever a heart is lost -->
 		{#key game.hurtCount}
 			{#if game.hurtCount > 0 && game.status === 'playing'}
-				<div
-					class="hurt pointer-events-none absolute inset-0 rounded-[14px_8px_16px_10px] border-8 border-tie-red"
-				></div>
+				<div class="hurt pointer-events-none absolute inset-0 border-8 border-tie-red"></div>
 			{/if}
 		{/key}
 
 		{#if game.status === 'ready'}
 			<div
-				class="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-[14px_8px_16px_10px] bg-ink/35 p-3"
+				class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-ink/35 p-3"
 			>
 				<div
 					class="sticker pop-in flex w-full max-w-xs flex-col items-center gap-2 p-4 text-center"
@@ -197,13 +198,20 @@
 		{/if}
 	</div>
 
-	<div class="flex items-center justify-between gap-3">
-		<p dir="auto" class="hidden flex-1 text-sm font-semibold sm:block">
+	<div
+		class="pointer-events-none absolute inset-x-2 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-10 flex items-end justify-between gap-3"
+	>
+		<p
+			dir="auto"
+			class="hidden max-w-md rounded-md border-2 border-ink bg-paper/90 px-2 py-1 text-sm font-semibold sm:block"
+		>
 			{m.gpsliar_controls_hint()}
 		</p>
 		<button
 			type="button"
-			class="btn-chunky ms-auto text-lg {game.revealing ? 'bg-explosion-yellow' : 'bg-flag-blue'}"
+			class="btn-chunky pointer-events-auto ms-auto text-lg {game.revealing
+				? 'bg-explosion-yellow'
+				: 'bg-flag-blue'}"
 			disabled={game.status !== 'playing' || game.crossChecksLeft === 0}
 			onclick={() => game.crossCheck()}
 		>

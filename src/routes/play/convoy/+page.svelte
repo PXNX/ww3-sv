@@ -37,6 +37,7 @@
 	score={game.score}
 	best={game.best}
 	confirmLeave={game.status === 'running' || game.status === 'paused'}
+	immersive
 >
 	{#snippet actions()}
 		{#if game.status === 'running' || game.status === 'paused'}
@@ -53,7 +54,7 @@
 	{/snippet}
 
 	<section
-		class="flex shrink-0 flex-wrap items-center gap-2 font-display text-sm font-bold"
+		class="pointer-events-none absolute inset-x-2 top-(--hud-top) z-10 flex flex-wrap items-center gap-2 font-display text-sm font-bold"
 		aria-label={m.mode_convoy_name()}
 	>
 		<span
@@ -69,7 +70,7 @@
 		>
 			{m.convoy_barrels()}: {game.barrels}
 		</span>
-		<!-- The bonus chips always take their space (hidden while inactive) so the field below never shifts -->
+		<!-- The bonus chips always take their space (hidden while inactive) so the HUD never shifts -->
 		{#key game.multiplier}
 			<span
 				class={[

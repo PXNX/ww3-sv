@@ -41,6 +41,7 @@
 	score={game.score}
 	best={game.best}
 	confirmLeave={canPause}
+	immersive
 >
 	{#snippet actions()}
 		<button
