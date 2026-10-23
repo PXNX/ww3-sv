@@ -1,16 +1,21 @@
 <!--
-	Small cartoon icon of a raid weapon, helmet or vest, in the playfield's style. With a rarity it
+	Small cartoon icon of a raid weapon, helmet, vest or boots, in the playfield's style. With a rarity it
 	sits on a tile in that rarity's colour.
 -->
 <script lang="ts">
-	import { RARITY_COLOR, type Rarity, type WeaponKind } from '#lib/game/raid/config.js';
+	import {
+		RARITY_COLOR,
+		type ArmorSlot,
+		type Rarity,
+		type WeaponKind
+	} from '#lib/game/raid/config.js';
 
 	let {
 		kind,
 		rarity,
 		class: className = 'size-10'
 	}: {
-		kind: WeaponKind | 'helmet' | 'vest';
+		kind: WeaponKind | ArmorSlot;
 		rarity?: Rarity;
 		class?: string;
 	} = $props();
@@ -53,6 +58,21 @@
 			<rect x="4" y="17" width="38" height="12" rx="5" fill="#55603a" />
 			<circle cx="42" cy="23" r="4" fill="#e5484d" />
 			<rect x="16" y="29" width="5" height="9" rx="1" fill="#55603a" />
+		{:else if kind === 'flamethrower'}
+			<rect x="14" y="19" width="26" height="8" rx="3" fill="#8a2f1f" />
+			<circle cx="12" cy="28" r="7" fill="#c43c2c" />
+			<path d="M40 23 q6 -5 4 -10 q5 6 0 12z" fill="#ff8a2b" />
+			<rect x="24" y="27" width="4" height="9" rx="1" fill="#3b3b3b" />
+		{:else if kind === 'dronenest'}
+			<rect x="9" y="22" width="30" height="18" rx="3" fill="#55603a" />
+			<path d="M9 31 h30" fill="none" />
+			<path d="M16 14 l6 5 l6 -5" fill="none" />
+			<circle cx="16" cy="13" r="3" fill="#d8dde2" />
+			<circle cx="28" cy="13" r="3" fill="#d8dde2" />
+			<rect x="19" y="16" width="6" height="5" rx="1" fill="#3d3d3d" />
+		{:else if kind === 'boots'}
+			<path d="M8 12 h10 v18 h8 v8 h-18z" fill="#5a4630" />
+			<path d="M24 12 h10 v18 h8 v8 h-18z" fill="#6b5338" />
 		{:else if kind === 'helmet'}
 			<path d="M8 32 a16 16 0 0 1 32 0z" fill="#556b2f" />
 			<rect x="5" y="31" width="38" height="5" rx="2" fill="#3e4f22" />

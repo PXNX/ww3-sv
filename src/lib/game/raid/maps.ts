@@ -2,10 +2,11 @@
  * The three battlefields. Each layout is generated once from a fixed seed (so it is the same on
  * every device and every raid) around a few hand-placed landmarks: solid cover that blocks
  * movement and bullets, plus ground decoration that is only drawn. Maps also set their own
- * difficulty and reward multiplier.
+ * difficulty and reward multiplier, and patches of terrain: ice and oil slicks that make everything
+ * slide, and mud that slows everything down.
  */
 import { createRandom, randomInt, type Random } from '#lib/game/random.js';
-import type { MapId } from './config';
+import type { MapId, TerrainKind } from './config';
 
 export type ObstacleKind =
 	| 'tree'
@@ -49,6 +50,15 @@ export interface Decor {
 	seed: number;
 }
 
+/** A patch of ground that changes how everything walks across it */
+export interface Terrain {
+	x: number;
+	y: number;
+	r: number;
+	kind: TerrainKind;
+	seed: number;
+}
+
 export interface Palette {
 	ground: string;
 	groundDark: string;
@@ -70,6 +80,7 @@ export interface RaidMap {
 	spawn: { x: number; y: number };
 	obstacles: Obstacle[];
 	decor: Decor[];
+	terrain: Terrain[];
 }
 
 interface MapRecipe {
@@ -86,6 +97,7 @@ interface MapRecipe {
 	/** Scattered cover: kind, radius range and how many */
 	scatter: { kind: ObstacleKind; min: number; max: number; count: number }[];
 	decor: { kind: DecorKind; min: number; max: number; count: number }[];
+	terrain: { kind: TerrainKind; min: number; max: number; count: number }[];
 }
 
 const RECIPES: Record<MapId, MapRecipe> = {
@@ -114,7 +126,8 @@ const RECIPES: Record<MapId, MapRecipe> = {
 			{ kind: 'grass', min: 10, max: 18, count: 180 },
 			{ kind: 'crater', min: 30, max: 60, count: 22 },
 			{ kind: 'mud', min: 50, max: 110, count: 18 }
-		]
+		],
+		terrain: [{ kind: 'mud', min: 70, max: 130, count: 12 }]
 	},
 	strait: {
 		id: 'strait',
@@ -140,6 +153,10 @@ const RECIPES: Record<MapId, MapRecipe> = {
 			{ kind: 'oil', min: 30, max: 80, count: 24 },
 			{ kind: 'shell', min: 8, max: 14, count: 60 },
 			{ kind: 'crater', min: 30, max: 56, count: 16 }
+		],
+		terrain: [
+			{ kind: 'oil', min: 70, max: 120, count: 10 },
+			{ kind: 'mud', min: 60, max: 100, count: 4 }
 		]
 	},
 	arctic: {
@@ -166,6 +183,10 @@ const RECIPES: Record<MapId, MapRecipe> = {
 			{ kind: 'crack', min: 30, max: 70, count: 30 },
 			{ kind: 'tracks', min: 60, max: 120, count: 18 },
 			{ kind: 'crater', min: 30, max: 50, count: 10 }
+		],
+		terrain: [
+			{ kind: 'ice', min: 80, max: 150, count: 13 },
+			{ kind: 'mud', min: 50, max: 80, count: 3 }
 		]
 	}
 };
@@ -233,6 +254,21 @@ function buildMap(recipe: MapRecipe): RaidMap {
 	];
 	decor.sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));
 
+	// Terrain last, so adding it left the cover and decoration of every map where they were
+	const terrain: Terrain[] = [];
+	for (const group of recipe.terrain) {
+		let placed = 0;
+		for (let attempt = 0; attempt < group.count * 40 && placed < group.count; attempt++) {
+			const r = randomInt(random, group.min, group.max + 1);
+			const x = randomInt(random, r, width - r);
+			const y = randomInt(random, r, height - r);
+			if (Math.hypot(x - spawn.x, y - spawn.y) < CLEAR_START + r) continue;
+			if (terrain.some((other) => Math.hypot(other.x - x, other.y - y) < other.r + r)) continue;
+			terrain.push({ x, y, r, kind: group.kind, seed: randomInt(random, 0, 1000) });
+			placed += 1;
+		}
+	}
+
 	return {
 		id: recipe.id,
 		width,
@@ -243,7 +279,8 @@ function buildMap(recipe: MapRecipe): RaidMap {
 		palette: recipe.palette,
 		spawn,
 		obstacles,
-		decor
+		decor,
+		terrain
 	};
 }
 
@@ -257,4 +294,14 @@ export function raidMap(id: MapId): RaidMap {
 		built.set(id, map);
 	}
 	return map;
+}
+
+/** The terrain under a spot, or null for plain ground */
+export function terrainAt(map: RaidMap, x: number, y: number): TerrainKind | null {
+	for (const patch of map.terrain) {
+		const dx = x - patch.x;
+		const dy = y - patch.y;
+		if (dx * dx + dy * dy < patch.r * patch.r) return patch.kind;
+	}
+	return null;
 }

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { SEASON_XP_PER_TIER } from '#lib/game/raid/config.js';
 import { makeWeapon } from '#lib/game/raid/items.js';
 import { newProfile } from '#lib/game/raid/profile.js';
 import { spawnEnemy } from '#lib/game/raid/state.js';
@@ -150,6 +151,38 @@ describe('RaidGame', () => {
 		expect(game.skillCooldowns).toEqual([0, 0]);
 		game.skill(0);
 		expect(game.state.player.focusShots).toBeGreaterThan(0);
+	});
+
+	it('reports kills by type, crystals and season progress when the raid ends', () => {
+		const { game } = newGame();
+		game.load();
+		quietStart(game);
+		game.state.killsBy.drone = 4;
+		game.state.crystals.push({ kind: 'damage', rarity: 'rare' });
+		game.state.xp = SEASON_XP_PER_TIER + 5;
+		knockOut(game);
+		game.giveUp();
+		expect(game.result?.killsBy.drone).toBe(4);
+		expect(game.result?.crystals).toHaveLength(1);
+		expect(game.result!.seasonXpAfter - game.result!.seasonXpBefore).toBe(SEASON_XP_PER_TIER + 5);
+		expect(game.profile.crystals['damage:rare']).toBe(1);
+	});
+
+	it('claims season rewards and sockets crystals in the lobby', () => {
+		const { game, store } = newGame();
+		const profile = newProfile();
+		store.write('raid:profile', {
+			...profile,
+			crystals: { 'crit:common': 1 },
+			season: { ...profile.season, xp: SEASON_XP_PER_TIER * 2 }
+		});
+		game.load();
+		game.claimSeason();
+		expect(game.claimed).toHaveLength(2);
+		expect(game.profile.season.claimed).toBe(2);
+		game.dismissClaimed();
+		game.socket('primary', { kind: 'crit', rarity: 'common' });
+		expect(game.profile.loadout.primary.crystals).toEqual([{ kind: 'crit', rarity: 'common' }]);
 	});
 
 	it('has its messages in every language', () => {

@@ -4,63 +4,101 @@
  * weapon button; every shot aims itself at the closest enemy in sight (as in mo.co). Each weapon
  * brings two skills; they, the weapon swap and the revive are commands. Enemies stream in from
  * beyond the camera, tougher and more often the longer the raid lasts, and every defeat can drop
- * loot. Each step returns events for sounds and effects.
+ * loot and, rarely (from bosses always), crystals. Drones fly over cover and crash into the
+ * player, medics heal, mortars and artillery shell marked spots. Ice and oil make everyone slide,
+ * mud slows them. Each step returns events for sounds and effects.
  */
 import { pickWeighted, randomInt, type Random } from '#lib/game/random.js';
 import {
+	ARCHETYPE_CAP,
 	ARCHETYPE_SPECS,
-	BOSS_EVERY_MS,
-	BOSS_SLAM_EVERY_MS,
-	BOSS_SLAM_RADIUS,
-	BOSS_SLAM_WINDUP_MS,
-	BOSS_VOLLEY_BULLETS,
-	BOSS_VOLLEY_EVERY_MS,
-	ENEMY_BULLET_SPEED,
-	FIRST_BOSS_MS,
-	GEAR_PICKUP_RADIUS,
+	ARTILLERY_FLIGHT_MS,
+	ARTILLERY_RADIUS,
+	ARTILLERY_SCATTER,
+	ARTILLERY_SHELLS,
 	BARRAGE_RANGE,
 	BARRAGE_ROCKETS,
 	BLAST_ANGLE,
 	BLAST_DAMAGE_FACTOR,
 	BLAST_PUSH,
 	BLAST_RADIUS,
+	BOSS_EVERY_MS,
+	BOSS_SLAM_EVERY_MS,
+	BOSS_SLAM_RADIUS,
+	BOSS_SLAM_WINDUP_MS,
+	BOSS_VOLLEY_BULLETS,
+	BOSS_VOLLEY_EVERY_MS,
+	BURN_TICK_MS,
 	DASH_MS,
 	DASH_SPEED,
+	DRONE_BLAST_RADIUS,
+	DRONE_LIFETIME_MS,
+	ENEMY_BULLET_SPEED,
+	FIRST_BOSS_MS,
+	FLASHPOINT_CRIT_MULTIPLIER,
+	FLASHPOINT_DAMAGE_FACTOR,
+	FLASHPOINT_RANGE,
 	FOCUS_SHOTS,
+	GEAR_PICKUP_RADIUS,
 	GRENADE_DAMAGE_FACTOR,
 	GRENADE_FUSE_MS,
 	GRENADE_RADIUS,
 	GRENADE_THROW_RANGE,
 	HEAL_SHARE,
+	HIT_GRACE_MS,
+	JAMMER_COOLDOWN_MS,
+	JAMMER_RADIUS,
+	LOOT_LIFETIME_MS,
+	MAGNET_RADIUS,
+	MAX_ITEM_LEVEL,
 	MAX_MINES,
+	MAX_NESTS,
+	MEDIC_BOSS_HEAL_SHARE,
+	MEDIC_HEAL_RADIUS,
+	MEDIC_HEAL_SHARE,
+	MEDKIT_HEAL_SHARE,
 	MINE_ARM_MS,
 	MINE_DAMAGE_FACTOR,
 	MINE_LIFETIME_MS,
 	MINE_RADIUS,
 	MINE_TRIGGER_RADIUS,
+	MORTAR_FLIGHT_MS,
+	MORTAR_RADIUS,
+	MUD_SPEED,
+	NAPALM_MS,
+	NAPALM_RADIUS,
+	NAPALM_THROW_RANGE,
+	NEST_LAUNCH_MS,
+	NEST_LIFETIME_MS,
 	NOVA_BULLETS,
 	NOVA_DAMAGE_FACTOR,
+	OVERCLOCK_LAUNCH_FACTOR,
+	OVERCLOCK_MS,
 	OVERDRIVE_FIRE_FACTOR,
 	OVERDRIVE_MS,
-	RAILSHOT_DAMAGE_FACTOR,
-	RAILSHOT_RANGE,
-	SKILL_COOLDOWN_MS,
-	SKILL_IDS,
-	HIT_GRACE_MS,
-	LOOT_LIFETIME_MS,
-	MAGNET_RADIUS,
-	MAX_ITEM_LEVEL,
-	MEDKIT_HEAL_SHARE,
 	PICKUP_RADIUS,
 	PLAYER_RADIUS,
 	PLAYER_SPEED,
+	RAILSHOT_DAMAGE_FACTOR,
+	RAILSHOT_RANGE,
 	REVIVE_BLAST_RADIUS,
 	REVIVE_HEALTH_SHARE,
 	REVIVE_INVULNERABLE_MS,
 	REVIVES_PER_RAID,
 	SCORE_PER_SECOND,
+	SKILL_COOLDOWN_MS,
+	SKILL_IDS,
+	SLIPPERY_GRIP,
 	SPAWN_DISTANCE_MAX,
 	SPAWN_DISTANCE_MIN,
+	SPIKES_REFLECT,
+	SWARM_DRONES,
+	TRAIL_BURN_MS,
+	TRAIL_DPS,
+	TRAIL_DPS_PER_LEVEL,
+	TRAIL_EVERY_MS,
+	TRAIL_MS,
+	TRAIL_RADIUS,
 	VARIANT_SPECS,
 	WEAPONS,
 	archetypeWeights,
@@ -81,22 +119,31 @@ import {
 } from './config';
 import { blocked, lineOfSight, resolveCircle, segmentDistance, steer } from './geometry';
 import {
+	bootsSpeed,
 	damageTakenFactor,
 	makeArmor,
+	perkOf,
+	rollCrystals,
 	rollLoot,
 	upgraded,
 	weaponDamage,
+	weaponStats,
+	type Crystal,
 	type GearItem,
-	type LootDrop
+	type LootDrop,
+	type WeaponStats
 } from './items';
-import { raidMap, type RaidMap } from './maps';
-import { armorFor, maxHpFor, type Loadout } from './profile';
+import { raidMap, terrainAt, type RaidMap } from './maps';
+import { armorFor, maxHpFor, type Loadout, type WeaponSlot } from './profile';
 
-export type WeaponSlot = 'primary' | 'secondary';
+export type { WeaponSlot };
 
 export interface Player {
 	x: number;
 	y: number;
+	/** Current velocity; on ice and oil it only slowly follows the stick */
+	vx: number;
+	vy: number;
 	hp: number;
 	maxHp: number;
 	armor: number;
@@ -116,6 +163,8 @@ export interface Player {
 	focusShots: number;
 	/** Overdrive: faster fire while above 0 */
 	overdriveMs: number;
+	/** Overclock: drone nests launch faster while above 0 */
+	overclockMs: number;
 	/** Dash: time left and direction */
 	dashMs: number;
 	dashX: number;
@@ -124,6 +173,10 @@ export interface Player {
 	invulnerableMs: number;
 	/** Counts up while walking, drives the walk cycle */
 	stepPhase: number;
+	/** Fire trail boots: time to the next patch of fire */
+	trailMs: number;
+	/** Jammer helmet: time until it can throw the next drone off course */
+	jammerMs: number;
 }
 
 export interface Enemy {
@@ -132,6 +185,8 @@ export interface Enemy {
 	variant: Variant;
 	x: number;
 	y: number;
+	vx: number;
+	vy: number;
 	hp: number;
 	maxHp: number;
 	speed: number;
@@ -145,10 +200,20 @@ export interface Enemy {
 	slamMs: number;
 	slamWindupMs: number;
 	volleyMs: number;
-	/** Ranged enemies circle the player in this direction (1 or -1) */
+	/** Enemies that keep their distance circle the player in this direction (1 or -1) */
 	strafe: number;
 	/** Walk cycle */
 	phase: number;
+	/** Drones fly over all cover */
+	flying: boolean;
+	/** A drone thrown off course by the jammer: it flies at this enemy (or nowhere) and crashes */
+	jammed: boolean;
+	jamTargetId: number | null;
+	jamMs: number;
+	/** Burning: time left, damage per second and time to the next tick */
+	burnMs: number;
+	burnDps: number;
+	burnTickMs: number;
 }
 
 export interface Bullet {
@@ -164,6 +229,11 @@ export interface Bullet {
 	kind: WeaponKind;
 	/** A rail shot: drawn as a long beam */
 	rail: boolean;
+	/** A puff of flame from the flamethrower */
+	flame: boolean;
+	/** A hit sets the enemy on fire for this long (0 for none) at this damage per second */
+	burnMs: number;
+	burnDps: number;
 	/** Enemies this bullet already hit, so a piercing shot hits each one once */
 	hit: number[];
 }
@@ -175,6 +245,20 @@ export interface EnemyBullet {
 	vy: number;
 	damage: number;
 	lifeMs: number;
+	big: boolean;
+}
+
+/** A mortar or artillery shell on its way to a marked spot */
+export interface Shell {
+	id: number;
+	fromX: number;
+	fromY: number;
+	x: number;
+	y: number;
+	ageMs: number;
+	flightMs: number;
+	radius: number;
+	damage: number;
 	big: boolean;
 }
 
@@ -193,6 +277,45 @@ export interface Mine {
 	y: number;
 	ageMs: number;
 	damage: number;
+}
+
+/** A drone nest built by the player: it sends kamikaze drones at enemies in reach */
+export interface Nest {
+	id: number;
+	x: number;
+	y: number;
+	ageMs: number;
+	launchMs: number;
+	/** The drone weapon's stats when it was built */
+	damage: number;
+	critChance: number;
+	critMultiplier: number;
+}
+
+/** One of the player's kamikaze drones, homing in on an enemy */
+export interface FriendlyDrone {
+	id: number;
+	x: number;
+	y: number;
+	vx: number;
+	vy: number;
+	targetId: number | null;
+	lifeMs: number;
+	damage: number;
+	crit: boolean;
+}
+
+/** Fire on the ground (napalm or the trail of fire boots) that sets enemies walking in it alight */
+export interface FirePool {
+	id: number;
+	x: number;
+	y: number;
+	radius: number;
+	ageMs: number;
+	lifeMs: number;
+	burnMs: number;
+	burnDps: number;
+	trail: boolean;
 }
 
 export interface Loot {
@@ -219,8 +342,12 @@ export interface RaidState {
 	enemies: Enemy[];
 	bullets: Bullet[];
 	enemyBullets: EnemyBullet[];
+	shells: Shell[];
 	grenades: Grenade[];
 	mines: Mine[];
+	nests: Nest[];
+	drones: FriendlyDrone[];
+	fires: FirePool[];
 	loot: Loot[];
 	input: MoveInput;
 	spawnMs: number;
@@ -231,19 +358,26 @@ export interface RaidState {
 	over: boolean;
 	threat: number;
 	kills: number;
+	/** Defeated enemies by archetype, for the results */
+	killsBy: Record<Archetype, number>;
 	bossKills: number;
 	superKills: number;
 	megaKills: number;
+	damageDealt: number;
+	biggestHit: number;
 	xp: number;
 	gold: number;
+	scrap: number;
 	/** Gear picked up this raid, including anything swapped out of the loadout */
 	haul: GearItem[];
+	/** Crystals picked up this raid */
+	crystals: Crystal[];
 	nextId: number;
 }
 
 export type RaidEvent =
 	| { type: 'shot'; kind: WeaponKind }
-	| { type: 'hit'; x: number; y: number; damage: number; crit: boolean }
+	| { type: 'hit'; x: number; y: number; damage: number; crit: boolean; burn: boolean }
 	| { type: 'splash'; x: number; y: number; radius: number }
 	| {
 			type: 'kill';
@@ -263,7 +397,19 @@ export type RaidEvent =
 	| { type: 'boss-spawn'; variant: Variant }
 	| { type: 'boss-windup'; x: number; y: number }
 	| { type: 'boss-slam'; x: number; y: number }
+	| { type: 'drone-crash'; x: number; y: number }
+	| { type: 'shell-launch'; x: number; y: number; big: boolean }
+	| { type: 'shell-burst'; x: number; y: number; radius: number }
+	| { type: 'medic-heal'; x: number; y: number }
+	| { type: 'nest'; x: number; y: number }
+	| { type: 'nest-launch' }
+	| { type: 'flare'; x: number; y: number }
+	| { type: 'napalm'; x: number; y: number }
+	| { type: 'jammed'; x: number; y: number }
+	| { type: 'spikes'; x: number; y: number }
 	| { type: 'gold'; amount: number; x: number; y: number }
+	| { type: 'scrap'; amount: number; x: number; y: number }
+	| { type: 'crystal'; crystal: Crystal; x: number; y: number }
 	| { type: 'gear'; item: GearItem }
 	| { type: 'weapon-kit'; kind: WeaponKind; level: number; maxed: boolean }
 	| { type: 'armor-kit'; slot: ArmorSlot; level: number; fresh: boolean }
@@ -290,6 +436,12 @@ export function heldSkills(state: RaidState): readonly [SkillId, SkillId] {
 const readySkills = () =>
 	Object.fromEntries(SKILL_IDS.map((skill) => [skill, 0])) as Record<SkillId, number>;
 
+const noKills = () =>
+	Object.fromEntries(Object.keys(ARCHETYPE_SPECS).map((archetype) => [archetype, 0])) as Record<
+		Archetype,
+		number
+	>;
+
 export function scoreOf(state: RaidState): number {
 	return Math.floor(state.timeMs / 1000) * SCORE_PER_SECOND + Math.floor(state.xp);
 }
@@ -305,6 +457,8 @@ export function createRaid(mapId: MapId, loadout: Loadout, playerLevel: number):
 		player: {
 			x: map.spawn.x,
 			y: map.spawn.y,
+			vx: 0,
+			vy: 0,
 			hp: maxHp,
 			maxHp,
 			armor: armorFor(loadout.vest),
@@ -317,19 +471,26 @@ export function createRaid(mapId: MapId, loadout: Loadout, playerLevel: number):
 			skillMs: readySkills(),
 			focusShots: 0,
 			overdriveMs: 0,
+			overclockMs: 0,
 			dashMs: 0,
 			dashX: 0,
 			dashY: 0,
 			graceMs: 0,
 			invulnerableMs: 0,
-			stepPhase: 0
+			stepPhase: 0,
+			trailMs: 0,
+			jammerMs: 0
 		},
-		loadout: structuredClone(loadout),
+		loadout: { ...structuredClone(loadout), boots: loadout.boots ?? null },
 		enemies: [],
 		bullets: [],
 		enemyBullets: [],
+		shells: [],
 		grenades: [],
 		mines: [],
+		nests: [],
+		drones: [],
+		fires: [],
 		loot: [],
 		input: { x: 0, y: 0 },
 		spawnMs: 900,
@@ -339,12 +500,17 @@ export function createRaid(mapId: MapId, loadout: Loadout, playerLevel: number):
 		over: false,
 		threat: 1,
 		kills: 0,
+		killsBy: noKills(),
 		bossKills: 0,
 		superKills: 0,
 		megaKills: 0,
+		damageDealt: 0,
+		biggestHit: 0,
 		xp: 0,
 		gold: 0,
+		scrap: 0,
 		haul: [],
+		crystals: [],
 		nextId: 1
 	};
 }
@@ -383,6 +549,9 @@ export function useSkill(state: RaidState, slot: 0 | 1): RaidEvent[] {
 	return events;
 }
 
+/** Everything the held weapon does, crystals included */
+const heldStats = (state: RaidState) => weaponStats(heldWeapon(state), state.playerLevel);
+
 /** Shot damage of the held weapon, the base the skills scale from */
 const heldDamage = (state: RaidState) => weaponDamage(heldWeapon(state), state.playerLevel);
 
@@ -410,9 +579,20 @@ function pushBullet(
 		splash: 0,
 		kind: heldWeapon(state).kind,
 		rail: false,
+		flame: false,
+		burnMs: 0,
+		burnDps: 0,
 		hit: [],
 		...fields
 	});
+}
+
+/** A spot on the ground at a target (or ahead of the player), inside the map */
+function throwSpot(state: RaidState, target: Enemy | null, ahead = 200) {
+	const { player, map } = state;
+	const x = target ? target.x : player.x + Math.cos(player.aim) * ahead;
+	const y = target ? target.y : player.y + Math.sin(player.aim) * ahead;
+	return { x: Math.max(0, Math.min(map.width, x)), y: Math.max(0, Math.min(map.height, y)) };
 }
 
 /** What each skill does */
@@ -426,14 +606,12 @@ const SKILLS: Record<SkillId, (state: RaidState, events: RaidEvent[]) => void> =
 	},
 	grenade(state) {
 		const { player } = state;
-		const target = nearestEnemy(state, GRENADE_THROW_RANGE, false);
-		const x = target ? target.x : player.x + Math.cos(player.aim) * 200;
-		const y = target ? target.y : player.y + Math.sin(player.aim) * 200;
+		const spot = throwSpot(state, nearestEnemy(state, GRENADE_THROW_RANGE, false));
 		state.grenades.push({
 			fromX: player.x,
 			fromY: player.y,
-			x: Math.max(0, Math.min(state.map.width, x)),
-			y: Math.max(0, Math.min(state.map.height, y)),
+			x: spot.x,
+			y: spot.y,
 			ageMs: 0,
 			damage: heldDamage(state) * GRENADE_DAMAGE_FACTOR
 		});
@@ -444,11 +622,11 @@ const SKILLS: Record<SkillId, (state: RaidState, events: RaidEvent[]) => void> =
 		state.player.fireMs = 0;
 	},
 	railshot(state, events) {
-		const spec = WEAPONS[heldWeapon(state).kind];
+		const stats = heldStats(state);
 		const angle = aimAngle(state, RAILSHOT_RANGE);
 		state.player.aim = angle;
 		pushBullet(state, angle, 2600, {
-			damage: heldDamage(state) * RAILSHOT_DAMAGE_FACTOR * spec.critMultiplier,
+			damage: stats.damage * RAILSHOT_DAMAGE_FACTOR * stats.critMultiplier,
 			crit: true,
 			rangeLeft: RAILSHOT_RANGE,
 			pierceLeft: 99,
@@ -484,7 +662,7 @@ const SKILLS: Record<SkillId, (state: RaidState, events: RaidEvent[]) => void> =
 			if (distance > 0.001 && enemy.archetype !== 'boss') {
 				enemy.x += (dx / distance) * BLAST_PUSH;
 				enemy.y += (dy / distance) * BLAST_PUSH;
-				resolveCircle(enemy, enemy.radius, state.map.obstacles, state.map.width, state.map.height);
+				keepInside(state, enemy);
 			}
 			damageEnemy(state, enemy, damage, false, events);
 		}
@@ -537,6 +715,58 @@ const SKILLS: Record<SkillId, (state: RaidState, events: RaidEvent[]) => void> =
 			ageMs: 0,
 			damage: heldDamage(state) * MINE_DAMAGE_FACTOR
 		});
+	},
+	// Flamethrower: a huge critical hit on every burning enemy, and a pool of napalm
+	flashpoint(state, events) {
+		const { player } = state;
+		const stats = heldStats(state);
+		const damage =
+			stats.damage *
+			FLASHPOINT_DAMAGE_FACTOR *
+			Math.max(stats.critMultiplier, FLASHPOINT_CRIT_MULTIPLIER);
+		for (const enemy of state.enemies) {
+			if (enemy.burnMs <= 0) continue;
+			if (Math.hypot(enemy.x - player.x, enemy.y - player.y) > FLASHPOINT_RANGE) continue;
+			events.push({ type: 'flare', x: enemy.x, y: enemy.y });
+			damageEnemy(state, enemy, damage, true, events);
+		}
+		state.enemies = state.enemies.filter((enemy) => enemy.hp > 0);
+	},
+	napalm(state, events) {
+		const stats = heldStats(state);
+		const spot = throwSpot(state, nearestEnemy(state, NAPALM_THROW_RANGE, false), 160);
+		state.fires.push({
+			id: state.nextId++,
+			x: spot.x,
+			y: spot.y,
+			radius: NAPALM_RADIUS,
+			ageMs: 0,
+			lifeMs: NAPALM_MS,
+			burnMs: Math.max(stats.burnMs, WEAPONS.flamethrower.burnMs * stats.statusFactor),
+			burnDps: stats.burnDps,
+			trail: false
+		});
+		events.push({ type: 'napalm', x: spot.x, y: spot.y });
+	},
+	// Drone nest: every nest (and the player) sends a swarm, and nests launch faster for a while
+	swarm(state, events) {
+		const { player } = state;
+		const stats = heldStats(state);
+		const launchers = [
+			...state.nests.map((nest) => ({ x: nest.x, y: nest.y, count: SWARM_DRONES })),
+			{ x: player.x, y: player.y, count: 2 }
+		];
+		for (const from of launchers) {
+			const targets = enemiesByDistance(state, from.x, from.y, WEAPONS.dronenest.range * 1.3);
+			for (let i = 0; i < from.count; i++) {
+				const target = targets.length > 0 ? targets[i % targets.length] : null;
+				launchDrone(state, from.x, from.y, stats, target, player.aim + (i - 1) * 0.5);
+			}
+		}
+		events.push({ type: 'nest-launch' });
+	},
+	overclock(state) {
+		state.player.overclockMs = OVERCLOCK_MS;
 	}
 };
 
@@ -549,6 +779,7 @@ export function revive(state: RaidState): RaidEvent[] {
 	player.hp = Math.round(player.maxHp * REVIVE_HEALTH_SHARE);
 	player.invulnerableMs = REVIVE_INVULNERABLE_MS;
 	state.enemyBullets = [];
+	state.shells = [];
 	const events: RaidEvent[] = [{ type: 'revive', x: player.x, y: player.y }];
 	for (const enemy of [...state.enemies]) {
 		const dx = enemy.x - player.x;
@@ -559,11 +790,12 @@ export function revive(state: RaidState): RaidEvent[] {
 		if (distance > 0.001) {
 			enemy.x += (dx / distance) * push;
 			enemy.y += (dy / distance) * push;
-			resolveCircle(enemy, enemy.radius, state.map.obstacles, state.map.width, state.map.height);
+			keepInside(state, enemy);
 		}
 		const share = enemy.archetype === 'boss' ? 0.05 : 0.4;
 		damageEnemy(state, enemy, enemy.maxHp * share, false, events);
 	}
+	state.enemies = state.enemies.filter((enemy) => enemy.hp > 0);
 	return events;
 }
 
@@ -590,8 +822,7 @@ export function equipFromHaul(state: RaidState, itemId: string): RaidEvent[] {
 	} else {
 		const previous = loadout[item.slot];
 		if (previous) state.haul.push(previous);
-		if (item.slot === 'helmet') loadout.helmet = item;
-		else loadout.vest = item;
+		loadout[item.slot] = item;
 		refreshStats(state);
 	}
 	return [{ type: 'equip', item }];
@@ -621,35 +852,92 @@ export function stepRaid(state: RaidState, random: Random, dtMs: number): RaidEv
 		events.push({ type: 'threat', level: threat });
 	}
 
-	movePlayer(state, dt);
+	movePlayer(state, dtMs);
 	tickCooldowns(state, dtMs);
 	firePlayer(state, random, events);
 	moveBullets(state, dt, events);
 	updateGrenades(state, dtMs, events);
 	updateMines(state, dtMs, events);
+	updateNests(state, dtMs, events);
+	updateDrones(state, dtMs, events);
+	updateFires(state, dtMs);
+	updateBurning(state, dtMs, events);
+	updateJammer(state, random, events);
 	updateEnemies(state, random, dtMs, events);
 	moveEnemyBullets(state, dtMs, events);
+	updateShells(state, dtMs, events);
 	updateLoot(state, dtMs, events);
 	spawn(state, random, dtMs, events);
 	return events;
 }
 
-function movePlayer(state: RaidState, dt: number) {
+/**
+ * Turns a walker's velocity towards where it wants to go: at once on firm ground, slowly on ice
+ * and oil (so it slides). Mud slows the wanted speed.
+ */
+function walk(
+	state: RaidState,
+	body: { x: number; y: number; vx: number; vy: number },
+	wantX: number,
+	wantY: number,
+	dt: number
+) {
+	const ground = terrainAt(state.map, body.x, body.y);
+	const slow = ground === 'mud' ? MUD_SPEED : 1;
+	if (ground === 'ice' || ground === 'oil') {
+		const k = Math.min(1, SLIPPERY_GRIP * dt);
+		body.vx += (wantX * slow - body.vx) * k;
+		body.vy += (wantY * slow - body.vy) * k;
+	} else {
+		body.vx = wantX * slow;
+		body.vy = wantY * slow;
+	}
+	body.x += body.vx * dt;
+	body.y += body.vy * dt;
+}
+
+/** Walking speed with the boots on */
+export function playerSpeed(state: RaidState): number {
+	return PLAYER_SPEED * (1 + bootsSpeed(state.loadout.boots));
+}
+
+function movePlayer(state: RaidState, dtMs: number) {
 	const { player, input, map } = state;
+	const dt = dtMs / 1000;
 	if (player.dashMs > 0) {
 		player.moving = true;
 		player.x += player.dashX * DASH_SPEED * dt;
 		player.y += player.dashY * DASH_SPEED * dt;
+		player.vx = player.dashX * PLAYER_SPEED;
+		player.vy = player.dashY * PLAYER_SPEED;
 		resolveCircle(player, PLAYER_RADIUS, map.obstacles, map.width, map.height);
 		return;
 	}
 	const speed = Math.hypot(input.x, input.y);
-	player.moving = speed > 0.05;
-	if (!player.moving) return;
-	player.x += input.x * PLAYER_SPEED * dt;
-	player.y += input.y * PLAYER_SPEED * dt;
-	player.stepPhase += speed * dt * 9;
+	const walking = speed > 0.05;
+	const wanted = walking ? playerSpeed(state) : 0;
+	walk(state, player, walking ? input.x * wanted : 0, walking ? input.y * wanted : 0, dt);
+	player.moving = walking || Math.hypot(player.vx, player.vy) > 20;
+	if (walking) player.stepPhase += speed * dt * 9;
 	resolveCircle(player, PLAYER_RADIUS, map.obstacles, map.width, map.height);
+	// Fire boots leave a burning trail behind while walking
+	if (walking && perkOf(state.loadout.boots) === 'trail') {
+		player.trailMs -= dtMs;
+		if (player.trailMs <= 0) {
+			player.trailMs = TRAIL_EVERY_MS;
+			state.fires.push({
+				id: state.nextId++,
+				x: player.x,
+				y: player.y,
+				radius: TRAIL_RADIUS,
+				ageMs: 0,
+				lifeMs: TRAIL_MS,
+				burnMs: TRAIL_BURN_MS,
+				burnDps: TRAIL_DPS + TRAIL_DPS_PER_LEVEL * state.playerLevel,
+				trail: true
+			});
+		}
+	}
 }
 
 function tickCooldowns(state: RaidState, dtMs: number) {
@@ -659,24 +947,39 @@ function tickCooldowns(state: RaidState, dtMs: number) {
 		player.skillMs[skill] = Math.max(0, player.skillMs[skill] - dtMs);
 	}
 	player.overdriveMs = Math.max(0, player.overdriveMs - dtMs);
+	player.overclockMs = Math.max(0, player.overclockMs - dtMs);
 	player.dashMs = Math.max(0, player.dashMs - dtMs);
 	player.graceMs = Math.max(0, player.graceMs - dtMs);
 	player.invulnerableMs = Math.max(0, player.invulnerableMs - dtMs);
+	player.jammerMs = Math.max(0, player.jammerMs - dtMs);
 }
 
-/** The nearest enemy within reach, optionally only one the player can see */
+/** The nearest enemy within reach, optionally only one the player can see (drones always are) */
 export function nearestEnemy(state: RaidState, range: number, needSight = true): Enemy | null {
 	const { player, map } = state;
 	let best: Enemy | null = null;
 	let bestDistance = Infinity;
 	for (const enemy of state.enemies) {
+		if (enemy.hp <= 0) continue;
 		const distance = Math.hypot(enemy.x - player.x, enemy.y - player.y) - enemy.radius;
 		if (distance > range || distance >= bestDistance) continue;
-		if (needSight && !lineOfSight(map.obstacles, player.x, player.y, enemy.x, enemy.y)) continue;
+		if (
+			needSight &&
+			!enemy.flying &&
+			!lineOfSight(map.obstacles, player.x, player.y, enemy.x, enemy.y)
+		)
+			continue;
 		best = enemy;
 		bestDistance = distance;
 	}
 	return best;
+}
+
+/** Living enemies within reach of a spot, nearest first */
+function enemiesByDistance(state: RaidState, x: number, y: number, range: number): Enemy[] {
+	return state.enemies
+		.filter((enemy) => enemy.hp > 0 && Math.hypot(enemy.x - x, enemy.y - y) < range)
+		.sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y));
 }
 
 function firePlayer(state: RaidState, random: Random, events: RaidEvent[]) {
@@ -685,38 +988,155 @@ function firePlayer(state: RaidState, random: Random, events: RaidEvent[]) {
 	const spec = WEAPONS[weapon.kind];
 	const target = nearestEnemy(state, spec.range);
 	if (target) player.aim = Math.atan2(target.y - player.y, target.x - player.x);
-	else if (player.moving) player.aim = Math.atan2(state.input.y, state.input.x);
+	else if (Math.hypot(state.input.x, state.input.y) > 0.05)
+		player.aim = Math.atan2(state.input.y, state.input.x);
 	// Only the attack button fires: with nobody in reach the shot goes where the player faces
 	if (!(player.firing || player.fireQueued) || player.fireMs > 0) return;
 
+	const stats = weaponStats(weapon, state.playerLevel);
 	player.fireQueued = false;
-	player.fireMs = spec.fireMs * (player.overdriveMs > 0 ? OVERDRIVE_FIRE_FACTOR : 1);
+	player.fireMs = stats.fireMs * (player.overdriveMs > 0 ? OVERDRIVE_FIRE_FACTOR : 1);
+	if (weapon.kind === 'dronenest') {
+		buildNest(state, stats, events);
+		return;
+	}
 	const focused = player.focusShots > 0;
 	if (focused) player.focusShots -= 1;
-	const damage = weaponDamage(weapon, state.playerLevel);
 	for (let i = 0; i < spec.pellets; i++) {
 		const offset =
 			spec.pellets > 1
 				? -spec.spread / 2 + (spec.spread * i) / (spec.pellets - 1) + (random() - 0.5) * 0.08
 				: (random() - 0.5) * spec.spread;
 		const angle = player.aim + offset;
-		const crit = focused || random() < spec.critChance;
+		const crit = focused || random() < stats.critChance;
+		// Only a chance below 1 (a status crystal) rolls, so plain weapons keep their random stream
+		const burns = stats.burnMs > 0 && (stats.burnChance >= 1 || random() < stats.burnChance);
 		state.bullets.push({
 			x: player.x + Math.cos(angle) * (PLAYER_RADIUS + 6),
 			y: player.y + Math.sin(angle) * (PLAYER_RADIUS + 6),
 			vx: Math.cos(angle) * spec.projectileSpeed,
 			vy: Math.sin(angle) * spec.projectileSpeed,
-			damage: crit ? damage * spec.critMultiplier : damage,
+			damage: crit ? stats.damage * stats.critMultiplier : stats.damage,
 			crit,
 			rangeLeft: spec.range * 1.2,
 			pierceLeft: spec.pierce,
 			splash: spec.splash,
 			kind: weapon.kind,
 			rail: false,
+			flame: weapon.kind === 'flamethrower',
+			burnMs: burns ? stats.burnMs : 0,
+			burnDps: burns ? stats.burnDps : 0,
 			hit: []
 		});
 	}
 	events.push({ type: 'shot', kind: weapon.kind });
+}
+
+/** The drone nest weapon's attack: a nest a step ahead; the oldest goes when there are too many */
+function buildNest(state: RaidState, stats: WeaponStats, events: RaidEvent[]) {
+	const { player, map } = state;
+	const spot = {
+		x: player.x + Math.cos(player.aim) * (PLAYER_RADIUS + 14),
+		y: player.y + Math.sin(player.aim) * (PLAYER_RADIUS + 14)
+	};
+	resolveCircle(spot, 16, map.obstacles, map.width, map.height);
+	if (state.nests.length >= MAX_NESTS) state.nests.shift();
+	state.nests.push({
+		id: state.nextId++,
+		x: spot.x,
+		y: spot.y,
+		ageMs: 0,
+		launchMs: 350,
+		damage: stats.damage,
+		critChance: stats.critChance,
+		critMultiplier: stats.critMultiplier
+	});
+	events.push({ type: 'nest', x: spot.x, y: spot.y });
+}
+
+/** Sends one kamikaze drone from a spot at a target (or off in a direction) */
+function launchDrone(
+	state: RaidState,
+	x: number,
+	y: number,
+	stats: Pick<WeaponStats, 'damage' | 'critChance' | 'critMultiplier'>,
+	target: Enemy | null,
+	fallbackAngle: number
+) {
+	const angle = target ? Math.atan2(target.y - y, target.x - x) : fallbackAngle;
+	const speed = WEAPONS.dronenest.projectileSpeed;
+	// Crits are decided by the drone's id, so drones do not shift the step's random stream
+	const crit = ((state.nextId * 2654435761) >>> 0) / 4294967296 < stats.critChance;
+	state.drones.push({
+		id: state.nextId++,
+		x,
+		y,
+		vx: Math.cos(angle) * speed,
+		vy: Math.sin(angle) * speed,
+		targetId: target?.id ?? null,
+		lifeMs: target ? DRONE_LIFETIME_MS : 900,
+		damage: crit ? stats.damage * stats.critMultiplier : stats.damage,
+		crit
+	});
+}
+
+function updateNests(state: RaidState, dtMs: number, events: RaidEvent[]) {
+	const speedUp = state.player.overclockMs > 0 ? 1 / OVERCLOCK_LAUNCH_FACTOR : 1;
+	const kept: Nest[] = [];
+	for (const nest of state.nests) {
+		nest.ageMs += dtMs;
+		if (nest.ageMs > NEST_LIFETIME_MS) continue;
+		kept.push(nest);
+		nest.launchMs -= dtMs * speedUp;
+		if (nest.launchMs > 0) continue;
+		const target = enemiesByDistance(state, nest.x, nest.y, WEAPONS.dronenest.range)[0];
+		if (!target) {
+			nest.launchMs = 0;
+			continue;
+		}
+		nest.launchMs = NEST_LAUNCH_MS;
+		launchDrone(state, nest.x, nest.y, nest, target, 0);
+		events.push({ type: 'nest-launch' });
+	}
+	state.nests = kept;
+}
+
+function updateDrones(state: RaidState, dtMs: number, events: RaidEvent[]) {
+	const dt = dtMs / 1000;
+	const speed = WEAPONS.dronenest.projectileSpeed;
+	const splash = WEAPONS.dronenest.splash;
+	const kept: FriendlyDrone[] = [];
+	for (const drone of state.drones) {
+		drone.lifeMs -= dtMs;
+		let target = state.enemies.find((enemy) => enemy.id === drone.targetId && enemy.hp > 0);
+		if (!target && drone.targetId !== null) {
+			target = enemiesByDistance(state, drone.x, drone.y, 500)[0];
+			drone.targetId = target?.id ?? null;
+		}
+		if (target) {
+			// Homing: the velocity turns towards the target, the speed stays the same
+			const dx = target.x - drone.x;
+			const dy = target.y - drone.y;
+			const distance = Math.hypot(dx, dy) || 1;
+			const k = Math.min(1, dt * 7);
+			drone.vx += ((dx / distance) * speed - drone.vx) * k;
+			drone.vy += ((dy / distance) * speed - drone.vy) * k;
+			const length = Math.hypot(drone.vx, drone.vy) || 1;
+			drone.vx = (drone.vx / length) * speed;
+			drone.vy = (drone.vy / length) * speed;
+		}
+		drone.x += drone.vx * dt;
+		drone.y += drone.vy * dt;
+		const arrived =
+			target && Math.hypot(target.x - drone.x, target.y - drone.y) < target.radius + 8;
+		if (arrived || drone.lifeMs <= 0) {
+			explode(state, drone.x, drone.y, splash, drone.damage, drone.crit, events);
+			continue;
+		}
+		kept.push(drone);
+	}
+	state.drones = kept;
+	state.enemies = state.enemies.filter((enemy) => enemy.hp > 0);
 }
 
 function moveBullets(state: RaidState, dt: number, events: RaidEvent[]) {
@@ -731,28 +1151,24 @@ function moveBullets(state: RaidState, dt: number, events: RaidEvent[]) {
 		const spent = bullet.rangeLeft <= 0;
 		let alive = true;
 
-		if (alive) {
-			for (const enemy of state.enemies) {
-				if (bullet.hit.includes(enemy.id)) continue;
-				if (
-					segmentDistance(fromX, fromY, bullet.x, bullet.y, enemy.x, enemy.y) >
-					enemy.radius + 4
-				) {
-					continue;
-				}
-				bullet.hit.push(enemy.id);
-				if (bullet.splash > 0) {
-					explode(state, enemy.x, enemy.y, bullet.splash, bullet.damage, bullet.crit, events);
-					alive = false;
-					break;
-				}
-				damageEnemy(state, enemy, bullet.damage, bullet.crit, events);
-				if (bullet.pierceLeft <= 0) {
-					alive = false;
-					break;
-				}
-				bullet.pierceLeft -= 1;
+		for (const enemy of state.enemies) {
+			if (enemy.hp <= 0 || bullet.hit.includes(enemy.id)) continue;
+			// Flames swell as they travel, so they catch a little more off to the side
+			const reach = enemy.radius + (bullet.flame ? 14 : 4);
+			if (segmentDistance(fromX, fromY, bullet.x, bullet.y, enemy.x, enemy.y) > reach) continue;
+			bullet.hit.push(enemy.id);
+			if (bullet.splash > 0) {
+				explode(state, enemy.x, enemy.y, bullet.splash, bullet.damage, bullet.crit, events);
+				alive = false;
+				break;
 			}
+			damageEnemy(state, enemy, bullet.damage, bullet.crit, events);
+			if (bullet.burnMs > 0) ignite(enemy, bullet.burnMs, bullet.burnDps);
+			if (bullet.pierceLeft <= 0) {
+				alive = false;
+				break;
+			}
+			bullet.pierceLeft -= 1;
 		}
 		if (alive && !lineOfSight(map.obstacles, fromX, fromY, bullet.x, bullet.y)) {
 			if (bullet.splash > 0)
@@ -814,6 +1230,7 @@ function updateMines(state: RaidState, dtMs: number, events: RaidEvent[]) {
 			mine.ageMs >= MINE_ARM_MS &&
 			state.enemies.some(
 				(enemy) =>
+					!enemy.flying &&
 					Math.hypot(enemy.x - mine.x, enemy.y - mine.y) < enemy.radius + MINE_TRIGGER_RADIUS
 			);
 		if (!triggered) {
@@ -827,17 +1244,69 @@ function updateMines(state: RaidState, dtMs: number, events: RaidEvent[]) {
 	state.enemies = state.enemies.filter((enemy) => enemy.hp > 0);
 }
 
+// ---------------------------------------------------------------------------------------------
+// Burning
+
+/** Sets an enemy on fire, or keeps it burning longer and hotter */
+export function ignite(enemy: Enemy, ms: number, dps: number) {
+	if (enemy.hp <= 0 || ms <= 0) return;
+	if (enemy.burnMs <= 0) enemy.burnTickMs = BURN_TICK_MS;
+	enemy.burnMs = Math.max(enemy.burnMs, ms);
+	enemy.burnDps = Math.max(enemy.burnDps, dps);
+}
+
+/** Napalm and fire trails set every walking enemy in them alight */
+function updateFires(state: RaidState, dtMs: number) {
+	const kept: FirePool[] = [];
+	for (const fire of state.fires) {
+		fire.ageMs += dtMs;
+		if (fire.ageMs > fire.lifeMs) continue;
+		kept.push(fire);
+		for (const enemy of state.enemies) {
+			if (enemy.flying) continue;
+			if (Math.hypot(enemy.x - fire.x, enemy.y - fire.y) > fire.radius + enemy.radius * 0.6)
+				continue;
+			ignite(enemy, fire.burnMs, fire.burnDps);
+		}
+	}
+	// A long walk in fire boots leaves only its newest patches burning
+	state.fires = kept.length > 60 ? kept.slice(-60) : kept;
+}
+
+function updateBurning(state: RaidState, dtMs: number, events: RaidEvent[]) {
+	for (const enemy of state.enemies) {
+		if (enemy.burnMs <= 0 || enemy.hp <= 0) continue;
+		enemy.burnMs -= dtMs;
+		enemy.burnTickMs -= dtMs;
+		if (enemy.burnTickMs <= 0) {
+			enemy.burnTickMs += BURN_TICK_MS;
+			damageEnemy(state, enemy, (enemy.burnDps * BURN_TICK_MS) / 1000, false, events, true);
+		}
+		if (enemy.burnMs <= 0) {
+			enemy.burnMs = 0;
+			enemy.burnDps = 0;
+		}
+	}
+	state.enemies = state.enemies.filter((enemy) => enemy.hp > 0);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Damage and defeat
+
 function damageEnemy(
 	state: RaidState,
 	enemy: Enemy,
 	damage: number,
 	crit: boolean,
-	events: RaidEvent[]
+	events: RaidEvent[],
+	burn = false
 ) {
 	if (enemy.hp <= 0) return;
+	state.damageDealt += Math.min(enemy.hp, damage);
+	if (!burn) state.biggestHit = Math.max(state.biggestHit, damage);
 	enemy.hp -= damage;
 	enemy.flashMs = 90;
-	events.push({ type: 'hit', x: enemy.x, y: enemy.y - enemy.radius, damage, crit });
+	events.push({ type: 'hit', x: enemy.x, y: enemy.y - enemy.radius, damage, crit, burn });
 	if (enemy.hp <= 0) defeat(state, enemy, events);
 }
 
@@ -849,6 +1318,7 @@ function defeat(state: RaidState, enemy: Enemy, events: RaidEvent[]) {
 	const xp = spec.xp * reward;
 	state.xp += xp;
 	state.kills += 1;
+	state.killsBy[enemy.archetype] += 1;
 	if (enemy.archetype === 'boss') state.bossKills += 1;
 	if (enemy.variant === 'super') state.superKills += 1;
 	if (enemy.variant === 'mega') state.megaKills += 1;
@@ -869,15 +1339,13 @@ function defeat(state: RaidState, enemy: Enemy, events: RaidEvent[]) {
 		luck: spec.luck + variant.luck + minutes * 0.15 + (state.map.reward - 1),
 		gold: spec.gold * reward,
 		itemLevel: Math.min(MAX_ITEM_LEVEL, 1 + Math.floor(minutes / 1.5) + state.map.itemLevelBonus),
-		guaranteedGear: boss || enemy.variant === 'mega',
-		floor: boss
-			? enemy.variant === 'normal'
-				? 'rare'
-				: 'epic'
-			: enemy.variant === 'mega'
-				? 'rare'
-				: undefined
+		// Only bosses are sure to drop gear; for everyone else it is a rare find
+		guaranteedGear: boss,
+		floor: boss ? (enemy.variant === 'normal' ? 'rare' : 'epic') : undefined
 	});
+	for (const crystal of rollCrystals(random, boss, enemy.variant)) {
+		drops.push({ type: 'crystal', crystal });
+	}
 	drops.forEach((drop, index) => {
 		const angle = (index / Math.max(1, drops.length)) * Math.PI * 2 + enemy.id;
 		const spread = drops.length > 1 ? enemy.radius * 0.6 + 26 : 0;
@@ -902,9 +1370,10 @@ function lootRandom(state: RaidState, enemy: Enemy): Random {
 	};
 }
 
-function hurtPlayer(state: RaidState, raw: number, events: RaidEvent[]) {
+/** Hurts the player; returns the damage that got through (0 while untouchable) */
+function hurtPlayer(state: RaidState, raw: number, events: RaidEvent[]): number {
 	const { player } = state;
-	if (player.invulnerableMs > 0 || player.graceMs > 0 || !active(state)) return;
+	if (player.invulnerableMs > 0 || player.graceMs > 0 || !active(state)) return 0;
 	const damage = Math.max(
 		1,
 		Math.round(
@@ -914,7 +1383,7 @@ function hurtPlayer(state: RaidState, raw: number, events: RaidEvent[]) {
 	player.hp = Math.max(0, player.hp - damage);
 	player.graceMs = HIT_GRACE_MS;
 	events.push({ type: 'player-hit', damage });
-	if (player.hp > 0) return;
+	if (player.hp > 0) return damage;
 	if (state.revivesLeft > 0) {
 		state.down = true;
 		state.input = { x: 0, y: 0 };
@@ -925,13 +1394,103 @@ function hurtPlayer(state: RaidState, raw: number, events: RaidEvent[]) {
 		state.over = true;
 		events.push({ type: 'over' });
 	}
+	return damage;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Enemies
+
+/** Back inside the map and, unless it flies, out of the cover */
+function keepInside(state: RaidState, enemy: Enemy) {
+	const { map } = state;
+	resolveCircle(enemy, enemy.radius, enemy.flying ? [] : map.obstacles, map.width, map.height);
+}
+
+/**
+ * Jammer helmet: every so often the nearest drone in range is thrown off course. It turns on the
+ * nearest other enemy and crashes into it, or spins away and crashes on its own.
+ */
+function updateJammer(state: RaidState, random: Random, events: RaidEvent[]) {
+	const { player } = state;
+	if (perkOf(state.loadout.helmet) !== 'jammer' || player.jammerMs > 0) return;
+	let drone: Enemy | null = null;
+	let best = JAMMER_RADIUS;
+	for (const enemy of state.enemies) {
+		if (!enemy.flying || enemy.jammed || enemy.hp <= 0) continue;
+		const distance = Math.hypot(enemy.x - player.x, enemy.y - player.y);
+		if (distance < best) {
+			best = distance;
+			drone = enemy;
+		}
+	}
+	if (!drone) return;
+	player.jammerMs = JAMMER_COOLDOWN_MS;
+	drone.jammed = true;
+	const victim = state.enemies.find(
+		(enemy) =>
+			!enemy.flying && enemy.hp > 0 && Math.hypot(enemy.x - drone.x, enemy.y - drone.y) < 420
+	);
+	drone.jamTargetId = victim?.id ?? null;
+	drone.jamMs = 1100;
+	// With nobody to crash into it veers off sideways, away from the player
+	drone.facing += (random() < 0.5 ? 1 : -1) * (Math.PI * 0.6 + random() * 0.4);
+	events.push({ type: 'jammed', x: drone.x, y: drone.y });
+}
+
+/** A kamikaze drone blows up; a jammed one takes the enemies around it along */
+function crashDrone(state: RaidState, drone: Enemy, events: RaidEvent[]) {
+	const { player } = state;
+	events.push({ type: 'drone-crash', x: drone.x, y: drone.y });
+	if (drone.jammed) {
+		// Counts as the player's kill: the jammer brought it down
+		damageEnemy(state, drone, drone.hp, false, events);
+		for (const enemy of state.enemies) {
+			if (enemy === drone || enemy.hp <= 0) continue;
+			if (Math.hypot(enemy.x - drone.x, enemy.y - drone.y) > DRONE_BLAST_RADIUS + enemy.radius)
+				continue;
+			damageEnemy(state, enemy, drone.damage * 4, false, events);
+		}
+		return;
+	}
+	drone.hp = 0;
+	if (Math.hypot(player.x - drone.x, player.y - drone.y) < DRONE_BLAST_RADIUS + PLAYER_RADIUS) {
+		hurtPlayer(state, drone.damage, events);
+	}
+}
+
+function flyDrone(
+	state: RaidState,
+	drone: Enemy,
+	dt: number,
+	distance: number,
+	events: RaidEvent[]
+) {
+	const { player } = state;
+	drone.phase += dt * 30;
+	if (drone.jammed) {
+		drone.jamMs -= dt * 1000;
+		const victim = state.enemies.find((enemy) => enemy.id === drone.jamTargetId && enemy.hp > 0);
+		if (victim) drone.facing = Math.atan2(victim.y - drone.y, victim.x - drone.x);
+		else drone.facing += dt * 5;
+		drone.x += Math.cos(drone.facing) * drone.speed * 1.3 * dt;
+		drone.y += Math.sin(drone.facing) * drone.speed * 1.3 * dt;
+		const hit =
+			victim && Math.hypot(victim.x - drone.x, victim.y - drone.y) < victim.radius + drone.radius;
+		if (hit || drone.jamMs <= 0) crashDrone(state, drone, events);
+		return;
+	}
+	drone.facing = Math.atan2(player.y - drone.y, player.x - drone.x);
+	drone.x += Math.cos(drone.facing) * drone.speed * dt;
+	drone.y += Math.sin(drone.facing) * drone.speed * dt;
+	if (distance < drone.radius + PLAYER_RADIUS + 4) crashDrone(state, drone, events);
 }
 
 function updateEnemies(state: RaidState, random: Random, dtMs: number, events: RaidEvent[]) {
 	const { player, map } = state;
 	const dt = dtMs / 1000;
 	for (const enemy of state.enemies) {
-		if (!active(state)) return;
+		if (!active(state)) break;
+		if (enemy.hp <= 0) continue;
 		enemy.attackMs = Math.max(0, enemy.attackMs - dtMs);
 		enemy.flashMs = Math.max(0, enemy.flashMs - dtMs);
 		const dx = player.x - enemy.x;
@@ -939,14 +1498,21 @@ function updateEnemies(state: RaidState, random: Random, dtMs: number, events: R
 		const distance = Math.hypot(dx, dy) || 1;
 		const toX = dx / distance;
 		const toY = dy / distance;
+
+		if (enemy.flying) {
+			flyDrone(state, enemy, dt, distance, events);
+			continue;
+		}
 		enemy.facing = Math.atan2(dy, dx);
 
+		const spec = ARCHETYPE_SPECS[enemy.archetype];
 		let wantX = toX;
 		let wantY = toY;
 		let speed = enemy.speed;
 
-		if (enemy.archetype === 'ranged') {
-			const keep = ARCHETYPE_SPECS.ranged.keepDistance;
+		// Enemies that fight from afar hold their distance and circle the player
+		if (spec.keepDistance > 0) {
+			const keep = spec.keepDistance;
 			const tangentX = -toY * enemy.strafe;
 			const tangentY = toX * enemy.strafe;
 			if (distance > keep + 40) {
@@ -960,12 +1526,65 @@ function updateEnemies(state: RaidState, random: Random, dtMs: number, events: R
 				wantY = tangentY;
 				speed *= 0.5;
 			}
+			if (enemy.attackMs <= 0) rangedAttack(state, random, enemy, distance, toX, toY, events);
+		}
+
+		if (enemy.archetype === 'boss') {
+			speed = updateBoss(state, enemy, dtMs, events) ? 0 : speed;
+		}
+
+		const direction =
+			speed > 0 ? steer(map.obstacles, enemy.x, enemy.y, enemy.radius, wantX, wantY) : null;
+		walk(
+			state,
+			enemy,
+			direction ? direction.x * speed : 0,
+			direction ? direction.y * speed : 0,
+			dt
+		);
+		enemy.phase += dt * Math.hypot(enemy.vx, enemy.vy) * 0.06;
+
+		// Contact damage for everyone that walks into the player; spikes hurt them back
+		if (
+			spec.keepDistance === 0 &&
+			enemy.attackMs <= 0 &&
+			distance < enemy.radius + PLAYER_RADIUS + 4
+		) {
+			enemy.attackMs = spec.attackMs;
+			const dealt = hurtPlayer(state, enemy.damage, events);
+			if (dealt > 0 && perkOf(state.loadout.vest) === 'spikes') {
+				events.push({ type: 'spikes', x: enemy.x, y: enemy.y });
+				const reflect =
+					enemy.damage * SPIKES_REFLECT * threatDamage(minutesOf(state)) * state.map.difficulty;
+				damageEnemy(state, enemy, reflect, false, events);
+			}
+		}
+	}
+	state.enemies = state.enemies.filter((enemy) => enemy.hp > 0);
+	separate(state);
+}
+
+/** The attacks of the enemies that keep their distance: shots, heals and shells */
+function rangedAttack(
+	state: RaidState,
+	random: Random,
+	enemy: Enemy,
+	distance: number,
+	toX: number,
+	toY: number,
+	events: RaidEvent[]
+) {
+	const { player, map } = state;
+	const spec = ARCHETYPE_SPECS[enemy.archetype];
+	const keep = spec.keepDistance;
+	const reload = () => (enemy.attackMs = spec.attackMs * (0.85 + random() * 0.3));
+	switch (enemy.archetype) {
+		case 'ranged':
 			if (
-				enemy.attackMs <= 0 &&
 				distance < keep + 140 &&
 				lineOfSight(map.obstacles, enemy.x, enemy.y, player.x, player.y)
 			) {
-				enemy.attackMs = ARCHETYPE_SPECS.ranged.attackMs * (0.85 + random() * 0.3);
+				reload();
 				state.enemyBullets.push({
 					x: enemy.x + toX * enemy.radius,
 					y: enemy.y + toY * enemy.radius,
@@ -977,30 +1596,99 @@ function updateEnemies(state: RaidState, random: Random, dtMs: number, events: R
 				});
 				events.push({ type: 'enemy-shot', x: enemy.x, y: enemy.y });
 			}
+			return;
+		case 'medic': {
+			// A pulse only when someone nearby needs it
+			const patients = state.enemies.filter(
+				(other) =>
+					other !== enemy &&
+					other.hp > 0 &&
+					other.hp < other.maxHp &&
+					Math.hypot(other.x - enemy.x, other.y - enemy.y) < MEDIC_HEAL_RADIUS + other.radius
+			);
+			if (patients.length === 0) {
+				enemy.attackMs = 400;
+				return;
+			}
+			reload();
+			for (const other of patients) {
+				const share = other.archetype === 'boss' ? MEDIC_BOSS_HEAL_SHARE : MEDIC_HEAL_SHARE;
+				other.hp = Math.min(other.maxHp, other.hp + other.maxHp * share);
+			}
+			events.push({ type: 'medic-heal', x: enemy.x, y: enemy.y });
+			return;
 		}
+		case 'mortar':
+			if (distance > keep + 160) return;
+			reload();
+			lobShell(state, random, enemy, 30, MORTAR_RADIUS, MORTAR_FLIGHT_MS, false);
+			events.push({ type: 'shell-launch', x: enemy.x, y: enemy.y, big: false });
+			return;
+		case 'artillery':
+			if (distance > keep + 240) return;
+			reload();
+			for (let i = 0; i < ARTILLERY_SHELLS; i++) {
+				lobShell(
+					state,
+					random,
+					enemy,
+					i === 0 ? 20 : ARTILLERY_SCATTER,
+					ARTILLERY_RADIUS,
+					ARTILLERY_FLIGHT_MS + i * 160,
+					true
+				);
+			}
+			events.push({ type: 'shell-launch', x: enemy.x, y: enemy.y, big: true });
+			return;
+	}
+}
 
-		if (enemy.archetype === 'boss') {
-			speed = updateBoss(state, enemy, dtMs, events) ? 0 : speed;
+/** Fires a shell at the player's spot, give or take some scatter */
+function lobShell(
+	state: RaidState,
+	random: Random,
+	from: Enemy,
+	scatter: number,
+	radius: number,
+	flightMs: number,
+	big: boolean
+) {
+	const { player, map } = state;
+	const angle = random() * Math.PI * 2;
+	const off = random() * scatter;
+	state.shells.push({
+		id: state.nextId++,
+		fromX: from.x,
+		fromY: from.y,
+		x: Math.max(0, Math.min(map.width, player.x + Math.cos(angle) * off)),
+		y: Math.max(0, Math.min(map.height, player.y + Math.sin(angle) * off)),
+		ageMs: 0,
+		flightMs,
+		radius,
+		damage: from.damage,
+		big
+	});
+}
+
+function updateShells(state: RaidState, dtMs: number, events: RaidEvent[]) {
+	const { player } = state;
+	const kept: Shell[] = [];
+	for (const shell of state.shells) {
+		if (!active(state)) {
+			kept.push(shell);
+			continue;
 		}
-
-		if (speed > 0) {
-			const direction = steer(map.obstacles, enemy.x, enemy.y, enemy.radius, wantX, wantY);
-			enemy.x += direction.x * speed * dt;
-			enemy.y += direction.y * speed * dt;
-			enemy.phase += dt * speed * 0.06;
+		shell.ageMs += dtMs;
+		if (shell.ageMs < shell.flightMs) {
+			kept.push(shell);
+			continue;
 		}
-
-		// Contact damage for everyone that walks into the player
-		if (
-			enemy.archetype !== 'ranged' &&
-			enemy.attackMs <= 0 &&
-			distance < enemy.radius + PLAYER_RADIUS + 4
-		) {
-			enemy.attackMs = ARCHETYPE_SPECS[enemy.archetype].attackMs;
-			hurtPlayer(state, enemy.damage, events);
+		events.push({ type: 'shell-burst', x: shell.x, y: shell.y, radius: shell.radius });
+		if (Math.hypot(player.x - shell.x, player.y - shell.y) < shell.radius + PLAYER_RADIUS * 0.5) {
+			hurtPlayer(state, shell.damage, events);
 		}
 	}
-	separate(state);
+	state.shells = kept;
 }
 
 /** Runs the boss's slam and volley; true while it stands still winding up */
@@ -1046,13 +1734,15 @@ function updateBoss(state: RaidState, boss: Enemy, dtMs: number, events: RaidEve
 	return false;
 }
 
-/** Keeps enemies from stacking on one spot, and out of the cover */
+/** Keeps enemies from stacking on one spot, and out of the cover (drones fly over it) */
 function separate(state: RaidState) {
-	const { enemies, map } = state;
+	const { enemies } = state;
 	for (let i = 0; i < enemies.length; i++) {
 		const a = enemies[i];
 		for (let j = i + 1; j < enemies.length; j++) {
 			const b = enemies[j];
+			// Drones fly over the heads of those on the ground
+			if (a.flying !== b.flying) continue;
 			const dx = b.x - a.x;
 			const dy = b.y - a.y;
 			const min = a.radius + b.radius;
@@ -1068,7 +1758,7 @@ function separate(state: RaidState) {
 			b.x += (dx / distance) * push * shareB;
 			b.y += (dy / distance) * push * shareB;
 		}
-		resolveCircle(a, a.radius, map.obstacles, map.width, map.height);
+		keepInside(state, a);
 	}
 }
 
@@ -1095,6 +1785,9 @@ function moveEnemyBullets(state: RaidState, dtMs: number, events: RaidEvent[]) {
 	state.enemyBullets = kept;
 }
 
+// ---------------------------------------------------------------------------------------------
+// Loot
+
 function updateLoot(state: RaidState, dtMs: number, events: RaidEvent[]) {
 	const { player } = state;
 	const dt = dtMs / 1000;
@@ -1102,7 +1795,9 @@ function updateLoot(state: RaidState, dtMs: number, events: RaidEvent[]) {
 	for (const loot of state.loot) {
 		loot.ageMs += dtMs;
 		const gear = loot.drop.type === 'gear';
-		if (!gear && loot.ageMs > LOOT_LIFETIME_MS) continue;
+		// Gear and crystals stay until picked up; the small stuff fades after a while
+		const lasting = gear || loot.drop.type === 'crystal';
+		if (!lasting && loot.ageMs > LOOT_LIFETIME_MS) continue;
 		const dx = player.x - loot.x;
 		const dy = player.y - loot.y;
 		const distance = Math.hypot(dx, dy);
@@ -1135,6 +1830,14 @@ function collect(state: RaidState, loot: Loot, events: RaidEvent[]) {
 			state.gold += drop.amount;
 			events.push({ type: 'gold', amount: drop.amount, x: loot.x, y: loot.y });
 			break;
+		case 'scrap':
+			state.scrap += drop.amount;
+			events.push({ type: 'scrap', amount: drop.amount, x: loot.x, y: loot.y });
+			break;
+		case 'crystal':
+			state.crystals.push(drop.crystal);
+			events.push({ type: 'crystal', crystal: drop.crystal, x: loot.x, y: loot.y });
+			break;
 		case 'medkit': {
 			const amount = Math.min(
 				player.maxHp - player.hp,
@@ -1158,22 +1861,19 @@ function collect(state: RaidState, loot: Loot, events: RaidEvent[]) {
 			break;
 		}
 		case 'armor-kit': {
-			// Upgrades the weaker piece; with nothing worn it hands out a fresh vest or helmet
-			const { helmet, vest } = loadout;
+			// Hands out a fresh vest, helmet or boots if one is missing, else upgrades the weakest
+			const missing = (['vest', 'helmet', 'boots'] as const).find((slot) => !loadout[slot]);
 			let slot: ArmorSlot;
 			let fresh = false;
-			if (!vest) {
-				slot = 'vest';
-				loadout.vest = makeArmor('vest');
-				fresh = true;
-			} else if (!helmet) {
-				slot = 'helmet';
-				loadout.helmet = makeArmor('helmet');
+			if (missing) {
+				slot = missing;
+				loadout[slot] = makeArmor(slot);
 				fresh = true;
 			} else {
-				slot = helmet.level < vest.level ? 'helmet' : 'vest';
-				if (slot === 'helmet') loadout.helmet = upgraded(helmet);
-				else loadout.vest = upgraded(vest);
+				slot = (['helmet', 'vest', 'boots'] as const).reduce((weakest, candidate) =>
+					loadout[candidate]!.level < loadout[weakest]!.level ? candidate : weakest
+				);
+				loadout[slot] = upgraded(loadout[slot]!);
 			}
 			refreshStats(state);
 			events.push({ type: 'armor-kit', slot, level: loadout[slot]!.level, fresh });
@@ -1201,10 +1901,16 @@ function spawn(state: RaidState, random: Random, dtMs: number, events: RaidEvent
 	state.spawnMs = spawnIntervalMs(minutes) * (0.7 + random() * 0.6);
 	const regular = state.enemies.filter((enemy) => enemy.archetype !== 'boss').length;
 	if (regular >= maxEnemies(minutes)) return;
-	const archetype = pickWeighted(random, archetypeWeights(minutes));
+	let archetype = pickWeighted(random, archetypeWeights(minutes));
+	// Support enemies are capped, so a raid never turns into a wall of artillery
+	const cap = ARCHETYPE_CAP[archetype];
+	if (cap !== undefined && state.enemies.filter((e) => e.archetype === archetype).length >= cap) {
+		archetype = 'grunt';
+	}
 	const variant = rollVariant(random, minutes);
-	// Fast ones come in small packs
-	const count = archetype === 'fast' && variant === 'normal' ? randomInt(random, 2, 4) : 1;
+	// Fast ones and drones come in small packs
+	const pack = (archetype === 'fast' || archetype === 'drone') && variant === 'normal';
+	const count = pack ? randomInt(random, 2, 4) : 1;
 	const first = spawnEnemy(state, random, archetype, variant);
 	if (!first) return;
 	for (let i = 1; i < count; i++) {
@@ -1234,6 +1940,7 @@ export function spawnEnemy(
 	const spec = ARCHETYPE_SPECS[archetype];
 	const variantSpec = VARIANT_SPECS[variant];
 	const radius = spec.radius * variantSpec.radius;
+	const flying = archetype === 'drone';
 	let spot = at ? { ...at } : null;
 	for (let attempt = 0; !spot && attempt < 10; attempt++) {
 		const angle = random() * Math.PI * 2;
@@ -1241,11 +1948,11 @@ export function spawnEnemy(
 		const x = player.x + Math.cos(angle) * distance;
 		const y = player.y + Math.sin(angle) * distance;
 		if (x < radius || y < radius || x > map.width - radius || y > map.height - radius) continue;
-		if (blocked(map.obstacles, x, y, radius)) continue;
+		if (!flying && blocked(map.obstacles, x, y, radius)) continue;
 		spot = { x, y };
 	}
 	if (!spot) return null;
-	resolveCircle(spot, radius, map.obstacles, map.width, map.height);
+	resolveCircle(spot, radius, flying ? [] : map.obstacles, map.width, map.height);
 	const minutes = minutesOf(state);
 	const hp = spec.hp * variantSpec.hp * threatHp(minutes) * map.difficulty;
 	const enemy: Enemy = {
@@ -1254,6 +1961,8 @@ export function spawnEnemy(
 		variant,
 		x: spot.x,
 		y: spot.y,
+		vx: 0,
+		vy: 0,
 		hp,
 		maxHp: hp,
 		speed: spec.speed * variantSpec.speed,
@@ -1261,12 +1970,19 @@ export function spawnEnemy(
 		radius,
 		attackMs: 600,
 		flashMs: 0,
-		facing: 0,
+		facing: Math.atan2(player.y - spot.y, player.x - spot.x),
 		slamMs: BOSS_SLAM_EVERY_MS * 0.6,
 		slamWindupMs: 0,
 		volleyMs: BOSS_VOLLEY_EVERY_MS,
 		strafe: random() < 0.5 ? 1 : -1,
-		phase: random() * 10
+		phase: random() * 10,
+		flying,
+		jammed: false,
+		jamTargetId: null,
+		jamMs: 0,
+		burnMs: 0,
+		burnDps: 0,
+		burnTickMs: 0
 	};
 	state.enemies.push(enemy);
 	return enemy;

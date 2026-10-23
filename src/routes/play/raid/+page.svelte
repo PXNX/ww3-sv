@@ -5,20 +5,19 @@
 	import RaidCanvas from '#lib/components/RaidCanvas.svelte';
 	import RaidItemIcon from '#lib/components/RaidItemIcon.svelte';
 	import RaidLobby from '#lib/components/RaidLobby.svelte';
+	import RaidResults from '#lib/components/RaidResults.svelte';
 	import RaidSkillIcon from '#lib/components/RaidSkillIcon.svelte';
 	import TutorialModal from '#lib/components/TutorialModal.svelte';
 	import {
-		formatTime,
-		itemName,
-		RARITY_NAMES,
+		PERK_HINTS,
+		PERK_NAMES,
 		SKILL_HINTS,
 		SKILL_NAMES,
 		WEAPON_NAMES,
 		WEAPON_TRAITS
 	} from '#lib/components/raidText.js';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
-	import { RARITIES, RARITY_COLOR, WEAPON_KINDS, WEAPONS } from '#lib/game/raid/config.js';
-	import type { GearItem } from '#lib/game/raid/items.js';
+	import { ARMOR_PERKS, WEAPON_KINDS, WEAPONS } from '#lib/game/raid/config.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
 	import { RaidGame } from '#lib/stores/raidGame.svelte.js';
@@ -57,14 +56,6 @@
 
 	const inRaid = $derived(game.status !== 'lobby');
 	const result = $derived(game.result);
-	/** The rarest piece found, named under the loot icons */
-	const topFind = $derived(
-		result?.gear.reduce<GearItem | null>(
-			(best, item) =>
-				!best || RARITIES.indexOf(item.rarity) > RARITIES.indexOf(best.rarity) ? item : best,
-			null
-		) ?? null
-	);
 </script>
 
 <GameShell
@@ -156,7 +147,15 @@
 			{/each}
 		</ul>
 		<p>{m.raid_tutorial_variants()}</p>
+		<p>{m.raid_tutorial_enemies()}</p>
 		<p>{m.raid_tutorial_loot()}</p>
+		<ul class="flex flex-col gap-1 text-sm">
+			{#each ARMOR_PERKS as perk (perk)}
+				<li><strong>{PERK_NAMES[perk]()}:</strong> {PERK_HINTS[perk]()}</li>
+			{/each}
+		</ul>
+		<p>{m.raid_tutorial_crystals()}</p>
+		<p>{m.raid_tutorial_season()}</p>
 		<p>{m.raid_tutorial_revive()}</p>
 		<p class="hidden text-sm sm:block">{m.raid_keyboard_hint()}</p>
 	</TutorialModal>
@@ -172,75 +171,7 @@
 		onRetry={start}
 	>
 		{#if result}
-			<dl class="grid grid-cols-3 gap-2 font-display text-sm">
-				<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
-					<dt class="font-bold">{m.raid_stat_time()}</dt>
-					<dd class="text-xl font-bold tabular-nums">{formatTime(result.timeMs)}</dd>
-				</div>
-				<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
-					<dt class="font-bold">{m.raid_stat_kills()}</dt>
-					<dd class="text-xl font-bold tabular-nums">{result.kills}</dd>
-				</div>
-				<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
-					<dt class="font-bold">{m.raid_stat_bosses()}</dt>
-					<dd class="text-xl font-bold tabular-nums">{result.bossKills}</dd>
-				</div>
-				<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
-					<dt class="font-bold">{m.raid_stat_elites()}</dt>
-					<dd class="text-xl font-bold tabular-nums">{result.eliteKills}</dd>
-				</div>
-				<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
-					<dt class="font-bold">{m.raid_stat_xp()}</dt>
-					<dd class="text-xl font-bold tabular-nums">{result.xp}</dd>
-				</div>
-				<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
-					<dt class="font-bold">{m.raid_stat_gold()}</dt>
-					<dd class="text-xl font-bold tabular-nums">{result.gold}</dd>
-				</div>
-			</dl>
-			{#if result.levelsGained > 0}
-				<p
-					dir="auto"
-					class="pop-in rounded-md border-2 border-ink bg-explosion-yellow p-2 text-center font-display font-bold"
-				>
-					{m.raid_result_level_up({ level: result.level })}
-				</p>
-			{/if}
-			<div class="flex flex-col gap-1">
-				<h3 class="font-display text-sm font-bold">{m.raid_result_loot()}</h3>
-				{#if result.gear.length === 0}
-					<p class="text-sm opacity-80">{m.raid_result_no_loot()}</p>
-				{:else}
-					<ul class="flex flex-wrap gap-1.5">
-						{#each result.gear as item (item.id)}
-							<li
-								title="{itemName(item)}, {RARITY_NAMES[item.rarity]()}, {m.raid_item_level({
-									level: item.level
-								})}"
-							>
-								<RaidItemIcon
-									kind={item.type === 'weapon' ? item.kind : item.slot}
-									rarity={item.rarity}
-									class="size-10"
-								/>
-								<span class="sr-only">{itemName(item)}, {RARITY_NAMES[item.rarity]()}</span>
-							</li>
-						{/each}
-					</ul>
-					{#if topFind}
-						<p dir="auto" class="text-xs font-bold" style:color={RARITY_COLOR[topFind.rarity]}>
-							{RARITY_NAMES[topFind.rarity]()} · {itemName(topFind)} · {m.raid_item_level({
-								level: topFind.level
-							})}
-						</p>
-					{/if}
-				{/if}
-				{#if result.salvaged > 0}
-					<p dir="auto" class="text-xs">
-						{m.raid_result_salvaged({ count: result.salvaged, gold: result.salvageGold })}
-					</p>
-				{/if}
-			</div>
+			<RaidResults {result} reducedMotion={game.reducedMotion} />
 			<button type="button" class="btn-chunky text-sm" onclick={() => game.backToLobby()}>
 				{m.raid_back_to_lobby()}
 			</button>

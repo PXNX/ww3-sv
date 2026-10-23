@@ -3,25 +3,44 @@
  * flat colours). The camera follows the player and shows VIEW_HEIGHT units of the map in
  * landscape. Each map has its own ground, cover and enemy cast: soldiers, drones and a crowned
  * tank in the sunflower field, oil blobs, scorpions and a kraken in the strait, penguins, yetis
- * and a polar bear icebreaker in the arctic. Super enemies wear a golden aura, mega ones a red one.
+ * and a polar bear icebreaker in the arctic. Kamikaze drones, medics, mortar crews and Pion guns
+ * turn up everywhere. Super enemies wear a golden aura, mega ones a red one. Drones are drawn
+ * above the cover they fly over, with their shadow far below them.
  */
 import {
+	ARTILLERY_RADIUS,
 	BOSS_SLAM_RADIUS,
+	CRYSTAL_COLOR,
 	BOSS_SLAM_WINDUP_MS,
 	GRENADE_FUSE_MS,
 	MINE_ARM_MS,
 	MINE_TRIGGER_RADIUS,
 	GRENADE_RADIUS,
+	JAMMER_RADIUS,
+	MEDIC_HEAL_RADIUS,
+	NEST_LIFETIME_MS,
 	PLAYER_RADIUS,
 	RARITY_COLOR,
 	VIEW_HEIGHT,
 	VIEW_MAX_WIDTH,
+	type CrystalKind,
 	type MapId,
+	type Rarity,
 	type WeaponKind
 } from './config';
-import type { GearItem } from './items';
-import type { Decor, Obstacle } from './maps';
-import type { Bullet, Enemy, Loot, Mine, RaidState } from './state';
+import { perkOf, type GearItem } from './items';
+import type { Decor, Obstacle, Terrain } from './maps';
+import type {
+	Bullet,
+	Enemy,
+	FirePool,
+	FriendlyDrone,
+	Loot,
+	Mine,
+	Nest,
+	RaidState,
+	Shell
+} from './state';
 
 const INK = '#111111';
 const PAPER = '#ffffff';
@@ -63,6 +82,10 @@ export type Effect =
 export interface SceneExtras {
 	effects: readonly Effect[];
 	reducedMotion: boolean;
+	/** Closer than the raid's camera, for small views such as the weapon demos */
+	zoom?: number;
+	/** Where the camera looks, if not at the player */
+	center?: { x: number; y: number };
 }
 
 export interface Camera {
@@ -81,17 +104,23 @@ export function cameraScale(cssWidth: number, cssHeight: number): number {
 	return Math.max(shortSide / VIEW_HEIGHT, cssWidth / VIEW_MAX_WIDTH, 0.01);
 }
 
-export function cameraFor(state: RaidState, cssWidth: number, cssHeight: number): Camera {
-	const scale = cameraScale(cssWidth, cssHeight);
+export function cameraFor(
+	state: RaidState,
+	cssWidth: number,
+	cssHeight: number,
+	zoom = 1,
+	center: { x: number; y: number } = state.player
+): Camera {
+	const scale = cameraScale(cssWidth, cssHeight) * zoom;
 	const width = cssWidth / scale;
 	const height = cssHeight / scale;
-	const { map, player } = state;
+	const { map } = state;
 	const clamp = (value: number, size: number, total: number) =>
 		size >= total ? (total - size) / 2 : Math.max(0, Math.min(total - size, value - size / 2));
 	return {
 		scale,
-		left: clamp(player.x, width, map.width),
-		top: clamp(player.y, height, map.height),
+		left: clamp(center.x, width, map.width),
+		top: clamp(center.y, height, map.height),
 		width,
 		height
 	};
@@ -114,7 +143,7 @@ export function drawRaid(
 	cssHeight: number,
 	extras: SceneExtras
 ) {
-	const camera = cameraFor(state, cssWidth, cssHeight);
+	const camera = cameraFor(state, cssWidth, cssHeight, extras.zoom, extras.center);
 	context.save();
 	context.fillStyle = state.map.palette.edge;
 	context.fillRect(0, 0, cssWidth, cssHeight);
@@ -138,37 +167,55 @@ function drawWorld(
 	context.strokeStyle = INK;
 	context.strokeRect(0, 0, map.width, map.height);
 
+	for (const patch of map.terrain) {
+		if (visible(camera, patch.x, patch.y, patch.r)) drawTerrain(context, patch, time);
+	}
 	for (const decor of map.decor) {
 		if (visible(camera, decor.x, decor.y, decor.size)) drawDecor(context, decor, state.mapId);
 	}
 	for (const enemy of state.enemies) {
 		if (enemy.archetype === 'boss' && enemy.slamWindupMs > 0) drawSlamWarning(context, enemy);
 	}
+	for (const shell of state.shells) drawShellMarker(context, shell);
+	for (const fire of state.fires) {
+		if (visible(camera, fire.x, fire.y, fire.radius)) drawFirePool(context, fire, time);
+	}
 	for (const mine of state.mines) drawMine(context, mine, time);
+	for (const nest of state.nests) drawNest(context, nest, time);
 	for (const loot of state.loot) {
 		if (visible(camera, loot.x, loot.y, 60)) drawLoot(context, loot, time);
 	}
-	// Shadows under everything that stands
+	// Shadows under everything that stands; flying drones cast theirs far below
 	context.fillStyle = 'rgba(0, 0, 0, 0.16)';
 	for (const enemy of state.enemies) {
-		if (!visible(camera, enemy.x, enemy.y, enemy.radius + 20)) continue;
-		ellipse(context, enemy.x + 4, enemy.y + enemy.radius * 0.7, enemy.radius, enemy.radius * 0.4);
+		if (!visible(camera, enemy.x, enemy.y, enemy.radius + 40)) continue;
+		if (enemy.flying) ellipse(context, enemy.x + 10, enemy.y + 34, enemy.radius * 0.8, 5);
+		else
+			ellipse(context, enemy.x + 4, enemy.y + enemy.radius * 0.7, enemy.radius, enemy.radius * 0.4);
 	}
+	for (const drone of state.drones) ellipse(context, drone.x + 8, drone.y + 28, 9, 4);
 	ellipse(context, state.player.x + 3, state.player.y + 15, 20, 8);
 
 	for (const enemy of state.enemies) {
-		if (visible(camera, enemy.x, enemy.y, enemy.radius + 30))
+		if (!enemy.flying && visible(camera, enemy.x, enemy.y, enemy.radius + 30))
 			drawEnemy(context, enemy, state.mapId, time);
 	}
 	drawPlayer(context, state, time);
 	for (const obstacle of map.obstacles) {
 		if (visible(camera, obstacle.x, obstacle.y, obstacle.r + 20)) drawObstacle(context, obstacle);
 	}
-	for (const bullet of state.bullets) drawBullet(context, bullet);
+	// Drones fly above the cover
+	for (const enemy of state.enemies) {
+		if (enemy.flying && visible(camera, enemy.x, enemy.y, enemy.radius + 30))
+			drawEnemy(context, enemy, state.mapId, time);
+	}
+	for (const drone of state.drones) drawFriendlyDrone(context, drone, time);
+	for (const bullet of state.bullets) drawBullet(context, bullet, time);
 	for (const bullet of state.enemyBullets) {
 		circle(context, bullet.x, bullet.y, bullet.big ? 8 : 6, '#ff6a2b', 2.5);
 		circle(context, bullet.x - 1.5, bullet.y - 1.5, 2, YELLOW, 0);
 	}
+	for (const shell of state.shells) drawShell(context, shell);
 	for (const grenade of state.grenades)
 		drawGrenade(context, grenade.fromX, grenade.fromY, grenade.x, grenade.y, grenade.ageMs);
 	for (const enemy of state.enemies) {
@@ -522,7 +569,9 @@ const WEAPON_LOOK: Record<WeaponKind, { length: number; width: number; color: st
 	marksman: { length: 42, width: 5, color: '#2a2f3a' },
 	shotgun: { length: 26, width: 9, color: '#6b4520' },
 	smg: { length: 22, width: 7, color: '#2b2b2b' },
-	launcher: { length: 36, width: 12, color: '#55603a' }
+	launcher: { length: 36, width: 12, color: '#55603a' },
+	flamethrower: { length: 30, width: 10, color: '#8a2f1f' },
+	dronenest: { length: 16, width: 14, color: '#4a5a6a' }
 };
 
 function drawPlayer(context: CanvasRenderingContext2D, state: RaidState, time: number) {
@@ -553,11 +602,37 @@ function drawPlayer(context: CanvasRenderingContext2D, state: RaidState, time: n
 		context.globalAlpha = player.invulnerableMs > 0 && Math.floor(time / 90) % 2 === 0 ? 0.55 : 1;
 	}
 
-	// Boots
-	if (player.moving) {
-		const swing = Math.sin(player.stepPhase) * 6;
-		circle(context, x - 7, y + 14 + swing, 5, '#3b2a1a', 2);
-		circle(context, x + 7, y + 14 - swing, 5, '#3b2a1a', 2);
+	// Boots, in the colour of their rarity when worn; fire boots glow
+	const boots = loadout.boots;
+	const swing = player.moving ? Math.sin(player.stepPhase) * 6 : 0;
+	const bootColor = boots ? RARITY_COLOR[boots.rarity] : '#3b2a1a';
+	if (perkOf(boots) === 'trail') {
+		context.globalAlpha = 0.5 + Math.sin(time / 60) * 0.2;
+		circle(context, x - 7, y + 17 + swing, 6, '#ff8a2b', 0);
+		circle(context, x + 7, y + 17 - swing, 6, '#ff8a2b', 0);
+		context.globalAlpha = 1;
+	}
+	if (player.moving || boots) {
+		circle(context, x - 7, y + 14 + swing, 5, bootColor, 2);
+		circle(context, x + 7, y + 14 - swing, 5, bootColor, 2);
+	}
+	// Spiked vest: a ring of spikes around the body
+	if (perkOf(loadout.vest) === 'spikes') {
+		context.fillStyle = '#c9ced4';
+		context.strokeStyle = INK;
+		context.lineWidth = 1.5;
+		for (let i = 0; i < 10; i++) {
+			const angle = (i / 10) * Math.PI * 2;
+			const cos = Math.cos(angle);
+			const sin = Math.sin(angle);
+			context.beginPath();
+			context.moveTo(x + cos * (PLAYER_RADIUS + 8), y + sin * (PLAYER_RADIUS + 8));
+			context.lineTo(x + cos * PLAYER_RADIUS - sin * 4, y + sin * PLAYER_RADIUS + cos * 4);
+			context.lineTo(x + cos * PLAYER_RADIUS + sin * 4, y + sin * PLAYER_RADIUS - cos * 4);
+			context.closePath();
+			context.fill();
+			context.stroke();
+		}
 	}
 	facingFrame(context, x, y, player.aim, () => {
 		roundRect(context, 4, -look.width / 2 + 6, look.length, look.width, 2, look.color, 2.5);
@@ -595,6 +670,25 @@ function drawPlayer(context: CanvasRenderingContext2D, state: RaidState, time: n
 	context.stroke();
 	eyes(context, x, y - 4, player.aim, 4, 2.6, false);
 	context.globalAlpha = 1;
+
+	// Jammer helmet: an antenna, and a faint ring showing its reach
+	if (perkOf(loadout.helmet) === 'jammer') {
+		context.strokeStyle = INK;
+		context.lineWidth = 2;
+		context.beginPath();
+		context.moveTo(x + 6, y - 17);
+		context.lineTo(x + 12, y - 32);
+		context.stroke();
+		circle(context, x + 12, y - 32, 3, player.jammerMs > 0 ? '#5a1a1a' : RED, 1.5);
+		context.beginPath();
+		context.arc(x, y, JAMMER_RADIUS, 0, Math.PI * 2);
+		context.setLineDash([3, 12]);
+		context.lineDashOffset = time / 40;
+		context.lineWidth = 2;
+		context.strokeStyle = 'rgba(61, 201, 245, 0.35)';
+		context.stroke();
+		context.setLineDash([]);
+	}
 
 	// Focus: a red crosshair over the head with one dot per certain crit left
 	if (player.focusShots > 0) {
@@ -644,7 +738,187 @@ function drawEnemy(context: CanvasRenderingContext2D, enemy: Enemy, mapId: MapId
 		context.restore();
 	}
 	const flash = enemy.flashMs > 0;
-	drawCast(context, enemy, mapId, flash);
+	if (SUPPORT.includes(enemy.archetype)) drawSupport(context, enemy, mapId, flash, time);
+	else drawCast(context, enemy, mapId, flash);
+	if (enemy.burnMs > 0) {
+		drawFlames(context, enemy.x, enemy.y - enemy.radius * 0.3, enemy.radius, time + enemy.id * 77);
+	}
+}
+
+/** Small flickering flames over something burning */
+function drawFlames(
+	context: CanvasRenderingContext2D,
+	x: number,
+	y: number,
+	r: number,
+	time: number
+) {
+	for (let i = 0; i < 3; i++) {
+		const fx = x + (i - 1) * r * 0.55;
+		const flicker = 1 + Math.sin(time / 70 + i * 2.1) * 0.25;
+		const h = r * 0.75 * flicker * (i === 1 ? 1.3 : 1);
+		const w = r * 0.32;
+		context.beginPath();
+		context.moveTo(fx - w, y);
+		context.quadraticCurveTo(fx - w, y - h * 0.6, fx, y - h);
+		context.quadraticCurveTo(fx + w, y - h * 0.6, fx + w, y);
+		context.closePath();
+		context.fillStyle = '#ff6a1a';
+		context.fill();
+		// Thin outlines on small flames, or they turn into dark ticks
+		context.lineWidth = Math.min(1.5, r * 0.07);
+		context.strokeStyle = INK;
+		context.stroke();
+		context.beginPath();
+		context.moveTo(fx - w * 0.5, y);
+		context.quadraticCurveTo(fx, y - h * 0.7, fx + w * 0.5, y);
+		context.fillStyle = YELLOW;
+		context.fill();
+	}
+}
+
+const SUPPORT: readonly Enemy['archetype'][] = ['drone', 'medic', 'mortar', 'artillery'];
+
+/** Camouflage of the enemies that turn up on every map */
+const CAMO: Record<MapId, { main: string; dark: string }> = {
+	sunflower: { main: '#6d7c45', dark: '#4b5a2e' },
+	strait: { main: '#c9a35d', dark: '#8a6a32' },
+	arctic: { main: '#e6eef5', dark: '#9fb3c4' }
+};
+
+/** A medic glows for a moment after each healing pulse */
+const HEAL_GLOW_MS = 2200;
+
+/** Kamikaze drones, medics, mortar crews and Pion guns, in each map's camouflage */
+function drawSupport(
+	context: CanvasRenderingContext2D,
+	enemy: Enemy,
+	mapId: MapId,
+	flash: boolean,
+	time: number
+) {
+	const { x, y, radius: r, facing } = enemy;
+	const camo = CAMO[mapId];
+	switch (enemy.archetype) {
+		case 'drone': {
+			const wobble = enemy.jammed ? Math.sin(time / 40) * 0.6 : 0;
+			facingFrame(context, x, y, facing + wobble, () => {
+				context.lineWidth = 3;
+				context.strokeStyle = INK;
+				for (const [dx, dy] of [
+					[-1, -1],
+					[1, -1],
+					[-1, 1],
+					[1, 1]
+				]) {
+					context.beginPath();
+					context.moveTo(0, 0);
+					context.lineTo(dx * r * 0.9, dy * r * 0.9);
+					context.stroke();
+					// Spinning props
+					context.globalAlpha = 0.55;
+					context.beginPath();
+					context.ellipse(
+						dx * r * 0.9,
+						dy * r * 0.9,
+						r * 0.55,
+						r * 0.18,
+						enemy.phase + dx,
+						0,
+						Math.PI * 2
+					);
+					context.fillStyle = '#d8dde2';
+					context.fill();
+					context.globalAlpha = 1;
+				}
+				roundRect(context, -r * 0.5, -r * 0.35, r * 1.1, r * 0.7, 4, tint(flash, '#3d3d3d'), 2);
+				// The warhead strapped under it, pointing forward
+				roundRect(
+					context,
+					r * 0.4,
+					-r * 0.22,
+					r * 0.75,
+					r * 0.44,
+					r * 0.22,
+					tint(flash, camo.dark),
+					2
+				);
+				const lit = Math.floor(time / 120 + enemy.id) % 2 === 0;
+				circle(context, -r * 0.2, 0, r * 0.14, lit ? RED : '#5a1a1a', 0);
+			});
+			if (enemy.jammed) {
+				// Sparks: it has lost its link
+				context.strokeStyle = '#3dc9f5';
+				context.lineWidth = 2.5;
+				context.beginPath();
+				context.moveTo(x - r, y - r * 1.2);
+				context.lineTo(x - r * 0.3, y - r * 0.8);
+				context.lineTo(x - r * 0.1, y - r * 1.4);
+				context.lineTo(x + r * 0.6, y - r);
+				context.stroke();
+			}
+			break;
+		}
+		case 'medic':
+			if (enemy.attackMs > HEAL_GLOW_MS) {
+				context.globalAlpha = 0.25;
+				circle(context, x, y, MEDIC_HEAL_RADIUS * 0.35, '#5bd16b', 0);
+				context.globalAlpha = 1;
+			}
+			facingFrame(context, x, y, facing, () => {
+				roundRect(context, -r * 1.05, -r * 0.55, r * 0.6, r * 1.1, 4, tint(flash, PAPER), 2);
+				context.fillStyle = RED;
+				context.fillRect(-r * 0.95, -r * 0.1, r * 0.4, r * 0.2);
+				context.fillRect(-r * 0.85, -r * 0.3, r * 0.2, r * 0.6);
+			});
+			circle(context, x, y, r, tint(flash, camo.main));
+			circle(context, x, y - r * 0.45, r * 0.55, tint(flash, PAPER), 2);
+			context.fillStyle = RED;
+			context.fillRect(x - r * 0.08, y - r * 0.8, r * 0.16, r * 0.5);
+			context.fillRect(x - r * 0.25, y - r * 0.63, r * 0.5, r * 0.16);
+			eyes(context, x, y + r * 0.2, facing, r * 0.3, r * 0.18);
+			break;
+		case 'mortar': {
+			// Base plate and tube towards the player, the crewman behind it
+			facingFrame(context, x, y, facing, () => {
+				circle(context, r * 0.7, 0, r * 0.45, '#5a5a5a', 2);
+				roundRect(context, r * 0.3, -r * 0.2, r * 1.2, r * 0.4, 3, tint(flash, camo.dark), 2);
+				circle(context, r * 1.5, 0, r * 0.22, INK, 0);
+			});
+			const bx = x - Math.cos(facing) * r * 0.3;
+			const by = y - Math.sin(facing) * r * 0.3;
+			circle(context, bx, by, r * 0.8, tint(flash, camo.main));
+			context.beginPath();
+			context.arc(bx, by - r * 0.15, r * 0.75, Math.PI, Math.PI * 2);
+			context.fillStyle = tint(flash, camo.dark);
+			context.fill();
+			context.lineWidth = 2;
+			context.strokeStyle = INK;
+			context.stroke();
+			eyes(context, bx, by + r * 0.05, facing, r * 0.25, r * 0.16);
+			break;
+		}
+		case 'artillery':
+			// The Pion: tracks, a hull, a turret and a very long gun
+			facingFrame(context, x, y, facing, () => {
+				roundRect(context, -r * 1.1, -r * 0.95, r * 2, r * 0.32, 6, '#2f3324');
+				roundRect(context, -r * 1.1, r * 0.63, r * 2, r * 0.32, 6, '#2f3324');
+				roundRect(context, -r, -r * 0.7, r * 1.8, r * 1.4, 8, tint(flash, camo.main));
+				roundRect(context, -r * 0.2, -r * 0.13, r * 2.6, r * 0.26, 3, tint(flash, camo.dark));
+				roundRect(context, r * 2.2, -r * 0.2, r * 0.35, r * 0.4, 2, tint(flash, camo.dark), 2);
+				roundRect(context, -r * 0.7, -r * 0.5, r * 0.9, r, 6, tint(flash, camo.dark));
+			});
+			eyes(
+				context,
+				x - Math.cos(facing) * r * 0.25,
+				y - Math.sin(facing) * r * 0.25,
+				facing,
+				r * 0.2,
+				r * 0.12
+			);
+			break;
+	}
+	if (enemy.variant === 'mega') drawCrown(context, x + r * 0.7, y - r * 0.9, r * 0.25, RED);
 }
 
 /** Picks the fill colour, or white while hit */
@@ -669,29 +943,18 @@ function drawCast(context: CanvasRenderingContext2D, enemy: Enemy, mapId: MapId,
 			eyes(context, x, y + r * 0.1, facing, r * 0.32, r * 0.2);
 			break;
 		case 'sunflower:fast':
-			for (const [dx, dy] of [
-				[-1, -1],
-				[1, -1],
-				[-1, 1],
-				[1, 1]
-			]) {
-				context.beginPath();
-				context.moveTo(x, y);
-				context.lineTo(x + dx * r, y + dy * r);
-				context.lineWidth = 3;
-				context.strokeStyle = INK;
-				context.stroke();
-				circle(context, x + dx * r, y + dy * r, r * 0.45, 'rgba(200,200,200,0.6)', 1.5);
-			}
-			circle(context, x, y, r * 0.6, tint(flash, '#3d3d3d'));
-			circle(
-				context,
-				x + Math.cos(facing) * r * 0.25,
-				y + Math.sin(facing) * r * 0.25,
-				r * 0.2,
-				RED,
-				0
-			);
+			// A sprinting scout with a red armband
+			circle(context, x, y, r, tint(flash, '#a3a37a'));
+			context.fillStyle = tint(flash, RED);
+			ellipse(context, x - r * 0.75, y + r * 0.1, r * 0.3, r * 0.42);
+			context.beginPath();
+			context.arc(x, y - r * 0.15, r * 0.9, Math.PI * 1.1, Math.PI * 1.9);
+			context.fillStyle = tint(flash, '#4b5a2e');
+			context.fill();
+			context.lineWidth = 2;
+			context.strokeStyle = INK;
+			context.stroke();
+			eyes(context, x, y + r * 0.1, facing, r * 0.32, r * 0.22);
 			break;
 		case 'sunflower:heavy':
 			facingFrame(context, x, y, facing, () => {
@@ -850,16 +1113,43 @@ function drawCast(context: CanvasRenderingContext2D, enemy: Enemy, mapId: MapId,
 			eyes(context, x, y - r * 0.2, facing, r * 0.28, r * 0.18);
 			break;
 		case 'arctic:fast':
+			// An arctic fox: bushy tail, pointed ears
+			facingFrame(context, x, y, facing, () => {
+				context.beginPath();
+				context.ellipse(
+					-r * 1.2,
+					Math.sin(enemy.phase) * r * 0.3,
+					r * 0.7,
+					r * 0.35,
+					0,
+					0,
+					Math.PI * 2
+				);
+				context.fillStyle = tint(flash, PAPER);
+				context.fill();
+				context.lineWidth = 2;
+				context.strokeStyle = INK;
+				context.stroke();
+				for (const side of [-1, 1]) {
+					context.beginPath();
+					context.moveTo(r * 0.2, side * r * 0.4);
+					context.lineTo(r * 0.5, side * r * 1.05);
+					context.lineTo(r * 0.75, side * r * 0.35);
+					context.closePath();
+					context.fill();
+					context.stroke();
+				}
+			});
 			circle(context, x, y, r, tint(flash, '#f4f9ff'));
-			context.strokeStyle = INK;
-			context.lineWidth = 2;
-			context.beginPath();
-			context.moveTo(x - r * 1.5, y);
-			context.lineTo(x + r * 1.5, y);
-			context.stroke();
-			circle(context, x - r * 1.5, y, r * 0.4, 'rgba(200,230,255,0.7)', 1.5);
-			circle(context, x + r * 1.5, y, r * 0.4, 'rgba(200,230,255,0.7)', 1.5);
-			eyes(context, x, y, facing, r * 0.3, r * 0.22);
+			circle(
+				context,
+				x + Math.cos(facing) * r * 0.9,
+				y + Math.sin(facing) * r * 0.9,
+				r * 0.18,
+				INK,
+				0
+			);
+			eyes(context, x, y, facing, r * 0.3, r * 0.2);
 			break;
 		case 'arctic:heavy':
 			for (let i = 0; i < 10; i++) {
@@ -1022,9 +1312,19 @@ function drawSlamWarning(context: CanvasRenderingContext2D, boss: Enemy) {
 // ---------------------------------------------------------------------------------------------
 // Shots, loot, effects
 
-function drawBullet(context: CanvasRenderingContext2D, bullet: Bullet) {
+function drawBullet(context: CanvasRenderingContext2D, bullet: Bullet, time: number) {
 	const { x, y, vx, vy, kind, crit } = bullet;
 	const angle = Math.atan2(vy, vx);
+	if (bullet.flame) {
+		// A puff of flame that swells and fades as it flies
+		const grown = Math.max(0, Math.min(1, 1 - bullet.rangeLeft / 210));
+		const size = 7 + grown * 13 + Math.sin(time / 40 + x) * 1.5;
+		context.globalAlpha = 0.9 - grown * 0.55;
+		circle(context, x, y, size, '#ff6a1a', 0);
+		circle(context, x, y, size * 0.55, YELLOW, 0);
+		context.globalAlpha = 1;
+		return;
+	}
 	facingFrame(context, x, y, angle, () => {
 		if (bullet.rail) {
 			context.lineCap = 'round';
@@ -1063,6 +1363,199 @@ function drawBullet(context: CanvasRenderingContext2D, bullet: Bullet) {
 		context.stroke();
 		context.lineCap = 'butt';
 	});
+}
+
+// ---------------------------------------------------------------------------------------------
+// Terrain, fire, nests, drones and shells
+
+function drawTerrain(context: CanvasRenderingContext2D, patch: Terrain, time: number) {
+	const { x, y, r, seed } = patch;
+	// A soft blob rather than a perfect circle
+	context.beginPath();
+	for (let i = 0; i < 14; i++) {
+		const angle = (i / 14) * Math.PI * 2;
+		const reach = r * (0.92 + ((seed * (i + 5)) % 11) / 100);
+		context.lineTo(x + Math.cos(angle) * reach, y + Math.sin(angle) * reach * 0.85);
+	}
+	context.closePath();
+	if (patch.kind === 'mud') {
+		context.fillStyle = 'rgba(96, 70, 38, 0.55)';
+		context.fill();
+		context.fillStyle = 'rgba(70, 50, 25, 0.5)';
+		for (let i = 0; i < 4; i++) {
+			const angle = seed + i * 1.7;
+			ellipse(
+				context,
+				x + Math.cos(angle) * r * 0.45,
+				y + Math.sin(angle) * r * 0.35,
+				r * 0.16,
+				r * 0.1
+			);
+		}
+		return;
+	}
+	if (patch.kind === 'oil') {
+		context.fillStyle = 'rgba(20, 16, 26, 0.82)';
+		context.fill();
+		context.lineWidth = 3;
+		context.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+		context.stroke();
+		const sheen = (time / 1500 + seed) % (Math.PI * 2);
+		context.fillStyle = 'rgba(150, 120, 255, 0.35)';
+		ellipse(context, x + Math.cos(sheen) * r * 0.2, y - r * 0.25, r * 0.4, r * 0.1);
+		context.fillStyle = 'rgba(80, 220, 200, 0.25)';
+		ellipse(context, x - r * 0.2, y + r * 0.2, r * 0.3, r * 0.08);
+		return;
+	}
+	// Ice: pale and glossy, with a few scratches
+	context.fillStyle = 'rgba(170, 220, 245, 0.75)';
+	context.fill();
+	context.lineWidth = 3;
+	context.strokeStyle = 'rgba(110, 170, 210, 0.8)';
+	context.stroke();
+	context.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+	context.lineWidth = 3;
+	context.beginPath();
+	context.moveTo(x - r * 0.5, y - r * 0.2);
+	context.lineTo(x - r * 0.15, y - r * 0.45);
+	context.moveTo(x + r * 0.1, y + r * 0.3);
+	context.lineTo(x + r * 0.5, y + r * 0.05);
+	context.stroke();
+}
+
+function drawFirePool(context: CanvasRenderingContext2D, fire: FirePool, time: number) {
+	const left = 1 - fire.ageMs / fire.lifeMs;
+	const fade = Math.min(1, left * 4);
+	context.globalAlpha = 0.45 * fade;
+	circle(context, fire.x, fire.y, fire.radius, fire.trail ? '#ff8a2b' : '#ff5a1a', 0);
+	context.globalAlpha = 0.6 * fade;
+	circle(context, fire.x, fire.y, fire.radius * 0.55, YELLOW, 0);
+	context.globalAlpha = fade;
+	const flames = fire.trail ? 1 : 4;
+	for (let i = 0; i < flames; i++) {
+		const angle = fire.id + i * 1.6;
+		const reach = fire.trail ? 0 : fire.radius * 0.5;
+		drawFlames(
+			context,
+			fire.x + Math.cos(angle) * reach,
+			fire.y + Math.sin(angle) * reach * 0.6 + 6,
+			fire.trail ? 9 : 16,
+			time + fire.id * 53 + i * 100
+		);
+	}
+	context.globalAlpha = 1;
+}
+
+/** A drone nest: a camouflaged crate with a launch rail and an antenna that blinks while armed */
+function drawNest(context: CanvasRenderingContext2D, nest: Nest, time: number) {
+	const { x, y } = nest;
+	const fading = nest.ageMs > NEST_LIFETIME_MS - 2500 && Math.floor(time / 150) % 2 === 0;
+	if (fading) context.globalAlpha = 0.5;
+	roundRect(context, x - 17, y - 13, 34, 26, 5, '#55603a', 3);
+	context.strokeStyle = '#3e4a28';
+	context.lineWidth = 2;
+	context.beginPath();
+	context.moveTo(x - 17, y);
+	context.lineTo(x + 17, y);
+	context.stroke();
+	roundRect(context, x - 8, y - 9, 16, 6, 2, '#2b2b2b', 1.5);
+	context.strokeStyle = INK;
+	context.lineWidth = 2;
+	context.beginPath();
+	context.moveTo(x + 12, y - 12);
+	context.lineTo(x + 18, y - 28);
+	context.stroke();
+	const lit = Math.floor((time + nest.id * 97) / 260) % 2 === 0;
+	circle(context, x + 18, y - 28, 3, lit ? '#5bd16b' : '#1f4a25', 1.5);
+	context.globalAlpha = 1;
+}
+
+/** The player's kamikaze drones: small, light and quick */
+function drawFriendlyDrone(context: CanvasRenderingContext2D, drone: FriendlyDrone, time: number) {
+	const angle = Math.atan2(drone.vy, drone.vx);
+	facingFrame(context, drone.x, drone.y, angle, () => {
+		context.lineWidth = 2.5;
+		context.strokeStyle = INK;
+		for (const [dx, dy] of [
+			[-1, -1],
+			[1, -1],
+			[-1, 1],
+			[1, 1]
+		]) {
+			context.beginPath();
+			context.moveTo(0, 0);
+			context.lineTo(dx * 9, dy * 9);
+			context.stroke();
+			context.globalAlpha = 0.5;
+			context.beginPath();
+			context.ellipse(dx * 9, dy * 9, 5, 1.8, time / 25 + dx, 0, Math.PI * 2);
+			context.fillStyle = '#e8f1f7';
+			context.fill();
+			context.globalAlpha = 1;
+		}
+		roundRect(context, -5, -4, 12, 8, 3, drone.crit ? RED : '#4fa8d8', 2);
+	});
+}
+
+/** Where a shell is about to land: a red ring that fills up as it falls */
+function drawShellMarker(context: CanvasRenderingContext2D, shell: Shell) {
+	const progress = Math.min(1, shell.ageMs / shell.flightMs);
+	context.fillStyle = 'rgba(229, 72, 77, 0.14)';
+	ellipse(context, shell.x, shell.y, shell.radius, shell.radius);
+	context.fillStyle = 'rgba(229, 72, 77, 0.32)';
+	ellipse(context, shell.x, shell.y, shell.radius * progress, shell.radius * progress);
+	context.beginPath();
+	context.arc(shell.x, shell.y, shell.radius, 0, Math.PI * 2);
+	context.setLineDash([8, 7]);
+	context.lineWidth = shell.radius >= ARTILLERY_RADIUS ? 4 : 3;
+	context.strokeStyle = RED;
+	context.stroke();
+	context.setLineDash([]);
+}
+
+/** The shell itself on its high arc, coming down on the marker */
+function drawShell(context: CanvasRenderingContext2D, shell: Shell) {
+	const t = Math.min(1, shell.ageMs / shell.flightMs);
+	const x = shell.fromX + (shell.x - shell.fromX) * t;
+	const y = shell.fromY + (shell.y - shell.fromY) * t - Math.sin(t * Math.PI) * 220;
+	const size = shell.big ? 8 : 6;
+	circle(context, x, y, size, '#3b3f2f', 2.5);
+	circle(context, x - size * 0.3, y - size * 0.3, size * 0.3, '#9aa0a6', 0);
+}
+
+/** A crystal: a cut gem in its kind's colour, ringed in its rarity's colour */
+export function drawCrystal(
+	context: CanvasRenderingContext2D,
+	x: number,
+	y: number,
+	size: number,
+	kind: CrystalKind,
+	rarity: Rarity
+) {
+	context.beginPath();
+	context.arc(x, y, size * 1.15, 0, Math.PI * 2);
+	context.lineWidth = 4;
+	context.strokeStyle = RARITY_COLOR[rarity];
+	context.stroke();
+	context.beginPath();
+	context.moveTo(x, y - size);
+	context.lineTo(x + size * 0.75, y - size * 0.25);
+	context.lineTo(x + size * 0.45, y + size * 0.85);
+	context.lineTo(x - size * 0.45, y + size * 0.85);
+	context.lineTo(x - size * 0.75, y - size * 0.25);
+	context.closePath();
+	context.fillStyle = CRYSTAL_COLOR[kind];
+	context.fill();
+	context.lineWidth = 2;
+	context.strokeStyle = INK;
+	context.stroke();
+	context.fillStyle = 'rgba(255, 255, 255, 0.55)';
+	context.beginPath();
+	context.moveTo(x, y - size);
+	context.lineTo(x + size * 0.25, y - size * 0.25);
+	context.lineTo(x - size * 0.75, y - size * 0.25);
+	context.closePath();
+	context.fill();
 }
 
 /** A landmine: a flat disc whose light blinks once armed */
@@ -1119,6 +1612,9 @@ function gearIcon(context: CanvasRenderingContext2D, item: GearItem, x: number, 
 			2
 		);
 		roundRect(context, x - look.length / 2 + 4, y + look.width / 2 - 1, 6, 8, 2, look.color, 2);
+	} else if (item.slot === 'boots') {
+		roundRect(context, x - 11, y - 6, 9, 14, 3, '#5a4630', 2.5);
+		roundRect(context, x + 2, y - 6, 9, 14, 3, '#5a4630', 2.5);
 	} else if (item.slot === 'helmet') {
 		context.beginPath();
 		context.arc(x, y + 5, 11, Math.PI, Math.PI * 2);
@@ -1146,6 +1642,34 @@ function drawLoot(context: CanvasRenderingContext2D, loot: Loot, time: number) {
 			circle(context, x, y, 8, YELLOW, 2.5);
 			circle(context, x - 2, y - 2, 2.5, '#fff3b0', 0);
 			break;
+		case 'scrap':
+			// A bent cog
+			context.save();
+			context.translate(x, y);
+			context.rotate(loot.id);
+			for (let i = 0; i < 6; i++) {
+				context.rotate(Math.PI / 3);
+				roundRect(context, -2.5, -11, 5, 5, 1, '#8a8f99', 1.5);
+			}
+			context.restore();
+			circle(context, x, y, 7, '#a5aab3', 2);
+			circle(context, x, y, 2.5, '#5a5f66', 0);
+			break;
+		case 'crystal': {
+			const { kind, rarity } = drop.crystal;
+			// Rare and better crystals shine a beam, like good gear
+			if (rarity !== 'common' && rarity !== 'uncommon') {
+				const gradient = context.createLinearGradient(x, y - 110, x, y);
+				gradient.addColorStop(0, 'rgba(255,255,255,0)');
+				gradient.addColorStop(1, RARITY_COLOR[rarity]);
+				context.globalAlpha = 0.5;
+				context.fillStyle = gradient;
+				context.fillRect(x - 6, y - 110, 12, 110);
+				context.globalAlpha = 1;
+			}
+			drawCrystal(context, x, y, 9, kind, rarity);
+			break;
+		}
 		case 'medkit':
 			roundRect(context, x - 11, y - 9, 22, 18, 4, PAPER, 2.5);
 			context.fillStyle = RED;

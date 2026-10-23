@@ -57,7 +57,15 @@ export const POWER_PER_ITEM_LEVEL = 0.1;
 // ---------------------------------------------------------------------------------------------
 // Weapons
 
-export const WEAPON_KINDS = ['rifle', 'marksman', 'shotgun', 'smg', 'launcher'] as const;
+export const WEAPON_KINDS = [
+	'rifle',
+	'marksman',
+	'shotgun',
+	'smg',
+	'launcher',
+	'flamethrower',
+	'dronenest'
+] as const;
 export type WeaponKind = (typeof WEAPON_KINDS)[number];
 
 /** Every weapon brings two skills, shown on the buttons around the attack button */
@@ -71,7 +79,11 @@ export const SKILL_IDS = [
 	'overdrive',
 	'nova',
 	'barrage',
-	'mine'
+	'mine',
+	'flashpoint',
+	'napalm',
+	'swarm',
+	'overclock'
 ] as const;
 export type SkillId = (typeof SKILL_IDS)[number];
 
@@ -92,6 +104,8 @@ export interface WeaponSpec {
 	splash: number;
 	/** How many enemies one projectile passes through after the first */
 	pierce: number;
+	/** How long a hit sets the enemy on fire, 0 for weapons that do not burn */
+	burnMs: number;
 	/** The two skills on the buttons around the attack button while this weapon is held */
 	skills: readonly [SkillId, SkillId];
 }
@@ -109,6 +123,7 @@ export const WEAPONS: Record<WeaponKind, WeaponSpec> = {
 		critMultiplier: 1.6,
 		splash: 0,
 		pierce: 0,
+		burnMs: 0,
 		skills: ['heal', 'grenade']
 	},
 	// Slow and precise: nearly every other shot is a critical hit
@@ -123,6 +138,7 @@ export const WEAPONS: Record<WeaponKind, WeaponSpec> = {
 		critMultiplier: 2.6,
 		splash: 0,
 		pierce: 1,
+		burnMs: 0,
 		skills: ['focus', 'railshot']
 	},
 	shotgun: {
@@ -136,6 +152,7 @@ export const WEAPONS: Record<WeaponKind, WeaponSpec> = {
 		critMultiplier: 1.6,
 		splash: 0,
 		pierce: 0,
+		burnMs: 0,
 		skills: ['dash', 'blast']
 	},
 	smg: {
@@ -149,6 +166,7 @@ export const WEAPONS: Record<WeaponKind, WeaponSpec> = {
 		critMultiplier: 1.6,
 		splash: 0,
 		pierce: 0,
+		burnMs: 0,
 		skills: ['overdrive', 'nova']
 	},
 	launcher: {
@@ -162,7 +180,39 @@ export const WEAPONS: Record<WeaponKind, WeaponSpec> = {
 		critMultiplier: 1.6,
 		splash: 85,
 		pierce: 0,
+		burnMs: 0,
 		skills: ['barrage', 'mine']
+	},
+	// Short reach, a steady stream of flames that pass through and set everything on fire
+	flamethrower: {
+		damage: 3.2,
+		fireMs: 80,
+		range: 175,
+		projectileSpeed: 430,
+		pellets: 1,
+		spread: 0.32,
+		critChance: 0.05,
+		critMultiplier: 1.6,
+		splash: 0,
+		pierce: 2,
+		burnMs: 2600,
+		skills: ['flashpoint', 'napalm']
+	},
+	// Fires nothing itself: each attack builds an FPV drone nest that sends kamikaze drones at
+	// whatever comes into its range. Damage, speed and splash are those of one drone
+	dronenest: {
+		damage: 20,
+		fireMs: 1900,
+		range: 380,
+		projectileSpeed: 380,
+		pellets: 1,
+		spread: 0,
+		critChance: 0.08,
+		critMultiplier: 1.8,
+		splash: 60,
+		pierce: 0,
+		burnMs: 0,
+		skills: ['swarm', 'overclock']
 	}
 };
 
@@ -176,7 +226,11 @@ export const SKILL_COOLDOWN_MS: Record<SkillId, number> = {
 	overdrive: 13000,
 	nova: 8000,
 	barrage: 11000,
-	mine: 6000
+	mine: 6000,
+	flashpoint: 9000,
+	napalm: 10000,
+	swarm: 10000,
+	overclock: 14000
 };
 
 /** Field medkit (rifle): heals a share of maximum health */
@@ -216,22 +270,109 @@ export const MINE_RADIUS = 120;
 export const MINE_DAMAGE_FACTOR = 4;
 export const MINE_LIFETIME_MS = 30_000;
 export const MAX_MINES = 3;
+/** Flashpoint (flamethrower): every burning enemy in reach takes a huge critical hit */
+export const FLASHPOINT_RANGE = 560;
+export const FLASHPOINT_DAMAGE_FACTOR = 10;
+export const FLASHPOINT_CRIT_MULTIPLIER = 3;
+/** Napalm (flamethrower): a pool of fire that sets everything walking through it alight */
+export const NAPALM_RADIUS = 95;
+export const NAPALM_MS = 4500;
+export const NAPALM_THROW_RANGE = 380;
+/** Drone nests: how many stand at once, how long they last and how often they launch a drone */
+export const MAX_NESTS = 3;
+export const NEST_LIFETIME_MS = 22_000;
+export const NEST_LAUNCH_MS = 1500;
+/** A friendly drone that finds nothing to hit explodes after this long */
+export const DRONE_LIFETIME_MS = 3500;
+/** Swarm (drone nest): every nest launches this many drones at once, the player two more */
+export const SWARM_DRONES = 3;
+/** Overclock (drone nest): nests launch this much more often for a while */
+export const OVERCLOCK_MS = 6000;
+export const OVERCLOCK_LAUNCH_FACTOR = 0.4;
+
+// ---------------------------------------------------------------------------------------------
+// Burning
+
+/** Burning enemies take damage in ticks: this multiple of the weapon's shot damage per second */
+export const BURN_DPS_FACTOR = 3;
+export const BURN_TICK_MS = 500;
 
 // ---------------------------------------------------------------------------------------------
 // Armour
 
-export const ARMOR_SLOTS = ['helmet', 'vest'] as const;
+export const ARMOR_SLOTS = ['helmet', 'vest', 'boots'] as const;
 export type ArmorSlot = (typeof ARMOR_SLOTS)[number];
 
 /** A helmet adds maximum health */
 export const HELMET_HP = 22;
 /** A vest adds armour: damage taken is scaled by 100 / (100 + armour) */
 export const VEST_ARMOR = 14;
+/** Boots add walking speed, as a share */
+export const BOOTS_SPEED = 0.04;
+
+/**
+ * Some armour comes with a perk. Each slot has its own: a jammer helmet that throws drones off
+ * course, a spiked vest that hurts whoever hits it up close, boots that leave a burning trail or
+ * make you sprint.
+ */
+export const ARMOR_PERKS = ['jammer', 'spikes', 'trail', 'sprint'] as const;
+export type ArmorPerk = (typeof ARMOR_PERKS)[number];
+
+export const SLOT_PERKS: Record<ArmorSlot, readonly ArmorPerk[]> = {
+	helmet: ['jammer'],
+	vest: ['spikes'],
+	boots: ['trail', 'sprint']
+};
+
+/** Chance that a dropped piece of armour has its slot's perk; the rarer, the likelier */
+export const PERK_CHANCE: Record<Rarity, number> = {
+	common: 0.08,
+	uncommon: 0.18,
+	rare: 0.35,
+	epic: 0.6,
+	legendary: 1
+};
+
+/** Jammer: a drone that comes this close is thrown off course and crashes; one every so often */
+export const JAMMER_RADIUS = 170;
+export const JAMMER_COOLDOWN_MS = 1400;
+/** Spikes: melee attackers take this multiple of the hit they land (before the player's armour) */
+export const SPIKES_REFLECT = 2.5;
+/** Fire trail: a patch of fire left every so often while walking */
+export const TRAIL_EVERY_MS = 240;
+export const TRAIL_RADIUS = 30;
+export const TRAIL_MS = 2200;
+export const TRAIL_BURN_MS = 1800;
+/** Burn damage per second of the trail, per player level */
+export const TRAIL_DPS = 6;
+export const TRAIL_DPS_PER_LEVEL = 0.6;
+/** Sprint boots: extra walking speed */
+export const SPRINT_SPEED = 0.22;
+
+// ---------------------------------------------------------------------------------------------
+// Terrain: ice and oil slicks make everything that walks slide, mud slows it down
+
+export const TERRAIN_KINDS = ['ice', 'mud', 'oil'] as const;
+export type TerrainKind = (typeof TERRAIN_KINDS)[number];
+
+/** On ice and oil a walker only turns its speed towards where it wants to go this fast, per second */
+export const SLIPPERY_GRIP = 1.6;
+export const MUD_SPEED = 0.55;
 
 // ---------------------------------------------------------------------------------------------
 // Enemies
 
-export const ARCHETYPES = ['grunt', 'fast', 'heavy', 'ranged', 'boss'] as const;
+export const ARCHETYPES = [
+	'grunt',
+	'fast',
+	'heavy',
+	'ranged',
+	'drone',
+	'medic',
+	'mortar',
+	'artillery',
+	'boss'
+] as const;
 export type Archetype = (typeof ARCHETYPES)[number];
 
 export interface ArchetypeSpec {
@@ -249,7 +390,7 @@ export interface ArchetypeSpec {
 	luck: number;
 	/** Cooldown between contact hits or shots */
 	attackMs: number;
-	/** Ranged enemies hold this distance and shoot from it */
+	/** Enemies that fight from afar hold this distance from the player */
 	keepDistance: number;
 }
 
@@ -302,6 +443,58 @@ export const ARCHETYPE_SPECS: Record<Archetype, ArchetypeSpec> = {
 		attackMs: 1900,
 		keepDistance: 270
 	},
+	// Kamikaze FPV drones: fly straight over all cover and blow up on the player
+	drone: {
+		hp: 12,
+		speed: 150,
+		damage: 11,
+		radius: 14,
+		xp: 5,
+		gold: 1,
+		dropChance: 0.05,
+		luck: 0,
+		attackMs: 0,
+		keepDistance: 0
+	},
+	// Medics stay back and heal every enemy around them in pulses: take them out first
+	medic: {
+		hp: 40,
+		speed: 82,
+		damage: 4,
+		radius: 18,
+		xp: 14,
+		gold: 2,
+		dropChance: 0.14,
+		luck: 0.15,
+		attackMs: 2600,
+		keepDistance: 230
+	},
+	// Mortar crews lob shells at where the player stands; the target is marked on the ground
+	mortar: {
+		hp: 45,
+		speed: 70,
+		damage: 13,
+		radius: 20,
+		xp: 14,
+		gold: 2,
+		dropChance: 0.14,
+		luck: 0.15,
+		attackMs: 3400,
+		keepDistance: 400
+	},
+	// Pion self-propelled guns: tough, slow, and fire salvos from beyond the edge of the screen
+	artillery: {
+		hp: 260,
+		speed: 40,
+		damage: 20,
+		radius: 32,
+		xp: 40,
+		gold: 6,
+		dropChance: 0.3,
+		luck: 0.4,
+		attackMs: 6500,
+		keepDistance: 560
+	},
 	boss: {
 		hp: 1700,
 		speed: 66,
@@ -324,6 +517,20 @@ export const BOSS_SLAM_RADIUS = 160;
 /** Boss volley: a ring of slow bullets */
 export const BOSS_VOLLEY_EVERY_MS = 3300;
 export const BOSS_VOLLEY_BULLETS = 12;
+/** Kamikaze drones blow up in this radius when they reach the player */
+export const DRONE_BLAST_RADIUS = 50;
+/** Medic pulse: heals this share of every nearby enemy's maximum health (much less for bosses) */
+export const MEDIC_HEAL_RADIUS = 220;
+export const MEDIC_HEAL_SHARE = 0.18;
+export const MEDIC_BOSS_HEAL_SHARE = 0.02;
+/** Mortar shells land on a marked spot after a flight */
+export const MORTAR_RADIUS = 70;
+export const MORTAR_FLIGHT_MS = 1200;
+/** Artillery salvos: several bigger, slower shells scattered around the player */
+export const ARTILLERY_SHELLS = 3;
+export const ARTILLERY_RADIUS = 95;
+export const ARTILLERY_FLIGHT_MS = 1700;
+export const ARTILLERY_SCATTER = 110;
 
 export const VARIANTS = ['normal', 'super', 'mega'] as const;
 export type Variant = (typeof VARIANTS)[number];
@@ -423,9 +630,20 @@ export function archetypeWeights(minutes: number): { item: Archetype; weight: nu
 		{ item: 'grunt', weight: 10 },
 		{ item: 'fast', weight: 4 + minutes },
 		{ item: 'ranged', weight: minutes < 0.5 ? 0 : 3 + minutes * 0.8 },
-		{ item: 'heavy', weight: minutes < 1 ? 0 : 1.5 + minutes * 0.7 }
+		{ item: 'heavy', weight: minutes < 1 ? 0 : 1.5 + minutes * 0.7 },
+		{ item: 'drone', weight: minutes < 0.75 ? 0 : 2 + minutes * 0.6 },
+		{ item: 'mortar', weight: minutes < 1 ? 0 : 1.2 + minutes * 0.45 },
+		{ item: 'medic', weight: minutes < 1.5 ? 0 : 1 + minutes * 0.35 },
+		{ item: 'artillery', weight: minutes < 3 ? 0 : 0.5 + minutes * 0.2 }
 	];
 }
+
+/** At most this many of each support enemy on the field at once */
+export const ARCHETYPE_CAP: Partial<Record<Archetype, number>> = {
+	medic: 3,
+	mortar: 4,
+	artillery: 2
+};
 
 /** Spawns appear just outside the camera, at this distance from the player */
 export const SPAWN_DISTANCE_MIN = 620;
@@ -434,7 +652,7 @@ export const SPAWN_DISTANCE_MAX = 820;
 // ---------------------------------------------------------------------------------------------
 // Pickups
 
-/** Gold, medkits and upgrade kits fly to the player from this far */
+/** Gold, scrap, crystals, medkits and upgrade kits fly to the player from this far */
 export const MAGNET_RADIUS = 95;
 export const PICKUP_RADIUS = 26;
 /** Gear (weapons and armour) waits on the ground until the player walks over it */
@@ -442,6 +660,76 @@ export const GEAR_PICKUP_RADIUS = 34;
 export const MEDKIT_HEAL_SHARE = 0.25;
 /** Loot left on the ground disappears after a while, so the map does not fill up */
 export const LOOT_LIFETIME_MS = 45_000;
+
+// ---------------------------------------------------------------------------------------------
+// Crystals: socketed into weapons, each kind improves one stat, more the rarer it is
+
+export const CRYSTAL_KINDS = ['damage', 'crit', 'fire', 'status'] as const;
+export type CrystalKind = (typeof CRYSTAL_KINDS)[number];
+
+/** What a crystal adds, by rarity from common to legendary */
+export const CRYSTAL_BONUS: Record<CrystalKind, readonly number[]> = {
+	// Extra base damage, as a share
+	damage: [0.05, 0.1, 0.16, 0.24, 0.35],
+	// Extra critical hit chance, added
+	crit: [0.02, 0.04, 0.07, 0.1, 0.15],
+	// Extra fire rate, as a share (the time between shots is divided by 1 + this)
+	fire: [0.04, 0.08, 0.12, 0.17, 0.24],
+	// Longer status effects such as burning, as a share
+	status: [0.2, 0.4, 0.7, 1, 1.5]
+};
+
+/** A status crystal on a weapon that does not burn gives its shots this chance to set a fire */
+export const CRYSTAL_IGNITE_CHANCE: readonly number[] = [0.03, 0.05, 0.08, 0.12, 0.18];
+/** Fires set by a crystal are shorter and weaker than the flamethrower's */
+export const CRYSTAL_IGNITE_MS = 1600;
+export const CRYSTAL_IGNITE_DPS_SHARE = 0.25;
+
+export const CRYSTAL_COLOR: Record<CrystalKind, string> = {
+	damage: '#e5484d',
+	crit: '#f5c83a',
+	fire: '#3dc9f5',
+	status: '#ff8a2b'
+};
+
+/** Crystal sockets per weapon rarity */
+export const CRYSTAL_SOCKETS: Record<Rarity, number> = {
+	common: 1,
+	uncommon: 1,
+	rare: 2,
+	epic: 2,
+	legendary: 3
+};
+
+/** Five crystals of one kind and rarity, plus scrap, make one of the next rarity */
+export const CRYSTAL_COMBINE_COUNT = 5;
+/** Scrap to combine into uncommon, rare, epic and legendary */
+export const CRYSTAL_COMBINE_SCRAP: readonly number[] = [15, 40, 100, 250];
+
+/** Regular enemies drop crystals rarely, and only common and uncommon ones */
+export const CRYSTAL_ENEMY_CHANCE: Record<Variant, number> = {
+	normal: 0.012,
+	super: 0.06,
+	mega: 0.15
+};
+export const CRYSTAL_ENEMY_WEIGHTS: readonly number[] = [85, 15, 0, 0, 0];
+/** Bosses always drop crystals: how many (fewest and most) and how rare, by variant */
+export const CRYSTAL_BOSS_COUNT: Record<Variant, readonly [number, number]> = {
+	normal: [1, 2],
+	super: [2, 3],
+	mega: [3, 5]
+};
+export const CRYSTAL_BOSS_WEIGHTS: Record<Variant, readonly number[]> = {
+	normal: [50, 32, 14, 3.5, 0.5],
+	super: [30, 34, 24, 10, 2],
+	mega: [12, 28, 32, 21, 7]
+};
+
+// ---------------------------------------------------------------------------------------------
+// Season: raid XP also fills a monthly track of rewards
+
+export const SEASON_TIERS = 30;
+export const SEASON_XP_PER_TIER = 600;
 
 // ---------------------------------------------------------------------------------------------
 // Profile

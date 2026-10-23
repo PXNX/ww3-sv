@@ -5,6 +5,10 @@
 	import type { SkillId } from '#lib/game/raid/config.js';
 	import IconBomb from '~icons/lucide/bomb';
 	import IconChevronsRight from '~icons/lucide/chevrons-right';
+	import IconDroplets from '~icons/lucide/droplets';
+	import IconFastForward from '~icons/lucide/fast-forward';
+	import IconFlameKindling from '~icons/lucide/flame-kindling';
+	import IconPlane from '~icons/lucide/plane';
 	import IconCircleDot from '~icons/lucide/circle-dot';
 	import IconCrosshair from '~icons/lucide/crosshair';
 	import IconFlame from '~icons/lucide/flame';
@@ -26,7 +30,11 @@
 		overdrive: { icon: IconGauge, color: 'text-mustard' },
 		nova: { icon: IconSun, color: 'text-mustard' },
 		barrage: { icon: IconRocket, color: 'text-khaki' },
-		mine: { icon: IconCircleDot, color: 'text-khaki' }
+		mine: { icon: IconCircleDot, color: 'text-khaki' },
+		flashpoint: { icon: IconFlameKindling, color: 'text-tie-red' },
+		napalm: { icon: IconDroplets, color: 'text-mustard' },
+		swarm: { icon: IconPlane, color: 'text-flag-blue' },
+		overclock: { icon: IconFastForward, color: 'text-khaki' }
 	};
 
 	const Icon = $derived(ICONS[skill].icon);

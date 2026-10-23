@@ -1,40 +1,60 @@
 /*
  * Raid game store: the persistent profile and lobby actions, and around a running raid the
- * player's commands, floating numbers and rings, sounds and the reactive HUD values. The
+ * player's commands, floating numbers and rings, sounds and the reactive HUD values; the lobby
+ * also sockets and combines crystals and claims season rewards. The
  * simulation state is a plain object read by the canvas every frame; only what the page chrome
  * shows is reactive, synced after each step.
  */
-import { BOSS_NAMES, itemName, SKILL_NAMES, WEAPON_NAMES } from '#lib/components/raidText.js';
+import {
+	ARMOR_NAMES,
+	BOSS_NAMES,
+	crystalName,
+	itemName,
+	SKILL_NAMES,
+	WEAPON_NAMES
+} from '#lib/components/raidText.js';
 import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
 import {
 	BLAST_ANGLE,
 	BLAST_RADIUS,
+	DRONE_BLAST_RADIUS,
 	GRENADE_RADIUS,
+	MEDIC_HEAL_RADIUS,
+	NAPALM_RADIUS,
 	MINE_RADIUS,
 	RARITY_COLOR,
 	REVIVE_BLAST_RADIUS,
 	BOSS_SLAM_RADIUS,
+	CRYSTAL_COLOR,
 	SKILL_COOLDOWN_MS,
-	WEAPONS,
+	type Archetype,
+	type ArmorSlot,
 	type MapId,
 	type SkillId,
 	type Variant,
 	type WeaponKind
 } from '#lib/game/raid/config.js';
-import { gearScore, type GearItem } from '#lib/game/raid/items.js';
+import { gearScore, weaponStats, type Crystal, type GearItem } from '#lib/game/raid/items.js';
 import {
 	bankHaul,
+	claimSeasonRewards,
+	combineCrystals,
 	equipFromStash,
-	isProfile,
 	newProfile,
+	parseProfile,
 	salvage,
+	socketCrystal,
 	swapWeapons,
 	unequipArmor,
+	unsocketCrystal,
 	upgradeSlot,
+	withCurrentSeason,
 	xpToNext,
 	type LoadoutSlot,
-	type Profile
+	type Profile,
+	type WeaponSlot
 } from '#lib/game/raid/profile.js';
+import type { SeasonReward } from '#lib/game/raid/season.js';
 import { drawRaidPreview, type Effect, type SceneExtras } from '#lib/game/raid/render.js';
 import {
 	createRaid,
@@ -70,15 +90,29 @@ export interface RaidResult {
 	map: MapId;
 	timeMs: number;
 	kills: number;
+	/** Defeated enemies by archetype */
+	killsBy: Record<Archetype, number>;
 	bossKills: number;
 	eliteKills: number;
+	damageDealt: number;
+	biggestHit: number;
 	xp: number;
 	gold: number;
+	scrap: number;
 	gear: GearItem[];
+	crystals: Crystal[];
 	levelsGained: number;
+	/** Level and XP before and after banking, for the animated level bar */
+	levelBefore: number;
+	xpBefore: number;
 	level: number;
+	xpAfter: number;
 	salvaged: number;
 	salvageGold: number;
+	salvageScrap: number;
+	/** Season XP before and after the raid */
+	seasonXpBefore: number;
+	seasonXpAfter: number;
 }
 
 export interface RaidOptions {
@@ -106,6 +140,7 @@ export class RaidGame {
 	xp = $state(0);
 	gold = $state(0);
 	kills = $state(0);
+	crystalsFound = $state(0);
 	revivesLeft = $state(1);
 	heldKind = $state<WeaponKind>('rifle');
 	otherKind = $state<WeaponKind>('marksman');
@@ -122,6 +157,8 @@ export class RaidGame {
 	result = $state.raw<RaidResult | null>(null);
 	best = $state<number | null>(null);
 	isNewBest = $state(false);
+	/** Season rewards just claimed in the lobby, shown until dismissed */
+	claimed = $state.raw<SeasonReward[] | null>(null);
 
 	/** Simulation state, deliberately not reactive */
 	state: RaidState;
@@ -153,7 +190,7 @@ export class RaidGame {
 
 	/** Reads the saved profile and best score; call in the browser only */
 	load() {
-		this.profile = this.#store().read(PROFILE_KEY, newProfile(), isProfile);
+		this.profile = parseProfile(this.#store().read<unknown>(PROFILE_KEY, null)) ?? newProfile();
 		this.best = this.#scores().get(scoreKey(this.map));
 		this.state = createRaid(this.map, this.profile.loadout, this.profile.level);
 		this.#syncChrome();
@@ -177,7 +214,7 @@ export class RaidGame {
 		this.#play('click');
 	}
 
-	unequip(slot: 'helmet' | 'vest') {
+	unequip(slot: ArmorSlot) {
 		this.#setProfile(unequipArmor(this.profile, slot));
 		this.#play('click');
 	}
@@ -196,6 +233,37 @@ export class RaidGame {
 	swapLoadoutWeapons() {
 		this.#setProfile(swapWeapons(this.profile));
 		this.#play('click');
+	}
+
+	socket(slot: WeaponSlot, crystal: Crystal) {
+		const before = this.profile;
+		this.#setProfile(socketCrystal(this.profile, slot, crystal));
+		this.#play(before === this.profile ? 'ui-error' : 'chime');
+	}
+
+	unsocket(slot: WeaponSlot, index: number) {
+		this.#setProfile(unsocketCrystal(this.profile, slot, index));
+		this.#play('click');
+	}
+
+	combine(crystal: Crystal) {
+		const before = this.profile;
+		this.#setProfile(combineCrystals(this.profile, crystal));
+		this.#play(before === this.profile ? 'ui-error' : 'chime-big');
+	}
+
+	/** Claims every season tier reached so far */
+	claimSeason() {
+		const current = withCurrentSeason(this.profile);
+		const { profile, rewards } = claimSeasonRewards(current);
+		this.#setProfile(profile);
+		if (rewards.length === 0) return;
+		this.claimed = rewards;
+		this.#play('chime-big');
+	}
+
+	dismissClaimed() {
+		this.claimed = null;
 	}
 
 	backToLobby() {
@@ -332,12 +400,25 @@ export class RaidGame {
 		const { player } = this.state;
 		switch (event.type) {
 			case 'shot':
-				this.#play(
-					event.kind === 'launcher' ? 'whoosh' : event.kind === 'marksman' ? 'zap' : 'fire',
-					0.5
-				);
+				if (event.kind === 'flamethrower') this.#play('whoosh', 0.25);
+				else
+					this.#play(
+						event.kind === 'launcher' ? 'whoosh' : event.kind === 'marksman' ? 'zap' : 'fire',
+						0.5
+					);
 				break;
 			case 'hit':
+				if (event.burn) {
+					this.#text(
+						event.x + (Math.random() - 0.5) * 20,
+						event.y,
+						`${Math.round(event.damage)}`,
+						'#ff9a3c',
+						13,
+						500
+					);
+					break;
+				}
 				this.#text(
 					event.x + (Math.random() - 0.5) * 16,
 					event.y,
@@ -420,10 +501,77 @@ export class RaidGame {
 				this.#text(event.x, event.y - 14, `+${event.amount}`, '#f5c83a', 16, 700);
 				this.#play('pickup', 0.4);
 				break;
+			case 'scrap':
+				this.#text(
+					event.x,
+					event.y - 14,
+					m.raid_popup_scrap({ amount: event.amount }),
+					'#c9ced4',
+					16,
+					700
+				);
+				this.#play('pickup', 0.4);
+				break;
+			case 'crystal': {
+				const { crystal } = event;
+				this.#text(
+					player.x,
+					player.y - 44,
+					crystalName(crystal),
+					RARITY_COLOR[crystal.rarity],
+					22,
+					1400
+				);
+				this.#ring(event.x, event.y, 40, CRYSTAL_COLOR[crystal.kind], 500);
+				this.#play(
+					crystal.rarity === 'legendary' || crystal.rarity === 'epic' ? 'chime-big' : 'sparkle'
+				);
+				break;
+			}
+			case 'drone-crash':
+				this.#ring(event.x, event.y, DRONE_BLAST_RADIUS, '#ff8a2b', 420);
+				this.#play('explosion-small', 0.7);
+				break;
+			case 'shell-launch':
+				this.#play('thud', event.big ? 0.6 : 0.35);
+				break;
+			case 'shell-burst':
+				this.#ring(event.x, event.y, event.radius, '#ff6a2b', 520);
+				this.#play(event.radius > 80 ? 'explosion-big' : 'explosion-small', 0.6);
+				break;
+			case 'medic-heal':
+				this.#ring(event.x, event.y, MEDIC_HEAL_RADIUS, '#5bd16b', 650);
+				this.#play('sparkle', 0.3);
+				break;
+			case 'nest':
+				this.#ring(event.x, event.y, 30, '#5bd16b', 300);
+				this.#play('blocks-place', 0.6);
+				break;
+			case 'nest-launch':
+				this.#play('drone-buzz', 0.35);
+				break;
+			case 'flare':
+				this.#ring(event.x, event.y, 46, '#ff4d1a', 420);
+				this.#play('explosion-tiny', 0.7);
+				break;
+			case 'napalm':
+				this.#ring(event.x, event.y, NAPALM_RADIUS, '#ff8a2b', 450);
+				this.#play('fire');
+				break;
+			case 'jammed':
+				this.#ring(event.x, event.y, 34, '#3dc9f5', 360);
+				this.#text(event.x, event.y - 26, m.raid_popup_jammed(), '#3dc9f5', 16, 800);
+				this.#play('zap', 0.5);
+				break;
+			case 'spikes':
+				this.#play('impact-stone', 0.5);
+				break;
 			case 'gear': {
 				const { item } = event;
 				const current =
-					item.type === 'weapon' ? this.state.loadout[player.held] : this.state.loadout[item.slot];
+					item.type === 'weapon'
+						? this.state.loadout[player.held]
+						: (this.state.loadout[item.slot] ?? null);
 				const better =
 					!current || (current.type === item.type && gearScore(item) > gearScore(current));
 				this.found = { item, better };
@@ -453,7 +601,7 @@ export class RaidGame {
 					player.x,
 					player.y - 40,
 					m.raid_popup_armor_kit({
-						armor: event.slot === 'helmet' ? m.raid_armor_helmet() : m.raid_armor_vest(),
+						armor: ARMOR_NAMES[event.slot](),
 						level: m.raid_item_level({ level: event.level })
 					}),
 					'#4fa8d8',
@@ -508,7 +656,11 @@ export class RaidGame {
 			overdrive: 'ability-split',
 			nova: 'ability-blast',
 			barrage: 'patriot-launch',
-			mine: 'click'
+			mine: 'click',
+			flashpoint: 'explosion-small',
+			napalm: 'whoosh',
+			swarm: 'drone-brzzz',
+			overclock: 'ability-split'
 		};
 		if (skill !== 'heal')
 			this.#text(player.x, player.y - 46, SKILL_NAMES[skill](), '#ffffff', 18, 900);
@@ -534,6 +686,7 @@ export class RaidGame {
 		this.xp = Math.floor(state.xp);
 		this.gold = state.gold;
 		this.kills = state.kills;
+		this.crystalsFound = state.crystals.length;
 		this.revivesLeft = state.revivesLeft;
 		const held = loadout[player.held];
 		this.heldKind = held.kind;
@@ -549,7 +702,7 @@ export class RaidGame {
 		if (cooldowns[0] !== this.skillCooldowns[0] || cooldowns[1] !== this.skillCooldowns[1]) {
 			this.skillCooldowns = cooldowns;
 		}
-		this.fireCooldown = share(player.fireMs, WEAPONS[held.kind].fireMs);
+		this.fireCooldown = share(player.fireMs, weaponStats(held, state.playerLevel).fireMs);
 		const boss = currentBoss(state);
 		this.boss = boss
 			? { share: Math.max(0, Math.ceil((boss.hp / boss.maxHp) * 100) / 100), variant: boss.variant }
@@ -559,12 +712,15 @@ export class RaidGame {
 	#finish() {
 		this.#syncChrome();
 		const state = this.state;
-		const banked = bankHaul(this.profile, {
+		const before = withCurrentSeason(this.profile);
+		const banked = bankHaul(before, {
 			map: state.mapId,
 			timeMs: state.timeMs,
 			xp: state.xp,
 			gold: state.gold,
+			scrap: state.scrap,
 			gear: state.haul,
+			crystals: state.crystals,
 			loadout: state.loadout
 		});
 		this.#setProfile(banked.profile);
@@ -575,15 +731,26 @@ export class RaidGame {
 			map: state.mapId,
 			timeMs: state.timeMs,
 			kills: state.kills,
+			killsBy: { ...state.killsBy },
 			bossKills: state.bossKills,
 			eliteKills: state.superKills + state.megaKills,
+			damageDealt: Math.round(state.damageDealt),
+			biggestHit: Math.round(state.biggestHit),
 			xp: Math.floor(state.xp),
 			gold: state.gold,
+			scrap: state.scrap,
 			gear: [...state.haul],
+			crystals: [...state.crystals],
 			levelsGained: banked.levelsGained,
+			levelBefore: before.level,
+			xpBefore: before.xp,
 			level: banked.profile.level,
+			xpAfter: banked.profile.xp,
 			salvaged: banked.salvaged,
-			salvageGold: banked.salvageGold
+			salvageGold: banked.salvageGold,
+			salvageScrap: banked.salvageScrap,
+			seasonXpBefore: before.season.xp,
+			seasonXpAfter: banked.profile.season.xp
 		};
 		this.found = null;
 		this.status = 'over';

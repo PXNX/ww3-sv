@@ -28,6 +28,7 @@
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
 	import IconRepeat from '~icons/lucide/repeat';
 	import IconCoins from '~icons/lucide/coins';
+	import IconGem from '~icons/lucide/gem';
 	import IconSkull from '~icons/lucide/skull';
 
 	let { game }: { game: RaidGame } = $props();
@@ -273,7 +274,7 @@
 	{/key}
 
 	{#if game.status !== 'lobby'}
-		<!-- HUD: health, revive, time and threat on the left; XP, gold and kills on the right -->
+		<!-- HUD: health, revive, time and threat on the left; XP, gold, kills and crystals on the right -->
 		<div
 			class="pointer-events-none absolute inset-x-2 top-(--hud-top) flex items-start justify-between gap-2"
 		>
@@ -335,6 +336,11 @@
 				<span class="flex items-center gap-0.5"
 					><IconSkull class="size-4" aria-hidden="true" />{game.kills}</span
 				>
+				{#if game.crystalsFound > 0}
+					<span class="flex items-center gap-0.5 text-[#a64dff]"
+						><IconGem class="size-4" aria-hidden="true" />{game.crystalsFound}</span
+					>
+				{/if}
 			</div>
 		</div>
 	{/if}
