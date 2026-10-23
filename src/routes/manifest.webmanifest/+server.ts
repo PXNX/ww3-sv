@@ -16,7 +16,9 @@ export const GET: RequestHandler = () =>
 			id: '/',
 			start_url: '/',
 			scope: '/',
-			display: 'standalone',
+			// Installed, the app opens without any browser bars; standalone where full screen is refused
+			display: 'fullscreen',
+			display_override: ['fullscreen', 'standalone'],
 			orientation: 'any',
 			background_color: THEME_COLOR,
 			theme_color: THEME_COLOR,

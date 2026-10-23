@@ -74,6 +74,8 @@ export interface SceneOptions {
 	world: FuryWorld;
 	/** Bird waiting in the slingshot, drawn at the pulled pouch */
 	birdOnSling: BirdKind | null;
+	/** Birds still to come, lined up on the ground behind the slingshot, next one first */
+	waiting?: readonly BirdKind[];
 	aim: Aim | null;
 	/** Preview dots in world coordinates */
 	preview: Vec[];
@@ -1029,6 +1031,33 @@ function drawPreview(context: CanvasRenderingContext2D, camera: Camera, points: 
 	});
 }
 
+/** Space for the queue between the slingshot and the left edge of the field, in meters */
+const QUEUE_GAP = 0.9;
+const QUEUE_LENGTH = 2.5;
+
+/** The squad waits its turn on the ground behind the slingshot, hopping now and then */
+function drawWaiting(
+	context: CanvasRenderingContext2D,
+	camera: Camera,
+	waiting: readonly BirdKind[],
+	options: SceneOptions
+) {
+	const step = Math.min(1, QUEUE_LENGTH / Math.max(1, waiting.length - 1));
+	// Back to front, so the next bird overlaps the ones behind it
+	for (let index = waiting.length - 1; index >= 0; index--) {
+		const kind = waiting[index];
+		const radius = BIRDS[kind].radius;
+		const hop = options.reducedMotion
+			? 0
+			: Math.max(0, Math.sin(options.time * 2.4 - index * 1.3)) ** 8 * 0.18;
+		const center = worldToScreen(camera, {
+			x: SLINGSHOT_X - QUEUE_GAP - index * step,
+			y: radius + hop
+		});
+		drawBird(context, camera, kind, center, radius, 0, options.sprites);
+	}
+}
+
 /** Draws the whole scene for one frame */
 export function drawScene(
 	context: CanvasRenderingContext2D,
@@ -1052,6 +1081,7 @@ export function drawScene(
 		options.reducedMotion
 	);
 	drawSlingshotBack(context, camera);
+	if (options.waiting?.length) drawWaiting(context, camera, options.waiting, options);
 
 	const pouch = options.aim
 		? (() => {

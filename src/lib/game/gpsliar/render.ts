@@ -1,6 +1,7 @@
 /*
- * Canvas drawing for GPS Liar. The scene is drawn in pixels of a fixed 700 by 500 world (50 per sea
- * unit, see config.ts for the view size) and scaled by the caller. Two pictures share the canvas:
+ * Canvas drawing for GPS Liar. The scene is drawn in scene pixels (50 per sea unit) and scaled by
+ * the caller so that at least the 700 by 500 view of config.ts fits; a screen of another shape just
+ * shows more sea (or fog) around the boat. Two pictures share the canvas:
  * the real view around the boat, which stops at the fog, and the chart in the corner, which shows
  * the whole sea but puts the boat where the GPS lies (and, during a cross-check, where it truly
  * is). Everything is original cartoon art: the boat, the tanker and the lighthouses are made-up.
@@ -80,6 +81,37 @@ const CHART_W = 220;
 const CHART_H = 160;
 const CHART_MARGIN = 10;
 
+/**
+ * The canvas in scene pixels: its size, and how much of each edge the page covers (the HUD on top,
+ * the safe area), so the chart, the compass and the lights stay clear of it
+ */
+export interface Frame {
+	width: number;
+	height: number;
+	top: number;
+	right: number;
+	bottom: number;
+	left: number;
+	/** Where the cross-check button starts at the bottom right; the compass sits above it */
+	buttonTop: number;
+}
+
+/** The bare view of config.ts, as the tests draw it */
+export const FULL_FRAME: Frame = {
+	width: SCENE_W,
+	height: SCENE_H,
+	top: 0,
+	right: 0,
+	bottom: 0,
+	left: 0,
+	buttonTop: SCENE_H
+};
+
+/** CSS pixels per scene pixel for a canvas this size: the whole view of config.ts always fits */
+export function sceneScale(cssWidth: number, cssHeight: number): number {
+	return Math.max(Math.min(cssWidth / SCENE_W, cssHeight / SCENE_H), 0.01);
+}
+
 /** A small deterministic scatter so the waves sit in the same places every frame */
 function hash(a: number, b: number): number {
 	let h = (a * 374761393 + b * 668265263) | 0;
@@ -96,28 +128,33 @@ function outline(ctx: CanvasRenderingContext2D, width = 2.5) {
 }
 
 /** The middle of the view: the boat, kept off the edge of a small sea */
-function camera(level: Level, pos: Vec): Vec {
+function camera(level: Level, pos: Vec, frame: Frame): Vec {
 	const clamp = (value: number, size: number, view: number) =>
 		size <= view ? size / 2 : Math.min(size - view / 2, Math.max(view / 2, value));
-	return { x: clamp(pos.x, level.width, VIEW_W), y: clamp(pos.y, level.height, VIEW_H) };
+	return {
+		x: clamp(pos.x, level.width, frame.width / UNIT),
+		y: clamp(pos.y, level.height, frame.height / UNIT)
+	};
 }
 
 interface View {
 	cam: Vec;
+	frame: Frame;
 	/** Radius of the fog around the boat, in sea units */
 	fog: number;
 	/** The point the fog is centred on: the boat itself */
 	boat: Vec;
 }
 
-const sx = (view: View, x: number) => (x - view.cam.x) * UNIT + SCENE_W / 2;
-const sy = (view: View, y: number) => (y - view.cam.y) * UNIT + SCENE_H / 2;
+const sx = (view: View, x: number) => (x - view.cam.x) * UNIT + view.frame.width / 2;
+const sy = (view: View, y: number) => (y - view.cam.y) * UNIT + view.frame.height / 2;
 const away = (a: Vec, b: Vec) => Math.hypot(a.x - b.x, a.y - b.y);
 
 function drawWater(ctx: CanvasRenderingContext2D, state: GameState, view: View, still: boolean) {
 	const { level } = state;
+	const { width, height } = view.frame;
 	ctx.fillStyle = DEEP;
-	ctx.fillRect(0, 0, SCENE_W, SCENE_H);
+	ctx.fillRect(0, 0, width, height);
 	const left = sx(view, 0);
 	const top = sy(view, 0);
 	ctx.fillStyle = WATER;
@@ -128,10 +165,10 @@ function drawWater(ctx: CanvasRenderingContext2D, state: GameState, view: View, 
 	ctx.strokeStyle = WATER_DARK;
 	ctx.lineWidth = 2.5;
 	ctx.lineCap = 'round';
-	const firstX = Math.floor(view.cam.x - VIEW_W / 2);
-	const firstY = Math.floor(view.cam.y - VIEW_H / 2);
-	for (let gx = firstX; gx <= firstX + VIEW_W + 1; gx++) {
-		for (let gy = firstY; gy <= firstY + VIEW_H + 1; gy++) {
+	const firstX = Math.floor(view.cam.x - width / UNIT / 2);
+	const firstY = Math.floor(view.cam.y - height / UNIT / 2);
+	for (let gx = firstX; gx <= firstX + width / UNIT + 1; gx++) {
+		for (let gy = firstY; gy <= firstY + height / UNIT + 1; gy++) {
 			if (gx < 0 || gy < 0 || gx >= level.width || gy >= level.height) continue;
 			if (hash(gx, gy) < 0.45) continue;
 			const x = sx(view, gx + hash(gy, gx));
@@ -461,24 +498,32 @@ function drawFog(ctx: CanvasRenderingContext2D, view: View) {
 	gradient.addColorStop(0, 'rgba(201,211,220,0)');
 	gradient.addColorStop(0.85, 'rgba(201,211,220,0.82)');
 	gradient.addColorStop(1, FOG);
+	const { width, height } = view.frame;
 	ctx.fillStyle = gradient;
-	ctx.fillRect(0, 0, SCENE_W, SCENE_H);
+	ctx.fillRect(0, 0, width, height);
 	ctx.fillStyle = FOG;
 	// Beyond the radius nothing but fog (the gradient only covers the circle's own area)
 	ctx.beginPath();
-	ctx.rect(0, 0, SCENE_W, SCENE_H);
+	ctx.rect(0, 0, width, height);
 	ctx.arc(x, y, radius, 0, Math.PI * 2, true);
 	ctx.fill('evenodd');
 }
 
-/** Lighthouse lights shine through the fog: a blinking dot, pinned to the view edge when off screen */
+/** Lighthouse lights shine through the fog: a blinking dot, pinned to the view edge (below the HUD) when off screen */
 function drawLights(ctx: CanvasRenderingContext2D, state: GameState, view: View) {
+	const { frame } = view;
 	state.level.lighthouses.forEach((lighthouse, index) => {
 		if (away(lighthouse, state.pos) > LIGHT_RANGE) return;
 		if (!lightOn(lighthouse.flashes, state.time, lightOffset(index))) return;
 		const margin = 16;
-		const x = Math.min(SCENE_W - margin, Math.max(margin, sx(view, lighthouse.x)));
-		const y = Math.min(SCENE_H - margin, Math.max(margin, sy(view, lighthouse.y)));
+		const x = Math.min(
+			frame.width - frame.right - margin,
+			Math.max(frame.left + margin, sx(view, lighthouse.x))
+		);
+		const y = Math.min(
+			frame.height - frame.bottom - margin,
+			Math.max(frame.top + margin, sy(view, lighthouse.y))
+		);
 		const glow = ctx.createRadialGradient(x, y, 0, x, y, 26);
 		glow.addColorStop(0, 'rgba(255,240,150,0.95)');
 		glow.addColorStop(1, 'rgba(255,240,150,0)');
@@ -494,9 +539,7 @@ function drawLights(ctx: CanvasRenderingContext2D, state: GameState, view: View)
 	});
 }
 
-function drawCompass(ctx: CanvasRenderingContext2D, state: GameState) {
-	const x = SCENE_W - 46;
-	const y = 46;
+function drawCompass(ctx: CanvasRenderingContext2D, state: GameState, x: number, y: number) {
 	ctx.fillStyle = 'rgba(255,255,255,0.9)';
 	ctx.beginPath();
 	ctx.arc(x, y, 34, 0, Math.PI * 2);
@@ -708,12 +751,14 @@ function drawEffects(ctx: CanvasRenderingContext2D, effects: readonly Effect[], 
 export function drawScene(
 	ctx: CanvasRenderingContext2D,
 	state: GameState,
-	extras: SceneExtras = NO_EXTRAS
+	extras: SceneExtras = NO_EXTRAS,
+	frame: Frame = FULL_FRAME
 ) {
 	const still = extras.reducedMotion;
 	const { level } = state;
 	const view: View = {
-		cam: camera(level, state.pos),
+		cam: camera(level, state.pos, frame),
+		frame,
 		boat: state.pos,
 		fog: level.fogRadius
 	};
@@ -771,13 +816,19 @@ export function drawScene(
 	}
 	drawEffects(ctx, extras.effects, view);
 	ctx.restore();
-	drawCompass(ctx, state);
+	// The compass sits above the cross-check button at the bottom right, the chart in the other corner
+	drawCompass(
+		ctx,
+		state,
+		frame.width - frame.right - CHART_MARGIN - 36,
+		Math.min(frame.height - frame.bottom, frame.buttonTop) - CHART_MARGIN - 58
+	);
 	drawChart(
 		ctx,
 		state,
 		{
-			x: SCENE_W - CHART_W - CHART_MARGIN,
-			y: SCENE_H - CHART_H - CHART_MARGIN,
+			x: frame.left + CHART_MARGIN,
+			y: frame.height - frame.bottom - CHART_H - CHART_MARGIN,
 			w: CHART_W,
 			h: CHART_H
 		},
@@ -805,10 +856,10 @@ export function drawChartPreview(
 }
 
 /** Where the boat is on the scene, in scene pixels (the view follows it, except near the edge of a small sea) */
-export function boatOnScreen(state: GameState): Vec {
-	const cam = camera(state.level, state.pos);
+export function boatOnScreen(state: GameState, frame: Frame = FULL_FRAME): Vec {
+	const cam = camera(state.level, state.pos, frame);
 	return {
-		x: (state.pos.x - cam.x) * UNIT + SCENE_W / 2,
-		y: (state.pos.y - cam.y) * UNIT + SCENE_H / 2
+		x: (state.pos.x - cam.x) * UNIT + frame.width / 2,
+		y: (state.pos.y - cam.y) * UNIT + frame.height / 2
 	};
 }

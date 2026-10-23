@@ -26,7 +26,6 @@
 	import IconDraft from '~icons/lucide/wind';
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconLaser from '~icons/lucide/target';
-	import IconMotion from '~icons/lucide/waves';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
 	import IconThunder from '~icons/lucide/cloud-lightning';
@@ -73,17 +72,6 @@
 		>
 			<IconHelp class="size-4" aria-hidden="true" />
 			<span class="hidden sm:inline">{m.purr_help_button()}</span>
-		</button>
-		<button
-			type="button"
-			class="btn-chunky px-2 py-1 text-sm sm:px-3"
-			class:bg-explosion-yellow={game.reducedMotion}
-			aria-pressed={game.reducedMotion}
-			aria-label={m.purr_reduce_motion()}
-			onclick={() => game.setReducedMotion(!game.reducedMotion)}
-		>
-			<IconMotion class="size-4" aria-hidden="true" />
-			<span class="hidden md:inline">{m.purr_reduce_motion()}</span>
 		</button>
 		{#if game.status === 'playing' || game.status === 'paused'}
 			<button type="button" class="btn-chunky px-3 py-1 text-sm" onclick={() => game.togglePause()}>

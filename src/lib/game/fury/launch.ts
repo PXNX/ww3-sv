@@ -41,8 +41,8 @@ export const DEFAULT_AIM: Aim = { angle: (35 * Math.PI) / 180, power: 0.7 };
 export const KEY_ANGLE_STEP = Math.PI / 180;
 export const KEY_POWER_STEP = 0.02;
 
-/** How long the dotted preview reaches, in seconds of flight: normal and the accessibility setting */
-export const PREVIEW_SECONDS = { normal: 0.45, long: 1.4 } as const;
+/** How long the dotted preview reaches, in seconds of flight */
+export const PREVIEW_SECONDS = 1.4;
 
 const TAU = Math.PI * 2;
 
@@ -94,10 +94,6 @@ export function launchVelocity(aim: Aim, speedFactor = 1): Vec {
 export function adjustAim(aim: Aim, angleDelta: number, powerDelta: number): Aim {
 	const angle = Math.min(MAX_ANGLE, Math.max(MIN_ANGLE, clampAngle(aim.angle) + angleDelta));
 	return clampAim({ angle, power: aim.power + powerDelta });
-}
-
-export function previewSeconds(long: boolean): number {
-	return long ? PREVIEW_SECONDS.long : PREVIEW_SECONDS.normal;
 }
 
 /**

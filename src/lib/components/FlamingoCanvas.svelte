@@ -1,6 +1,8 @@
 <!--
 	Flamingo Flight playing field: a crisp high-DPI canvas driven by the fixed-timestep loop, with
-	tap, Space and Up arrow input and small overlays for the start hint, progress and pause.
+	tap, Space and Up arrow input and small overlays for the start hint, progress and pause. The
+	canvas fills the whole page: the field is always all on screen, and whatever space is left over
+	shows more sky, ground and scenery around it.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -9,13 +11,15 @@
 	import { textDirection } from '#lib/i18n.js';
 	import { createFixedLoop, prefersReducedMotion, type FixedLoop } from '#lib/game/loop.js';
 	import { suppliedFlamingoAssets } from '#lib/game/flamingo/assets.js';
-	import { WORLD_WIDTH } from '#lib/game/flamingo/physics.js';
 	import type { SiteKind } from '#lib/game/flamingo/refinery.js';
 	import {
+		FIELD_VIEW,
 		FlamingoEffects,
 		drawScene,
+		fitView,
 		type RenderAssets,
-		type RenderLabels
+		type RenderLabels,
+		type View
 	} from '#lib/game/flamingo/render.js';
 	import { explosionFrames, loadImage } from '#lib/theme/sprites.js';
 	import type { FlamingoGame } from '#lib/stores/flamingoGame.svelte.js';
@@ -28,6 +32,7 @@
 	let loop: FixedLoop | undefined;
 	let reducedMotion = false;
 	let effects = new FlamingoEffects(false);
+	let view: View = FIELD_VIEW;
 	const assets: RenderAssets = { explosion: [], supplied: {} };
 
 	const approachText: Record<SiteKind, () => string> = {
@@ -60,16 +65,18 @@
 
 	function render() {
 		if (!canvas || !context) return;
-		const scale = canvas.width / WORLD_WIDTH;
-		context.setTransform(scale, 0, 0, scale, 0, 0);
-		drawScene(context, game.sim, effects, assets, labels);
+		const fit = fitView(canvas.width, canvas.height);
+		view = fit.view;
+		const { scale } = fit;
+		context.setTransform(scale, 0, 0, scale, -view.left * scale, -view.top * scale);
+		drawScene(context, game.sim, effects, assets, labels, view);
 	}
 
 	function update(stepMs: number) {
 		const dt = stepMs / 1000;
 		if (!game.update(dt)) return;
 		effects.handle(game.sim.events, game.sim, labels);
-		effects.update(dt, game.sim);
+		effects.update(dt, game.sim, view);
 	}
 
 	function resize() {
@@ -143,66 +150,60 @@
 
 <svelte:window onkeydown={onKeyDown} />
 
-<!-- The whole page takes taps; the field keeps its shape, as large as fits, centered on it -->
+<!-- The whole page takes taps -->
 <div
 	data-playfield
-	class="[container-type:size] flex min-h-0 flex-1 touch-none items-center justify-center bg-banner-slate select-none"
+	class="relative min-h-0 flex-1 touch-none overflow-hidden bg-sky select-none"
 	role="application"
 	aria-label={m.flamingo_playfield_label()}
 	onpointerdown={onPointerDown}
 >
-	<div class="relative aspect-[9/16] w-[min(100cqw,calc(100cqh*9/16))] overflow-hidden bg-sky">
-		<canvas bind:this={canvas} class="block size-full" aria-hidden="true"></canvas>
+	<canvas bind:this={canvas} class="absolute inset-0 block size-full" aria-hidden="true"></canvas>
 
-		{#if game.status === 'playing' || game.status === 'paused'}
-			<!-- Clear of the floating page controls when the field reaches the top of the screen -->
-			<div
-				class="pointer-events-none absolute inset-x-0 flex justify-center px-2"
-				style:top="max(0.5rem, calc(var(--hud-top) - (100cqh - min(100cqh, 100cqw * 16 / 9)) / 2))"
-			>
-				{#if game.stage === 'approach'}
-					<p
-						dir="auto"
-						class="pop-in rounded-md border-3 border-ink bg-explosion-yellow px-2 py-0.5 text-sm font-bold"
-						aria-live="polite"
-					>
-						{approachText[game.site]()}
-					</p>
-				{:else}
-					<p
-						dir="auto"
-						class="rounded-md border-2 border-ink bg-paper px-2 py-0.5 text-sm font-bold"
-					>
-						{m.flamingo_gaps_left({ count: game.gapsLeft })}
-					</p>
-				{/if}
-			</div>
-		{/if}
-
-		{#if game.status === 'ready'}
-			<div
-				class="pointer-events-none absolute inset-x-3 bottom-24 flex flex-col items-center gap-2 text-center"
-			>
+	{#if game.status === 'playing' || game.status === 'paused'}
+		<!-- Clear of the floating page controls -->
+		<div
+			class="pointer-events-none absolute inset-x-0 top-[max(0.5rem,var(--hud-top))] flex justify-center px-2"
+		>
+			{#if game.stage === 'approach'}
 				<p
 					dir="auto"
-					class="pop-in sticker px-4 py-1 font-display text-2xl font-bold"
-					style:--tilt="-2deg"
+					class="pop-in rounded-md border-3 border-ink bg-explosion-yellow px-2 py-0.5 text-sm font-bold"
+					aria-live="polite"
 				>
-					{m.flamingo_tap_to_start()}
+					{approachText[game.site]()}
 				</p>
-				{#if showTutorial}
-					<p
-						dir="auto"
-						class="rounded-md border-2 border-ink bg-paper px-2 py-1 text-sm leading-snug"
-					>
-						{m.flamingo_controls_hint()}
-					</p>
-				{/if}
-			</div>
-		{/if}
+			{:else}
+				<p dir="auto" class="rounded-md border-2 border-ink bg-paper px-2 py-0.5 text-sm font-bold">
+					{m.flamingo_gaps_left({ count: game.gapsLeft })}
+				</p>
+			{/if}
+		</div>
+	{/if}
 
-		{#if game.status === 'paused'}
-			<PauseOverlay onResume={() => game.resume()} />
-		{/if}
-	</div>
+	{#if game.status === 'ready'}
+		<div
+			class="pointer-events-none absolute inset-x-3 bottom-[calc(6rem+env(safe-area-inset-bottom))] flex flex-col items-center gap-2 text-center"
+		>
+			<p
+				dir="auto"
+				class="pop-in sticker px-4 py-1 font-display text-2xl font-bold"
+				style:--tilt="-2deg"
+			>
+				{m.flamingo_tap_to_start()}
+			</p>
+			{#if showTutorial}
+				<p
+					dir="auto"
+					class="rounded-md border-2 border-ink bg-paper px-2 py-1 text-sm leading-snug"
+				>
+					{m.flamingo_controls_hint()}
+				</p>
+			{/if}
+		</div>
+	{/if}
+
+	{#if game.status === 'paused'}
+		<PauseOverlay onResume={() => game.resume()} />
+	{/if}
 </div>

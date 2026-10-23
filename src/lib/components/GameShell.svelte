@@ -5,11 +5,13 @@
 	whatever sound is still playing stops when the page is left. Immersive games fill the whole
 	viewport instead: the controls and a small score badge float above the playfield, and the
 	`--hud-top` variable tells the game how far down its own overlays start to stay clear of them.
+	Landscape games also go full screen on phones while immersive, hiding the browser bars.
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { onDestroy } from 'svelte';
 	import { resolve } from '$app/paths';
+	import { enterLandscape, leaveLandscape } from '#lib/game/landscape.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import SoundToggle from './SoundToggle.svelte';
@@ -23,6 +25,7 @@
 		confirmLeave = false,
 		wide = false,
 		immersive = false,
+		landscape = false,
 		children
 	}: {
 		title: string;
@@ -36,6 +39,8 @@
 		wide?: boolean;
 		/** The game fills the whole viewport; the back link and the actions float on top of it */
 		immersive?: boolean;
+		/** Played sideways: while immersive, phones go full screen and lock to landscape */
+		landscape?: boolean;
 		children: Snippet;
 	} = $props();
 
@@ -55,6 +60,14 @@
 
 	$effect(() => {
 		if (!confirmLeave) confirmingLeave = false;
+	});
+
+	// Runs right after the tap that started the game, which still counts as the gesture that full
+	// screen needs
+	$effect(() => {
+		if (!immersive || !landscape) return;
+		void enterLandscape();
+		return () => leaveLandscape();
 	});
 
 	// Nothing a game started (a voice line, a long explosion) keeps sounding on the next page

@@ -1,5 +1,6 @@
 <!--
-	Convoy Runner playfield: draws the strait on a canvas (crisp on high-density screens). The tanker
+	Convoy Runner playfield: draws the strait on a canvas that fills the whole area, with no letterbox
+	bars (crisp on high-density screens). The tanker
 	is held with a finger or the mouse and follows it 1:1 sideways (shared PointerDrag helper); a tap
 	beside it, arrow keys, and A and D change lane. Left and right are always physical, also in
 	right-to-left languages.
@@ -7,11 +8,11 @@
 <script lang="ts">
 	import { onMount, type Snippet } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
-	import { FIELD_HEIGHT, FIELD_WIDTH, SIDE_MARGIN } from '#lib/game/convoy/constants.js';
-	import { drawScene, loadConvoySprites } from '#lib/game/convoy/drawScene.js';
+	import { SIDE_MARGIN } from '#lib/game/convoy/constants.js';
+	import { convoyView, drawScene, loadConvoySprites } from '#lib/game/convoy/drawScene.js';
 	import { shipRange } from '#lib/game/convoy/runnerStep.js';
 	import { createFixedLoop, onAppHidden } from '#lib/game/loop.js';
-	import { PointerDrag, clampToBounds, clientToLocal } from '#lib/game/pointerDrag.js';
+	import { PointerDrag, clampToBounds } from '#lib/game/pointerDrag.js';
 	import type { ConvoyGame } from '#lib/stores/convoyGame.svelte.js';
 
 	let {
@@ -56,13 +57,9 @@
 
 	function resize() {
 		if (!wrapper || !canvas) return;
-		// As large as the screen allows, keeping the field's shape
-		const width = Math.min(
-			wrapper.clientWidth,
-			(wrapper.clientHeight * FIELD_WIDTH) / FIELD_HEIGHT
-		);
-		cssWidth = Math.max(1, Math.floor(width));
-		cssHeight = Math.floor((cssWidth * FIELD_HEIGHT) / FIELD_WIDTH);
+		// The whole screen: the scene shows more strait or banks wherever it is not field-shaped
+		cssWidth = Math.max(1, wrapper.clientWidth);
+		cssHeight = Math.max(1, wrapper.clientHeight);
 		const ratio = window.devicePixelRatio || 1;
 		canvas.width = Math.round(cssWidth * ratio);
 		canvas.height = Math.round(cssHeight * ratio);
@@ -125,16 +122,20 @@
 
 	/** Field units from the left edge of the field to the center of lane 0 */
 	const LANE_ORIGIN = SIDE_MARGIN + 0.5;
-	const FIELD = { width: FIELD_WIDTH, height: FIELD_HEIGHT };
 
-	/** Viewport x of a sideways position given in lanes (rect: the canvas, measured fresh) */
+	/**
+	 * Viewport x of a sideways position given in lanes (rect: the canvas, measured fresh). Uses the
+	 * renderer's own mapping, as the field is centered with banks beyond it on wide screens.
+	 */
 	function clientXOfLane(rect: DOMRect, lane: number): number {
-		return rect.left + ((LANE_ORIGIN + lane) / FIELD_WIDTH) * rect.width;
+		const { unit, left } = convoyView(rect.width, rect.height);
+		return rect.left + left + (LANE_ORIGIN + lane) * unit;
 	}
 
 	/** Sideways position in lanes under a viewport x */
 	function laneAtClientX(rect: DOMRect, clientX: number): number {
-		return clientToLocal(rect, { x: clientX, y: 0 }, FIELD).x - LANE_ORIGIN;
+		const { unit, left } = convoyView(rect.width, rect.height);
+		return (clientX - rect.left - left) / unit - LANE_ORIGIN;
 	}
 
 	/** The way a tap steers; 0 when the press was on the tanker itself, which only grabs it */
@@ -194,24 +195,23 @@
 
 <svelte:window onkeydown={onKeydown} />
 
-<div data-playfield class="flex min-h-0 flex-1 flex-col items-center bg-banner-slate">
-	<div bind:this={wrapper} class="flex min-h-0 w-full flex-1 items-center justify-center">
-		<div class="relative overflow-hidden" style:width="{cssWidth}px" style:height="{cssHeight}px">
-			<canvas
-				bind:this={canvas}
-				class="block size-full touch-none select-none"
-				aria-label={m.convoy_playfield_label()}
-				onpointerdown={onPointerDown}
-				onpointermove={(event) => drag.pointerMove(event)}
-				onpointerup={(event) => drag.pointerUp(event)}
-				onpointercancel={(event) => drag.pointerCancel(event)}
-				oncontextmenu={(event) => event.preventDefault()}
-			></canvas>
-			{#if children}
-				<div class="pointer-events-none absolute inset-0 flex items-center justify-center p-3">
-					{@render children()}
-				</div>
-			{/if}
+<div data-playfield bind:this={wrapper} class="relative min-h-0 flex-1 overflow-hidden">
+	<canvas
+		bind:this={canvas}
+		class="absolute inset-0 block size-full touch-none select-none"
+		aria-label={m.convoy_playfield_label()}
+		onpointerdown={onPointerDown}
+		onpointermove={(event) => drag.pointerMove(event)}
+		onpointerup={(event) => drag.pointerUp(event)}
+		onpointercancel={(event) => drag.pointerCancel(event)}
+		oncontextmenu={(event) => event.preventDefault()}
+	></canvas>
+	{#if children}
+		<!-- Kept below the floating controls and inside the safe areas, as the canvas fills the screen -->
+		<div
+			class="pointer-events-none absolute inset-0 flex items-center justify-center pt-(--hud-top) pr-[calc(0.75rem+env(safe-area-inset-right))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] pl-[calc(0.75rem+env(safe-area-inset-left))]"
+		>
+			{@render children()}
 		</div>
-	</div>
+	{/if}
 </div>

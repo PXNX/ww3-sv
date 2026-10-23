@@ -12,17 +12,13 @@ import { DEFAULT_AIM, MIN_POWER, adjustAim, type Aim } from '#lib/game/fury/laun
 import { LEVELS, PREPARED_LEVEL_COUNT, levelAt, levelIdAt } from '#lib/game/fury/levels/index.js';
 import { backgroundFor, type Backdrop } from '#lib/game/fury/backgrounds.js';
 import {
-	DEFAULT_SETTINGS,
 	EMPTY_PROGRESS,
 	PROGRESS_KEY,
-	SETTINGS_KEY,
 	isFuryProgress,
-	isFurySettings,
 	isUnlocked,
 	recordWin,
 	visibleLevelCount,
-	type FuryProgress,
-	type FurySettings
+	type FuryProgress
 } from '#lib/game/fury/progress.js';
 import { highscores } from '#lib/services/highscore.js';
 import { localStore } from '#lib/services/storage.js';
@@ -81,7 +77,6 @@ export class FuryGame {
 	isNewBest = $state(false);
 	best = $state<number | null>(null);
 	progress = $state<FuryProgress>(EMPTY_PROGRESS);
-	settings = $state<FurySettings>(DEFAULT_SETTINGS);
 	/** Latest event worth announcing to screen readers */
 	announcement = $state<FuryAnnouncement | null>(null);
 	/** Increases with every step while playing; drives idle animation */
@@ -118,11 +113,9 @@ export class FuryGame {
 		return this.phase === 'aiming' ? (this.squad[0] ?? null) : null;
 	}
 
-	/** Reads progress and settings from local storage (call in the browser) */
+	/** Reads progress from local storage (call in the browser) */
 	load() {
-		const store = localStore();
-		this.progress = store.read(PROGRESS_KEY, EMPTY_PROGRESS, isFuryProgress);
-		this.settings = store.read(SETTINGS_KEY, DEFAULT_SETTINGS, isFurySettings);
+		this.progress = localStore().read(PROGRESS_KEY, EMPTY_PROGRESS, isFuryProgress);
 	}
 
 	isUnlocked(index: number): boolean {
@@ -135,11 +128,6 @@ export class FuryGame {
 
 	bestFor(levelId: string): number | null {
 		return highscores().get(highscoreParts(levelId));
-	}
-
-	setLongPreview(longPreview: boolean) {
-		this.settings = { ...this.settings, longPreview };
-		localStore().write(SETTINGS_KEY, this.settings);
 	}
 
 	openLevel(index: number) {

@@ -89,13 +89,18 @@ const PLACEHOLDER_SPRITE_IDS = Object.keys(PLACEHOLDER_FILES) as FurySpriteId[];
 
 export type FurySprites = Partial<Record<FurySpriteId, HTMLImageElement>>;
 
+/** The picture of a sprite as it is shown in the game, for the page around it (such as a tutorial) */
+export function furySpriteSrc(id: FurySpriteId): string | null {
+	return SUPPLIED_FURY_SPRITES.includes(id) ? FILES[id] : (PLACEHOLDER_FILES[id] ?? null);
+}
+
 /** Loads every supplied sprite, falling back to a placeholder SVG where one exists */
 export async function loadFurySprites(): Promise<FurySprites> {
 	const sprites: FurySprites = {};
 	const ids = new Set([...SUPPLIED_FURY_SPRITES, ...PLACEHOLDER_SPRITE_IDS]);
 	await Promise.all(
 		[...ids].map(async (id) => {
-			const src = SUPPLIED_FURY_SPRITES.includes(id) ? FILES[id] : PLACEHOLDER_FILES[id];
+			const src = furySpriteSrc(id);
 			const image = src ? await loadImage(src) : null;
 			if (image) sprites[id] = image;
 		})

@@ -43,31 +43,10 @@
 		const update = () => (portrait = query.matches);
 		update();
 		query.addEventListener('change', update);
-		return () => {
-			query.removeEventListener('change', update);
-			if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
-		};
+		return () => query.removeEventListener('change', update);
 	});
 
-	/**
-	 * Raids are played sideways: on a phone, starting one asks for full screen and a landscape lock
-	 * (both need the tap that starts it). Browsers that refuse simply keep the page as it is.
-	 */
-	async function goLandscape() {
-		if (!matchMedia('(pointer: coarse)').matches) return;
-		try {
-			if (!document.fullscreenElement) await document.documentElement.requestFullscreen?.();
-			const orientation = screen.orientation as ScreenOrientation & {
-				lock?: (orientation: string) => Promise<void>;
-			};
-			await orientation.lock?.('landscape');
-		} catch {
-			// Not supported here (iOS Safari, desktop): the rotate hint covers it
-		}
-	}
-
 	function start() {
-		void goLandscape();
 		game.start();
 	}
 
@@ -94,6 +73,7 @@
 	best={game.best}
 	wide
 	immersive={inRaid}
+	landscape
 	confirmLeave={game.status === 'playing' || game.status === 'paused' || game.status === 'down'}
 >
 	{#snippet actions()}

@@ -38,6 +38,8 @@
 
 	// The how-to-play screen opens on the first visit and whenever the help button is tapped
 	let showTutorial = $state(false);
+	/** The HUD floats over the playfield; the canvas keeps the lighthouse lights below it */
+	let hudHeight = $state(0);
 	onMount(() => {
 		game.load();
 		showTutorial = firstPlay('gpsliar');
@@ -61,6 +63,7 @@
 	best={playing ? game.best : undefined}
 	confirmLeave={running}
 	immersive={playing}
+	landscape
 >
 	{#snippet actions()}
 		<button
@@ -99,6 +102,7 @@
 		<!-- The playfield fills the screen; the HUD floats over its top under the page controls -->
 		<section class="relative flex min-h-0 flex-1 flex-col">
 			<div
+				bind:offsetHeight={hudHeight}
 				class="pointer-events-none absolute inset-x-2 top-(--hud-top) z-10 mx-auto flex max-w-xl flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1 shadow-[3px_3px_0_var(--color-ink)]"
 			>
 				<LivesBar lives={game.hearts} max={STARTING_HEARTS} class="shrink-0 text-xl" />
@@ -115,7 +119,7 @@
 				</p>
 			</div>
 
-			<GpsLiarCanvas {game} levelName={levelName(game.levelIndex)} />
+			<GpsLiarCanvas {game} levelName={levelName(game.levelIndex)} {hudHeight} />
 			<RotateHint />
 		</section>
 	{:else}

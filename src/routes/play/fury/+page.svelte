@@ -1,27 +1,37 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
-	import FuryCanvas from '#lib/components/FuryCanvas.svelte';
+	import FuryCanvas, { birdHint, birdName } from '#lib/components/FuryCanvas.svelte';
 	import FuryLevelSelect from '#lib/components/FuryLevelSelect.svelte';
 	import FuryWinPanel from '#lib/components/FuryWinPanel.svelte';
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import PauseOverlay from '#lib/components/PauseOverlay.svelte';
 	import RotateHint from '#lib/components/RotateHint.svelte';
+	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import { furySpriteSrc } from '#lib/game/fury/assets.js';
+	import { BIRD_KINDS } from '#lib/game/fury/birds.js';
 	import { drawScene, fitCamera } from '#lib/game/fury/furyRender.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
 	import { FuryGame } from '#lib/stores/furyGame.svelte.js';
+	import IconHelp from '~icons/lucide/circle-help';
 	import IconList from '~icons/lucide/list';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
 	import IconRotate from '~icons/lucide/rotate-ccw';
 
 	const game = new FuryGame();
+	// The how-to-play screen opens on the first visit and whenever the help button is tapped
 	let showTutorial = $state(false);
 	onMount(() => {
 		game.load();
 		showTutorial = firstPlay('fury');
 	});
+
+	function openHelp() {
+		if (game.screen === 'play') game.setPaused(true);
+		showTutorial = true;
+	}
 
 	const playing = $derived(game.screen === 'play');
 	const title = $derived(
@@ -56,8 +66,18 @@
 	best={playing ? game.best : undefined}
 	confirmLeave={playing && !game.showWin && !game.showFail}
 	immersive={playing}
+	landscape
 >
 	{#snippet actions()}
+		<button
+			type="button"
+			class="btn-chunky px-2 py-1 text-sm sm:px-3"
+			aria-label={m.fury_help_button()}
+			onclick={openHelp}
+		>
+			<IconHelp class="size-4" aria-hidden="true" />
+			<span class="hidden sm:inline">{m.fury_help_button()}</span>
+		</button>
 		{#if playing}
 			<button
 				type="button"
@@ -78,7 +98,7 @@
 
 	{#if playing}
 		<div class="relative flex min-h-0 flex-1 flex-col">
-			<FuryCanvas {game} {showTutorial} />
+			<FuryCanvas {game} />
 			<RotateHint />
 			{#if game.paused}
 				<PauseOverlay hint="" onResume={() => game.setPaused(false)}>
@@ -90,21 +110,35 @@
 						<IconList class="size-5" aria-hidden="true" />
 						{m.fury_back_to_levels()}
 					</button>
-					<label class="flex min-h-11 items-center gap-2 font-semibold">
-						<input
-							type="checkbox"
-							class="checkbox border-3 border-ink"
-							checked={game.settings.longPreview}
-							onchange={(event) => game.setLongPreview(event.currentTarget.checked)}
-						/>
-						{m.fury_long_preview()}
-					</label>
 				</PauseOverlay>
 			{/if}
 		</div>
 	{:else}
 		<FuryLevelSelect {game} />
 	{/if}
+
+	<TutorialModal
+		open={showTutorial}
+		title={m.fury_tutorial_title()}
+		closeLabel={m.fury_tutorial_close()}
+		onclose={() => (showTutorial = false)}
+	>
+		<p>{m.fury_intro()}</p>
+		<p>{m.fury_controls_hint()}</p>
+		<p>{m.fury_tutorial_birds()}</p>
+		<ul class="flex flex-col gap-2">
+			{#each BIRD_KINDS as kind (kind)}
+				{@const src = furySpriteSrc(kind)}
+				<li class="flex items-center gap-3">
+					{#if src}
+						<img {src} alt="" class="size-12 shrink-0 object-contain" />
+					{/if}
+					<span><strong>{birdName(kind)}:</strong> {birdHint(kind)}</span>
+				</li>
+			{/each}
+		</ul>
+		<p class="hidden text-sm sm:block">{m.fury_keyboard_hint()}</p>
+	</TutorialModal>
 </GameShell>
 
 <FuryWinPanel

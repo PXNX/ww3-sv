@@ -42,12 +42,11 @@ function newGame(seed = 7) {
 	const mixer = new SpyMixer();
 	const game = new PurrPentagramGame({
 		scores: () => scores,
-		settings: () => storage,
 		seed: () => seed,
 		mixer,
 		reducedMotion: false
 	});
-	return { game, scores, mixer, storage };
+	return { game, scores, mixer };
 }
 
 const seat = (game: PurrPentagramGame, cat: number): Point =>
@@ -226,21 +225,6 @@ describe('PurrPentagramGame', () => {
 		for (let i = 0; i < 600; i++) game.update(STEP);
 		expect(mixer.finaleStarted).toBe(1);
 		expect(game.status).toBe('won');
-	});
-
-	it('remembers the reduce-motion setting', () => {
-		const { game, storage } = newGame();
-		expect(game.reducedMotion).toBe(false);
-		game.setReducedMotion(true);
-		expect(game.reducedMotion).toBe(true);
-
-		const again = new PurrPentagramGame({
-			settings: () => storage,
-			mixer: new SpyMixer(),
-			reducedMotion: false
-		});
-		again.load();
-		expect(again.reducedMotion).toBe(true);
 	});
 
 	it('releases the audio when the page is left', () => {

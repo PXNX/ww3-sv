@@ -15,7 +15,6 @@ import {
 	ballisticPosition,
 	clampAngle,
 	launchVelocity,
-	previewSeconds,
 	pullFromAim,
 	trajectoryPoints
 } from './launch';
@@ -91,13 +90,10 @@ describe('trajectory preview', () => {
 		expect(Math.abs(last.y - ideal.y)).toBeLessThan(0.1);
 	});
 
-	it('reaches further with the accessibility setting', () => {
-		expect(previewSeconds(false)).toBe(PREVIEW_SECONDS.normal);
-		expect(previewSeconds(true)).toBe(PREVIEW_SECONDS.long);
-		const short = trajectoryPoints(start, velocity, previewSeconds(false));
-		const long = trajectoryPoints(start, velocity, previewSeconds(true));
-		expect(long.length).toBeGreaterThan(short.length * 2);
-		expect(long.slice(0, short.length)).toEqual(short);
+	it('previews over a second of flight', () => {
+		const points = trajectoryPoints(start, velocity, PREVIEW_SECONDS);
+		expect(points.length).toBeGreaterThan(0);
+		expect(points).toEqual(trajectoryPoints(start, velocity, 1.4));
 	});
 
 	it('matches the physics engine step for step', () => {

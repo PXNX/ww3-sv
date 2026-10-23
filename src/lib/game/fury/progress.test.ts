@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
 	EMPTY_PROGRESS,
 	isFuryProgress,
-	isFurySettings,
 	isUnlocked,
 	recordWin,
 	totalStars,
@@ -44,8 +43,6 @@ describe('progress', () => {
 		expect(isFuryProgress({ version: 1, stars: { 'level-01': 7 } })).toBe(false);
 		expect(isFuryProgress({ version: 1, stars: [] })).toBe(false);
 		expect(isFuryProgress(null)).toBe(false);
-		expect(isFurySettings({ longPreview: true })).toBe(true);
-		expect(isFurySettings({ longPreview: 'yes' })).toBe(false);
 	});
 });
 

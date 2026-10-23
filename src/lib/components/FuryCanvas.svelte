@@ -1,6 +1,6 @@
 <!--
 	Magyar's Birds playing field: high-DPI canvas rendering, slingshot input (touch and mouse drag,
-	or the keyboard), the bird squad and the tap ability. The field stays left-to-right in every
+	or the keyboard), the bird squad lined up behind the slingshot and the tap ability. The field stays left-to-right in every
 	language; the surrounding chrome mirrors.
 -->
 <script lang="ts" module>
@@ -41,28 +41,22 @@
 	import { createFixedLoop, onAppHidden, prefersReducedMotion } from '#lib/game/loop.js';
 	import { loadFurySprites, type FurySprites } from '#lib/game/fury/assets.js';
 	import { BIRDS } from '#lib/game/fury/birds.js';
-	import {
-		BIRD_LOOKS,
-		drawScene,
-		fitCamera,
-		screenToWorld,
-		type Camera
-	} from '#lib/game/fury/furyRender.js';
+	import { drawScene, fitCamera, screenToWorld, type Camera } from '#lib/game/fury/furyRender.js';
 	import {
 		KEY_ANGLE_STEP,
 		KEY_POWER_STEP,
 		POUCH,
+		PREVIEW_SECONDS,
 		STEP_SECONDS,
 		aimFromPull,
 		launchVelocity,
-		previewSeconds,
 		trajectoryPoints,
 		type Vec
 	} from '#lib/game/fury/launch.js';
 	import type { FuryGame } from '#lib/stores/furyGame.svelte.js';
 	import IconSparkles from '~icons/lucide/sparkles';
 
-	let { game, showTutorial = false }: { game: FuryGame; showTutorial?: boolean } = $props();
+	let { game }: { game: FuryGame } = $props();
 
 	let canvas: HTMLCanvasElement | undefined = $state();
 	let size = { width: 0, height: 0, dpr: 1 };
@@ -89,11 +83,7 @@
 		const aim = game.aim;
 		const preview =
 			bird && aim
-				? trajectoryPoints(
-						POUCH,
-						launchVelocity(aim, BIRDS[bird].speedFactor),
-						previewSeconds(game.settings.longPreview)
-					)
+				? trajectoryPoints(POUCH, launchVelocity(aim, BIRDS[bird].speedFactor), PREVIEW_SECONDS)
 				: [];
 		const offset =
 			shake > 0.2
@@ -102,6 +92,7 @@
 		drawScene(context, camera(), {
 			world: match.world,
 			birdOnSling: bird,
+			waiting: bird ? game.squad.slice(1) : game.squad,
 			aim,
 			preview,
 			time: game.steps * STEP_SECONDS,
@@ -250,7 +241,7 @@
 	});
 </script>
 
-<!-- The canvas fills the page; the aim, hints, squad and trick button float over it -->
+<!-- The canvas fills the page; the aim, the domes left and the trick button float over it -->
 <div data-playfield class="relative min-h-0 flex-1 overflow-hidden">
 	<canvas
 		bind:this={canvas}
@@ -272,51 +263,18 @@
 				{aimText}
 			</p>
 		{/if}
-		{#if game.currentBird || showTutorial}
-			<div
-				class="flex max-w-md flex-col gap-1 rounded-md border-2 border-ink bg-paper/90 px-2 py-1"
-			>
-				{#if game.currentBird}
-					<p class="text-sm font-semibold">
-						{birdName(game.currentBird)}: {birdHint(game.currentBird)}
-					</p>
-				{/if}
-				{#if showTutorial}
-					<p class="text-xs">{m.fury_controls_hint()}</p>
-					<p class="hidden text-xs sm:block">{m.fury_keyboard_hint()}</p>
-				{/if}
-			</div>
-		{/if}
 	</div>
 
 	<div
 		class="pointer-events-none absolute inset-x-2 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] flex flex-wrap items-end justify-between gap-2"
 	>
-		<div class="flex flex-col gap-1 rounded-md border-2 border-ink bg-paper/90 px-2 py-1">
-			<span class="text-xs font-bold uppercase">{m.fury_squad_label()}</span>
-			<ol
-				class="flex flex-wrap items-center gap-1.5"
-				aria-label={m.fury_birds_left({ count: game.squad.length })}
-			>
-				{#each game.squad as bird, index (index)}
-					<li
-						class="flex items-center gap-1 rounded-md border-2 border-ink px-1.5 py-0.5 text-sm font-bold {index ===
-							0 && game.phase === 'aiming'
-							? 'rotate-[-3deg] bg-explosion-yellow'
-							: 'bg-paper'}"
-					>
-						<span
-							class="inline-block size-3 rounded-full border-2 border-ink"
-							style:background={BIRD_LOOKS[bird].body}
-							aria-hidden="true"
-						></span>
-						{birdName(bird)}
-					</li>
-				{:else}
-					<li class="text-sm">{m.fury_birds_left({ count: 0 })}</li>
-				{/each}
-			</ol>
-		</div>
+		<ol class="sr-only" aria-label={m.fury_squad_label()}>
+			{#each game.squad as bird, index (index)}
+				<li>{birdName(bird)}</li>
+			{:else}
+				<li>{m.fury_birds_left({ count: 0 })}</li>
+			{/each}
+		</ol>
 
 		<div class="ms-auto flex items-end gap-2">
 			<p class="rounded-md border-2 border-ink bg-paper px-2 py-1 font-display font-bold">

@@ -64,14 +64,4 @@
 			</li>
 		{/each}
 	</ol>
-
-	<label class="flex min-h-11 items-center gap-2 self-start font-semibold">
-		<input
-			type="checkbox"
-			class="checkbox border-3 border-ink"
-			checked={game.settings.longPreview}
-			onchange={(event) => game.setLongPreview(event.currentTarget.checked)}
-		/>
-		{m.fury_long_preview()}
-	</label>
 </section>

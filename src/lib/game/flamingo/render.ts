@@ -64,6 +64,50 @@ export interface RenderLabels {
 	direction: 'ltr' | 'rtl';
 }
 
+/**
+ * The part of the world on screen, in world units relative to the camera. The field is always all
+ * on screen; a screen with another shape shows extra sky, ground or scenery around it.
+ */
+export interface View {
+	left: number;
+	top: number;
+	right: number;
+	bottom: number;
+}
+
+export const FIELD_VIEW: View = { left: 0, top: 0, right: WORLD_WIDTH, bottom: WORLD_HEIGHT };
+
+/** At most this much shows ahead of the field, so a new segment never pops into sight */
+const MAX_LOOKAHEAD = 100;
+
+/** Fits the whole field into a screen of the given size; the extra space shows more of the world */
+export function fitView(width: number, height: number): { scale: number; view: View } {
+	const scale = Math.min(width / WORLD_WIDTH, height / WORLD_HEIGHT);
+	const extraX = width / scale - WORLD_WIDTH;
+	const extraY = height / scale - WORLD_HEIGHT;
+	// Sideways the extra space goes mostly behind the flamingo; upright, half to sky, half to ground
+	const ahead = Math.min(extraX / 2, MAX_LOOKAHEAD);
+	return {
+		scale,
+		view: {
+			left: ahead - extraX,
+			top: -extraY / 2,
+			right: WORLD_WIDTH + ahead,
+			bottom: WORLD_HEIGHT + extraY / 2
+		}
+	};
+}
+
+/** The view grown on every side, so the screen shake never uncovers an unpainted edge */
+function padView(view: View, margin: number): View {
+	return {
+		left: view.left - margin,
+		top: view.top - margin,
+		right: view.right + margin,
+		bottom: view.bottom + margin
+	};
+}
+
 interface Fireball {
 	x: number;
 	y: number;
@@ -185,7 +229,7 @@ export class FlamingoEffects {
 		}
 	}
 
-	update(dt: number, state: FlamingoState): void {
+	update(dt: number, state: FlamingoState, view: View = FIELD_VIEW): void {
 		for (const fireball of this.fireballs) fireball.age += dt;
 		this.fireballs = this.fireballs.filter((f) => f.age < f.delay + f.duration);
 		for (const puff of this.puffs) {
@@ -219,7 +263,7 @@ export class FlamingoEffects {
 				if (!segment.strike) continue;
 				for (const index of segment.strike.destroyed) {
 					const tank = segment.refinery.tanks[index];
-					if (tank.x < cameraX - 40 || tank.x > cameraX + WORLD_WIDTH + 40) continue;
+					if (tank.x < cameraX + view.left - 40 || tank.x > cameraX + view.right + 40) continue;
 					this.puff(tank.x, GROUND_Y - tank.height * 0.55, tank.halfWidth);
 				}
 			}
@@ -357,23 +401,24 @@ function drawWeather(
 	context: CanvasRenderingContext2D,
 	weather: Weather,
 	cameraX: number,
-	time: number
+	time: number,
+	view: View
 ) {
+	const width = view.right - view.left;
+	const sky = GROUND_Y - view.top;
 	context.save();
 	if (weather.haze > 0.01) {
 		context.fillStyle = PAPER;
 		context.globalAlpha = 0.14 * weather.haze;
-		context.fillRect(0, 0, WORLD_WIDTH, GROUND_Y);
+		context.fillRect(view.left, view.top, width, sky);
 		// Pale banks of mist drifting past
 		context.globalAlpha = 0.3 * weather.haze;
-		for (let k = 0; k < 6; k++) {
-			const x = wrap(
-				hash(k + 400) * WORLD_WIDTH * 2 - cameraX * 0.25 - time * 6,
-				WORLD_WIDTH + 300
-			);
+		const banks = Math.ceil((6 * width) / WORLD_WIDTH);
+		for (let k = 0; k < banks; k++) {
+			const x = wrap(hash(k + 400) * width * 2 - cameraX * 0.25 - time * 6, width + 300);
 			context.beginPath();
 			context.ellipse(
-				x - 150,
+				view.left + x - 150,
 				110 + hash(k + 410) * 400,
 				90 + hash(k + 420) * 70,
 				16,
@@ -390,7 +435,7 @@ function drawWeather(
 		// Stepped flat bands, thickest dust near the ground
 		for (let band = 0; band < 4; band++) {
 			const top = 300 + band * 70;
-			context.fillRect(0, top, WORLD_WIDTH, GROUND_Y - top);
+			context.fillRect(view.left, top, width, GROUND_Y - top);
 		}
 		// Wind-blown sand streaks, rushing against the direction of flight
 		context.globalAlpha = 0.75 * weather.dust;
@@ -398,14 +443,13 @@ function drawWeather(
 		context.lineWidth = 2;
 		context.lineCap = 'round';
 		context.beginPath();
-		const streaks = Math.ceil(34 * weather.dust);
+		const streaks = Math.ceil((34 * weather.dust * width) / WORLD_WIDTH);
 		for (let i = 0; i < streaks; i++) {
 			const speed = 150 + hash(i + 500) * 110;
 			const x =
-				wrap(
-					hash(i + 510) * (WORLD_WIDTH + 120) - cameraX * 1.2 - time * speed,
-					WORLD_WIDTH + 120
-				) - 60;
+				view.left +
+				wrap(hash(i + 510) * (width + 120) - cameraX * 1.2 - time * speed, width + 120) -
+				60;
 			const y = 300 + hash(i + 520) * (GROUND_Y - 310);
 			context.moveTo(x, y);
 			context.lineTo(x + 12 + hash(i + 530) * 26, y);
@@ -415,17 +459,18 @@ function drawWeather(
 	if (weather.rain > 0.01) {
 		context.fillStyle = '#2f3b52';
 		context.globalAlpha = 0.16 * weather.rain;
-		context.fillRect(0, 0, WORLD_WIDTH, GROUND_Y);
+		context.fillRect(view.left, view.top, width, sky);
 		context.globalAlpha = 0.6 * weather.rain;
 		context.strokeStyle = RAIN;
 		context.lineWidth = 1.5;
 		context.beginPath();
-		const drops = Math.ceil(70 * weather.rain);
+		// The same density of drops however much sky is on screen
+		const drops = Math.ceil((70 * weather.rain * width * sky) / (WORLD_WIDTH * GROUND_Y));
 		for (let i = 0; i < drops; i++) {
 			const speed = 520 + hash(i + 300) * 180;
 			const x =
-				wrap(hash(i) * (WORLD_WIDTH + 80) - cameraX * 0.6 - time * 70, WORLD_WIDTH + 80) - 40;
-			const y = wrap(hash(i + 150) * GROUND_Y + time * speed, GROUND_Y + 20) - 20;
+				view.left + wrap(hash(i) * (width + 80) - cameraX * 0.6 - time * 70, width + 80) - 40;
+			const y = view.top + wrap(hash(i + 150) * sky + time * speed, sky + 20) - 20;
 			context.moveTo(x, y);
 			context.lineTo(x - 4, y + 13);
 		}
@@ -438,10 +483,11 @@ function drawBackdrop(
 	context: CanvasRenderingContext2D,
 	cameraX: number,
 	weather: Weather = CLEAR_WEATHER,
-	time = 0
+	time = 0,
+	view: View = FIELD_VIEW
 ) {
 	context.fillStyle = SKY;
-	context.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+	context.fillRect(view.left, view.top, view.right - view.left, view.bottom - view.top);
 
 	// The sun only shows through when it is neither raining nor hazy
 	const sun = 1 - Math.min(1, weather.rain + weather.haze * 0.6);
@@ -453,8 +499,9 @@ function drawBackdrop(
 
 	const cloudFill = mixColor(PAPER, '#a7aeba', weather.rain);
 	const cloudOffset = cameraX * 0.3;
-	const first = Math.floor((cloudOffset - 120) / 200);
-	for (let k = first; k < first + 4; k++) {
+	const first = Math.floor((cloudOffset + view.left - 120) / 200);
+	const last = Math.ceil((cloudOffset + view.right) / 200);
+	for (let k = first; k <= last; k++) {
 		drawCloud(
 			context,
 			k * 200 - cloudOffset + hash(k) * 60,
@@ -466,8 +513,9 @@ function drawBackdrop(
 
 	// Low, far-away hills scroll at half speed
 	const hillOffset = cameraX * 0.5;
-	const firstHill = Math.floor((hillOffset - 160) / 140);
-	for (let k = firstHill; k < firstHill + 5; k++) {
+	const firstHill = Math.floor((hillOffset + view.left - 160) / 140);
+	const lastHill = Math.ceil((hillOffset + view.right + 20) / 140);
+	for (let k = firstHill; k <= lastHill; k++) {
 		const x = k * 140 - hillOffset;
 		const height = 30 + hash(k + 31) * 40;
 		context.beginPath();
@@ -476,15 +524,19 @@ function drawBackdrop(
 		outlined(context, SAND_DARK);
 	}
 
-	drawWeather(context, weather, cameraX, time);
+	drawWeather(context, weather, cameraX, time, view);
 }
 
-function drawGround(context: CanvasRenderingContext2D, cameraX: number) {
-	box(context, -LINE, GROUND_Y, WORLD_WIDTH + LINE * 2, WORLD_HEIGHT - GROUND_Y + LINE, SAND);
+function drawGround(context: CanvasRenderingContext2D, cameraX: number, view: View = FIELD_VIEW) {
+	const width = view.right - view.left;
+	box(context, view.left - LINE, GROUND_Y, width + LINE * 2, view.bottom - GROUND_Y + LINE, SAND);
 	context.fillStyle = MUSTARD;
-	const offset = cameraX % 40;
-	for (let x = -offset - 40; x < WORLD_WIDTH + 40; x += 40) {
-		context.fillRect(x, GROUND_Y + 16, 20, 5);
+	// One row of dashes in the field; ground showing below it gets more rows, staggered
+	for (let row = 0; GROUND_Y + 16 + row * 48 < view.bottom; row++) {
+		const start = view.left - wrap(cameraX + view.left + (row % 2) * 20, 40) - 40;
+		for (let x = start; x < view.right + 40; x += 40) {
+			context.fillRect(x, GROUND_Y + 16 + row * 48, 20, 5);
+		}
 	}
 }
 
@@ -591,7 +643,12 @@ function drawPantsir(context: CanvasRenderingContext2D, column: GapColumn) {
 const NET_MESH = 20;
 
 /** A drone net hanging from the sky: a diamond mesh on edge ropes, weighted along the hem */
-function drawDroneNet(context: CanvasRenderingContext2D, column: GapColumn, time: number) {
+function drawDroneNet(
+	context: CanvasRenderingContext2D,
+	column: GapColumn,
+	time: number,
+	top: number
+) {
 	const { x, gapTop } = column;
 	const left = x + 4;
 	const width = COLUMN_WIDTH - 8;
@@ -599,16 +656,18 @@ function drawDroneNet(context: CanvasRenderingContext2D, column: GapColumn, time
 
 	context.save();
 	context.beginPath();
-	context.rect(left, -LINE, width, hem + LINE);
+	context.rect(left, top - LINE, width, hem - top + LINE);
 	context.clip();
 	context.globalAlpha = 0.9;
 	context.fillStyle = NET;
-	context.fillRect(left, -LINE, width, hem + LINE);
+	context.fillRect(left, top - LINE, width, hem - top + LINE);
 	context.globalAlpha = 1;
 	context.lineWidth = 1.2;
 	context.strokeStyle = INK;
 	context.beginPath();
-	for (let y = -width; y < hem; y += NET_MESH) {
+	// The mesh stays put in the world however far up the screen reaches
+	const meshTop = -width - Math.ceil(Math.max(0, -top) / NET_MESH) * NET_MESH;
+	for (let y = meshTop; y < hem; y += NET_MESH) {
 		context.moveTo(left, y);
 		context.lineTo(left + width, y + width);
 		context.moveTo(left + width, y);
@@ -651,7 +710,7 @@ function drawDroneNet(context: CanvasRenderingContext2D, column: GapColumn, time
 	context.strokeStyle = INK;
 	context.beginPath();
 	for (const edge of [left, left + width]) {
-		context.moveTo(edge, 0);
+		context.moveTo(edge, top);
 		context.lineTo(edge, hem);
 	}
 	context.moveTo(left, hem);
@@ -667,17 +726,17 @@ function drawDroneNet(context: CanvasRenderingContext2D, column: GapColumn, time
 
 const BALLOON_HEIGHT = 44;
 
-function drawBalloonStack(context: CanvasRenderingContext2D, column: GapColumn) {
+function drawBalloonStack(context: CanvasRenderingContext2D, column: GapColumn, top: number) {
 	const { x, gapTop } = column;
 	const middle = x + COLUMN_WIDTH / 2;
 	context.lineWidth = 2;
 	context.strokeStyle = INK;
 	context.beginPath();
-	context.moveTo(middle, 0);
+	context.moveTo(middle, top);
 	context.lineTo(middle, gapTop);
 	context.stroke();
 	// Absurdly, the balloons are stacked all the way up to the sky
-	for (let bottom = gapTop; bottom > -BALLOON_HEIGHT; bottom -= BALLOON_HEIGHT) {
+	for (let bottom = gapTop; bottom > top - BALLOON_HEIGHT; bottom -= BALLOON_HEIGHT) {
 		const centerY = bottom - BALLOON_HEIGHT / 2;
 		for (const fin of [-1, 1]) {
 			context.beginPath();
@@ -709,12 +768,14 @@ function drawColumn(
 	context: CanvasRenderingContext2D,
 	column: GapColumn,
 	time: number,
-	assets: RenderAssets
+	assets: RenderAssets,
+	/** Top of the screen: the hanging obstacles reach all the way up to it */
+	top: number
 ) {
-	const top = assets.supplied.droneNet;
-	if (column.top === 'balloon') drawBalloonStack(context, column);
-	else if (top) context.drawImage(top, column.x, 0, COLUMN_WIDTH, column.gapTop);
-	else drawDroneNet(context, column, time);
+	const net = assets.supplied.droneNet;
+	if (column.top === 'balloon') drawBalloonStack(context, column, top);
+	else if (net) context.drawImage(net, column.x, top, COLUMN_WIDTH, column.gapTop - top);
+	else drawDroneNet(context, column, time, top);
 
 	const bottomImage = assets.supplied[column.kind === 'radar' ? 'radarMast' : 'pantsirTower'];
 	if (bottomImage) {
@@ -1289,15 +1350,20 @@ function drawDizzyStars(context: CanvasRenderingContext2D, x: number, y: number,
 	}
 }
 
-/** Draws the whole scene in world units; the caller scales the context to the canvas size */
+/**
+ * Draws the whole scene in world units, filling the given view; the caller scales and shifts the
+ * context so the view covers the canvas (see fitView)
+ */
 export function drawScene(
 	context: CanvasRenderingContext2D,
 	state: FlamingoState,
 	effects: FlamingoEffects,
 	assets: RenderAssets,
-	labels: RenderLabels
+	labels: RenderLabels,
+	view: View = FIELD_VIEW
 ): void {
 	const cameraX = state.x - FLAMINGO_SCREEN_X;
+	const painted = padView(view, 16);
 	const shakeX = effects.shake ? Math.sin(state.time * 90) * effects.shake : 0;
 	const shakeY = effects.shake ? Math.cos(state.time * 70) * effects.shake * 0.6 : 0;
 
@@ -1305,23 +1371,25 @@ export function drawScene(
 	context.translate(shakeX, shakeY);
 	// Weather depends on how far the flamingo has flown, so it is the same on every run of a seed
 	const weather = weatherAt(state.seed, cameraX + WORLD_WIDTH / 2);
-	drawBackdrop(context, cameraX, weather, effects.reducedMotion ? 0 : state.time);
+	drawBackdrop(context, cameraX, weather, effects.reducedMotion ? 0 : state.time, painted);
 
 	context.save();
 	context.translate(-cameraX, 0);
 	const current = currentSegment(state);
 	const dive = state.stage === 'approach' ? predictDive(state) : null;
 	const target = dive?.kind === 'tank' ? dive.index : null;
+	const left = cameraX + view.left - 80;
+	const right = cameraX + view.right + 80;
 	for (const segment of state.segments) {
 		drawRefinery(context, segment, segment === current ? target : null, state.time, assets, labels);
 		for (const column of segment.columns) {
-			if (column.x + COLUMN_WIDTH + 80 < cameraX || column.x - 80 > cameraX + WORLD_WIDTH) continue;
-			drawColumn(context, column, state.time, assets);
+			if (column.x + COLUMN_WIDTH < left || column.x > right) continue;
+			drawColumn(context, column, state.time, assets, painted.top);
 		}
 	}
 	context.restore();
 
-	drawGround(context, cameraX);
+	drawGround(context, cameraX, painted);
 
 	context.save();
 	context.translate(-cameraX, 0);

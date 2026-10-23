@@ -25,7 +25,6 @@ import { beginPet, connect, endPet, nudgePet, stepRitual } from '#lib/game/purrp
 import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
 import { prefersReducedMotion } from '#lib/game/loop.js';
 import { highscores, type Highscores } from '#lib/services/highscore.js';
-import { localStore, type Store } from '#lib/services/storage.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
 import type { SoundId } from '#lib/sound/sounds.js';
 import { PurrMixer } from '#lib/sound/purrMixer.js';
@@ -37,14 +36,11 @@ export type PurrPentagramStatus = 'ready' | 'playing' | 'paused' | 'won' | 'over
 export type NoticeKind = 'mistake' | 'not-ready' | 'out-of-turn';
 
 const SCORE_KEY = ['purrpentagram', 'score'] as const;
-const MOTION_KEY = 'purrpentagram:reduce-motion';
 const NOTICE_MS = 2800;
 /** The purrs sent to the mixer are refreshed at this interval: fast enough to follow a stroke */
 const MIXER_SYNC_MS = 40;
 /** How loud and steady every cat purrs while the finale plays */
 const FINALE_PURR = 0.55;
-
-const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
 
 /** Sound of each room event as it begins; the dim lights and the laser dot are silent */
 const EVENT_SOUND: Partial<Record<RoomEvent, SoundId>> = {
@@ -55,12 +51,10 @@ const EVENT_SOUND: Partial<Record<RoomEvent, SoundId>> = {
 };
 
 export interface PurrPentagramOptions {
-	/** Starting value of the reduce-motion setting when none was saved; defaults to the OS preference */
+	/** Calmer animation without flashes; defaults to the OS preference */
 	reducedMotion?: boolean;
 	/** Injected for tests; defaults to the browser's local high scores */
 	scores?: () => Highscores;
-	/** Injected for tests; defaults to the browser's local storage */
-	settings?: () => Store;
 	/** Fixed seed for tests; a fresh random seed per ritual otherwise */
 	seed?: () => number;
 	/** Injected for tests; defaults to the real mixer */
@@ -96,7 +90,6 @@ export class PurrPentagramGame {
 
 	#random: Random = createRandom(1);
 	#scores: () => Highscores;
-	#settings: () => Store;
 	#seed: () => number;
 	#mixer: PurrMixer;
 	#gesture: Gesture | null = null;
@@ -110,26 +103,18 @@ export class PurrPentagramGame {
 	constructor({
 		reducedMotion = prefersReducedMotion(),
 		scores = highscores,
-		settings = localStore,
 		seed = randomSeed,
 		mixer = new PurrMixer()
 	}: PurrPentagramOptions = {}) {
 		this.#scores = scores;
-		this.#settings = settings;
 		this.#seed = seed;
 		this.#mixer = mixer;
 		this.reducedMotion = reducedMotion;
 	}
 
-	/** Reads the stored best and settings; call in the browser only */
+	/** Reads the stored best; call in the browser only */
 	load() {
 		this.best = this.#scores().get(SCORE_KEY);
-		this.reducedMotion = this.#settings().read(MOTION_KEY, this.reducedMotion, isBoolean);
-	}
-
-	setReducedMotion(reduced: boolean) {
-		this.reducedMotion = reduced;
-		this.#settings().write(MOTION_KEY, reduced);
 	}
 
 	/** Starts audio from a user gesture, as browsers require */

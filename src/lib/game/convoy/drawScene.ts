@@ -11,7 +11,7 @@ import {
 	ITEM_SIZE,
 	LANE_COUNT,
 	SIDE_MARGIN,
-	TANKER_OFFSET,
+	SPAWN_AHEAD,
 	VIEW_AHEAD
 } from './constants';
 import { droneArrival, shoreInsetLanes, type Obstacle, type RunnerState } from './runnerStep';
@@ -19,6 +19,7 @@ import { droneArrival, shoreInsetLanes, type Obstacle, type RunnerState } from '
 const INK = '#111111';
 const PAPER = '#ffffff';
 const SAND = '#e8e1bc';
+const DUNE = '#d4ca9c';
 const KHAKI = '#7c8c5c';
 const WATER = '#4fa8d8';
 const WAVE = '#8fcbeb';
@@ -76,6 +77,39 @@ export interface SceneOptions {
 	timeMs?: number;
 }
 
+/**
+ * How the field maps onto a drawing area of any shape. The lanes fit the narrower side and stay
+ * centered; spare room shows more banks sideways, or more strait above and below the tanker.
+ */
+export interface ConvoyView {
+	/** Canvas units per world unit */
+	unit: number;
+	/** Canvas x of the field's left edge; the banks carry on past both edges */
+	left: number;
+	/** Canvas y of the tanker's center */
+	tankerY: number;
+	/** World units visible ahead of and behind the tanker */
+	ahead: number;
+	behind: number;
+}
+
+/** Spare height may show this much more strait ahead; beyond it patterns have not spawned yet */
+const MAX_EXTRA_AHEAD = SPAWN_AHEAD - VIEW_AHEAD - 0.5;
+
+export function convoyView(width: number, height: number): ConvoyView {
+	const unit = Math.min(width / FIELD_WIDTH, height / FIELD_HEIGHT);
+	// Spare height is split evenly, so the tanker sits where it would in a centered field
+	const spare = height / unit - FIELD_HEIGHT;
+	const ahead = VIEW_AHEAD + Math.min(spare / 2, MAX_EXTRA_AHEAD);
+	return {
+		unit,
+		left: (width - FIELD_WIDTH * unit) / 2,
+		tankerY: ahead * unit,
+		ahead,
+		behind: height / unit - ahead
+	};
+}
+
 /** Draws the whole field for a runner state into the rectangle (0, 0, width, height) */
 export function drawScene(
 	context: CanvasRenderingContext2D,
@@ -90,11 +124,12 @@ export function drawScene(
 		timeMs = 0
 	}: SceneOptions
 ) {
-	const unit = Math.min(width / FIELD_WIDTH, height / FIELD_HEIGHT);
+	const view = convoyView(width, height);
+	const { unit, left, tankerY } = view;
 	const distance = runner.distance + scrollAhead;
 	const line = Math.max(2, unit * 0.045);
-	const toX = (lane: number) => (SIDE_MARGIN + 0.5 + lane) * unit;
-	const toY = (y: number) => height - (TANKER_OFFSET + y - distance) * unit;
+	const toX = (lane: number) => left + (SIDE_MARGIN + 0.5 + lane) * unit;
+	const toY = (y: number) => tankerY - (y - distance) * unit;
 
 	context.save();
 	context.lineJoin = 'round';
@@ -105,18 +140,20 @@ export function drawScene(
 		context.translate(Math.sin(timeMs * 0.09) * strength, Math.cos(timeMs * 0.11) * strength);
 	}
 
-	drawWater(context, unit, width, height, distance, line);
+	drawWater(context, view, width, height, distance, line);
 
 	// Obstacles, far ones first so nearer ones overlap them
 	const visible = runner.obstacles
-		.filter((obstacle) => obstacle.y - distance < VIEW_AHEAD + DRONE_WARNING_AHEAD + 1)
+		.filter((obstacle) => obstacle.y - distance < view.ahead + DRONE_WARNING_AHEAD + 1)
 		.sort((a, b) => b.y - a.y);
+	// Drone warnings pin to the top of the regular field, below the HUD over any extra strait
+	const topY = Math.max(line * 2, tankerY - VIEW_AHEAD * unit);
 	for (const obstacle of visible) {
 		const ahead = obstacle.y - distance;
 		drawObstacle(context, obstacle, toX(obstacle.x), toY(obstacle.y), ahead, unit, line, {
 			timeMs,
 			reducedMotion,
-			topY: line * 2
+			topY
 		});
 	}
 
@@ -127,32 +164,34 @@ export function drawScene(
 	}
 
 	// Drawn last so a narrowing bank visibly reclaims anything still sitting on it
-	drawShoreBanks(context, unit, width, height, line, shoreInsetLanes(runner));
+	drawShoreBanks(context, view, width, height, distance, line, shoreInsetLanes(runner));
 
 	context.restore();
 }
 
 function drawWater(
 	context: CanvasRenderingContext2D,
-	unit: number,
+	{ unit, left, tankerY, ahead, behind }: ConvoyView,
 	width: number,
 	height: number,
 	distance: number,
 	line: number
 ) {
+	// One unit of overdraw on every side, so the screen shake never bares the edges
 	context.fillStyle = WATER;
-	context.fillRect(0, 0, width, height);
+	context.fillRect(-unit, -unit, width + 2 * unit, height + 2 * unit);
 
 	// Flat wave marks scrolling with the water
 	const spacing = 0.6;
 	context.strokeStyle = WAVE;
 	context.lineWidth = line;
-	const first = Math.floor((distance - TANKER_OFFSET) / spacing) - 1;
-	const last = Math.ceil((distance + VIEW_AHEAD) / spacing) + 1;
+	const first = Math.floor((distance - behind) / spacing) - 1;
+	const last = Math.ceil((distance + ahead) / spacing) + 1;
+	const right = left + (FIELD_WIDTH - SIDE_MARGIN) * unit;
 	for (let row = first; row <= last; row++) {
-		const y = height - (TANKER_OFFSET + row * spacing - distance) * unit;
+		const y = tankerY - (row * spacing - distance) * unit;
 		const shift = (row % 2 === 0 ? 0.35 : 0.85) * unit;
-		for (let x = SIDE_MARGIN * unit + shift; x < width - SIDE_MARGIN * unit; x += 1.1 * unit) {
+		for (let x = left + SIDE_MARGIN * unit + shift; x < right; x += 1.1 * unit) {
 			context.beginPath();
 			context.arc(x, y, unit * 0.12, Math.PI * 0.15, Math.PI * 0.85);
 			context.stroke();
@@ -165,36 +204,61 @@ function drawWater(
 	context.setLineDash([unit * 0.35, unit * 0.35]);
 	context.lineDashOffset = -((distance * unit) % (unit * 0.7));
 	for (let lane = 1; lane < LANE_COUNT; lane++) {
-		const x = (SIDE_MARGIN + lane) * unit;
+		const x = left + (SIDE_MARGIN + lane) * unit;
 		context.beginPath();
-		context.moveTo(x, 0);
-		context.lineTo(x, height);
+		context.moveTo(x, -unit);
+		context.lineTo(x, height + unit);
 		context.stroke();
 	}
 	context.setLineDash([]);
 }
 
-/** Sandy banks on both sides, wider while the shore has narrowed in around a squeeze */
+/**
+ * Sandy banks on both sides, wider while the shore has narrowed in around a squeeze. They reach
+ * the canvas edges, with dune ripples scrolling along wherever the screen is wider than the field.
+ */
 function drawShoreBanks(
 	context: CanvasRenderingContext2D,
-	unit: number,
+	{ unit, left, tankerY, ahead, behind }: ConvoyView,
 	width: number,
 	height: number,
+	distance: number,
 	line: number,
 	inset: { left: number; right: number }
 ) {
-	const leftBank = (SIDE_MARGIN + inset.left) * unit;
-	const rightBank = (SIDE_MARGIN + inset.right) * unit;
+	const leftBank = left + (SIDE_MARGIN + inset.left) * unit;
+	const rightBank = left + (FIELD_WIDTH - SIDE_MARGIN - inset.right) * unit;
 	context.fillStyle = SAND;
-	context.fillRect(0, 0, leftBank, height);
-	context.fillRect(width - rightBank, 0, rightBank, height);
+	context.fillRect(-unit, -unit, leftBank + unit, height + 2 * unit);
+	context.fillRect(rightBank, -unit, width + unit - rightBank, height + 2 * unit);
+
+	if (left > unit * 0.5) {
+		const fieldRight = left + FIELD_WIDTH * unit;
+		const spacing = 0.9;
+		context.strokeStyle = DUNE;
+		context.lineWidth = line * 1.2;
+		const first = Math.floor((distance - behind) / spacing) - 1;
+		const last = Math.ceil((distance + ahead) / spacing) + 1;
+		for (let row = first; row <= last; row++) {
+			const y = tankerY - (row * spacing - distance) * unit;
+			const shift = (row % 2 === 0 ? 0.5 : 1.1) * unit;
+			for (let offset = shift; offset < left + unit; offset += 1.2 * unit) {
+				for (const x of [left - offset, fieldRight + offset]) {
+					context.beginPath();
+					context.arc(x, y, unit * 0.18, Math.PI * 1.15, Math.PI * 1.85);
+					context.stroke();
+				}
+			}
+		}
+	}
+
 	context.strokeStyle = INK;
 	context.lineWidth = line * 1.5;
 	context.beginPath();
-	context.moveTo(leftBank, 0);
-	context.lineTo(leftBank, height);
-	context.moveTo(width - rightBank, 0);
-	context.lineTo(width - rightBank, height);
+	context.moveTo(leftBank, -unit);
+	context.lineTo(leftBank, height + unit);
+	context.moveTo(rightBank, -unit);
+	context.lineTo(rightBank, height + unit);
 	context.stroke();
 }
 
@@ -539,16 +603,16 @@ export function drawConvoyBoard(
 	y: number,
 	size: number
 ) {
-	const height = size;
-	const width = (size * FIELD_WIDTH) / FIELD_HEIGHT;
 	context.save();
-	context.fillStyle = SAND;
-	context.fillRect(x, y, size, size);
-	context.translate(x + (size - width) / 2, y);
+	context.translate(x, y);
 	context.beginPath();
-	context.rect(0, 0, width, height);
+	context.rect(0, 0, size, size);
 	context.clip();
-	// Drawn steady: no flicker, shake or blinking on the still image
-	drawScene(context, { ...runner, invulnerableMs: 0 }, { width, height, reducedMotion: true });
+	// Drawn steady: no flicker, shake or blinking on the still image; the banks fill the sides
+	drawScene(
+		context,
+		{ ...runner, invulnerableMs: 0 },
+		{ width: size, height: size, reducedMotion: true }
+	);
 	context.restore();
 }

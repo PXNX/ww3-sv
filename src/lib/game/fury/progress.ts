@@ -1,11 +1,10 @@
 /*
- * Level progress and settings, stored locally (no accounts). Progress keeps the best star rating
+ * Level progress, stored locally (no accounts). Progress keeps the best star rating
  * per level; a level unlocks once the one before it has been won. Best scores live in the shared
  * high score service under ['fury', '<level id>', 'score'].
  */
 
 export const PROGRESS_KEY = 'fury:progress';
-export const SETTINGS_KEY = 'fury:settings';
 
 export interface FuryProgress {
 	version: 1;
@@ -13,13 +12,7 @@ export interface FuryProgress {
 	stars: Record<string, number>;
 }
 
-export interface FurySettings {
-	/** Accessibility: a longer dotted aiming line */
-	longPreview: boolean;
-}
-
 export const EMPTY_PROGRESS: FuryProgress = { version: 1, stars: {} };
-export const DEFAULT_SETTINGS: FurySettings = { longPreview: false };
 
 export function isFuryProgress(value: unknown): value is FuryProgress {
 	if (typeof value !== 'object' || value === null) return false;
@@ -29,14 +22,6 @@ export function isFuryProgress(value: unknown): value is FuryProgress {
 	if (typeof stars !== 'object' || stars === null || Array.isArray(stars)) return false;
 	return Object.values(stars).every(
 		(count) => Number.isInteger(count) && (count as number) >= 1 && (count as number) <= 3
-	);
-}
-
-export function isFurySettings(value: unknown): value is FurySettings {
-	return (
-		typeof value === 'object' &&
-		value !== null &&
-		typeof (value as Partial<FurySettings>).longPreview === 'boolean'
 	);
 }
 
