@@ -30,7 +30,6 @@
 		>
 			{APP_NAME}
 		</h1>
-		<p class="text-lg font-semibold">{m.home_tagline({ location: m.location_name() })}</p>
 
 		<div class="sticker mt-2 w-full max-w-2xl bg-sand p-0" style:--tilt="-1deg">
 			<CameoLineup bind:selected={leader} />

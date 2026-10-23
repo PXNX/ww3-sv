@@ -55,39 +55,44 @@
 		{@const Icon = mode.icon}
 		<li class="flex">
 			{#snippet card()}
-				<span class="flex w-full items-start justify-between gap-2">
-					<span class="rounded-lg border-3 border-ink p-2 {mode.tileClass}" aria-hidden="true">
-						<Icon class="size-8" stroke-width="2.5" />
+				<!-- Faint gameplay screenshot behind the card, captured by scripts/generate-card-screenshots.ts -->
+				<img
+					src="/cards/{mode.id}.webp"
+					alt=""
+					class="pointer-events-none absolute inset-0 -z-10 size-full object-cover object-top opacity-25"
+					loading="lazy"
+					draggable="false"
+				/>
+				{#if mode.leaders.length > 0}
+					<span class="absolute top-2 right-2 flex flex-wrap justify-end gap-1" aria-hidden="true">
+						{#each mode.leaders as id (id)}
+							<img
+								src={leaderById(id).flag}
+								alt=""
+								class="h-4 w-6 rounded-sm border-2 border-ink object-cover"
+								draggable="false"
+							/>
+						{/each}
 					</span>
-					{#if mode.leaders.length > 0}
-						<span class="flex flex-wrap justify-end gap-1" aria-hidden="true">
-							{#each mode.leaders as id (id)}
-								<img
-									src={leaderById(id).flag}
-									alt=""
-									class="h-4 w-6 rounded-sm border-2 border-ink object-cover"
-									draggable="false"
-								/>
-							{/each}
-						</span>
-						<span class="sr-only">{m.mode_features({ names: featured(mode.leaders) })}</span>
-					{/if}
+					<span class="sr-only">{m.mode_features({ names: featured(mode.leaders) })}</span>
+				{/if}
+				<span class="mt-6 rounded-xl border-3 border-ink p-3 {mode.tileClass}" aria-hidden="true">
+					<Icon class="size-12" stroke-width="2.5" />
 				</span>
-				<h3 class="text-lg leading-tight font-bold">{mode.name()}</h3>
-				<p class="text-sm leading-snug">{mode.description()}</p>
+				<h3 class="text-center text-lg leading-tight font-bold">{mode.name()}</h3>
 			{/snippet}
 
 			{#if mode.status === 'playable'}
 				<a
 					href={resolveRoute(mode.href)}
-					class="sticker sticker-interactive flex w-full flex-col items-start gap-2 p-3 active:scale-95"
+					class="sticker sticker-interactive relative isolate flex w-full flex-col items-center gap-2 overflow-hidden p-3 active:scale-95"
 					style:--tilt="{tilt}deg"
 				>
 					{@render card()}
 				</a>
 			{:else}
 				<div
-					class="sticker flex w-full flex-col items-start gap-2 p-3 opacity-80"
+					class="sticker relative isolate flex w-full flex-col items-center gap-2 overflow-hidden p-3 opacity-80"
 					style:--tilt="{tilt}deg"
 				>
 					{@render card()}
