@@ -1,18 +1,20 @@
 /*
  * Translated names of the raid's maps, bosses, enemies, weapons, armour and its perks, crystals,
- * rarities and season rewards
+ * rarities, season rewards, live events and daily quests
  */
 import type {
 	Archetype,
 	ArmorPerk,
 	ArmorSlot,
 	CrystalKind,
+	LiveEvent,
 	MapId,
 	Rarity,
 	SkillId,
 	WeaponKind
 } from '#lib/game/raid/config.js';
 import { crystalBonus, type Crystal, type GearItem } from '#lib/game/raid/items.js';
+import type { Quest } from '#lib/game/raid/quests.js';
 import type { SeasonReward } from '#lib/game/raid/season.js';
 import { m } from '#lib/paraglide/messages.js';
 
@@ -195,5 +197,44 @@ export function seasonRewardText(reward: SeasonReward): string {
 				weapon: WEAPON_NAMES[reward.kind](),
 				rarity: RARITY_NAMES[reward.rarity]()
 			});
+	}
+}
+
+export const EVENT_NAMES: Record<LiveEvent, () => string> = {
+	'double-xp': m.raid_event_double_xp,
+	'elite-surge': m.raid_event_elite_surge,
+	'rapid-skills': m.raid_event_rapid_skills,
+	'gold-rush': m.raid_event_gold_rush
+};
+
+export const EVENT_HINTS: Record<LiveEvent, () => string> = {
+	'double-xp': m.raid_event_double_xp_hint,
+	'elite-surge': m.raid_event_elite_surge_hint,
+	'rapid-skills': m.raid_event_rapid_skills_hint,
+	'gold-rush': m.raid_event_gold_rush_hint
+};
+
+/** What a daily quest asks for */
+export function questText(quest: Quest): string {
+	const count = quest.target;
+	switch (quest.kind) {
+		case 'kills':
+			return m.raid_quest_kills({ count });
+		case 'drones':
+			return m.raid_quest_drones({ count });
+		case 'support':
+			return m.raid_quest_support({ count });
+		case 'survive':
+			return m.raid_quest_survive({ count });
+		case 'boss':
+			return m.raid_quest_boss();
+		case 'crystals':
+			return m.raid_quest_crystals({ count });
+		case 'damage':
+			return m.raid_quest_damage({ count });
+		case 'skills':
+			return m.raid_quest_skills({ count });
+		case 'map':
+			return m.raid_quest_map({ map: MAP_NAMES[quest.map ?? 'sunflower']() });
 	}
 }

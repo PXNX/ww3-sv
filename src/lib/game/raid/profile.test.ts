@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
+	ARCHETYPES,
 	CRYSTAL_COMBINE_COUNT,
 	CRYSTAL_COMBINE_SCRAP,
 	MAX_PLAYER_LEVEL,
 	PLAYER_BASE_HP,
 	SEASON_XP_PER_TIER,
-	STASH_SIZE
+	STASH_SIZE,
+	type Archetype,
+	type MapId
 } from './config';
+import { dailyQuests, type QuestStats } from './quests';
 import {
 	makeArmor,
 	makeWeapon,
@@ -30,11 +34,26 @@ import {
 	salvage,
 	socketCrystal,
 	unsocketCrystal,
+	claimQuest,
 	swapWeapons,
 	unequipArmor,
 	upgradeSlot,
 	xpToNext
 } from './profile';
+
+/** A raid that counts for nothing on the quests */
+function noStats(map: MapId): QuestStats {
+	return {
+		map,
+		timeMs: 0,
+		kills: 0,
+		killsBy: Object.fromEntries(ARCHETYPES.map((a) => [a, 0])) as Record<Archetype, number>,
+		bossKills: 0,
+		crystals: 0,
+		damage: 0,
+		skillsUsed: 0
+	};
+}
 
 describe('a new profile', () => {
 	it('starts at level 1 with the rifle and the marksman rifle and no armour', () => {
@@ -72,7 +91,8 @@ describe('banking a raid', () => {
 			scrap: 7,
 			gear: [found],
 			crystals: [{ kind: 'crit', rarity: 'rare' }],
-			loadout
+			loadout,
+			stats: noStats('strait')
 		});
 		expect(levelsGained).toBe(1);
 		expect(next.gold).toBe(33);
@@ -101,7 +121,8 @@ describe('banking a raid', () => {
 			scrap: 0,
 			gear: [worst, best],
 			crystals: [],
-			loadout: profile.loadout
+			loadout: profile.loadout,
+			stats: noStats('sunflower')
 		});
 		expect(result.profile.stash).toContain(best);
 		expect(result.profile.stash).not.toContain(worst);
@@ -251,5 +272,68 @@ describe('season', () => {
 		expect(loaded.crystals).toEqual({});
 		expect(loaded.loadout.boots).toBeNull();
 		expect(loaded.season.id).toBe('2026-10');
+	});
+});
+
+describe('daily quests', () => {
+	const day = new Date(2026, 9, 24, 12);
+
+	it('gives three different quests a day, the same for everyone', () => {
+		const quests = dailyQuests('2026-10-24').quests;
+		expect(quests).toHaveLength(3);
+		expect(new Set(quests.map((quest) => quest.kind)).size).toBe(3);
+		expect(dailyQuests('2026-10-24')).toEqual(dailyQuests('2026-10-24'));
+	});
+
+	it('counts raids towards the quests and pays out once a quest is done', () => {
+		const profile = newProfile(day);
+		profile.quests = {
+			day: '2026-10-24',
+			quests: [
+				{
+					kind: 'kills',
+					target: 60,
+					progress: 0,
+					claimed: false,
+					reward: { xp: 150, gold: 80, scrap: 0 }
+				},
+				{
+					kind: 'survive',
+					target: 4,
+					progress: 0,
+					claimed: false,
+					reward: { xp: 150, gold: 0, scrap: 20 }
+				}
+			]
+		};
+		const stats = { ...noStats('sunflower'), kills: 40, timeMs: 5 * 60_000 };
+		const haul = {
+			map: 'sunflower' as const,
+			timeMs: stats.timeMs,
+			xp: 0,
+			gold: 0,
+			scrap: 0,
+			gear: [],
+			crystals: [],
+			loadout: profile.loadout,
+			stats
+		};
+		let next = bankHaul(profile, haul, day).profile;
+		expect(next.quests.quests.map((quest) => quest.progress)).toEqual([40, 4]);
+		// Not done yet: nothing to claim
+		expect(claimQuest(next, 0)).toBe(next);
+		next = bankHaul(next, haul, day).profile;
+		expect(next.quests.quests[0].progress).toBe(60);
+		const claimed = claimQuest(next, 0);
+		expect(claimed.gold).toBe(next.gold + 80);
+		expect(claimed.season.xp).toBe(next.season.xp + 150);
+		expect(claimQuest(claimed, 0)).toBe(claimed);
+	});
+
+	it('hands out new quests on a new day', () => {
+		const profile = newProfile(day);
+		const tomorrow = new Date(2026, 9, 25, 9);
+		const loaded = parseProfile(profile, tomorrow)!;
+		expect(loaded.quests.day).toBe('2026-10-25');
 	});
 });

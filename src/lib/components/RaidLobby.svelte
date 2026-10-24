@@ -1,11 +1,13 @@
 <!--
-	Raid lobby between raids: the raider's level, XP, gold and scrap, the season's reward track,
-	the three battlefields to pick from, the loadout (two weapons, helmet, vest and boots) with
-	gold upgrades and the crystals socketed into the weapons, the loose crystals (socketed from
-	here, or combined five into one rarer), and the stash of gear found in earlier raids, where
-	each piece can be equipped or salvaged for gold and scrap.
+	Raid lobby between raids, laid out for landscape: the raider's level and season progress in one
+	card (tap it for the season's rewards), the three battlefields (tap one to start the raid),
+	the live event running now or coming next and today's quests. Beside them the loadout (two
+	weapons, helmet, vest and boots; tap a weapon for all its stats and skills) with gold upgrades
+	and socketed crystals, the loose crystals (socketed from here, or combined five into one
+	rarer), and the stash, where each piece can be equipped or salvaged for gold and scrap.
 -->
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import {
@@ -17,6 +19,7 @@
 		WEAPONS,
 		type MapId
 	} from '#lib/game/raid/config.js';
+	import { liveEventAt, nextLiveEvent } from '#lib/game/raid/events.js';
 	import {
 		bootsSpeed,
 		crystalsOf,
@@ -40,41 +43,39 @@
 		type LoadoutSlot,
 		type WeaponSlot
 	} from '#lib/game/raid/profile.js';
-	import {
-		seasonDaysLeft,
-		seasonId,
-		seasonNumber,
-		seasonReward,
-		seasonTier,
-		seasonTierProgress
-	} from '#lib/game/raid/season.js';
-	import type { RaidGame } from '#lib/stores/raidGame.svelte.js';
+	import { hoursUntilNewQuests, questDone } from '#lib/game/raid/quests.js';
+	import { seasonNumber, seasonTier, seasonTierProgress } from '#lib/game/raid/season.js';
+	import { rememberDetailsItem, type RaidGame } from '#lib/stores/raidGame.svelte.js';
 	import RaidCrystalIcon from './RaidCrystalIcon.svelte';
 	import RaidItemIcon from './RaidItemIcon.svelte';
+	import RaidSeasonScreen from './RaidSeasonScreen.svelte';
 	import {
 		crystalEffect,
 		crystalName,
+		EVENT_HINTS,
+		EVENT_NAMES,
 		formatTime,
 		itemName,
 		MAP_DESCRIPTIONS,
 		MAP_NAMES,
 		PERK_HINTS,
+		questText,
 		RARITY_NAMES,
-		SKILL_NAMES,
 		seasonRewardText,
+		SKILL_NAMES,
 		WEAPON_NAMES,
 		WEAPON_TRAITS
 	} from './raidText';
-	import IconCheck from '~icons/lucide/check';
+	import IconChevronRight from '~icons/lucide/chevron-right';
 	import IconCoins from '~icons/lucide/coins';
 	import IconGift from '~icons/lucide/gift';
-	import IconInfo from '~icons/lucide/info';
-	import IconLock from '~icons/lucide/lock';
+	import IconListChecks from '~icons/lucide/list-checks';
 	import IconPlay from '~icons/lucide/play';
 	import IconRepeat from '~icons/lucide/repeat';
 	import IconSettings from '~icons/lucide/settings';
+	import IconZap from '~icons/lucide/zap';
 
-	let { game, onStart }: { game: RaidGame; onStart: () => void } = $props();
+	let { game, onStart }: { game: RaidGame; onStart: (map: MapId) => void } = $props();
 
 	const profile = $derived(game.profile);
 	let selectedId = $state<string | null>(null);
@@ -91,6 +92,14 @@
 				) ?? null)
 			: null
 	);
+	let showSeason = $state(false);
+
+	/** The wall clock, ticking every second for the live event and quest countdowns */
+	let now = $state(Date.now());
+	onMount(() => {
+		const timer = setInterval(() => (now = Date.now()), 1000);
+		return () => clearInterval(timer);
+	});
 
 	const SLOT_LABELS: Record<LoadoutSlot, () => string> = {
 		primary: m.raid_slot_primary,
@@ -105,6 +114,11 @@
 	function iconKind(item: GearItem) {
 		return item.type === 'weapon' ? item.kind : item.slot;
 	}
+
+	/** The weapon's own page with all its stats and skills, showing this very weapon */
+	const detailsHref = (item: Extract<GearItem, { type: 'weapon' }>) =>
+		resolve('/play/raid/weapons/[kind]', { kind: item.kind });
+	const openDetails = (item: GearItem) => rememberDetailsItem(item.id);
 
 	function statLine(item: GearItem): string {
 		if (item.type === 'weapon')
@@ -155,35 +169,67 @@
 	const xpShare = $derived(Math.min(1, profile.xp / game.xpNeeded));
 	const mapColors = (id: MapId) => raidMap(id).palette;
 
-	// Season
+	// Season, shown with the level
 	const season = $derived(profile.season);
 	const reached = $derived(seasonTier(season.xp));
 	const tierProgress = $derived(seasonTierProgress(season.xp));
 	const claimable = $derived(reached - season.claimed);
-	const tiers = Array.from({ length: SEASON_TIERS }, (_, index) => index + 1);
-	const today = new Date();
-	const current = $derived(seasonId(today) === season.id);
+
+	// Live events and quests
+	const liveEvent = $derived(liveEventAt(now));
+	const nextEvent = $derived(nextLiveEvent(now));
+	const questHours = $derived(hoursUntilNewQuests(now));
 </script>
 
-<div class="grid w-full gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+<div class="grid w-full gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
 	<div class="flex flex-col gap-3">
-		<!-- Profile -->
-		<section class="sticker flex items-center gap-3 p-3" style:--tilt="-0.5deg">
-			<div
-				class="flex size-14 shrink-0 flex-col items-center justify-center rounded-full border-3 border-ink bg-explosion-yellow font-display leading-none font-bold"
+		<!-- Level and season in one card; tap it for the season's rewards -->
+		<button
+			type="button"
+			class="sticker sticker-interactive flex items-center gap-3 p-3 text-start"
+			style:--tilt="-0.5deg"
+			aria-label="{m.raid_lobby_level({ level: profile.level })}, {m.raid_season_open()}"
+			onclick={() => (showSeason = true)}
+		>
+			<span
+				class="relative flex size-14 shrink-0 flex-col items-center justify-center rounded-full border-3 border-ink bg-explosion-yellow font-display leading-none font-bold"
 			>
 				<span class="text-2xl tabular-nums">{profile.level}</span>
-			</div>
-			<div class="flex min-w-0 flex-1 flex-col gap-1 font-display">
-				<span class="text-lg font-bold">{m.raid_lobby_level({ level: profile.level })}</span>
-				<div class="h-3 w-full overflow-hidden rounded-full border-2 border-ink bg-sand">
-					<div class="h-full bg-flag-blue" style:width="{xpShare * 100}%"></div>
-				</div>
-				<span class="text-xs font-bold tabular-nums opacity-80"
-					>{m.raid_lobby_xp({ xp: profile.xp, next: game.xpNeeded })}</span
-				>
-			</div>
-			<div class="flex flex-col items-end gap-0.5 font-display font-bold tabular-nums">
+				{#if claimable > 0}
+					<span
+						class="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full border-2 border-ink bg-tie-red text-[0.65rem] text-paper"
+						>{claimable}</span
+					>
+				{/if}
+			</span>
+			<span class="flex min-w-0 flex-1 flex-col gap-1 font-display">
+				<span class="flex items-baseline justify-between gap-2">
+					<span class="text-lg font-bold">{m.raid_lobby_level({ level: profile.level })}</span>
+					<span class="text-xs font-bold tabular-nums opacity-80"
+						>{m.raid_lobby_xp({ xp: profile.xp, next: game.xpNeeded })}</span
+					>
+				</span>
+				<span class="h-3 w-full overflow-hidden rounded-full border-2 border-ink bg-sand">
+					<span class="block h-full bg-flag-blue" style:width="{xpShare * 100}%"></span>
+				</span>
+				<span class="flex items-center gap-2 text-xs font-bold">
+					<span class="shrink-0"
+						>{m.raid_season_title({ number: seasonNumber(season.id) })} · {m.raid_season_tier({
+							tier: reached,
+							max: SEASON_TIERS
+						})}</span
+					>
+					<span class="h-2 flex-1 overflow-hidden rounded-full border-2 border-ink bg-sand">
+						<span
+							class="block h-full bg-mustard"
+							style:width="{tierProgress.needed > 0
+								? (tierProgress.xp / tierProgress.needed) * 100
+								: 100}%"
+						></span>
+					</span>
+				</span>
+			</span>
+			<span class="flex flex-col items-end gap-0.5 font-display font-bold tabular-nums">
 				<span class="flex items-center gap-1 text-lg">
 					<IconCoins class="size-5 text-mustard" aria-hidden="true" />
 					<span class="sr-only">{m.raid_lobby_gold({ gold: profile.gold })}</span>
@@ -194,119 +240,44 @@
 					<span class="sr-only">{m.raid_lobby_scrap({ scrap: profile.scrap })}</span>
 					<span aria-hidden="true">{profile.scrap}</span>
 				</span>
-			</div>
-		</section>
+			</span>
+			<IconChevronRight class="size-5 shrink-0 rtl:rotate-180" aria-hidden="true" />
+		</button>
 
-		<!-- Season track -->
-		<section class="sticker flex flex-col gap-2 p-3" style:--tilt="0.4deg">
-			<div class="flex flex-wrap items-baseline justify-between gap-2 font-display">
-				<h2 class="text-lg font-bold">
-					{m.raid_season_title({ number: seasonNumber(season.id) })}
-				</h2>
-				{#if current}
-					<span class="text-xs font-bold opacity-80"
-						>{m.raid_season_days_left({ days: seasonDaysLeft(today) })}</span
-					>
-				{/if}
-			</div>
-			<div class="flex items-center gap-2 font-display text-sm font-bold">
-				<span class="shrink-0 rounded bg-banner-slate px-1.5 text-paper tabular-nums"
-					>{m.raid_season_tier({ tier: reached, max: SEASON_TIERS })}</span
-				>
-				<div class="h-3 flex-1 overflow-hidden rounded-full border-2 border-ink bg-sand">
-					<div
-						class="h-full bg-mustard"
-						style:width="{tierProgress.needed > 0
-							? (tierProgress.xp / tierProgress.needed) * 100
-							: 100}%"
-					></div>
-				</div>
-			</div>
-			<p class="text-xs font-semibold tabular-nums opacity-80">
-				{tierProgress.needed > 0
-					? m.raid_season_xp({ xp: tierProgress.xp, next: tierProgress.needed })
-					: m.raid_season_complete()}
-			</p>
-			<ol class="flex gap-1.5 overflow-x-auto px-1 pt-2 pb-1" aria-label={m.raid_result_season()}>
-				{#each tiers as tier (tier)}
-					{@const reward = seasonReward(season.id, tier)}
-					{@const done = tier <= season.claimed}
-					{@const ready = !done && tier <= reached}
-					<li
-						class="relative flex w-14 shrink-0 flex-col items-center gap-0.5 rounded-lg border-2 p-1 text-center"
-						class:border-ink={!ready}
-						class:border-khaki={ready}
-						class:bg-paper={!done}
-						class:bg-sand={done}
-						class:opacity-60={tier > reached}
-						title={seasonRewardText(reward)}
-					>
-						<span class="font-display text-[0.6rem] font-bold tabular-nums">{tier}</span>
-						{#if reward.type === 'gold'}
-							<IconCoins class="size-6 text-mustard" aria-hidden="true" />
-						{:else if reward.type === 'scrap'}
-							<IconSettings class="size-6 opacity-70" aria-hidden="true" />
-						{:else if reward.type === 'crystal'}
-							<RaidCrystalIcon
-								kind={reward.crystal.kind}
-								rarity={reward.crystal.rarity}
-								class="size-6"
-							/>
-						{:else if reward.type === 'weapon'}
-							<RaidItemIcon kind={reward.kind} rarity={reward.rarity} class="size-7" />
-						{/if}
-						<span class="sr-only">{seasonRewardText(reward)}</span>
-						{#if done}
-							<IconCheck
-								class="absolute -top-1.5 -right-1.5 size-4 rounded-full border-2 border-ink bg-khaki p-0.5 text-paper"
-								aria-hidden="true"
-							/>
-						{:else if tier > reached}
-							<IconLock class="absolute -top-1.5 -right-1.5 size-4 opacity-70" aria-hidden="true" />
-						{/if}
-					</li>
-				{/each}
-			</ol>
-			<div class="flex flex-wrap items-center gap-2">
-				<button
-					type="button"
-					class="btn-chunky px-3 py-1 text-sm"
-					class:bg-explosion-yellow={claimable > 0}
-					disabled={claimable <= 0}
-					onclick={() => game.claimSeason()}
-				>
-					<IconGift class="size-4" aria-hidden="true" />
-					{m.raid_season_claim({ count: Math.max(0, claimable) })}
-				</button>
-				<p class="flex-1 text-xs leading-snug opacity-80">{m.raid_season_hint()}</p>
-			</div>
-		</section>
-
-		<!-- Battlefields -->
+		<!-- Battlefields: a tap starts the raid -->
 		<section class="flex flex-col gap-2">
-			<h2 class="font-display text-lg font-bold">{m.raid_lobby_choose_map()}</h2>
-			<div class="grid gap-2 sm:grid-cols-3">
+			<div class="flex flex-wrap items-baseline justify-between gap-2">
+				<h2 class="font-display text-lg font-bold">{m.raid_lobby_choose_map()}</h2>
+				<span class="text-xs font-semibold opacity-80">{m.raid_lobby_tap_map()}</span>
+			</div>
+			<div class="grid grid-cols-3 gap-2">
 				{#each MAP_IDS as id (id)}
 					{@const map = raidMap(id)}
 					{@const best = profile.bestTimeMs[id]}
 					<button
 						type="button"
-						class="sticker sticker-interactive flex flex-col gap-1 p-2 text-start"
-						class:ring-4={game.map === id}
-						class:ring-tie-red={game.map === id}
-						aria-pressed={game.map === id}
-						onclick={() => game.selectMap(id)}
+						class="sticker sticker-interactive group flex flex-col gap-1 p-2 text-start"
+						aria-label="{m.raid_start()}: {MAP_NAMES[id]()}"
+						onclick={() => onStart(id)}
 					>
 						<span
-							class="block h-10 w-full rounded-md border-2 border-ink"
+							class="relative flex h-10 w-full items-center justify-center rounded-md border-2 border-ink"
 							style:background="repeating-linear-gradient(135deg, {mapColors(id).ground} 0 14px, {mapColors(
 								id
 							).groundDark} 14px 20px)"
-						></span>
+						>
+							<span
+								class="flex size-8 items-center justify-center rounded-full border-2 border-ink bg-tie-red text-paper transition-transform group-hover:scale-110"
+							>
+								<IconPlay class="size-4" aria-hidden="true" />
+							</span>
+						</span>
 						<span dir="auto" class="font-display text-base leading-tight font-bold"
 							>{MAP_NAMES[id]()}</span
 						>
-						<span dir="auto" class="text-xs leading-snug">{MAP_DESCRIPTIONS[id]()}</span>
+						<span dir="auto" class="hidden text-xs leading-snug sm:block"
+							>{MAP_DESCRIPTIONS[id]()}</span
+						>
 						<span class="flex flex-wrap gap-1 font-display text-[0.7rem] font-bold">
 							<span class="rounded bg-tie-red px-1 text-paper"
 								>{m.raid_map_danger({ value: map.difficulty })}</span
@@ -323,17 +294,92 @@
 					</button>
 				{/each}
 			</div>
-			{#if game.best !== null}
-				<p class="text-sm font-semibold">{m.raid_best({ score: game.best })}</p>
-			{/if}
-			<button
-				type="button"
-				class="btn-chunky self-start bg-tie-red text-xl text-paper"
-				onclick={onStart}
-			>
-				<IconPlay class="size-5" aria-hidden="true" />
-				{m.raid_start()}
-			</button>
+		</section>
+
+		<!-- Live event now, or the next one -->
+		<section
+			class="flex items-center gap-2 rounded-xl border-3 border-ink p-2"
+			class:bg-explosion-yellow={liveEvent}
+			class:bg-paper={!liveEvent}
+			aria-live="polite"
+		>
+			<IconZap class="size-6 shrink-0" aria-hidden="true" />
+			<div class="flex min-w-0 flex-col leading-tight">
+				{#if liveEvent}
+					<span class="font-display text-sm font-bold"
+						>{m.raid_event_live({ event: EVENT_NAMES[liveEvent.kind]() })} · {m.raid_event_seconds({
+							seconds: Math.max(0, Math.ceil((liveEvent.endsAt - now) / 1000))
+						})}</span
+					>
+					<span dir="auto" class="text-xs">{EVENT_HINTS[liveEvent.kind]()}</span>
+				{:else}
+					<span class="font-display text-sm font-bold"
+						>{m.raid_event_next({
+							event: EVENT_NAMES[nextEvent.kind](),
+							time: formatTime(nextEvent.startsAt - now)
+						})}</span
+					>
+					<span dir="auto" class="text-xs opacity-80">{EVENT_HINTS[nextEvent.kind]()}</span>
+				{/if}
+			</div>
+		</section>
+
+		<!-- Daily quests -->
+		<section class="sticker flex flex-col gap-2 p-3" style:--tilt="0.4deg">
+			<div class="flex items-baseline justify-between gap-2 font-display">
+				<h2 class="flex items-center gap-1.5 text-lg font-bold">
+					<IconListChecks class="size-5" aria-hidden="true" />{m.raid_quests_title()}
+				</h2>
+				<span class="text-xs font-bold opacity-80"
+					>{m.raid_quests_new_in({ hours: questHours })}</span
+				>
+			</div>
+			<ul class="flex flex-col gap-1.5">
+				{#each profile.quests.quests as quest, index (index)}
+					{@const done = questDone(quest)}
+					<li class="flex items-center gap-2">
+						<div class="flex min-w-0 flex-1 flex-col gap-0.5">
+							<span dir="auto" class="text-sm leading-tight font-semibold">{questText(quest)}</span>
+							<span class="flex items-center gap-2">
+								<span class="h-2 flex-1 overflow-hidden rounded-full border-2 border-ink bg-sand">
+									<span
+										class="block h-full"
+										class:bg-khaki={done}
+										class:bg-flag-blue={!done}
+										style:width="{Math.min(1, quest.progress / quest.target) * 100}%"
+									></span>
+								</span>
+								<span class="font-display text-[0.65rem] font-bold tabular-nums"
+									>{quest.progress}/{quest.target}</span
+								>
+							</span>
+							<span class="text-[0.65rem] font-bold opacity-75"
+								>{m.raid_quest_reward_xp({ xp: quest.reward.xp })}{quest.reward.gold
+									? ` · ${m.raid_reward_gold({ amount: quest.reward.gold })}`
+									: ''}{quest.reward.scrap
+									? ` · ${m.raid_reward_scrap({ amount: quest.reward.scrap })}`
+									: ''}</span
+							>
+						</div>
+						{#if quest.claimed}
+							<span class="rounded bg-khaki px-1.5 font-display text-xs font-bold text-paper"
+								>{m.raid_quest_claimed()}</span
+							>
+						{:else}
+							<button
+								type="button"
+								class="btn-chunky px-2 py-1 text-xs"
+								class:bg-explosion-yellow={done}
+								disabled={!done}
+								onclick={() => game.claimQuest(index)}
+							>
+								<IconGift class="size-3.5" aria-hidden="true" />
+								{m.raid_quest_claim()}
+							</button>
+						{/if}
+					</li>
+				{/each}
+			</ul>
 		</section>
 	</div>
 
@@ -360,14 +406,36 @@
 						style:border-color={item ? RARITY_COLOR[item.rarity] : 'var(--color-ink)'}
 					>
 						{#if item}
-							<RaidItemIcon kind={iconKind(item)} rarity={item.rarity} class="size-12 shrink-0" />
+							{#if item.type === 'weapon'}
+								<!-- A weapon opens its own page with all stats and skills -->
+								<a
+									href={detailsHref(item)}
+									onclick={() => openDetails(item)}
+									class="shrink-0 rounded-lg hover:scale-105"
+								>
+									<RaidItemIcon kind={item.kind} rarity={item.rarity} class="size-12" />
+									<span class="sr-only">{m.raid_weapon_details()}</span>
+								</a>
+							{:else}
+								<RaidItemIcon kind={iconKind(item)} rarity={item.rarity} class="size-12 shrink-0" />
+							{/if}
 							<div class="flex min-w-0 flex-1 flex-col leading-tight">
 								<span class="text-[0.65rem] font-bold uppercase opacity-70"
 									>{SLOT_LABELS[slot]()}</span
 								>
-								<span dir="auto" class="truncate font-display text-sm font-bold"
-									>{itemName(item)}</span
-								>
+								{#if item.type === 'weapon'}
+									<a
+										href={detailsHref(item)}
+										onclick={() => openDetails(item)}
+										dir="auto"
+										class="truncate font-display text-sm font-bold underline decoration-2 underline-offset-2"
+										>{itemName(item)}</a
+									>
+								{:else}
+									<span dir="auto" class="truncate font-display text-sm font-bold"
+										>{itemName(item)}</span
+									>
+								{/if}
 								<span class="text-xs font-bold" style:color={RARITY_COLOR[item.rarity]}
 									>{RARITY_NAMES[item.rarity]()} · {m.raid_item_level({ level: item.level })}</span
 								>
@@ -418,10 +486,11 @@
 									{#if item.type === 'weapon'}
 										<a
 											class="btn-chunky px-2 py-0.5 text-xs"
-											href={resolve('/play/raid/weapons/[kind]', { kind: item.kind })}
+											href={detailsHref(item)}
+											onclick={() => openDetails(item)}
 										>
-											<IconInfo class="size-3.5" aria-hidden="true" />
 											{m.raid_weapon_details()}
+											<IconChevronRight class="size-3.5 rtl:rotate-180" aria-hidden="true" />
 										</a>
 									{:else}
 										<button
@@ -589,6 +658,16 @@
 									{m.raid_equip()}{selected.type === 'weapon' ? `: ${SLOT_LABELS[slot]()}` : ''}
 								</button>
 							{/each}
+							{#if selected.type === 'weapon'}
+								<a
+									class="btn-chunky px-2 py-1 text-xs"
+									href={detailsHref(selected)}
+									onclick={() => openDetails(selected)}
+								>
+									{m.raid_weapon_details()}
+									<IconChevronRight class="size-3.5 rtl:rotate-180" aria-hidden="true" />
+								</a>
+							{/if}
 							<button type="button" class="btn-chunky px-2 py-1 text-xs" onclick={salvageSelected}>
 								{m.raid_salvage({ gold: salvageValue(selected) })} · {m.raid_reward_scrap({
 									amount: salvageScrap(selected)
@@ -601,6 +680,14 @@
 		</section>
 	</div>
 </div>
+
+{#if showSeason}
+	<RaidSeasonScreen
+		{season}
+		onClaim={() => game.claimSeason()}
+		onClose={() => (showSeason = false)}
+	/>
+{/if}
 
 {#if game.claimed}
 	<div

@@ -22,6 +22,25 @@ export const REVIVE_INVULNERABLE_MS = 2500;
 export const REVIVE_BLAST_RADIUS = 240;
 /** Short invulnerability after a hit, so a crowd cannot drain the bar in a single frame */
 export const HIT_GRACE_MS = 350;
+/** Walking speed while shooting (and for a moment after each shot), as a share */
+export const SHOOTING_SPEED = 0.6;
+export const SHOOTING_SLOW_MS = 250;
+/** Sprint: a burst forwards on its own button, untouchable while it lasts */
+export const SPRINT_MS = 240;
+export const SPRINT_SPEED = 780;
+export const SPRINT_COOLDOWN_MS = 6000;
+
+// ---------------------------------------------------------------------------------------------
+// Live events: every ten minutes of real time, one of them runs for a minute
+
+export const LIVE_EVENTS = ['double-xp', 'elite-surge', 'rapid-skills', 'gold-rush'] as const;
+export type LiveEvent = (typeof LIVE_EVENTS)[number];
+export const LIVE_EVENT_EVERY_MS = 10 * 60_000;
+export const LIVE_EVENT_MS = 60_000;
+/** Elite surge: super and mega enemies turn up this many times as often */
+export const SURGE_FACTOR = 3;
+/** Rapid skills: cooldowns run down this many times as fast */
+export const RAPID_SKILLS_FACTOR = 2;
 
 /** World units of height the camera shows in landscape; the width follows the screen */
 export const VIEW_HEIGHT = 500;
@@ -347,7 +366,7 @@ export const TRAIL_BURN_MS = 1800;
 export const TRAIL_DPS = 6;
 export const TRAIL_DPS_PER_LEVEL = 0.6;
 /** Sprint boots: extra walking speed */
-export const SPRINT_SPEED = 0.22;
+export const SPRINT_BOOTS_SPEED = 0.22;
 
 // ---------------------------------------------------------------------------------------------
 // Terrain: ice and oil slicks make everything that walks slide, mud slows it down

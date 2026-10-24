@@ -1,10 +1,11 @@
 /*
  * The raider's profile that lasts between raids: level and XP, gold and scrap, the equipped
- * loadout (two weapons, a helmet and a vest), the stash, the crystals and the season track. Raids
- * hand their haul in here when they end; the lobby equips, upgrades and salvages gear, sockets
- * and combines crystals and claims season rewards. Pure functions on plain data, so the store
- * only has to read and write it.
+ * loadout (two weapons, a helmet, a vest and boots), the stash, the crystals, the season track and
+ * the daily quests. Raids hand their haul in here when they end; the lobby equips, upgrades and
+ * salvages gear, sockets and combines crystals and claims season and quest rewards. Pure
+ * functions on plain data, so the store only has to read and write it.
  */
+import { dayKey } from '#lib/game/random.js';
 import {
 	ARMOR_SLOTS,
 	ARMOR_PERKS,
@@ -52,6 +53,14 @@ import {
 	type SeasonProgress,
 	type SeasonReward
 } from './season';
+import {
+	addRaidToQuests,
+	isDailyQuests,
+	newDailyQuests,
+	questDone,
+	type DailyQuests,
+	type QuestStats
+} from './quests';
 
 export interface Loadout {
 	/** The all-rounder slot: starts with the rifle that carries the heal and the grenade */
@@ -80,6 +89,8 @@ export interface Profile {
 	/** Loose crystals, counted by kind and rarity */
 	crystals: CrystalStock;
 	season: SeasonProgress;
+	/** Today's quests (missing in older saves) */
+	quests: DailyQuests;
 	raids: number;
 	/** Longest survival per map in milliseconds */
 	bestTimeMs: Partial<Record<MapId, number>>;
@@ -102,6 +113,7 @@ export function newProfile(now: Date = new Date()): Profile {
 		stash: [],
 		crystals: {},
 		season: newSeason(now),
+		quests: newDailyQuests(now),
 		raids: 0,
 		bestTimeMs: {}
 	};
@@ -269,6 +281,50 @@ export function withCurrentSeason(profile: Profile, now: Date = new Date()): Pro
 	return { ...claimed, season: newSeason(now) };
 }
 
+/** Raid XP (or quest XP) for both the level and the season track */
+function gainXp(profile: Profile, gained: number): { profile: Profile; levelsGained: number } {
+	const xp = addXp(profile.level, profile.xp, gained);
+	return {
+		profile: {
+			...profile,
+			level: xp.level,
+			xp: xp.xp,
+			season: { ...profile.season, xp: profile.season.xp + Math.max(0, Math.round(gained)) }
+		},
+		levelsGained: xp.levelsGained
+	};
+}
+
+// ---------------------------------------------------------------------------------------------
+// Daily quests
+
+/** Gives the profile today's quests if the ones it has are from an earlier day */
+export function withCurrentQuests(profile: Profile, now: Date = new Date()): Profile {
+	if (profile.quests.day === dayKey(now)) return profile;
+	return { ...profile, quests: newDailyQuests(now) };
+}
+
+/** Moves the profile into the current season and day */
+export function withToday(profile: Profile, now: Date = new Date()): Profile {
+	return withCurrentQuests(withCurrentSeason(profile, now), now);
+}
+
+/** Claims a finished quest's reward; unchanged if it is not finished or already claimed */
+export function claimQuest(profile: Profile, index: number): Profile {
+	const quest = profile.quests.quests[index];
+	if (!quest || quest.claimed || !questDone(quest)) return profile;
+	const quests = profile.quests.quests.map((other, i) =>
+		i === index ? { ...other, claimed: true } : other
+	);
+	const next = gainXp(profile, quest.reward.xp).profile;
+	return {
+		...next,
+		gold: next.gold + quest.reward.gold,
+		scrap: next.scrap + quest.reward.scrap,
+		quests: { ...profile.quests, quests }
+	};
+}
+
 // ---------------------------------------------------------------------------------------------
 // Banking a raid
 
@@ -283,6 +339,8 @@ export interface RaidHaul {
 	crystals: Crystal[];
 	/** The loadout as the raid ended, with any upgrades and swaps made in the field */
 	loadout: Loadout;
+	/** What the raid counts towards the daily quests */
+	stats: QuestStats;
 }
 
 export interface HaulResult {
@@ -296,10 +354,13 @@ export interface HaulResult {
 	seasonTiersGained: number;
 }
 
-/** Banks a finished raid: XP (also for the season), gold, scrap, crystals, loadout and gear */
+/**
+ * Banks a finished raid: XP (also for the season), gold, scrap, crystals, loadout, gear and the
+ * progress of the daily quests
+ */
 export function bankHaul(profile: Profile, haul: RaidHaul, now: Date = new Date()): HaulResult {
-	const current = withCurrentSeason(profile, now);
-	const xp = addXp(current.level, current.xp, haul.xp);
+	const today = withToday(profile, now);
+	const { profile: current, levelsGained } = gainXp(today, haul.xp);
 	const incoming = [...haul.gear].sort((a, b) => gearScore(b) - gearScore(a));
 	const stash = [...current.stash];
 	let salvaged = 0;
@@ -319,27 +380,24 @@ export function bankHaul(profile: Profile, haul: RaidHaul, now: Date = new Date(
 		}
 	}
 	for (const crystal of haul.crystals) crystals = addCrystals(crystals, crystal, 1);
-	const seasonXp = current.season.xp + Math.max(0, Math.round(haul.xp));
 	const best = current.bestTimeMs[haul.map] ?? 0;
 	return {
 		profile: {
 			...current,
-			level: xp.level,
-			xp: xp.xp,
 			gold: current.gold + Math.round(haul.gold) + salvageGold,
 			scrap: current.scrap + Math.round(haul.scrap) + scrapFromSalvage,
 			loadout: haul.loadout,
 			stash,
 			crystals,
-			season: { ...current.season, xp: seasonXp },
+			quests: addRaidToQuests(current.quests, haul.stats),
 			raids: current.raids + 1,
 			bestTimeMs: { ...current.bestTimeMs, [haul.map]: Math.max(best, haul.timeMs) }
 		},
-		levelsGained: xp.levelsGained,
+		levelsGained,
 		salvaged,
 		salvageGold,
 		salvageScrap: scrapFromSalvage,
-		seasonTiersGained: seasonTier(seasonXp) - seasonTier(current.season.xp)
+		seasonTiersGained: seasonTier(current.season.xp) - seasonTier(today.season.xp)
 	};
 }
 
@@ -480,6 +538,7 @@ export function isProfile(value: unknown): value is Profile {
 		(value.scrap === undefined || isCount(value.scrap)) &&
 		(value.crystals === undefined || isCrystalStock(value.crystals)) &&
 		(value.season === undefined || isSeasonProgress(value.season)) &&
+		(value.quests === undefined || isDailyQuests(value.quests)) &&
 		isRecord(loadout) &&
 		isWeapon(loadout.primary) &&
 		isWeapon(loadout.secondary) &&
@@ -497,19 +556,20 @@ export function isProfile(value: unknown): value is Profile {
 }
 
 /**
- * A saved profile, or null if it is not one. Saves from before boots, scrap, crystals and
- * seasons get those filled in, and the season moves on to the current one.
+ * A saved profile, or null if it is not one. Saves from before boots, scrap, crystals, seasons
+ * and quests get those filled in, and the season and quests move on to the current ones.
  */
 export function parseProfile(value: unknown, now: Date = new Date()): Profile | null {
 	if (!isProfile(value)) return null;
 	const loaded = value as Partial<Profile> & Profile;
-	return withCurrentSeason(
+	return withToday(
 		{
 			...loaded,
 			loadout: { ...loaded.loadout, boots: loaded.loadout.boots ?? null },
 			scrap: loaded.scrap ?? 0,
 			crystals: loaded.crystals ?? {},
-			season: loaded.season ?? newSeason(now)
+			season: loaded.season ?? newSeason(now),
+			quests: loaded.quests ?? newDailyQuests(now)
 		},
 		now
 	);

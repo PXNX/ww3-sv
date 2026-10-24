@@ -3,20 +3,30 @@ import { createRandom } from '#lib/game/random.js';
 import {
 	CRYSTAL_BOSS_COUNT,
 	MEDIC_HEAL_SHARE,
+	LIVE_EVENT_EVERY_MS,
+	LIVE_EVENT_MS,
+	LIVE_EVENTS,
 	PLAYER_SPEED,
+	SHOOTING_SPEED,
+	SKILL_COOLDOWN_MS,
+	SPRINT_COOLDOWN_MS,
 	WEAPON_KINDS,
 	WEAPONS,
 	type Archetype,
 	type WeaponKind
 } from './config';
 import { createDemo, DEMO_MS, stepDemo } from './demo';
+import { liveEventAt, nextLiveEvent } from './events';
 import { makeArmor, makeWeapon, rollCrystals, rollLoot } from './items';
 import { newProfile } from './profile';
 import {
 	createRaid,
+	rollVariant,
 	setFiring,
+	setLiveEvent,
 	setMove,
 	spawnEnemy,
+	sprint,
 	stepRaid,
 	useSkill,
 	type RaidEvent,
@@ -298,5 +308,77 @@ describe('weapon demos', () => {
 				expect(after, `${kind} ${action}`).not.toBe(before);
 			}
 		}
+	});
+});
+
+describe('moving', () => {
+	it('walks slower while shooting', () => {
+		const state = quietRaid();
+		const x = state.player.x;
+		setMove(state, 1, 0);
+		setFiring(state, true);
+		run(state, 1000);
+		expect(state.player.x - x).toBeCloseTo(PLAYER_SPEED * SHOOTING_SPEED, -1);
+	});
+
+	it('sprints forwards out of harm, then needs six seconds to recharge', () => {
+		const state = quietRaid();
+		const x = state.player.x;
+		setMove(state, 1, 0);
+		expect(count(sprint(state), 'sprint')).toBe(1);
+		expect(state.player.invulnerableMs).toBeGreaterThan(0);
+		setMove(state, 0, 0);
+		run(state, 400);
+		expect(state.player.x - x).toBeGreaterThan(150);
+		expect(sprint(state)).toEqual([]);
+		run(state, SPRINT_COOLDOWN_MS);
+		expect(count(sprint(state), 'sprint')).toBe(1);
+	});
+});
+
+describe('live events', () => {
+	it('run for the first minute of every ten, taking turns', () => {
+		const window = Date.UTC(2026, 9, 24, 12, 0);
+		const kinds = new Set();
+		for (let i = 0; i < LIVE_EVENTS.length; i++) {
+			const at = window + i * LIVE_EVENT_EVERY_MS;
+			const event = liveEventAt(at + 1000)!;
+			expect(event.endsAt).toBe(at + LIVE_EVENT_MS);
+			kinds.add(event.kind);
+			expect(liveEventAt(at + LIVE_EVENT_MS + 1)).toBeNull();
+		}
+		expect(kinds.size).toBe(LIVE_EVENTS.length);
+		expect(nextLiveEvent(window + 1000).startsAt).toBe(window + LIVE_EVENT_EVERY_MS);
+	});
+
+	it('double XP doubles what a defeat is worth', () => {
+		const plain = quietRaid();
+		const doubled = quietRaid();
+		setLiveEvent(doubled, 'double-xp');
+		for (const state of [plain, doubled]) place(state, 'grunt', 60).hp = 0.1;
+		for (const state of [plain, doubled]) {
+			setFiring(state, true);
+			run(state, 300);
+		}
+		expect(doubled.xp).toBeCloseTo(plain.xp * 2, 5);
+	});
+
+	it('rapid skills recharge twice as fast', () => {
+		const state = quietRaid();
+		setLiveEvent(state, 'rapid-skills');
+		useSkill(state, 1);
+		run(state, SKILL_COOLDOWN_MS.grenade / 2 + 100);
+		expect(state.player.skillMs.grenade).toBe(0);
+	});
+
+	it('an elite surge brings far more super and mega enemies', () => {
+		const random = createRandom(2);
+		let plain = 0;
+		let surge = 0;
+		for (let i = 0; i < 4000; i++) {
+			if (rollVariant(random, 1) !== 'normal') plain++;
+			if (rollVariant(random, 1, 3) !== 'normal') surge++;
+		}
+		expect(surge).toBeGreaterThan(plain * 2.5);
 	});
 });

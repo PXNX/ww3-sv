@@ -16,8 +16,9 @@
 		WEAPON_NAMES,
 		WEAPON_TRAITS
 	} from '#lib/components/raidText.js';
+	import { enterLandscape } from '#lib/game/landscape.js';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
-	import { ARMOR_PERKS, WEAPON_KINDS, WEAPONS } from '#lib/game/raid/config.js';
+	import { ARMOR_PERKS, WEAPON_KINDS, WEAPONS, type MapId } from '#lib/game/raid/config.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
 	import { RaidGame } from '#lib/stores/raidGame.svelte.js';
@@ -45,8 +46,18 @@
 		return () => query.removeEventListener('change', update);
 	});
 
-	function start() {
-		game.start();
+	/** A battlefield was tapped: the tap also lets the phone go full screen and sideways */
+	function start(map: MapId = game.map) {
+		void enterLandscape();
+		game.start(map);
+	}
+
+	/** The lobby is played sideways too; the first tap in it asks for full screen and landscape */
+	let askedLandscape = false;
+	function askLandscape() {
+		if (askedLandscape) return;
+		askedLandscape = true;
+		void enterLandscape();
 	}
 
 	function openHelp() {
@@ -58,12 +69,14 @@
 	const result = $derived(game.result);
 </script>
 
+<svelte:window onpointerdown={askLandscape} />
+
 <GameShell
 	title={modeName}
 	score={inRaid ? game.score : undefined}
 	best={game.best}
 	wide
-	immersive={inRaid}
+	immersive
 	landscape
 	confirmLeave={game.status === 'playing' || game.status === 'paused' || game.status === 'down'}
 >
@@ -91,34 +104,35 @@
 	{/snippet}
 
 	{#if inRaid}
-		<div class="relative flex min-h-0 flex-1 flex-col">
+		<div class="relative flex h-full min-h-0 flex-1 flex-col">
 			<RaidCanvas {game} />
-			{#if portrait && !rotateDismissed && game.status !== 'over'}
-				<div
-					class="absolute inset-0 z-30 flex items-center justify-center bg-banner-slate p-4"
-					role="dialog"
-					aria-modal="true"
-					aria-labelledby="raid-rotate-title"
-				>
-					<div class="sticker flex max-w-xs flex-col items-center gap-3 p-5 text-center">
-						<IconRotate class="rotate-hint size-14" aria-hidden="true" />
-						<h2 id="raid-rotate-title" dir="auto" class="font-display text-2xl font-bold">
-							{m.raid_rotate_title()}
-						</h2>
-						<p dir="auto" class="text-sm">{m.raid_rotate_body()}</p>
-						<button
-							type="button"
-							class="btn-chunky text-sm"
-							onclick={() => (rotateDismissed = true)}
-						>
-							{m.raid_rotate_dismiss()}
-						</button>
-					</div>
-				</div>
-			{/if}
 		</div>
 	{:else}
-		<RaidLobby {game} onStart={start} />
+		<!-- The lobby scrolls under the floating header -->
+		<div
+			class="absolute inset-0 overflow-y-auto ps-[calc(0.75rem+env(safe-area-inset-left))] pe-[calc(0.75rem+env(safe-area-inset-right))] pt-[calc(var(--hud-top)+0.5rem)] pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
+		>
+			<RaidLobby {game} onStart={start} />
+		</div>
+	{/if}
+	{#if portrait && !rotateDismissed && game.status !== 'over'}
+		<div
+			class="fixed inset-0 z-30 flex items-center justify-center bg-banner-slate p-4"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="raid-rotate-title"
+		>
+			<div class="sticker flex max-w-xs flex-col items-center gap-3 p-5 text-center">
+				<IconRotate class="rotate-hint size-14" aria-hidden="true" />
+				<h2 id="raid-rotate-title" dir="auto" class="font-display text-2xl font-bold">
+					{m.raid_rotate_title()}
+				</h2>
+				<p dir="auto" class="text-sm">{m.raid_rotate_body()}</p>
+				<button type="button" class="btn-chunky text-sm" onclick={() => (rotateDismissed = true)}>
+					{m.raid_rotate_dismiss()}
+				</button>
+			</div>
+		</div>
 	{/if}
 
 	<TutorialModal
@@ -129,6 +143,7 @@
 	>
 		<p>{m.raid_tutorial_goal()}</p>
 		<p>{m.raid_tutorial_controls()}</p>
+		<p>{m.raid_tutorial_sprint()}</p>
 		<p>{m.raid_tutorial_weapons()}</p>
 		<ul class="flex flex-col gap-3">
 			{#each WEAPON_KINDS as kind (kind)}
@@ -156,6 +171,8 @@
 		</ul>
 		<p>{m.raid_tutorial_crystals()}</p>
 		<p>{m.raid_tutorial_season()}</p>
+		<p>{m.raid_tutorial_quests()}</p>
+		<p>{m.raid_tutorial_events()}</p>
 		<p>{m.raid_tutorial_revive()}</p>
 		<p class="hidden text-sm sm:block">{m.raid_keyboard_hint()}</p>
 	</TutorialModal>

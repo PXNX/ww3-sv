@@ -30,7 +30,7 @@ import {
 	WEAPON_KINDS,
 	WEAPONS,
 	SLOT_PERKS,
-	SPRINT_SPEED,
+	SPRINT_BOOTS_SPEED,
 	type ArmorPerk,
 	type ArmorSlot,
 	type CrystalKind,
@@ -221,7 +221,7 @@ export function vestArmor(item: ArmorItem | null): number {
 export function bootsSpeed(item: ArmorItem | null): number {
 	if (!item || item.slot !== 'boots') return 0;
 	const base = BOOTS_SPEED * RARITY_POWER[item.rarity] * Math.sqrt(levelFactor(item.level));
-	return base + (item.perk === 'sprint' ? SPRINT_SPEED : 0);
+	return base + (item.perk === 'sprint' ? SPRINT_BOOTS_SPEED : 0);
 }
 
 /** Share of incoming damage that gets through an armour value */

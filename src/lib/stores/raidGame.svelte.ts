@@ -1,7 +1,8 @@
 /*
  * Raid game store: the persistent profile and lobby actions, and around a running raid the
  * player's commands, floating numbers and rings, sounds and the reactive HUD values; the lobby
- * also sockets and combines crystals and claims season rewards. The
+ * also sockets and combines crystals and claims season and quest rewards, and the clock switches
+ * the live events on and off during a raid. The
  * simulation state is a plain object read by the canvas every frame; only what the page chrome
  * shows is reactive, synced after each step.
  */
@@ -9,6 +10,7 @@ import {
 	ARMOR_NAMES,
 	BOSS_NAMES,
 	crystalName,
+	EVENT_NAMES,
 	itemName,
 	SKILL_NAMES,
 	WEAPON_NAMES
@@ -27,6 +29,7 @@ import {
 	BOSS_SLAM_RADIUS,
 	CRYSTAL_COLOR,
 	SKILL_COOLDOWN_MS,
+	SPRINT_COOLDOWN_MS,
 	type Archetype,
 	type ArmorSlot,
 	type MapId,
@@ -37,6 +40,7 @@ import {
 import { gearScore, weaponStats, type Crystal, type GearItem } from '#lib/game/raid/items.js';
 import {
 	bankHaul,
+	claimQuest,
 	claimSeasonRewards,
 	combineCrystals,
 	equipFromStash,
@@ -49,12 +53,14 @@ import {
 	unsocketCrystal,
 	upgradeSlot,
 	withCurrentSeason,
+	withToday,
 	xpToNext,
 	type LoadoutSlot,
 	type Profile,
 	type WeaponSlot
 } from '#lib/game/raid/profile.js';
-import type { SeasonReward } from '#lib/game/raid/season.js';
+import { liveEventAt, type ActiveEvent } from '#lib/game/raid/events.js';
+import { dateAt, type SeasonReward } from '#lib/game/raid/season.js';
 import { drawRaidPreview, type Effect, type SceneExtras } from '#lib/game/raid/render.js';
 import {
 	createRaid,
@@ -65,7 +71,9 @@ import {
 	revive,
 	scoreOf,
 	setFiring,
+	setLiveEvent,
 	setMove,
+	sprint,
 	stepRaid,
 	swapWeapon,
 	useSkill,
@@ -80,7 +88,28 @@ import type { SoundId } from '#lib/sound/sounds.js';
 
 export type RaidStatus = 'lobby' | 'playing' | 'paused' | 'down' | 'over';
 
-const PROFILE_KEY = 'raid:profile';
+/** Where the profile is saved; the weapon pages read it too */
+export const PROFILE_KEY = 'raid:profile';
+/** The weapon the lobby opened its page for, handed over for that one visit */
+const DETAILS_ITEM_KEY = 'ww3:raid:details-item';
+
+/** Remembers which of the player's weapons the next weapon page should show */
+export function rememberDetailsItem(id: string) {
+	try {
+		sessionStorage.setItem(DETAILS_ITEM_KEY, id);
+	} catch {
+		// No session storage: the page shows the weapon's base stats
+	}
+}
+
+/** The weapon the lobby asked the weapon page to show, if any */
+export function detailsItem(): string | null {
+	try {
+		return sessionStorage.getItem(DETAILS_ITEM_KEY);
+	} catch {
+		return null;
+	}
+}
 /** How long the "found new gear" card stays up */
 const FOUND_MS = 6000;
 /** The same sound never plays more often than this, so a fast weapon does not drown the rest */
@@ -121,6 +150,8 @@ export interface RaidOptions {
 	store?: () => Store;
 	scores?: () => Highscores;
 	seed?: () => number;
+	/** The wall clock for the live events, in epoch milliseconds; injected for tests */
+	now?: () => number;
 }
 
 const scoreKey = (map: MapId) => ['raid', map, 'score'] as const;
@@ -150,6 +181,12 @@ export class RaidGame {
 	/** Share of each skill's cooldown still to go, 0 when ready */
 	skillCooldowns = $state<readonly [number, number]>([0, 0]);
 	fireCooldown = $state(0);
+	/** Share of the sprint's recharge still to go, 0 when ready */
+	sprintCooldown = $state(0);
+	/** The live event running during the raid, with its end on the wall clock */
+	liveEvent = $state.raw<ActiveEvent | null>(null);
+	/** Whole seconds the live event still runs */
+	liveEventSeconds = $state(0);
 	boss = $state<{ share: number; variant: Variant } | null>(null);
 	/** The last piece of gear picked up, offered for equipping for a few seconds */
 	found = $state.raw<{ item: GearItem; better: boolean } | null>(null);
@@ -169,6 +206,7 @@ export class RaidGame {
 	#store: () => Store;
 	#scores: () => Highscores;
 	#seed: () => number;
+	#now: () => number;
 	#foundMs = 0;
 	/** When each sound last played, on the raid clock */
 	#soundAt: Partial<Record<SoundId, number>> = {};
@@ -178,19 +216,23 @@ export class RaidGame {
 		reducedMotion = false,
 		store = localStore,
 		scores = highscores,
-		seed = randomSeed
+		seed = randomSeed,
+		now = Date.now
 	}: RaidOptions = {}) {
 		this.reducedMotion = reducedMotion;
 		this.#store = store;
 		this.#scores = scores;
 		this.#seed = seed;
+		this.#now = now;
 		this.state = createRaid(this.map, this.profile.loadout, this.profile.level);
 		this.#syncChrome();
 	}
 
 	/** Reads the saved profile and best score; call in the browser only */
 	load() {
-		this.profile = parseProfile(this.#store().read<unknown>(PROFILE_KEY, null)) ?? newProfile();
+		const today = dateAt(this.#now());
+		const saved = parseProfile(this.#store().read<unknown>(PROFILE_KEY, null), today);
+		this.#setProfile(saved ?? newProfile(today));
 		this.best = this.#scores().get(scoreKey(this.map));
 		this.state = createRaid(this.map, this.profile.loadout, this.profile.level);
 		this.#syncChrome();
@@ -252,9 +294,16 @@ export class RaidGame {
 		this.#play(before === this.profile ? 'ui-error' : 'chime-big');
 	}
 
+	/** Claims a finished daily quest's reward */
+	claimQuest(index: number) {
+		const before = this.profile;
+		this.#setProfile(claimQuest(withToday(this.profile, dateAt(this.#now())), index));
+		this.#play(before === this.profile ? 'ui-error' : 'chime-big');
+	}
+
 	/** Claims every season tier reached so far */
 	claimSeason() {
-		const current = withCurrentSeason(this.profile);
+		const current = withCurrentSeason(this.profile, dateAt(this.#now()));
 		const { profile, rewards } = claimSeasonRewards(current);
 		this.#setProfile(profile);
 		if (rewards.length === 0) return;
@@ -267,6 +316,8 @@ export class RaidGame {
 	}
 
 	backToLobby() {
+		// A new day (or season) may have started during the raid
+		this.#setProfile(withToday(this.profile, dateAt(this.#now())));
 		this.status = 'lobby';
 		this.result = null;
 		this.found = null;
@@ -293,6 +344,8 @@ export class RaidGame {
 		this.best = this.#scores().get(scoreKey(map));
 		this.#clockMs = 0;
 		this.#soundAt = {};
+		this.liveEvent = null;
+		this.#followClock();
 		this.#syncChrome();
 		this.status = 'playing';
 	}
@@ -324,6 +377,11 @@ export class RaidGame {
 
 	swap() {
 		if (this.status === 'playing') this.#apply(swapWeapon(this.state));
+	}
+
+	/** A burst forwards, on its own button */
+	sprint() {
+		if (this.status === 'playing') this.#apply(sprint(this.state));
 	}
 
 	/** One of the held weapon's two skills */
@@ -360,7 +418,43 @@ export class RaidGame {
 			this.#foundMs -= dtMs;
 			if (this.#foundMs <= 0) this.found = null;
 		}
+		this.#followClock();
 		this.#apply(stepRaid(this.state, this.#random, dtMs));
+	}
+
+	/** Switches the live event on and off with the wall clock, with a popup each time */
+	#followClock() {
+		const now = this.#now();
+		const event = liveEventAt(now);
+		const before = this.liveEvent;
+		if (event?.kind !== before?.kind) {
+			this.liveEvent = event;
+			setLiveEvent(this.state, event?.kind ?? null);
+			const { player } = this.state;
+			if (event) {
+				const name = EVENT_NAMES[event.kind]();
+				this.#text(
+					player.x,
+					player.y - 96,
+					m.raid_popup_event({ event: name }),
+					'#ffd23a',
+					26,
+					2400
+				);
+				this.#play('chime-big');
+			} else if (before) {
+				const name = EVENT_NAMES[before.kind]();
+				this.#text(
+					player.x,
+					player.y - 96,
+					m.raid_popup_event_over({ event: name }),
+					'#ffffff',
+					20,
+					1600
+				);
+			}
+		}
+		this.liveEventSeconds = event ? Math.max(0, Math.ceil((event.endsAt - now) / 1000)) : 0;
 	}
 
 	sceneExtras(): SceneExtras {
@@ -566,6 +660,9 @@ export class RaidGame {
 			case 'spikes':
 				this.#play('impact-stone', 0.5);
 				break;
+			case 'sprint':
+				this.#play('ability-dash');
+				break;
 			case 'gear': {
 				const { item } = event;
 				const current =
@@ -703,6 +800,7 @@ export class RaidGame {
 			this.skillCooldowns = cooldowns;
 		}
 		this.fireCooldown = share(player.fireMs, weaponStats(held, state.playerLevel).fireMs);
+		this.sprintCooldown = share(player.sprintMs, SPRINT_COOLDOWN_MS);
 		const boss = currentBoss(state);
 		this.boss = boss
 			? { share: Math.max(0, Math.ceil((boss.hp / boss.maxHp) * 100) / 100), variant: boss.variant }
@@ -712,17 +810,32 @@ export class RaidGame {
 	#finish() {
 		this.#syncChrome();
 		const state = this.state;
-		const before = withCurrentSeason(this.profile);
-		const banked = bankHaul(before, {
-			map: state.mapId,
-			timeMs: state.timeMs,
-			xp: state.xp,
-			gold: state.gold,
-			scrap: state.scrap,
-			gear: state.haul,
-			crystals: state.crystals,
-			loadout: state.loadout
-		});
+		const today = dateAt(this.#now());
+		const before = withToday(this.profile, today);
+		const banked = bankHaul(
+			before,
+			{
+				map: state.mapId,
+				timeMs: state.timeMs,
+				xp: state.xp,
+				gold: state.gold,
+				scrap: state.scrap,
+				gear: state.haul,
+				crystals: state.crystals,
+				loadout: state.loadout,
+				stats: {
+					map: state.mapId,
+					timeMs: state.timeMs,
+					kills: state.kills,
+					killsBy: state.killsBy,
+					bossKills: state.bossKills,
+					crystals: state.crystals.length,
+					damage: state.damageDealt,
+					skillsUsed: state.skillsUsed
+				}
+			},
+			today
+		);
 		this.#setProfile(banked.profile);
 		const best = this.#scores().submit(scoreKey(state.mapId), this.score);
 		this.best = best.best;

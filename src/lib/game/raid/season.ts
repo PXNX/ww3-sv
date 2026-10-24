@@ -34,6 +34,9 @@ export type SeasonReward =
 /** The first season, so the seasons are numbered from 1 */
 const FIRST_SEASON = { year: 2026, month: 10 };
 
+/** A date for a moment on the clock, for code that keeps time as milliseconds */
+export const dateAt = (ms: number): Date => new Date(ms);
+
 export function seasonId(date: Date = new Date()): string {
 	return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 }

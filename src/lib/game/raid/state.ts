@@ -6,7 +6,9 @@
  * beyond the camera, tougher and more often the longer the raid lasts, and every defeat can drop
  * loot and, rarely (from bosses always), crystals. Drones fly over cover and crash into the
  * player, medics heal, mortars and artillery shell marked spots. Ice and oil make everyone slide,
- * mud slows them. Each step returns events for sounds and effects.
+ * mud slows them. Shooting slows the player down; the sprint button bursts forwards. A live event
+ * (double XP, an elite surge, rapid skills or a gold rush) can be switched on from outside. Each
+ * step returns events for sounds and effects.
  */
 import { pickWeighted, randomInt, type Random } from '#lib/game/random.js';
 import {
@@ -80,18 +82,25 @@ import {
 	PLAYER_RADIUS,
 	PLAYER_SPEED,
 	RAILSHOT_DAMAGE_FACTOR,
+	RAPID_SKILLS_FACTOR,
 	RAILSHOT_RANGE,
 	REVIVE_BLAST_RADIUS,
 	REVIVE_HEALTH_SHARE,
 	REVIVE_INVULNERABLE_MS,
 	REVIVES_PER_RAID,
 	SCORE_PER_SECOND,
+	SHOOTING_SLOW_MS,
+	SHOOTING_SPEED,
 	SKILL_COOLDOWN_MS,
 	SKILL_IDS,
 	SLIPPERY_GRIP,
 	SPAWN_DISTANCE_MAX,
 	SPAWN_DISTANCE_MIN,
 	SPIKES_REFLECT,
+	SPRINT_COOLDOWN_MS,
+	SPRINT_MS,
+	SPRINT_SPEED,
+	SURGE_FACTOR,
 	SWARM_DRONES,
 	TRAIL_BURN_MS,
 	TRAIL_DPS,
@@ -112,6 +121,7 @@ import {
 	threatLevel,
 	type Archetype,
 	type ArmorSlot,
+	type LiveEvent,
 	type MapId,
 	type SkillId,
 	type Variant,
@@ -165,10 +175,15 @@ export interface Player {
 	overdriveMs: number;
 	/** Overclock: drone nests launch faster while above 0 */
 	overclockMs: number;
-	/** Dash: time left and direction */
+	/** Dash (or sprint): time left, direction and speed */
 	dashMs: number;
 	dashX: number;
 	dashY: number;
+	dashSpeed: number;
+	/** Sprint button: time until it can be used again */
+	sprintMs: number;
+	/** Walks slower while above 0, set by every shot */
+	shootSlowMs: number;
 	graceMs: number;
 	invulnerableMs: number;
 	/** Counts up while walking, drives the walk cycle */
@@ -365,6 +380,9 @@ export interface RaidState {
 	megaKills: number;
 	damageDealt: number;
 	biggestHit: number;
+	skillsUsed: number;
+	/** The live event running right now, set from outside by the clock */
+	liveEvent: LiveEvent | null;
 	xp: number;
 	gold: number;
 	scrap: number;
@@ -407,6 +425,7 @@ export type RaidEvent =
 	| { type: 'napalm'; x: number; y: number }
 	| { type: 'jammed'; x: number; y: number }
 	| { type: 'spikes'; x: number; y: number }
+	| { type: 'sprint' }
 	| { type: 'gold'; amount: number; x: number; y: number }
 	| { type: 'scrap'; amount: number; x: number; y: number }
 	| { type: 'crystal'; crystal: Crystal; x: number; y: number }
@@ -475,6 +494,9 @@ export function createRaid(mapId: MapId, loadout: Loadout, playerLevel: number):
 			dashMs: 0,
 			dashX: 0,
 			dashY: 0,
+			dashSpeed: DASH_SPEED,
+			sprintMs: 0,
+			shootSlowMs: 0,
 			graceMs: 0,
 			invulnerableMs: 0,
 			stepPhase: 0,
@@ -506,6 +528,8 @@ export function createRaid(mapId: MapId, loadout: Loadout, playerLevel: number):
 		megaKills: 0,
 		damageDealt: 0,
 		biggestHit: 0,
+		skillsUsed: 0,
+		liveEvent: null,
 		xp: 0,
 		gold: 0,
 		scrap: 0,
@@ -546,7 +570,28 @@ export function useSkill(state: RaidState, slot: 0 | 1): RaidEvent[] {
 	const events: RaidEvent[] = [{ type: 'skill', skill }];
 	SKILLS[skill](state, events);
 	state.player.skillMs[skill] = SKILL_COOLDOWN_MS[skill];
+	state.skillsUsed += 1;
 	return events;
+}
+
+/** A burst forwards (where the stick points, or the aim), untouchable while it lasts */
+export function sprint(state: RaidState): RaidEvent[] {
+	const { player, input } = state;
+	if (!active(state) || player.sprintMs > 0 || player.dashMs > 0) return [];
+	const moving = Math.hypot(input.x, input.y) > 0.05;
+	const angle = moving ? Math.atan2(input.y, input.x) : player.aim;
+	player.dashX = Math.cos(angle);
+	player.dashY = Math.sin(angle);
+	player.dashMs = SPRINT_MS;
+	player.dashSpeed = SPRINT_SPEED;
+	player.sprintMs = SPRINT_COOLDOWN_MS;
+	player.invulnerableMs = Math.max(player.invulnerableMs, SPRINT_MS + 60);
+	return [{ type: 'sprint' }];
+}
+
+/** Switches the live event on or off; the store follows the clock */
+export function setLiveEvent(state: RaidState, event: LiveEvent | null) {
+	state.liveEvent = event;
 }
 
 /** Everything the held weapon does, crystals included */
@@ -642,6 +687,7 @@ const SKILLS: Record<SkillId, (state: RaidState, events: RaidEvent[]) => void> =
 		player.dashX = Math.cos(angle);
 		player.dashY = Math.sin(angle);
 		player.dashMs = DASH_MS;
+		player.dashSpeed = DASH_SPEED;
 		player.invulnerableMs = Math.max(player.invulnerableMs, DASH_MS + 80);
 	},
 	blast(state, events) {
@@ -906,8 +952,8 @@ function movePlayer(state: RaidState, dtMs: number) {
 	const dt = dtMs / 1000;
 	if (player.dashMs > 0) {
 		player.moving = true;
-		player.x += player.dashX * DASH_SPEED * dt;
-		player.y += player.dashY * DASH_SPEED * dt;
+		player.x += player.dashX * player.dashSpeed * dt;
+		player.y += player.dashY * player.dashSpeed * dt;
 		player.vx = player.dashX * PLAYER_SPEED;
 		player.vy = player.dashY * PLAYER_SPEED;
 		resolveCircle(player, PLAYER_RADIUS, map.obstacles, map.width, map.height);
@@ -915,7 +961,8 @@ function movePlayer(state: RaidState, dtMs: number) {
 	}
 	const speed = Math.hypot(input.x, input.y);
 	const walking = speed > 0.05;
-	const wanted = walking ? playerSpeed(state) : 0;
+	const shooting = player.firing || player.shootSlowMs > 0;
+	const wanted = walking ? playerSpeed(state) * (shooting ? SHOOTING_SPEED : 1) : 0;
 	walk(state, player, walking ? input.x * wanted : 0, walking ? input.y * wanted : 0, dt);
 	player.moving = walking || Math.hypot(player.vx, player.vy) > 20;
 	if (walking) player.stepPhase += speed * dt * 9;
@@ -943,9 +990,12 @@ function movePlayer(state: RaidState, dtMs: number) {
 function tickCooldowns(state: RaidState, dtMs: number) {
 	const { player } = state;
 	player.fireMs = Math.max(0, player.fireMs - dtMs);
+	const skillTick = state.liveEvent === 'rapid-skills' ? dtMs * RAPID_SKILLS_FACTOR : dtMs;
 	for (const skill of SKILL_IDS) {
-		player.skillMs[skill] = Math.max(0, player.skillMs[skill] - dtMs);
+		player.skillMs[skill] = Math.max(0, player.skillMs[skill] - skillTick);
 	}
+	player.sprintMs = Math.max(0, player.sprintMs - dtMs);
+	player.shootSlowMs = Math.max(0, player.shootSlowMs - dtMs);
 	player.overdriveMs = Math.max(0, player.overdriveMs - dtMs);
 	player.overclockMs = Math.max(0, player.overclockMs - dtMs);
 	player.dashMs = Math.max(0, player.dashMs - dtMs);
@@ -996,6 +1046,7 @@ function firePlayer(state: RaidState, random: Random, events: RaidEvent[]) {
 	const stats = weaponStats(weapon, state.playerLevel);
 	player.fireQueued = false;
 	player.fireMs = stats.fireMs * (player.overdriveMs > 0 ? OVERDRIVE_FIRE_FACTOR : 1);
+	player.shootSlowMs = SHOOTING_SLOW_MS;
 	if (weapon.kind === 'dronenest') {
 		buildNest(state, stats, events);
 		return;
@@ -1315,7 +1366,7 @@ function defeat(state: RaidState, enemy: Enemy, events: RaidEvent[]) {
 	const variant = VARIANT_SPECS[enemy.variant];
 	const minutes = minutesOf(state);
 	const reward = rewardMultiplier(minutes) * state.map.reward * variant.reward;
-	const xp = spec.xp * reward;
+	const xp = spec.xp * reward * (state.liveEvent === 'double-xp' ? 2 : 1);
 	state.xp += xp;
 	state.kills += 1;
 	state.killsBy[enemy.archetype] += 1;
@@ -1826,10 +1877,12 @@ function collect(state: RaidState, loot: Loot, events: RaidEvent[]) {
 	const { player, loadout } = state;
 	const { drop } = loot;
 	switch (drop.type) {
-		case 'gold':
-			state.gold += drop.amount;
-			events.push({ type: 'gold', amount: drop.amount, x: loot.x, y: loot.y });
+		case 'gold': {
+			const amount = drop.amount * (state.liveEvent === 'gold-rush' ? 2 : 1);
+			state.gold += amount;
+			events.push({ type: 'gold', amount, x: loot.x, y: loot.y });
 			break;
+		}
 		case 'scrap':
 			state.scrap += drop.amount;
 			events.push({ type: 'scrap', amount: drop.amount, x: loot.x, y: loot.y });
@@ -1893,7 +1946,7 @@ function spawn(state: RaidState, random: Random, dtMs: number, events: RaidEvent
 	const minutes = minutesOf(state);
 	if (state.timeMs >= state.nextBossMs) {
 		state.nextBossMs += BOSS_EVERY_MS;
-		const boss = spawnEnemy(state, random, 'boss', rollVariant(random, minutes));
+		const boss = spawnEnemy(state, random, 'boss', rollVariant(random, minutes, surge(state)));
 		if (boss) events.push({ type: 'boss-spawn', variant: boss.variant });
 	}
 	state.spawnMs -= dtMs;
@@ -1907,7 +1960,7 @@ function spawn(state: RaidState, random: Random, dtMs: number, events: RaidEvent
 	if (cap !== undefined && state.enemies.filter((e) => e.archetype === archetype).length >= cap) {
 		archetype = 'grunt';
 	}
-	const variant = rollVariant(random, minutes);
+	const variant = rollVariant(random, minutes, surge(state));
 	// Fast ones and drones come in small packs
 	const pack = (archetype === 'fast' || archetype === 'drone') && variant === 'normal';
 	const count = pack ? randomInt(random, 2, 4) : 1;
@@ -1921,10 +1974,14 @@ function spawn(state: RaidState, random: Random, dtMs: number, events: RaidEvent
 	}
 }
 
-export function rollVariant(random: Random, minutes: number): Variant {
+/** An elite surge makes super and mega enemies far more common */
+const surge = (state: RaidState) => (state.liveEvent === 'elite-surge' ? SURGE_FACTOR : 1);
+
+export function rollVariant(random: Random, minutes: number, factor = 1): Variant {
 	const roll = random();
-	if (roll < megaChance(minutes)) return 'mega';
-	if (roll < megaChance(minutes) + superChance(minutes)) return 'super';
+	const mega = megaChance(minutes) * factor;
+	if (roll < mega) return 'mega';
+	if (roll < mega + superChance(minutes) * factor) return 'super';
 	return 'normal';
 }
 

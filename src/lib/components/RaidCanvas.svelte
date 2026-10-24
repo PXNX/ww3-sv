@@ -3,7 +3,8 @@
 	fixed-step loop, with the HUD and the touch controls laid over it. Dragging anywhere on the
 	field opens a floating stick to walk. The big weapon button at the bottom right attacks (tap
 	or hold; every shot aims at the closest enemy), and the held weapon's two skills and the
-	weapon swap sit in an arc towards its top left. Keys work too. The playfield never mirrors in
+	weapon swap sit in an arc towards its top left, the sprint button to their left. A live event
+	shows under the time with its seconds left. Keys work too. The playfield never mirrors in
 	right-to-left languages and never scrolls.
 -->
 <script lang="ts">
@@ -19,6 +20,7 @@
 	import RaidSkillIcon from './RaidSkillIcon.svelte';
 	import {
 		BOSS_NAMES,
+		EVENT_NAMES,
 		formatTime,
 		itemName,
 		RARITY_NAMES,
@@ -26,6 +28,8 @@
 		WEAPON_NAMES
 	} from './raidText';
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
+	import IconWind from '~icons/lucide/wind';
+	import IconZap from '~icons/lucide/zap';
 	import IconRepeat from '~icons/lucide/repeat';
 	import IconCoins from '~icons/lucide/coins';
 	import IconGem from '~icons/lucide/gem';
@@ -220,6 +224,10 @@
 			case 'KeyF':
 				if (!event.repeat) game.equipFound();
 				return;
+			case 'ShiftLeft':
+			case 'ShiftRight':
+				if (!event.repeat) game.sprint();
+				return;
 		}
 		if (event.code.startsWith('Arrow') || ['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(event.code)) {
 			event.preventDefault();
@@ -241,7 +249,7 @@
 			? `background-image: conic-gradient(rgb(17 17 17 / 0.55) ${share * 360}deg, transparent 0)`
 			: '';
 
-	// The skills sit on an arc towards the top left of the attack button
+	// The skills sit on an arc towards the top left of the attack button, the sprint to their left
 	const ATTACK_SIZE = 88;
 	const SKILL_SIZE = 58;
 	const ARC = 102;
@@ -306,6 +314,17 @@
 						>{m.raid_hud_threat({ level: game.threat })}</span
 					>
 				</div>
+				{#if game.liveEvent}
+					<div
+						class="live-event flex w-fit items-center gap-1 rounded-lg border-2 border-ink bg-explosion-yellow px-2 py-0.5 font-display text-xs font-bold"
+					>
+						<IconZap class="size-3.5" aria-hidden="true" />
+						<span>{m.raid_event_live({ event: EVENT_NAMES[game.liveEvent.kind]() })}</span>
+						<span class="tabular-nums opacity-80"
+							>{m.raid_event_seconds({ seconds: game.liveEventSeconds })}</span
+						>
+					</div>
+				{/if}
 			</div>
 
 			{#if game.boss}
@@ -428,6 +447,22 @@
 		{/each}
 		<button
 			type="button"
+			class="skill absolute flex touch-none items-center justify-center rounded-full border-3 border-ink bg-paper shadow-[2px_2px_0_var(--color-ink)]"
+			style="right: {14 +
+				ATTACK_SIZE / 2 +
+				ARC +
+				SKILL_SIZE / 2 +
+				12}px; bottom: 18px; width: {SKILL_SIZE}px; height: {SKILL_SIZE}px; {cooldownStyle(
+				game.sprintCooldown
+			)}"
+			title={m.raid_button_sprint()}
+			aria-label={m.raid_button_sprint()}
+			onpointerdown={skill(() => game.sprint())}
+		>
+			<IconWind class="size-7 text-flag-blue" aria-hidden="true" />
+		</button>
+		<button
+			type="button"
 			class="skill absolute flex touch-none items-center justify-center rounded-full border-3 border-ink bg-sky shadow-[2px_2px_0_var(--color-ink)]"
 			style={arcSpot(90)}
 			title="{m.raid_button_swap()}: {WEAPON_NAMES[game.otherKind]()}"
@@ -496,9 +531,23 @@
 		}
 	}
 
+	.live-event {
+		animation: live-event 900ms ease-in-out infinite alternate;
+	}
+
+	@keyframes live-event {
+		to {
+			scale: 1.06;
+		}
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		.hurt {
 			animation-duration: 1ms;
+		}
+
+		.live-event {
+			animation: none;
 		}
 	}
 </style>

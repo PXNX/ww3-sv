@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { SEASON_XP_PER_TIER } from '#lib/game/raid/config.js';
+import { LIVE_EVENT_MS, SEASON_XP_PER_TIER } from '#lib/game/raid/config.js';
+import { liveEventAt } from '#lib/game/raid/events.js';
 import { makeWeapon } from '#lib/game/raid/items.js';
 import { newProfile } from '#lib/game/raid/profile.js';
 import { spawnEnemy } from '#lib/game/raid/state.js';
@@ -23,8 +24,11 @@ const STEP = 1000 / 60;
 function newGame() {
 	const store = createStore(memoryStorage());
 	const scores = createHighscores(store);
-	const make = () => new RaidGame({ store: () => store, scores: () => scores, seed: () => 7 });
-	return { game: make(), make, store };
+	// Five minutes into a ten-minute window: no live event running
+	let now = Date.UTC(2026, 9, 24, 12, 5);
+	const make = () =>
+		new RaidGame({ store: () => store, scores: () => scores, seed: () => 7, now: () => now });
+	return { game: make(), make, store, setNow: (ms: number) => (now = ms) };
 }
 
 function quietStart(game: RaidGame) {
@@ -183,6 +187,32 @@ describe('RaidGame', () => {
 		game.dismissClaimed();
 		game.socket('primary', { kind: 'crit', rarity: 'common' });
 		expect(game.profile.loadout.primary.crystals).toEqual([{ kind: 'crit', rarity: 'common' }]);
+	});
+
+	it('switches live events on and off with the clock', () => {
+		const { game, setNow } = newGame();
+		quietStart(game);
+		expect(game.liveEvent).toBeNull();
+		const start = Date.UTC(2026, 9, 24, 12, 10);
+		setNow(start + 15_000);
+		game.update(STEP);
+		expect(game.liveEvent?.kind).toBe(liveEventAt(start)!.kind);
+		expect(game.state.liveEvent).toBe(game.liveEvent?.kind);
+		expect(game.liveEventSeconds).toBe(45);
+		setNow(start + LIVE_EVENT_MS + 1);
+		game.update(STEP);
+		expect(game.liveEvent).toBeNull();
+		expect(game.state.liveEvent).toBeNull();
+	});
+
+	it('sprints on its own button with a recharge', () => {
+		const { game } = newGame();
+		quietStart(game);
+		const x = game.state.player.x;
+		game.sprint();
+		for (let i = 0; i < 20; i++) game.update(STEP);
+		expect(game.state.player.x).toBeGreaterThan(x + 100);
+		expect(game.sprintCooldown).toBeGreaterThan(0);
 	});
 
 	it('has its messages in every language', () => {
