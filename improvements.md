@@ -537,6 +537,9 @@ redesign of the games.
 
 ## 5. Content and growth
 
+Per-game depth ideas for the 35 existing games are in section 9; this section is about new modes and
+content around them.
+
 - [ ] Finish the modes already planned in `todo.md` (Iceberg Curling, Starlink Kill Switch,
       Hermit Hackers, Gig Saboteur, Shadow Fleet Shuffle and the backlog 3.16 list).
 - [ ] Add more modes for under-represented countries and leaders.
@@ -658,7 +661,520 @@ Guardrails:
 
 ---
 
-## 9. Open questions
+## 9. Per-game depth ideas
+
+The career layer adds a reason to come back; this section is about giving each game another reason
+to be interesting on the second, tenth and fiftieth run. These are candidates, not commitments.
+Each entry states the current loop in one line, then specific additions. Effort: **(S)** hours,
+**(M)** one to two days, **(L)** a new subsystem.
+
+The rules for all of them: keep the first 30 seconds unchanged, add at most one new verb, seed every
+random layout so a daily or a shared run is fair, and keep the games playable without spending
+anything.
+
+### 9.1 Levers worth reusing
+
+1. **Objective cards** — three optional goals per run ("clear 2 lines with one piece"), scored and
+   shown on the result sheet. Cheap, and it turns a score chase into a plan.
+2. **Escalation phases** — at fixed marks, introduce one new threat with a radio line or a banner.
+   The first minute stops being the whole game.
+3. **A risk/reward resource** — fuel, ammo, time, a combo bank. A second bar the player can spend is
+   depth without a new screen.
+4. **A second information channel** — sound, a forecast, a banker's eyebrow. Depth comes from
+   reading, not from more UI.
+5. **A start-of-run choice** — ship class, loadout, doctrine, board size. It changes the solution
+   rather than the stats.
+6. **A seeded daily** — one board or sequence per day, par and a share card. Reuses the existing
+   random helpers and the daily layer.
+
+### 9.2 The 35 games
+
+#### Balloon
+
+_Loop: hold to climb, release to sink, five wind layers, hazards, photos._
+
+- **Composition scoring**: a photo scores by altitude, framing and weather, with the three criteria
+  shown after the snap, so the photo is a skill and not a drive-by. (S)
+- **Album of 12 subjects** across America with a one-line joke each; complete sets unlock balloon
+  patterns (cosmetic only). (M)
+- **Forecast board** before launch: the first two wind patterns and the jet schedule, turning the
+  route into a plan instead of a guess. (S)
+- **Photo streak**: every subject photographed without a hit adds to a multiplier that a hazard resets,
+  so the safe route and the photogenic route differ. (S)
+- **Storm cells**: lightning forces a layer change and gusts push sideways; one new hazard per
+  stretch so the crossing has chapters. (M)
+
+#### Belt & Road
+
+_Loop: draw routes across a grid, join every pair, keep the debt meter down, earn stars._
+
+- **Toll gates and one-way lanes** as new tile types; coverage is no longer the only constraint. (M)
+- **Contract levels**: "move six units to the port before the debt meter fills", reusing the debt
+  meter as a soft timer. (S)
+- **Daily trade route**: a seeded board with a par and a share card, no new level content. (S)
+- **Port closures and sanctions** for two moves, announced one move ahead, so a good route has
+  redundancy. (M)
+- **Par ghost**: after a first failed star, a translucent preview of one optimal stroke teaches
+  without a hint button. (M)
+
+#### Blocks
+
+_Loop: place one of three pieces, clear rows and columns, the run ends when nothing fits._
+
+- **Objective cards**: three per run from a small deck ("clear two lines with one piece", "make a
+  four-line cascade"), paying a score bonus at the end. (M)
+- **Cascade meter**: clears in consecutive placements build a x2/x3 multiplier that resets on a
+  placement without a clear. (S)
+- **Earned specials** in a three-slot tray: a 1×1 filler after five clears, a line charge after ten,
+  a colour bomb after fifteen. (M)
+- **Board modes**: 6×6 Blitz with a move budget and 8×8 Classic, each keeping its own best. (S)
+- **Rising stack**: a junk row appears every few placements and must be cleared from the bottom,
+  making height a threat. (M)
+
+#### Centrifuge
+
+_Loop: watch the needle, press only on a real drift, ignore fake scares, keep hearts._
+
+- **Scare families** with different tells: visual (banner, shake), audio (siren, colleague), social
+  (phone call). Introduce one per difficulty so learning is legible. (M)
+- **Trust meter**: false presses lower it; at low trust the real sirens look and sound dimmer, so
+  panic compounds. (M)
+- **Incident report** after the run: every alarm, real or fake, with the reaction time. Teaches the
+  patterns and gives the run a story. (S)
+- **Endurance mode**: one heart, news cycles per minute as the difficulty knob, daily-seeded scare
+  order. (S)
+- **Two actions**: acknowledge (cheap, wrong on a real drift) versus emergency shutdown (costly,
+  right on a real drift), so the reflex becomes a decision. (M)
+
+#### Chess
+
+_Loop: chess against Putin, three cards per match, Vance may steal one._
+
+- **Opponent personalities**: three leaders with different openings and one signature rule each (a
+  free swap, a pawn wall, a card thief). (M)
+- **Deck choice**: pick three of eight cards before the match, so a Vance steal is survivable and
+  the deck is part of the plan. (M)
+- **Puzzle ladder**: "win in two with one card" positions scored by moves, as a short second mode. (M)
+- **Ladder twists** every few matches: a teleporting square, a fogged back rank, a one-move head
+  start for the opponent. (L)
+- **Grudge rematch**: after a loss, the opponent starts with a small advantage but the win pays
+  double, giving an immediate reason to retry. (S)
+
+#### Chip Fab
+
+_Loop: stack a wafer, merge the modules it yields, keep the shortage bar down, keep hearts._
+
+- **Yield**: a mis-stacked layer produces defective modules that must be scrapped, so speed trades
+  against quality, with the yield shown on the HUD. (M)
+- **Contracts**: "deliver three 16 GB modules" with a deadline and a payout, giving the merge stage a
+  target beyond the shortage bar. (M)
+- **Cleanroom events**: dust specks to tap off the wafer and a power flicker that freezes the
+  stacker for two seconds. (S)
+- **R&D choice** between levels: bigger board, slower shortage or more module value, one per level. (M)
+- **Shortage market**: module value rises with the shortage bar, so pushing close to failure pays
+  more. (M)
+
+#### Convoy
+
+_Loop: dodge in three lanes, grab barrels, chain near misses, keep the escort alive._
+
+- **Fuel**: lane changes and mine hits burn it, barrels refill it, and running dry ends the run. The
+  barrel line versus the safe line becomes the core decision. (M)
+- **Ship classes** chosen before the run: tanker (three hearts, wide), corvette (two hearts, narrow,
+  faster), tug (starts with an escort). (M)
+- **Escort contracts**: keep a second ship alive for 60 seconds; it soaks one hit and pays a bonus if
+  it survives. (M)
+- **Escalation sets** at distance marks: crossfire, mine barrages, fog, each announced by radio so
+  the change is readable. (M)
+- **Emergency helm**: five near misses charge a one-use phase-through, giving the multiplier a
+  payoff. (S)
+
+#### Dome
+
+_Loop: tap incoming rockets, prioritise what to save, limited ammo, faster waves._
+
+- **Interceptor types**: short-range fast for drones, long-range for grad rockets, wide blast for
+  clusters, each with its own count. (M)
+- **Iron Beam**: one laser charge per wave on a cooldown, best saved for leakers; rewards restraint. (M)
+- **Between-wave upgrades**: pick one of three (ammo, reload speed, rebuild a building). (M)
+- **Building values**: a hospital is worth more than a shed, so the landing prediction becomes a
+  triage decision. (S)
+- **Drone swarms**: a cluster that needs one wide shot, breaking the single-tap rhythm. (M)
+
+#### Drone Wall
+
+_Loop: tower defence on a road, helmets as money, elite upgrades, powers, weather._
+
+- **Doctrines** at wave one: infantry, air or engineering, changing upgrade costs and one power. (M)
+- **Tech drafts** every five waves: one of three cards (medics cannot heal, mortars splash, drones
+  cost less), so runs diverge. (L)
+- **Wave intel**: show the next composition during the build phase, so preparation beats reaction. (S)
+- **Rubble rebuild**: a destroyed defence leaves a cheap rebuild slot; a lost line is a setback, not
+  a wipe. (M)
+- **Commander unit**: one active hero with two cooldown abilities, so the player acts during a
+  wave. (L)
+
+#### Energiewende
+
+_Loop: balance supply and demand, ramp plants, weather, storage, critics._
+
+- **Demand response**: shed a block of demand for 30 minutes for money and a critic penalty, a third
+  lever beside supply and storage. (M)
+- **Interconnectors**: import and export at a moving price, cheap at night and expensive in a
+  Dunkelflaute. (M)
+- **Carbon budget**: coal gets expensive as the scenario's budget shrinks, so the cheap answer
+  becomes a trap. (M)
+- **Forecast error**: wind and sun forecasts are off by a margin, so reserve has to be planned, not
+  just watched. (S)
+- **Scenario campaign**: heatwave, storm and Dunkelflaute, each with a target, a par and a star
+  rating. (L)
+
+#### Fleet Hunt
+
+_Loop: battleship on a 10×10, daily ammo, a fleet that persists across days._
+
+- **Enemy salvos**: the fleet fires back at your harbour between days, so hunting carries a
+  defensive cost. (M)
+- **Sonar**: a limited scan reports how many ships sit in a row or column, earned by sinking a
+  class. (M)
+- **Fleet composition**: choose which class to hunt; a corvette chain is cheap, the Moskva pays big
+  and needs rockets. (M)
+- **Campaign**: several grids with damage and ammo carrying over, ending in a boss fleet. (L)
+- **Daily mission**: sink one named class for a bonus, tying the hunt to the daily layer. (S)
+
+#### Flamingo
+
+_Loop: flap through gaps, dodge obstacles, keep hearts, revive once._
+
+- **Rings and photo spots**: optional pickups in risky lines that raise the multiplier, greed versus
+  safety. (S)
+- **Weather blocks**: thermals, headwind gusts and rain that changes flap strength, seeded per run. (M)
+- **Feather glide**: collect three feathers for a five-second glide, saved for a dense stretch. (M)
+- **Medal gates** at 10, 25 and 50, with the next medal shown in the HUD and a share card at each. (S)
+- **One-wing mode**: one hit, double score, no revive; a short second mode for players who have
+  mastered the gaps. (S)
+
+#### Fury
+
+_Loop: slingshot birds with tap abilities, topple structures, finish levels, earn stars._
+
+- **Loadout**: pick three of six birds before a level with limited counts, changing the solution
+  rather than the power. (M)
+- **Bonus objectives**: "finish with two birds left", "topple the dome without the bomb bird", beside
+  the existing stars. (S)
+- **Daily fort**: one seeded structure per day with a local best and a share card. (M)
+- **Collapsing supports**: structures that fall when a lower block breaks, rewarding physics over
+  brute force. (M)
+- **Boss fortress** every fifth level: moving parts, an armoured core and two weak points. (L)
+
+#### GPS Liar
+
+_Loop: sail through fog with a lying GPS, read landmarks, limited cross-checks, 12 levels._
+
+- **Triangulation**: pick two landmarks and cross two bearings for a fix, a skill layer above "check
+  the compass". (M)
+- **Radio beacons**: blips that give a bearing, using the sound channel instead of another
+  readout. (M)
+- **Currents**: the boat drifts while the GPS lies, so dead reckoning matters between fixes. (M)
+- **Cargo contracts**: herring spoils faster than sauna stones, so the shortest route is not always
+  the right one. (M)
+- **Night levels**: only lights and buoys are visible; the same rules with a harder information
+  diet. (S)
+
+#### Leak Patrol
+
+_Loop: hold fingers on leaks, grab items, answer the group chat, keep three hearts._
+
+- **Rooms and doors**: leaks keep growing in rooms you leave, so triage across zones. (M)
+- **Staff**: an intern who plugs one leak slowly and a second who sometimes causes one. (M)
+- **Crisis types**: a burst main needs two fingers, a classified folder must be shredded, a reporter
+  at the door must be blocked; different verbs, not more droplets. (M)
+- **Group chat**: answering costs time but prevents a leak penalty; ignoring it grows. (S)
+- **Shift structure**: three-minute shifts with a summary and a new floor, so the endless loop has a
+  run shape and a payoff. (M)
+
+#### Maple
+
+_Loop: push a cart through a warehouse, snake up barrels, dodge moose cones, make the quota._
+
+- **Tools with charges**: a syrup slick (a moose slips for a turn), a barrel decoy, a radio lure,
+  found in the level. (M)
+- **Noise**: a longer cart is louder and draws moose from further away, so route length is a stealth
+  cost. (M)
+- **Moose types**: sleepy, keen and a union rep who blocks a corridor for two turns. (M)
+- **Efficiency stars**: moves against par, barrels against quota, no-detection; the level select
+  shows which one is missing. (S)
+- **Daily heist**: a seeded warehouse with a steps board and a share card. (M)
+
+#### Maze
+
+_Loop: find the counter with the form, collect stamps, avoid offices closed until Tuesday, fewer
+steps is better._
+
+- **Daily maze**: one seeded building per day with a par and a medal, reusing the generator. (S)
+- **Efficiency rating**: par steps per size, plus a shortcut badge for the hidden vent. (M)
+- **Form order**: the Passierschein lists forms in an order; collecting them in that order opens a
+  shortcut, the wrong order wastes steps. (M)
+- **Timed counters**: some offices close after a number of steps, so the route has to be chosen, not
+  fully explored. (M)
+- **Rules per size**: moving desks and one-way corridors from the medium size up, so sizes differ in
+  mechanics and not just area. (L)
+
+#### Merge
+
+_Loop: swipe to merge ships, survive mines every five moves, earn submarines, reach the mega tanker._
+
+- **Objective cards**: "build a ferry", "clear three mines", "make a triple", three per run and
+  scored at the end. (S)
+- **Mine types**: contact (blocks), drifting (moves one cell per merge) and cluster (splits), each
+  needing a different answer. (M)
+- **Combo chain**: merges on consecutive moves build a multiplier that resets on a non-merge move. (S)
+- **High-tier abilities**: an oil tanker clears a row when merged, a supertanker spawns a submarine,
+  so the top tiers stop being only points. (M)
+- **Board variants**: 4×4 tight, 5×5 classic and 6×6 marathon with a move budget. (S)
+
+#### Minefield
+
+_Loop: minesweeper at sea, buoys, tools, an escort queue, a channel to clear._
+
+- **Daily strait**: a seeded board with a par time and a medal, the same for everyone. (M)
+- **Fair-board guarantee**: the generator proves the board is solvable without guessing, with a "no
+  guess" badge on the difficulty. (M)
+- **Tool charges**: the submarine and sonar are limited and earned by safe reveals, so using one is
+  a decision. (M)
+- **Convoy variant**: escort a tanker across while clearing, so the clock and the board interact. (M)
+- **No-flag challenge**: buoys disabled, scored by time, a second board for the same layouts. (S)
+
+#### Parking
+
+_Loop: slide ships, free the red tanker, beat par, earn stars._
+
+- **New blockers**: cranes that rotate a ship 90°, tugs that push a whole line, locks that open after
+  a number of moves. (M)
+- **Two tankers, one exit**: a shared move budget, so the order of freeing them matters. (M)
+- **Currents**: after every third move a ship drifts one cell, so the plan has to survive drift. (M)
+- **Daily puzzle** with a par and a fewest-moves board. (S)
+- **Hint costs a star** rather than being free, keeping the par meaningful. (S)
+
+#### Pipeline
+
+_Loop: rotate pipes, repair cracks, intercept strikes, fill tankers, chain perfect saves._
+
+- **Pressure**: pumps build pressure; too high cracks faster, too low stalls flow, and a relief valve
+  is the new verb. (M)
+- **Sabotage forecast**: the ticker names the next target type, so pre-repair and pre-position are
+  possible. (S)
+- **Pipe grades**: upgrading a segment buys crack resistance at a flow cost, a choice along the
+  trunk line. (M)
+- **Two terminals** with different demand, routed through junctions, so junctions become decisions. (L)
+- **Spend the perfect-save streak** on a temporary flow boost, turning defence into economy. (S)
+
+#### Purr Pentagram
+
+_Loop: repeat the sequence of named cats, keep hearts, ignite the star._
+
+- **Decoy cats** that look similar but are never named, plus longer sequences. (S)
+- **Cat rules**: one cat repeats the previous name, one swaps two points mid-sequence; rules rather
+  than raw memory. (M)
+- **Rhythm mode**: names arrive on a beat and timing adds a multiplier. (M)
+- **Daily riddle**: one seeded sequence with a share card. (S)
+- **Nine Lives**: one heart, sequences grow forever, score by length; a short endurance mode. (S)
+
+#### Raid
+
+_Loop: survive waves, loot, level skills, fight bosses, run the season._
+
+- **Build synergies**: weapon and perk tags combine with visible set bonuses (incendiary plus crit),
+  so loot choice matters beyond the item level. (L)
+- **Risk wave**: after a boss, choose a cursed next wave (more elites, double loot) or cash out the
+  run bonus; a push-your-luck beat. (M)
+- **Map modifiers** shown before entry: fog, elite surge, scavenger, cheap replayability. (M)
+- **Companion** with two orders (hold, follow) and one ability; a light squad layer. (L)
+- **Boss telegraphs and weak points** instead of more health, a skill check rather than a stat
+  check. (M)
+
+#### Rare Earth
+
+_Loop: route crates from mines to the right factory, follow changing notices, meet deadlines._
+
+- **Contracts with prices**: choose which crate to prioritise when capacity is short, and score the
+  choice. (M)
+- **Warehouses as buffers**: store a crate to dodge a deadline but pay storage, a timing tool. (M)
+- **Bribes**: ignore one notice for a round with a scandal risk, a pressure valve with a cost. (M)
+- **Rule forecast**: the ministry leaks the next notice type one round ahead. (S)
+- **Refining**: combine two elements at a factory for a higher-value export, a second decision
+  layer. (M)
+
+#### Run Comrade
+
+_Loop: three lanes, jump and duck, outrun the drone, survive the weather._
+
+- **Run missions**: three optional objectives (collect ten sunflowers, five clean jumps, keep the
+  drone back) with a completion bonus. (S)
+- **Drone types**: spotter marks obstacles, dasher charges, jammer hides pickups; the chase becomes a
+  puzzle. (M)
+- **Pickup chain**: a helmet followed by a rice bowl within a few seconds upgrades the shield to a
+  drone stun, so pickup order matters. (S)
+- **Distance gates**: new obstacle pairs at 300, 600 and 900 metres, so the first minute is not the
+  whole game. (M)
+- **Daily seeded run** with a fixed obstacle order and a share card. (S)
+
+#### Shootdown
+
+_Loop: waves of drones, auto-fire, combos, a boss, a launcher on the ground._
+
+- **Weapon pickups**: shotgun, railgun and flak with limited ammo from bosses, the one real choice in
+  an auto-fire game. (M)
+- **Launcher sandbags**: two absorbed hits before a heart, shown on the HUD, so positioning
+  matters. (S)
+- **Wave intel and an upgrade choice** during the break (fire rate or spread). (M)
+- **Drone specials**: shields that need a flank, splitters, and jammers that disable auto-fire for
+  three seconds. (M)
+- **Night raid**: tracers only, so aim is by tracer and sound; a one-page mutator. (S)
+
+#### Slice
+
+_Loop: swipe missiles and drones, avoid friendly decoys, chain combos, keep hearts._
+
+- **Formation volleys**: V shapes and crossing pairs that reward one planned swipe. (M)
+- **Bomb types**: a cluster that splits if not cut in time, an EMP that disables the blade for two
+  seconds. (M)
+- **Flak burst**: a one-charge screen clear earned by a ten-hit combo, giving the combo a payoff. (S)
+- **Precision bonus**: cutting through the centre adds points, so wild swipes cost accuracy. (S)
+- **Boss helicopter** with exposed rotors, a multi-stage target in a reflex game. (M)
+
+#### Sondage
+
+_Loop: hold Othello rallies on France, answer the rival, survive events, win the poll._
+
+- **Coalition partners**: at 30 percent pick one of two with a one-time power (an extra rally, a
+  frozen region). (M)
+- **Campaign budget**: rallies cost funds, funds come from held departments, so tempo is a
+  resource. (M)
+- **Debate round**: a short reaction mini-game that swings three departments. (M)
+- **Regional blocs**: fully holding Brittany or Alsace gives a bonus, adding sub-goals to the map. (M)
+- **Election night payoff**: a seat-count animation and a headline, turning the result screen into a
+  moment. (S)
+
+#### Suez
+
+_Loop: wiggle the wedged ship free, call the excavator, keep the queue patient, keep hearts._
+
+- **Tides**: at high tide the ship moves more easily; waiting costs queue patience, pushing costs
+  hearts. (M)
+- **Salvage tools** with charges: dredger, tug and airbags, each for a different wedging. (M)
+- **Queue classes**: a livestock carrier that must go first and a tanker that blocks the canal if
+  hit. (M)
+- **Storms** re-wedge the ship and shake the queue, a mid-run reset that is not a full restart. (M)
+- **Par time and a "no excavator" medal**; the narrower canals stay the difficulty ramp. (S)
+
+#### Tycoon
+
+_Loop: tap the derrick, buy producers, survive crises, chase achievements, prestige._
+
+- **Contracts**: deliver a number of barrels within a time limit for a multiplier, a short-term goal
+  in an idle loop. (M)
+- **Market price**: selling now versus holding, reusing the existing price-spike machinery for a
+  real decision. (M)
+- **Managers**: assign one to a producer to automate a decision (reinvest, hold, sell), not just more
+  output. (L)
+- **New fields**: exploration with different cost and risk profiles, unlocked by prestige. (L)
+- **Prestige tree** with three branches (extraction, logistics, influence), so resets play
+  differently. (L)
+
+#### Vault
+
+_Loop: flip pairs, find bonus pairs, watch the banker, survive the phone shuffle, open bigger vaults._
+
+- **Heist timer**: matches add time, mismatches cost it, while hearts stay the hard limit. (M)
+- **Banker tells**: his eyebrow points near a bonus pair, a second information channel. (M)
+- **Lock tiers**: gold bars need two keys, cheese is wild, watches come in threes; new card rules,
+  not more cards. (M)
+- **Scheduled phone calls**: the shuffle is announced with a countdown, so players can plan for it. (S)
+- **Daily vault**: the same layout for everyone, fewest flips wins. (S)
+
+#### Venezuela
+
+_Loop: run, jump, twirl, slam, collect barrels, reach the flag, earn stars._
+
+- **Oil-price modifier**: a high price means more guards and richer barrels, a low price the
+  opposite; theme and mechanic in one. (M)
+- **Bosses**: a rig foreman with a shockwave and a helicopter that drops guards. (L)
+- **Vehicle section**: a stolen tanker truck auto-runs for 20 seconds with lane changes. (M)
+- **Time medals and a no-damage badge** on the level select, next to the existing three stars. (S)
+- **Hidden barrels** behind breakable crates, exploration versus the flag. (S)
+
+#### Veto
+
+_Loop: read five cards, vote aye, nay or veto before the clock, build a streak._
+
+- **Resolution types**: procedural (abstain), substantive (majority) and emergency (veto); the right
+  action depends on the type, not only on the cards. (M)
+- **Veto limit**: three per session, so a veto has a cost while majority votes are free. (M)
+- **Amendment window**: add a clause before voting that changes the required outcome, a second
+  decision under time. (L)
+- **Alliance signals**: a seat's card flickers to hint at a bloc, so reading beats reacting. (M)
+- **Historical pack**: real-ish resolutions with a one-line context card after each round. (S)
+
+#### Whack
+
+_Loop: whack spokespeople before the statement bar fills, avoid decoys, keep the x5 combo._
+
+- **Statement categories**: a lie (whack), a correction (leave) and a funding question (hold to
+  fact-check); reading replaces pure reflex. (M)
+- **Press-conference structure**: three rounds and a closing statement, with a bonus for reaching
+  the end. (M)
+- **Follow-up chains**: a whack spawns a follow-up card that must be tapped to complete the
+  combo. (M)
+- **Exclusive leak**: a rare golden target worth five times as much with a shorter bar, a greed
+  decision. (S)
+- **Board modifiers**: hideout targets move between podiums, the press hall adds more decoys. (M)
+
+#### Wordle
+
+_Loop: one five-letter word per day, six guesses, stats and a share card._
+
+- **Hard mode** with its own stats: revealed letters must be reused. (S)
+- **Themed weeks** announced in advance (energy, trade, bureaucracy) with a short intro line. (S)
+- **Streak freeze**: one per week, bought with career coins, marked as used in the stats. (S)
+- **Hint economy**: reveal one letter for coins, with aided solves counted separately. (M)
+- **Challenge links**: pick a word and share a code that encodes it, so a friend plays the same
+  puzzle without a backend. (M)
+
+### 9.3 What to deepen first
+
+Six candidates chosen for replay value against effort, not for how much code they touch.
+
+| Order | Mode    | First change                        | Effort | Why this one                                                                                                  |
+| ----- | ------- | ----------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------- |
+| 1     | Blocks  | Objective cards and a cascade meter | M      | The purest score loop and the least run-to-run variation; it also sets the pattern for the other arcade modes |
+| 2     | Whack   | Statement categories                | S      | The cheapest way to turn a reflex game into a reading game                                                    |
+| 3     | Convoy  | Fuel and a ship choice              | M      | A runner needs a second resource more than more obstacles                                                     |
+| 4     | Maze    | Daily maze and an efficiency rating | S      | Already step-scored and deterministic, ideal for a daily                                                      |
+| 5     | Vault   | Heist timer and banker tells        | M      | The memory loop needs a clock and a second channel                                                            |
+| 6     | Balloon | Forecast and composition scoring    | M      | The photos are the theme; make them the goal                                                                  |
+
+Do one or two per release, and pair each with a matching mastery badge or result-sheet line from
+section 2.2 so the new depth is visible without a new screen.
+
+### 9.4 Guardrails for depth
+
+- Leave the first 30 seconds alone. New mechanics arrive after the first minute or in a separate
+  mode.
+- One new verb at most. If an idea needs a new control scheme, it needs a very good reason.
+- Seed every random layout. A daily, a share card and a test all need the same input to give the
+  same output.
+- Put new rules in the mode's pure logic folder with tests, not in the page component.
+- No depth behind a paywall. Coins can speed up cosmetics, never change a rule.
+- Keep runs under three minutes unless the mode is a campaign (Belt & Road, Maze, Parking, Tycoon).
+- Six locales, logical CSS and icons over prose for every new label; a mechanic that needs a
+  paragraph is probably too complicated.
+- Measure retries and second runs, not just session length. Depth that nobody reaches is cost
+  without value.
+
+---
+
+## 10. Open questions
 
 - Should the daily reset be local midnight or a fixed UTC time once accounts exist?
 - Should coins be shared with Tycoon cash, Raid crystals and Fleet Hunt points, or kept separate?
@@ -673,7 +1189,7 @@ Guardrails:
 
 ---
 
-## 10. Relationship to `todo.md`
+## 11. Relationship to `todo.md`
 
 This document is the idea catalogue. `todo.md` remains the short list of concrete open work. When an
 item here becomes planned, add a matching checkbox there with a file or a design note. The existing

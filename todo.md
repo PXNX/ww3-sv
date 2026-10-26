@@ -149,3 +149,5 @@ To continue: resume the workflow with `MODES.slice(0, 8)` (the four finished mod
 ## Ideas not chosen yet (from the brainstorm)
 
 Coalition Tower (Italy), Carnival Rush (Brazil), Last Train (Japan), Douze Points (Eurovision), Sauna Sisu (Finland), Sisyphus Bailout (Greece), Rubber Army (USA 1944), Baltic Elves (Lithuania), Phishing Trip (Estonia), Six Fingers (Ukraine), DMZ Sort (South Korea), Rooftop Dish (Iran).
+
+- [ ] Per-game depth pass: six candidates and their effort are in `improvements.md` §9.3. Pick one or two per release, starting with Blocks objective cards and the Whack statement categories.
