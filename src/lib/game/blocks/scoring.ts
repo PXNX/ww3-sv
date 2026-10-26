@@ -56,6 +56,24 @@ export function scoreMove(cellsPlaced: number, linesCleared: number, combo: Comb
 	};
 }
 
+/**
+ * Cascade: clearing on consecutive placements (no grace) builds a meter. Tier 1 is the first clear,
+ * tier 2 the second in a row, tier 3 the third and every one after that. The bonus is paid per
+ * clearing placement, on top of the streak multiplier.
+ */
+export const MAX_CASCADE = 3;
+export const CASCADE_BONUS: readonly number[] = [0, 0, 25, 50];
+
+/** The cascade after a placement: up one tier on a clear, reset to zero on a quiet placement */
+export function nextCascade(linesCleared: number, previous: number): number {
+	return linesCleared > 0 ? Math.min(previous + 1, MAX_CASCADE) : 0;
+}
+
+/** Points the current cascade pays for a clear */
+export function cascadeBonus(cascade: number): number {
+	return CASCADE_BONUS[Math.min(Math.max(cascade, 0), MAX_CASCADE)];
+}
+
 /** Board fill ratio from which the game counts as being in danger */
 export const NEARLY_FULL = 0.6;
 

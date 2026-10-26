@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+	MAX_CASCADE,
 	MAX_STREAK_MULTIPLIER,
 	NEARLY_FULL,
 	NO_COMBO,
 	POINTS_PER_LINE,
 	STREAK_GRACE_MOVES,
+	cascadeBonus,
+	nextCascade,
 	performanceMood,
 	scoreMove,
 	type Combo
@@ -56,6 +59,22 @@ describe('scoring', () => {
 		let combo: Combo = NO_COMBO;
 		for (let i = 0; i < MAX_STREAK_MULTIPLIER + 3; i++) combo = scoreMove(2, 1, combo).combo;
 		expect(scoreMove(2, 1, combo).streakMultiplier).toBe(MAX_STREAK_MULTIPLIER);
+	});
+
+	it('builds a cascade on consecutive clears and resets it on a quiet placement', () => {
+		expect(nextCascade(1, 0)).toBe(1);
+		expect(nextCascade(2, 1)).toBe(2);
+		expect(nextCascade(1, 2)).toBe(MAX_CASCADE);
+		expect(nextCascade(1, MAX_CASCADE)).toBe(MAX_CASCADE);
+		expect(nextCascade(0, 2)).toBe(0);
+	});
+
+	it('pays cascade points from the second clear in a row', () => {
+		expect(cascadeBonus(0)).toBe(0);
+		expect(cascadeBonus(1)).toBe(0);
+		expect(cascadeBonus(2)).toBeGreaterThan(0);
+		expect(cascadeBonus(MAX_CASCADE)).toBeGreaterThan(cascadeBonus(2));
+		expect(cascadeBonus(MAX_CASCADE + 5)).toBe(cascadeBonus(MAX_CASCADE));
 	});
 
 	it('reads the mood from the board and the streak', () => {

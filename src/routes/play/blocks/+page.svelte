@@ -6,6 +6,7 @@
 	import { onMount } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { BlocksGame } from '#lib/stores/blocksGame.svelte.js';
+	import type { ObjectiveId } from '#lib/game/blocks/objectives.js';
 	import type { Piece } from '#lib/game/blocks/pieces.js';
 	import type { MascotPose } from '#lib/theme/character.js';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
@@ -20,6 +21,16 @@
 
 	const game = new BlocksGame();
 	const reducedMotion = prefersReducedMotion();
+
+	/** Short labels for the three objective cards; fixed targets keep the copy parameterless */
+	const OBJECTIVE_LABEL: Record<ObjectiveId, () => string> = {
+		double: () => m.blocks_objective_double(),
+		triple: () => m.blocks_objective_triple(),
+		lines: () => m.blocks_objective_lines(),
+		cascade: () => m.blocks_objective_cascade(),
+		pieces: () => m.blocks_objective_pieces(),
+		combo: () => m.blocks_objective_combo()
+	};
 
 	let showTutorial = $state(false);
 	onMount(() => {
@@ -256,6 +267,11 @@
 								{m.blocks_combo({ streak: game.feedback.streak })}
 							</span>
 						{/if}
+						{#if game.feedback.objectives.length > 0}
+							<span class="rotate-1 rounded-md border-2 border-ink bg-explosion-yellow px-1.5">
+								{m.blocks_objective_complete()}
+							</span>
+						{/if}
 					</p>
 				{/key}
 			{:else if notice}
@@ -265,8 +281,59 @@
 			{:else if showTutorial}
 				<p class="text-sm leading-snug">{m.blocks_instructions()}</p>
 			{/if}
+			<!-- The cascade meter is always visible, so a clear streak has a place on screen -->
+			<div class="mt-1 flex items-center gap-1.5 text-[0.7rem] leading-none font-bold">
+				<span>{m.blocks_cascade_label()}</span>
+				<span class="flex gap-0.5" aria-hidden="true">
+					{#each [1, 2, 3] as tier (tier)}
+						<span
+							class="h-1.5 w-4 rounded-[2px] border border-ink"
+							class:bg-explosion-yellow={game.cascade >= tier}
+							class:bg-khaki={game.cascade < tier}
+						></span>
+					{/each}
+				</span>
+				{#if game.nextCascadePoints > 0}
+					<span class="ms-auto text-tie-red">
+						{m.blocks_cascade_bonus({ points: game.nextCascadePoints })}
+					</span>
+				{/if}
+			</div>
 		</div>
 	</div>
+
+	<section
+		class="rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-2 py-1.5 shadow-[3px_3px_0_var(--color-ink)]"
+		aria-label={m.blocks_objectives_title()}
+	>
+		<div class="flex items-baseline justify-between gap-2">
+			<h2 class="text-xs font-bold">{m.blocks_objectives_title()}</h2>
+			<span class="text-[0.65rem] font-bold tabular-nums" dir="ltr">
+				{game.objectivesDone}/{game.objectives.length}
+			</span>
+		</div>
+		<ul class="mt-1 grid grid-cols-3 gap-1.5">
+			{#each game.objectives as objective (objective.id)}
+				<li
+					class="flex flex-col gap-0.5 rounded-md border-2 border-ink px-1 py-0.5"
+					class:bg-explosion-yellow={objective.done}
+					class:bg-sand={!objective.done}
+				>
+					<span class="text-[0.65rem] leading-tight font-bold">
+						{OBJECTIVE_LABEL[objective.id]()}
+					</span>
+					<span class="flex items-baseline justify-between gap-1 text-[0.6rem] leading-none">
+						<span class="font-bold tabular-nums" dir="ltr">
+							{objective.done
+								? m.blocks_objective_done()
+								: `${objective.progress}/${objective.target}`}
+						</span>
+						<span class="font-bold opacity-70" dir="ltr">+{objective.bonus}</span>
+					</span>
+				</li>
+			{/each}
+		</ul>
+	</section>
 
 	<Grid
 		bind:this={gridRef}
@@ -324,20 +391,52 @@
 	{drawBoard}
 	onRetry={retry}
 >
-	<dl class="grid grid-cols-3 gap-2 text-center">
-		<div class="rounded-lg border-2 border-ink bg-sand p-1">
-			<dt class="text-xs font-bold">{m.blocks_stat_lines()}</dt>
-			<dd class="font-display text-xl font-bold tabular-nums">{game.linesCleared}</dd>
+	<div class="flex w-full flex-col gap-2">
+		<div class="rounded-lg border-2 border-ink bg-sand p-2 text-start">
+			<p class="text-xs font-bold">
+				{m.blocks_objectives_title()}
+				<span class="ms-1 tabular-nums" dir="ltr">
+					{game.objectivesDone}/{game.objectives.length}
+				</span>
+			</p>
+			<ul class="mt-1 flex flex-col gap-1">
+				{#each game.objectives as objective (objective.id)}
+					<li class="flex items-center gap-1.5 text-xs">
+						<span
+							class="inline-flex size-4 shrink-0 items-center justify-center rounded-full border-2 border-ink text-[0.6rem] leading-none font-bold"
+							class:bg-explosion-yellow={objective.done}
+							class:bg-paper={!objective.done}
+							aria-hidden="true"
+						>
+							{objective.done ? '✓' : '×'}
+						</span>
+						<span class="min-w-0 flex-1">{OBJECTIVE_LABEL[objective.id]()}</span>
+						<span class="shrink-0 font-bold tabular-nums" dir="ltr">
+							{objective.done ? `+${objective.bonus}` : `${objective.progress}/${objective.target}`}
+						</span>
+					</li>
+				{/each}
+			</ul>
 		</div>
-		<div class="rounded-lg border-2 border-ink bg-sand p-1">
-			<dt class="text-xs font-bold">{m.blocks_stat_pieces()}</dt>
-			<dd class="font-display text-xl font-bold tabular-nums">{game.piecesPlaced}</dd>
-		</div>
-		<div class="rounded-lg border-2 border-ink bg-sand p-1">
-			<dt class="text-xs font-bold">{m.blocks_stat_streak()}</dt>
-			<dd class="font-display text-xl font-bold tabular-nums">{game.longestStreak}</dd>
-		</div>
-	</dl>
+		<dl class="grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
+			<div class="rounded-lg border-2 border-ink bg-sand p-1">
+				<dt class="text-xs font-bold">{m.blocks_stat_lines()}</dt>
+				<dd class="font-display text-xl font-bold tabular-nums">{game.linesCleared}</dd>
+			</div>
+			<div class="rounded-lg border-2 border-ink bg-sand p-1">
+				<dt class="text-xs font-bold">{m.blocks_stat_pieces()}</dt>
+				<dd class="font-display text-xl font-bold tabular-nums">{game.piecesPlaced}</dd>
+			</div>
+			<div class="rounded-lg border-2 border-ink bg-sand p-1">
+				<dt class="text-xs font-bold">{m.blocks_stat_streak()}</dt>
+				<dd class="font-display text-xl font-bold tabular-nums">{game.longestStreak}</dd>
+			</div>
+			<div class="rounded-lg border-2 border-ink bg-sand p-1">
+				<dt class="text-xs font-bold">{m.blocks_stat_objectives()}</dt>
+				<dd class="font-display text-xl font-bold tabular-nums">{game.objectivesDone}</dd>
+			</div>
+		</dl>
+	</div>
 </GameOverModal>
 
 <style>

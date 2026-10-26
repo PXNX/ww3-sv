@@ -97,6 +97,90 @@ describe('Block Puzzle game', () => {
 		expect(game.fill).toBe(0);
 	});
 
+	it('builds a cascade and pays extra for the second clear in a row', () => {
+		const board = boardFromRows([
+			'XXXXXX..',
+			'XXXXXX..',
+			'........',
+			'........',
+			'........',
+			'........',
+			'........',
+			'........'
+		]);
+		const game = new BlocksGame({ scores: memoryScores(), seed: 8, board });
+		game.tray = [pieceById('line-2-h')!, pieceById('line-2-h')!, pieceById('line-2-v')!];
+		expect(game.nextCascadePoints).toBe(0);
+
+		game.select(0);
+		expect(game.place(0, 6)).toBe('placed');
+		expect(game.cascade).toBe(1);
+		// A first clear pays nothing extra, but it opens the second tier for the next clear
+		const promised = game.nextCascadePoints;
+		expect(promised).toBeGreaterThan(0);
+
+		game.select(1);
+		expect(game.place(1, 6)).toBe('placed');
+		expect(game.cascade).toBe(2);
+		expect(game.feedback).toMatchObject({ cascade: 2, cascadeBonus: promised });
+		expect(game.nextCascadePoints).toBeGreaterThan(promised);
+	});
+
+	it('resets the cascade on a placement that clears nothing', () => {
+		const board = boardFromRows([
+			'XXXXXX..',
+			'XXXXXX..',
+			'........',
+			'........',
+			'........',
+			'........',
+			'........',
+			'........'
+		]);
+		const game = new BlocksGame({ scores: memoryScores(), seed: 9, board });
+		game.tray = [pieceById('line-2-h')!, pieceById('line-2-v')!, pieceById('line-2-h')!];
+
+		game.select(0);
+		game.place(0, 6);
+		expect(game.cascade).toBe(1);
+
+		game.select(1);
+		expect(game.place(2, 0)).toBe('placed');
+		expect(game.cascade).toBe(0);
+
+		game.select(2);
+		game.place(1, 6);
+		expect(game.cascade).toBe(1);
+	});
+
+	it('completes an objective and adds its bonus to the score', () => {
+		const board = boardFromRows([
+			'XXXXXX..',
+			'........',
+			'........',
+			'........',
+			'........',
+			'........',
+			'........',
+			'........'
+		]);
+		const game = new BlocksGame({ scores: memoryScores(), seed: 10, board });
+		game.tray = [pieceById('line-2-h')!, null, null];
+		game.objectives = [
+			{ id: 'lines', target: 1, bonus: 120, progress: 0, done: false },
+			{ id: 'pieces', target: 25, bonus: 100, progress: 0, done: false },
+			{ id: 'combo', target: 3, bonus: 100, progress: 0, done: false }
+		];
+
+		game.select(0);
+		expect(game.place(0, 6)).toBe('placed');
+		expect(game.objectivesDone).toBe(1);
+		expect(game.objectivePoints).toBe(120);
+		// Two placed cells, one line, and the objective bonus
+		expect(game.score).toBe(2 + 10 + 120);
+		expect(game.feedback?.objectives.map((objective) => objective.id)).toEqual(['lines']);
+	});
+
 	it('ends when nothing fits and records the personal best', () => {
 		const scores = memoryScores();
 		const game = new BlocksGame({ scores, seed: 6 });
