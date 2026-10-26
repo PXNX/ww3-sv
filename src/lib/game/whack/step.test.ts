@@ -2,25 +2,36 @@ import { describe, expect, it } from 'vitest';
 import { createRandom } from '#lib/game/random.js';
 import {
 	COMBO_WINDOW_MS,
+	CORRECTION_POINTS,
+	FACT_CHECK_BONUS,
+	FACT_CHECK_MS,
 	HITTABLE_RISE,
 	LEAVE_MS,
 	RISE_MS,
 	STARTING_LIVES,
 	WHACKED_MS,
-	type MoleKind
+	type MoleKind,
+	type StatementCategory
 } from './config';
 import { holeBase } from './layout';
 import { createGame, riseOf, type Mole, type WhackEvent, type WhackState } from './state';
-import { stepGame, tapAt, tapHole } from './step';
+import { releaseHole, stepGame, tapAt, tapHole } from './step';
 
 const STEP = 1000 / 60;
 
 /** A figure already standing at full height */
-function standing(state: WhackState, hole: number, kind: MoleKind, lifeMs = 2000): Mole {
+function standing(
+	state: WhackState,
+	hole: number,
+	kind: MoleKind,
+	lifeMs = 2000,
+	statement: StatementCategory = 'lie'
+): Mole {
 	const mole: Mole = {
 		id: state.nextId++,
 		hole,
 		kind,
+		statement,
 		phase: 'up',
 		ageMs: RISE_MS,
 		phaseMs: RISE_MS,
@@ -255,6 +266,74 @@ describe('combo in play', () => {
 		const [event] = tapHole(state, 8);
 		expect(event).toMatchObject({ type: 'empty', broke: true });
 		expect(state.combo.streak).toBe(0);
+	});
+});
+
+describe('statement categories', () => {
+	it('costs a heart to whack a correction', () => {
+		const state = createGame();
+		standing(state, 0, 'spokesperson', 2000, 'correction');
+		expect(types(tapHole(state, 0))).toEqual(['correction-hit']);
+		expect(state.lives).toBe(STARTING_LIVES - 1);
+		expect(state.wrongCorrections).toBe(1);
+		expect(state.score).toBe(0);
+	});
+
+	it('rewards leaving a correction alone until its statement ends', () => {
+		const state = createGame();
+		standing(state, 0, 'official', 500, 'correction');
+		const events = quietStep(state, 500 + LEAVE_MS + 100);
+		expect(types(events)).toEqual(['correction-left']);
+		expect(state.corrections).toBe(1);
+		expect(state.lives).toBe(STARTING_LIVES);
+		expect(state.escaped).toBe(0);
+		expect(state.score).toBe(CORRECTION_POINTS);
+	});
+
+	it('fact-checks a funding question when the hold is long enough', () => {
+		const state = createGame();
+		standing(state, 4, 'official', 4000, 'funding');
+		expect(types(tapHole(state, 4))).toEqual(['fact-check-start']);
+		expect(state.score).toBe(0);
+		expect(state.factCheck).not.toBeNull();
+
+		const events = quietStep(state, FACT_CHECK_MS + 100);
+		expect(types(events)).toEqual(['fact-check']);
+		expect(state.checks).toBe(1);
+		expect(state.hits).toBe(1);
+		expect(state.score).toBe(15 + FACT_CHECK_BONUS);
+		expect(state.factCheck).toBeNull();
+		expect(state.moles[0].phase).toBe('whacked');
+	});
+
+	it('cancels a fact-check when the hold is released early', () => {
+		const state = createGame();
+		standing(state, 4, 'official', 4000, 'funding');
+		tapHole(state, 4);
+		quietStep(state, FACT_CHECK_MS / 2);
+		releaseHole(state);
+		quietStep(state, FACT_CHECK_MS);
+		expect(state.checks).toBe(0);
+		expect(state.score).toBe(0);
+		expect(state.moles[0].phase).toBe('up');
+	});
+
+	it('loses the heart when a funding question runs out while the hold is too short', () => {
+		const state = createGame();
+		standing(state, 4, 'official', 300, 'funding');
+		tapHole(state, 4);
+		const events = quietStep(state, 500);
+		expect(types(events)).toEqual(['statement-finished']);
+		expect(state.checks).toBe(0);
+		expect(state.lives).toBe(STARTING_LIVES - 1);
+	});
+
+	it('counts a repeated press on the same funding question once', () => {
+		const state = createGame();
+		standing(state, 4, 'official', 4000, 'funding');
+		tapHole(state, 4);
+		expect(tapHole(state, 4)).toEqual([]);
+		expect(state.factCheck?.moleId).toBe(state.moles[0].id);
 	});
 });
 

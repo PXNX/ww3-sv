@@ -6,7 +6,7 @@
 import { STARTING_LIVES, type BoardId } from '#lib/game/whack/config.js';
 import { drawScenePreview, type Effect, type SceneExtras } from '#lib/game/whack/render.js';
 import { createGame, type WhackEvent, type WhackState } from '#lib/game/whack/state.js';
-import { stepGame, tapAt, tapHole } from '#lib/game/whack/step.js';
+import { releaseHole, stepGame, tapAt, tapHole } from '#lib/game/whack/step.js';
 import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
 import { highscores, type Highscores } from '#lib/services/highscore.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
@@ -37,6 +37,9 @@ export class WhackGame {
 	hits = $state(0);
 	escaped = $state(0);
 	decoysHit = $state(0);
+	checks = $state(0);
+	corrections = $state(0);
+	wrongCorrections = $state(0);
 	bestStreak = $state(0);
 	/** Counts up whenever a heart is lost, so the field can flash */
 	hurtCount = $state(0);
@@ -126,6 +129,11 @@ export class WhackGame {
 		this.#apply(tapAt(this.state, x, y));
 	}
 
+	/** A release ends a funding-question hold; a short tap never completes the fact-check */
+	pointerUp() {
+		releaseHole(this.state);
+	}
+
 	/** A key press for one podium (digits 1 to 9) */
 	pressHole(hole: number) {
 		if (this.status !== 'playing') return;
@@ -209,6 +217,60 @@ export class WhackGame {
 				});
 				this.#play('ui-error', 0);
 				break;
+			case 'correction-hit':
+				this.hurtCount += 1;
+				this.effects.push({
+					kind: 'ring',
+					x: event.x,
+					y: event.y,
+					ageMs: 0,
+					durationMs: 420 * short + 80
+				});
+				this.effects.push({
+					kind: 'popup',
+					x: event.x,
+					y: event.y,
+					text: '-1 ♥',
+					big: true,
+					ageMs: 0,
+					durationMs: 900 * short + 150
+				});
+				this.#play('ui-error', 0);
+				break;
+			case 'correction-left':
+				this.effects.push({
+					kind: 'popup',
+					x: event.x,
+					y: event.y,
+					text: `+${event.points}`,
+					big: false,
+					ageMs: 0,
+					durationMs: 700 * short + 150
+				});
+				this.#play('chime', 500);
+				break;
+			case 'fact-check-start':
+				this.#play('click', SOUND_GAP_MS);
+				break;
+			case 'fact-check':
+				this.effects.push({
+					kind: 'bonk',
+					x: event.x,
+					y: event.y,
+					ageMs: 0,
+					durationMs: 320 * short + 80
+				});
+				this.effects.push({
+					kind: 'popup',
+					x: event.x,
+					y: event.y,
+					text: `+${event.points}`,
+					big: true,
+					ageMs: 0,
+					durationMs: 800 * short + 150
+				});
+				this.#play('chime', 0);
+				break;
 			case 'statement-finished':
 				this.hurtCount += 1;
 				this.effects.push({
@@ -260,6 +322,9 @@ export class WhackGame {
 		this.hits = this.state.hits;
 		this.escaped = this.state.escaped;
 		this.decoysHit = this.state.decoysHit;
+		this.checks = this.state.checks;
+		this.corrections = this.state.corrections;
+		this.wrongCorrections = this.state.wrongCorrections;
 		this.bestStreak = this.state.bestStreak;
 	}
 

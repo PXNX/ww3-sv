@@ -7,12 +7,14 @@ import {
 	CELL_HEIGHT,
 	CELL_WIDTH,
 	COLUMNS,
+	FACT_CHECK_MS,
 	FIELD_TOP,
 	HOLE_COUNT,
 	WORLD_HEIGHT,
 	WORLD_WIDTH,
 	isDecoy,
-	type BoardId
+	type BoardId,
+	type StatementCategory
 } from './config';
 import { INK, PAPER, SAND, TIE_RED, YELLOW, drawFigure, type Pose } from './art';
 import { holeBase, holeRect } from './layout';
@@ -371,7 +373,7 @@ function drawMole(
 	ctx.clip();
 	if (rise > 0) {
 		const shake =
-			!calm && mole.phase === 'up' && mole.progress > 0.7 && !isDecoy(mole.kind)
+			!calm && mole.phase === 'up' && mole.progress > 0.7 && mole.statement === 'lie'
 				? Math.sin(timeMs / 35) * 1.6 * ((mole.progress - 0.7) / 0.3)
 				: 0;
 		ctx.translate(shake, (1 - rise) * HIDE_DEPTH);
@@ -392,7 +394,58 @@ function drawEmptyPodium(ctx: CanvasRenderingContext2D, board: BoardId, hole: nu
 	ctx.restore();
 }
 
-/** The statement bubble: a bar that fills while the target talks; at the end you lose a heart */
+/** One colour per statement category, so the badge and the bar agree */
+const CATEGORY_INK: Record<StatementCategory, string> = {
+	lie: TIE_RED,
+	correction: '#3f8a45',
+	funding: '#2f6fb0'
+};
+
+/** The badge that tells the player what kind of statement this is: !, a tick or a magnifier */
+function drawCategoryTag(
+	ctx: CanvasRenderingContext2D,
+	category: StatementCategory,
+	x: number,
+	y: number
+) {
+	const radius = 7;
+	ctx.beginPath();
+	ctx.arc(x, y, radius, 0, Math.PI * 2);
+	stroked(ctx, CATEGORY_INK[category], 2);
+	ctx.fillStyle = PAPER;
+	ctx.lineWidth = 1.8;
+	ctx.lineCap = 'round';
+	ctx.lineJoin = 'round';
+	ctx.strokeStyle = PAPER;
+	if (category === 'lie') {
+		ctx.beginPath();
+		ctx.moveTo(x, y - 3.2);
+		ctx.lineTo(x, y + 0.6);
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.arc(x, y + 3.8, 1, 0, Math.PI * 2);
+		ctx.fill();
+	} else if (category === 'correction') {
+		ctx.beginPath();
+		ctx.moveTo(x - 3.2, y);
+		ctx.lineTo(x - 0.8, y + 2.4);
+		ctx.lineTo(x + 3.6, y - 2.8);
+		ctx.stroke();
+	} else {
+		ctx.beginPath();
+		ctx.arc(x - 0.8, y - 0.8, 2.9, 0, Math.PI * 2);
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(x + 1.4, y + 1.4);
+		ctx.lineTo(x + 3.8, y + 3.8);
+		ctx.stroke();
+	}
+}
+
+/**
+ * The statement bubble: a bar that fills while the target talks. Lies and funding questions cost a
+ * heart when it fills; a correction is doing its job, so its bar runs green and is safe.
+ */
 function drawBubble(ctx: CanvasRenderingContext2D, mole: Mole, timeMs: number, calm: boolean) {
 	if (mole.phase !== 'up' || isDecoy(mole.kind)) return;
 	const rise = riseOf(mole);
@@ -402,7 +455,8 @@ function drawBubble(ctx: CanvasRenderingContext2D, mole: Mole, timeMs: number, c
 	const height = 17;
 	const x = base.x - width / 2;
 	const y = base.y - 86 * rise - height - 4;
-	const urgent = mole.progress > 0.7;
+	const correction = mole.statement === 'correction';
+	const urgent = mole.progress > 0.7 && !correction;
 	const blink = urgent && !calm && Math.floor(timeMs / 120) % 2 === 0;
 
 	ctx.beginPath();
@@ -410,7 +464,7 @@ function drawBubble(ctx: CanvasRenderingContext2D, mole: Mole, timeMs: number, c
 	ctx.moveTo(base.x - 5, y + height);
 	ctx.lineTo(base.x, y + height + 6);
 	ctx.lineTo(base.x + 5, y + height);
-	stroked(ctx, blink ? '#ffe3e3' : PAPER, 2.2);
+	stroked(ctx, correction ? '#eaf4e5' : blink ? '#ffe3e3' : PAPER, 2.2);
 
 	const trackX = x + 5;
 	const trackY = y + 4.5;
@@ -422,13 +476,44 @@ function drawBubble(ctx: CanvasRenderingContext2D, mole: Mole, timeMs: number, c
 	if (mole.progress > 0) {
 		ctx.beginPath();
 		ctx.roundRect(trackX, trackY, Math.max(8, trackW * mole.progress), 8, 4);
-		ctx.fillStyle = urgent ? TIE_RED : YELLOW;
+		ctx.fillStyle = correction
+			? CATEGORY_INK.correction
+			: mole.statement === 'funding'
+				? CATEGORY_INK.funding
+				: urgent
+					? TIE_RED
+					: YELLOW;
 		ctx.fill();
 	}
 	ctx.beginPath();
 	ctx.roundRect(trackX, trackY, trackW, 8, 4);
 	ctx.lineWidth = 1.5;
 	ctx.strokeStyle = INK;
+	ctx.stroke();
+
+	drawCategoryTag(ctx, mole.statement, x - 2, y + height / 2);
+}
+
+/** A ring around a funding question that fills while the player holds it */
+function drawFactCheck(ctx: CanvasRenderingContext2D, state: WhackState) {
+	const check = state.factCheck;
+	if (!check) return;
+	const mole = state.moles.find((candidate) => candidate.id === check.moleId);
+	if (!mole) return;
+	const base = holeBase(mole.hole);
+	const progress = Math.min(1, check.heldMs / FACT_CHECK_MS);
+	const radius = 36;
+	const cy = base.y - 44;
+	ctx.beginPath();
+	ctx.arc(base.x, cy, radius, 0, Math.PI * 2);
+	ctx.lineWidth = 5;
+	ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.arc(base.x, cy, radius, -Math.PI / 2, -Math.PI / 2 + Math.max(0.02, progress) * Math.PI * 2);
+	ctx.lineWidth = 5;
+	ctx.lineCap = 'round';
+	ctx.strokeStyle = CATEGORY_INK.funding;
 	ctx.stroke();
 }
 
@@ -519,6 +604,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, state: WhackState, extr
 		else drawEmptyPodium(ctx, state.board, hole);
 	}
 	for (const mole of state.moles) drawBubble(ctx, mole, state.timeMs, calm);
+	drawFactCheck(ctx, state);
 	drawComboPill(ctx, state);
 	for (const effect of extras.effects) drawEffect(ctx, effect);
 	ctx.restore();

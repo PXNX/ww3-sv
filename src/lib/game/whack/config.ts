@@ -31,6 +31,16 @@ export type TargetKind = 'spokesperson' | 'official' | 'talkinghead';
 export type DecoyKind = 'journalist' | 'aidworker';
 export type MoleKind = TargetKind | DecoyKind;
 
+/**
+ * What a target is saying. Lies are whacked, corrections must be left alone (whacking one costs a
+ * heart), and funding questions are fact-checked with a short press and hold.
+ */
+export type StatementCategory = 'lie' | 'correction' | 'funding';
+
+export function isStatementCategory(value: unknown): value is StatementCategory {
+	return value === 'lie' || value === 'correction' || value === 'funding';
+}
+
 export interface KindSpec {
 	/** Points for a whack (targets only) */
 	points: number;
@@ -76,3 +86,10 @@ export const COMBO_WINDOW_MS = 1100;
 /** Hits in a row per step of the multiplier, and the highest multiplier */
 export const COMBO_STREAK_PER_LEVEL = 3;
 export const COMBO_MULTIPLIER_CAP = 5;
+
+/** How long a funding question has to be held before the fact-check lands */
+export const FACT_CHECK_MS = 600;
+/** Extra points a completed fact-check pays on top of the target's own points */
+export const FACT_CHECK_BONUS = 10;
+/** Points for correctly leaving a correction alone until its statement ends */
+export const CORRECTION_POINTS = 5;

@@ -99,6 +99,42 @@
 			</li>
 		</ul>
 		<p>{m.whack_tutorial_statement()}</p>
+		<p>{m.whack_tutorial_categories()}</p>
+		<ul class="flex flex-col gap-2">
+			<li class="flex items-start gap-2">
+				<span
+					class="mt-0.5 inline-block size-4 shrink-0 rounded-full border-2 border-ink"
+					style:background="var(--color-tie-red)"
+					aria-hidden="true"
+				></span>
+				<span>
+					<strong>{m.whack_category_lie()}</strong>
+					— {m.whack_category_lie_hint()}
+				</span>
+			</li>
+			<li class="flex items-start gap-2">
+				<span
+					class="mt-0.5 inline-block size-4 shrink-0 rounded-full border-2 border-ink"
+					style:background="#3f8a45"
+					aria-hidden="true"
+				></span>
+				<span>
+					<strong>{m.whack_category_correction()}</strong>
+					— {m.whack_category_correction_hint()}
+				</span>
+			</li>
+			<li class="flex items-start gap-2">
+				<span
+					class="mt-0.5 inline-block size-4 shrink-0 rounded-full border-2 border-ink"
+					style:background="#2f6fb0"
+					aria-hidden="true"
+				></span>
+				<span>
+					<strong>{m.whack_category_funding()}</strong>
+					— {m.whack_category_funding_hint()}
+				</span>
+			</li>
+		</ul>
 		<p>{m.whack_tutorial_decoys()}</p>
 		<ul class="flex flex-col gap-2">
 			<li class="flex items-center gap-2">
@@ -129,6 +165,14 @@
 			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
 				<dt class="font-bold">{m.whack_stat_hits()}</dt>
 				<dd class="text-2xl font-bold tabular-nums">{game.hits}</dd>
+			</div>
+			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
+				<dt class="font-bold">{m.whack_stat_checks()}</dt>
+				<dd class="text-2xl font-bold tabular-nums">{game.checks}</dd>
+			</div>
+			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
+				<dt class="font-bold">{m.whack_stat_corrections()}</dt>
+				<dd class="text-2xl font-bold tabular-nums">{game.corrections}</dd>
 			</div>
 			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
 				<dt class="font-bold">{m.whack_stat_escaped()}</dt>

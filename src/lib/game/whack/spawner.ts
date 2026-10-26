@@ -3,14 +3,46 @@
  * a figure. Difficulty ramps with the run time: pop-ups come faster, more of them are up at once,
  * statements run shorter and decoys mix in more often.
  */
-import { DECOY_KINDS, HOLE_COUNT, TARGET_KINDS, specOf, type MoleKind } from './config';
+import {
+	DECOY_KINDS,
+	HOLE_COUNT,
+	TARGET_KINDS,
+	isDecoy,
+	specOf,
+	type MoleKind,
+	type StatementCategory
+} from './config';
 import { pickWeighted, type Random } from '#lib/game/random.js';
 
 export interface Spawn {
 	hole: number;
 	kind: MoleKind;
+	/** What the target says; decoys carry 'lie' because nothing reads it for them */
+	statement: StatementCategory;
 	/** How long the statement runs (targets) or the visit lasts (decoys), after rising */
 	lifeMs: number;
+}
+
+/** Seconds of a run before corrections and funding questions start to appear */
+export const CATEGORY_DELAY_S = 20;
+/** Highest share of each non-lie category, reached after the ramp */
+export const CATEGORY_SHARE_CAP = 0.2;
+
+/**
+ * Share of correction spawns (and, separately, funding spawns) at a point in the run. It is zero
+ * for the first twenty seconds, then ramps up, so the opening loop stays exactly as it was.
+ */
+export function nonLieShare(timeMs: number): number {
+	const seconds = Math.max(0, timeMs) / 1000;
+	return Math.min(CATEGORY_SHARE_CAP, Math.max(0, (seconds - CATEGORY_DELAY_S) * 0.01));
+}
+
+/** Maps one random roll to a statement category for the given run time */
+export function pickStatement(roll: number, timeMs: number): StatementCategory {
+	const share = nonLieShare(timeMs);
+	if (roll < share) return 'correction';
+	if (roll < share * 2) return 'funding';
+	return 'lie';
 }
 
 export interface Difficulty {
@@ -70,13 +102,20 @@ export function planSpawn(
 	const decoyRoll = random();
 	const kindRoll = random();
 	const lifeRoll = random();
+	const statementRoll = random();
 	if (freeHoles.length === 0) return null;
 
 	const hole = freeHoles[Math.min(freeHoles.length - 1, Math.floor(holeRoll * freeHoles.length))];
 	const decoy = targetsUp > 0 && decoyRoll < difficulty.decoyChance;
 	const kind = pickKind(() => kindRoll, decoy);
+	const statement = isDecoy(kind) ? 'lie' : pickStatement(statementRoll, timeMs);
 	const jitter = 0.9 + lifeRoll * 0.2;
-	return { hole, kind, lifeMs: Math.round(specOf(kind).lifeMs * difficulty.speakScale * jitter) };
+	return {
+		hole,
+		kind,
+		statement,
+		lifeMs: Math.round(specOf(kind).lifeMs * difficulty.speakScale * jitter)
+	};
 }
 
 /** Counts the timer down and returns the pop-ups that are due this step */

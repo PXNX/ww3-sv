@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { RISE_MS, STARTING_LIVES, TARGETS, type MoleKind } from '#lib/game/whack/config.js';
+import {
+	FACT_CHECK_BONUS,
+	RISE_MS,
+	STARTING_LIVES,
+	TARGETS,
+	type MoleKind,
+	type StatementCategory
+} from '#lib/game/whack/config.js';
 import { holeBase } from '#lib/game/whack/layout.js';
 import { createHighscores } from '#lib/services/highscore.js';
 import { createStore, type KeyValueStorage } from '#lib/services/storage.js';
@@ -28,11 +35,18 @@ function startQuiet(game: WhackGame) {
 	game.state.spawner.nextMs = Infinity;
 }
 
-function stand(game: WhackGame, hole: number, kind: MoleKind, lifeMs = 2000) {
+function stand(
+	game: WhackGame,
+	hole: number,
+	kind: MoleKind,
+	lifeMs = 2000,
+	statement: StatementCategory = 'lie'
+) {
 	game.state.moles.push({
 		id: game.state.nextId++,
 		hole,
 		kind,
+		statement,
 		phase: 'up',
 		ageMs: RISE_MS,
 		phaseMs: RISE_MS,
@@ -100,6 +114,40 @@ describe('WhackGame', () => {
 		expect(game.lives).toBe(STARTING_LIVES - 1);
 		expect(game.decoysHit).toBe(1);
 		expect(game.hurtCount).toBe(1);
+	});
+
+	it('fact-checks a held funding question and cancels the hold on release', () => {
+		const { game } = newGame();
+		startQuiet(game);
+		stand(game, 5, 'official', 4000, 'funding');
+		tap(game, 5);
+		for (let i = 0; i < 20; i++) game.update(STEP);
+		game.pointerUp();
+		for (let i = 0; i < 40; i++) game.update(STEP);
+		expect(game.checks).toBe(0);
+		expect(game.score).toBe(0);
+		expect(game.lives).toBe(STARTING_LIVES);
+
+		tap(game, 5);
+		for (let i = 0; i < 40; i++) game.update(STEP);
+		expect(game.checks).toBe(1);
+		expect(game.score).toBe(TARGETS.official.points + FACT_CHECK_BONUS);
+		expect(game.effects.some((effect) => effect.kind === 'bonk')).toBe(true);
+	});
+
+	it('costs a heart for whacking a correction and none for leaving it alone', () => {
+		const { game } = newGame();
+		startQuiet(game);
+		stand(game, 1, 'spokesperson', 400, 'correction');
+		tap(game, 1);
+		expect(game.wrongCorrections).toBe(1);
+		expect(game.lives).toBe(STARTING_LIVES - 1);
+
+		stand(game, 3, 'spokesperson', 400, 'correction');
+		for (let i = 0; i < 60; i++) game.update(STEP);
+		expect(game.corrections).toBe(1);
+		expect(game.escaped).toBe(0);
+		expect(game.lives).toBe(STARTING_LIVES - 1);
 	});
 
 	it('costs a heart when a statement finishes', () => {

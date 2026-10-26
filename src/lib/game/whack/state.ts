@@ -8,7 +8,8 @@ import {
 	STARTING_LIVES,
 	WHACKED_MS,
 	type BoardId,
-	type MoleKind
+	type MoleKind,
+	type StatementCategory
 } from './config';
 import { createCombo, type Combo } from './scoring';
 import { createSpawner, type Spawner } from './spawner';
@@ -20,6 +21,8 @@ export interface Mole {
 	id: number;
 	hole: number;
 	kind: MoleKind;
+	/** What the target is saying; decoys are never whacked for points, so they carry 'lie' */
+	statement: StatementCategory;
 	phase: MolePhase;
 	/** Time since the pop-up began */
 	ageMs: number;
@@ -35,6 +38,14 @@ export interface Mole {
 	finished: boolean;
 }
 
+/** A funding question being held for a fact-check */
+export interface FactCheck {
+	hole: number;
+	moleId: number;
+	/** Milliseconds the player has held so far */
+	heldMs: number;
+}
+
 export interface WhackState {
 	board: BoardId;
 	timeMs: number;
@@ -43,6 +54,7 @@ export interface WhackState {
 	moles: Mole[];
 	spawner: Spawner;
 	combo: Combo;
+	factCheck: FactCheck | null;
 	nextId: number;
 	/** Targets whacked */
 	hits: number;
@@ -50,6 +62,12 @@ export interface WhackState {
 	escaped: number;
 	/** Decoys whacked */
 	decoysHit: number;
+	/** Funding questions fact-checked */
+	checks: number;
+	/** Corrections left alone until they ended */
+	corrections: number;
+	/** Corrections wrongly whacked */
+	wrongCorrections: number;
 	/** Taps on an empty podium */
 	emptyTaps: number;
 	/** Longest streak of fast hits in the run */
@@ -66,10 +84,14 @@ export function createGame(board: BoardId = 'regime'): WhackState {
 		moles: [],
 		spawner: createSpawner(),
 		combo: createCombo(),
+		factCheck: null,
 		nextId: 1,
 		hits: 0,
 		escaped: 0,
 		decoysHit: 0,
+		checks: 0,
+		corrections: 0,
+		wrongCorrections: 0,
 		emptyTaps: 0,
 		bestStreak: 0,
 		over: false
@@ -96,6 +118,26 @@ export type WhackEvent =
 			multiplier: number;
 	  }
 	| { type: 'decoy-hit'; kind: MoleKind; hole: number; x: number; y: number }
+	| { type: 'correction-hit'; kind: MoleKind; hole: number; x: number; y: number }
+	| {
+			type: 'correction-left';
+			kind: MoleKind;
+			hole: number;
+			x: number;
+			y: number;
+			points: number;
+	  }
+	| { type: 'fact-check-start'; hole: number; x: number; y: number }
+	| {
+			type: 'fact-check';
+			kind: MoleKind;
+			hole: number;
+			x: number;
+			y: number;
+			points: number;
+			streak: number;
+			multiplier: number;
+	  }
 	| { type: 'statement-finished'; kind: MoleKind; hole: number; x: number; y: number }
 	| { type: 'empty'; hole: number; x: number; y: number; broke: boolean }
 	| { type: 'game-over' };

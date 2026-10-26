@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { createRandom } from '#lib/game/random.js';
 import { DECOY_KINDS, HOLE_COUNT, TARGET_KINDS, isDecoy, specOf } from './config';
 import {
+	CATEGORY_DELAY_S,
 	FIRST_SPAWN_MS,
 	RETRY_MS,
 	createSpawner,
 	difficultyAt,
+	nonLieShare,
+	pickStatement,
 	planSpawn,
 	stepSpawner
 } from './spawner';
@@ -108,6 +111,41 @@ describe('planSpawn', () => {
 			return Array.from({ length: 20 }, () => planSpawn(random, 10_000, ALL_HOLES, 1));
 		};
 		expect(run()).toEqual(run());
+	});
+});
+
+describe('statement categories', () => {
+	it('starts every target as a lie and only then ramps corrections and funding in', () => {
+		expect(nonLieShare(0)).toBe(0);
+		expect(nonLieShare(CATEGORY_DELAY_S * 1000)).toBe(0);
+		expect(nonLieShare(40_000)).toBeCloseTo(0.2, 5);
+		expect(nonLieShare(10_000_000)).toBe(0.2);
+
+		const random = createRandom(3);
+		for (let i = 0; i < 200; i++) {
+			expect(pickStatement(random(), 0)).toBe('lie');
+			expect(pickStatement(random(), CATEGORY_DELAY_S * 1000)).toBe('lie');
+		}
+	});
+
+	it('maps a roll to a category once the ramp is open', () => {
+		expect(pickStatement(0.05, 60_000)).toBe('correction');
+		expect(pickStatement(0.25, 60_000)).toBe('funding');
+		expect(pickStatement(0.5, 60_000)).toBe('lie');
+	});
+
+	it('gives decoys a harmless lie and targets a category', () => {
+		const random = createRandom(13);
+		let nonLie = 0;
+		for (let i = 0; i < 500; i++) {
+			const spawn = planSpawn(random, 60_000, ALL_HOLES, 1)!;
+			if (isDecoy(spawn.kind)) {
+				expect(spawn.statement).toBe('lie');
+			} else if (spawn.statement !== 'lie') {
+				nonLie += 1;
+			}
+		}
+		expect(nonLie).toBeGreaterThan(0);
 	});
 });
 

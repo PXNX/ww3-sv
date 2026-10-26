@@ -128,6 +128,11 @@
 			style:touch-action="none"
 			aria-label={m.whack_playfield_label()}
 			onpointerdown={onCanvasDown}
+			onpointerup={() => game.pointerUp()}
+			onpointercancel={() => game.pointerUp()}
+			onpointerleave={(event) => {
+				if (event.pointerType === 'mouse') game.pointerUp();
+			}}
 			oncontextmenu={(event) => event.preventDefault()}
 		></canvas>
 
