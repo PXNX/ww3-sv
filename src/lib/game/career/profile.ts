@@ -1,8 +1,8 @@
 /*
  * The career profile: one small, persistent layer above all the games. A finished run pays coins
- * and XP, levels unlock coin bonuses and revival tokens, a seven-day login streak pays out once a
- * day, one featured game a day pays a challenge bonus, and coins are spent in the supply depot.
- * Everything is a pure function on plain data, so the store only reads and writes it.
+ * and XP, levels unlock coin bonuses and revival tokens, a seven-day daily reward opens once the
+ * featured game's challenge is done, and coins are spent in the supply depot. Everything is a pure
+ * function on plain data, so the store only reads and writes it.
  */
 import { createRandom, dayKey, randomInt, seedFromString } from '#lib/game/random.js';
 import {
@@ -72,9 +72,9 @@ export interface CareerProfile {
 	xp: number;
 	coins: number;
 	revives: number;
-	/** Consecutive days the login bonus was collected */
+	/** Consecutive days the daily reward was collected */
 	streak: number;
-	/** The last day the login bonus was collected, or null */
+	/** The last day the daily reward was collected, or null */
 	lastBonusDay: string | null;
 	challenge: DailyChallenge;
 	/** What was earned today, against the daily soft cap */
@@ -279,7 +279,7 @@ export function awardRun(profile: CareerProfile, run: RunInput, now: Date = new 
 }
 
 // ---------------------------------------------------------------------------------------------
-// The daily login streak
+// The daily reward
 
 export interface StreakClaim {
 	profile: CareerProfile;
@@ -300,15 +300,20 @@ export function nextStreakSlot(profile: CareerProfile, now: Date = new Date()): 
 	return (streak - 1) % DAILY_TRACK.length;
 }
 
+/**
+ * The daily reward is collected, not just logged in for: it opens once today's challenge is done,
+ * so the panel can show one goal and one button instead of two tracks side by side.
+ */
 export function canClaimDaily(profile: CareerProfile, now: Date = new Date()): boolean {
-	return profile.lastBonusDay !== dayKey(now);
+	const today = withToday(profile, now);
+	return today.challenge.done && today.lastBonusDay !== dayKey(now);
 }
 
-/** Collects today's login bonus; null when it was already collected today */
+/** Collects today's reward; null until the challenge is done and while it was already collected */
 export function claimDaily(profile: CareerProfile, now: Date = new Date()): StreakClaim | null {
 	const today = withToday(profile, now);
 	const day = dayKey(now);
-	if (today.lastBonusDay === day) return null;
+	if (!today.challenge.done || today.lastBonusDay === day) return null;
 	const streak = isYesterday(today.lastBonusDay, now) ? today.streak + 1 : 1;
 	const slot = (streak - 1) % DAILY_TRACK.length;
 	const reward = DAILY_TRACK[slot];

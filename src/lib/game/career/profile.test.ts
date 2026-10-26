@@ -29,7 +29,9 @@ import {
 	recentModes,
 	reviveCost,
 	useRevive,
-	watchAd
+	watchAd,
+	withToday,
+	type CareerProfile
 } from './profile';
 
 const DAY1 = new Date(2026, 9, 26, 12, 0, 0);
@@ -48,6 +50,12 @@ const run = (overrides: Partial<Parameters<typeof awardRun>[1]> = {}) => ({
 const quiet = (day = DAY1) => {
 	const profile = newCareer(day);
 	return { ...profile, challenge: { ...profile.challenge, done: true } };
+};
+
+/** Takes a profile to the given day with that day's challenge already done */
+const done = (profile: CareerProfile, day: Date) => {
+	const today = withToday(profile, day);
+	return { ...today, challenge: { ...today.challenge, done: true } };
 };
 
 describe('a fresh career', () => {
@@ -163,9 +171,24 @@ describe('paying out a run', () => {
 	});
 });
 
-describe('the daily login streak', () => {
-	it('pays the first day, refuses a second claim and grows the next day', () => {
+describe('the daily reward', () => {
+	it('stays closed until the featured game has been played', () => {
 		const profile = newCareer(DAY1);
+		expect(canClaimDaily(profile, DAY1)).toBe(false);
+		expect(claimDaily(profile, DAY1)).toBeNull();
+
+		const otherMode = CAREER_MODES.find((mode) => mode !== profile.challenge.mode)!;
+		const elsewhere = awardRun(profile, run({ mode: otherMode, score: 5 }), DAY1);
+		expect(elsewhere.challengeCompleted).toBe(false);
+		expect(canClaimDaily(elsewhere.profile, DAY1)).toBe(false);
+
+		const featured = awardRun(profile, run({ mode: profile.challenge.mode, score: 5 }), DAY1);
+		expect(featured.challengeCompleted).toBe(true);
+		expect(canClaimDaily(featured.profile, DAY1)).toBe(true);
+	});
+
+	it('pays the first day, refuses a second claim and grows the next day', () => {
+		const profile = quiet();
 		expect(canClaimDaily(profile, DAY1)).toBe(true);
 		const first = claimDaily(profile, DAY1);
 		expect(first?.coins).toBe(DAILY_TRACK[0].coins);
@@ -173,26 +196,26 @@ describe('the daily login streak', () => {
 		expect(canClaimDaily(first!.profile, DAY1)).toBe(false);
 		expect(claimDaily(first!.profile, DAY1)).toBeNull();
 
-		const second = claimDaily(first!.profile, DAY2);
+		const second = claimDaily(done(first!.profile, DAY2), DAY2);
 		expect(second?.coins).toBe(DAILY_TRACK[1].coins);
 		expect(second?.streak).toBe(2);
 	});
 
 	it('resets the streak after a missed day', () => {
-		const profile = newCareer(DAY1);
+		const profile = quiet();
 		const first = claimDaily(profile, DAY1)!;
-		const afterGap = claimDaily(first.profile, DAY4)!;
+		const afterGap = claimDaily(done(first.profile, DAY4), DAY4)!;
 		expect(afterGap.streak).toBe(1);
 		expect(afterGap.coins).toBe(DAILY_TRACK[0].coins);
 	});
 
 	it('hands out a revival on the third day', () => {
-		let profile = newCareer(DAY1);
+		let profile = quiet();
 		const day2 = new Date(2026, 9, 27, 12);
 		const day3 = new Date(2026, 9, 28, 12);
 		profile = claimDaily(profile, DAY1)!.profile;
-		profile = claimDaily(profile, day2)!.profile;
-		const third = claimDaily(profile, day3)!;
+		profile = claimDaily(done(profile, day2), day2)!.profile;
+		const third = claimDaily(done(profile, day3), day3)!;
 		expect(third.slot).toBe(2);
 		expect(third.revives).toBe(1);
 	});

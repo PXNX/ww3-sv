@@ -2386,7 +2386,7 @@
 	"daily_challenge_done": "Challenge complete",
 	"daily_challenge_play": "Play now",
 	"daily_next": "New rewards in {time}",
-	"daily_hint": "Coins carry over between all games and are spent in the supply depot.",
+	"daily_hint": "Complete the challenge to collect the daily reward.",
 	"shop_title": "Supply depot",
 	"shop_balance": "{count} Fake News",
 	"shop_intro": "Spend the Fake News you earn in every game. Nothing here costs real money yet.",

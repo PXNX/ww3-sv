@@ -1,7 +1,7 @@
 /*
  * Tuning for the career layer that sits above the individual games: the coins and XP a finished
- * run pays out, the level curve, the seven-day login streak, the daily challenge and the demo
- * advert. Everything here is a plain number or list so the rules stay testable and easy to retune.
+ * run pays out, the level curve, the seven-day reward track and the challenge that unlocks it, and
+ * the demo advert. Everything here is a plain number or list so the rules stay testable.
  */
 import type { ModeId } from '#lib/modes/registry.js';
 
@@ -123,7 +123,7 @@ export const LEVEL_UP_COINS = 25;
 export const LEVEL_UP_REVIVE_EVERY = 3;
 
 // ---------------------------------------------------------------------------------------------
-// Daily login streak
+// The daily reward
 
 export interface StreakReward {
 	coins: number;
