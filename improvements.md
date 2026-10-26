@@ -1157,6 +1157,10 @@ Six candidates chosen for replay value against effort, not for how much code the
 Do one or two per release, and pair each with a matching mastery badge or result-sheet line from
 section 2.2 so the new depth is visible without a new screen.
 
+Done so far: Blocks (objective cards in `src/lib/game/blocks/objectives.ts`, cascade meter in
+`scoring.ts` and the store) and Whack (lives, corrections and held fact-checks in
+`src/lib/game/whack/`). Next pair: Convoy fuel and ship choice, then the Maze daily.
+
 ### 9.4 Guardrails for depth
 
 - Leave the first 30 seconds alone. New mechanics arrive after the first minute or in a separate
