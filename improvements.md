@@ -268,6 +268,10 @@ Not covered yet, each for a specific reason:
 
 ### 4.3 Telegram Stars
 
+The concrete build design — identity, endpoints, schema, testing and rollout — is in section
+4.8. The short version: Stars need a bot, a verified Mini App identity, a webhook and a Postgres
+ledger, so this is a small backend project rather than a client-only change.
+
 - [ ] Coin packs: 500 / 50 Stars, 1,200 / 100 Stars, 3,000 / 200 Stars (placeholder pricing).
 - [ ] A single revival for Stars as an impulse purchase on the result sheet, clearly optional.
 - [ ] A starter pack: coins, revivals and one cosmetic at a discount, once per account.
@@ -321,6 +325,213 @@ Not covered yet, each for a specific reason:
 - [ ] Legal pages: terms, privacy, imprint, refund policy, age notice.
 - [ ] Data export and account deletion.
 - [ ] Fraud and anti-cheat checks on coin grants and scores.
+
+### 4.8 Telegram Stars: build design
+
+Recorded as the concrete plan behind section 4.3, so the next person does not have to rediscover the
+constraints. Sources: [Telegram Stars](https://core.telegram.org/bots/payments-stars) and the
+[Bot API payments section](https://core.telegram.org/bots/api#payments). The shop keeps its disabled
+Stars shelf until the phases in 4.8.10 are done.
+
+#### 4.8.1 Three constraints that shape everything
+
+1. An invoice is created by a **bot** through the Bot API and can only be paid **inside a Telegram
+   client**. A normal browser session can never complete a Stars payment.
+2. Digital goods sold inside Telegram must use Stars, currency `XTR`, with an **empty**
+   `provider_token`. App-store rules make other providers non-compliant inside the apps.
+3. Goods are delivered only on the bot's `successful_payment` update. The client's
+   `openInvoice` callback reports what the UI did, not what Telegram charged.
+
+So the work needs a public server, a webhook and durable storage. The existing Vercel adapter
+already deploys serverless functions; the bot, database and account identity are the new pieces.
+
+#### 4.8.2 Identity before payments
+
+- The Mini App reads `Telegram.WebApp.initData` at launch and sends it to our server.
+- The server validates it: split the query string, build `data_check_string` from every field except
+  `hash` (sorted by key, `key=value` joined with newlines), and compare against
+  `HMAC_SHA256(key = HMAC_SHA256("WebAppData", bot_token), data_check_string)`. Reject an
+  `auth_date` older than a few minutes. Third-party validators should check the Ed25519
+  `signature` against Telegram's published key instead.
+- The verified `user.id` becomes the account key. It is never accepted from a request body, a query
+  parameter or local storage.
+- Treat `initData` as a short-lived bearer token: do not log it, store it or put it in analytics.
+- A browser session has no verified identity. The start screen, local career profile and demo shop
+  keep working there; the Stars shelf stays hidden or disabled.
+
+#### 4.8.3 Payment flow and endpoint contract
+
+| Step | Who      | Call                                              | Notes                                                       |
+| ---- | -------- | ------------------------------------------------- | ----------------------------------------------------------- |
+| 1    | Shop     | `GET /api/stars/me` (initData)                    | account, wallet, entitlements, server catalogue             |
+| 2    | Shop     | `POST /api/stars/invoice` `{ initData, sku }`     | server looks up the price, never trusts a client amount     |
+| 3    | Player   | `Telegram.WebApp.openInvoice(url, cb)`            | status `paid`, `cancelled`, `failed` or `pending`           |
+| 4    | Shop     | `GET /api/stars/me` after `paid`                  | poll a few times; the webhook can arrive after the callback |
+| 5    | Telegram | `POST /api/telegram/webhook` `pre_checkout_query` | answer within 10 seconds                                    |
+| 6    | Telegram | `POST /api/telegram/webhook` `successful_payment` | insert once, then grant in a transaction                    |
+
+Details that are easy to get wrong:
+
+- `createInvoiceLink` gets `currency: "XTR"`, a price array in whole Stars, `title`, `description`,
+  and a `payload` such as `sku:userId:nonce` signed with a server-only HMAC and a short expiry.
+  The payload is what binds an invoice to one account and one sku.
+- The webhook is configured with `setWebhook` and a `secret_token`; every request must carry the
+  matching `X-Telegram-Bot-Api-Secret-Token` header. Return 200 quickly and process idempotently.
+- On `successful_payment`, verify `currency`, `total_amount` and `invoice_payload` against the sku,
+  then insert a purchase keyed by the unique `telegram_payment_charge_id`. A duplicate delivery
+  hits the unique constraint and grants nothing. Store `provider_payment_charge_id` as well.
+- The `paid` callback only refreshes the UI. It must never unlock coins by itself.
+- A handler that takes longer than 10 seconds for `pre_checkout_query` cancels the order; check the
+  sku and signature locally instead of calling another service in that window.
+- Return 200 even for updates we ignore, so Telegram does not retry forever.
+
+#### 4.8.4 Catalogue, owned by the server
+
+| SKU            | Grant                                 | Placeholder price | Notes                                         |
+| -------------- | ------------------------------------- | ----------------- | --------------------------------------------- |
+| `revive_1`     | 1 revival                             | 25 Stars          | impulse purchase on the result sheet, one tap |
+| `coins_500`    | 500 coins                             | 50 Stars          |                                               |
+| `coins_1200`   | 1,200 coins                           | 100 Stars         |                                               |
+| `starter_once` | 1,000 coins, 5 revivals, one cosmetic | 150 Stars         | once per account, not a fake countdown        |
+| `pro_30d`      | Pro for 30 days                       | 250 Stars         | Stars subscription                            |
+| `remove_ads`   | no adverts forever                    | 300 Stars         | only once real adverts exist                  |
+
+Rules: prices are whole Stars; the client shows the exact amount and the exact grant returned by the
+server; no invented Stars-to-euro rate; no fake discount; every SKU has a stable id and an
+idempotent grant.
+
+#### 4.8.5 Storage sketch (Postgres)
+
+Neon Postgres through the Vercel marketplace is the working choice: a money ledger wants
+transactions and unique constraints, not a key-value store.
+
+```sql
+create table accounts (
+	telegram_user_id bigint primary key,
+	username text,
+	first_seen_at timestamptz not null default now(),
+	pro_until timestamptz
+);
+
+create table purchases (
+	charge_id text primary key, -- telegram_payment_charge_id, the idempotency key
+	telegram_user_id bigint not null references accounts,
+	sku text not null,
+	stars integer not null,
+	payload text not null,
+	refunded_at timestamptz,
+	created_at timestamptz not null default now()
+);
+
+create table coin_ledger (
+	id bigint generated always as identity primary key,
+	telegram_user_id bigint not null references accounts,
+	delta integer not null,
+	reason text not null, -- stars:coins_500, refund, starter
+	charge_id text references purchases,
+	created_at timestamptz not null default now()
+);
+```
+
+Revival grants get their own ledger table (or a `kind` column), and subscriptions get
+`pro_until`, the last charge id and the current period. Balances are sums over the ledgers; a cached
+balance column is optional and must be updated in the same transaction.
+
+#### 4.8.6 What the server owns
+
+- Today the career profile lives in local storage. Earned coins and XP are fine there, but anything
+  bought is forgeable: a local grant can be replayed by resetting storage.
+- The MVP should keep **purchased** coins, revivals and Pro on the server and let the client mirror
+  them. Spending a purchased revival must be reported to the server (`POST /api/stars/spend`, or a
+  server decrement before the game revives), otherwise one purchase can be used twice.
+- The simpler alternative — grant bought coins into the local profile once — is acceptable only
+  while nothing of value is at stake; document that it is cheat-prone and revisit before
+  leaderboards.
+- Run rewards, daily caps and scores stay client-side for now. A server economy eventually needs
+  server-validated results; that is a separate project (section 6.1).
+- On the first verified session, import the local profile once for convenience, marked as
+  client-supplied and never trusted for purchases.
+
+#### 4.8.7 Monthly Pro
+
+- A 30-day Stars subscription: `subscription_period: 2592000`, the only period Stars subscriptions
+  support.
+- On `successful_payment`, store `pro_until` from `subscription_expiration_date`; every renewal
+  extends it. Check `pro_until > now()` on the server when granting ad-free or the monthly revive
+  allowance.
+- The 10 monthly revivals are granted once per subscription period in a ledger row, not stacked and
+  not banked indefinitely.
+- "Restore purchase" is just `GET /api/stars/me` after initData verification; there is no client
+  receipt to trust.
+- Stars subscriptions have no trial parameter. A 3-day trial has to be a separate one-off
+  entitlement with a follow-up offer, not an auto-charging trial.
+- Cancellation happens in Telegram. The shop shows the paid-until date and that access lasts until
+  then; it does not pretend to cancel from our side.
+- Modes, scores and leaderboards stay outside Pro (section 4.4).
+
+#### 4.8.8 Security, compliance and support
+
+- Bot token only in server environment variables, never in the bundle; rotate it if it leaks.
+- Validate the webhook secret header, the signed invoice payload, the user id, the sku and the
+  amount on every path. Rate-limit invoice creation per user.
+- Refunds use `refundStarPayment(user_id, telegram_payment_charge_id)` and then a ledger reversal.
+  Keep the purchase row, mark it refunded and revoke the entitlement; never delete history.
+- The bot needs `/terms` and `/paysupport`. The shop needs Terms, privacy, imprint, refund policy
+  and an age notice before real money is enabled.
+- Telegram requires the seller to handle disputes itself; Telegram support does not mediate bot
+  purchases. Stars revenue is paid out through Telegram's own star balance and holding period, and
+  tax/legal-entity questions are the operator's, not the code's.
+- Never offer Stars outside Telegram; never show a self-invented Stars price in another currency.
+- Add spending limits and, where required, an age gate; keep the game fully playable without any
+  purchase (section 4.1).
+
+#### 4.8.9 Testing and local development
+
+- Telegram can test Stars in its dedicated test environment with a test bot, so the flow is
+  exercisable without real money.
+- `TELEGRAM_MOCK=1` for local development: a dev bot token, a test `initData` signer, an injected
+  fake Bot API and webhook fixtures. Nothing in the mock path may be enabled in production.
+- Tests that matter: invalid hash, stale `auth_date`, wrong amount, wrong sku, duplicate webhook
+  delivery, refund reversal, subscription renewal, expired payload, unknown user, missing header.
+- Pure parts (payload signing, catalogue lookup, ledger grants, expiry) belong in unit tests next to
+  `src/lib/game/career/`; the webhook gets integration tests against the mock.
+- Manual checklist: browser (no Stars UI), Mini App test payment, cancel an invoice, deliver the
+  same update twice, refund, expire initData, second device.
+
+#### 4.8.10 Rollout phases
+
+| Phase | Work                                                                                   | Done when                                                                         |
+| ----- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| 1     | Bot, Mini App entry, env vars, initData verification, `GET /api/stars/me`              | a Mini App session resolves to one verified account; invalid initData is rejected |
+| 2     | Postgres schema, ledgers, account import, wallet in `/api/stars/me`                    | a simulated purchase survives a redeploy and sums correctly                       |
+| 3     | Server catalogue, `POST /api/stars/invoice`, Stars shelf in the shop, test environment | a test Stars invoice opens and pays                                               |
+| 4     | Webhook with `pre_checkout_query` and `successful_payment`, grants, mock mode          | a paid SKU lands exactly once, including a duplicate delivery                     |
+| 5     | Pro subscription, refunds, `/terms`, `/paysupport`, limits, go-live review             | a refund revokes the grant and the go-live checklist is signed off                |
+
+Phases 1 to 4 are the bulk of the work; 5 is smaller in code but needs legal copy and a support
+process. Roughly two to three days of engineering plus about a day of operations and copy, with no
+redesign of the games.
+
+#### 4.8.11 Decisions still open
+
+- Database provider, and whether adding a driver is acceptable in a repo with no runtime
+  dependencies today.
+- Server-owned wallet from day one (recommended) or a local grant for speed.
+- Whether Pro includes revivals at all; section 4.4 says yes, which weakens the revival sink.
+- Stars price points, and whether a single revival is sold at all.
+- Who operates the bot, owns the Telegram account, handles refunds and taxes.
+- Whether browser players can ever pay. They cannot with Stars; that would need another provider
+  and must respect the store rules.
+
+#### 4.8.12 What already exists in the repo
+
+- `/shop` with the disabled Stars shelf and clear "coming soon" copy (section 1.5).
+- Career rules isolated in `src/lib/game/career/`, so a server wallet can replace the local one
+  without touching the 28 modes.
+- Vercel adapter with serverless output; hosting a webhook and API routes is solved.
+- Root `prerender = true` and `ssr = false`: every API route must set `export const prerender = false`
+  and must not be crawlable as a page.
+- No database client, bot token, webhook, `/terms` or `/paysupport` yet.
 
 ---
 
@@ -403,6 +614,9 @@ Not covered yet, each for a specific reason:
 6. Polish: coin animation, near-miss copy, RTL and screen-reader pass.
 
 ### Next (small backend)
+
+Sections 4.8.2 to 4.8.10 are the detailed Stars sequence: identity first, then the ledger, then the
+first invoice, then the webhook, then Pro and refunds. Do not start with the invoice endpoint.
 
 1. Telegram login and cloud saves.
 2. Real rewarded adverts with consent and the existing cap.

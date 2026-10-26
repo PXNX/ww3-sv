@@ -106,10 +106,11 @@ Done: **1.3** the older pause overlays (convoy, minefield, pipeline, fury, flami
 ## 7. Future monetization
 
 - [ ] Release the current state as version 1.0 on GitHub: bump `version` in `package.json`, tag the commit `v1.0.0` and publish a GitHub release with that tag and label.
-- [ ] Telegram login through a Telegram bot, modelled on [pxnx/ptb-rw](https://github.com/pxnx/ptb-rw) and [pxnx/ptb-psyops](https://github.com/pxnx/ptb-psyops) (python-telegram-bot).
-- [ ] Payments with Telegram Stars inside the app to buy a revival.
-- [ ] Monthly Pro subscription (paid with Telegram Stars): skips watching ads once ads exist, and includes 10 free revivals per month.
-- [ ] Database design: check whether the app and its backend can be hosted serverless as a Telegram Web App, see [Telegram: serverless bots](https://core.telegram.org/bots/serverless). Needs to store accounts, Stars purchases, subscriptions, revivals left this month and, later, the shared points wallet.
+- [ ] Telegram login through a Telegram bot, modelled on [pxnx/ptb-rw](https://github.com/pxnx/ptb-rw) and [pxnx/ptb-psyops](https://github.com/pxnx/ptb-psyops) (python-telegram-bot). Start with Mini App `initData` verification rather than a password flow: `improvements.md` §4.8.2.
+- [ ] Payments with Telegram Stars inside the app to buy a revival. Invoice endpoint, webhook and idempotency: `improvements.md` §4.8.3 and §4.8.8.
+- [ ] Monthly Pro subscription (paid with Telegram Stars): skips watching ads once ads exist, and includes 10 free revivals per month. Stars subscription rules: `improvements.md` §4.8.7.
+- [ ] Database design: check whether the app and its backend can be hosted serverless as a Telegram Web App, see [Telegram: serverless bots](https://core.telegram.org/bots/serverless). Needs to store accounts, Stars purchases, subscriptions, revivals left this month and, later, the shared points wallet. Working schema: `improvements.md` §4.8.5.
+- [ ] Execute the five Stars phases in `improvements.md` §4.8.10 in order: identity, ledger, invoice, webhook, then Pro and refunds. Do not build the shop shelf first.
 - [ ] Wire up the open monetization TODOs in the code: the rewarded ad before the bonus shots in Black Sea Fleet Hunt (`fleethunt`), and moving its points into a shared wallet so they can be spent as currency in other games.
 
 # ww3-sv: open items (as of 2026-10-15)
