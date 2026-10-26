@@ -1,18 +1,26 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import type { RouteId } from '$app/types';
+	import type { ResolvedPathname, RouteId } from '$app/types';
+	import { isCareerMode } from '#lib/game/career/config.js';
+	import { career } from '#lib/game/career/store.svelte.js';
+	import { pickOne } from '#lib/game/random.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { MODES } from '#lib/modes/registry.js';
+	import { MODES, modeById } from '#lib/modes/registry.js';
 	import { leaderById, type LeaderId } from '#lib/theme/leaders.js';
 	import IconHourglass from '~icons/lucide/hourglass';
+	import IconShuffle from '~icons/lucide/shuffle';
+	import IconTrophy from '~icons/lucide/trophy';
 	import IconX from '~icons/lucide/x';
 
 	// resolve() has one overload per route, and TypeScript gives up on matching a union of more than
 	// 25 routes against them. The registry already type-checks every href against RouteId.
-	const resolveRoute = resolve as (route: RouteId) => string;
+	const resolveRoute = resolve as (route: RouteId) => ResolvedPathname;
 
 	let { leader = $bindable(null) }: { leader?: LeaderId | null } = $props();
+
+	const careerState = career();
 
 	// Varied, slight tilts so the cards read like a sticker sheet rather than a dashboard
 	const TILTS = [-2.5, 1.8, -1.2, 2.6, -1.9, 1.1, -2.2, 1.6];
@@ -24,10 +32,22 @@
 		)
 	);
 
+	const recent = $derived(careerState.recent(4).map((id) => modeById(id)));
+
 	const featured = (ids: readonly LeaderId[]) =>
 		new Intl.ListFormat(getLocale(), { type: 'conjunction' }).format(
 			ids.map((id) => leaderById(id).name())
 		);
+
+	const progressFor = (id: (typeof MODES)[number]['id']) =>
+		isCareerMode(id) ? careerState.profile.modes[id] : undefined;
+
+	function surprise() {
+		const playable = MODES.filter((mode) => mode.status === 'playable');
+		const mode = pickOne(Math.random, playable);
+		if (mode.status !== 'playable') return;
+		void goto(resolveRoute(mode.href));
+	}
 </script>
 
 {#if leader}
@@ -50,9 +70,29 @@
 	</div>
 {/if}
 
+<div class="mb-4 flex flex-wrap items-center gap-2">
+	<button type="button" class="btn-chunky bg-explosion-yellow px-3 py-1 text-sm" onclick={surprise}>
+		<IconShuffle class="size-4" aria-hidden="true" />
+		{m.home_surprise()}
+	</button>
+	{#if recent.length > 0}
+		<span class="ms-1 text-sm font-bold">{m.home_recent()}</span>
+		{#each recent as mode (mode.id)}
+			{#if mode.status === 'playable'}
+				{@const Icon = mode.icon}
+				<a href={resolveRoute(mode.href)} class="btn-chunky bg-paper px-2.5 py-1 text-sm">
+					<Icon class="size-4" aria-hidden="true" />
+					{mode.name()}
+				</a>
+			{/if}
+		{/each}
+	{/if}
+</div>
+
 <ul class="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
 	{#each cards as { mode, tilt } (mode.id)}
 		{@const Icon = mode.icon}
+		{@const progress = progressFor(mode.id)}
 		<li class="flex">
 			{#snippet card()}
 				<!-- Faint gameplay screenshot behind the card, captured by scripts/generate-card-screenshots.ts -->
@@ -80,6 +120,15 @@
 						{/each}
 					</span>
 					<span class="sr-only">{m.mode_features({ names: featured(mode.leaders) })}</span>
+				{/if}
+				{#if progress && progress.best > 0}
+					<span
+						class="absolute start-2 top-2 inline-flex items-center gap-1 rounded-md border-2 border-ink bg-explosion-yellow px-1.5 py-0.5 text-xs font-bold tabular-nums"
+						aria-label={m.career_best({ score: progress.best })}
+					>
+						<IconTrophy class="size-3.5" aria-hidden="true" />
+						{progress.best}
+					</span>
 				{/if}
 				<span
 					class="mt-auto rounded-xl border-3 border-ink p-3 {mode.tileClass}"

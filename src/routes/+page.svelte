@@ -4,6 +4,8 @@
 	import { APP_NAME } from '#lib/config.js';
 	import type { LeaderId } from '#lib/theme/leaders.js';
 	import CameoLineup from '#lib/components/CameoLineup.svelte';
+	import CareerBar from '#lib/components/CareerBar.svelte';
+	import DailyPanel from '#lib/components/DailyPanel.svelte';
 	import InstallPwaHint from '#lib/components/InstallPwaHint.svelte';
 	import LocaleSwitcher from '#lib/components/LocaleSwitcher.svelte';
 	import ModeSelect from '#lib/components/ModeSelect.svelte';
@@ -36,12 +38,18 @@
 		</div>
 	</header>
 
+	<div class="grid items-start gap-5 lg:grid-cols-2">
+		<CareerBar />
+		<DailyPanel />
+	</div>
+
 	<section class="flex flex-col gap-4" aria-labelledby="choose-mode">
 		<h2 id="choose-mode" class="text-2xl font-bold">{m.home_choose_mode()}</h2>
 		<ModeSelect bind:leader />
 	</section>
 
-	<footer class="text-center text-sm">
+	<footer class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-center text-sm">
+		<a href={resolve('/shop')} class="font-semibold underline">{m.career_shop()}</a>
 		<a href={resolve('about')} class="font-semibold underline">{m.about_link()}</a>
 	</footer>
 </main>

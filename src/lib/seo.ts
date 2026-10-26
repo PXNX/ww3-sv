@@ -37,6 +37,10 @@ function buildPages(): Map<string, PageMeta> {
 		title: `${m.about_title()} | ${APP_NAME}`,
 		description: shorten(m.about_fiction_body())
 	});
+	pages.set('/shop', {
+		title: `${m.shop_title()} | ${APP_NAME}`,
+		description: shorten(m.shop_intro())
+	});
 	for (const mode of MODES) {
 		if (mode.status !== 'playable') continue;
 		pages.set(mode.href, {

@@ -11,11 +11,14 @@
 </script>
 
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	import { untrack, type Snippet } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { modeById, type ModeId } from '#lib/modes/registry.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { AD_COINS, isCareerMode } from '#lib/game/career/config.js';
+	import { career } from '#lib/game/career/store.svelte.js';
+	import type { RunReward } from '#lib/game/career/profile.js';
 	import type { ScoreCard } from '#lib/services/share.js';
 	import {
 		CAMEO_PLACEHOLDER,
@@ -31,9 +34,14 @@
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import Confetti from './Confetti.svelte';
 	import ResultCharacter from './ResultCharacter.svelte';
+	import RewardedAdModal from './RewardedAdModal.svelte';
 	import ShareButton from './ShareButton.svelte';
+	import IconCoins from '~icons/lucide/coins';
+	import IconGift from '~icons/lucide/gift';
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
 	import IconRotate from '~icons/lucide/rotate-ccw';
+	import IconTv from '~icons/lucide/tv';
+	import IconZap from '~icons/lucide/zap';
 
 	let {
 		open,
@@ -174,6 +182,42 @@
 			dialog.close();
 		}
 	});
+
+	// The career payout happens once per opening of the sheet; a re-mounted result sheet for the
+	// same run is filtered out by the store's duplicate guard as well.
+	const careerState = career();
+	let reward = $state<RunReward | null>(null);
+	let adOpen = $state(false);
+	let adCoins = $state(0);
+	let awarded = false;
+
+	$effect(() => {
+		if (!open) {
+			awarded = false;
+			reward = null;
+			adOpen = false;
+			adCoins = 0;
+			return;
+		}
+		if (awarded) return;
+		awarded = true;
+		const careerMode = isCareerMode(mode) ? mode : null;
+		if (!careerMode) return;
+		reward = untrack(() => careerState.awardRun({ mode: careerMode, score, outcome, isNewBest }));
+	});
+
+	function revive() {
+		// Modes outside the career layer have no token to spend
+		if (isCareerMode(mode) && !careerState.useRevive()) return;
+		soundManager().play('ui-toggle');
+		onRevive?.();
+	}
+
+	function claimAd() {
+		const result = careerState.watchAd(AD_COINS);
+		adOpen = false;
+		adCoins = result.coins;
+	}
 </script>
 
 <dialog
@@ -228,6 +272,46 @@
 				<div class="w-full">{@render children()}</div>
 			{/if}
 
+			{#if reward}
+				<div
+					class="pop-in flex w-full flex-col items-center gap-1 rounded-[12px_6px_14px_8px] border-3 border-ink bg-sand p-2 text-sm font-bold"
+				>
+					<div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+						{#if reward.coins > 0}
+							<span class="inline-flex items-center gap-1">
+								<IconCoins class="size-4 text-mustard" aria-hidden="true" />
+								{m.gameover_reward_coins({ count: reward.coins })}
+							</span>
+						{/if}
+						{#if reward.xp > 0}
+							<span class="inline-flex items-center gap-1">
+								<IconZap class="size-4" aria-hidden="true" />
+								{m.gameover_reward_xp({ count: reward.xp })}
+							</span>
+						{/if}
+					</div>
+					{#if reward.levelsGained > 0}
+						<span
+							class="inline-flex -rotate-1 items-center gap-1 rounded-md border-2 border-ink bg-explosion-yellow px-2 py-0.5"
+						>
+							<IconGift class="size-4" aria-hidden="true" />
+							{m.gameover_level_up({ level: reward.level, coins: reward.levelCoins })}
+						</span>
+					{/if}
+					{#if reward.challengeCompleted}
+						<span
+							class="inline-flex rotate-1 items-center gap-1 rounded-md border-2 border-ink bg-khaki px-2 py-0.5 text-paper"
+						>
+							<IconGift class="size-4" aria-hidden="true" />
+							{m.gameover_challenge_done({ coins: reward.challengeCoins })}
+						</span>
+					{/if}
+					{#if reward.capped}
+						<span class="text-xs font-semibold opacity-70">{m.gameover_daily_cap()}</span>
+					{/if}
+				</div>
+			{/if}
+
 			{#if showCameo}
 				<figure
 					class="flex w-full items-center gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-sand p-3 text-start"
@@ -251,11 +335,37 @@
 			{/if}
 
 			{#if onRevive}
-				<!-- TODO: charge the revival in Telegram Stars (or take one from the Pro subscription's monthly allowance) before calling onRevive -->
-				<button type="button" class="btn-chunky bg-khaki text-lg" onclick={onRevive}>
-					<IconHeartPulse class="size-5" aria-hidden="true" />
-					{m.gameover_revive()}
+				{#if !isCareerMode(mode) || careerState.profile.revives > 0}
+					<button type="button" class="btn-chunky bg-khaki text-lg" onclick={revive}>
+						<IconHeartPulse class="size-5" aria-hidden="true" />
+						{#if isCareerMode(mode)}
+							{m.gameover_revive_left({ count: careerState.profile.revives })}
+						{:else}
+							{m.gameover_revive()}
+						{/if}
+					</button>
+				{:else}
+					<a href={resolve('/shop')} class="btn-chunky bg-khaki text-lg">
+						<IconHeartPulse class="size-5" aria-hidden="true" />
+						{m.gameover_revive_none()}
+					</a>
+				{/if}
+			{/if}
+
+			{#if reward && careerState.adsLeft > 0}
+				<button
+					type="button"
+					class="btn-chunky bg-explosion-yellow px-3 py-1 text-sm"
+					onclick={() => (adOpen = true)}
+				>
+					<IconTv class="size-4" aria-hidden="true" />
+					{m.gameover_double({ coins: AD_COINS })}
 				</button>
+			{/if}
+			{#if adCoins > 0}
+				<p role="status" class="pop-in text-sm font-bold text-khaki">
+					{m.shop_ad_done({ coins: adCoins })}
+				</p>
 			{/if}
 
 			<div class="flex flex-wrap items-center justify-center gap-3">
@@ -270,7 +380,7 @@
 					<IconRotate class="size-5" aria-hidden="true" />
 					{m.gameover_try_again()}
 				</button>
-				<a href={resolve('/')} class="btn-chunky">{m.gameover_home()}</a>
+				<a href={resolve('/')} class="btn-chunky">{m.gameover_next()}</a>
 			</div>
 
 			{#if isNewBest}
@@ -279,3 +389,11 @@
 		</div>
 	</div>
 </dialog>
+
+<!-- Outside the result dialog: a second modal inside the top layer is unreliable in older Safari -->
+<RewardedAdModal
+	open={adOpen}
+	coins={AD_COINS}
+	onClaim={claimAd}
+	onClose={() => (adOpen = false)}
+/>
