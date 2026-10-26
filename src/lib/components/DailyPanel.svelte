@@ -18,9 +18,9 @@
 	import IconCalendarDays from '~icons/lucide/calendar-days';
 	import IconCheck from '~icons/lucide/check';
 	import IconClock from '~icons/lucide/clock';
-	import IconCoins from '~icons/lucide/coins';
 	import IconFlame from '~icons/lucide/flame';
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
+	import IconNewspaper from '~icons/lucide/newspaper';
 	import IconPlay from '~icons/lucide/play';
 
 	// resolve() has one overload per route, and TypeScript gives up on matching a union of more
@@ -108,7 +108,7 @@
 			>
 				<span class="text-[0.65rem] leading-none opacity-75">{index + 1}</span>
 				<span class="flex items-center gap-0.5 tabular-nums">
-					<IconCoins class="size-3" aria-hidden="true" />
+					<IconNewspaper class="size-3" aria-hidden="true" />
 					{reward.coins}
 				</span>
 				{#if reward.revives > 0}

@@ -20,8 +20,8 @@
 	import LocaleSwitcher from '#lib/components/LocaleSwitcher.svelte';
 	import RewardedAdModal from '#lib/components/RewardedAdModal.svelte';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
-	import IconCoins from '~icons/lucide/coins';
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
+	import IconNewspaper from '~icons/lucide/newspaper';
 	import IconPackage from '~icons/lucide/package';
 	import IconSparkles from '~icons/lucide/sparkles';
 	import IconTv from '~icons/lucide/tv';
@@ -104,7 +104,7 @@
 				disabled={!singleAffordable}
 				onclick={() => buy(1)}
 			>
-				<IconCoins class="size-4" aria-hidden="true" />
+				<IconNewspaper class="size-4" aria-hidden="true" />
 				{m.shop_buy({ cost: m.career_coins({ count: REVIVE_COST }) })}
 			</button>
 			{#if !singleAffordable}
@@ -124,7 +124,7 @@
 				disabled={!packAffordable}
 				onclick={() => buy(REVIVE_PACK_SIZE)}
 			>
-				<IconCoins class="size-4" aria-hidden="true" />
+				<IconNewspaper class="size-4" aria-hidden="true" />
 				{m.shop_pack_buy({
 					count: REVIVE_PACK_SIZE,
 					cost: m.career_coins({ count: REVIVE_PACK_COST })
@@ -173,7 +173,7 @@
 				<div
 					class="flex flex-col items-center gap-1 rounded-[12px_6px_14px_8px] border-3 border-dashed border-ink/50 bg-sand/70 p-3 text-center opacity-70"
 				>
-					<IconCoins class="size-5" aria-hidden="true" />
+					<IconNewspaper class="size-5" aria-hidden="true" />
 					<span class="text-sm font-bold">{m.shop_support_pack({ coins: pack.coins })}</span>
 					<span class="text-xs font-semibold">
 						{m.shop_support_price({ stars: pack.stars })}

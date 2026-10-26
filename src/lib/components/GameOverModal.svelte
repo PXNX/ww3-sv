@@ -36,9 +36,9 @@
 	import ResultCharacter from './ResultCharacter.svelte';
 	import RewardedAdModal from './RewardedAdModal.svelte';
 	import ShareButton from './ShareButton.svelte';
-	import IconCoins from '~icons/lucide/coins';
 	import IconGift from '~icons/lucide/gift';
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
+	import IconNewspaper from '~icons/lucide/newspaper';
 	import IconRotate from '~icons/lucide/rotate-ccw';
 	import IconTv from '~icons/lucide/tv';
 	import IconZap from '~icons/lucide/zap';
@@ -279,7 +279,7 @@
 					<div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
 						{#if reward.coins > 0}
 							<span class="inline-flex items-center gap-1">
-								<IconCoins class="size-4 text-mustard" aria-hidden="true" />
+								<IconNewspaper class="size-4 text-mustard" aria-hidden="true" />
 								{m.gameover_reward_coins({ count: reward.coins })}
 							</span>
 						{/if}

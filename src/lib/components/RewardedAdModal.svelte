@@ -7,7 +7,7 @@
 	import { AD_SECONDS } from '#lib/game/career/config.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
-	import IconCoins from '~icons/lucide/coins';
+	import IconNewspaper from '~icons/lucide/newspaper';
 	import IconTv from '~icons/lucide/tv';
 
 	let {
@@ -114,7 +114,7 @@
 			disabled={!ready || claimed}
 			onclick={claim}
 		>
-			<IconCoins class="size-5" aria-hidden="true" />
+			<IconNewspaper class="size-5" aria-hidden="true" />
 			{m.ad_claim({ coins })}
 		</button>
 		<button type="button" class="btn-chunky px-3 py-1 text-sm" onclick={close}>

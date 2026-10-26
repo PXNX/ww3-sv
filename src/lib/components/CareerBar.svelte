@@ -9,9 +9,9 @@
 	import { career } from '#lib/game/career/store.svelte.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import IconAward from '~icons/lucide/award';
-	import IconCoins from '~icons/lucide/coins';
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
 	import IconLayoutGrid from '~icons/lucide/layout-grid';
+	import IconNewspaper from '~icons/lucide/newspaper';
 	import IconStore from '~icons/lucide/store';
 
 	const state = career();
@@ -73,7 +73,7 @@
 		<span
 			class="inline-flex items-center gap-1.5 rounded-[10px_5px_9px_6px] border-2 border-ink bg-explosion-yellow px-2 py-0.5 text-sm font-bold"
 		>
-			<IconCoins class="size-4" aria-hidden="true" />
+			<IconNewspaper class="size-4" aria-hidden="true" />
 			{m.career_coins({ count: state.profile.coins })}
 		</span>
 		<span
