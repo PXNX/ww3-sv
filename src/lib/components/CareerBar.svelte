@@ -7,6 +7,7 @@
 	import { resolve } from '$app/paths';
 	import { CAREER_MODES } from '#lib/game/career/config.js';
 	import { career } from '#lib/game/career/store.svelte.js';
+	import { telegram } from '#lib/stores/telegram.svelte.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import IconAward from '~icons/lucide/award';
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
@@ -15,6 +16,11 @@
 	import IconStore from '~icons/lucide/store';
 
 	const state = career();
+	const account = telegram();
+	// Earned on this device plus bought with Stars, which live on the Telegram account
+	const revives = $derived(
+		state.profile.revives + (account.status === 'verified' ? account.wallet.revives : 0)
+	);
 
 	const RANK_LABELS = {
 		intern: m.career_rank_intern,
@@ -80,7 +86,7 @@
 			class="inline-flex items-center gap-1.5 rounded-[10px_5px_9px_6px] border-2 border-ink bg-sand px-2 py-0.5 text-sm font-bold"
 		>
 			<IconHeartPulse class="size-4 text-tie-red" aria-hidden="true" />
-			{m.career_revives({ count: state.profile.revives })}
+			{m.career_revives({ count: revives })}
 		</span>
 		<span
 			class="inline-flex items-center gap-1.5 rounded-[10px_5px_9px_6px] border-2 border-ink bg-sand px-2 py-0.5 text-sm font-bold"

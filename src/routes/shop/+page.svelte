@@ -1,7 +1,8 @@
 <!--
 	The supply depot: spend the coins every finished run pays out. Revivals keep a crashed run alive,
-	the sponsor break tops the wallet up once a day, and the real-money shelves are visible but
-	clearly marked as coming soon. Nothing here talks to a server.
+	the sponsor break tops the wallet up once a day. Inside the Telegram Mini App a second shelf sells
+	revival tokens and Pro for Telegram Stars through the bot; in a normal browser it only points to
+	Telegram, because Stars can only be paid there.
 -->
 <script lang="ts">
 	import { resolve } from '$app/paths';
@@ -19,14 +20,26 @@
 	import CareerBar from '#lib/components/CareerBar.svelte';
 	import LocaleSwitcher from '#lib/components/LocaleSwitcher.svelte';
 	import RewardedAdModal from '#lib/components/RewardedAdModal.svelte';
+	import StarsOffer from '#lib/components/StarsOffer.svelte';
+	import { telegram } from '#lib/stores/telegram.svelte.js';
+	import { getLocale } from '#lib/paraglide/runtime.js';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
 	import IconNewspaper from '~icons/lucide/newspaper';
 	import IconPackage from '~icons/lucide/package';
+	import IconSend from '~icons/lucide/send';
 	import IconSparkles from '~icons/lucide/sparkles';
+	import IconStar from '~icons/lucide/star';
 	import IconTv from '~icons/lucide/tv';
 
 	const careerState = career();
+	const account = telegram();
+
+	const proDate = $derived(
+		account.proUntil
+			? new Date(account.proUntil).toLocaleDateString(getLocale(), { dateStyle: 'medium' })
+			: ''
+	);
 
 	let adOpen = $state(false);
 	let notice = $state<{ text: string; ok: boolean } | null>(null);
@@ -164,36 +177,69 @@
 
 	<section class="sticker flex flex-col gap-3 bg-paper p-4" style:--tilt="-0.5deg">
 		<h2 class="flex items-center gap-2 font-display text-xl font-bold">
-			<IconSparkles class="size-5 text-mustard" aria-hidden="true" />
-			{m.shop_support_name()}
+			<IconStar class="size-5 text-mustard" aria-hidden="true" />
+			{m.stars_title()}
 		</h2>
-		<p class="text-sm leading-snug">{m.shop_support_body()}</p>
-		<div class="grid gap-3 sm:grid-cols-3">
-			{#each [{ coins: 500, stars: 50 }, { coins: 1200, stars: 100 }] as pack (pack.coins)}
-				<div
-					class="flex flex-col items-center gap-1 rounded-[12px_6px_14px_8px] border-3 border-dashed border-ink/50 bg-sand/70 p-3 text-center opacity-70"
-				>
-					<IconNewspaper class="size-5" aria-hidden="true" />
-					<span class="text-sm font-bold">{m.shop_support_pack({ coins: pack.coins })}</span>
-					<span class="text-xs font-semibold">
-						{m.shop_support_price({ stars: pack.stars })}
-					</span>
-					<span class="rounded-md border-2 border-ink bg-paper px-2 py-0.5 text-xs font-bold">
-						{m.shop_soon()}
-					</span>
-				</div>
-			{/each}
-			<div
-				class="flex flex-col items-center gap-1 rounded-[12px_6px_14px_8px] border-3 border-dashed border-ink/50 bg-sand/70 p-3 text-center opacity-70"
-			>
-				<IconSparkles class="size-5" aria-hidden="true" />
-				<span class="text-sm font-bold">{m.shop_pro_name()}</span>
-				<span class="text-xs leading-snug">{m.shop_pro_body()}</span>
-				<span class="rounded-md border-2 border-ink bg-paper px-2 py-0.5 text-xs font-bold">
-					{m.shop_soon()}
-				</span>
+		<p class="text-sm leading-snug">{m.stars_intro()}</p>
+
+		{#if account.status === 'verified'}
+			<p class="flex items-center gap-1.5 text-sm font-bold">
+				<IconHeartPulse class="size-4 text-tie-red" aria-hidden="true" />
+				{m.stars_owned({ count: account.wallet.revives })}
+			</p>
+			<div class="grid gap-3 sm:grid-cols-2">
+				{#if account.reviveItem}
+					<div
+						class="flex flex-col gap-2 rounded-[12px_6px_14px_8px] border-3 border-ink bg-sand/70 p-3"
+					>
+						<span class="flex items-center gap-1.5 font-bold">
+							<IconHeartPulse class="size-5 text-tie-red" aria-hidden="true" />
+							{m.shop_revive_name()}
+						</span>
+						<span class="text-xs leading-snug">{m.shop_revive_body()}</span>
+						<StarsOffer item={account.reviveItem} />
+					</div>
+				{/if}
+				{#if account.proItem}
+					<div
+						class="flex flex-col gap-2 rounded-[12px_6px_14px_8px] border-3 border-ink bg-sand/70 p-3"
+					>
+						<span class="flex items-center gap-1.5 font-bold">
+							<IconSparkles class="size-5 text-mustard" aria-hidden="true" />
+							{m.shop_pro_name()}
+						</span>
+						<span class="text-xs leading-snug">{m.shop_pro_body()}</span>
+						{#if account.pro}
+							<p
+								class="rounded-md border-2 border-ink bg-khaki px-2 py-1 text-center text-sm font-bold text-paper"
+							>
+								{m.stars_pro_active({ date: proDate })}
+							</p>
+						{:else}
+							<StarsOffer item={account.proItem} />
+						{/if}
+						<span class="text-[0.7rem] leading-snug opacity-70">{m.stars_pro_renews()}</span>
+					</div>
+				{/if}
 			</div>
-		</div>
+		{:else if account.status === 'checking'}
+			<p class="text-sm font-semibold opacity-70">{m.profile_telegram_checking()}</p>
+		{:else if account.inTelegram}
+			<p class="text-sm font-semibold text-tie-red">{m.stars_unavailable()}</p>
+			<button
+				type="button"
+				class="btn-chunky self-start bg-paper"
+				onclick={() => account.refresh()}
+			>
+				{m.profile_telegram_retry()}
+			</button>
+		{:else}
+			<p class="text-sm leading-snug">{m.profile_telegram_browser()}</p>
+			<a href="https://t.me/game_ww3_bot?startapp=shop" class="btn-chunky self-start bg-flag-blue">
+				<IconSend class="size-5" aria-hidden="true" />
+				{m.profile_telegram_open()}
+			</a>
+		{/if}
 	</section>
 
 	<p class="text-center text-xs leading-snug opacity-75">{m.shop_demo()}</p>

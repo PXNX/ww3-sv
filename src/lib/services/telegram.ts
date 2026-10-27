@@ -8,13 +8,18 @@
 
 const SCRIPT_URL = 'https://telegram.org/js/telegram-web-app.js';
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+	typeof value === 'object' && value !== null && !Array.isArray(value);
+
 export type TelegramErrorType = 'UNAUTHORIZED' | 'ENDPOINT_ERROR' | 'UNAVAILABLE' | 'UNKNOWN';
 
 /** A failed endpoint call: refused identity, an error in the endpoint, or no Telegram at all */
 export class TelegramCallError extends Error {
 	constructor(
 		readonly type: TelegramErrorType,
-		message: string = type
+		message: string = type,
+		/** The code an endpoint refused with, from its error parameters */
+		readonly code: string | null = null
 	) {
 		super(message);
 		this.name = 'TelegramCallError';
@@ -25,10 +30,15 @@ interface ServerlessApi {
 	call(name: string, input: unknown, callback: (error: unknown, result: unknown) => void): void;
 }
 
+/** What Telegram reports when the invoice sheet closes; only `paid` means money moved */
+export type InvoiceStatus = 'paid' | 'cancelled' | 'failed' | 'pending';
+
 interface TelegramWebApp {
 	initData?: string;
+	initDataUnsafe?: { start_param?: string };
 	ready?: () => void;
 	Serverless?: ServerlessApi;
+	openInvoice?: (url: string, callback: (status: string) => void) => void;
 }
 
 type TelegramWindow = Window & { Telegram?: { WebApp?: TelegramWebApp } };
@@ -72,6 +82,23 @@ export function loadTelegram(): Promise<TelegramWebApp | null> {
 	return loading;
 }
 
+/** Pages a `startapp` link may open; anything else lands on the start screen */
+const START_ROUTES = { profile: '/profile', shop: '/shop' } as const;
+
+export type StartRoute = (typeof START_ROUTES)[keyof typeof START_ROUTES];
+
+/** The page a Mini App launch asked for, such as `?startapp=shop`, or null */
+export function startRoute(startParam: string | undefined | null): StartRoute | null {
+	if (!startParam || !Object.hasOwn(START_ROUTES, startParam)) return null;
+	return START_ROUTES[startParam as keyof typeof START_ROUTES];
+}
+
+/** The start parameter of the current Mini App launch, once Telegram is loaded */
+export async function launchStartParam(): Promise<string | null> {
+	const app = await loadTelegram();
+	return app?.initDataUnsafe?.start_param ?? null;
+}
+
 /** Maps whatever the platform threw onto one of the known error types */
 export function toCallError(error: unknown): TelegramCallError {
 	if (error instanceof TelegramCallError) return error;
@@ -81,8 +108,11 @@ export function toCallError(error: unknown): TelegramCallError {
 		typeof error === 'object' && error !== null && 'message' in error
 			? String(error.message)
 			: undefined;
+	const parameters =
+		typeof error === 'object' && error !== null && 'parameters' in error ? error.parameters : null;
+	const code = isRecord(parameters) && typeof parameters.code === 'string' ? parameters.code : null;
 	if (type === 'UNAUTHORIZED' || type === 'ENDPOINT_ERROR') {
-		return new TelegramCallError(type, message);
+		return new TelegramCallError(type, message, code);
 	}
 	return new TelegramCallError('UNKNOWN', message);
 }
@@ -102,6 +132,29 @@ export async function call<T>(name: string, input: unknown = {}): Promise<T> {
 			reject(toCallError(error));
 		}
 	});
+}
+
+/**
+ * Opens a Stars invoice inside Telegram. The status only says what the sheet did: the purchase is
+ * granted by the bot on `successful_payment`, so a `paid` result is followed by asking `me` again.
+ */
+export async function openInvoice(url: string): Promise<InvoiceStatus> {
+	const app = await loadTelegram();
+	if (!app?.openInvoice) throw new TelegramCallError('UNAVAILABLE');
+	const open = app.openInvoice;
+	return new Promise((resolve) => {
+		open(url, (status) => {
+			resolve(
+				status === 'paid' || status === 'cancelled' || status === 'pending' ? status : 'failed'
+			);
+		});
+	});
+}
+
+/** The machine-readable code an endpoint refused with, such as `CONSENT_REQUIRED` */
+export function endpointCode(error: unknown): string | null {
+	if (!(error instanceof TelegramCallError) || error.type !== 'ENDPOINT_ERROR') return null;
+	return error.code ?? null;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -125,6 +178,18 @@ export interface CatalogueItem {
 	subscription: boolean;
 }
 
+/**
+ * The consent German law asks for before digital goods are delivered at once (§ 356 BGB). The
+ * wording is the server's, in German, because that is the text the player agrees to and the bot
+ * stores; the links lead to the AGB and the Widerrufsbelehrung.
+ */
+export interface PurchaseConsent {
+	version: string;
+	text: string;
+	terms: string;
+	withdrawal: string;
+}
+
 export interface TelegramMe {
 	user: TelegramUser;
 	/** Revival tokens bought with Stars and not spent yet */
@@ -134,11 +199,9 @@ export interface TelegramMe {
 	proUntil: string | null;
 	/** Whether the player already agreed to immediate delivery (needed before a purchase) */
 	consented: boolean;
+	consent: PurchaseConsent | null;
 	catalogue: CatalogueItem[];
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-	typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const isCount = (value: unknown): value is number =>
 	typeof value === 'number' && Number.isInteger(value) && value >= 0;
@@ -151,6 +214,14 @@ function toCatalogueItem(value: unknown): CatalogueItem | null {
 		return null;
 	}
 	return { sku, title, stars, revives, subscription };
+}
+
+function toConsent(value: unknown): PurchaseConsent | null {
+	if (!isRecord(value)) return null;
+	const { version, text, terms, withdrawal } = value;
+	if (typeof version !== 'string' || typeof text !== 'string' || text === '') return null;
+	const link = (url: unknown) => (typeof url === 'string' && url.startsWith('https://') ? url : '');
+	return { version, text, terms: link(terms), withdrawal: link(withdrawal) };
 }
 
 /** Validates what `me` returned; null when it is not the expected shape */
@@ -178,6 +249,7 @@ export function parseMe(value: unknown): TelegramMe | null {
 		pro,
 		proUntil: proUntil ?? null,
 		consented: consented ?? false,
+		consent: toConsent(value.consent),
 		catalogue: items as CatalogueItem[]
 	};
 }

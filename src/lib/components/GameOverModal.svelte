@@ -18,6 +18,8 @@
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { AD_COINS, isCareerMode } from '#lib/game/career/config.js';
 	import { career } from '#lib/game/career/store.svelte.js';
+	import { telegram } from '#lib/stores/telegram.svelte.js';
+	import StarsOffer from '#lib/components/StarsOffer.svelte';
 	import type { RunReward } from '#lib/game/career/profile.js';
 	import type { ScoreCard } from '#lib/services/share.js';
 	import {
@@ -186,6 +188,13 @@
 	// The career payout happens once per opening of the sheet; a re-mounted result sheet for the
 	// same run is filtered out by the store's duplicate guard as well.
 	const careerState = career();
+	const account = telegram();
+	let reviving = $state(false);
+
+	/** Revival tokens on hand: the ones earned on this device plus the ones bought with Stars */
+	const revivesLeft = $derived(
+		careerState.profile.revives + (account.status === 'verified' ? account.wallet.revives : 0)
+	);
 	let reward = $state<RunReward | null>(null);
 	let adOpen = $state(false);
 	let adCoins = $state(0);
@@ -206,9 +215,16 @@
 		reward = untrack(() => careerState.awardRun({ mode: careerMode, score, outcome, isNewBest }));
 	});
 
-	function revive() {
-		// Modes outside the career layer have no token to spend
-		if (isCareerMode(mode) && !careerState.useRevive()) return;
+	async function revive() {
+		if (reviving) return;
+		// Modes outside the career layer have no token to spend. Earned tokens go first; a token
+		// bought with Stars is taken by the bot before the run continues, so it cannot be used twice.
+		if (isCareerMode(mode) && !careerState.useRevive()) {
+			reviving = true;
+			const spent = await account.spendRevive(mode);
+			reviving = false;
+			if (!spent) return;
+		}
 		soundManager().play('ui-toggle');
 		onRevive?.();
 	}
@@ -335,15 +351,23 @@
 			{/if}
 
 			{#if onRevive}
-				{#if !isCareerMode(mode) || careerState.profile.revives > 0}
-					<button type="button" class="btn-chunky bg-khaki text-lg" onclick={revive}>
+				{#if !isCareerMode(mode) || revivesLeft > 0}
+					<button
+						type="button"
+						class="btn-chunky bg-khaki text-lg"
+						disabled={reviving}
+						onclick={revive}
+					>
 						<IconHeartPulse class="size-5" aria-hidden="true" />
 						{#if isCareerMode(mode)}
-							{m.gameover_revive_left({ count: careerState.profile.revives })}
+							{m.gameover_revive_left({ count: revivesLeft })}
 						{:else}
 							{m.gameover_revive()}
 						{/if}
 					</button>
+				{:else if account.status === 'verified' && account.reviveItem}
+					<!-- One tap inside Telegram: once the revival arrives, the button above takes over -->
+					<StarsOffer item={account.reviveItem} compact />
 				{:else}
 					<a href={resolve('/shop')} class="btn-chunky bg-khaki text-lg">
 						<IconHeartPulse class="size-5" aria-hidden="true" />

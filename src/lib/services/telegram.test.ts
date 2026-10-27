@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
 	TelegramCallError,
+	endpointCode,
 	isTelegramLaunch,
 	parseMe,
+	startRoute,
 	telegramAppLink,
 	toCallError
 } from './telegram';
@@ -40,6 +42,20 @@ describe('endpoint errors', () => {
 		const own = new TelegramCallError('UNAVAILABLE');
 		expect(toCallError(own)).toBe(own);
 	});
+
+	it('carry the code an endpoint refused with', () => {
+		const refused = toCallError({
+			type: 'ENDPOINT_ERROR',
+			message: 'Consent to immediate delivery is required',
+			parameters: { code: 'CONSENT_REQUIRED' }
+		});
+		expect(endpointCode(refused)).toBe('CONSENT_REQUIRED');
+		expect(endpointCode(toCallError({ type: 'ENDPOINT_ERROR' }))).toBeNull();
+		expect(endpointCode(toCallError({ type: 'UNAUTHORIZED', parameters: { code: 'X' } }))).toBe(
+			null
+		);
+		expect(endpointCode(new Error('network'))).toBeNull();
+	});
 });
 
 describe('the me endpoint', () => {
@@ -60,6 +76,7 @@ describe('the me endpoint', () => {
 			pro: false,
 			proUntil: null,
 			consented: true,
+			consent: null,
 			catalogue: [REVIVE]
 		});
 		expect(
@@ -68,6 +85,20 @@ describe('the me endpoint', () => {
 		expect(parseMe({ ...body, pro: true, pro_until: '2026-11-27T00:00:00Z' })?.proUntil).toBe(
 			'2026-11-27T00:00:00Z'
 		);
+	});
+
+	it('reads the consent wording and keeps only https links', () => {
+		const consent = {
+			version: '2026-10-27',
+			text: 'Ich stimme ausdrücklich zu …',
+			terms: 'https://app1.tgcloud.ai/legal/agb.html',
+			withdrawal: 'javascript:alert(1)'
+		};
+		expect(parseMe({ ...body, consented: false, consent })?.consent).toEqual({
+			...consent,
+			withdrawal: ''
+		});
+		expect(parseMe({ ...body, consent: { version: '1', text: '' } })?.consent).toBeNull();
 	});
 
 	it('treats a missing consent or catalogue as none', () => {
@@ -87,6 +118,16 @@ describe('the me endpoint', () => {
 		expect(parseMe({ ...body, user: { id: '1', first_name: 'A' } })).toBeNull();
 		expect(parseMe({ ...body, pro: 'yes' })).toBeNull();
 		expect(parseMe({ ...body, pro_until: 5 })).toBeNull();
+	});
+});
+
+describe('a startapp link', () => {
+	it('opens the profile or the shop and nothing else', () => {
+		expect(startRoute('profile')).toBe('/profile');
+		expect(startRoute('shop')).toBe('/shop');
+		expect(startRoute('toString')).toBeNull();
+		expect(startRoute('../admin')).toBeNull();
+		expect(startRoute(null)).toBeNull();
 	});
 });
 
