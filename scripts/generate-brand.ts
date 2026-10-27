@@ -25,7 +25,14 @@ const BROWSERS = [
 const browser = BROWSERS.find((path) => path && existsSync(path));
 if (!browser) throw new Error('No Chromium browser found: set EDGE_PATH or CHROME_PATH');
 
-const PICTURES = [{ source: 'telegram-description.svg', output: 'telegram-description.png', width: 640, height: 360 }];
+const PICTURES = [
+	{
+		source: 'telegram-description.svg',
+		output: 'telegram-description.png',
+		width: 640,
+		height: 360
+	}
+];
 
 for (const { source, output, width, height } of PICTURES) {
 	execFileSync(browser, [
