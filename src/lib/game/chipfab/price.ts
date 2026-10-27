@@ -1,6 +1,6 @@
 /*
  * Street prices in dollars. Memory gets pricier per gigabyte the bigger the module is, and every
- * price is marked up by the running shortage meter. Jason Huang's flagship GPU follows the same
+ * price is marked up by the running shortage meter. Jensen Huang's flagship GPU follows the same
  * markup and climbs with every level, because why would it ever get cheaper.
  */
 import { moduleGb } from './ram';

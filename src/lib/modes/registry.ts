@@ -114,7 +114,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/blocks',
 		icon: IconBlocks,
 		tileClass: 'bg-khaki',
-		leaders: ['trump', 'modi', 'starmer'],
+		leaders: ['trump'],
 		name: m.mode_blocks_name,
 		description: m.mode_blocks_description
 	},
@@ -124,7 +124,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/minefield',
 		icon: IconBomb,
 		tileClass: 'bg-tie-red',
-		leaders: ['trump', 'khamenei', 'modi', 'starmer'],
+		leaders: ['trump', 'khamenei'],
 		name: m.mode_minefield_name,
 		description: m.mode_minefield_description
 	},
@@ -134,7 +134,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/convoy',
 		icon: IconShip,
 		tileClass: 'bg-flag-blue',
-		leaders: ['trump', 'putin', 'modi', 'starmer'],
+		leaders: ['trump', 'putin'],
 		name: m.mode_convoy_name,
 		description: m.mode_convoy_description
 	},
@@ -144,7 +144,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/merge',
 		icon: IconMerge,
 		tileClass: 'bg-skin',
-		leaders: ['trump', 'modi', 'starmer'],
+		leaders: ['trump'],
 		name: m.mode_merge_name,
 		description: m.mode_merge_description
 	},
@@ -154,7 +154,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/shootdown',
 		icon: IconCrosshair,
 		tileClass: 'bg-sky',
-		leaders: ['zelensky', 'khamenei', 'modi', 'starmer'],
+		leaders: ['zelensky', 'khamenei'],
 		name: m.mode_shootdown_name,
 		description: m.mode_shootdown_description
 	},
@@ -164,7 +164,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/pipeline',
 		icon: IconFuel,
 		tileClass: 'bg-mustard',
-		leaders: ['mbs', 'modi', 'starmer'],
+		leaders: ['mbs'],
 		name: m.mode_pipeline_name,
 		description: m.mode_pipeline_description
 	},
@@ -174,7 +174,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/flamingo',
 		icon: IconFeather,
 		tileClass: 'bg-skin',
-		leaders: ['zelensky', 'putin', 'modi', 'starmer'],
+		leaders: ['zelensky', 'putin'],
 		name: m.mode_flamingo_name,
 		description: m.mode_flamingo_description
 	},
@@ -184,7 +184,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/fury',
 		icon: IconBird,
 		tileClass: 'bg-explosion-yellow',
-		leaders: ['zelensky', 'putin', 'modi', 'starmer'],
+		leaders: ['zelensky', 'putin'],
 		name: m.mode_fury_name,
 		description: m.mode_fury_description
 	},
@@ -194,7 +194,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/chess',
 		icon: IconCastle,
 		tileClass: 'bg-banner-slate',
-		leaders: ['zelensky', 'putin', 'modi', 'starmer'],
+		leaders: ['zelensky', 'putin'],
 		name: m.mode_chess_name,
 		description: m.mode_chess_description
 	},
@@ -204,7 +204,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/dronewall',
 		icon: IconShield,
 		tileClass: 'bg-khaki',
-		leaders: ['zelensky', 'putin', 'modi', 'starmer'],
+		leaders: ['zelensky', 'putin'],
 		name: m.mode_dronewall_name,
 		description: m.mode_dronewall_description
 	},
@@ -214,7 +214,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/parking',
 		icon: IconParking,
 		tileClass: 'bg-sky',
-		leaders: ['erdogan', 'mbs', 'modi', 'starmer'],
+		leaders: ['erdogan', 'mbs'],
 		name: m.mode_parking_name,
 		description: m.mode_parking_description
 	},
@@ -224,7 +224,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/slice',
 		icon: IconRadar,
 		tileClass: 'bg-tie-red',
-		leaders: ['netanyahu', 'zelensky', 'modi', 'starmer'],
+		leaders: ['netanyahu', 'zelensky'],
 		name: m.mode_slice_name,
 		description: m.mode_slice_description
 	},
@@ -234,7 +234,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/whack',
 		icon: IconMegaphone,
 		tileClass: 'bg-explosion-yellow',
-		leaders: ['xi', 'modi', 'starmer'],
+		leaders: ['xi'],
 		name: m.mode_whack_name,
 		description: m.mode_whack_description
 	},
@@ -244,7 +244,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/runcomrade',
 		icon: IconFootprints,
 		tileClass: 'bg-mustard',
-		leaders: ['kim', 'modi', 'starmer'],
+		leaders: ['kim'],
 		name: m.mode_runcomrade_name,
 		description: m.mode_runcomrade_description
 	},
@@ -254,7 +254,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/beltroad',
 		icon: IconRoute,
 		tileClass: 'bg-skin',
-		leaders: ['xi', 'modi', 'starmer'],
+		leaders: ['xi', 'modi'],
 		name: m.mode_beltroad_name,
 		description: m.mode_beltroad_description
 	},
@@ -264,7 +264,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/maze',
 		icon: IconLandmark,
 		tileClass: 'bg-banner-slate',
-		leaders: ['merz', 'modi', 'starmer'],
+		leaders: ['merz'],
 		name: m.mode_maze_name,
 		description: m.mode_maze_description
 	},
@@ -284,7 +284,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/energiewende',
 		icon: IconZap,
 		tileClass: 'bg-explosion-yellow',
-		leaders: ['merz', 'macron', 'modi', 'starmer'],
+		leaders: ['merz', 'macron'],
 		name: m.mode_energiewende_name,
 		description: m.mode_energiewende_description
 	},
@@ -304,7 +304,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/venezuela',
 		icon: IconFlag,
 		tileClass: 'bg-mustard',
-		leaders: ['maduro', 'trump', 'modi', 'starmer'],
+		leaders: ['maduro', 'trump'],
 		name: m.mode_venezuela_name,
 		description: m.mode_venezuela_description
 	},
@@ -314,7 +314,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/sondage',
 		icon: IconVote,
 		tileClass: 'bg-flag-blue',
-		leaders: ['macron', 'modi', 'starmer'],
+		leaders: ['macron'],
 		name: m.mode_sondage_name,
 		description: m.mode_sondage_description
 	},
@@ -334,7 +334,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/chipfab',
 		icon: IconCpu,
 		tileClass: 'bg-sky',
-		leaders: ['modi', 'starmer'],
+		leaders: ['huang', 'altman', 'musk', 'zuckerberg'],
 		name: m.mode_chipfab_name,
 		description: m.mode_chipfab_description
 	},
@@ -344,7 +344,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/vault',
 		icon: IconVault,
 		tileClass: 'bg-explosion-yellow',
-		leaders: ['modi', 'starmer'],
+		leaders: ['merz', 'macron'],
 		name: m.mode_vault_name,
 		description: m.mode_vault_description
 	},
@@ -354,7 +354,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/veto',
 		icon: IconGavel,
 		tileClass: 'bg-flag-blue',
-		leaders: ['modi', 'starmer'],
+		leaders: ['trump', 'macron', 'xi', 'putin'],
 		name: m.mode_veto_name,
 		description: m.mode_veto_description
 	},
@@ -364,7 +364,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/balloon',
 		icon: IconWind,
 		tileClass: 'bg-sky',
-		leaders: ['xi', 'trump', 'modi', 'starmer'],
+		leaders: ['xi', 'trump'],
 		name: m.mode_balloon_name,
 		description: m.mode_balloon_description
 	},
@@ -374,7 +374,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/dome',
 		icon: IconSiren,
 		tileClass: 'bg-mustard',
-		leaders: ['modi', 'starmer'],
+		leaders: ['netanyahu'],
 		name: m.mode_dome_name,
 		description: m.mode_dome_description
 	},
@@ -384,7 +384,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/gpsliar',
 		icon: IconCompass,
 		tileClass: 'bg-flag-blue',
-		leaders: ['modi', 'starmer'],
+		leaders: ['putin', 'zelensky'],
 		name: m.mode_gpsliar_name,
 		description: m.mode_gpsliar_description
 	},
@@ -394,7 +394,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/leakpatrol',
 		icon: IconDroplets,
 		tileClass: 'bg-banner-slate',
-		leaders: ['trump', 'modi', 'starmer'],
+		leaders: ['trump'],
 		name: m.mode_leakpatrol_name,
 		description: m.mode_leakpatrol_description
 	},
@@ -404,7 +404,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/tycoon',
 		icon: IconDrill,
 		tileClass: 'bg-tie-red',
-		leaders: ['modi', 'starmer'],
+		leaders: ['mbs', 'trump'],
 		name: m.mode_tycoon_name,
 		description: m.mode_tycoon_description
 	},
@@ -414,7 +414,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/wordle',
 		icon: IconSpellCheck,
 		tileClass: 'bg-khaki',
-		leaders: ['modi', 'starmer'],
+		leaders: [],
 		name: m.mode_wordle_name,
 		description: m.mode_wordle_description
 	},
@@ -424,7 +424,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/maple',
 		icon: IconLeaf,
 		tileClass: 'bg-mustard',
-		leaders: ['modi', 'starmer'],
+		leaders: ['trump'],
 		name: m.mode_maple_name,
 		description: m.mode_maple_description
 	},
@@ -434,7 +434,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/rareearth',
 		icon: IconContainer,
 		tileClass: 'bg-skin',
-		leaders: ['modi', 'starmer'],
+		leaders: ['xi', 'modi'],
 		name: m.mode_rareearth_name,
 		description: m.mode_rareearth_description
 	},
@@ -444,7 +444,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/raid',
 		icon: IconSwords,
 		tileClass: 'bg-tie-red',
-		leaders: ['modi', 'starmer'],
+		leaders: ['zelensky', 'putin'],
 		name: m.mode_raid_name,
 		description: m.mode_raid_description
 	},
@@ -454,7 +454,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/fleethunt',
 		icon: IconRocket,
 		tileClass: 'bg-flag-blue',
-		leaders: ['zelensky', 'putin', 'modi', 'starmer'],
+		leaders: ['zelensky', 'putin'],
 		name: m.mode_fleethunt_name,
 		description: m.mode_fleethunt_description
 	},
@@ -464,7 +464,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/redsquare',
 		icon: IconMusic,
 		tileClass: 'bg-tie-red',
-		leaders: ['putin', 'modi', 'starmer'],
+		leaders: ['putin'],
 		name: m.mode_redsquare_name,
 		description: m.mode_redsquare_description
 	},
@@ -474,7 +474,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/petrobras',
 		icon: IconHandshake,
 		tileClass: 'bg-mustard',
-		leaders: ['lula', 'zuckerberg', 'modi', 'starmer'],
+		leaders: ['lula', 'zuckerberg'],
 		name: m.mode_petrobras_name,
 		description: m.mode_petrobras_description
 	},
@@ -483,7 +483,7 @@ export const MODES: readonly GameMode[] = [
 		status: 'coming-soon',
 		icon: IconBinoculars,
 		tileClass: 'bg-banner-slate',
-		leaders: ['tusk', 'modi', 'starmer'],
+		leaders: ['tusk', 'zelensky', 'putin'],
 		name: m.mode_bordershift_name,
 		description: m.mode_bordershift_description
 	},
@@ -492,7 +492,7 @@ export const MODES: readonly GameMode[] = [
 		status: 'coming-soon',
 		icon: IconSailboat,
 		tileClass: 'bg-sky',
-		leaders: ['starmer', 'milei', 'modi'],
+		leaders: ['starmer', 'milei'],
 		name: m.mode_falklands_name,
 		description: m.mode_falklands_description
 	}

@@ -12,6 +12,7 @@ import {
 	cameoFlag,
 	cameoPortrait,
 	flagAsset,
+	guestFlag,
 	guestPortrait,
 	putinPortrait,
 	type CameoId,
@@ -21,7 +22,10 @@ import { mascotImage, type MascotPose } from './character.js';
 
 export type LeaderId = CameoId | GuestLeaderId | 'trump';
 
-type GuestLeaderId = Extract<GuestId, 'kim' | 'maduro' | 'zuckerberg'>;
+type GuestLeaderId = Extract<
+	GuestId,
+	'kim' | 'maduro' | 'zuckerberg' | 'huang' | 'altman' | 'musk'
+>;
 
 export interface Leader {
 	id: LeaderId;
@@ -59,8 +63,27 @@ export const LEADERS: readonly Leader[] = [
 		// Not a head of state: the platform owner, kept next to the other guests
 		id: 'zuckerberg',
 		name: m.leader_zuckerberg_name,
-		flag: flagAsset('us'),
+		flag: guestFlag('zuckerberg'),
 		portrait: guestPortrait('zuckerberg')
+	},
+	{
+		// The leather jacket from Chip Fab Rush, now with a flag
+		id: 'huang',
+		name: m.leader_huang_name,
+		flag: guestFlag('huang'),
+		portrait: guestPortrait('huang')
+	},
+	{
+		id: 'altman',
+		name: m.leader_altman_name,
+		flag: guestFlag('altman'),
+		portrait: guestPortrait('altman')
+	},
+	{
+		id: 'musk',
+		name: m.leader_musk_name,
+		flag: guestFlag('musk'),
+		portrait: guestPortrait('musk')
 	}
 ];
 

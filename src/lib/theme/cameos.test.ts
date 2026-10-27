@@ -8,6 +8,7 @@ import {
 	cameoAsset,
 	cameoFlag,
 	cameoPortrait,
+	guestFlag,
 	guestPortrait,
 	pickCameo,
 	pickCameoMessage,
@@ -51,9 +52,27 @@ describe('cameos', () => {
 	});
 
 	it('has a portrait for each guest', () => {
-		for (const guest of ['vance', 'kim', 'maduro', 'zuckerberg'] as const) {
+		for (const guest of [
+			'vance',
+			'kim',
+			'maduro',
+			'zuckerberg',
+			'huang',
+			'altman',
+			'musk'
+		] as const) {
 			expect(guestPortrait(guest)).toBe(`/assets/cameos/${guest}.svg`);
 			expect(existsSync(`static/assets/cameos/${guest}.svg`), guest).toBe(true);
+		}
+	});
+
+	it('puts a company logo on a white ground behind each tech guest', () => {
+		expect(guestFlag('zuckerberg')).toBe('/assets/flags/meta.svg');
+		expect(guestFlag('huang')).toBe('/assets/flags/novideo.svg');
+		expect(guestFlag('altman')).toBe('/assets/flags/openai.svg');
+		expect(guestFlag('musk')).toBe('/assets/flags/spacex.svg');
+		for (const flag of ['meta', 'novideo', 'openai', 'spacex']) {
+			expect(existsSync(`static/assets/flags/${flag}.svg`), flag).toBe(true);
 		}
 	});
 

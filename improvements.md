@@ -629,20 +629,25 @@ _Loop: run a task force across the South Atlantic while the other side counts th
 
 The start screen filters modes by leader, so a leader only earns a place if several modes feature
 them. The roster today is Xi, Zelensky, Putin, Merz, MBS, Khamenei, Netanyahu, Erdoğan, Macron, Modi,
-Starmer, Milei, Lula, Tusk, the US mascot and the guests Kim, Maduro and Zuckerberg.
+Starmer, Milei, Lula, Tusk, the US mascot and the guests Kim, Maduro, Zuckerberg, Huang, Altman and
+Musk.
 
 - [x] Add cameos for India (Modi), Great Britain (Starmer), Argentina (Milei), Brazil (Lula) and
       Poland (Tusk), with portraits and flags in `src/lib/theme/cameos.ts`.
-- [x] Add India and Great Britain to every mode's leader list; the catch is that both filters then
-      return the whole grid, so if that feels flat, cover two thirds of the modes instead and say so
-      on the About page. (Kept the cat ritual and the centrifuge countryless, since those two have
-      no country to begin with.)
+- [x] Give India and Great Britain a few relevant cards instead of every card; a leader on every
+      mode makes both filters return the whole grid. India now sits with the Belt and Road, Suez and
+      rare earths, Britain with Suez and the Falklands. (Suez and the rare-earth squeeze were the
+      natural overlap; the cat ritual and the centrifuge stay countryless.)
 - [x] Add Mark Zuckerberg as a guest cameo rather than a head of state, next to Kim and Maduro, for
       the Brazil mode.
+- [x] Add Jensen Huang (Novideo), Sam Altman (OpenAI) and Elon Musk (SpaceX) as tech guests, with
+      company logos on white grounds in place of country flags, and put them on the Chip Fab card
+      next to Zuckerberg. Their portraits are original caricatures: the leather jacket with a GPU,
+      the sleep-deprived hoodie with a glowing orb, and the rocket salesman.
 - [x] Check that four flags still fit the corner of a game card on a 390 px screen, and that the
       leader strip can hold the longer roster without a second row. (Measured: the widest card has
-      four flags in one 108 px strip inside a 169 px card, and the eighteen portraits fill exactly
-      three rows of six 48 px cells.)
+      four flags in one 108 px strip inside a 169 px card, and the twenty-one portraits fill three
+      full rows of six plus a short last row.)
 
 ---
 

@@ -2,7 +2,7 @@
 	Chip Fab Rush (roadmap 3.13): every level has two stages. Stage A stacks a silicon wafer layer by
 	layer, Stage B merges the memory modules that wafer yields (4 GB, 8 GB, 16 GB and up). The
 	shortage meter keeps rising; big modules push it down, and when it is full a heart is lost.
-	Jason Huang of Novideo, the tech boss in the leather jacket, cheers, waits or sulks along the way.
+	Jensen Huang of Novideo, the tech boss in the leather jacket, cheers, waits or sulks along the way.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -62,7 +62,7 @@
 		sulks: m.chipfab_jacket_alt_sulks
 	};
 
-	// Game over: Jason Huang cheers if the run made a big module, otherwise he sulks
+	// Game over: Jensen Huang cheers if the run made a big module, otherwise he sulks
 	const cameo = $derived.by(() => {
 		const pose: JacketPose = game.topTier >= CHEER_TIER ? 'cheers' : 'sulks';
 		return {

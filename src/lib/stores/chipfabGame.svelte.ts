@@ -1,5 +1,5 @@
 /*
- * Chip Fab Rush game store: wraps the pure rules with visual effects, Jason Huang's reactions,
+ * Chip Fab Rush game store: wraps the pure rules with visual effects, Jensen Huang's reactions,
  * sounds and personal bests. The simulation state is a plain object that the stacker canvas reads
  * every frame; only what the page chrome shows (score, hearts, shortage, board) is reactive,
  * synced after each step.
@@ -91,7 +91,7 @@ export class ChipFabGame {
 	/** Modules that were just merged away and are still sliding onto their partner */
 	leaving = $state.raw<LeavingModule[]>([]);
 	toast = $state.raw<Toast | null>(null);
-	/** A recent event Jason Huang reacts to; null lets the shortage decide his pose */
+	/** A recent event Jensen Huang reacts to; null lets the shortage decide his pose */
 	reaction = $state<JacketPose | null>(null);
 	/** Which of the two sulking lines the game-over cameo uses */
 	sulkVariant = $state(0);
@@ -127,7 +127,7 @@ export class ChipFabGame {
 		this.#syncChrome();
 	}
 
-	/** The pose Jason Huang shows right now */
+	/** The pose Jensen Huang shows right now */
 	get pose(): JacketPose {
 		return jacketPose(this.shortage, this.reaction);
 	}

@@ -22,20 +22,38 @@ describe('mode leaders', () => {
 	});
 
 	it('filters by leader and keeps registry order', () => {
-		expect(modesFeaturing('xi').map((mode) => mode.id)).toEqual(['whack', 'beltroad', 'balloon']);
+		expect(modesFeaturing('xi').map((mode) => mode.id)).toEqual([
+			'whack',
+			'beltroad',
+			'veto',
+			'balloon',
+			'rareearth'
+		]);
 		expect(modesFeaturing('trump').map((mode) => mode.id)).toEqual([
 			'blocks',
 			'minefield',
 			'convoy',
 			'merge',
 			'venezuela',
+			'veto',
 			'balloon',
-			'leakpatrol'
+			'leakpatrol',
+			'tycoon',
+			'maple'
 		]);
 	});
 
+	it('does not put India or Britain on every card', () => {
+		expect(modesFeaturing('modi').map((mode) => mode.id)).toEqual([
+			'beltroad',
+			'suez',
+			'rareearth'
+		]);
+		expect(modesFeaturing('starmer').map((mode) => mode.id)).toEqual(['suez', 'falklands']);
+	});
+
 	it('looks a mode up by id and rejects an unknown one', () => {
-		expect(modeById('chess').leaders).toEqual(['zelensky', 'putin', 'modi', 'starmer']);
+		expect(modeById('chess').leaders).toEqual(['zelensky', 'putin']);
 		expect(() => modeById('nope' as never)).toThrow('Unknown mode');
 	});
 
@@ -44,7 +62,11 @@ describe('mode leaders', () => {
 		expect(modeById('petrobras').leaders).toContain('lula');
 		expect(modeById('petrobras').leaders).toContain('zuckerberg');
 		expect(modeById('bordershift').leaders).toContain('tusk');
-		expect(modeById('falklands').leaders).toEqual(['starmer', 'milei', 'modi']);
+		expect(modeById('falklands').leaders).toEqual(['starmer', 'milei']);
+	});
+
+	it('gives the tech guests a home in the chip fab', () => {
+		expect(modeById('chipfab').leaders).toEqual(['huang', 'altman', 'musk', 'zuckerberg']);
 	});
 });
 

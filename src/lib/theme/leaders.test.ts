@@ -9,7 +9,10 @@ describe('leaders', () => {
 			...CAMEOS.map((cameo) => cameo.id),
 			'kim',
 			'maduro',
-			'zuckerberg'
+			'zuckerberg',
+			'huang',
+			'altman',
+			'musk'
 		]);
 	});
 
@@ -19,6 +22,13 @@ describe('leaders', () => {
 		expect(leaderById('modi').flag).toBe('/assets/flags/in.svg');
 		expect(leaderById('lula').flag).toBe('/assets/flags/br.svg');
 		expect(() => leaderById('nope' as never)).toThrow('Unknown leader');
+	});
+
+	it('gives the company guests a logo on a white ground instead of a country', () => {
+		expect(leaderById('zuckerberg').flag).toBe('/assets/flags/meta.svg');
+		expect(leaderById('huang').flag).toBe('/assets/flags/novideo.svg');
+		expect(leaderById('altman').flag).toBe('/assets/flags/openai.svg');
+		expect(leaderById('musk').flag).toBe('/assets/flags/spacex.svg');
 	});
 });
 

@@ -183,13 +183,39 @@ export function cameoPortrait(id: CameoId): string {
 }
 
 /** Guests that appear inside a mode or on the start screen rather than on the game-over roster */
-export type GuestId = 'vance' | 'kim' | 'maduro' | 'zuckerberg';
+export type GuestId = 'vance' | 'kim' | 'maduro' | 'zuckerberg' | 'huang' | 'altman' | 'musk';
 
 /** Add a guest here once its portrait is in static/assets/cameos/<id>.svg */
-const SUPPLIED_GUESTS: readonly GuestId[] = ['vance', 'kim', 'maduro', 'zuckerberg'];
+const SUPPLIED_GUESTS: readonly GuestId[] = [
+	'vance',
+	'kim',
+	'maduro',
+	'zuckerberg',
+	'huang',
+	'altman',
+	'musk'
+];
 
 export function guestPortrait(id: GuestId): string {
 	return SUPPLIED_GUESTS.includes(id) ? `${CAMEO_DIRECTORY}/${id}.svg` : CAMEO_PLACEHOLDER;
+}
+
+/**
+ * Company flags for the guests who are not heads of state: a logo on a white ground instead of a
+ * country. They are drawn as original parody marks, sized like the country flags.
+ */
+const GUEST_FLAGS: Record<GuestId, string> = {
+	vance: 'us',
+	kim: 'kp',
+	maduro: 've',
+	zuckerberg: 'meta',
+	huang: 'novideo',
+	altman: 'openai',
+	musk: 'spacex'
+};
+
+export function guestFlag(id: GuestId): string {
+	return flagAsset(GUEST_FLAGS[id]);
 }
 
 /** Putin's moods: `calm` is the default roster portrait (sad and old), the others are extra faces */
