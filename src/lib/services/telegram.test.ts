@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
 	TelegramCallError,
 	endpointCode,
+	fromApiReply,
 	isTelegramLaunch,
 	parseMe,
 	startRoute,
 	telegramAppLink,
-	toCallError
+	toCallError,
+	toLaunchUser
 } from './telegram';
 
 const USER = { id: 279058397, first_name: 'Vlad', username: 'vlad' };
@@ -71,7 +73,7 @@ describe('the me endpoint', () => {
 
 	it('accepts the documented shape', () => {
 		expect(parseMe(body)).toEqual({
-			user: { id: USER.id, username: 'vlad', firstName: 'Vlad' },
+			user: { id: USER.id, username: 'vlad', firstName: 'Vlad', photoUrl: null },
 			revives: 3,
 			pro: false,
 			proUntil: null,
@@ -135,5 +137,45 @@ describe('opening the game in Telegram', () => {
 	it('links to the bot with a start parameter', () => {
 		expect(telegramAppLink()).toBe('https://t.me/game_ww3_bot');
 		expect(telegramAppLink('profile')).toBe('https://t.me/game_ww3_bot?startapp=profile');
+	});
+});
+
+describe('the account the Mini App was opened with', () => {
+	it('takes name, username and photo from the launch', () => {
+		expect(toLaunchUser({ ...USER, photo_url: 'https://t.me/i/userpic/320/vlad.jpg' })).toEqual({
+			id: USER.id,
+			username: 'vlad',
+			firstName: 'Vlad',
+			photoUrl: 'https://t.me/i/userpic/320/vlad.jpg'
+		});
+	});
+
+	it('drops a photo that is not https and refuses a launch without an id', () => {
+		expect(
+			toLaunchUser({ id: 1, first_name: 'A', photo_url: 'javascript:alert(1)' })?.photoUrl
+		).toBeNull();
+		expect(toLaunchUser({ first_name: 'A' })).toBeNull();
+		expect(toLaunchUser(null)).toBeNull();
+	});
+});
+
+describe("the bot's own server", () => {
+	it('unwraps a successful answer', () => {
+		expect(fromApiReply(200, { ok: true, result: { a: 1 } })).toEqual({ a: 1 });
+	});
+
+	it('reports refusals like the Serverless bridge', () => {
+		const refused = () =>
+			fromApiReply(400, { ok: false, description: 'No', parameters: { code: 'NO_REVIVES' } });
+		expect(refused).toThrow(TelegramCallError);
+		try {
+			refused();
+		} catch (error) {
+			expect(endpointCode(error)).toBe('NO_REVIVES');
+		}
+		expect(() => fromApiReply(401, { ok: false })).toThrow(
+			expect.objectContaining({ type: 'UNAUTHORIZED' })
+		);
+		expect(() => fromApiReply(502, null)).toThrow(expect.objectContaining({ type: 'UNKNOWN' }));
 	});
 });

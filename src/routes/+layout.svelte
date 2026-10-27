@@ -5,6 +5,8 @@
 	import { resolve } from '$app/paths';
 	import '../app.css';
 	import { APP_NAME } from '#lib/config.js';
+	import { streakDeadline } from '#lib/game/career/profile.js';
+	import { career } from '#lib/game/career/store.svelte.js';
 	import { launchStartParam, startRoute } from '#lib/services/telegram.js';
 	import { clipPreload } from '#lib/sound/preload.svelte.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
@@ -12,12 +14,23 @@
 
 	let { children } = $props();
 
+	const account = telegram();
+	const careerState = career();
+
+	// Inside Telegram the bot learns when the streak breaks, to remind the player two hours before;
+	// this runs again after every claim, which moves the deadline a day on
+	$effect(() => {
+		if (account.status !== 'verified') return;
+		const profile = careerState.profile;
+		void account.syncStreak(profile.streak, streakDeadline(profile));
+	});
+
 	onMount(() => {
 		// Voice clips are fetched while the player is still on the start screen; a muted player
 		// starts the same prefetch when they turn sound on.
 		if (!soundManager().muted) clipPreload().start();
 		// Early, while the URL hash still holds the Mini App launch parameters
-		void telegram().start();
+		void account.start();
 		// A `startapp=shop` or `startapp=profile` link opens that page instead of the start screen
 		void launchStartParam().then((param) => {
 			const route = startRoute(param);

@@ -164,6 +164,18 @@ function isYesterday(day: string | null, now: Date): boolean {
 	return dayKey(yesterday) === day;
 }
 
+/**
+ * When the daily-reward streak breaks: the local midnight after the day following the last claim,
+ * since a claim keeps the streak only when it comes the next day. Null without a streak, or once
+ * it is already broken.
+ */
+export function streakDeadline(profile: CareerProfile, now: Date = new Date()): Date | null {
+	const match = profile.lastBonusDay?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+	if (!match || profile.streak < 1) return null;
+	const deadline = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]) + 2);
+	return deadline.getTime() > now.getTime() ? deadline : null;
+}
+
 // ---------------------------------------------------------------------------------------------
 // A finished run
 

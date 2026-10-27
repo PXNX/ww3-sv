@@ -29,6 +29,7 @@ import {
 	playedCount,
 	recentModes,
 	reviveCost,
+	streakDeadline,
 	useRevive,
 	watchAd,
 	withToday,
@@ -243,6 +244,28 @@ describe('the daily reward', () => {
 		expect(claim.levelsGained).toBe(1);
 		expect(claim.coins).toBe(DAILY_TRACK[0].coins + LEVEL_UP_COINS);
 		expect(claim.profile.coins).toBe(STARTING_COINS + DAILY_TRACK[0].coins + LEVEL_UP_COINS);
+	});
+});
+
+describe('the streak deadline', () => {
+	it('is the midnight after the day following the last claim', () => {
+		const claimed = { ...newCareer(DAY1), streak: 3, lastBonusDay: '2026-10-26' };
+		expect(streakDeadline(claimed, DAY1)).toEqual(new Date(2026, 9, 28));
+		expect(streakDeadline(claimed, DAY2)).toEqual(new Date(2026, 9, 28));
+	});
+
+	it('is gone without a streak or once the streak broke', () => {
+		expect(streakDeadline(newCareer(DAY1), DAY1)).toBeNull();
+		const claimed = { ...newCareer(DAY1), streak: 3, lastBonusDay: '2026-10-26' };
+		expect(streakDeadline(claimed, DAY4)).toBeNull();
+		expect(streakDeadline({ ...claimed, streak: 0 }, DAY1)).toBeNull();
+	});
+
+	it('moves on with a claim', () => {
+		const claim = claimDaily(veteran(), DAY1)!;
+		expect(streakDeadline(claim.profile, DAY1)).toEqual(new Date(2026, 9, 28));
+		const nextDay = { ...claim.profile, streak: 2, lastBonusDay: '2026-10-27' };
+		expect(streakDeadline(nextDay, DAY2)).toEqual(new Date(2026, 9, 29));
 	});
 });
 

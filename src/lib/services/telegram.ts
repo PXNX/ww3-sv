@@ -1,9 +1,10 @@
 /*
- * The Telegram Mini App bridge. The backend runs on Telegram Serverless: the game calls named
- * endpoints through `Telegram.WebApp.Serverless.call`, and Telegram verifies the player's initData
- * itself, so the game never handles the token. Telegram's script is injected only when the page
- * was opened as a Mini App (the launch puts `tgWebAppData` in the URL hash); a browser visit loads
- * nothing extra. The initData is never read into storage or logs here.
+ * The Telegram Mini App bridge. The game calls the bot's named endpoints through
+ * `Telegram.WebApp.Serverless.call` when the bot runs on Telegram Serverless; otherwise it posts to
+ * the bot's own server (VITE_TELEGRAM_API_URL, set at build time) with the initData in a header,
+ * and that server checks the signature. Either way the game never handles the bot token. Telegram's script is
+ * injected only when the page was opened as a Mini App (the launch puts `tgWebAppData` in the URL
+ * hash); a browser visit loads nothing extra. The initData is never read into storage or logs here.
  */
 
 const SCRIPT_URL = 'https://telegram.org/js/telegram-web-app.js';
@@ -35,10 +36,11 @@ export type InvoiceStatus = 'paid' | 'cancelled' | 'failed' | 'pending';
 
 interface TelegramWebApp {
 	initData?: string;
-	initDataUnsafe?: { start_param?: string };
+	initDataUnsafe?: { start_param?: string; user?: unknown };
 	ready?: () => void;
 	Serverless?: ServerlessApi;
 	openInvoice?: (url: string, callback: (status: string) => void) => void;
+	requestWriteAccess?: (callback: (allowed: boolean) => void) => void;
 }
 
 type TelegramWindow = Window & { Telegram?: { WebApp?: TelegramWebApp } };
@@ -117,11 +119,56 @@ export function toCallError(error: unknown): TelegramCallError {
 	return new TelegramCallError('UNKNOWN', message);
 }
 
-/** Calls a Serverless endpoint; rejects with a TelegramCallError when it fails */
+/** The bot's own server, used when the bot does not run on Telegram Serverless */
+function apiUrl(): string {
+	const url: string = import.meta.env.VITE_TELEGRAM_API_URL ?? '';
+	return url.startsWith('https://') ? url.replace(/\/+$/, '') : '';
+}
+
+/**
+ * Unwraps what the bot's server answered (`{ ok: true, result }`), or throws the TelegramCallError
+ * the Serverless bridge would report: 401 is a refused identity, 400 an endpoint's refusal.
+ */
+export function fromApiReply(status: number, body: unknown): unknown {
+	if (isRecord(body) && body.ok === true && status === 200) return body.result;
+	const reply = isRecord(body) ? body : {};
+	if (status === 401) throw toCallError({ ...reply, type: 'UNAUTHORIZED' });
+	if (status === 400) throw toCallError({ ...reply, type: 'ENDPOINT_ERROR' });
+	throw new TelegramCallError(
+		'UNKNOWN',
+		typeof reply.description === 'string' ? reply.description : undefined
+	);
+}
+
+async function postToApi<T>(
+	url: string,
+	initData: string,
+	name: string,
+	input: unknown
+): Promise<T> {
+	let response: Response;
+	try {
+		response = await fetch(`${url}/api/${name}`, {
+			method: 'POST',
+			headers: { 'content-type': 'application/json', 'x-telegram-init-data': initData },
+			body: JSON.stringify(input)
+		});
+	} catch (error) {
+		throw toCallError(error);
+	}
+	const body: unknown = await response.json().catch(() => null);
+	return fromApiReply(response.status, body) as T;
+}
+
+/** Calls one of the bot's endpoints; rejects with a TelegramCallError when it fails */
 export async function call<T>(name: string, input: unknown = {}): Promise<T> {
 	const app = await loadTelegram();
 	const serverless = app?.Serverless;
-	if (!serverless) throw new TelegramCallError('UNAVAILABLE');
+	if (!serverless) {
+		const url = apiUrl();
+		if (!app?.initData || !url) throw new TelegramCallError('UNAVAILABLE');
+		return postToApi<T>(url, app.initData, name, input);
+	}
 	return new Promise<T>((resolve, reject) => {
 		try {
 			serverless.call(name, input, (error, result) => {
@@ -164,6 +211,49 @@ export interface TelegramUser {
 	id: number;
 	username: string | null;
 	firstName: string;
+	/** Telegram's profile photo, when the launch carries one (an https URL) */
+	photoUrl: string | null;
+}
+
+/**
+ * The Telegram account the Mini App was opened with, read from the launch data without waiting
+ * for the bot: good for showing who is playing, never for trusting (the bot checks that itself).
+ */
+export function toLaunchUser(value: unknown): TelegramUser | null {
+	if (!isRecord(value)) return null;
+	const { id, username, first_name: firstName, photo_url: photoUrl } = value;
+	if (typeof id !== 'number' || !Number.isSafeInteger(id) || typeof firstName !== 'string') {
+		return null;
+	}
+	return {
+		id,
+		username: typeof username === 'string' && username !== '' ? username : null,
+		firstName,
+		photoUrl: typeof photoUrl === 'string' && photoUrl.startsWith('https://') ? photoUrl : null
+	};
+}
+
+/** The launch's Telegram account, once Telegram is loaded; null outside a Mini App */
+export async function launchUser(): Promise<TelegramUser | null> {
+	const app = await loadTelegram();
+	return toLaunchUser(app?.initDataUnsafe?.user);
+}
+
+/**
+ * Asks Telegram's own dialog whether the bot may message the player (for streak reminders);
+ * resolves true when it may. Players who already started the bot are not asked again by Telegram.
+ */
+export async function requestWriteAccess(): Promise<boolean> {
+	const app = await loadTelegram();
+	const request = app?.requestWriteAccess;
+	if (!request) return false;
+	return new Promise((resolve) => {
+		try {
+			request((allowed) => resolve(allowed === true));
+		} catch {
+			resolve(false);
+		}
+	});
 }
 
 /** One thing the bot sells, priced and described by the server */
@@ -243,7 +333,8 @@ export function parseMe(value: unknown): TelegramMe | null {
 		user: {
 			id,
 			username: typeof username === 'string' && username !== '' ? username : null,
-			firstName
+			firstName,
+			photoUrl: null
 		},
 		revives,
 		pro,

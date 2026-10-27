@@ -1,14 +1,18 @@
 /*
  * The Telegram account store: whether the game runs as a Mini App and, if so, who the player is
- * and what they bought, as reported by the Serverless `me` endpoint. Outside Telegram it stays
- * empty and the game keeps running on the local profile alone.
+ * and what they bought. The Telegram account is taken from the launch at once (name and photo for
+ * display); the bot's `me` endpoint then confirms it and adds the purchases. Outside Telegram it
+ * stays empty and the game keeps running on the local profile alone.
  */
+import { localStore } from '#lib/services/storage.js';
 import {
 	call,
 	endpointCode,
+	launchUser,
 	loadTelegram,
 	openInvoice,
 	parseMe,
+	requestWriteAccess,
 	toCallError,
 	type CatalogueItem,
 	type PurchaseConsent,
@@ -33,6 +37,9 @@ const BOOKING_POLLS = 6;
 const BOOKING_POLL_MS = 1000;
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Set once Telegram's "allow messages" dialog was shown on this device, so it is asked only once */
+const WRITE_ACCESS_KEY = 'telegram:write-access-asked';
 
 export type TelegramStatus =
 	/** A normal browser visit, or the Telegram script could not be loaded */
@@ -61,6 +68,8 @@ class TelegramStore {
 	busy = $state(false);
 
 	#started = false;
+	/** The last streak report the bot accepted, so an unchanged streak is not sent again */
+	#streakSent = '';
 
 	get inTelegram(): boolean {
 		return this.status !== 'browser';
@@ -72,7 +81,33 @@ class TelegramStore {
 		this.#started = true;
 		const app = await loadTelegram();
 		if (!app) return;
+		this.user = await launchUser();
 		await this.refresh();
+	}
+
+	/**
+	 * Tells the bot when the daily-reward streak breaks, so it can send a reminder two hours before.
+	 * The first time a streak is reported, Telegram asks the player whether the bot may message them.
+	 */
+	async syncStreak(streak: number, deadline: Date | null): Promise<void> {
+		if (this.status !== 'verified') return;
+		const expiresAt = deadline && streak > 0 ? Math.floor(deadline.getTime() / 1000) : null;
+		const key = `${streak}:${expiresAt}`;
+		if (key === this.#streakSent) return;
+		this.#streakSent = key;
+
+		let writeAccess = false;
+		const storage = localStore();
+		if (expiresAt !== null && !storage.read<boolean>(WRITE_ACCESS_KEY, false)) {
+			storage.write(WRITE_ACCESS_KEY, true);
+			writeAccess = await requestWriteAccess();
+		}
+		try {
+			await call('streak', { streak, expires_at: expiresAt, write_access: writeAccess });
+		} catch {
+			// A missed report only costs one reminder; try again on the next change
+			this.#streakSent = '';
+		}
 	}
 
 	item(sku: string): CatalogueItem | undefined {
@@ -158,7 +193,8 @@ class TelegramStore {
 				this.status = 'error';
 				return;
 			}
-			this.user = me.user;
+			// The bot's answer confirms the account; the photo only comes with the launch
+			this.user = { ...me.user, photoUrl: me.user.photoUrl ?? this.user?.photoUrl ?? null };
 			this.wallet = { revives: me.revives };
 			this.pro = me.pro;
 			this.proUntil = me.proUntil;

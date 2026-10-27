@@ -1,7 +1,8 @@
 <!--
 	The player's profile: the agent big and editable, the career at a glance, and the Telegram
-	account when the game runs as a Mini App. The Telegram card only shows who Telegram says the
-	player is and what they bought; buying happens elsewhere.
+	account when the game runs as a Mini App. The Telegram card shows the account the Mini App was
+	opened with right away (name and photo), and what the player bought once the bot confirmed it;
+	buying happens elsewhere.
 -->
 <script lang="ts">
 	import { resolve } from '$app/paths';
@@ -87,11 +88,31 @@
 			{m.profile_telegram()}
 		</h2>
 
+		{#if session.user}
+			<div class="flex items-center gap-3">
+				{#if session.user.photoUrl}
+					<img
+						src={session.user.photoUrl}
+						alt=""
+						class="size-12 shrink-0 rounded-full border-2 border-ink object-cover"
+						referrerpolicy="no-referrer"
+					/>
+				{:else}
+					<span
+						class="grid size-12 shrink-0 place-items-center rounded-full border-2 border-ink bg-flag-blue font-display text-xl font-bold text-paper"
+						aria-hidden="true">{session.user.firstName.slice(0, 1).toUpperCase()}</span
+					>
+				{/if}
+				<p class="flex items-center gap-1.5 font-bold">
+					{#if session.status === 'verified'}
+						<IconBadgeCheck class="size-5 shrink-0 text-khaki" aria-hidden="true" />
+					{/if}
+					{m.profile_telegram_signed_in({ name: displayName })}
+				</p>
+			</div>
+		{/if}
+
 		{#if session.status === 'verified'}
-			<p class="flex items-center gap-1.5 font-bold">
-				<IconBadgeCheck class="size-5 text-khaki" aria-hidden="true" />
-				{m.profile_telegram_signed_in({ name: displayName })}
-			</p>
 			<p class="text-sm">{m.profile_telegram_wallet({ revives: session.wallet.revives })}</p>
 			{#if session.pro}
 				<p class="text-sm font-bold">
