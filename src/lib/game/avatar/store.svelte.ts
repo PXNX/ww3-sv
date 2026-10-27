@@ -5,7 +5,7 @@
  */
 import { localStore } from '#lib/services/storage.js';
 import { cyclePart, DEFAULT_LOOK, parseLook, randomLook, withPart } from './look';
-import type { AvatarLook, LookPart } from './look';
+import type { AvatarLook, LookAllowed, LookPart } from './look';
 
 const AVATAR_KEY = 'avatar:look';
 
@@ -30,8 +30,8 @@ class AvatarStore {
 		this.#commit(cyclePart(this.look, part, step));
 	}
 
-	randomize() {
-		this.#commit(randomLook());
+	randomize(allowed?: LookAllowed) {
+		this.#commit(randomLook(undefined, allowed));
 	}
 
 	reset() {

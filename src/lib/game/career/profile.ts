@@ -73,6 +73,8 @@ export interface CareerProfile {
 	revives: number;
 	/** Consecutive days the daily reward was collected */
 	streak: number;
+	/** The longest such streak ever reached, so daily-loss never takes an unlocked look back */
+	bestStreak: number;
 	/** The last day the daily reward was collected, or null */
 	lastBonusDay: string | null;
 	challenge: DailyChallenge;
@@ -136,6 +138,7 @@ export function newCareer(now: Date = new Date()): CareerProfile {
 		coins: STARTING_COINS,
 		revives: STARTING_REVIVES,
 		streak: 0,
+		bestStreak: 0,
 		lastBonusDay: null,
 		challenge: newChallenge(now),
 		earned: { day, coins: 0, xp: 0 },
@@ -330,6 +333,7 @@ export function claimDaily(profile: CareerProfile, now: Date = new Date()): Stre
 		profile: {
 			...today,
 			streak,
+			bestStreak: Math.max(today.bestStreak, streak),
 			lastBonusDay: day,
 			xp: today.xp + DAILY_REWARD_XP,
 			coins: today.coins + reward.coins + levels.coins,
@@ -449,6 +453,7 @@ export function isCareerProfile(value: unknown): value is CareerProfile {
 		isWholeCount(value.coins) &&
 		isWholeCount(value.revives) &&
 		isWholeCount(value.streak) &&
+		isWholeCount(value.bestStreak) &&
 		isWholeCount(value.runs) &&
 		(value.lastBonusDay === null ||
 			(typeof value.lastBonusDay === 'string' && DAY.test(value.lastBonusDay))) &&
@@ -476,6 +481,11 @@ export function isCareerProfile(value: unknown): value is CareerProfile {
 
 /** A saved profile, or null if it is not one; an old profile moves on to today's challenge */
 export function parseCareer(value: unknown, now: Date = new Date()): CareerProfile | null {
-	if (!isCareerProfile(value)) return null;
-	return withToday(value, now);
+	// Older saves predate the best streak; their current streak is the best we can prove
+	const candidate =
+		isRecord(value) && value.bestStreak === undefined
+			? { ...value, bestStreak: value.streak }
+			: value;
+	if (!isCareerProfile(candidate)) return null;
+	return withToday(candidate, now);
 }

@@ -4,7 +4,7 @@
  * validated part by part. Everything here is plain data and pure functions; the Avatar component
  * draws it and the avatar store keeps it in local storage.
  */
-import { createRandom, pickOne, randomSeed } from '#lib/game/random.js';
+import { createRandom, pickOne, randomSeed, type Random } from '#lib/game/random.js';
 
 export const SHIRT_TYPES = ['tee', 'hoodie', 'suit', 'camo', 'tank'] as const;
 export const FACE_SHAPES = ['round', 'oval', 'square', 'long'] as const;
@@ -92,22 +92,38 @@ export const DEFAULT_LOOK: AvatarLook = {
 };
 
 /** A random look; the same seed always gives the same look */
-export function randomLook(seed: number = randomSeed()): AvatarLook {
+export function randomLook(seed: number = randomSeed(), allowed?: LookAllowed): AvatarLook {
 	const random = createRandom(seed);
 	return {
 		version: 1,
-		shirt: pickOne(random, SHIRT_TYPES),
-		shirtColor: pickOne(random, SHIRT_COLORS),
-		face: pickOne(random, FACE_SHAPES),
+		shirt: pickAllowed(random, 'shirt', SHIRT_TYPES, DEFAULT_LOOK.shirt, allowed),
+		shirtColor: pickAllowed(random, 'shirtColor', SHIRT_COLORS, DEFAULT_LOOK.shirtColor, allowed),
+		face: pickAllowed(random, 'face', FACE_SHAPES, DEFAULT_LOOK.face, allowed),
 		// The green "alien" tone is a joke option, not something to hand out at random
-		skin: pickOne(random, SKIN_COLORS.slice(0, -1)),
-		nose: pickOne(random, NOSES),
-		eyes: pickOne(random, EYE_TYPES),
-		hair: pickOne(random, HAIRSTYLES),
-		hairColor: pickOne(random, HAIR_COLORS),
+		skin: pickAllowed(random, 'skin', SKIN_COLORS.slice(0, -1), DEFAULT_LOOK.skin, allowed),
+		nose: pickAllowed(random, 'nose', NOSES, DEFAULT_LOOK.nose, allowed),
+		eyes: pickAllowed(random, 'eyes', EYE_TYPES, DEFAULT_LOOK.eyes, allowed),
+		hair: pickAllowed(random, 'hair', HAIRSTYLES, DEFAULT_LOOK.hair, allowed),
+		hairColor: pickAllowed(random, 'hairColor', HAIR_COLORS, DEFAULT_LOOK.hairColor, allowed),
 		// Most agents go bareheaded, so a hat stays a little special
-		hat: random() < 0.6 ? 'none' : pickOne(random, HATS.slice(1))
+		hat:
+			random() < 0.6 ? 'none' : pickAllowed(random, 'hat', HATS.slice(1), DEFAULT_LOOK.hat, allowed)
 	};
+}
+
+/** A predicate saying which options may be used, for example only the unlocked ones */
+export type LookAllowed = (part: LookPart, value: string) => boolean;
+
+function pickAllowed<T extends string>(
+	random: Random,
+	part: LookPart,
+	options: readonly T[],
+	fallback: T,
+	allowed?: LookAllowed
+): T {
+	if (!allowed) return pickOne(random, options);
+	const open = options.filter((value) => allowed(part, value));
+	return open.length > 0 ? pickOne(random, open) : fallback;
 }
 
 /** Sets one part, ignoring a value that is not one of that part's choices */

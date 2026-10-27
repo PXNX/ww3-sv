@@ -214,6 +214,16 @@ describe('the daily reward', () => {
 		expect(afterGap.coins).toBe(DAILY_TRACK[0].coins);
 	});
 
+	it('keeps the best streak ever even after the current one breaks', () => {
+		const first = claimDaily(veteran(), DAY1)!;
+		expect(first.profile.bestStreak).toBe(1);
+		const second = claimDaily(done(first.profile, DAY2), DAY2)!;
+		expect(second.profile.bestStreak).toBe(2);
+		const afterGap = claimDaily(done(second.profile, DAY4), DAY4)!;
+		expect(afterGap.streak).toBe(1);
+		expect(afterGap.profile.bestStreak).toBe(2);
+	});
+
 	it('hands out revivals on the slots that carry them', () => {
 		let profile: CareerProfile = veteran();
 		const day2 = new Date(2026, 9, 27, 12);
@@ -292,6 +302,16 @@ describe('saved profiles', () => {
 		expect(parseCareer({ version: 1 }, DAY1)).toBeNull();
 		expect(parseCareer({ ...newCareer(DAY1), coins: -5 }, DAY1)).toBeNull();
 		expect(parseCareer({ ...newCareer(DAY1), version: 2 }, DAY1)).toBeNull();
+		expect(parseCareer({ ...newCareer(DAY1), bestStreak: -1 }, DAY1)).toBeNull();
+		expect(parseCareer({ ...newCareer(DAY1), bestStreak: 1.5 }, DAY1)).toBeNull();
 		expect(careerLevel(newCareer(DAY1).xp)).toBe(1);
+	});
+
+	it('takes the current streak as the best one when an old save has no best streak', () => {
+		const old: Record<string, unknown> = { ...newCareer(DAY1), streak: 4 };
+		delete old.bestStreak;
+		const loaded = parseCareer(old, DAY1);
+		expect(loaded?.streak).toBe(4);
+		expect(loaded?.bestStreak).toBe(4);
 	});
 });
