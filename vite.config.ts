@@ -3,7 +3,8 @@ import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 import Icons from 'unplugin-icons/vite';
-import adapter from '@sveltejs/adapter-vercel';
+import vercelAdapter from '@sveltejs/adapter-vercel';
+import staticAdapter from '@sveltejs/adapter-static';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import pkg from './package.json' with { type: 'json' };
 
@@ -19,8 +20,13 @@ export default defineConfig({
 			// deep URL still finds its scripts and styles
 			paths: { relative: false },
 
-			// Functions run on Vercel's Bun runtime; the Bun version is set by bunVersion in vercel.json
-			adapter: adapter({ runtime: 'bun1.x' })
+			// Vercel by default; Functions run on Vercel's Bun runtime, its version is set by bunVersion in
+			// vercel.json. ADAPTER=static writes a plain folder (build/) for the Telegram Mini App, which
+			// Telegram Serverless hosts (see mn/ptb-ww3)
+			adapter:
+				process.env.ADAPTER === 'static'
+					? staticAdapter({ pages: 'build', assets: 'build', strict: true })
+					: vercelAdapter({ runtime: 'bun1.x' })
 		}),
 		paraglideVitePlugin({
 			project: './project.inlang',
