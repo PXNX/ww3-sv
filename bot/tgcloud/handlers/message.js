@@ -67,7 +67,7 @@ export default async function (message) {
       const errors = await applyProfile();
       return await send(chatId, errors.length
         ? `⚠️ Not everything could be set:\n${errors.map(escapeHtml).join('\n')}`
-        : `✅ Profile photo, name (“${BOT_NAME}”), description, info and commands updated.`);
+        : `✅ Profile photo, name (“${BOT_NAME}”), description, info, commands and menu button updated.`);
     }
     case 'stats': {
       if (!ADMIN_IDS.includes(message.from.id)) return;

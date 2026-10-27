@@ -1,8 +1,10 @@
 // The bot's public face: name, description (the empty chat before Start), short description (the
-// "info" on the profile and in link previews), the command menu and the profile photo. They rarely
+// "info" on the profile and in link previews), the command menu, the menu button that opens the
+// game as a Mini App (so it launches with the player's Telegram account) and the profile photo. They rarely
 // change, so an admin applies them on demand with /set_cmd, in English and German.
 
 import { api, fetch } from 'sdk';
+import { APP_URL } from './generated.js';
 
 export const BOT_NAME = 'World War 3';
 
@@ -79,6 +81,9 @@ export async function applyProfile() {
       await api.setMyShortDescription({ short_description: SHORT_DESCRIPTION[language], ...scope });
       await api.setMyCommands({ commands: COMMANDS[language].map(([command, description]) => ({ command, description })), ...scope });
     });
+  }
+  if (APP_URL) {
+    await attempt('Menu button', () => api.setChatMenuButton({ menu_button: { type: 'web_app', text: 'Play', web_app: { url: APP_URL } } }));
   }
   for (const error of errors) console.warn('[profile]', error);
   return errors;
