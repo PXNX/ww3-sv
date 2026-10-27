@@ -3,9 +3,10 @@ import { MODES } from '#lib/modes/registry.js';
 import {
 	ADS_PER_DAY,
 	CAREER_MODES,
-	DAILY_CHALLENGE_COINS,
+	DAILY_REWARD_XP,
 	DAILY_COIN_CAP,
 	DAILY_TRACK,
+	LEVEL_UP_COINS,
 	STARTING_COINS,
 	STARTING_REVIVES,
 	rankFor,
@@ -51,6 +52,9 @@ const quiet = (day = DAY1) => {
 	const profile = newCareer(day);
 	return { ...profile, challenge: { ...profile.challenge, done: true } };
 };
+
+/** A top-level player, so the reward XP of a claim cannot cause a level-up */
+const veteran = () => ({ ...quiet(), xp: 10_000_000 });
 
 /** Takes a profile to the given day with that day's challenge already done */
 const done = (profile: CareerProfile, day: Date) => {
@@ -127,18 +131,19 @@ describe('paying out a run', () => {
 		expect(result.profile.revives).toBe(STARTING_REVIVES);
 	});
 
-	it('marks the featured game as done and pays the challenge once', () => {
+	it('marks the featured game as done once and doubles that run', () => {
 		const profile = newCareer(DAY1);
 		profile.challenge = { day: '2026-10-26', mode: 'blocks', done: false };
 		const first = awardRun(profile, run({ score: 50 }), DAY1);
 		expect(first.challengeCompleted).toBe(true);
-		expect(first.challengeCoins).toBe(DAILY_CHALLENGE_COINS);
-		expect(first.profile.revives).toBe(STARTING_REVIVES + 1);
+		// (5 base + 8 first play + 7 score) twice; the reward itself waits for the daily claim
+		expect(first.runCoins).toBe(40);
+		expect(first.profile.revives).toBe(STARTING_REVIVES);
 		expect(first.profile.challenge.done).toBe(true);
 
 		const second = awardRun(first.profile, run({ score: 50 }), DAY1);
 		expect(second.challengeCompleted).toBe(false);
-		expect(second.challengeCoins).toBe(0);
+		expect(second.runCoins).toBe(12);
 	});
 
 	it('does not count a scoreless run towards the challenge', () => {
@@ -188,7 +193,7 @@ describe('the daily reward', () => {
 	});
 
 	it('pays the first day, refuses a second claim and grows the next day', () => {
-		const profile = quiet();
+		const profile = veteran();
 		expect(canClaimDaily(profile, DAY1)).toBe(true);
 		const first = claimDaily(profile, DAY1);
 		expect(first?.coins).toBe(DAILY_TRACK[0].coins);
@@ -202,22 +207,32 @@ describe('the daily reward', () => {
 	});
 
 	it('resets the streak after a missed day', () => {
-		const profile = quiet();
+		const profile = veteran();
 		const first = claimDaily(profile, DAY1)!;
 		const afterGap = claimDaily(done(first.profile, DAY4), DAY4)!;
 		expect(afterGap.streak).toBe(1);
 		expect(afterGap.coins).toBe(DAILY_TRACK[0].coins);
 	});
 
-	it('hands out a revival on the third day', () => {
-		let profile = quiet();
+	it('hands out revivals on the slots that carry them', () => {
+		let profile: CareerProfile = veteran();
 		const day2 = new Date(2026, 9, 27, 12);
 		const day3 = new Date(2026, 9, 28, 12);
 		profile = claimDaily(profile, DAY1)!.profile;
-		profile = claimDaily(done(profile, day2), day2)!.profile;
-		const third = claimDaily(done(profile, day3), day3)!;
+		const second = claimDaily(done(profile, day2), day2)!;
+		expect(second.revives).toBe(DAILY_TRACK[1].revives);
+		const third = claimDaily(done(second.profile, day3), day3)!;
 		expect(third.slot).toBe(2);
-		expect(third.revives).toBe(1);
+		expect(third.revives).toBe(DAILY_TRACK[2].revives);
+	});
+
+	it('adds reward XP that can level the player up', () => {
+		const claim = claimDaily(quiet(), DAY1)!;
+		expect(claim.xp).toBe(DAILY_REWARD_XP);
+		expect(claim.profile.xp).toBe(DAILY_REWARD_XP);
+		expect(claim.levelsGained).toBe(1);
+		expect(claim.coins).toBe(DAILY_TRACK[0].coins + LEVEL_UP_COINS);
+		expect(claim.profile.coins).toBe(STARTING_COINS + DAILY_TRACK[0].coins + LEVEL_UP_COINS);
 	});
 });
 

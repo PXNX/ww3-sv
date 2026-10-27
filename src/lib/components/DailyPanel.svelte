@@ -1,14 +1,15 @@
 <!--
-	The daily dispatch, in one panel: the seven-day reward track and today's challenge that unlocks
-	it. The challenge doubles as the button, so the panel has one goal and one action instead of two
-	competing tracks. The store moves itself to the new day on the first tick after midnight, so the
-	panel can stay open on a phone overnight and still show the right rewards.
+	The daily dispatch: one reward a day on a seven-day track, opened by finishing a run in today's
+	featured game. The track shows what is on offer; a single row below it names the game and
+	carries the one action of the moment (play, collect, done), so challenge and reward read as one
+	step instead of two competing boxes. The store moves itself to the new day on the first tick
+	after midnight, so the panel can stay open on a phone overnight and still show the right reward.
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { resolve } from '$app/paths';
 	import type { ResolvedPathname, RouteId } from '$app/types';
-	import { DAILY_CHALLENGE_COINS, DAILY_TRACK } from '#lib/game/career/config.js';
+	import { DAILY_TRACK } from '#lib/game/career/config.js';
 	import { nextStreakSlot } from '#lib/game/career/profile.js';
 	import { career } from '#lib/game/career/store.svelte.js';
 	import { dayKey } from '#lib/game/random.js';
@@ -20,6 +21,7 @@
 	import IconCheck from '~icons/lucide/check';
 	import IconClock from '~icons/lucide/clock';
 	import IconFlame from '~icons/lucide/flame';
+	import IconGift from '~icons/lucide/gift';
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
 	import IconNewspaper from '~icons/lucide/newspaper';
 	import IconPlay from '~icons/lucide/play';
@@ -61,8 +63,13 @@
 	const nextSlot = $derived(nextStreakSlot(careerState.profile, now));
 	const countdown = $derived(formatCountdown(msUntilNextDay(now)));
 	const challenge = $derived(modeById(careerState.challengeMode));
+	const ChallengeIcon = $derived(challenge.icon);
 	const challengeHref = $derived(
 		challenge.status === 'playable' ? resolveRoute(challenge.href) : null
+	);
+	/** Where today stands: the challenge is open, the reward waits, or both are done */
+	const step = $derived(
+		claimedToday ? 'claimed' : careerState.profile.challenge.done ? 'ready' : 'play'
 	);
 
 	function claim() {
@@ -79,13 +86,15 @@
 </script>
 
 <section class="sticker flex flex-col gap-2 bg-sand p-3" style:--tilt="-0.6deg">
-	<div class="flex items-center justify-between gap-2">
-		<h2 class="flex items-center gap-1.5 font-display text-lg leading-none font-bold">
-			<IconCalendarDays class="size-5" aria-hidden="true" />
-			{m.daily_title()}
+	<div class="flex items-center gap-2">
+		<h2
+			class="flex min-w-0 flex-1 items-center gap-1.5 font-display text-lg leading-none font-bold"
+		>
+			<IconCalendarDays class="size-5 shrink-0" aria-hidden="true" />
+			<span class="truncate">{m.daily_title()}</span>
 		</h2>
 		<span
-			class="inline-flex items-center gap-1 rounded-[8px_4px_7px_5px] border-2 border-ink bg-explosion-yellow px-1.5 py-0.5 text-xs leading-none font-bold"
+			class="inline-flex shrink-0 items-center gap-1 rounded-[8px_4px_7px_5px] border-2 border-ink bg-explosion-yellow px-1.5 py-0.5 text-xs leading-none font-bold"
 		>
 			<IconFlame class="size-3.5 text-tie-red" aria-hidden="true" />
 			{#if streak > 0}
@@ -93,6 +102,14 @@
 			{:else}
 				{m.daily_streak_none()}
 			{/if}
+		</span>
+		<span
+			class="inline-flex shrink-0 items-center gap-1 text-xs leading-none font-bold tabular-nums opacity-70"
+			title={m.daily_next({ time: countdown })}
+		>
+			<IconClock class="size-3.5" aria-hidden="true" />
+			<span aria-hidden="true">{countdown}</span>
+			<span class="sr-only">{m.daily_next({ time: countdown })}</span>
 		</span>
 	</div>
 
@@ -127,27 +144,33 @@
 	<div
 		class="flex items-center gap-2 rounded-[10px_5px_9px_6px] border-2 border-ink bg-paper px-2 py-1.5"
 	>
+		<span
+			class="grid size-8 shrink-0 place-items-center rounded-[7px_4px_6px_5px] border-2 border-ink {challenge.tileClass}"
+		>
+			<ChallengeIcon class="size-4" stroke-width="2.5" aria-hidden="true" />
+		</span>
 		<div class="min-w-0 flex-1">
-			<p
-				class="flex flex-wrap items-center gap-x-1.5 text-[0.6rem] font-bold tracking-wide uppercase opacity-60"
-			>
-				{m.daily_challenge()}
-				{#if careerState.profile.challenge.done}
-					<span class="inline-flex items-center gap-0.5 text-khaki">
-						<IconCheck class="size-3" aria-hidden="true" />
-						{m.daily_challenge_done()}
-					</span>
-				{/if}
-			</p>
 			<p class="truncate text-sm leading-tight font-bold">
 				{m.daily_challenge_goal({ mode: challenge.name() })}
 			</p>
-			<p class="truncate text-[0.65rem] leading-tight font-semibold opacity-70">
-				{m.daily_challenge_reward({ coins: DAILY_CHALLENGE_COINS })}
-			</p>
+			{#if step === 'claimed' && rewardNote}
+				<p role="status" class="pop-in truncate text-[0.65rem] leading-tight font-bold text-khaki">
+					{rewardNote}
+				</p>
+			{:else}
+				<p class="truncate text-[0.65rem] leading-tight font-semibold opacity-70">
+					{#if step === 'play'}
+						{m.daily_unlocks({ day: nextSlot + 1 })}
+					{:else if step === 'ready'}
+						{m.daily_ready()}
+					{:else}
+						{m.daily_claimed()}
+					{/if}
+				</p>
+			{/if}
 		</div>
 
-		{#if !careerState.profile.challenge.done && challengeHref}
+		{#if step === 'play' && challengeHref}
 			<a
 				href={challengeHref}
 				class="btn-chunky shrink-0 bg-khaki px-2.5 py-1 text-xs whitespace-nowrap"
@@ -155,36 +178,21 @@
 				<IconPlay class="size-3.5" aria-hidden="true" />
 				{m.daily_challenge_play()}
 			</a>
-		{:else if careerState.dailyAvailable}
+		{:else if step === 'ready'}
 			<button
 				type="button"
 				class="btn-chunky shrink-0 bg-explosion-yellow px-2.5 py-1 text-xs whitespace-nowrap"
 				onclick={claim}
 			>
-				{m.daily_claim({ day: nextSlot + 1 })}
+				<IconGift class="size-3.5" aria-hidden="true" />
+				{m.daily_claim()}
 			</button>
-		{:else if claimedToday}
+		{:else if step === 'claimed'}
 			<span
-				class="inline-flex shrink-0 items-center gap-1 rounded-[8px_4px_7px_5px] border-2 border-ink bg-khaki px-2 py-1 text-xs font-bold text-paper"
+				class="grid size-7 shrink-0 place-items-center rounded-full border-2 border-ink bg-khaki text-paper"
 			>
-				<IconCheck class="size-3.5" aria-hidden="true" />
-				{m.daily_claimed()}
+				<IconCheck class="size-4" aria-hidden="true" />
 			</span>
 		{/if}
 	</div>
-
-	{#if rewardNote}
-		<p role="status" class="pop-in text-center text-xs font-bold text-khaki">{rewardNote}</p>
-	{:else}
-		<p
-			class="flex flex-wrap items-center justify-center gap-x-1.5 text-[0.65rem] leading-tight font-semibold opacity-70"
-		>
-			<span class="inline-flex items-center gap-1">
-				<IconClock class="size-3" aria-hidden="true" />
-				{m.daily_next({ time: countdown })}
-			</span>
-			<span aria-hidden="true">·</span>
-			{m.daily_hint()}
-		</p>
-	{/if}
 </section>

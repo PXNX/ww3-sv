@@ -1,6 +1,6 @@
 /*
  * Tuning for the career layer that sits above the individual games: the coins and XP a finished
- * run pays out, the level curve, the seven-day reward track and the challenge that unlocks it, and
+ * run pays out, the level curve, the seven-day reward track that the daily challenge unlocks, and
  * the demo advert. Everything here is a plain number or list so the rules stay testable.
  */
 import type { ModeId } from '#lib/modes/registry.js';
@@ -125,28 +125,31 @@ export const LEVEL_UP_REVIVE_EVERY = 3;
 // ---------------------------------------------------------------------------------------------
 // The daily reward
 
-export interface StreakReward {
+export interface DailyReward {
 	coins: number;
 	revives: number;
 }
 
-/** A seven-day loop; the eighth day starts the track again */
-export const DAILY_TRACK: readonly StreakReward[] = [
-	{ coins: 10, revives: 0 },
-	{ coins: 15, revives: 0 },
-	{ coins: 20, revives: 1 },
-	{ coins: 25, revives: 0 },
-	{ coins: 35, revives: 0 },
-	{ coins: 50, revives: 0 },
-	{ coins: 100, revives: 1 }
+/**
+ * The one reward of the day, opened by finishing a run in the featured game. It used to be two
+ * payouts (a login track and a separate challenge bonus); folding the challenge bonus into the
+ * track keeps the weekly total about the same. A seven-day loop; a missed day starts it over.
+ */
+export const DAILY_TRACK: readonly DailyReward[] = [
+	{ coins: 60, revives: 1 },
+	{ coins: 65, revives: 0 },
+	{ coins: 75, revives: 1 },
+	{ coins: 85, revives: 0 },
+	{ coins: 95, revives: 1 },
+	{ coins: 110, revives: 0 },
+	{ coins: 160, revives: 2 }
 ];
 
-// ---------------------------------------------------------------------------------------------
-// Daily challenge
+/** XP that comes with every collected daily reward, whatever the slot */
+export const DAILY_REWARD_XP = 100;
 
-export const DAILY_CHALLENGE_COINS = 60;
-export const DAILY_CHALLENGE_XP = 100;
-export const DAILY_CHALLENGE_REVIVES = 1;
+/** The run that completes the challenge pays this many times its own coins and XP */
+export const CHALLENGE_RUN_MULTIPLIER = 2;
 
 // ---------------------------------------------------------------------------------------------
 // Shop, revivals and the demo advert

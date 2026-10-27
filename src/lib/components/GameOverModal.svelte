@@ -303,7 +303,7 @@
 							class="inline-flex rotate-1 items-center gap-1 rounded-md border-2 border-ink bg-khaki px-2 py-0.5 text-paper"
 						>
 							<IconGift class="size-4" aria-hidden="true" />
-							{m.gameover_challenge_done({ coins: reward.challengeCoins })}
+							{m.gameover_challenge_done()}
 						</span>
 					{/if}
 					{#if reward.capped}

@@ -1,17 +1,16 @@
 /*
  * The career profile: one small, persistent layer above all the games. A finished run pays coins
- * and XP, levels unlock coin bonuses and revival tokens, a seven-day daily reward opens once the
- * featured game's challenge is done, and coins are spent in the supply depot. Everything is a pure
+ * and XP, levels unlock coin bonuses and revival tokens, one daily reward on a seven-day track opens
+ * once a run in the featured game is done, and coins are spent in the supply depot. Everything is a pure
  * function on plain data, so the store only reads and writes it.
  */
 import { createRandom, dayKey, randomInt, seedFromString } from '#lib/game/random.js';
 import {
 	ADS_PER_DAY,
 	CAREER_MODES,
-	DAILY_CHALLENGE_COINS,
-	DAILY_CHALLENGE_REVIVES,
-	DAILY_CHALLENGE_XP,
+	CHALLENGE_RUN_MULTIPLIER,
 	DAILY_COIN_CAP,
+	DAILY_REWARD_XP,
 	DAILY_TRACK,
 	DAILY_XP_CAP,
 	LEVEL_UP_COINS,
@@ -174,7 +173,7 @@ export interface RunInput {
 
 export interface RunReward {
 	profile: CareerProfile;
-	/** Everything this run added, including level-ups and the challenge */
+	/** Everything this run added, including level-ups */
 	coins: number;
 	xp: number;
 	/** The part that counts against the daily cap */
@@ -183,9 +182,8 @@ export interface RunReward {
 	levelsGained: number;
 	level: number;
 	levelCoins: number;
+	/** True when this run was the featured game's and opened today's daily reward */
 	challengeCompleted: boolean;
-	challengeCoins: number;
-	challengeRevives: number;
 	/** True when the daily cap trimmed the payout */
 	capped: boolean;
 }
@@ -205,7 +203,7 @@ export function awardRun(profile: CareerProfile, run: RunInput, now: Date = new 
 		today.challenge.mode === run.mode &&
 		!today.challenge.done &&
 		score > 0;
-	const multiplier = challengeMatch ? 2 : 1;
+	const multiplier = challengeMatch ? CHALLENGE_RUN_MULTIPLIER : 1;
 
 	const wantedCoins =
 		(RUN_BASE_COINS +
@@ -228,19 +226,7 @@ export function awardRun(profile: CareerProfile, run: RunInput, now: Date = new 
 	const runCoins = Math.min(wantedCoins, coinRoom);
 	const runXp = Math.min(wantedXp, xpRoom);
 	const capped = runCoins < wantedCoins || runXp < wantedXp;
-
-	// The challenge is paid once a day and is not taken from the daily cap
-	const challengeCoins = challengeMatch ? DAILY_CHALLENGE_COINS : 0;
-	const challengeRevives = challengeMatch ? DAILY_CHALLENGE_REVIVES : 0;
-	const challengeXp = challengeMatch ? DAILY_CHALLENGE_XP : 0;
-
-	const beforeLevel = careerLevel(today.xp);
-	const afterLevel = careerLevel(today.xp + runXp + challengeXp);
-	const levelsGained = afterLevel - beforeLevel;
-	const levelCoins = levelsGained * LEVEL_UP_COINS;
-	const levelRevives =
-		Math.floor(afterLevel / LEVEL_UP_REVIVE_EVERY) -
-		Math.floor(beforeLevel / LEVEL_UP_REVIVE_EVERY);
+	const levels = levelUp(today.xp, runXp);
 
 	const modes: CareerProfile['modes'] = {
 		...today.modes,
@@ -253,9 +239,9 @@ export function awardRun(profile: CareerProfile, run: RunInput, now: Date = new 
 
 	const next: CareerProfile = {
 		...today,
-		xp: today.xp + runXp + challengeXp,
-		coins: today.coins + runCoins + challengeCoins + levelCoins,
-		revives: today.revives + challengeRevives + levelRevives,
+		xp: today.xp + runXp,
+		coins: today.coins + runCoins + levels.coins,
+		revives: today.revives + levels.revives,
 		challenge: challengeMatch ? { ...today.challenge, done: true } : today.challenge,
 		earned: { ...today.earned, coins: today.earned.coins + runCoins, xp: today.earned.xp + runXp },
 		modes,
@@ -264,17 +250,35 @@ export function awardRun(profile: CareerProfile, run: RunInput, now: Date = new 
 
 	return {
 		profile: next,
-		coins: runCoins + challengeCoins + levelCoins,
-		xp: runXp + challengeXp,
+		coins: runCoins + levels.coins,
+		xp: runXp,
 		runCoins,
 		runXp,
-		levelsGained,
-		level: afterLevel,
-		levelCoins,
+		levelsGained: levels.gained,
+		level: levels.level,
+		levelCoins: levels.coins,
 		challengeCompleted: challengeMatch,
-		challengeCoins,
-		challengeRevives,
 		capped
+	};
+}
+
+interface LevelUp {
+	gained: number;
+	/** The level after the XP was added */
+	level: number;
+	coins: number;
+	revives: number;
+}
+
+/** What adding XP pays in level-up coins and revival tokens */
+function levelUp(xpBefore: number, xpAdded: number): LevelUp {
+	const before = careerLevel(xpBefore);
+	const after = careerLevel(xpBefore + xpAdded);
+	return {
+		gained: after - before,
+		level: after,
+		coins: (after - before) * LEVEL_UP_COINS,
+		revives: Math.floor(after / LEVEL_UP_REVIVE_EVERY) - Math.floor(before / LEVEL_UP_REVIVE_EVERY)
 	};
 }
 
@@ -283,8 +287,11 @@ export function awardRun(profile: CareerProfile, run: RunInput, now: Date = new 
 
 export interface StreakClaim {
 	profile: CareerProfile;
+	/** Coins and revival tokens paid, including any level-up the reward XP caused */
 	coins: number;
 	revives: number;
+	xp: number;
+	levelsGained: number;
 	/** The streak after this claim */
 	streak: number;
 	/** Index into DAILY_TRACK that was just paid */
@@ -317,16 +324,21 @@ export function claimDaily(profile: CareerProfile, now: Date = new Date()): Stre
 	const streak = isYesterday(today.lastBonusDay, now) ? today.streak + 1 : 1;
 	const slot = (streak - 1) % DAILY_TRACK.length;
 	const reward = DAILY_TRACK[slot];
+	// The reward XP is not taken from the run cap, but it can still level the player up
+	const levels = levelUp(today.xp, DAILY_REWARD_XP);
 	return {
 		profile: {
 			...today,
 			streak,
 			lastBonusDay: day,
-			coins: today.coins + reward.coins,
-			revives: today.revives + reward.revives
+			xp: today.xp + DAILY_REWARD_XP,
+			coins: today.coins + reward.coins + levels.coins,
+			revives: today.revives + reward.revives + levels.revives
 		},
-		coins: reward.coins,
-		revives: reward.revives,
+		coins: reward.coins + levels.coins,
+		revives: reward.revives + levels.revives,
+		xp: DAILY_REWARD_XP,
+		levelsGained: levels.gained,
 		streak,
 		slot
 	};
