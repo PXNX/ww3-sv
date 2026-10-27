@@ -35,8 +35,16 @@ describe('mode leaders', () => {
 	});
 
 	it('looks a mode up by id and rejects an unknown one', () => {
-		expect(modeById('chess').leaders).toEqual(['zelensky', 'putin']);
+		expect(modeById('chess').leaders).toEqual(['zelensky', 'putin', 'modi', 'starmer']);
 		expect(() => modeById('nope' as never)).toThrow('Unknown mode');
+	});
+
+	it('gives each planned mode its countries while it is still coming soon', () => {
+		expect(modeById('redsquare').leaders).toContain('putin');
+		expect(modeById('petrobras').leaders).toContain('lula');
+		expect(modeById('petrobras').leaders).toContain('zuckerberg');
+		expect(modeById('bordershift').leaders).toContain('tusk');
+		expect(modeById('falklands').leaders).toEqual(['starmer', 'milei', 'modi']);
 	});
 });
 

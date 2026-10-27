@@ -621,18 +621,21 @@ _Loop: run a task force across the South Atlantic while the other side counts th
 ### 5.2 Leaders and countries
 
 The start screen filters modes by leader, so a leader only earns a place if several modes feature
-them. The roster today stops at Xi, Zelensky, Putin, Merz, MBS, Khamenei, Netanyahu, Erdoğan, Macron,
-Kim, Maduro and the US mascot.
+them. The roster today is Xi, Zelensky, Putin, Merz, MBS, Khamenei, Netanyahu, Erdoğan, Macron, Modi,
+Starmer, Milei, Lula, Tusk, the US mascot and the guests Kim, Maduro and Zuckerberg.
 
-- [ ] Add cameos for India (Modi), Great Britain (Starmer), Argentina (Milei), Brazil (Lula) and
+- [x] Add cameos for India (Modi), Great Britain (Starmer), Argentina (Milei), Brazil (Lula) and
       Poland (Tusk), with portraits and flags in `src/lib/theme/cameos.ts`.
-- [ ] Add India and Great Britain to every mode's leader list; the catch is that both filters then
+- [x] Add India and Great Britain to every mode's leader list; the catch is that both filters then
       return the whole grid, so if that feels flat, cover two thirds of the modes instead and say so
-      on the About page.
-- [ ] Add Mark Zuckerberg as a guest cameo rather than a head of state, next to Kim and Maduro, for
+      on the About page. (Kept the cat ritual and the centrifuge countryless, since those two have
+      no country to begin with.)
+- [x] Add Mark Zuckerberg as a guest cameo rather than a head of state, next to Kim and Maduro, for
       the Brazil mode.
-- [ ] Check that four flags still fit the corner of a game card on a 390 px screen, and that the
-      leader strip can hold the longer roster without a second row.
+- [x] Check that four flags still fit the corner of a game card on a 390 px screen, and that the
+      leader strip can hold the longer roster without a second row. (Measured: the widest card has
+      four flags in one 108 px strip inside a 169 px card, and the eighteen portraits fill exactly
+      three rows of six 48 px cells.)
 
 ---
 

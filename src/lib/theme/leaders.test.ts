@@ -3,18 +3,21 @@ import { CAMEOS, cameoPortrait } from './cameos';
 import { LEADERS, leaderById, leaderReaction } from './leaders';
 
 describe('leaders', () => {
-	it('lists the mascot first, then the roster, then the two guests', () => {
+	it('lists the mascot first, then the roster, then the guests', () => {
 		expect(LEADERS.map((leader) => leader.id)).toEqual([
 			'trump',
 			...CAMEOS.map((cameo) => cameo.id),
 			'kim',
-			'maduro'
+			'maduro',
+			'zuckerberg'
 		]);
 	});
 
 	it('looks a leader up by id and rejects an unknown one', () => {
 		expect(leaderById('kim').flag).toBe('/assets/flags/kp.svg');
 		expect(leaderById('maduro').flag).toBe('/assets/flags/ve.svg');
+		expect(leaderById('modi').flag).toBe('/assets/flags/in.svg');
+		expect(leaderById('lula').flag).toBe('/assets/flags/br.svg');
 		expect(() => leaderById('nope' as never)).toThrow('Unknown leader');
 	});
 });

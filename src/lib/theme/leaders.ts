@@ -1,7 +1,8 @@
 /*
- * Everyone who can be featured in a game: the nine game-over cameos plus the mascot (the USA),
- * Kim Jong Un and Maduro, who only appear on the start screen and the result sheets. Each leader
- * stands for one country, so the flag on a game card and the leader filter share this one list.
+ * Everyone who can be featured in a game: the fourteen game-over cameos plus the mascot (the USA),
+ * Kim Jong Un, Maduro and Zuckerberg, who only appear on the start screen and the result sheets.
+ * Each leader stands for one country, so the flag on a game card and the leader filter share this
+ * one list.
  */
 import type { Random } from '#lib/game/random.js';
 import { m } from '#lib/paraglide/messages.js';
@@ -20,7 +21,7 @@ import { mascotImage, type MascotPose } from './character.js';
 
 export type LeaderId = CameoId | GuestLeaderId | 'trump';
 
-type GuestLeaderId = Extract<GuestId, 'kim' | 'maduro'>;
+type GuestLeaderId = Extract<GuestId, 'kim' | 'maduro' | 'zuckerberg'>;
 
 export interface Leader {
 	id: LeaderId;
@@ -53,6 +54,13 @@ export const LEADERS: readonly Leader[] = [
 		name: m.leader_maduro_name,
 		flag: flagAsset('ve'),
 		portrait: guestPortrait('maduro')
+	},
+	{
+		// Not a head of state: the platform owner, kept next to the other guests
+		id: 'zuckerberg',
+		name: m.leader_zuckerberg_name,
+		flag: flagAsset('us'),
+		portrait: guestPortrait('zuckerberg')
 	}
 ];
 

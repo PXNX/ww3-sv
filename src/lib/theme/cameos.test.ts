@@ -15,7 +15,7 @@ import {
 } from './cameos';
 
 describe('cameos', () => {
-	it('has the nine-character roster, each listed once', () => {
+	it('has the fourteen-character roster, each listed once', () => {
 		expect(CAMEOS.map((cameo) => cameo.id)).toEqual([
 			'xi',
 			'zelensky',
@@ -25,7 +25,12 @@ describe('cameos', () => {
 			'khamenei',
 			'netanyahu',
 			'erdogan',
-			'macron'
+			'macron',
+			'modi',
+			'starmer',
+			'milei',
+			'lula',
+			'tusk'
 		]);
 	});
 
@@ -45,16 +50,26 @@ describe('cameos', () => {
 		expect(pickCameoMessage(() => 0.999999, cameo)).toBe(cameo.messages.length - 1);
 	});
 
-	it('has a portrait file for the vance guest', () => {
-		expect(guestPortrait('vance')).toBe('/assets/cameos/vance.svg');
-		expect(existsSync('static/assets/cameos/vance.svg')).toBe(true);
+	it('has a portrait for each guest', () => {
+		for (const guest of ['vance', 'kim', 'maduro', 'zuckerberg'] as const) {
+			expect(guestPortrait(guest)).toBe(`/assets/cameos/${guest}.svg`);
+			expect(existsSync(`static/assets/cameos/${guest}.svg`), guest).toBe(true);
+		}
 	});
 
 	it('has a portrait file for every cameo', () => {
 		for (const cameo of CAMEOS) {
-			expect(cameoPortrait(cameo.id)).toBe(`/assets/cameos/${cameo.id}.svg`);
-			expect(existsSync(`static/assets/cameos/${cameo.id}.svg`)).toBe(true);
+			expect(cameoPortrait(cameo.id), cameo.id).toBe(`/assets/cameos/${cameo.id}.svg`);
+			expect(existsSync(`static/assets/cameos/${cameo.id}.svg`), cameo.id).toBe(true);
 		}
+	});
+
+	it('keeps the new leaders behind their own flags', () => {
+		expect(cameoFlag('modi')).toBe('/assets/flags/in.svg');
+		expect(cameoFlag('starmer')).toBe('/assets/flags/gb.svg');
+		expect(cameoFlag('milei')).toBe('/assets/flags/ar.svg');
+		expect(cameoFlag('lula')).toBe('/assets/flags/br.svg');
+		expect(cameoFlag('tusk')).toBe('/assets/flags/pl.svg');
 	});
 
 	it('has a flag file for every cameo and the mascot', () => {
@@ -102,7 +117,7 @@ describe('cameos', () => {
 
 	it('handles random values at the edges of the range', () => {
 		expect(pickCameo(() => 0).id).toBe('xi');
-		expect(pickCameo(() => 0.999999).id).toBe('macron');
+		expect(pickCameo(() => 0.999999).id).toBe(CAMEOS.at(-1)!.id);
 		expect(pickCameo(() => 0, 'xi').id).toBe('zelensky');
 	});
 });

@@ -7,7 +7,20 @@ import { m } from '#lib/paraglide/messages.js';
 import type { Random } from '#lib/game/random.js';
 
 export type CameoId =
-	'xi' | 'zelensky' | 'putin' | 'merz' | 'mbs' | 'khamenei' | 'netanyahu' | 'erdogan' | 'macron';
+	| 'xi'
+	| 'zelensky'
+	| 'putin'
+	| 'merz'
+	| 'mbs'
+	| 'khamenei'
+	| 'netanyahu'
+	| 'erdogan'
+	| 'macron'
+	| 'modi'
+	| 'starmer'
+	| 'milei'
+	| 'lula'
+	| 'tusk';
 
 export type CameoMessage = (inputs: { characterName: string }) => string;
 
@@ -32,7 +45,12 @@ const SUPPLIED_PORTRAITS: readonly CameoId[] = [
 	'khamenei',
 	'netanyahu',
 	'erdogan',
-	'macron'
+	'macron',
+	'modi',
+	'starmer',
+	'milei',
+	'lula',
+	'tusk'
 ];
 
 export const CAMEOS: readonly Cameo[] = [
@@ -80,6 +98,31 @@ export const CAMEOS: readonly Cameo[] = [
 		id: 'macron',
 		name: m.cameo_macron_name,
 		messages: [m.cameo_macron, m.cameo_macron_2, m.cameo_macron_3]
+	},
+	{
+		id: 'modi',
+		name: m.cameo_modi_name,
+		messages: [m.cameo_modi, m.cameo_modi_2, m.cameo_modi_3]
+	},
+	{
+		id: 'starmer',
+		name: m.cameo_starmer_name,
+		messages: [m.cameo_starmer, m.cameo_starmer_2, m.cameo_starmer_3]
+	},
+	{
+		id: 'milei',
+		name: m.cameo_milei_name,
+		messages: [m.cameo_milei, m.cameo_milei_2, m.cameo_milei_3]
+	},
+	{
+		id: 'lula',
+		name: m.cameo_lula_name,
+		messages: [m.cameo_lula, m.cameo_lula_2, m.cameo_lula_3]
+	},
+	{
+		id: 'tusk',
+		name: m.cameo_tusk_name,
+		messages: [m.cameo_tusk, m.cameo_tusk_2, m.cameo_tusk_3]
 	}
 ];
 
@@ -115,7 +158,12 @@ const CAMEO_FLAGS: Record<CameoId, string> = {
 	khamenei: 'ir',
 	netanyahu: 'il',
 	erdogan: 'tr',
-	macron: 'fr'
+	macron: 'fr',
+	modi: 'in',
+	starmer: 'gb',
+	milei: 'ar',
+	lula: 'br',
+	tusk: 'pl'
 };
 
 /** URL of a country flag in static/assets/flags/, by lowercase country code */
@@ -135,10 +183,10 @@ export function cameoPortrait(id: CameoId): string {
 }
 
 /** Guests that appear inside a mode or on the start screen rather than on the game-over roster */
-export type GuestId = 'vance' | 'kim' | 'maduro';
+export type GuestId = 'vance' | 'kim' | 'maduro' | 'zuckerberg';
 
 /** Add a guest here once its portrait is in static/assets/cameos/<id>.svg */
-const SUPPLIED_GUESTS: readonly GuestId[] = ['vance', 'kim', 'maduro'];
+const SUPPLIED_GUESTS: readonly GuestId[] = ['vance', 'kim', 'maduro', 'zuckerberg'];
 
 export function guestPortrait(id: GuestId): string {
 	return SUPPLIED_GUESTS.includes(id) ? `${CAMEO_DIRECTORY}/${id}.svg` : CAMEO_PLACEHOLDER;
