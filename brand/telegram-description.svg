@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+  <!-- The picture above the description in an empty chat with @game_ww3_bot (640×360, set in BotFather).
+       Rendered to telegram-description.png by scripts/generate-brand.ts. -->
+  <defs>
+    <style>@font-face { font-family: Baloo; font-weight: 700; src: url("../static/fonts/baloo-2-latin-700-normal.woff2"); }</style>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#16213a"/><stop offset="0.7" stop-color="#2b3c63"/><stop offset="1" stop-color="#3d4f78"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#f7c86a" stop-opacity="0.9"/><stop offset="0.55" stop-color="#e5484d" stop-opacity="0.35"/><stop offset="1" stop-color="#e5484d" stop-opacity="0"/></radialGradient>
+    <linearGradient id="beam" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#f5efd6" stop-opacity="0.32"/><stop offset="1" stop-color="#f5efd6" stop-opacity="0"/></linearGradient>
+    <clipPath id="frame"><rect width="640" height="360"/></clipPath>
+    <clipPath id="globe"><circle cx="300" cy="372" r="186"/></clipPath>
+  </defs>
+  <g clip-path="url(#frame)">
+  <rect width="640" height="360" fill="url(#sky)"/>
+  <g fill="#f5efd6" opacity="0.7"><circle cx="40" cy="40" r="2.2"/><circle cx="120" cy="26" r="1.4"/><circle cx="210" cy="58" r="1.4"/><circle cx="300" cy="22" r="2.2"/><circle cx="352" cy="70" r="1.4"/><circle cx="600" cy="30" r="1.4"/><circle cx="560" cy="96" r="2.2"/><circle cx="24" cy="130" r="1.4"/><circle cx="250" cy="110" r="1.4"/><circle cx="620" cy="150" r="2.2"/></g>
+  <!-- searchlights -->
+  <path d="M70 300 L10 0 L90 0 Z" fill="url(#beam)" transform="rotate(-14 70 300)"/>
+  <path d="M300 300 L250 0 L330 0 Z" fill="url(#beam)" transform="rotate(18 300 300)"/>
+  <!-- warm sunburst behind the globe -->
+  <circle cx="478" cy="170" r="190" fill="url(#glow)"/>
+  <g fill="#f7c86a" opacity="0.13" transform="translate(478 170)"><path d="M0 0L-34 -520L34 -520Z" transform="rotate(0)"/><path d="M0 0L-34 -520L34 -520Z" transform="rotate(22.5)"/><path d="M0 0L-34 -520L34 -520Z" transform="rotate(45)"/><path d="M0 0L-34 -520L34 -520Z" transform="rotate(67.5)"/><path d="M0 0L-34 -520L34 -520Z" transform="rotate(90)"/><path d="M0 0L-34 -520L34 -520Z" transform="rotate(112.5)"/><path d="M0 0L-34 -520L34 -520Z" transform="rotate(135)"/><path d="M0 0L-34 -520L34 -520Z" transform="rotate(157.5)"/><path d="M0 0L-34 -520L34 -520Z" transform="rotate(180)"/><path d="M0 0L-34 -520L34 -520Z" transform="rotate(202.5)"/><path d="M0 0L-34 -520L34 -520Z" transform="rotate(225)"/><path d="M0 0L-34 -520L34 -520Z" transform="rotate(247.5)"/><path d="M0 0L-34 -520L34 -520Z" transform="rotate(270)"/><path d="M0 0L-34 -520L34 -520Z" transform="rotate(292.5)"/><path d="M0 0L-34 -520L34 -520Z" transform="rotate(315)"/><path d="M0 0L-34 -520L34 -520Z" transform="rotate(337.5)"/></g>
+  <!-- refinery skyline and the sea -->
+  <g fill="#0f1729">
+    <path d="M0 300 L0 262 L30 262 L30 236 L44 236 L44 262 L70 262 L76 214 L82 214 L88 262 L120 262 L120 246 L160 246 L160 262 L190 262 L196 196 L204 196 L210 262 L236 262 L236 240 L262 232 L262 262 L300 262 L300 300 Z"/>
+    <path d="M128 246 C128 230 152 230 152 246"/>
+    <path d="M560 300 L560 270 L580 270 L590 238 L600 270 L640 270 L640 300 Z"/>
+  </g>
+  <g stroke="#0f1729" stroke-width="3" fill="none"><path d="M248 236 L262 200 L276 236 M252 226 L272 226 M256 214 L268 214"/></g>
+  <path d="M82 214 C 86 200, 70 196, 76 182 C 80 172, 92 172, 88 160" fill="none" stroke="#f5efd6" stroke-opacity="0.25" stroke-width="6" stroke-linecap="round"/>
+  <rect y="296" width="640" height="64" fill="#1d3b5c"/>
+  <g stroke="#4fa8d8" stroke-opacity="0.35" stroke-width="3" stroke-linecap="round" fill="none"><path d="M30 318 h40 M140 334 h60 M420 316 h50 M520 340 h70 M250 348 h30"/></g>
+  <!-- a tanker on the horizon -->
+  <g transform="translate(330 300)" stroke="#111" stroke-width="3" stroke-linejoin="round"><path d="M-46 0 L50 0 L40 16 L-38 16 Z" fill="#e5484d"/><rect x="24" y="-14" width="16" height="14" fill="#f5efd6"/><rect x="-30" y="-6" width="44" height="6" fill="#3a3a3a"/></g>
+  <!-- the globe bomb -->
+  <g transform="translate(332 4) scale(0.48)">
+  
+  <!-- fuse -->
+  <path d="M318 186 C 330 120, 392 118, 410 150 S 470 170, 478 128" fill="none" stroke="#111" stroke-width="26" stroke-linecap="round"/>
+  <path d="M318 186 C 330 120, 392 118, 410 150 S 470 170, 478 128" fill="none" stroke="#c9a46a" stroke-width="12" stroke-linecap="round"/>
+  <!-- spark -->
+  <g transform="translate(482 120)">
+    <path d="M0 -74 L16 -22 L66 -40 L30 0 L70 34 L18 24 L6 76 L-12 26 L-62 44 L-28 4 L-66 -32 L-16 -20 Z" fill="#E5484D" stroke="#111" stroke-width="10" stroke-linejoin="round"/>
+    <path d="M0 -38 L9 -12 L34 -20 L16 0 L36 18 L10 12 L3 40 L-7 13 L-32 22 L-14 2 L-34 -16 L-9 -10 Z" fill="#ffd23f"/>
+    <circle r="9" fill="#fff"/>
+  </g>
+  <!-- cap -->
+  <rect x="246" y="168" width="108" height="50" rx="12" fill="#3a3a3a" stroke="#111" stroke-width="14"/>
+  <!-- globe -->
+  <circle cx="300" cy="372" r="186" fill="#4fa8d8"/>
+  <g clip-path="url(#globe)" fill="#7cc576" stroke="#111" stroke-width="10" stroke-linejoin="round">
+    <!-- Europe -->
+    <path d="M232 214 C 262 200, 300 206, 322 226 C 346 230, 368 222, 386 240 C 372 262, 340 262, 330 282 C 312 288, 296 278, 280 286 C 262 276, 250 284, 238 270 C 220 262, 214 238, 232 214 Z"/>
+    <!-- Africa -->
+    <path d="M250 300 C 282 290, 318 300, 340 296 C 364 304, 382 330, 380 356 C 372 380, 354 392, 350 420 C 342 452, 322 480, 300 498 C 284 484, 282 452, 274 428 C 262 404, 246 396, 236 372 C 222 344, 228 314, 250 300 Z"/>
+    <!-- Middle East and Asia -->
+    <path d="M372 280 C 394 270, 420 266, 448 280 C 470 290, 486 312, 486 332 C 464 340, 442 330, 424 342 C 410 330, 396 334, 384 318 C 376 306, 366 296, 372 280 Z"/>
+    <!-- Americas edge -->
+    <path d="M104 300 C 122 290, 140 300, 146 324 C 150 350, 132 368, 140 392 C 132 420, 112 430, 100 420 Z"/>
+    <!-- Madagascar -->
+    <path d="M396 430 C 404 424, 412 432, 408 446 C 404 460, 394 462, 392 450 Z"/>
+  </g>
+  <!-- tanker on the sea -->
+  <g transform="translate(196 444) rotate(-10) scale(1.25)" stroke="#111" stroke-width="7" stroke-linejoin="round">
+    <path d="M-34 0 L38 0 L28 18 L-26 18 Z" fill="#E5484D"/>
+    <rect x="16" y="-16" width="16" height="16" fill="#fff"/>
+  </g>
+  <!-- outline and shine -->
+  <circle cx="300" cy="372" r="186" fill="none" stroke="#111" stroke-width="16"/>
+  <path d="M166 330 C 176 270, 214 228, 262 210" fill="none" stroke="#fff" stroke-width="20" stroke-linecap="round" opacity="0.9"/>
+  <circle cx="156" cy="372" r="11" fill="#fff" opacity="0.9"/>
+  </g>
+  <!-- title -->
+  <g transform="rotate(-3 180 128)">
+    <rect x="40" y="84" width="300" height="82" rx="20" fill="#111" transform="translate(7 7)"/>
+    <rect x="40" y="84" width="300" height="82" rx="20" fill="#e8e1bc" stroke="#111" stroke-width="5"/>
+    <text x="190" y="145" text-anchor="middle" font-family="Baloo, sans-serif" font-weight="700" font-size="52" fill="#111">World War <tspan fill="#e5484d">3</tspan></text>
+  </g>
+  <text x="190" y="206" text-anchor="middle" font-family="Baloo, sans-serif" font-weight="700" font-size="21" fill="#f5efd6">Satirical arcade games in Telegram</text>
+  </g>
+</svg>
