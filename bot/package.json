@@ -1,0 +1,16 @@
+{
+  "name": "ptb-ww3",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@tgcloud/cli": "0.2.0"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:bot": "node scripts/build.mjs --no-app",
+    "deploy": "node scripts/build.mjs && tgcloud push",
+    "status": "tgcloud status",
+    "run": "tgcloud run",
+    "test": "node --test \"test/**/*.test.mjs\""
+  }
+}

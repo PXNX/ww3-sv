@@ -1,0 +1,45 @@
+# Datenschutzerklärung
+
+## 1. Verantwortlicher
+
+Verantwortlich für die Datenverarbeitung im Sinne der Datenschutz-Grundverordnung (DSGVO) ist {name}, {street}, {city}, {country}, E-Mail: {email}.
+
+## 2. Das Spiel im Browser
+
+Das Spiel World War 3 läuft in Ihrem Browser oder als Telegram Mini App. Spielstände, Einstellungen, Ihre Spielfigur und der Karrierefortschritt werden nur im lokalen Speicher Ihres Geräts abgelegt und nicht an uns übertragen. Das Speichern ist für die von Ihnen gewünschte Funktion unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG). Es werden keine Tracking- oder Analysewerkzeuge eingesetzt.
+
+Die Website außerhalb von Telegram wird bei Vercel Inc. (440 N Barranca Ave #4133, Covina, CA 91723, USA) gehostet. Beim Aufruf verarbeitet Vercel technisch notwendige Verbindungsdaten (IP-Adresse, Zeitpunkt, abgerufene Datei, Browserkennung), um die Seite auszuliefern und vor Angriffen zu schützen (Art. 6 Abs. 1 lit. f DSGVO). Vercel ist nach dem EU-US Data Privacy Framework zertifiziert; zusätzlich bestehen Standardvertragsklauseln.
+
+## 3. Anmeldung über Telegram
+
+Öffnen Sie das Spiel als Telegram Mini App, übermittelt Telegram uns signierte Startdaten. Daraus verarbeiten wir Ihre Telegram-Nutzer-ID, Ihren Vornamen, Ihren Benutzernamen und Ihre Spracheinstellung, um Sie zu erkennen und Ihnen Ihre Käufe zuzuordnen (Art. 6 Abs. 1 lit. b DSGVO). Die Startdaten selbst speichern wir nicht.
+
+## 4. Käufe mit Telegram Stars
+
+Für Käufe verarbeiten wir Ihre Telegram-Nutzer-ID, den gekauften Artikel, den Preis in Stars, den Zeitpunkt, die Zahlungskennungen von Telegram, Ihre Zustimmung zur sofortigen Lieferung (mit Zeitpunkt und Version der Bedingungen) sowie Ihr Guthaben an gekauften Revival-Token und die Laufzeit von Pro. Rechtsgrundlage ist die Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO) und, soweit Aufbewahrungspflichten bestehen, Art. 6 Abs. 1 lit. c DSGVO.
+
+Die Zahlung wickelt Telegram ab. Zahlungsdaten wie Kartennummern erhalten wir nicht. Für die Verarbeitung durch Telegram gilt die Datenschutzerklärung von Telegram: https://telegram.org/privacy
+
+## 5. Der Telegram-Bot
+
+Wenn Sie dem Bot schreiben, verarbeiten wir Ihre Nachrichten und Ihre Telegram-Nutzer-ID, um Ihre Anfragen zu beantworten (Art. 6 Abs. 1 lit. b und f DSGVO). Nachrichten werden über die Server von Telegram übertragen, die auch außerhalb der EU stehen können.
+
+## 6. Hosting der Mini App, des Bots und der Datenbank
+
+Die Telegram Mini App (unter einer Adresse auf tgcloud.ai), der Bot und die Datenbank mit Konten, Käufen und Zustimmungen werden auf der Serverless-Plattform von Telegram betrieben (Datenschutzhinweise von Telegram: https://telegram.org/privacy). Telegram verarbeitet dabei Verbindungsdaten (IP-Adresse, Zeitpunkt, abgerufene Datei) und die gespeicherten Daten in unserem Auftrag; Server können außerhalb der EU stehen. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b und f DSGVO. Fehlerprotokolle enthalten technische Angaben (Zeitpunkt, Fehlermeldung, gegebenenfalls Ihre Telegram-Nutzer-ID) und dienen der Fehlerbehebung.
+
+## 7. Speicherdauer
+
+Kauf- und Zustimmungsdaten bewahren wir auf, solange Sie das Spiel nutzen, und darüber hinaus so lange, wie es gesetzliche Aufbewahrungspflichten erfordern (bis zu zehn Jahre nach § 147 AO und § 257 HGB). Kontodaten ohne Käufe löschen wir auf Anfrage sofort.
+
+## 8. Ihre Rechte
+
+Sie haben das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch gegen Verarbeitungen auf Grundlage berechtigter Interessen (Art. 21). Wenden Sie sich dazu an {email}.
+
+Sie haben außerdem das Recht, sich bei einer Datenschutz-Aufsichtsbehörde zu beschweren (Art. 77 DSGVO), insbesondere in dem Mitgliedstaat Ihres Aufenthaltsorts.
+
+## 9. Keine automatisierte Entscheidung
+
+Eine automatisierte Entscheidungsfindung einschließlich Profiling findet nicht statt.
+
+Stand: {updated}

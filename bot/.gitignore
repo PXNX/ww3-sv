@@ -1,0 +1,7 @@
+.tgcloud/
+node_modules/
+# The assembled Mini App (ww3-sv's static export plus the legal pages)
+/app/
+# Operator data for Impressum and Datenschutz, and the generated module that carries it
+/config.local.json
+/tgcloud/lib/generated.js

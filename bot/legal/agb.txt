@@ -1,0 +1,59 @@
+# Allgemeine Geschäftsbedingungen
+
+## 1. Geltungsbereich und Anbieter
+
+Diese Bedingungen gelten für alle Käufe im Spiel World War 3, die über den Telegram-Bot @game_ww3_bot oder die Telegram Mini App abgeschlossen werden. Anbieter und Vertragspartner ist {name}, {street}, {city}, {country}, E-Mail: {email} (siehe Impressum).
+
+Das Spiel selbst ist kostenlos und vollständig ohne Kauf spielbar. Spielmodi, Punktestände und Ranglisten sind nicht kostenpflichtig.
+
+## 2. Angebot und Vertragsschluss
+
+Die angebotenen Inhalte, ihr Umfang und ihr Preis werden vor dem Kauf in der Rechnung (Invoice) innerhalb von Telegram angezeigt. Die Darstellung im Spiel ist kein bindendes Angebot. Mit dem Bestätigen der Zahlung in Telegram geben Sie ein verbindliches Angebot ab; der Vertrag kommt zustande, sobald die Zahlung erfolgreich ist und wir den Kauf bestätigen.
+
+Vertragssprache ist Deutsch. Den Vertragstext speichern wir nicht gesondert; die Kaufbestätigung erhalten Sie als Nachricht im Telegram-Chat mit dem Bot, und diese Bedingungen sind jederzeit mit /agb abrufbar.
+
+## 3. Preise und Zahlung
+
+Alle Preise werden in Telegram Stars (XTR) angegeben und bezahlt. Telegram Stars erwerben Sie bei Telegram oder über die App-Stores zu deren Bedingungen; wir sind daran nicht beteiligt. Die Zahlung wird vollständig von Telegram abgewickelt.
+
+## 4. Virtuelle Inhalte
+
+Gekaufte Revival-Token sind virtuelle Spielgegenstände ohne Geldwert. Ein Revival-Token setzt einen gescheiterten Lauf in den Spielen fort, die das unterstützen, und wird dabei verbraucht. Revival-Token können nicht in Geld, Telegram Stars oder andere Werte zurückgetauscht, ausgezahlt oder auf andere Konten übertragen werden. Sie werden Ihrem Telegram-Konto unmittelbar nach erfolgreicher Zahlung gutgeschrieben und stehen in der Telegram Mini App zur Verfügung.
+
+## 5. World War 3 Pro
+
+Pro ist ein Abonnement mit einer Laufzeit von 30 Tagen, das sich über Telegram automatisch um jeweils 30 Tage verlängert, bis Sie es kündigen. Pro umfasst 10 Revival-Token je Laufzeit, die zu Beginn jeder Laufzeit gutgeschrieben werden, und – sobald das Spiel Werbung zeigt – ein Spiel ohne Werbung. Nicht genutzte Revival-Token bleiben auch nach dem Ende von Pro erhalten. Sie können jederzeit in Telegram kündigen (Einstellungen › Meine Stars › Abonnements); die Kündigung wirkt zum Ende der laufenden Laufzeit, bis dahin bleibt Pro aktiv.
+
+## 6. Widerrufsrecht
+
+Verbraucherinnen und Verbrauchern steht ein Widerrufsrecht zu; die Einzelheiten stehen in der Widerrufsbelehrung (/widerruf). Für digitale Inhalte erlischt es vorzeitig, wenn Sie vor dem Kauf ausdrücklich zustimmen, dass wir sofort liefern, und bestätigen, dass Sie dadurch Ihr Widerrufsrecht verlieren.
+
+## 7. Keine freiwilligen Erstattungen
+
+Über das gesetzliche Widerrufsrecht und die gesetzlichen Gewährleistungsrechte hinaus erstatten wir keine Käufe. Insbesondere werden bereits gutgeschriebene oder verbrauchte Inhalte nicht erstattet, und es besteht kein Anspruch auf Erstattung bei Verlust des Telegram-Kontos oder bei Sperrung wegen Missbrauchs. Ihre gesetzlichen Rechte bleiben unberührt.
+
+## 8. Gewährleistung
+
+Es gelten die gesetzlichen Vorschriften über Verträge über digitale Produkte (§§ 327 ff. BGB). Bei Problemen mit einem Kauf wenden Sie sich bitte an den Support (/paysupport).
+
+## 9. Haftung
+
+Wir haften unbeschränkt bei Vorsatz und grober Fahrlässigkeit, bei der Verletzung von Leben, Körper oder Gesundheit sowie nach dem Produkthaftungsgesetz. Bei leicht fahrlässiger Verletzung einer wesentlichen Vertragspflicht, deren Erfüllung die ordnungsgemäße Durchführung des Vertrags überhaupt erst ermöglicht und auf deren Einhaltung Sie regelmäßig vertrauen dürfen, ist die Haftung auf den vertragstypischen, vorhersehbaren Schaden begrenzt. Im Übrigen ist die Haftung für leichte Fahrlässigkeit ausgeschlossen.
+
+## 10. Verfügbarkeit und Änderungen am Spiel
+
+Wir entwickeln das Spiel weiter und dürfen Spielinhalte, Spielregeln und die Spielbalance ändern, soweit dies für Sie zumutbar ist und der Wert bereits gekaufter Inhalte nicht wesentlich beeinträchtigt wird. Eine ununterbrochene Verfügbarkeit können wir nicht zusichern; Wartungen und Störungen außerhalb unseres Einflussbereichs sind möglich.
+
+## 11. Missbrauch
+
+Bei Manipulation, dem Ausnutzen von Fehlern oder Zahlungsbetrug können wir betroffene Gutschriften rückgängig machen und den Zugang zu Käufen sperren.
+
+## 12. Minderjährige
+
+Minderjährige dürfen Käufe nur mit Zustimmung ihrer Erziehungsberechtigten tätigen.
+
+## 13. Schlussbestimmungen
+
+Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts. Bei Verbraucherinnen und Verbrauchern gilt diese Rechtswahl nur, soweit dadurch nicht der Schutz durch zwingende Bestimmungen des Rechts des Staates ihres gewöhnlichen Aufenthalts entzogen wird. Sollten einzelne Bestimmungen unwirksam sein, bleibt die Wirksamkeit der übrigen unberührt.
+
+Stand: {updated}
