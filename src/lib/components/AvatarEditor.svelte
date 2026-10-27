@@ -4,8 +4,9 @@
 	editor needs no word for "mohawk" in six languages; colours are plain swatches. Every tap saves.
 
 	A few options are extra looks that unlock from playing a particular game, keeping the daily
-	reward streak or climbing the career levels. They are shown in place, dimmed with a lock, so the
-	player can see what is still missing; tapping one says what unlocks it.
+	reward streak or climbing the career levels. On the profile the full collection is shown in
+	place, dimmed with a lock, so the player can see what is still missing; tapping one says what
+	unlocks it. The small editor on the start screen only offers what is already open.
 -->
 <script lang="ts">
 	import { onDestroy } from 'svelte';
@@ -31,9 +32,11 @@
 	interface Props {
 		/** Bigger preview for the profile page */
 		large?: boolean;
+		/** The full collection with locked extra looks; the start screen keeps the quick editor */
+		showUnlocks?: boolean;
 	}
 
-	let { large = false }: Props = $props();
+	let { large = false, showUnlocks = true }: Props = $props();
 
 	const avatarState = avatar();
 	const careerState = career();
@@ -65,7 +68,13 @@
 	const progress = $derived(unlockProgress(careerState.profile, careerState.level));
 	const collected = $derived(unlockedCount(progress));
 
-	const options = $derived(LOOK_PARTS[part] as readonly string[]);
+	const options = $derived(
+		showUnlocks
+			? (LOOK_PARTS[part] as readonly string[])
+			: (LOOK_PARTS[part] as readonly string[]).filter(
+					(value) => avatarState.look[part] === value || isUnlocked(part, value, progress)
+				)
+	);
 	const isColor = $derived(COLOR_PARTS.includes(part));
 
 	/** True while the option is locked and not already the look being worn */
@@ -159,19 +168,21 @@
 			{/each}
 		</div>
 
-		<div
-			class="flex items-center gap-2 rounded-[8px_4px_7px_5px] border-2 border-ink bg-paper px-2 py-1"
-		>
-			<IconSparkles class="size-4 shrink-0 text-mustard" aria-hidden="true" />
-			<p class="min-w-0 flex-1 text-xs leading-tight font-bold" aria-live="polite">
-				{collected === TOTAL_UNLOCKS
-					? m.avatar_unlocked_all()
-					: m.avatar_unlocked_progress({ done: collected, total: TOTAL_UNLOCKS })}
-			</p>
-			<div class="h-1.5 w-14 shrink-0 overflow-hidden rounded-full border-2 border-ink bg-sand">
-				<div class="h-full bg-mustard" style:width="{(collected / TOTAL_UNLOCKS) * 100}%"></div>
+		{#if showUnlocks}
+			<div
+				class="flex items-center gap-2 rounded-[8px_4px_7px_5px] border-2 border-ink bg-paper px-2 py-1"
+			>
+				<IconSparkles class="size-4 shrink-0 text-mustard" aria-hidden="true" />
+				<p class="min-w-0 flex-1 text-xs leading-tight font-bold" aria-live="polite">
+					{collected === TOTAL_UNLOCKS
+						? m.avatar_unlocked_all()
+						: m.avatar_unlocked_progress({ done: collected, total: TOTAL_UNLOCKS })}
+				</p>
+				<div class="h-1.5 w-14 shrink-0 overflow-hidden rounded-full border-2 border-ink bg-sand">
+					<div class="h-full bg-mustard" style:width="{(collected / TOTAL_UNLOCKS) * 100}%"></div>
+				</div>
 			</div>
-		</div>
+		{/if}
 
 		<div
 			class="grid gap-2 {isColor

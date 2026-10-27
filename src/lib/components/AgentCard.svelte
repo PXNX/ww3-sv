@@ -1,7 +1,8 @@
 <!--
 	The "make your agent" card on the start screen. Folded it is one row: the agent, a line of text
-	and a button; unfolded it holds the full editor. A player who never touched the look gets a
-	louder nudge than one who already dressed up.
+	and a button; unfolded it holds the quick editor with only the looks already unlocked, since
+	the full collection belongs on the profile. A player who never touched the look gets a louder
+	nudge than one who already dressed up.
 -->
 <script lang="ts">
 	import { slide } from 'svelte/transition';
@@ -63,7 +64,7 @@
 
 	{#if open}
 		<div transition:slide={{ duration: 220 }}>
-			<AvatarEditor />
+			<AvatarEditor showUnlocks={false} />
 		</div>
 	{/if}
 </section>
