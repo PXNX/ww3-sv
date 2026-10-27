@@ -460,7 +460,8 @@ export const MODES: readonly GameMode[] = [
 	},
 	{
 		id: 'redsquare',
-		status: 'coming-soon',
+		status: 'playable',
+		href: '/play/redsquare',
 		icon: IconMusic,
 		tileClass: 'bg-tie-red',
 		leaders: ['putin', 'modi', 'starmer'],

@@ -576,13 +576,17 @@ section 9 (S hours, M days, L a subsystem).
 _Loop: keep the victory parade rolling while the air defence thins out, then watch the square from a
 very safe distance._
 
-- **Parade pressure**: columns, tanks and the choir move on a timer; a missed slot costs the general's
-  mood, not a life, so the first minute stays playful. (S)
-- **Thinning defences**: each wave is announced as a "routine exercise", while the interceptors get
-  fewer and the radio more nervous. (M)
-- **The finale**: the last run ends with the square emptied and one very large firework over the
-  Kremlin; the result sheet is the punchline, not a fail state. (S)
-- **Cameo**: Putin watches from the tribune and leaves early. (S)
+- [x] **Parade pressure**: columns, tanks and the choir move on a timer; a missed slot costs the general's
+      mood, not a life, so the first minute stays playful. (S) (The marker sweeps across the square and
+      the player cues the column inside a band that narrows every four hits.)
+- [x] **Thinning defences**: each wave is announced as a "routine exercise", while the interceptors get
+      fewer and the radio more nervous. (M) (The HUD counts the interceptors down from twelve to one and
+      turns red below four.)
+- [x] **The finale**: the last run ends with the square emptied and one very large firework over the
+      Kremlin; the result sheet is the punchline, not a fail state. (S) (The result title reads "the
+      square is empty, the firework was magnificent", and the share card draws the firework.)
+- [x] **Cameo**: Putin watches from the tribune and leaves early. (S) (He is the mode's first leader,
+      so he reacts on the result sheet.)
 
 #### Petrobras
 
