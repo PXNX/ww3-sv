@@ -469,6 +469,7 @@
 	"gameover_title": "Spiel vorbei",
 	"gameover_final_score": "Endstand",
 	"gameover_new_best": "Neuer persönlicher Rekord!",
+	"gameover_near_best": "So knapp: {gap} bis zu deinem Rekord ({best}). Wiederbeleben und weiterlaufen?",
 	"gameover_try_again": "Nochmal",
 	"gameover_peek_show": "Ergebnis anzeigen",
 	"gameover_peek_hide": "Ergebnis ausblenden und Spielfeld ansehen",

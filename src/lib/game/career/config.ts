@@ -66,6 +66,25 @@ export const RUN_BEST_XP = 20;
 export const RUN_FIRST_XP = 15;
 
 /**
+ * How close a lost run has to come to the personal best, in percent, before the result sheet
+ * treats it as a near miss and offers the revival in place of the advert. A share rather than a
+ * fixed gap keeps the rule working for modes that score in the dozens and for modes that score in
+ * the thousands. Whole numbers so the comparison stays exact at any score.
+ */
+export const NEAR_BEST_PERCENT = 85;
+
+/** True when a finished run is worth a "so close" revival offer against the previous best */
+export function isNearBest(score: number, best: number | null): boolean {
+	return (
+		best !== null &&
+		best > 0 &&
+		score > 0 &&
+		score <= best &&
+		score * 100 >= best * NEAR_BEST_PERCENT
+	);
+}
+
+/**
  * How much a score is worth, independent of the game's scale: scores range from a handful of
  * points to tens of thousands, so the bonus grows with the logarithm of the score.
  */

@@ -469,6 +469,7 @@
 	"gameover_title": "Game over",
 	"gameover_final_score": "Final score",
 	"gameover_new_best": "New personal best!",
+	"gameover_near_best": "So close: {gap} short of your best ({best}). Revive and keep this run going.",
 	"gameover_try_again": "Try again",
 	"gameover_peek_show": "Show results",
 	"gameover_peek_hide": "Hide results to see the board",

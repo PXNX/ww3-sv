@@ -469,6 +469,7 @@
 	"gameover_title": "Игра окончена",
 	"gameover_final_score": "Итоговый счёт",
 	"gameover_new_best": "Новый личный рекорд!",
+	"gameover_near_best": "Так близко: {gap} до рекорда ({best}). Оживить и продолжить?",
 	"gameover_try_again": "Попробовать ещё раз",
 	"gameover_peek_show": "Показать результат",
 	"gameover_peek_hide": "Скрыть результат, чтобы увидеть поле",

@@ -16,7 +16,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { modeById, type ModeId } from '#lib/modes/registry.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { AD_COINS, isCareerMode } from '#lib/game/career/config.js';
+	import { AD_COINS, isCareerMode, isNearBest } from '#lib/game/career/config.js';
 	import { career } from '#lib/game/career/store.svelte.js';
 	import { telegram } from '#lib/stores/telegram.svelte.js';
 	import StarsOffer from '#lib/components/StarsOffer.svelte';
@@ -199,6 +199,8 @@
 	let adOpen = $state(false);
 	let adCoins = $state(0);
 	let awarded = false;
+	// The best before this run; the award below raises it, so the near-miss test needs the old one
+	let previousBest = $state<number | null>(null);
 
 	$effect(() => {
 		if (!open) {
@@ -206,14 +208,22 @@
 			reward = null;
 			adOpen = false;
 			adCoins = 0;
+			previousBest = null;
 			return;
 		}
 		if (awarded) return;
 		awarded = true;
 		const careerMode = isCareerMode(mode) ? mode : null;
 		if (!careerMode) return;
+		previousBest = untrack(() => careerState.profile.modes[careerMode]?.best ?? null);
 		reward = untrack(() => careerState.awardRun({ mode: careerMode, score, outcome, isNewBest }));
 	});
+
+	// A lost run close to the previous best is the one moment a revival is worth offering loudly:
+	// the advert line used to sit in the same corner and compete with it, so it now only appears
+	// after a win.
+	const nearBest = $derived(outcome === 'lost' && !isNewBest && isNearBest(score, previousBest));
+	const nearBestGap = $derived(previousBest === null ? 0 : Math.max(0, previousBest - score));
 
 	async function revive() {
 		if (reviving) return;
@@ -350,11 +360,20 @@
 				<ResultCharacter {mode} {outcome} class="w-24" />
 			{/if}
 
+			{#if nearBest}
+				<p
+					class="pop-in flex w-full items-center justify-center gap-2 rounded-[12px_6px_14px_8px] border-3 border-ink bg-explosion-yellow p-2 text-sm font-bold"
+				>
+					<IconHeartPulse class="size-4 shrink-0" aria-hidden="true" />
+					{m.gameover_near_best({ gap: nearBestGap, best: previousBest ?? 0 })}
+				</p>
+			{/if}
+
 			{#if onRevive}
 				{#if !isCareerMode(mode) || revivesLeft > 0}
 					<button
 						type="button"
-						class="btn-chunky bg-khaki text-lg"
+						class="btn-chunky text-lg {nearBest ? 'bg-explosion-yellow' : 'bg-khaki'}"
 						disabled={reviving}
 						onclick={revive}
 					>
@@ -376,7 +395,7 @@
 				{/if}
 			{/if}
 
-			{#if reward && careerState.adsLeft > 0}
+			{#if outcome === 'won' && reward && careerState.adsLeft > 0}
 				<button
 					type="button"
 					class="btn-chunky bg-explosion-yellow px-3 py-1 text-sm"

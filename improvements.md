@@ -132,13 +132,13 @@ Not covered yet, each for a specific reason:
 - [ ] Animate coins flying from the score into the wallet; keep it short and skippable.
 - [ ] Add a subtle "one more run" nudge on the result sheet when the next level is close.
 - [ ] Show progress towards the next personal best inside a run ("12 points to your best").
-- [ ] Add near-miss feedback ("2 points short of your best") with a retry button.
+- [x] Add near-miss feedback ("2 points short of your best") with a retry button.
 - [ ] Add a short "run summary" card after each game: best, plays, rank progress.
 - [ ] Make the revive decision clearer: what is at stake, how many tokens are left, what happens
       without one.
-- [ ] Drop the "watch a demo advert" line from the losing result sheet; it competes with the revive
+- [x] Drop the "watch a demo advert" line from the losing result sheet; it competes with the revive
       offer for the same corner.
-- [ ] When a run ends within 15 % of the personal best, offer the revival there and then, with the
+- [x] When a run ends within 15 % of the personal best, offer the revival there and then, with the
       price and the tokens left, so a near miss has a fix instead of an advert.
 
 ### 2.2 Goals and achievements

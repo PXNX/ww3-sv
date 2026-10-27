@@ -469,6 +469,7 @@
 	"gameover_title": "بازی تمام شد",
 	"gameover_final_score": "امتیاز نهایی",
 	"gameover_new_best": "رکورد شخصی جدید!",
+	"gameover_near_best": "اینقدر نزدیک: {gap} تا رکورد تو ({best}). زنده‌اش کن و ادامه بده.",
 	"gameover_try_again": "دوباره امتحان کن",
 	"gameover_peek_show": "نمایش نتیجه",
 	"gameover_peek_hide": "پنهان کردن نتیجه برای دیدن صفحه بازی",

@@ -469,6 +469,7 @@
 	"gameover_title": "انتهت اللعبة",
 	"gameover_final_score": "النتيجة النهائية",
 	"gameover_new_best": "رقم قياسي شخصي جديد!",
+	"gameover_near_best": "قريب جداً: {gap} يفصلك عن أفضل نتيجة ({best}). أعد الإحياء وأكمل الجولة.",
 	"gameover_try_again": "حاول مرة أخرى",
 	"gameover_peek_show": "إظهار النتيجة",
 	"gameover_peek_hide": "إخفاء النتيجة لرؤية اللوحة",
