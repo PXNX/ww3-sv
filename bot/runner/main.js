@@ -1,10 +1,13 @@
 // Runs the tgcloud/ handlers on nyx while Telegram Serverless is not enabled for the bot: long
 // polling instead of the platform's webhook, a local SQLite file instead of the platform database.
 // The handlers import `sdk` and get this project's shim (runner/sdk), so the same code deploys to
-// Serverless unchanged later. Endpoints need the platform's initData check and are not served here.
+// Serverless unchanged later. runner/api.js serves the endpoints with the platform's initData check,
+// and a timer runs the streak reminders, which on Serverless would need a scheduled trigger.
 
 import { api, sqlite } from 'sdk';
 import * as schema from '../tgcloud/schema.js';
+import { sendDueReminders } from '../tgcloud/lib/reminders.js';
+import { createApi } from './api.js';
 import { ensureTables } from './tables.js';
 
 ensureTables(sqlite, schema);
@@ -20,6 +23,25 @@ async function dispatch(update) {
     if (update[type]) return await handler(update[type], { update });
   }
 }
+
+const ENDPOINTS = {
+  me: (await import('../tgcloud/endpoints/me.js')).default,
+  invoice: (await import('../tgcloud/endpoints/invoice.js')).default,
+  spend: (await import('../tgcloud/endpoints/spend.js')).default,
+  streak: (await import('../tgcloud/endpoints/streak.js')).default,
+};
+
+const port = Number(process.env.API_PORT || 3790);
+const origins = (process.env.API_ORIGINS || 'https://ww3-sv.vercel.app').split(',').map((o) => o.trim());
+Bun.serve({ port, hostname: '0.0.0.0', fetch: createApi({ token: process.env.TELEGRAM, endpoints: ENDPOINTS, origins }) });
+console.info(`endpoints on :${port} for ${origins.join(', ')}`);
+
+const REMINDER_INTERVAL_MS = 60_000;
+setInterval(() => {
+  sendDueReminders()
+    .then((sent) => sent && console.info('streak reminders sent', sent))
+    .catch((error) => console.error('streak reminders failed', error));
+}, REMINDER_INTERVAL_MS);
 
 // Polling and a webhook exclude each other; if enabling Serverless set one, polling takes over again
 await api.deleteWebhook({ drop_pending_updates: false });

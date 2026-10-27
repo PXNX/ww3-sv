@@ -6,6 +6,7 @@ import { api } from 'sdk';
 import { PRODUCTS, product } from './catalogue.js';
 import { ADMIN_IDS, APP_URL, OPERATOR, SALES_OPEN } from './generated.js';
 import { createInvoice, hasConsent, recordConsent, upsertAccount, wallet } from './ledger.js';
+import { isMuted, setMuted, texts as reminderTexts } from './reminders.js';
 import { CONSENT_TEXT, CONSENT_VERSION, PAGES, escapeHtml, legalMessages, pageUrl } from './legal.js';
 
 export async function send(chatId, text, extra = {}) {
@@ -31,7 +32,8 @@ export async function start(message, param) {
   await send(message.chat.id,
     `Welcome, ${escapeHtml(message.from.first_name)}! Open the game below: inside Telegram you are signed in ` +
     'with your Telegram account, so bought revival tokens and Pro follow you to every device.\n\n' +
-    '/shop – revival tokens and Pro\n/wallet – what you bought\n/paysupport – help with purchases\n' +
+    '/shop – revival tokens and Pro\n/wallet – what you bought\n/reminders – streak reminders on or off\n' +
+    '/paysupport – help with purchases\n' +
     '/agb · /widerruf · /datenschutz · /impressum',
     { reply_markup: { inline_keyboard: keyboard } });
 }
@@ -136,4 +138,37 @@ export async function notifyAdmins(text) {
       console.warn('could not notify admin', admin, error.description ?? error.message);
     }
   }
+}
+
+const reminderLanguage = (user) => (String(user.language_code ?? '').startsWith('de') ? 'de' : 'en');
+
+function reminderKeyboard(language, muted) {
+  const t = reminderTexts(language);
+  return { inline_keyboard: [[muted
+    ? { text: t.unmute, callback_data: 'reminders:on' }
+    : { text: t.mute, callback_data: 'reminders:off' }]] };
+}
+
+/** /reminders: whether streak reminders are on, with a button to switch */
+export async function reminderSettings(chatId, user) {
+  const language = reminderLanguage(user);
+  const muted = await isMuted(user.id);
+  const t = reminderTexts(language);
+  await send(chatId, muted ? t.muted : t.unmuted, { reply_markup: reminderKeyboard(language, muted) });
+}
+
+/** The reminder's and /reminders' button; edits the message in place so the button flips */
+export async function toggleReminders(chatId, user, on, message) {
+  await setMuted(user.id, !on);
+  const language = reminderLanguage(user);
+  const t = reminderTexts(language);
+  const text = on ? t.unmuted : t.muted;
+  if (message) {
+    try {
+      return await api.editMessageText({ chat_id: chatId, message_id: message.message_id, text, reply_markup: reminderKeyboard(language, !on) });
+    } catch {
+      // The reminder itself may be too old to edit; answer with a new message instead
+    }
+  }
+  await send(chatId, text, { reply_markup: reminderKeyboard(language, !on) });
 }

@@ -6,7 +6,7 @@ Verantwortlich für die Datenverarbeitung im Sinne der Datenschutz-Grundverordnu
 
 ## 2. Das Spiel im Browser
 
-Das Spiel World War 3 läuft in Ihrem Browser oder als Telegram Mini App. Spielstände, Einstellungen, Ihre Spielfigur und der Karrierefortschritt werden nur im lokalen Speicher Ihres Geräts abgelegt und nicht an uns übertragen. Das Speichern ist für die von Ihnen gewünschte Funktion unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG). Es werden keine Tracking- oder Analysewerkzeuge eingesetzt.
+Das Spiel World War 3 läuft in Ihrem Browser oder als Telegram Mini App. Spielstände, Einstellungen, Ihre Spielfigur und der Karrierefortschritt werden im lokalen Speicher Ihres Geräts abgelegt und nicht an uns übertragen; einzige Ausnahme ist in Telegram Ihre Tagesserie für die Erinnerungen (Abschnitt 6). Das Speichern ist für die von Ihnen gewünschte Funktion unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG). Es werden keine Tracking- oder Analysewerkzeuge eingesetzt.
 
 Die Website außerhalb von Telegram wird bei Vercel Inc. (440 N Barranca Ave #4133, Covina, CA 91723, USA) gehostet. Beim Aufruf verarbeitet Vercel technisch notwendige Verbindungsdaten (IP-Adresse, Zeitpunkt, abgerufene Datei, Browserkennung), um die Seite auszuliefern und vor Angriffen zu schützen (Art. 6 Abs. 1 lit. f DSGVO). Vercel ist nach dem EU-US Data Privacy Framework zertifiziert; zusätzlich bestehen Standardvertragsklauseln.
 
@@ -24,21 +24,25 @@ Die Zahlung wickelt Telegram ab. Zahlungsdaten wie Kartennummern erhalten wir ni
 
 Wenn Sie dem Bot schreiben, verarbeiten wir Ihre Nachrichten und Ihre Telegram-Nutzer-ID, um Ihre Anfragen zu beantworten (Art. 6 Abs. 1 lit. b und f DSGVO). Nachrichten werden über die Server von Telegram übertragen, die auch außerhalb der EU stehen können.
 
-## 6. Hosting der Mini App, des Bots und der Datenbank
+## 6. Erinnerungen an Ihre Tagesserie
 
-Die Telegram Mini App (unter einer Adresse auf tgcloud.ai), der Bot und die Datenbank mit Konten, Käufen und Zustimmungen werden auf der Serverless-Plattform von Telegram betrieben (Datenschutzhinweise von Telegram: https://telegram.org/privacy). Telegram verarbeitet dabei Verbindungsdaten (IP-Adresse, Zeitpunkt, abgerufene Datei) und die gespeicherten Daten in unserem Auftrag; Server können außerhalb der EU stehen. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b und f DSGVO. Fehlerprotokolle enthalten technische Angaben (Zeitpunkt, Fehlermeldung, gegebenenfalls Ihre Telegram-Nutzer-ID) und dienen der Fehlerbehebung.
+Spielen Sie in Telegram, meldet das Spiel dem Bot die Länge Ihrer Serie bei der täglichen Belohnung und den Zeitpunkt, an dem sie endet (Mitternacht nach Ihrer Gerätezeit). Zwei Stunden vorher schickt Ihnen der Bot eine Erinnerung, sofern er Ihnen schreiben darf. Dafür speichern wir Ihre Telegram-Nutzer-ID, die Serienlänge, diesen Zeitpunkt, Ihre Sprache (Deutsch oder Englisch) und ob Sie die Erinnerungen abgeschaltet haben. Jede neue Meldung überschreibt die vorige. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (die Erinnerung ist Teil des Spiels, das Sie nutzen). Sie können die Erinnerungen jederzeit mit der Schaltfläche in der Nachricht oder mit /reminders abschalten.
 
-## 7. Speicherdauer
+## 7. Hosting des Bots, der Schnittstelle und der Datenbank
 
-Kauf- und Zustimmungsdaten bewahren wir auf, solange Sie das Spiel nutzen, und darüber hinaus so lange, wie es gesetzliche Aufbewahrungspflichten erfordern (bis zu zehn Jahre nach § 147 AO und § 257 HGB). Kontodaten ohne Käufe löschen wir auf Anfrage sofort.
+Der Bot, die Schnittstelle, über die die Mini App Ihr Konto, Ihre Käufe und Ihre Serie abfragt, und die Datenbank mit Konten, Käufen, Zustimmungen und Serien laufen auf einem von uns selbst betriebenen Server. Verbindungen zur Schnittstelle werden über Tailscale Funnel der Tailscale Inc. (Kanada) weitergeleitet; Tailscale sieht dabei Ihre IP-Adresse und den Zeitpunkt, die Inhalte bleiben verschlüsselt (https://tailscale.com/privacy-policy). Für Kanada besteht ein Angemessenheitsbeschluss der EU-Kommission. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b und f DSGVO. Fehlerprotokolle enthalten technische Angaben (Zeitpunkt, Fehlermeldung, gegebenenfalls Ihre Telegram-Nutzer-ID) und dienen der Fehlerbehebung.
 
-## 8. Ihre Rechte
+## 8. Speicherdauer
+
+Die Seriendaten löschen wir auf Anfrage sofort. Kauf- und Zustimmungsdaten bewahren wir auf, solange Sie das Spiel nutzen, und darüber hinaus so lange, wie es gesetzliche Aufbewahrungspflichten erfordern (bis zu zehn Jahre nach § 147 AO und § 257 HGB). Kontodaten ohne Käufe löschen wir auf Anfrage sofort.
+
+## 9. Ihre Rechte
 
 Sie haben das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch gegen Verarbeitungen auf Grundlage berechtigter Interessen (Art. 21). Wenden Sie sich dazu an {email}.
 
 Sie haben außerdem das Recht, sich bei einer Datenschutz-Aufsichtsbehörde zu beschweren (Art. 77 DSGVO), insbesondere in dem Mitgliedstaat Ihres Aufenthaltsorts.
 
-## 9. Keine automatisierte Entscheidung
+## 10. Keine automatisierte Entscheidung
 
 Eine automatisierte Entscheidungsfindung einschließlich Profiling findet nicht statt.
 

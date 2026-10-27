@@ -4,8 +4,9 @@ import { product } from '../lib/catalogue.js';
 import { ADMIN_IDS } from '../lib/generated.js';
 import { bookPayment, findInvoice, stats, upsertAccount } from '../lib/ledger.js';
 import { BOT_NAME, applyProfile } from '../lib/profile.js';
+import { unblock } from '../lib/reminders.js';
 import {
-  confirmPurchase, login, notifyAdmins, offer, paysupport, send, sendLegal, shop, showWallet, start,
+  confirmPurchase, login, notifyAdmins, offer, paysupport, reminderSettings, send, sendLegal, shop, showWallet, start,
 } from '../lib/bot.js';
 import { escapeHtml } from '../lib/legal.js';
 
@@ -42,7 +43,10 @@ async function paid(message) {
 
 export default async function (message) {
   if (message.successful_payment) return await paid(message);
-  if (message.chat.type !== 'private' || !message.text?.startsWith('/')) return;
+  if (message.chat.type !== 'private') return;
+  // Writing to the bot means it may message the player again
+  await unblock(message.from.id);
+  if (!message.text?.startsWith('/')) return;
 
   const [head, ...args] = message.text.trim().split(/\s+/);
   const command = head.slice(1).split('@')[0].toLowerCase();
@@ -56,6 +60,7 @@ export default async function (message) {
     case 'buy': return args[0] ? await offer(chatId, message.from, args[0]) : await shop(chatId);
     case 'wallet': return await showWallet(chatId, message.from);
     case 'paysupport': return await paysupport(chatId);
+    case 'reminders': return await reminderSettings(chatId, message.from);
     case 'set_cmd': {
       // Admins only: it changes the bot's public profile
       if (!ADMIN_IDS.includes(message.from.id)) return;

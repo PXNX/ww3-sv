@@ -43,6 +43,7 @@ for this bot, so until then the same handlers run on nyx (see *Run on nyx*):
 | `me`     | `{}`                     | `user`, `wallet.revives`, `pro`, `pro_until`, `consented`, `consent`, `catalogue` |
 | `invoice`| `{ sku, consent? }`      | `{ url }` for `Telegram.WebApp.openInvoice`; `CONSENT_REQUIRED`, `RATE_LIMITED`, `UNKNOWN_SKU` |
 | `spend`  | `{ mode }`               | takes one bought revival: `{ wallet, pro }`; `NO_REVIVES`                 |
+| `streak` | `{ streak, expires_at, write_access? }` | stores the streak deadline for the reminder: `{ reminder }` (unix seconds or null); `INVALID_INPUT` |
 
 The `paid` callback of `openInvoice` only refreshes the UI; call `me` again (a few times) until the
 `successful_payment` has been booked.
@@ -65,8 +66,20 @@ The `paid` callback of `openInvoice` only refreshes the UI; call `me` again (a f
 `runner/main.js` long-polls the Bot API and calls the `tgcloud/handlers/` modules, which import
 `runner/sdk` as `sdk` (a local package: `db` on bun:sqlite through drizzle-orm, `api` on the Bot API).
 It creates missing tables and indexes on start and deletes any webhook, so it must be stopped
-before the bot moves to Serverless. The Mini App endpoints need the platform and are not served;
-purchases go through the bot chat (`/shop`).
+before the bot moves to Serverless.
+
+The endpoints are served by `runner/api.js` on port 3790 (`API_PORT`), published publicly through
+Tailscale Funnel as `https://mn.tail865185.ts.net:10000/api/<name>`
+(`tailscale funnel --bg --https=10000 http://127.0.0.1:3790`). It checks the initData from the
+`X-Telegram-Init-Data` header with the bot token like the platform does, allows CORS only for
+`API_ORIGINS` (default `https://ww3-sv.vercel.app`), and answers `{ ok, result }` or
+`{ ok: false, type, description, parameters }`. The game uses it when `Telegram.WebApp.Serverless`
+is missing.
+
+Streak reminders: the game reports its daily-reward streak and deadline to the `streak` endpoint;
+a one-minute timer in the runner sends one message two hours before the deadline. Players switch
+them off with the button in the message or `/reminders`. On Serverless the timer would need a
+scheduled trigger.
 
 ```sh
 ssh nyx@mn

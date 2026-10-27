@@ -13,6 +13,9 @@ WorkingDir=/app
 # data/ww3.db (the purchase ledger) and config.local.json live in this bind mount, so they survive restarts and redeploys.
 Volume=%h/projects/ptb-ww3:/app:Z
 
+# The Mini App endpoints; only Tailscale Funnel (:10000 → 127.0.0.1:3790) exposes them publicly
+PublishPort=127.0.0.1:3790:3790
+
 EnvironmentFile=%h/projects/ptb-ww3/.env
 Environment=CONTAINER=true
 

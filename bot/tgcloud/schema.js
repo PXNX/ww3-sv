@@ -62,3 +62,24 @@ export const spends = table('spends', {
 }, (t) => ({
   user: index('idx_spends_user').on(t.userId),
 }));
+
+// The daily-reward streak as the game last reported it, for the reminder two hours before it ends.
+// The streak itself lives in the game; this is only its deadline, so the bot can warn in time.
+export const streaks = table('streaks', {
+  userId: integer('user_id').primaryKey(),
+  streak: integer('streak').notNull(),
+  // Unix seconds when the streak breaks (the player's local midnight), or null without a streak
+  expiresAt: integer('expires_at'),
+  // The deadline a reminder was already sent for, so each deadline gets at most one
+  remindedFor: integer('reminded_for').notNull().default(0),
+  // German or English reminders, from the Mini App's language
+  language: text('language').notNull().default('en'),
+  // Muted by the player (button or /reminders)
+  muted: boolean('muted').notNull().default(false),
+  // Telegram refused the message (bot never started or blocked); cleared when the player writes to
+  // the bot or allows messages in the Mini App
+  blocked: boolean('blocked').notNull().default(false),
+  updatedAt: integer('updated_at').notNull(),
+}, (t) => ({
+  due: index('idx_streaks_expires').on(t.expiresAt),
+}));

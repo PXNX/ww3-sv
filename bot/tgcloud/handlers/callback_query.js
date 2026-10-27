@@ -1,7 +1,7 @@
 // handlers/callback_query.js — the shop buttons and the consent step.
 
 import { api } from 'sdk';
-import { consent, offer, sendLegal, shop } from '../lib/bot.js';
+import { consent, offer, sendLegal, shop, toggleReminders } from '../lib/bot.js';
 
 export default async function (query) {
   const data = query.data ?? '';
@@ -15,6 +15,7 @@ export default async function (query) {
   const [action, value] = data.split(':');
   if (action === 'buy') return await offer(chatId, query.from, value);
   if (action === 'legal') return await sendLegal(chatId, value);
+  if (action === 'reminders') return await toggleReminders(chatId, query.from, value === 'on', query.message);
   if (action === 'consent') {
     if (query.message) {
       await api.editMessageReplyMarkup({ chat_id: chatId, message_id: query.message.message_id });
