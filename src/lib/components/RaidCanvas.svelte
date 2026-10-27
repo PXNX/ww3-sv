@@ -3,9 +3,9 @@
 	fixed-step loop, with the HUD and the touch controls laid over it. Dragging anywhere on the
 	field opens a floating stick to walk. The big weapon button at the bottom right attacks (tap
 	or hold; every shot aims at the closest enemy), and the held weapon's two skills and the
-	weapon swap sit in an arc towards its top left, the sprint button to their left. A live event
-	shows under the time with its seconds left. Keys work too. The playfield never mirrors in
-	right-to-left languages and never scrolls.
+	weapon swap sit in an arc towards its top left, the sprint button to their left. The time and
+	threat sit at the bottom left, a live event above them with its seconds left. Keys work too.
+	The playfield never mirrors in right-to-left languages and never scrolls.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -287,9 +287,9 @@
 	{/key}
 
 	{#if game.status !== 'lobby'}
-		<!-- HUD: health, revive, time and threat on the left; XP, gold, kills and crystals on the right -->
+		<!-- HUD: health and revive on the left, XP, gold, kills and crystals on the right; both kept clear of the corners -->
 		<div
-			class="pointer-events-none absolute inset-x-2 top-(--hud-top) flex items-start justify-between gap-2"
+			class="pointer-events-none absolute top-(--hud-top) right-(--hud-right) left-(--hud-left) flex items-start justify-between gap-2"
 		>
 			<div class="flex flex-col gap-1">
 				<div
@@ -311,25 +311,6 @@
 						>
 					</span>
 				</div>
-				<div
-					class="flex w-fit items-center gap-2 rounded-lg border-2 border-ink bg-paper/90 px-2 py-0.5 font-display text-xs font-bold"
-				>
-					<span class="tabular-nums">{formatTime(game.timeMs)}</span>
-					<span class="rounded bg-tie-red px-1 text-paper"
-						>{m.raid_hud_threat({ level: game.threat })}</span
-					>
-				</div>
-				{#if game.liveEvent}
-					<div
-						class="live-event flex w-fit items-center gap-1 rounded-lg border-2 border-ink bg-explosion-yellow px-2 py-0.5 font-display text-xs font-bold"
-					>
-						<IconZap class="size-3.5" aria-hidden="true" />
-						<span>{m.raid_event_live({ event: EVENT_NAMES[game.liveEvent.kind]() })}</span>
-						<span class="tabular-nums opacity-80"
-							>{m.raid_event_seconds({ seconds: game.liveEventSeconds })}</span
-						>
-					</div>
-				{/if}
 			</div>
 
 			{#if game.boss}
@@ -367,12 +348,37 @@
 				{/if}
 			</div>
 		</div>
+
+		<!-- The bottom left is free (the stick opens wherever the field is dragged): time, threat and a live event -->
+		<div
+			class="pointer-events-none absolute bottom-[calc(0.5rem+env(safe-area-inset-bottom))] left-[calc(0.5rem+env(safe-area-inset-left))] flex flex-col items-start gap-1"
+		>
+			{#if game.liveEvent}
+				<div
+					class="live-event flex w-fit origin-bottom-left items-center gap-1 rounded-lg border-2 border-ink bg-explosion-yellow px-2 py-0.5 font-display text-xs font-bold"
+				>
+					<IconZap class="size-3.5" aria-hidden="true" />
+					<span>{m.raid_event_live({ event: EVENT_NAMES[game.liveEvent.kind]() })}</span>
+					<span class="tabular-nums opacity-80"
+						>{m.raid_event_seconds({ seconds: game.liveEventSeconds })}</span
+					>
+				</div>
+			{/if}
+			<div
+				class="flex w-fit items-center gap-2 rounded-lg border-2 border-ink bg-paper/90 px-2 py-0.5 font-display text-xs font-bold"
+			>
+				<span class="tabular-nums">{formatTime(game.timeMs)}</span>
+				<span class="rounded bg-tie-red px-1 text-paper"
+					>{m.raid_hud_threat({ level: game.threat })}</span
+				>
+			</div>
+		</div>
 	{/if}
 
 	{#if game.found && (game.status === 'playing' || game.status === 'paused')}
 		{@const item = game.found.item}
 		<div
-			class="pop-in absolute top-[calc(var(--hud-top)+4.75rem)] left-2 flex max-w-[15rem] items-center gap-2 rounded-xl border-3 bg-paper p-2 shadow-[3px_3px_0_var(--color-ink)]"
+			class="pop-in absolute top-[calc(var(--hud-top)+2.75rem)] left-(--hud-left) flex max-w-[15rem] items-center gap-2 rounded-xl border-3 bg-paper p-2 shadow-[3px_3px_0_var(--color-ink)]"
 			style:border-color={RARITY_COLOR[item.rarity]}
 		>
 			<RaidItemIcon

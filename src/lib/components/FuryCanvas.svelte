@@ -256,7 +256,7 @@
 	></canvas>
 
 	<div
-		class="pointer-events-none absolute inset-x-2 top-(--hud-top) flex flex-col items-start gap-1.5"
+		class="pointer-events-none absolute top-(--hud-top) right-(--hud-right) left-(--hud-left) flex flex-col items-start gap-1.5"
 	>
 		{#if aimText}
 			<p class="rounded-md border-2 border-ink bg-paper px-2 py-0.5 text-sm font-bold tabular-nums">

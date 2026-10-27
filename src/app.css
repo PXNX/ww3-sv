@@ -59,3 +59,34 @@
 [data-playfield] {
 	direction: ltr;
 }
+
+/*
+ * What to keep clear along the top edge. In full screen Telegram floats its close button over the
+ * top left corner and its menu over the top right, and its script reports the band they take as
+ * the content safe area, which is zero otherwise. Telegram's own safe area also covers phones
+ * whose web view leaves env() at zero. Upright the controls move below the band; sideways, where
+ * height is scarce, they move in from the corners instead.
+ */
+:root {
+	--tg-band: var(--tg-content-safe-area-inset-top, 0px);
+	--top-inset: calc(
+		max(env(safe-area-inset-top), var(--tg-safe-area-inset-top, 0px)) + var(--tg-band)
+	);
+	--top-left-inset: max(env(safe-area-inset-left), var(--tg-safe-area-inset-left, 0px));
+	--top-right-inset: max(env(safe-area-inset-right), var(--tg-safe-area-inset-right, 0px));
+}
+
+@media (orientation: landscape) {
+	:root {
+		--top-inset: max(env(safe-area-inset-top), var(--tg-safe-area-inset-top, 0px));
+		/* The band is only there in full screen; multiplying it up turns the corners on with it */
+		--top-left-inset: calc(
+			max(env(safe-area-inset-left), var(--tg-safe-area-inset-left, 0px)) +
+				min(10.5rem, var(--tg-band) * 1000)
+		);
+		--top-right-inset: calc(
+			max(env(safe-area-inset-right), var(--tg-safe-area-inset-right, 0px)) +
+				min(5.5rem, var(--tg-band) * 1000)
+		);
+	}
+}

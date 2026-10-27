@@ -4,8 +4,9 @@
 	game is running (`confirmLeave`) the back link asks once more before throwing it away, and
 	whatever sound is still playing stops when the page is left. Immersive games fill the whole
 	viewport instead: the controls and a small score badge float above the playfield, and the
-	`--hud-top` variable tells the game how far down its own overlays start to stay clear of them.
-	Landscape games also go full screen on phones while immersive, hiding the browser bars.
+	`--hud-top` variable tells the game how far down its own overlays start to stay clear of them;
+	`--hud-left` and `--hud-right` keep overlays along the top edge clear of the corners, where
+	Telegram's full screen puts its own buttons. Landscape games also go full screen on phones while immersive, hiding the browser bars.
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
@@ -80,13 +81,13 @@
 
 <main
 	class={immersive
-		? 'fixed inset-0 overflow-hidden [--hud-top:calc(3.25rem+env(safe-area-inset-top))]'
-		: `mx-auto flex h-dvh ${wide ? 'max-w-none' : 'max-w-3xl'} flex-col gap-2 overflow-hidden px-2 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] [--hud-top:0.5rem] sm:gap-3 sm:px-3 sm:pt-[calc(0.75rem+env(safe-area-inset-top))] sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]`}
+		? 'fixed inset-0 overflow-hidden [--hud-left:calc(0.5rem+var(--top-left-inset))] [--hud-right:calc(0.5rem+var(--top-right-inset))] [--hud-top:calc(3.25rem+var(--top-inset))]'
+		: `mx-auto flex h-dvh ${wide ? 'max-w-none' : 'max-w-3xl'} flex-col gap-2 overflow-hidden px-2 pt-[calc(0.5rem+var(--top-inset))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] [--hud-left:0.5rem] [--hud-right:0.5rem] [--hud-top:0.5rem] sm:gap-3 sm:px-3 sm:pt-[calc(0.75rem+var(--top-inset))] sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]`}
 >
 	<div
 		class={immersive
-			? 'pointer-events-none absolute inset-x-0 top-0 z-40 flex items-start justify-between gap-2 ps-[calc(0.5rem+env(safe-area-inset-left))] pe-[calc(0.5rem+env(safe-area-inset-right))] pt-[calc(0.5rem+env(safe-area-inset-top))] *:pointer-events-auto'
-			: 'flex items-center justify-between gap-2'}
+			? 'pointer-events-none absolute inset-x-0 top-0 z-40 flex items-start justify-between gap-2 pt-[calc(0.5rem+var(--top-inset))] pr-(--hud-right) pl-(--hud-left) *:pointer-events-auto'
+			: 'flex items-center justify-between gap-2 pr-(--top-right-inset) pl-(--top-left-inset)'}
 	>
 		<div class="flex items-center gap-2">
 			<a

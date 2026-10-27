@@ -103,7 +103,7 @@
 		<section class="relative flex min-h-0 flex-1 flex-col">
 			<div
 				bind:offsetHeight={hudHeight}
-				class="pointer-events-none absolute inset-x-2 top-(--hud-top) z-10 mx-auto flex max-w-xl flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1 shadow-[3px_3px_0_var(--color-ink)]"
+				class="pointer-events-none absolute top-(--hud-top) right-(--hud-right) left-(--hud-left) z-10 mx-auto flex max-w-xl flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1 shadow-[3px_3px_0_var(--color-ink)]"
 			>
 				<LivesBar lives={game.hearts} max={STARTING_HEARTS} class="shrink-0 text-xl" />
 				<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">

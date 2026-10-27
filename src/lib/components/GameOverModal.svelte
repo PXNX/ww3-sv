@@ -53,6 +53,7 @@
 		outcome = 'lost',
 		withCharacter = true,
 		isNewBest = false,
+		wide = false,
 		title,
 		drawBoard,
 		customCameo,
@@ -70,6 +71,8 @@
 		/** Turn off when the mode's own cameo already is that character */
 		withCharacter?: boolean;
 		isNewBest?: boolean;
+		/** A wider card on larger screens, for extra stats laid out in columns */
+		wide?: boolean;
 		/** Defaults to "Game over" */
 		title?: string;
 		drawBoard?: ScoreCard['drawBoard'];
@@ -257,7 +260,9 @@
 		bind:this={box}
 		style:translate={offset > 0 ? `0 ${offset}px` : undefined}
 		style:transition={dragOffset === null ? undefined : 'none'}
-		class="sticker relative modal-box flex max-h-[92dvh] flex-col items-center gap-3 overflow-y-auto rounded-[18px_10px_16px_8px] border-3 border-ink bg-paper p-5 text-center shadow-(--shadow-hard)"
+		class="sticker relative modal-box {wide
+			? 'sm:max-w-3xl'
+			: ''} flex max-h-[92dvh] flex-col items-center gap-3 overflow-y-auto rounded-[18px_10px_16px_8px] border-3 border-ink bg-paper p-5 text-center shadow-(--shadow-hard)"
 		style:--tilt="-1deg"
 	>
 		<button
@@ -279,19 +284,27 @@
 				<Confetti />
 			{/if}
 
-			<h2 id="game-over-title" class="text-3xl font-bold">{title ?? m.gameover_title()}</h2>
+			<!-- The wide card puts the title beside the score to save height on a sideways phone -->
+			<div
+				class="flex flex-col items-center gap-3 {wide
+					? 'sm:flex-row sm:justify-center sm:gap-8'
+					: ''}"
+			>
+				<h2 id="game-over-title" class="text-3xl font-bold">{title ?? m.gameover_title()}</h2>
 
-			<div class="flex flex-col items-center">
-				<span class="text-sm font-bold uppercase">{m.gameover_final_score()}</span>
-				<span class="pop-in font-display text-5xl font-bold text-tie-red tabular-nums">{score}</span
-				>
-				{#if isNewBest}
-					<span
-						class="pop-in mt-1 rotate-2 rounded-md border-2 border-ink bg-explosion-yellow px-2 font-bold"
+				<div class="flex flex-col items-center">
+					<span class="text-sm font-bold uppercase">{m.gameover_final_score()}</span>
+					<span class="pop-in font-display text-5xl font-bold text-tie-red tabular-nums"
+						>{score}</span
 					>
-						{m.gameover_new_best()}
-					</span>
-				{/if}
+					{#if isNewBest}
+						<span
+							class="pop-in mt-1 rotate-2 rounded-md border-2 border-ink bg-explosion-yellow px-2 font-bold"
+						>
+							{m.gameover_new_best()}
+						</span>
+					{/if}
+				</div>
 			</div>
 
 			{#if children}

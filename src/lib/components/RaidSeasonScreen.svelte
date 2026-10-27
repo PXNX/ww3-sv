@@ -87,12 +87,12 @@
 <svelte:window onkeydown={onKeyDown} />
 
 <div
-	class="fixed inset-0 z-50 flex flex-col gap-3 bg-banner-slate p-3 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] text-paper"
+	class="fixed inset-0 z-50 flex flex-col gap-3 bg-banner-slate p-3 pt-[calc(0.75rem+var(--top-inset))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] text-paper"
 	role="dialog"
 	aria-modal="true"
 	aria-labelledby="raid-season-title"
 >
-	<div class="flex items-center gap-3">
+	<div class="flex items-center gap-3 pr-(--top-right-inset) pl-(--top-left-inset)">
 		<h2 id="raid-season-title" class="font-display text-2xl font-bold">
 			{m.raid_season_title({ number: seasonNumber(season.id) })}
 		</h2>

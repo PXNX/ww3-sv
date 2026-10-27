@@ -183,6 +183,9 @@
 		mode="raid"
 		{modeName}
 		isNewBest={game.isNewBest}
+		wide
+		withCharacter={false}
+		customCameo={null}
 		title={m.raid_gameover_title()}
 		drawBoard={game.drawBoard}
 		onRetry={start}

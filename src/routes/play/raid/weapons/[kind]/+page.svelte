@@ -119,9 +119,9 @@
 </svelte:head>
 
 <main
-	class="mx-auto flex max-w-5xl flex-col gap-3 ps-[calc(0.75rem+env(safe-area-inset-left))] pe-[calc(0.75rem+env(safe-area-inset-right))] pt-[calc(0.75rem+env(safe-area-inset-top))] pb-[calc(2rem+env(safe-area-inset-bottom))]"
+	class="mx-auto flex max-w-5xl flex-col gap-3 ps-[calc(0.75rem+env(safe-area-inset-left))] pe-[calc(0.75rem+env(safe-area-inset-right))] pt-[calc(0.75rem+var(--top-inset))] pb-[calc(2rem+env(safe-area-inset-bottom))]"
 >
-	<div class="flex items-center gap-2">
+	<div class="flex items-center gap-2 pr-(--top-right-inset) pl-(--top-left-inset)">
 		<a href={resolve('/play/raid')} class="btn-chunky px-3 py-1 text-sm">
 			<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
 			{m.raid_details_back()}
