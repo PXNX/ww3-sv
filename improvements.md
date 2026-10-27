@@ -78,6 +78,8 @@ the result sheet links to the supply depot instead of pretending the run can be 
 - **Surprise me** opens a random playable game.
 - **Personal best badges** appear on cards once a mode has a score above zero.
 - The footer links to the supply depot and the About page.
+- An installed PWA opens without browser chrome: the manifest asks for `fullscreen` and falls back to
+  `standalone`, and the career pages and games use the safe-area insets.
 
 ### 1.7 Tuning constants
 
@@ -134,6 +136,10 @@ Not covered yet, each for a specific reason:
 - [ ] Add a short "run summary" card after each game: best, plays, rank progress.
 - [ ] Make the revive decision clearer: what is at stake, how many tokens are left, what happens
       without one.
+- [ ] Drop the "watch a demo advert" line from the losing result sheet; it competes with the revive
+      offer for the same corner.
+- [ ] When a run ends within 15 % of the personal best, offer the revival there and then, with the
+      price and the tokens left, so a near miss has a fix instead of an advert.
 
 ### 2.2 Goals and achievements
 
@@ -193,6 +199,9 @@ Not covered yet, each for a specific reason:
 - [ ] Keyboard and switch-access path through the result sheet and shop.
 - [ ] Colour-blind-safe states: do not rely on red/green alone for affordable/unaffordable.
 - [ ] Test the long German, Russian, Ukrainian, Persian and Arabic strings on a 390 px screen.
+- [ ] Preload the recorded voice clips when sound is on, with a small progress line and an ETA, so a
+      first voice line is not silently skipped while its file downloads (today the clip is played
+      only if it is already decoded; otherwise the moment passes).
 
 ---
 
@@ -556,6 +565,75 @@ content around them.
 - [ ] A referral link that grants both sides a small coin bonus, capped against abuse.
 - [ ] Localised store listings and screenshots.
 
+### 5.1 New mode ideas
+
+Four modes that stay inside the satire and reuse a genre the collection already has code for, so
+none of them needs a new engine. Written as a loop line plus the payoff, with the effort tags from
+section 9 (S hours, M days, L a subsystem).
+
+#### Red Square
+
+_Loop: keep the victory parade rolling while the air defence thins out, then watch the square from a
+very safe distance._
+
+- **Parade pressure**: columns, tanks and the choir move on a timer; a missed slot costs the general's
+  mood, not a life, so the first minute stays playful. (S)
+- **Thinning defences**: each wave is announced as a "routine exercise", while the interceptors get
+  fewer and the radio more nervous. (M)
+- **The finale**: the last run ends with the square emptied and one very large firework over the
+  Kremlin; the result sheet is the punchline, not a fail state. (S)
+- **Cameo**: Putin watches from the tribune and leaves early. (S)
+
+#### Petrobras
+
+_Loop: defend an oil giant from a hostile takeover on one screen and a feed of lies on the other._
+
+- **Two fronts**: a boardroom track (shares, proxies, a tariff tweet from Trump) and a society track
+  (rumours, moderation, a Meta-style feed); ignoring either tanks the other. (L)
+- **Zuckerberg cameo**: a boss round where the feed algorithm is the enemy and the only weapon is a
+  boring press release. (M)
+- **Lula's line**: keep the company public and the country's mood above water; the score is the lower
+  of the two tracks, so one front alone cannot win. (M)
+
+#### Border Shift
+
+_Loop: one night on Poland's eastern border, a refugee surge the radio calls an invasion, and convoys
+that are not always what they claim._
+
+- **Identify, do not fire**: convoys split into families and Belarusian psy-ops; paperwork and a
+  camera are the right tools, the wrong call costs reputation rather than lives. (M)
+- **Radio conflict**: Warsaw and the local post give different orders; following the right one means
+  reading the situation, not the volume. (M)
+- **Morning report**: the result sheet is a press conference, scored on how few people were turned
+  away and how few lies got through. (S)
+
+#### Falklands
+
+_Loop: run a task force across the South Atlantic while the other side counts the same islands._
+
+- **Task force**: fuel, weather and a carrier group that must arrive before the other fleet does; the
+  map is the board. (M)
+- **The other side**: Great Britain and Israel as the player's coalition, Argentina as the opponent,
+  with Buenos Aires' claim ticking up in the corner. (M)
+- **Peace option**: a diplomatic track that wins later but scores lower, so the joke is that the war
+  is the fast path. (S)
+
+### 5.2 Leaders and countries
+
+The start screen filters modes by leader, so a leader only earns a place if several modes feature
+them. The roster today stops at Xi, Zelensky, Putin, Merz, MBS, Khamenei, Netanyahu, Erdoğan, Macron,
+Kim, Maduro and the US mascot.
+
+- [ ] Add cameos for India (Modi), Great Britain (Starmer), Argentina (Milei), Brazil (Lula) and
+      Poland (Tusk), with portraits and flags in `src/lib/theme/cameos.ts`.
+- [ ] Add India and Great Britain to every mode's leader list; the catch is that both filters then
+      return the whole grid, so if that feels flat, cover two thirds of the modes instead and say so
+      on the About page.
+- [ ] Add Mark Zuckerberg as a guest cameo rather than a head of state, next to Kim and Maduro, for
+      the Brazil mode.
+- [ ] Check that four flags still fit the corner of a game card on a 390 px screen, and that the
+      leader strip can hold the longer roster without a second row.
+
 ---
 
 ## 6. Technical foundation
@@ -603,6 +681,15 @@ content around them.
 - [ ] Consider a single `economy` module if Tycoon, Raid and Fleet Hunt are merged later.
 - [ ] Document every storage key and its migration path in one place.
 - [ ] Keep the shop and result sheet behind feature flags until the backend exists.
+
+### 6.5 Install and display
+
+- [ ] Test the installed app on a notched phone in portrait and landscape: career pages, shop and
+      result sheet all need to respect the safe-area insets now that the URL bar is gone.
+- [ ] Verify the Telegram WebView still looks right; it brings its own chrome and ignores the
+      manifest.
+- [ ] Keep an "open in browser" escape hatch for share links and for anyone who wants the URL bar.
+- [ ] Show the display mode in the About page, so a bug report can say "installed" or "browser tab".
 
 ---
 
@@ -1019,6 +1106,14 @@ _Loop: three lanes, jump and duck, outrun the drone, survive the weather._
 - **Distance gates**: new obstacle pairs at 300, 600 and 900 metres, so the first minute is not the
   whole game. (M)
 - **Daily seeded run** with a fixed obstacle order and a share card. (S)
+- **Jump sounds**: a takeoff whoosh and a landing thud, pitched by airtime, so a jump reads by ear
+  without looking at the sprite. (S)
+- **Speed surges**: every so often the drone closes in and the world runs 10–15 % faster for a
+  stretch before settling, turning the pace into a rhythm instead of one fixed speed. (S)
+- **A louder drone**: the scream comes more often and rises with proximity, doubling as the speed
+  warning, so the audio carries what the HUD says. (S)
+- **Coins on the road**: a Fake News pickup now and then that adds to the run's payout, giving the
+  player a reason to change lanes. (S)
 
 #### Shootdown
 
@@ -1191,6 +1286,8 @@ Done so far: Blocks (objective cards in `src/lib/game/blocks/objectives.ts`, cas
 - How do we handle a player who changes the device clock to farm the daily track? (For now: accept
   it; later: server day.)
 - Should Pro include revivals, or only convenience and cosmetics?
+- Are modes built on current politics (Brazil, Poland, the Falklands) worth the maintenance risk, or
+  should they stay clearly fictional so they do not expire with the news?
 
 ---
 
