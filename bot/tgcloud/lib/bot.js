@@ -6,6 +6,7 @@ import { api } from 'sdk';
 import { PRODUCTS, product } from './catalogue.js';
 import { ADMIN_IDS, APP_URL, OPERATOR, SALES_OPEN } from './generated.js';
 import { createInvoice, hasConsent, recordConsent, upsertAccount, wallet } from './ledger.js';
+import { inviteLink, inviteStats, parseInvite, recordReferral } from './referrals.js';
 import { isMuted, setMuted, texts as reminderTexts } from './reminders.js';
 import { CONSENT_TEXT, CONSENT_VERSION, PAGES, escapeHtml, legalMessages, pageUrl } from './legal.js';
 
@@ -26,13 +27,17 @@ function playButton(label = '🎮 Play World War 3', path = '') {
 const formatDate = (seconds) => new Date(seconds * 1000).toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
 
 export async function start(message, param) {
+  // Before the account is written: only a player new to the bot earns the inviter a reward
+  const referrer = parseInvite(param);
+  if (referrer && (await recordReferral(referrer, message.from))) await thankReferrer(referrer);
   await upsertAccount(message.from);
   if (param === 'shop') return await shop(message.chat.id);
   const keyboard = [playButton(), [{ text: '🛒 Supply depot', callback_data: 'shop' }]].filter((row) => row.length);
   await send(message.chat.id,
     `Welcome, ${escapeHtml(message.from.first_name)}! Open the game below: inside Telegram you are signed in ` +
     'with your Telegram account, so bought revival tokens and Pro follow you to every device.\n\n' +
-    '/shop – revival tokens and Pro\n/wallet – what you bought\n/reminders – streak reminders on or off\n' +
+    '/shop – revival tokens and Pro\n/wallet – what you bought\n/invite – invite friends, earn revival tokens\n' +
+    '/reminders – streak reminders on or off\n' +
     '/paysupport – help with purchases\n' +
     '/agb · /widerruf · /datenschutz · /impressum',
     { reply_markup: { inline_keyboard: keyboard } });
@@ -171,4 +176,38 @@ export async function toggleReminders(chatId, user, on, message) {
     }
   }
   await send(chatId, text, { reply_markup: reminderKeyboard(language, !on) });
+}
+
+function shareUrl(userId) {
+  const text = 'Play World War 3 with me: satirical cartoon arcade games right inside Telegram.';
+  return `https://t.me/share/url?url=${encodeURIComponent(inviteLink(userId))}&text=${encodeURIComponent(text)}`;
+}
+
+/** /invite: the player's link, what it earned so far, and a button to share it */
+export async function invite(chatId, user) {
+  await upsertAccount(user);
+  const stats = await inviteStats(user.id);
+  const left = Math.max(0, stats.cap - stats.friends);
+  await send(chatId,
+    `<b>Invite friends</b>
+For every friend who starts the bot for the first time with your link you get ` +
+    `❤️ ${stats.perFriend} revival token (up to ${stats.cap} friends).
+
+` +
+    `Your link: ${escapeHtml(stats.link)}
+` +
+    `Friends so far: ${stats.friends}${left === 0 ? ' (all rewards collected)' : `, ${left} rewards left`}`,
+    { reply_markup: { inline_keyboard: [[{ text: '📨 Share your link', url: shareUrl(user.id) }]] } });
+}
+
+async function thankReferrer(referrerId) {
+  const stats = await inviteStats(referrerId);
+  try {
+    await send(referrerId,
+      `🎉 A friend started World War 3 with your invite link: +${stats.perFriend} revival token ❤️ ` +
+      `(${stats.friends} of ${stats.cap} friends). /wallet`);
+  } catch (error) {
+    // The inviter may have blocked the bot; the token is booked either way
+    console.warn('could not thank referrer', referrerId, error.description ?? error.message);
+  }
 }

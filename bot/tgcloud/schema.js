@@ -83,3 +83,15 @@ export const streaks = table('streaks', {
 }, (t) => ({
   due: index('idx_streaks_expires').on(t.expiresAt),
 }));
+
+// Who invited whom with their invite link. One row per invited player (they can only be invited
+// once), written when a new player starts the bot through the link; the revivals it granted the
+// inviter count towards their wallet like bought ones.
+export const referrals = table('referrals', {
+  inviteeId: integer('invitee_id').primaryKey(),
+  referrerId: integer('referrer_id').notNull(),
+  revives: integer('revives').notNull(),
+  createdAt: integer('created_at').notNull(),
+}, (t) => ({
+  referrer: index('idx_referrals_referrer').on(t.referrerId),
+}));

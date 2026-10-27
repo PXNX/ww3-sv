@@ -6,7 +6,7 @@ import { bookPayment, findInvoice, stats, upsertAccount } from '../lib/ledger.js
 import { BOT_NAME, applyProfile } from '../lib/profile.js';
 import { unblock } from '../lib/reminders.js';
 import {
-  confirmPurchase, login, notifyAdmins, offer, paysupport, reminderSettings, send, sendLegal, shop, showWallet, start,
+  confirmPurchase, invite, login, notifyAdmins, offer, paysupport, reminderSettings, send, sendLegal, shop, showWallet, start,
 } from '../lib/bot.js';
 import { escapeHtml } from '../lib/legal.js';
 
@@ -59,6 +59,7 @@ export default async function (message) {
     case 'shop': return await shop(chatId);
     case 'buy': return args[0] ? await offer(chatId, message.from, args[0]) : await shop(chatId);
     case 'wallet': return await showWallet(chatId, message.from);
+    case 'invite': return await invite(chatId, message.from);
     case 'paysupport': return await paysupport(chatId);
     case 'reminders': return await reminderSettings(chatId, message.from);
     case 'set_cmd': {

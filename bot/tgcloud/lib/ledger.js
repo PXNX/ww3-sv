@@ -1,6 +1,7 @@
-// Accounts, consent, invoices, purchases and the revival wallet. Every write that moves value is a
-// single SQL statement, so it is atomic without a transaction: a purchase books its grant in the
-// same insert (keyed by the unique charge id), and a spend only inserts while the balance covers it.
+// Accounts, consent, invoices, purchases and the revival wallet (bought revivals, plus those earned
+// by inviting friends, minus those spent). Every write that moves value is a single SQL statement,
+// so it is atomic without a transaction: a purchase books its grant in the same insert (keyed by
+// the unique charge id), and a spend only inserts while the balance covers it.
 
 import { db, api } from 'sdk';
 import { and, eq, gt, sql } from 'sdk/db';
@@ -48,6 +49,7 @@ export async function wallet(userId) {
   const row = await db.get(sql`
     SELECT
       COALESCE((SELECT SUM(revives) FROM purchases WHERE user_id = ${userId}), 0)
+        + COALESCE((SELECT SUM(revives) FROM referrals WHERE referrer_id = ${userId}), 0)
         - COALESCE((SELECT SUM(revives) FROM spends WHERE user_id = ${userId}), 0) AS revives,
       (SELECT pro_until FROM accounts WHERE user_id = ${userId}) AS pro_until
   `);
@@ -125,6 +127,7 @@ export async function spendRevive(userId, reason) {
     INSERT INTO spends (user_id, revives, reason, created_at)
     SELECT ${userId}, 1, ${reason}, ${nowSeconds()}
     WHERE COALESCE((SELECT SUM(revives) FROM purchases WHERE user_id = ${userId}), 0)
+        + COALESCE((SELECT SUM(revives) FROM referrals WHERE referrer_id = ${userId}), 0)
         - COALESCE((SELECT SUM(revives) FROM spends WHERE user_id = ${userId}), 0) >= 1
   `);
   if (result.rowsAffected === 0) return null;
