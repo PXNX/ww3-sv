@@ -1,7 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-	<g stroke="#111111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-		<path d="M32 4v10M32 50v10M4 32h10M50 32h10M12 12l7 7M45 45l7 7M52 12l-7 7M19 45l-7 7"/>
-		<circle cx="32" cy="32" r="17" fill="#E5484D"/>
-		<circle cx="26" cy="26" r="4" fill="#FFFFFF" stroke="none"/>
+	<!-- The app icon reduced for a browser tab: the globe bomb without the background (scripts/icons) -->
+	<defs>
+		<clipPath id="globe"><circle cx="29" cy="38" r="21" /></clipPath>
+	</defs>
+	<g stroke="#111111" stroke-linejoin="round" stroke-linecap="round">
+		<path d="M32 17 C34 8 43 7 46 12" fill="none" stroke-width="5" />
+		<path d="M32 17 C34 8 43 7 46 12" fill="none" stroke="#c9a46a" stroke-width="2" />
+		<path
+			d="M50 2 L52 8 L58 6 L54 11 L59 15 L53 14 L51 20 L49 14 L43 16 L46 11 L42 6 L48 8 Z"
+			fill="#E5484D"
+			stroke-width="2"
+		/>
+		<circle cx="50" cy="11" r="2.4" fill="#ffd23f" stroke="none" />
+		<rect x="23" y="13" width="13" height="6" rx="2" fill="#3a3a3a" stroke-width="2.5" />
+		<circle cx="29" cy="38" r="21" fill="#4fa8d8" stroke="none" />
+		<g clip-path="url(#globe)" fill="#7cc576" stroke-width="2.5">
+			<path d="M20 22 C26 19 33 21 37 25 C34 29 28 29 24 31 C19 30 16 26 20 22 Z" />
+			<path d="M22 34 C28 32 35 33 39 36 C40 42 35 46 33 52 C30 56 27 54 26 49 C23 45 19 42 22 34 Z" />
+		</g>
+		<circle cx="29" cy="38" r="21" fill="none" stroke-width="4" />
+		<path d="M14 34 C15 27 19 22 24 20" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.9" />
 	</g>
 </svg>
