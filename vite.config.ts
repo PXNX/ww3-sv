@@ -5,6 +5,7 @@ import { defineConfig } from 'vite';
 import Icons from 'unplugin-icons/vite';
 import adapter from '@sveltejs/adapter-vercel';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+import pkg from './package.json' with { type: 'json' };
 
 export default defineConfig({
 	plugins: [
@@ -30,6 +31,10 @@ export default defineConfig({
 		tailwindcss(),
 		Icons({ compiler: 'svelte' })
 	],
+	// The release shown on the About page, from package.json
+	define: {
+		__APP_VERSION__: JSON.stringify(pkg.version)
+	},
 	server: {
 		port: 3021
 	}

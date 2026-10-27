@@ -36,4 +36,8 @@
 		<p class="leading-relaxed">{m.about_fiction_body()}</p>
 		<p class="leading-relaxed">{m.about_satire_body()}</p>
 	</section>
+
+	<p class="text-center text-xs font-semibold opacity-60">
+		{APP_NAME} v{__APP_VERSION__}
+	</p>
 </main>
