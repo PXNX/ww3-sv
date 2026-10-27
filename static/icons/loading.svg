@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- The app icon without its background, for loading screens: the globe bomb on transparency.
+       #fuse and #spark can be animated (the spark sits at 482 120 in the art's own coordinates). -->
+  <defs>
+    <clipPath id="globe"><circle cx="300" cy="372" r="186"/></clipPath>
+  </defs>
+  <g transform="translate(-24 -13) scale(0.85)">
+  <!-- shadow -->
+  <ellipse cx="312" cy="566" rx="150" ry="20" fill="#000" opacity="0.18"/>
+  <g id="fuse">
+  <path d="M318 186 C 330 120, 392 118, 410 150 S 470 170, 478 128" fill="none" stroke="#111" stroke-width="26" stroke-linecap="round"/>
+  <path d="M318 186 C 330 120, 392 118, 410 150 S 470 170, 478 128" fill="none" stroke="#c9a46a" stroke-width="12" stroke-linecap="round"/>
+  </g>
+  <!-- spark -->
+  <g id="spark" transform="translate(482 120)">
+    <path d="M0 -74 L16 -22 L66 -40 L30 0 L70 34 L18 24 L6 76 L-12 26 L-62 44 L-28 4 L-66 -32 L-16 -20 Z" fill="#E5484D" stroke="#111" stroke-width="10" stroke-linejoin="round"/>
+    <path d="M0 -38 L9 -12 L34 -20 L16 0 L36 18 L10 12 L3 40 L-7 13 L-32 22 L-14 2 L-34 -16 L-9 -10 Z" fill="#ffd23f"/>
+    <circle r="9" fill="#fff"/>
+  </g>
+  <!-- cap -->
+  <rect x="246" y="168" width="108" height="50" rx="12" fill="#3a3a3a" stroke="#111" stroke-width="14"/>
+  <!-- globe -->
+  <circle cx="300" cy="372" r="186" fill="#4fa8d8"/>
+  <g clip-path="url(#globe)" fill="#7cc576" stroke="#111" stroke-width="10" stroke-linejoin="round">
+    <!-- Europe -->
+    <path d="M232 214 C 262 200, 300 206, 322 226 C 346 230, 368 222, 386 240 C 372 262, 340 262, 330 282 C 312 288, 296 278, 280 286 C 262 276, 250 284, 238 270 C 220 262, 214 238, 232 214 Z"/>
+    <!-- Africa -->
+    <path d="M250 300 C 282 290, 318 300, 340 296 C 364 304, 382 330, 380 356 C 372 380, 354 392, 350 420 C 342 452, 322 480, 300 498 C 284 484, 282 452, 274 428 C 262 404, 246 396, 236 372 C 222 344, 228 314, 250 300 Z"/>
+    <!-- Middle East and Asia -->
+    <path d="M372 280 C 394 270, 420 266, 448 280 C 470 290, 486 312, 486 332 C 464 340, 442 330, 424 342 C 410 330, 396 334, 384 318 C 376 306, 366 296, 372 280 Z"/>
+    <!-- Americas edge -->
+    <path d="M104 300 C 122 290, 140 300, 146 324 C 150 350, 132 368, 140 392 C 132 420, 112 430, 100 420 Z"/>
+    <!-- Madagascar -->
+    <path d="M396 430 C 404 424, 412 432, 408 446 C 404 460, 394 462, 392 450 Z"/>
+  </g>
+  <!-- tanker on the sea -->
+  <g transform="translate(196 444) rotate(-10) scale(1.25)" stroke="#111" stroke-width="7" stroke-linejoin="round">
+    <path d="M-34 0 L38 0 L28 18 L-26 18 Z" fill="#E5484D"/>
+    <rect x="16" y="-16" width="16" height="16" fill="#fff"/>
+  </g>
+  <!-- outline and shine -->
+  <circle cx="300" cy="372" r="186" fill="none" stroke="#111" stroke-width="16"/>
+  <path d="M166 330 C 176 270, 214 228, 262 210" fill="none" stroke="#fff" stroke-width="20" stroke-linecap="round" opacity="0.9"/>
+  <circle cx="156" cy="372" r="11" fill="#fff" opacity="0.9"/>
+  </g>
+</svg>
