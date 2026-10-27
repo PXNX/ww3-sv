@@ -3,6 +3,8 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { APP_NAME } from '#lib/config.js';
 	import type { LeaderId } from '#lib/theme/leaders.js';
+	import AgentCard from '#lib/components/AgentCard.svelte';
+	import Avatar from '#lib/components/Avatar.svelte';
 	import CameoLineup from '#lib/components/CameoLineup.svelte';
 	import CareerBar from '#lib/components/CareerBar.svelte';
 	import DailyPanel from '#lib/components/DailyPanel.svelte';
@@ -18,7 +20,15 @@
 <main
 	class="mx-auto flex max-w-5xl flex-col gap-8 px-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(3rem+env(safe-area-inset-bottom))]"
 >
-	<div class="flex justify-end gap-2">
+	<div class="flex items-center justify-end gap-2">
+		<a
+			href={resolve('/profile')}
+			class="btn-chunky overflow-hidden bg-flag-blue/25 p-0"
+			aria-label={m.profile_link()}
+			title={m.profile_link()}
+		>
+			<Avatar size={36} />
+		</a>
 		<SoundToggle />
 		<LocaleSwitcher />
 	</div>
@@ -38,6 +48,8 @@
 		</div>
 	</header>
 
+	<AgentCard />
+
 	<div class="grid items-start gap-5 lg:grid-cols-2">
 		<CareerBar />
 		<DailyPanel />
@@ -50,6 +62,7 @@
 
 	<footer class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-center text-sm">
 		<a href={resolve('/shop')} class="font-semibold underline">{m.career_shop()}</a>
+		<a href={resolve('/profile')} class="font-semibold underline">{m.profile_link()}</a>
 		<a href={resolve('about')} class="font-semibold underline">{m.about_link()}</a>
 	</footer>
 </main>
