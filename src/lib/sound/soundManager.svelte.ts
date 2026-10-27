@@ -5,6 +5,7 @@
  * player's mute preference the same way shootdown/pipeline remember their settings.
  */
 import { localStore } from '#lib/services/storage.js';
+import { warmClips } from './clips';
 import { SOUNDS, type SoundId } from './sounds';
 
 const SETTINGS_KEY = 'sound:settings';
@@ -23,6 +24,8 @@ class SoundManager {
 
 	#ctx: AudioContext | null = null;
 	#master: GainNode | null = null;
+	// The recorded clips are decoded once the first gesture gives us a context, in the background
+	#warmed = false;
 
 	constructor() {
 		this.muted = localStore().read(SETTINGS_KEY, { muted: false }, isSettings).muted;
@@ -89,6 +92,12 @@ class SoundManager {
 		if (!this.#ctx) this.#ctx = new AudioContextClass();
 		if (!this.#master) this.#master = this.#createMaster(this.#ctx);
 		if (this.#ctx.state === 'suspended') void this.#ctx.resume();
+		// Decoding only needs a context, not playback, so do the slow part now rather than when a
+		// voice line is supposed to land; a failure is retried by the next playClip.
+		if (!this.#warmed) {
+			this.#warmed = true;
+			warmClips(this.#ctx);
+		}
 		return this.#ctx;
 	}
 }

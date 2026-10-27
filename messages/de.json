@@ -465,6 +465,7 @@
 	"about_fiction_body": "Dies ist ein Werk der Satire und Parodie. Personen des öffentlichen Lebens erscheinen als Karikaturen, alle übrigen Figuren sind erfunden. Die Szenen sind ausgedacht, und nichts, was eine Figur sagt, ist ein echtes Zitat.",
 	"about_satire_body": "Die Witze zielen auf Regierungen, Bürokratie und absurde Situationen, niemals auf Menschen wegen ihrer Herkunft, Religion oder Ethnie. Gewalt gibt es nur als Cartoon und ohne Blut.",
 	"sound_mute": "Ton stumm schalten",
+	"sound_preload": "Stimmen werden geladen… {percent} % · etwa {eta} s",
 	"sound_unmute": "Ton einschalten",
 	"gameover_title": "Spiel vorbei",
 	"gameover_final_score": "Endstand",

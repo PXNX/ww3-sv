@@ -7,6 +7,7 @@
 	import Avatar from '#lib/components/Avatar.svelte';
 	import CameoLineup from '#lib/components/CameoLineup.svelte';
 	import CareerBar from '#lib/components/CareerBar.svelte';
+	import ClipPreloadLine from '#lib/components/ClipPreloadLine.svelte';
 	import DailyPanel from '#lib/components/DailyPanel.svelte';
 	import InstallPwaHint from '#lib/components/InstallPwaHint.svelte';
 	import LocaleSwitcher from '#lib/components/LocaleSwitcher.svelte';
@@ -32,6 +33,8 @@
 		<SoundToggle />
 		<LocaleSwitcher />
 	</div>
+
+	<ClipPreloadLine class="mx-auto w-full max-w-xs" />
 
 	<InstallPwaHint />
 	<UpdatePwaHint />

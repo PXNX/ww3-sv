@@ -199,7 +199,7 @@ Not covered yet, each for a specific reason:
 - [ ] Keyboard and switch-access path through the result sheet and shop.
 - [ ] Colour-blind-safe states: do not rely on red/green alone for affordable/unaffordable.
 - [ ] Test the long German, Russian, Ukrainian, Persian and Arabic strings on a 390 px screen.
-- [ ] Preload the recorded voice clips when sound is on, with a small progress line and an ETA, so a
+- [x] Preload the recorded voice clips when sound is on, with a small progress line and an ETA, so a
       first voice line is not silently skipped while its file downloads (today the clip is played
       only if it is already decoded; otherwise the moment passes).
 
