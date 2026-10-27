@@ -1,8 +1,9 @@
 /*
- * Builds brand/splash.svg, the Mini App loading-screen icon: Telegram only takes a single <path>,
- * so the globe bomb is redrawn in one colour as one path with the even-odd fill rule. The globe is
- * a ring with the continents filled inside it; cap, fuse and spark sit beside it without
- * overlapping, since an overlap would cut a hole. Continents come from brand/app-icon.svg.
+ * Builds brand/splash.svg, the Mini App loading-screen icon. Like Telegram's sample
+ * (https://telegram.org/resources/web-app-icon-sample.svg) it is a single <path> with no fill
+ * colour or fill rule: Telegram colours it, and holes come from the default nonzero rule, so the
+ * inner edge of the globe's ring runs the other way round. The continents sit inside the ring;
+ * cap, fuse and spark sit beside it. Continents come from brand/app-icon.svg.
  *
  * Run with: bun scripts/generate-splash.ts
  */
@@ -19,8 +20,10 @@ const GLOBE = { x: 224, y: 326, r: 150, ring: 16 };
 // Continents are pulled in a little, so they stay clear of the ring
 const SCALE = ((GLOBE.r - GLOBE.ring - 8) / SOURCE.r) * 1.04;
 
-function circle(x: number, y: number, r: number): string {
-	return `M${round(x - r)} ${round(y)}A${r} ${r} 0 1 0 ${round(x + r)} ${round(y)}A${r} ${r} 0 1 0 ${round(x - r)} ${round(y)}Z`;
+/** A circle as two arcs; `reverse` draws it the other way round, which makes it a hole */
+function circle(x: number, y: number, r: number, reverse = false): string {
+	const sweep = reverse ? 1 : 0;
+	return `M${round(x - r)} ${round(y)}A${r} ${r} 0 1 ${sweep} ${round(x + r)} ${round(y)}A${r} ${r} 0 1 ${sweep} ${round(x - r)} ${round(y)}Z`;
 }
 
 /** A continent from the app icon, moved onto the smaller globe and kept inside its ring */
@@ -55,7 +58,7 @@ const top = GLOBE.y - GLOBE.r;
 const parts = [
 	// The globe: outer edge, inner edge (the ring), then the land inside it
 	circle(GLOBE.x, GLOBE.y, GLOBE.r),
-	circle(GLOBE.x, GLOBE.y, GLOBE.r - GLOBE.ring),
+	circle(GLOBE.x, GLOBE.y, GLOBE.r - GLOBE.ring, true),
 	...continents,
 	// The cap, just above the globe
 	`M${GLOBE.x - 40} ${top - 4}L${GLOBE.x - 40} ${top - 32}Q${GLOBE.x - 40} ${top - 40} ${GLOBE.x - 32} ${top - 40}` +
@@ -67,7 +70,10 @@ const parts = [
 	star(GLOBE.x + 158, top - 100, 52, 22, 8)
 ];
 
-const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><path fill="#111111" fill-rule="evenodd" d="${parts.join('')}"/></svg>
+const svg = `<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <path d="${parts.join('')}"/>
+</svg>
 `;
 writeFileSync(join(brand, 'splash.svg'), svg);
 console.log(`splash.svg: one path, ${svg.length} bytes`);
