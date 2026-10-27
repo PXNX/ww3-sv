@@ -1,10 +1,12 @@
 /*
  * The reactive avatar store: one look shared by the start screen, the profile page and the games
  * that draw the player. Reads and writes local storage; a player who never opened the editor gets
- * the default agent.
+ * the default agent. The agent is the player's Telegram identity: until the game runs as a Mini App
+ * with a Telegram account, everyone sees an anonymous hooded figure instead of the saved look.
  */
 import { localStore } from '#lib/services/storage.js';
-import { cyclePart, DEFAULT_LOOK, parseLook, randomLook, withPart } from './look';
+import { telegram } from '#lib/stores/telegram.svelte.js';
+import { ANONYMOUS_LOOK, cyclePart, DEFAULT_LOOK, parseLook, randomLook, withPart } from './look';
 import type { AvatarLook, LookAllowed, LookPart } from './look';
 
 const AVATAR_KEY = 'avatar:look';
@@ -20,6 +22,16 @@ class AvatarStore {
 			this.look = stored;
 			this.customized = true;
 		}
+	}
+
+	/** True while no Telegram account is signed in; the agent then stays masked */
+	get anonymous(): boolean {
+		return telegram().user === null;
+	}
+
+	/** The look to draw: the saved one once signed in with Telegram, the hooded figure before */
+	get shown(): AvatarLook {
+		return this.anonymous ? ANONYMOUS_LOOK : this.look;
 	}
 
 	set(part: LookPart, value: string) {

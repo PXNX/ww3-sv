@@ -10,7 +10,9 @@
 	import { career } from '#lib/game/career/store.svelte.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { inviteShareUrl, openTelegramLink } from '#lib/services/telegram.js';
+	import { avatar } from '#lib/game/avatar/store.svelte.js';
 	import { telegram } from '#lib/stores/telegram.svelte.js';
+	import Avatar from '#lib/components/Avatar.svelte';
 	import AvatarEditor from '#lib/components/AvatarEditor.svelte';
 	import CareerBar from '#lib/components/CareerBar.svelte';
 	import LocaleSwitcher from '#lib/components/LocaleSwitcher.svelte';
@@ -27,6 +29,7 @@
 
 	const careerState = career();
 	const session = telegram();
+	const avatarState = avatar();
 
 	const displayName = $derived.by(() => {
 		const user = session.user;
@@ -65,7 +68,25 @@
 
 	<section class="sticker flex flex-col gap-3 p-4" style:--tilt="-0.4deg">
 		<h2 class="font-display text-xl font-bold">{m.avatar_title()}</h2>
-		<AvatarEditor large />
+		{#if avatarState.anonymous}
+			<div class="flex items-center gap-4">
+				<Avatar size={120} />
+				<div class="flex flex-col gap-2">
+					<p class="text-sm leading-relaxed">{m.avatar_anonymous()}</p>
+					<a
+						href="https://t.me/game_ww3_bot?startapp=profile"
+						target="_blank"
+						rel="noopener"
+						class="btn-chunky self-start bg-flag-blue px-3 py-1 text-sm"
+					>
+						<IconSend class="size-4" aria-hidden="true" />
+						{m.profile_telegram_open()}
+					</a>
+				</div>
+			</div>
+		{:else}
+			<AvatarEditor large />
+		{/if}
 	</section>
 
 	<CareerBar />

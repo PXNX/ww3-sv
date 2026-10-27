@@ -2,7 +2,8 @@
 	The player's agent as a layered inline SVG bust in the game's cartoon style: thick ink outlines,
 	flat colours, a slightly too big head. Layers go back to front: hair that hangs behind the head,
 	shirt, neck, ears, head, face, front hair and the hat. Without a `look` it draws the player's
-	own saved agent, so any screen can show "you" with one tag.
+	own saved agent, so any screen can show "you" with one tag; until the player is signed in with
+	Telegram that agent is anonymous, a hooded figure with a question mark for a face.
 -->
 <script lang="ts">
 	import type { AvatarLook } from '#lib/game/avatar/look.js';
@@ -21,7 +22,9 @@
 	let { look, size = 64, expression = 'happy', label, class: className = '' }: Props = $props();
 
 	const avatarState = avatar();
-	const current = $derived(look ?? avatarState.look);
+	const current = $derived(look ?? avatarState.shown);
+	const anonymous = $derived(!look && avatarState.anonymous);
+	const HOOD = '#1d1d1d';
 	const uid = $props.id();
 
 	const INK = '#111111';
@@ -64,6 +67,11 @@
 			<path d="M12 141 C12 116 32 103 60 103 C88 103 108 116 108 141 Z" />
 		</clipPath>
 	</defs>
+
+	<!-- The hood of the anonymous agent, behind the head -->
+	{#if anonymous}
+		<path d="M18 116 C10 70 22 14 60 14 C98 14 110 70 102 116 Z" fill={HOOD} />
+	{/if}
 
 	<!-- Hair that hangs behind the head -->
 	{#if current.hair === 'long'}
@@ -162,7 +170,9 @@
 	{/if}
 
 	<!-- Nose -->
-	{#if current.nose === 'button'}
+	{#if anonymous}
+		<!-- No nose and no mouth for the anonymous agent: a question mark instead -->
+	{:else if current.nose === 'button'}
 		<circle cx="60" cy="71" r="4" fill={current.skin} stroke-width="2.5" />
 	{:else if current.nose === 'pointy'}
 		<path d="M60 62 L67 76 L58 76" fill={current.skin} stroke-width="2.5" />
@@ -173,7 +183,15 @@
 	{/if}
 
 	<!-- Mouth and cheeks -->
-	{#if expression === 'happy'}
+	{#if anonymous}
+		<path
+			d="M52 74 C52 66 68 66 68 74 C68 80 60 80 60 86"
+			fill="none"
+			stroke="#ffffff"
+			stroke-width="4.5"
+		/>
+		<circle cx="60" cy="93" r="3" fill="#ffffff" stroke="none" />
+	{:else if expression === 'happy'}
 		<path d="M49 84 Q60 93 71 84" fill="none" stroke-width="3" />
 		<circle cx="40" cy="76" r="4" fill="#e5484d" stroke="none" opacity="0.25" />
 		<circle cx="80" cy="76" r="4" fill="#e5484d" stroke="none" opacity="0.25" />
@@ -183,8 +201,15 @@
 		<path d="M51 86 L69 86" fill="none" stroke-width="3" />
 	{/if}
 
-	<!-- Front hair -->
-	{#if current.hair === 'bald'}
+	<!-- Front hair, or the rim of the hood -->
+	{#if anonymous}
+		<path
+			d="M24 92 C18 52 34 26 60 26 C86 26 102 52 96 92"
+			fill="none"
+			stroke={HOOD}
+			stroke-width="9"
+		/>
+	{:else if current.hair === 'bald'}
 		<path
 			d="M{60 - 10} {head.top + 7} Q60 {head.top + 3} {60 + 12} {head.top + 8}"
 			fill="none"

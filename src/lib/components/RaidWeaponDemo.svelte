@@ -29,7 +29,7 @@
 	const STEP = 1000 / 60;
 
 	const avatarState = avatar();
-	const look = $derived(raiderLook(avatarState.look));
+	const look = $derived(raiderLook(avatarState.shown));
 	let canvas: HTMLCanvasElement | undefined = $state();
 	let demo: Demo | null = null;
 	let elapsed = 0;

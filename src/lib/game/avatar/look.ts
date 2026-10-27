@@ -91,6 +91,23 @@ export const DEFAULT_LOOK: AvatarLook = {
 	hat: 'none'
 };
 
+/**
+ * The agent shown to a player who is not signed in with Telegram: a hooded figure in shadow. Its
+ * colours are outside the editor's lists on purpose, so it can never be saved or picked.
+ */
+export const ANONYMOUS_LOOK: AvatarLook = {
+	version: 1,
+	shirt: 'hoodie',
+	shirtColor: '#2b2b2b',
+	face: 'oval',
+	skin: '#4a4a4a',
+	nose: 'button',
+	eyes: 'shades',
+	hair: 'bald',
+	hairColor: '#111111',
+	hat: 'none'
+};
+
 /** A random look; the same seed always gives the same look */
 export function randomLook(seed: number = randomSeed(), allowed?: LookAllowed): AvatarLook {
 	const random = createRandom(seed);
