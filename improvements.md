@@ -592,12 +592,15 @@ very safe distance._
 
 _Loop: defend an oil giant from a hostile takeover on one screen and a feed of lies on the other._
 
-- **Two fronts**: a boardroom track (shares, proxies, a tariff tweet from Trump) and a society track
-  (rumours, moderation, a Meta-style feed); ignoring either tanks the other. (L)
-- **Zuckerberg cameo**: a boss round where the feed algorithm is the enemy and the only weapon is a
-  boring press release. (M)
-- **Lula's line**: keep the company public and the country's mood above water; the score is the lower
-  of the two tracks, so one front alone cannot win. (M)
+- [x] **Two fronts**: a boardroom track (shares, proxies, a tariff tweet from Trump) and a society track
+      (rumours, moderation, a Meta-style feed); ignoring either tanks the other. (L) (The untended track
+      drains every 1.5 s while the other one is being answered, and the score is the lower of the two.)
+- [x] **Zuckerberg cameo**: a boss round where the feed algorithm is the enemy and the only weapon is a
+      boring press release. (M) (Every fifth round is the algorithm, and both its buttons are labelled for
+      the joke; the firm press release is the only right call.)
+- [x] **Lula's line**: keep the company public and the country's mood above water; the score is the lower
+      of the two tracks, so one front alone cannot win. (M) (Lula is the mode's first leader, and the
+      boardroom and feed tracks are scored by `min(board, society)`.)
 
 #### Border Shift
 

@@ -40,7 +40,8 @@ export const CAREER_MODES = [
 	'leakpatrol',
 	'maple',
 	'rareearth',
-	'redsquare'
+	'redsquare',
+	'petrobras'
 ] as const satisfies readonly ModeId[];
 
 export type CareerMode = (typeof CAREER_MODES)[number];

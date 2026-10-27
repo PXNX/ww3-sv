@@ -470,7 +470,8 @@ export const MODES: readonly GameMode[] = [
 	},
 	{
 		id: 'petrobras',
-		status: 'coming-soon',
+		status: 'playable',
+		href: '/play/petrobras',
 		icon: IconHandshake,
 		tileClass: 'bg-mustard',
 		leaders: ['lula', 'zuckerberg', 'modi', 'starmer'],
