@@ -15,7 +15,8 @@
 		type Demo,
 		type DemoAction
 	} from '#lib/game/raid/demo.js';
-	import { drawRaid } from '#lib/game/raid/render.js';
+	import { avatar } from '#lib/game/avatar/store.svelte.js';
+	import { drawRaid, raiderLook } from '#lib/game/raid/render.js';
 	import IconRotate from '~icons/lucide/rotate-ccw';
 
 	let {
@@ -26,6 +27,9 @@
 	}: { kind: WeaponKind; action: DemoAction; label: string; reducedMotion?: boolean } = $props();
 
 	const STEP = 1000 / 60;
+
+	const avatarState = avatar();
+	const look = $derived(raiderLook(avatarState.look));
 	let canvas: HTMLCanvasElement | undefined = $state();
 	let demo: Demo | null = null;
 	let elapsed = 0;
@@ -57,6 +61,7 @@
 			effects: demo.effects,
 			reducedMotion: false,
 			zoom: 1.5,
+			look,
 			// Where the player stood at the start, so a dash moves the player and not the view
 			center: { x: start.x + DEMO_CENTER_OFFSET, y: start.y }
 		});

@@ -12,7 +12,8 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { createFixedLoop, onAppHidden } from '#lib/game/loop.js';
 	import { RARITY_COLOR } from '#lib/game/raid/config.js';
-	import { drawRaid } from '#lib/game/raid/render.js';
+	import { avatar } from '#lib/game/avatar/store.svelte.js';
+	import { drawRaid, raiderLook } from '#lib/game/raid/render.js';
 	import type { RaidGame } from '#lib/stores/raidGame.svelte.js';
 	import LivesBar from './LivesBar.svelte';
 	import PauseOverlay from './PauseOverlay.svelte';
@@ -37,6 +38,10 @@
 
 	let { game }: { game: RaidGame } = $props();
 
+	// The raider wears the player's own agent colours
+	const avatarState = avatar();
+	const look = $derived(raiderLook(avatarState.look));
+
 	let canvas: HTMLCanvasElement | undefined = $state();
 	let context: CanvasRenderingContext2D | null = null;
 	let cssWidth = 1;
@@ -46,7 +51,7 @@
 		if (!canvas || !context) return;
 		const ratio = window.devicePixelRatio || 1;
 		context.setTransform(ratio, 0, 0, ratio, 0, 0);
-		drawRaid(context, game.state, cssWidth, cssHeight, game.sceneExtras());
+		drawRaid(context, game.state, cssWidth, cssHeight, { ...game.sceneExtras(), look });
 	}
 
 	function resize() {

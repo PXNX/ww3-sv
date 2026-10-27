@@ -28,6 +28,7 @@ import {
 	type Rarity,
 	type WeaponKind
 } from './config';
+import type { AvatarLook } from '#lib/game/avatar/look.js';
 import { perkOf, type GearItem } from './items';
 import type { Decor, Obstacle, Terrain } from './maps';
 import type {
@@ -86,6 +87,25 @@ export interface SceneExtras {
 	zoom?: number;
 	/** Where the camera looks, if not at the player */
 	center?: { x: number; y: number };
+	/** The player's own agent; without it the raider wears the stock olive kit */
+	look?: RaiderLook;
+}
+
+/** The colours of the player's agent that the small raider sprite can show */
+export interface RaiderLook {
+	shirt: string;
+	skin: string;
+	/** Null for a bald agent */
+	hair: string | null;
+}
+
+/** Picks the sprite colours out of the player's avatar */
+export function raiderLook(look: AvatarLook): RaiderLook {
+	return {
+		shirt: look.shirtColor,
+		skin: look.skin,
+		hair: look.hair === 'bald' ? null : look.hairColor
+	};
 }
 
 export interface Camera {
@@ -200,7 +220,7 @@ function drawWorld(
 		if (!enemy.flying && visible(camera, enemy.x, enemy.y, enemy.radius + 30))
 			drawEnemy(context, enemy, state.mapId, time);
 	}
-	drawPlayer(context, state, time);
+	drawPlayer(context, state, time, extras.look);
 	for (const obstacle of map.obstacles) {
 		if (visible(camera, obstacle.x, obstacle.y, obstacle.r + 20)) drawObstacle(context, obstacle);
 	}
@@ -574,7 +594,12 @@ const WEAPON_LOOK: Record<WeaponKind, { length: number; width: number; color: st
 	dronenest: { length: 16, width: 14, color: '#4a5a6a' }
 };
 
-function drawPlayer(context: CanvasRenderingContext2D, state: RaidState, time: number) {
+function drawPlayer(
+	context: CanvasRenderingContext2D,
+	state: RaidState,
+	time: number,
+	agent: RaiderLook | undefined
+) {
 	const { player, loadout } = state;
 	if (player.invulnerableMs > 0 && Math.floor(time / 90) % 2 === 0) context.globalAlpha = 0.55;
 	const bob = player.moving ? Math.sin(player.stepPhase) * 2 : 0;
@@ -641,7 +666,7 @@ function drawPlayer(context: CanvasRenderingContext2D, state: RaidState, time: n
 			context.fillRect(8, 6 - look.width / 2 + 1, 6, look.width - 2);
 		}
 	});
-	circle(context, x, y, PLAYER_RADIUS, '#7c8c5c');
+	circle(context, x, y, PLAYER_RADIUS, agent?.shirt ?? '#7c8c5c');
 	if (loadout.vest) {
 		context.save();
 		context.beginPath();
@@ -657,17 +682,25 @@ function drawPlayer(context: CanvasRenderingContext2D, state: RaidState, time: n
 		x + Math.cos(player.aim) * 3,
 		y - 4 + Math.sin(player.aim) * 2,
 		11,
-		'#f6c9a0',
+		agent?.skin ?? '#f6c9a0',
 		2.5
 	);
-	context.beginPath();
-	context.arc(x, y - 7, 13, Math.PI * 1.05, Math.PI * 1.95);
-	context.closePath();
-	context.fillStyle = loadout.helmet ? RARITY_COLOR[loadout.helmet.rarity] : '#556b2f';
-	context.fill();
-	context.lineWidth = 2.5;
-	context.strokeStyle = INK;
-	context.stroke();
+	// A worn helmet always shows; bareheaded, the agent's own hair does (or nothing when bald)
+	const capColor = loadout.helmet
+		? RARITY_COLOR[loadout.helmet.rarity]
+		: agent
+			? agent.hair
+			: '#556b2f';
+	if (capColor) {
+		context.beginPath();
+		context.arc(x, y - 7, 13, Math.PI * 1.05, Math.PI * 1.95);
+		context.closePath();
+		context.fillStyle = capColor;
+		context.fill();
+		context.lineWidth = 2.5;
+		context.strokeStyle = INK;
+		context.stroke();
+	}
 	eyes(context, x, y - 4, player.aim, 4, 2.6, false);
 	context.globalAlpha = 1;
 

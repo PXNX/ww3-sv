@@ -46,6 +46,7 @@
 	import { hoursUntilNewQuests, questDone } from '#lib/game/raid/quests.js';
 	import { seasonNumber, seasonTier, seasonTierProgress } from '#lib/game/raid/season.js';
 	import { rememberDetailsItem, type RaidGame } from '#lib/stores/raidGame.svelte.js';
+	import Avatar from './Avatar.svelte';
 	import RaidCrystalIcon from './RaidCrystalIcon.svelte';
 	import RaidItemIcon from './RaidItemIcon.svelte';
 	import RaidSeasonScreen from './RaidSeasonScreen.svelte';
@@ -191,13 +192,20 @@
 			aria-label="{m.raid_lobby_level({ level: profile.level })}, {m.raid_season_open()}"
 			onclick={() => (showSeason = true)}
 		>
+			<!-- The player's own agent, with the raider level pinned to it -->
 			<span
-				class="relative flex size-14 shrink-0 flex-col items-center justify-center rounded-full border-3 border-ink bg-explosion-yellow font-display leading-none font-bold"
+				class="relative size-14 shrink-0 rounded-full border-3 border-ink bg-flag-blue/25 font-display leading-none font-bold"
 			>
-				<span class="text-2xl tabular-nums">{profile.level}</span>
+				<span class="block size-full overflow-hidden rounded-full">
+					<Avatar size={56} class="ms-[-3px] -mt-1" />
+				</span>
+				<span
+					class="absolute -start-1.5 -bottom-1.5 flex size-6 items-center justify-center rounded-full border-2 border-ink bg-explosion-yellow text-xs tabular-nums"
+					>{profile.level}</span
+				>
 				{#if claimable > 0}
 					<span
-						class="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full border-2 border-ink bg-tie-red text-[0.65rem] text-paper"
+						class="absolute -end-1 -top-1 flex size-5 items-center justify-center rounded-full border-2 border-ink bg-tie-red text-[0.65rem] text-paper"
 						>{claimable}</span
 					>
 				{/if}
