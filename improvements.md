@@ -38,20 +38,21 @@ without rewriting the game code.
 - **The start screen shows the career strip:** rank, level, XP bar, coin and revival wallets, how
   many career games have been played, and a shortcut to the supply depot.
 
-### 1.2 Daily login streak
+### 1.2 Daily reward
 
-A seven-day track pays 10, 15, 20 + 1 revival, 25, 35, 50 and 100 + 1 revival coins. Missing a day
-resets the streak to day one. The start screen shows the track, the current slot, the effective
+One reward a day on a seven-day track: 60 + 1 revival, 65, 75 + 1 revival, 85, 95 + 1 revival, 110
+and 160 + 2 revivals coins, plus 100 XP per claim (which can level the player up). Missing a day
+resets the track to day one. The start screen shows the track, the current slot, the effective
 streak and a countdown to the next local midnight. The panel refreshes on a 30-second tick and
 immediately when the tab becomes visible again.
 
 ### 1.3 Daily challenge
 
 One mode is featured per local day and is the same for everyone on that day (seeded by the date).
-Finishing one run there with a score above zero pays 60 coins, 100 XP and a revival token, and
-doubles the run's own coins. The challenge is paid once a day and is not taken from the run cap.
-The start screen shows the mode, the goal and a direct play link; the result sheet confirms the
-bonus.
+Finishing one run there with a score above zero opens the day's reward and doubles that run's own
+coins and XP; the challenge has no separate payout. The daily panel shows the track and one row with
+the featured game and the single action of the moment (play, collect, done); the result sheet says
+when the reward is ready.
 
 ### 1.4 Revival tokens
 
@@ -91,8 +92,8 @@ All numbers live in `src/lib/game/career/config.ts` and can be retuned without t
 | First-play bonus          | 8 coins, 15 XP                                  |
 | Score bonus               | up to 15 coins, up to 40 XP                     |
 | Run cap                   | 150 coins, 800 XP per day                       |
-| Challenge                 | 60 coins, 100 XP, 1 revival, doubles run coins  |
-| Streak track              | 10, 15, 20 + revival, 25, 35, 50, 100 + revival |
+| Challenge                 | opens the daily reward, doubles that run        |
+| Daily reward track        | 60–160 coins, 5 revivals a week, 100 XP a claim |
 | Revival                   | 120 coins (5 for 450)                           |
 | Sponsor break             | 10 coins, 5 per day                             |
 | Level curve               | 100 + 50 × (level − 1) XP, max level 40         |
