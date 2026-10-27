@@ -57,12 +57,17 @@ describe('mode leaders', () => {
 		expect(() => modeById('nope' as never)).toThrow('Unknown mode');
 	});
 
-	it('gives each planned mode its countries while it is still coming soon', () => {
+	it('gives each recent mode its countries and a page of its own', () => {
 		expect(modeById('redsquare').leaders).toContain('putin');
 		expect(modeById('petrobras').leaders).toContain('lula');
 		expect(modeById('petrobras').leaders).toContain('zuckerberg');
 		expect(modeById('bordershift').leaders).toContain('tusk');
+		expect(modeById('bordershift')).toMatchObject({
+			status: 'playable',
+			href: '/play/bordershift'
+		});
 		expect(modeById('falklands').leaders).toEqual(['starmer', 'milei']);
+		expect(modeById('falklands')).toMatchObject({ status: 'playable', href: '/play/falklands' });
 	});
 
 	it('gives the tech guests a home in the chip fab', () => {

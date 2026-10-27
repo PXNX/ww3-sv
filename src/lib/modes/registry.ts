@@ -480,7 +480,8 @@ export const MODES: readonly GameMode[] = [
 	},
 	{
 		id: 'bordershift',
-		status: 'coming-soon',
+		status: 'playable',
+		href: '/play/bordershift',
 		icon: IconBinoculars,
 		tileClass: 'bg-banner-slate',
 		leaders: ['tusk', 'zelensky', 'putin'],
@@ -489,7 +490,8 @@ export const MODES: readonly GameMode[] = [
 	},
 	{
 		id: 'falklands',
-		status: 'coming-soon',
+		status: 'playable',
+		href: '/play/falklands',
 		icon: IconSailboat,
 		tileClass: 'bg-sky',
 		leaders: ['starmer', 'milei'],
