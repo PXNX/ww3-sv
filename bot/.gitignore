@@ -8,3 +8,5 @@ node_modules/
 # The nyx runner: bot token and the purchase ledger
 /.env
 /data/
+# Written by bun install in the nyx container (package-lock.json is the lockfile)
+/bun.lock
