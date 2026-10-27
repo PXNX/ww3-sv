@@ -1,7 +1,8 @@
 # ptb-ww3
 
-The Telegram side of [World War 3](https://github.com/PXNX/ww3-sv) (`@game_ww3_bot`), running on
-[Telegram Serverless](https://core.telegram.org/bots/serverless) instead of a polling bot on nyx:
+The Telegram side of [World War 3](https://github.com/PXNX/ww3-sv) (`@game_ww3_bot`), written for
+[Telegram Serverless](https://core.telegram.org/bots/serverless). Serverless is still behind a waitlist
+for this bot, so until then the same handlers run on nyx (see *Run on nyx*):
 
 - **Mini App hosting**: the game's static export (`ww3-sv`, `bun run build:static`) is served at
   `https://app<id>.tgcloud.ai/`, together with the legal pages under `/legal/<page>.html`.
@@ -30,7 +31,10 @@ The Telegram side of [World War 3](https://github.com/PXNX/ww3-sv) (`@game_ww3_b
 | `tgcloud/handlers/`          | `message` (commands, `successful_payment`), `callback_query`, `pre_checkout_query` |
 | `tgcloud/endpoints/`         | `me`, `invoice`, `spend`, called by the Mini App via `Telegram.WebApp.Serverless.call` |
 | `legal/*.txt`                | Sources of the legal pages, with `{placeholders}` for the operator data |
+| `tgcloud/lib/profile.js`     | Name, descriptions, commands and photo (`res/profile.jpg`), applied by `/set_cmd` |
 | `scripts/build.mjs`          | Fills the legal texts, writes `tgcloud/lib/generated.js`, assembles `app/` |
+| `runner/`                    | The nyx runner: long polling, local SQLite, and an `sdk` shim on drizzle-orm |
+| `res/icon.svg`               | Source of the profile photo (render it to `res/profile.jpg`, 640×640 JPG) |
 
 ## Endpoints
 
@@ -56,10 +60,34 @@ The `paid` callback of `openInvoice` only refreshes the UI; call `me` again (a f
    button URL, and make it the main Mini App so `https://t.me/game_ww3_bot?startapp` works.
 6. Optionally put your Telegram user id into `adminIds` for `/stats` and payment alerts.
 
+## Run on nyx
+
+`runner/main.js` long-polls the Bot API and calls the `tgcloud/handlers/` modules, which import
+`runner/sdk` as `sdk` (a local package: `db` on bun:sqlite through drizzle-orm, `api` on the Bot API).
+It creates missing tables and indexes on start and deletes any webhook, so it must be stopped
+before the bot moves to Serverless. The Mini App endpoints need the platform and are not served;
+purchases go through the bot chat (`/shop`).
+
+```sh
+ssh nyx@mn
+git clone https://github.com/PXNX/ptb-ww3 ~/projects/ptb-ww3 && cd ~/projects/ptb-ww3
+cp example.env .env                     # TELEGRAM=<bot token>
+cp config.example.json config.local.json  # operator data; appUrl https://ww3-sv.vercel.app, legalUrl "", adminIds
+ln -sf ~/projects/ptb-ww3/ptb-ww3.container ~/.config/containers/systemd/
+systemctl --user daemon-reload && systemctl --user start ptb-ww3
+```
+
+Updates: push, then `ssh nyx@mn "cd ~/projects/ptb-ww3 && gh repo sync && systemctl --user restart ptb-ww3"`.
+
+Sales stay closed (`/buy` answers "Purchases open soon", the invoice endpoint refuses with
+`SALES_CLOSED`) until `config.local.json` carries real operator data instead of the example's.
+An admin (`adminIds`) sends `/set_cmd` to apply the bot's name, description, info, commands and
+profile photo.
+
 ## Development
 
 ```sh
-npm test                 # legal text filling and rendering
+npm test                 # legal text filling and rendering, and the ledger on the runner's shim
 npm run build:bot        # regenerate tgcloud/lib/generated.js without building the game
 npx tgcloud run endpoints/me '{}' --ctx '{ initData: { user: { id: 1, first_name: "Test" } } }'
 npx tgcloud status       # what differs from the cloud

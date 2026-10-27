@@ -11,6 +11,11 @@
     "deploy": "node scripts/build.mjs && tgcloud push",
     "status": "tgcloud status",
     "run": "tgcloud run",
-    "test": "node --test \"test/**/*.test.mjs\""
+    "test": "node --test \"test/**/*.test.mjs\" && bun test runner/",
+    "bot": "bun runner/main.js"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2",
+    "sdk": "file:./runner/sdk"
   }
 }

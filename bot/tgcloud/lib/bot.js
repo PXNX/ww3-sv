@@ -4,7 +4,7 @@
 
 import { api } from 'sdk';
 import { PRODUCTS, product } from './catalogue.js';
-import { ADMIN_IDS, APP_URL, OPERATOR } from './generated.js';
+import { ADMIN_IDS, APP_URL, OPERATOR, SALES_OPEN } from './generated.js';
 import { createInvoice, hasConsent, recordConsent, upsertAccount, wallet } from './ledger.js';
 import { CONSENT_TEXT, CONSENT_VERSION, PAGES, escapeHtml, legalMessages, pageUrl } from './legal.js';
 
@@ -69,6 +69,9 @@ export async function offer(chatId, user, sku) {
   const item = product(sku);
   if (!item) return await shop(chatId);
   await upsertAccount(user);
+  if (!SALES_OPEN) {
+    return await send(chatId, 'Purchases open soon. Until then every game is free to play.');
+  }
 
   if (!(await hasConsent(user.id))) {
     return await send(chatId,

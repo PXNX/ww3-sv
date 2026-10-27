@@ -3,9 +3,11 @@
 import { product } from '../lib/catalogue.js';
 import { ADMIN_IDS } from '../lib/generated.js';
 import { bookPayment, findInvoice, stats, upsertAccount } from '../lib/ledger.js';
+import { BOT_NAME, applyProfile } from '../lib/profile.js';
 import {
   confirmPurchase, login, notifyAdmins, offer, paysupport, send, sendLegal, shop, showWallet, start,
 } from '../lib/bot.js';
+import { escapeHtml } from '../lib/legal.js';
 
 const LEGAL_COMMANDS = {
   impressum: 'impressum', imprint: 'impressum',
@@ -54,6 +56,14 @@ export default async function (message) {
     case 'buy': return args[0] ? await offer(chatId, message.from, args[0]) : await shop(chatId);
     case 'wallet': return await showWallet(chatId, message.from);
     case 'paysupport': return await paysupport(chatId);
+    case 'set_cmd': {
+      // Admins only: it changes the bot's public profile
+      if (!ADMIN_IDS.includes(message.from.id)) return;
+      const errors = await applyProfile();
+      return await send(chatId, errors.length
+        ? `⚠️ Not everything could be set:\n${errors.map(escapeHtml).join('\n')}`
+        : `✅ Profile photo, name (“${BOT_NAME}”), description, info and commands updated.`);
+    }
     case 'stats': {
       if (!ADMIN_IDS.includes(message.from.id)) return;
       const numbers = await stats();

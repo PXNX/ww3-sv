@@ -3,7 +3,7 @@
 // data from config.local.json and writes them to generated.js (and as web pages next to the Mini
 // App). This module renders them as Telegram messages.
 
-import { APP_URL, TEXTS } from './generated.js';
+import { LEGAL_URL, TEXTS } from './generated.js';
 
 export const PAGES = {
   impressum: 'Impressum',
@@ -28,7 +28,7 @@ export function escapeHtml(text) {
 }
 
 export function pageUrl(page) {
-  return APP_URL ? `${APP_URL}/legal/${page}.html` : '';
+  return LEGAL_URL ? `${LEGAL_URL}/${page}.html` : '';
 }
 
 function blocks(text) {

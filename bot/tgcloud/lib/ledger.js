@@ -6,6 +6,7 @@ import { db, api } from 'sdk';
 import { and, eq, gt, sql } from 'sdk/db';
 import { accounts, consents, invoices, purchases, spends } from '../schema.js';
 import { CURRENCY, SUBSCRIPTION_PERIOD } from './catalogue.js';
+import { SALES_OPEN } from './generated.js';
 import { CONSENT_VERSION } from './legal.js';
 
 // Invoice creations a user may make per minute
@@ -65,6 +66,7 @@ function invoiceId() {
 
 /** An invoice link bound to this user and sku; refuses when the user asks for too many */
 export async function createInvoice(userId, item) {
+  if (!SALES_OPEN) throw new LedgerError('SALES_CLOSED', 'Purchases are not open yet.');
   const recent = await db.$count(invoices, and(eq(invoices.userId, userId), gt(invoices.createdAt, nowSeconds() - 60)));
   if (recent >= INVOICES_PER_MINUTE) {
     throw new LedgerError('RATE_LIMITED', 'Too many invoices, please wait a minute.');
