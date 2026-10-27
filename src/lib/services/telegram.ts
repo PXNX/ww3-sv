@@ -41,6 +41,7 @@ interface TelegramWebApp {
 	Serverless?: ServerlessApi;
 	openInvoice?: (url: string, callback: (status: string) => void) => void;
 	requestWriteAccess?: (callback: (allowed: boolean) => void) => void;
+	openTelegramLink?: (url: string) => void;
 }
 
 type TelegramWindow = Window & { Telegram?: { WebApp?: TelegramWebApp } };
@@ -280,6 +281,30 @@ export interface PurchaseConsent {
 	withdrawal: string;
 }
 
+/** The player's invite link and what it earned, as the bot counts it */
+export interface TelegramInvite {
+	/** A t.me link that starts the bot with the player's invite code */
+	link: string;
+	friends: number;
+	/** Friends that earn a reward */
+	cap: number;
+	/** Revival tokens per friend */
+	revivesPerFriend: number;
+}
+
+/** A Telegram share sheet for the invite link, with a line of text to go with it */
+export function inviteShareUrl(invite: TelegramInvite, text: string): string {
+	return `https://t.me/share/url?url=${encodeURIComponent(invite.link)}&text=${encodeURIComponent(text)}`;
+}
+
+/** Opens a t.me link inside Telegram (a share sheet, a chat); false outside a Mini App */
+export async function openTelegramLink(url: string): Promise<boolean> {
+	const app = await loadTelegram();
+	if (!app?.openTelegramLink) return false;
+	app.openTelegramLink(url);
+	return true;
+}
+
 export interface TelegramMe {
 	user: TelegramUser;
 	/** Revival tokens bought with Stars and not spent yet */
@@ -291,6 +316,7 @@ export interface TelegramMe {
 	consented: boolean;
 	consent: PurchaseConsent | null;
 	catalogue: CatalogueItem[];
+	invite: TelegramInvite | null;
 }
 
 const isCount = (value: unknown): value is number =>
@@ -312,6 +338,14 @@ function toConsent(value: unknown): PurchaseConsent | null {
 	if (typeof version !== 'string' || typeof text !== 'string' || text === '') return null;
 	const link = (url: unknown) => (typeof url === 'string' && url.startsWith('https://') ? url : '');
 	return { version, text, terms: link(terms), withdrawal: link(withdrawal) };
+}
+
+function toInvite(value: unknown): TelegramInvite | null {
+	if (!isRecord(value)) return null;
+	const { link, friends, cap, revives_per_friend: revivesPerFriend } = value;
+	if (typeof link !== 'string' || !link.startsWith('https://t.me/')) return null;
+	if (!isCount(friends) || !isCount(cap) || !isCount(revivesPerFriend)) return null;
+	return { link, friends, cap, revivesPerFriend };
 }
 
 /** Validates what `me` returned; null when it is not the expected shape */
@@ -341,7 +375,8 @@ export function parseMe(value: unknown): TelegramMe | null {
 		proUntil: proUntil ?? null,
 		consented: consented ?? false,
 		consent: toConsent(value.consent),
-		catalogue: items as CatalogueItem[]
+		catalogue: items as CatalogueItem[],
+		invite: toInvite(value.invite)
 	};
 }
 

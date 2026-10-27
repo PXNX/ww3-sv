@@ -16,6 +16,7 @@ import {
 	toCallError,
 	type CatalogueItem,
 	type PurchaseConsent,
+	type TelegramInvite,
 	type TelegramUser
 } from '#lib/services/telegram.js';
 
@@ -64,6 +65,8 @@ class TelegramStore {
 	consent = $state<PurchaseConsent | null>(null);
 	/** What the bot sells, as the server prices it */
 	catalogue = $state<CatalogueItem[]>([]);
+	/** The invite link and how many friends joined through it */
+	invite = $state<TelegramInvite | null>(null);
 	/** True while an invoice is open or a payment is being booked */
 	busy = $state(false);
 
@@ -201,6 +204,7 @@ class TelegramStore {
 			this.consented = me.consented;
 			this.consent = me.consent;
 			this.catalogue = me.catalogue;
+			this.invite = me.invite;
 			this.status = 'verified';
 		} catch (error) {
 			this.status = toCallError(error).type === 'UNAUTHORIZED' ? 'rejected' : 'error';

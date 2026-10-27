@@ -2606,5 +2606,10 @@
 	"profile_telegram_retry": "Try again",
 	"profile_telegram_browser": "Open the game from our Telegram bot to sign in. Purchases with Telegram Stars only work inside the Telegram Mini App.",
 	"profile_local_note": "Your agent and your progress are saved on this device.",
+	"profile_invite_title": "Invite friends",
+	"profile_invite_body": "Revival tokens: +{revives} for every friend who starts the bot for the first time with your link, up to {cap} friends.",
+	"profile_invite_count": "Friends invited: {friends} / {cap}",
+	"profile_invite_share": "Share invite link",
+	"profile_invite_text": "Play World War 3 with me: satirical cartoon arcade games right in Telegram.",
 	"profile_telegram_open": "Open in Telegram"
 }

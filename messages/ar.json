@@ -2606,5 +2606,10 @@
 	"profile_telegram_retry": "حاول مجددًا",
 	"profile_telegram_browser": "افتح اللعبة من بوت تيليغرام الخاص بنا لتسجيل الدخول. الشراء بـ Telegram Stars يعمل فقط داخل تطبيق تيليغرام المصغّر.",
 	"profile_local_note": "يُحفظ عميلك وتقدمك على هذا الجهاز.",
+	"profile_invite_title": "ادعُ أصدقاءك",
+	"profile_invite_body": "رموز الإحياء: +{revives} عن كل صديق يبدأ البوت لأول مرة عبر رابطك، حتى {cap} أصدقاء.",
+	"profile_invite_count": "الأصدقاء المدعوون: {friends} / {cap}",
+	"profile_invite_share": "شارك رابط الدعوة",
+	"profile_invite_text": "العب معي World War 3: ألعاب آركيد كرتونية ساخرة داخل تيليغرام مباشرة.",
 	"profile_telegram_open": "افتح في تيليغرام"
 }

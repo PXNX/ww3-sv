@@ -2606,5 +2606,10 @@
 	"profile_telegram_retry": "Попробовать снова",
 	"profile_telegram_browser": "Открой игру через нашего Telegram-бота, чтобы войти. Покупки за Telegram Stars работают только в мини-приложении Telegram.",
 	"profile_local_note": "Твой агент и прогресс сохраняются на этом устройстве.",
+	"profile_invite_title": "Пригласи друзей",
+	"profile_invite_body": "Жетоны возрождения: +{revives} за каждого друга, который впервые запустит бота по твоей ссылке, до {cap} друзей.",
+	"profile_invite_count": "Приглашено друзей: {friends} / {cap}",
+	"profile_invite_share": "Поделиться ссылкой",
+	"profile_invite_text": "Играй со мной в World War 3: сатирические мультяшные аркады прямо в Telegram.",
 	"profile_telegram_open": "Открыть в Telegram"
 }

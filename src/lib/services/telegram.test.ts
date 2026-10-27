@@ -3,6 +3,7 @@ import {
 	TelegramCallError,
 	endpointCode,
 	fromApiReply,
+	inviteShareUrl,
 	isTelegramLaunch,
 	parseMe,
 	startRoute,
@@ -79,7 +80,8 @@ describe('the me endpoint', () => {
 			proUntil: null,
 			consented: true,
 			consent: null,
-			catalogue: [REVIVE]
+			catalogue: [REVIVE],
+			invite: null
 		});
 		expect(
 			parseMe({ ...body, user: { id: 1, first_name: 'A', username: null } })?.user.username
@@ -177,5 +179,42 @@ describe("the bot's own server", () => {
 			expect.objectContaining({ type: 'UNAUTHORIZED' })
 		);
 		expect(() => fromApiReply(502, null)).toThrow(expect.objectContaining({ type: 'UNKNOWN' }));
+	});
+});
+
+describe('the invite link', () => {
+	const ME = {
+		user: USER,
+		wallet: { revives: 0 },
+		pro: false,
+		pro_until: null,
+		invite: {
+			link: 'https://t.me/game_ww3_bot?start=r5',
+			friends: 2,
+			cap: 10,
+			revives_per_friend: 1
+		}
+	};
+
+	it('comes with me', () => {
+		expect(parseMe(ME)?.invite).toEqual({
+			link: 'https://t.me/game_ww3_bot?start=r5',
+			friends: 2,
+			cap: 10,
+			revivesPerFriend: 1
+		});
+	});
+
+	it('is dropped when it does not lead to Telegram', () => {
+		const elsewhere = { ...ME, invite: { ...ME.invite, link: 'https://evil.test/?start=r5' } };
+		expect(parseMe(elsewhere)?.invite).toBeNull();
+		expect(parseMe({ ...ME, invite: undefined })?.invite).toBeNull();
+	});
+
+	it('is shared through the Telegram share sheet', () => {
+		const invite = parseMe(ME)!.invite!;
+		expect(inviteShareUrl(invite, 'Play with me')).toBe(
+			'https://t.me/share/url?url=https%3A%2F%2Ft.me%2Fgame_ww3_bot%3Fstart%3Dr5&text=Play%20with%20me'
+		);
 	});
 });
