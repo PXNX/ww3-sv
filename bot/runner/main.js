@@ -3,12 +3,10 @@
 // The handlers import `sdk` and get this project's shim (runner/sdk), so the same code deploys to
 // Serverless unchanged later. Endpoints need the platform's initData check and are not served here.
 
-import { mkdirSync } from 'node:fs';
 import { api, sqlite } from 'sdk';
 import * as schema from '../tgcloud/schema.js';
 import { ensureTables } from './tables.js';
 
-mkdirSync('data', { recursive: true });
 ensureTables(sqlite, schema);
 
 const HANDLERS = {

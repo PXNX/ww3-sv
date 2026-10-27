@@ -1,13 +1,17 @@
 // `sdk` for the nyx runner: the same `db`, `api`, `fetch` and `EndpointError` the handlers get on
 // Telegram Serverless, backed by a local SQLite file and the plain Bot API over HTTPS.
 
+import { mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { Database } from 'bun:sqlite';
 import { drizzle } from 'drizzle-orm/bun-sqlite';
 
 const token = process.env.TELEGRAM;
 if (!token) throw new Error('TELEGRAM (the bot token) is not set');
 
-const sqlite = new Database(process.env.DB_PATH ?? 'data/ww3.db', { create: true });
+const path = process.env.DB_PATH || 'data/ww3.db';
+if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
+const sqlite = new Database(path, { create: true });
 sqlite.exec('PRAGMA journal_mode = WAL');
 
 export const db = drizzle(sqlite);
