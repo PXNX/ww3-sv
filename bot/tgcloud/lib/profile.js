@@ -1,10 +1,11 @@
 // The bot's public face: name, description (the empty chat before Start), short description (the
 // "info" on the profile and in link previews), the command menu, the menu button that opens the
-// game as a Mini App (so it launches with the player's Telegram account) and the profile photo. They rarely
-// change, so an admin applies them on demand with /set_cmd, in English and German.
+// game as a Mini App (so it launches with the player's Telegram account) and the profile photo.
+// Photo, name and descriptions rarely change, so an admin applies them on demand with /set_cmd, in
+// English and German; the command menus and the menu button are refreshed on every start.
 
 import { api, fetch } from 'sdk';
-import { APP_URL } from './generated.js';
+import { ADMIN_IDS, APP_URL } from './generated.js';
 
 export const BOT_NAME = 'World War 3';
 
@@ -60,8 +61,15 @@ const COMMANDS = {
 // res/profile.jpg, read next to the project; Telegram only takes the photo as an upload
 const PHOTO = new URL('../../res/profile.jpg', import.meta.url);
 
-/** Applies everything; returns one line per step that failed, so the admin sees what is missing */
-export async function applyProfile() {
+// Admins also see these in their own chat's menu; they are never advertised publicly
+const ADMIN_COMMANDS = [
+  ['set_cmd', 'Profilbild, Name und Beschreibung setzen'],
+  ['stats', 'Konten, Käufe und Stars'],
+];
+
+const toCommands = (list) => list.map(([command, description]) => ({ command, description }));
+
+function collector() {
   const errors = [];
   const attempt = async (label, step) => {
     try {
@@ -70,7 +78,35 @@ export async function applyProfile() {
       errors.push(`${label}: ${error.description ?? error.message}`);
     }
   };
+  return { errors, attempt };
+}
 
+/**
+ * The command menus (English, German, and the admins' own) and the menu button that opens the game.
+ * Cheap, so like ptb-words' post_init it runs on every start; returns one line per failed step.
+ */
+export async function applyCommands() {
+  const { errors, attempt } = collector();
+  await attempt('Commands (en)', () => api.setMyCommands({ commands: toCommands(COMMANDS.en) }));
+  await attempt('Commands (de)', () => api.setMyCommands({ commands: toCommands(COMMANDS.de), language_code: 'de' }));
+  for (const admin of ADMIN_IDS) {
+    await attempt(`Admin commands (${admin})`, () =>
+      api.setMyCommands({ commands: toCommands([...COMMANDS.de, ...ADMIN_COMMANDS]), scope: { type: 'chat', chat_id: admin } }));
+  }
+  if (APP_URL) {
+    await attempt('Menu button', () =>
+      api.setChatMenuButton({ menu_button: { type: 'web_app', text: 'World War 3', web_app: { url: APP_URL } } }));
+  }
+  for (const error of errors) console.warn('[profile]', error);
+  return errors;
+}
+
+/**
+ * Everything /set_cmd sets: photo, name, description and short description in English and German,
+ * then the commands and menu button; returns one line per step that failed, for the admin.
+ */
+export async function applyProfile() {
+  const { errors, attempt } = collector();
   await attempt('Profile photo', async () => {
     const photo = await (await fetch(PHOTO)).blob();
     await api.setMyProfilePhoto({ photo: { type: 'static', photo: 'attach://profile' }, profile: new Blob([photo], { type: 'image/jpeg' }) });
@@ -81,12 +117,8 @@ export async function applyProfile() {
       await api.setMyName({ name: BOT_NAME, ...scope });
       await api.setMyDescription({ description: DESCRIPTION[language], ...scope });
       await api.setMyShortDescription({ short_description: SHORT_DESCRIPTION[language], ...scope });
-      await api.setMyCommands({ commands: COMMANDS[language].map(([command, description]) => ({ command, description })), ...scope });
     });
   }
-  if (APP_URL) {
-    await attempt('Menu button', () => api.setChatMenuButton({ menu_button: { type: 'web_app', text: 'Play', web_app: { url: APP_URL } } }));
-  }
   for (const error of errors) console.warn('[profile]', error);
-  return errors;
+  return [...errors, ...(await applyCommands())];
 }

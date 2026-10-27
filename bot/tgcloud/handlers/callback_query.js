@@ -8,7 +8,7 @@ export default async function (query) {
   const chatId = query.message?.chat.id ?? query.from.id;
   await api.answerCallbackQuery({ callback_query_id: query.id });
 
-  if (data === 'shop') return await shop(chatId);
+  if (data === 'shop') return await shop(chatId, query.from);
   if (data === 'cancel' && query.message) {
     return await api.editMessageReplyMarkup({ chat_id: chatId, message_id: query.message.message_id });
   }

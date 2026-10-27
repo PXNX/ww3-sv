@@ -9,6 +9,7 @@ import {
   confirmPurchase, invite, login, notifyAdmins, offer, paysupport, reminderSettings, send, sendLegal, shop, showWallet, start,
 } from '../lib/bot.js';
 import { escapeHtml } from '../lib/legal.js';
+import { langOfUser, t } from '../lib/texts.js';
 
 const LEGAL_COMMANDS = {
   impressum: 'impressum', imprint: 'impressum',
@@ -25,8 +26,7 @@ async function paid(message) {
   const item = invoice ? product(invoice.sku) : null;
   if (!invoice || !item || invoice.userId !== user.id || payment.currency !== 'XTR' || payment.total_amount !== item.stars) {
     console.error('unmatched payment', payment.telegram_payment_charge_id, user.id, payment.invoice_payload);
-    await send(message.chat.id,
-      'Your payment arrived but could not be matched to an item. We will sort it out: /paysupport');
+    await send(message.chat.id, t(langOfUser(user), 'unmatched_payment'));
     await notifyAdmins(`⚠️ Unmatched payment ${payment.telegram_payment_charge_id} from ${user.id}`);
     return;
   }
@@ -38,7 +38,12 @@ async function paid(message) {
     return;
   }
   console.info('granted', item.sku, 'to', user.id, payment.telegram_payment_charge_id);
-  await confirmPurchase(message.chat.id, item, payment, proUntil);
+  await confirmPurchase(message.chat.id, user, item, payment, proUntil);
+  // Like ptb-words: every payment shows up in the admins' chat
+  await notifyAdmins(
+    `⭐ ${payment.total_amount} Stars: ${escapeHtml(item.title)} from ${escapeHtml(user.first_name ?? '')} (${user.username ? `@${escapeHtml(user.username)}, ` : ''}ID ${user.id})` +
+    (payment.is_recurring && !payment.is_first_recurring ? ' – renewal' : ''),
+  );
 }
 
 export default async function (message) {
@@ -56,11 +61,11 @@ export default async function (message) {
   switch (command) {
     case 'start': return await start(message, args[0]);
     case 'login': return await login(message);
-    case 'shop': return await shop(chatId);
-    case 'buy': return args[0] ? await offer(chatId, message.from, args[0]) : await shop(chatId);
+    case 'shop': return await shop(chatId, message.from);
+    case 'buy': return args[0] ? await offer(chatId, message.from, args[0]) : await shop(chatId, message.from);
     case 'wallet': return await showWallet(chatId, message.from);
     case 'invite': return await invite(chatId, message.from);
-    case 'paysupport': return await paysupport(chatId);
+    case 'paysupport': return await paysupport(chatId, message.from);
     case 'reminders': return await reminderSettings(chatId, message.from);
     case 'set_cmd': {
       // Admins only: it changes the bot's public profile

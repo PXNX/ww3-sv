@@ -27,6 +27,7 @@ for this bot, so until then the same handlers run on nyx (see *Run on nyx*):
 | `tgcloud/lib/catalogue.js`   | The items and their Stars prices (server-owned)                         |
 | `tgcloud/lib/ledger.js`      | Wallet, invoices, idempotent booking and atomic spending                |
 | `tgcloud/lib/legal.js`       | Consent wording and version, legal pages as Telegram messages           |
+| `tgcloud/lib/texts.js`       | Every bot text, German first and English otherwise (like ptb-words' texts.py) |
 | `tgcloud/lib/bot.js`         | Chat flows: start, login, shop, consent, confirmation, support          |
 | `tgcloud/handlers/`          | `message` (commands, `successful_payment`), `callback_query`, `pre_checkout_query` |
 | `tgcloud/endpoints/`         | `me`, `invoice`, `spend`, called by the Mini App via `Telegram.WebApp.Serverless.call` |
@@ -91,6 +92,8 @@ systemctl --user daemon-reload && systemctl --user start ptb-ww3
 ```
 
 Updates: push, then `ssh nyx@mn "cd ~/projects/ptb-ww3 && gh repo sync && systemctl --user restart ptb-ww3"`.
+
+On start the runner also refreshes the command menus (English, German, and the admins' own with `/set_cmd` and `/stats`) and the menu button, like ptb-words' `post_init`. It serves the legal pages at `/legal/<page>.html`; set `legalUrl` in `config.local.json` to `https://mn.tail865185.ts.net:10000/legal` so messages and the Mini App link to them.
 
 Sales stay closed (`/buy` answers "Purchases open soon", the invoice endpoint refuses with
 `SALES_CLOSED`) until `config.local.json` carries real operator data instead of the example's.

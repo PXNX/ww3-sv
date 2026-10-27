@@ -6,7 +6,10 @@
 
 import { api, sqlite } from 'sdk';
 import * as schema from '../tgcloud/schema.js';
+import { applyCommands } from '../tgcloud/lib/profile.js';
 import { sendDueReminders } from '../tgcloud/lib/reminders.js';
+import { PAGES, renderHtml } from '../scripts/legal-render.mjs';
+import { TEXTS } from '../tgcloud/lib/generated.js';
 import { createApi } from './api.js';
 import { ensureTables } from './tables.js';
 
@@ -31,9 +34,11 @@ const ENDPOINTS = {
   streak: (await import('../tgcloud/endpoints/streak.js')).default,
 };
 
+const LEGAL_PAGES = Object.fromEntries(Object.keys(PAGES).map((page) => [page, renderHtml(page, TEXTS[page])]));
+
 const port = Number(process.env.API_PORT || 3790);
 const origins = (process.env.API_ORIGINS || 'https://ww3-sv.vercel.app').split(',').map((o) => o.trim());
-Bun.serve({ port, hostname: '0.0.0.0', fetch: createApi({ token: process.env.TELEGRAM, endpoints: ENDPOINTS, origins }) });
+Bun.serve({ port, hostname: '0.0.0.0', fetch: createApi({ token: process.env.TELEGRAM, endpoints: ENDPOINTS, origins, pages: LEGAL_PAGES }) });
 console.info(`endpoints on :${port} for ${origins.join(', ')}`);
 
 const REMINDER_INTERVAL_MS = 60_000;
@@ -45,6 +50,7 @@ setInterval(() => {
 
 // Polling and a webhook exclude each other; if enabling Serverless set one, polling takes over again
 await api.deleteWebhook({ drop_pending_updates: false });
+await applyCommands();
 const me = await api.getMe();
 console.info(`polling as @${me.username}`);
 

@@ -9,6 +9,7 @@ import { accounts, consents, invoices, purchases, spends } from '../schema.js';
 import { CURRENCY, SUBSCRIPTION_PERIOD } from './catalogue.js';
 import { SALES_OPEN } from './generated.js';
 import { CONSENT_VERSION } from './legal.js';
+import { langOfUser } from './texts.js';
 
 // Invoice creations a user may make per minute
 const INVOICES_PER_MINUTE = 5;
@@ -24,12 +25,18 @@ export class LedgerError extends Error {
 
 export async function upsertAccount(user) {
   await db.insert(accounts)
-    .values({ userId: user.id, username: user.username ?? null, firstName: user.first_name ?? null })
+    .values({ userId: user.id, username: user.username ?? null, firstName: user.first_name ?? null, language: langOfUser(user) })
     .onConflictDoUpdate({
       target: accounts.userId,
-      set: { username: user.username ?? null, firstName: user.first_name ?? null },
+      set: { username: user.username ?? null, firstName: user.first_name ?? null, language: langOfUser(user) },
     })
     .run();
+}
+
+/** The language stored with the account ('de' or 'en'), for messages sent without an update */
+export async function accountLanguage(userId) {
+  const row = await db.get(sql`SELECT language FROM accounts WHERE user_id = ${userId}`);
+  return row?.language === 'de' ? 'de' : 'en';
 }
 
 export async function hasConsent(userId) {

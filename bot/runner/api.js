@@ -36,8 +36,14 @@ export function verifyInitData(raw, token, now = Math.floor(Date.now() / 1000)) 
 const json = (status, body, headers) =>
   new Response(JSON.stringify(body), { status, headers: { ...headers, 'content-type': 'application/json' } });
 
-export function createApi({ token, endpoints, origins }) {
+export function createApi({ token, endpoints, origins, pages = {} }) {
   return async function handle(request) {
+    // The legal pages as web pages, linked from the bot's messages and the Mini App's consent box
+    const page = new URL(request.url).pathname.match(/^\/legal\/([a-z]+)\.html$/)?.[1];
+    if (request.method === 'GET' && page && Object.hasOwn(pages, page)) {
+      return new Response(pages[page], { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=300' } });
+    }
+
     const origin = request.headers.get('origin') ?? '';
     const cors = origins.includes(origin)
       ? {

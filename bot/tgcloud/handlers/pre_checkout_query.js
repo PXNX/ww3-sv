@@ -4,19 +4,21 @@
 import { api } from 'sdk';
 import { CURRENCY, product } from '../lib/catalogue.js';
 import { findInvoice, hasConsent, nowSeconds } from '../lib/ledger.js';
+import { langOfUser, t } from '../lib/texts.js';
 
 // An unpaid invoice older than this is refused at checkout
 const INVOICE_TTL = 24 * 3600;
 
+/** The text key of the reason to refuse, or null to accept */
 async function refusal(query) {
   const invoice = await findInvoice(query.invoice_payload);
-  if (!invoice) return 'This invoice is unknown. Please start the purchase again.';
+  if (!invoice) return 'checkout_unknown';
   const item = product(invoice.sku);
   if (!item || invoice.userId !== query.from.id || query.currency !== CURRENCY || query.total_amount !== item.stars) {
-    return 'This invoice does not belong to your account.';
+    return 'checkout_foreign';
   }
-  if (nowSeconds() - invoice.createdAt > INVOICE_TTL) return 'This invoice has expired. Please start the purchase again.';
-  if (!(await hasConsent(query.from.id))) return 'Please agree to the terms first: /shop';
+  if (nowSeconds() - invoice.createdAt > INVOICE_TTL) return 'checkout_expired';
+  if (!(await hasConsent(query.from.id))) return 'checkout_consent';
   return null;
 }
 
@@ -26,9 +28,9 @@ export default async function (query) {
     error = await refusal(query);
   } catch (failure) {
     console.error('pre-checkout check failed', failure);
-    error = 'Something went wrong. Please try again in a moment.';
+    error = 'checkout_error';
   }
   await api.answerPreCheckoutQuery(
-    error ? { pre_checkout_query_id: query.id, ok: false, error_message: error } : { pre_checkout_query_id: query.id, ok: true },
+    error ? { pre_checkout_query_id: query.id, ok: false, error_message: t(langOfUser(query.from), error) } : { pre_checkout_query_id: query.id, ok: true },
   );
 }

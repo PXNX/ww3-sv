@@ -9,6 +9,8 @@ export const accounts = table('accounts', {
   userId: integer('user_id').primaryKey(),
   username: text('username'),
   firstName: text('first_name'),
+  // 'de' or 'en' after the Telegram language, for messages the player did not ask for
+  language: text('language'),
   firstSeen: integer('first_seen', { mode: 'timestamp' }).default(sql`(unixepoch())`),
   // Unix seconds until which Pro is active, or null
   proUntil: integer('pro_until'),

@@ -4,14 +4,17 @@
 // granted later, only on `successful_payment`.
 
 import { EndpointError } from 'sdk';
-import { product } from '../lib/catalogue.js';
+import { localized, product } from '../lib/catalogue.js';
 import { LedgerError, createInvoice, hasConsent, recordConsent, upsertAccount } from '../lib/ledger.js';
+import { langOfUser } from '../lib/texts.js';
 
 export default async function (input, ctx) {
   const user = ctx.initData.user;
-  const item = product(String(input.sku ?? ''));
-  if (!item) throw new EndpointError('Unknown item', { code: 'UNKNOWN_SKU' });
+  const entry = product(String(input.sku ?? ''));
+  if (!entry) throw new EndpointError('Unknown item', { code: 'UNKNOWN_SKU' });
 
+  // Title and description in the buyer's language; the price is the same
+  const item = localized(entry, langOfUser(user));
   await upsertAccount(user);
   if (!(await hasConsent(user.id))) {
     if (input.consent !== true) {
