@@ -5,7 +5,7 @@
  * the page chrome shows is reactive, synced after each step.
  */
 import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
-import { BOOST_MS, STARTING_LIVES } from '#lib/game/runcomrade/config.js';
+import { BOOST_MS, JUMP_MS, STARTING_LIVES } from '#lib/game/runcomrade/config.js';
 import {
 	buzzIntensity,
 	buzzIntervalMs,
@@ -44,6 +44,8 @@ export class RunComradeGame {
 	stumbles = $state(0);
 	helmets = $state(0);
 	bowls = $state(0);
+	/** Fake News pickups collected this run */
+	coins = $state(0);
 	/** Share of the helmet boost left, in steps of a twentieth; 0 when none */
 	boostLeft = $state(0);
 	shield = $state(false);
@@ -196,6 +198,9 @@ export class RunComradeGame {
 				if (event.kind === 'helmet') {
 					popup(m.runcomrade_popup_boost(), true);
 					this.#play('chime');
+				} else if (event.kind === 'coin') {
+					popup(m.runcomrade_popup_coin(), true);
+					this.#play('ding');
 				} else {
 					popup(m.runcomrade_popup_shield(), true);
 					this.#play('pickup');
@@ -226,17 +231,25 @@ export class RunComradeGame {
 					this.#buzzMs = Math.max(this.#buzzMs, 450);
 				}
 				break;
+			case 'surge':
+				popup(m.runcomrade_popup_surge(), true);
+				this.#play('whoosh');
+				break;
 			case 'jump':
-			case 'duck':
+				this.#play('run-jump');
+				break;
 			case 'land':
+				this.#play('run-land', Math.min(1, Math.max(0.1, event.airMs / JUMP_MS)));
+				break;
+			case 'duck':
 			case 'lane':
 			case 'boost-end':
 				break;
 		}
 	}
 
-	#play(id: SoundId) {
-		soundManager().play(id);
+	#play(id: SoundId, intensity = 1) {
+		soundManager().play(id, intensity);
 	}
 
 	#ageEffects(dtMs: number) {
@@ -253,6 +266,7 @@ export class RunComradeGame {
 		this.stumbles = state.stumbles;
 		this.helmets = state.pickups.helmet;
 		this.bowls = state.pickups.rice;
+		this.coins = state.pickups.coin;
 		this.boostLeft = Math.ceil((state.power.boostMs / BOOST_MS) * 20) / 20;
 		this.shield = state.power.shield;
 	}

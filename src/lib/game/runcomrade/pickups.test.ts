@@ -80,6 +80,16 @@ describe('rice bowl', () => {
 	});
 });
 
+describe('Fake News coin', () => {
+	it('gives no power, so collecting one never changes the next hit', () => {
+		const power = createPower();
+		applyPickup(power, 'coin');
+		expect(power.shield).toBe(false);
+		expect(isBoosted(power)).toBe(false);
+		expect(absorbHit(power)).toBe(false);
+	});
+});
+
 describe('reaching a pickup', () => {
 	it('needs the runner in its lane and within reach along the course', () => {
 		expect(reaches(pickup(), 50, 1)).toBe(true);

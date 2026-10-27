@@ -78,6 +78,19 @@ describe('drone chase', () => {
 		expect(boosted.gap - calm.gap).toBeCloseTo(BOOST_DRONE_PULL, 1);
 	});
 
+	it('recovers slower during a speed surge, so it closes in and falls back again', () => {
+		const calm = createDrone();
+		const surging = createDrone();
+		calm.gap = 5;
+		surging.gap = 5;
+		for (let t = 0; t < 2000; t += STEP) {
+			stepDrone(calm, STEP, false);
+			stepDrone(surging, STEP, false, true);
+		}
+		expect(surging.gap).toBeLessThan(calm.gap);
+		expect(surging.gap).toBeGreaterThan(5);
+	});
+
 	it('makes contact once the gap is used up', () => {
 		const drone = createDrone();
 		closeIn(drone, 'mine');
@@ -145,6 +158,12 @@ describe('buzz', () => {
 			expect(buzzIntensity(gap, false)).toBeGreaterThan(0);
 			expect(buzzIntervalMs(gap)).toBeGreaterThan(200);
 		}
+	});
+
+	it('is loud enough to be the speed warning, even at the far end of the chase', () => {
+		expect(buzzIntensity(DRONE_MAX_GAP, false)).toBeGreaterThanOrEqual(0.35);
+		expect(buzzIntervalMs(DRONE_MAX_GAP)).toBeLessThanOrEqual(1300);
+		expect(buzzIntervalMs(0)).toBeLessThanOrEqual(300);
 	});
 
 	it('is louder when tall sunflowers hide the drone', () => {

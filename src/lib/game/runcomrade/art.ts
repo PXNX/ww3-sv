@@ -290,6 +290,32 @@ export function drawRiceBowl(ctx: Ctx, x: number, y: number, s: number, steam = 
 	}
 }
 
+/** A Fake News pickup: a spinning golden coin with a tiny newspaper on it */
+export function drawCoin(ctx: Ctx, x: number, y: number, s: number, spin = 0) {
+	const r = 14 * s;
+	// A horizontal squash so the spin reads from a distance
+	const width = r * (0.25 + 0.75 * Math.abs(Math.cos(spin)));
+	ctx.beginPath();
+	ctx.ellipse(x, y - r, width, r, 0, 0, Math.PI * 2);
+	fillStroke(ctx, YELLOW, s, 2);
+	if (width > r * 0.45) {
+		// Two lines of "print" and a headline, so it reads as news rather than gold
+		ctx.beginPath();
+		ctx.moveTo(x - width * 0.45, y - r * 1.35);
+		ctx.lineTo(x + width * 0.45, y - r * 1.35);
+		outline(ctx, s, 1.8);
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(x - width * 0.45, y - r * 1.05);
+		ctx.lineTo(x + width * 0.45, y - r * 1.05);
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(x - width * 0.45, y - r * 0.75);
+		ctx.lineTo(x + width * 0.1, y - r * 0.75);
+		ctx.stroke();
+	}
+}
+
 export interface RunnerPose {
 	/** Leg and arm swing, any angle in radians that advances while running */
 	stride: number;

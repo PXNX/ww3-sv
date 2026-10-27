@@ -5,6 +5,7 @@
  */
 import type { Random } from '#lib/game/random.js';
 import {
+	COIN_SCORE,
 	DUCK_MS,
 	GENERATE_AHEAD,
 	HIDE_TAIL,
@@ -37,6 +38,7 @@ import { stepGlance } from './glance';
 import { fogHidesDrone, weatherAt } from './weather';
 import { extendField, inTallSunflowers, nearestLane, pruneField, speedAt } from './patterns';
 import { absorbHit, applyPickup, isBoosted, reaches, speedFactor, tickPower } from './pickups';
+import { stepSurge, surgeSpeedFactor } from './surge';
 import { isAirborne, isDucking, type RunEvent, type RunState } from './state';
 
 export type Command = 'left' | 'right' | 'jump' | 'duck';
@@ -65,8 +67,8 @@ export function command(state: RunState, action: Command): RunEvent[] {
 			const events: RunEvent[] = [];
 			// Ducking in the air drops the runner straight down
 			if (isAirborne(runner)) {
+				events.push({ type: 'land', airMs: runner.jumpMs });
 				runner.jumpMs = -1;
-				events.push({ type: 'land' });
 			}
 			if (!isDucking(runner)) events.push({ type: 'duck' });
 			runner.duckMs = DUCK_MS;
@@ -124,7 +126,7 @@ export function stepGame(state: RunState, random: Random, dtMs: number): RunEven
 		runner.jumpMs += dtMs;
 		if (runner.jumpMs >= JUMP_MS) {
 			runner.jumpMs = -1;
-			events.push({ type: 'land' });
+			events.push({ type: 'land', airMs: JUMP_MS });
 		}
 	}
 	runner.duckMs = Math.max(0, runner.duckMs - dtMs);
@@ -137,8 +139,14 @@ export function stepGame(state: RunState, random: Random, dtMs: number): RunEven
 			? Math.min(runner.lane, runner.x + slide)
 			: Math.max(runner.lane, runner.x - slide);
 
-	// Forward motion
-	state.speed = speedAt(state.distance) * speedFactor(state.power) * slowFactor(runner.slowMs);
+	// Forward motion. A surge starts before the speed is worked out, so the step it starts is faster
+	const surge = stepSurge(state.surge, dtMs, random);
+	if (surge.started) events.push({ type: 'surge', factor: state.surge.factor });
+	state.speed =
+		speedAt(state.distance) *
+		surgeSpeedFactor(state.surge) *
+		speedFactor(state.power) *
+		slowFactor(runner.slowMs);
 	state.distance += state.speed * seconds;
 	if (tickPower(state.power, dtMs).boostEnded) events.push({ type: 'boost-end' });
 
@@ -154,7 +162,9 @@ export function stepGame(state: RunState, random: Random, dtMs: number): RunEven
 	state.covered = inTallSunflowers(state.field, state.distance, lane, HIDE_TAIL);
 	state.weather = weatherAt(state.weatherPlan, state.distance);
 	state.hidden = state.covered || fogHidesDrone(state.weather, state.drone.gap);
-	if (stepDrone(state.drone, dtMs, isBoosted(state.power)).contact) {
+	if (
+		stepDrone(state.drone, dtMs, isBoosted(state.power), surgeSpeedFactor(state.surge) > 1).contact
+	) {
 		if (absorbHit(state.power)) {
 			state.shieldBlocks += 1;
 			events.push({ type: 'shield-block', source: 'drone' });
@@ -230,9 +240,14 @@ function collectPickups(state: RunState, events: RunEvent[]) {
 	for (const pickup of state.field.pickups) {
 		if (!reaches(pickup, state.distance, state.runner.x)) continue;
 		pickup.taken = true;
-		applyPickup(state.power, pickup.kind);
-		state.pickups[pickup.kind] += 1;
-		state.bonus += PICKUP_SCORE;
+		if (pickup.kind === 'coin') {
+			state.pickups.coin += 1;
+			state.bonus += COIN_SCORE;
+		} else {
+			applyPickup(state.power, pickup.kind);
+			state.pickups[pickup.kind] += 1;
+			state.bonus += PICKUP_SCORE;
+		}
 		events.push({ type: 'pickup', kind: pickup.kind, lane: pickup.lane });
 	}
 }

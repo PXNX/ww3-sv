@@ -14,6 +14,8 @@ import { pickWeighted, randomInt, shuffle, type Random } from '#lib/game/random.
 import {
 	ACTION_COST_MS,
 	BASE_SPEED,
+	COIN_GAP_MIN,
+	COIN_GAP_SPAN,
 	FIRST_ROW_Z,
 	FULL_DENSITY_DISTANCE,
 	KIND_UNLOCK,
@@ -76,6 +78,7 @@ export interface Generator {
 	/** Which lanes of the last placed row held an obstacle */
 	busy: Flags;
 	nextPickupZ: number;
+	nextCoinZ: number;
 	nextPatchZ: number;
 	nextId: number;
 }
@@ -91,6 +94,7 @@ export function createGenerator(): Generator {
 		reach: [false, true, false],
 		busy: [false, false, false],
 		nextPickupZ: FIRST_ROW_Z + 25,
+		nextCoinZ: FIRST_ROW_Z + 18,
 		nextPatchZ: 50,
 		nextId: 1
 	};
@@ -240,14 +244,32 @@ function placeRow(
 	const previous = field.rows.at(-1);
 	field.rows.push({ id: generator.nextId++, z, cells, spent: [false, false, false] });
 
-	if (previous && z >= generator.nextPickupZ) {
-		const middle = (previous.z + z) / 2;
+	if (previous) {
 		const free = LANES.filter((lane) => previous.cells[lane] === null && cells[lane] === null);
-		if (free.length > 0 && middle - previous.z >= PICKUP_CLEARANCE) {
-			const lane = free[randomInt(random, 0, free.length)];
-			const kind: PickupKind = random() < 0.45 ? 'helmet' : 'rice';
-			field.pickups.push({ id: generator.nextId++, kind, lane, z: middle, taken: false });
-			generator.nextPickupZ = z + 55 + random() * 55;
+
+		// A Fake News coin now and then, closer to the row behind so it reads as a small detour
+		if (free.length > 0 && z >= generator.nextCoinZ) {
+			const coinZ = previous.z + (z - previous.z) * 0.35;
+			if (coinZ - previous.z >= PICKUP_CLEARANCE && z - coinZ >= PICKUP_CLEARANCE) {
+				field.pickups.push({
+					id: generator.nextId++,
+					kind: 'coin',
+					lane: free[randomInt(random, 0, free.length)],
+					z: coinZ,
+					taken: false
+				});
+			}
+			generator.nextCoinZ = z + COIN_GAP_MIN + random() * COIN_GAP_SPAN;
+		}
+
+		if (z >= generator.nextPickupZ) {
+			const middle = (previous.z + z) / 2;
+			if (free.length > 0 && middle - previous.z >= PICKUP_CLEARANCE) {
+				const lane = free[randomInt(random, 0, free.length)];
+				const kind: PickupKind = random() < 0.45 ? 'helmet' : 'rice';
+				field.pickups.push({ id: generator.nextId++, kind, lane, z: middle, taken: false });
+				generator.nextPickupZ = z + 55 + random() * 55;
+			}
 		}
 	}
 

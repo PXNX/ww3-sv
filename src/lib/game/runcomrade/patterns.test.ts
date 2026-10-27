@@ -317,9 +317,17 @@ describe('generated courses', () => {
 		expect(found).toBeGreaterThan(40);
 	});
 
-	it('make both pickup kinds appear', () => {
+	it('make all three pickup kinds appear', () => {
 		const kinds = new Set(SEEDS.flatMap((seed) => course(seed, 2000).pickups.map((p) => p.kind)));
-		expect(kinds).toEqual(new Set(['helmet', 'rice']));
+		expect(kinds).toEqual(new Set(['helmet', 'rice', 'coin']));
+	});
+
+	it('place coins more often than power-ups, so there is a reason to change lane', () => {
+		const field = course(7, 3000);
+		const coins = field.pickups.filter((pickup) => pickup.kind === 'coin');
+		const powerUps = field.pickups.filter((pickup) => pickup.kind !== 'coin');
+		expect(coins.length).toBeGreaterThan(powerUps.length);
+		expect(coins.length).toBeGreaterThan(5);
 	});
 });
 

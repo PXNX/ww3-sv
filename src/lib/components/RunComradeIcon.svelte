@@ -5,7 +5,7 @@
 -->
 <script lang="ts" module>
 	export type RunComradeIconKind =
-		'ditch' | 'arm' | 'mine' | 'helmet' | 'rice' | 'drone' | 'sunflower' | 'runner';
+		'ditch' | 'arm' | 'mine' | 'helmet' | 'rice' | 'coin' | 'drone' | 'sunflower' | 'runner';
 </script>
 
 <script lang="ts">
@@ -19,7 +19,8 @@
 		drawRiceBowl,
 		drawRunner,
 		drawSunflower,
-		drawTractorArm
+		drawTractorArm,
+		drawCoin
 	} from '#lib/game/runcomrade/art.js';
 
 	let { kind, class: className = 'size-12' }: { kind: RunComradeIconKind; class?: string } =
@@ -49,6 +50,9 @@
 				break;
 			case 'rice':
 				drawRiceBowl(context, 24, 42, 0.95, 0);
+				break;
+			case 'coin':
+				drawCoin(context, 24, 34, 1.15, 0.6);
 				break;
 			case 'drone':
 				drawDrone(context, 24, 22, 0.55, 0.2);

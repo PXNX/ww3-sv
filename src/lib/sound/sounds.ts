@@ -29,6 +29,8 @@ export type SoundId =
 	| 'thud'
 	| 'alarm'
 	| 'whoosh'
+	| 'run-jump'
+	| 'run-land'
 	| 'flap'
 	| 'ding'
 	| 'click'
@@ -181,6 +183,36 @@ export const SOUNDS: Record<SoundId, SoundEffect> = {
 			q: 0.7,
 			gain: 0.18
 		}),
+
+	// Run Comrade take-off: a short rising sweep from the boots
+	'run-jump': (ctx, dest) =>
+		noise(ctx, dest, {
+			duration: 0.18,
+			filterType: 'bandpass',
+			filterFrequency: 420,
+			filterTo: 1800,
+			q: 0.8,
+			gain: 0.14
+		}),
+
+	// The landing thud; a longer jump lands heavier (intensity is the airtime)
+	'run-land': (ctx, dest, intensity) => {
+		const weight = 0.5 + 0.5 * Math.min(1, Math.max(0, intensity));
+		noise(ctx, dest, {
+			duration: 0.1 + 0.05 * weight,
+			filterType: 'lowpass',
+			filterFrequency: 320,
+			filterTo: 110,
+			gain: 0.14 + 0.12 * weight
+		});
+		tone(ctx, dest, {
+			frequency: 95 + 35 * weight,
+			glideTo: 55,
+			duration: 0.09,
+			type: 'sine',
+			gain: 0.1 + 0.08 * weight
+		});
+	},
 
 	// A single soft wingbeat
 	flap: (ctx, dest) =>

@@ -1106,14 +1106,14 @@ _Loop: three lanes, jump and duck, outrun the drone, survive the weather._
 - **Distance gates**: new obstacle pairs at 300, 600 and 900 metres, so the first minute is not the
   whole game. (M)
 - **Daily seeded run** with a fixed obstacle order and a share card. (S)
-- **Jump sounds**: a takeoff whoosh and a landing thud, pitched by airtime, so a jump reads by ear
-  without looking at the sprite. (S)
-- **Speed surges**: every so often the drone closes in and the world runs 10–15 % faster for a
-  stretch before settling, turning the pace into a rhythm instead of one fixed speed. (S)
-- **A louder drone**: the scream comes more often and rises with proximity, doubling as the speed
-  warning, so the audio carries what the HUD says. (S)
-- **Coins on the road**: a Fake News pickup now and then that adds to the run's payout, giving the
-  player a reason to change lanes. (S)
+- [x] **Jump sounds**: a takeoff whoosh and a landing thud, pitched by airtime, so a jump reads by ear
+      without looking at the sprite. (S)
+- [x] **Speed surges**: every so often the drone closes in and the world runs 10–15 % faster for a
+      stretch before settling, turning the pace into a rhythm instead of one fixed speed. (S)
+- [x] **A louder drone**: the scream comes more often and rises with proximity, doubling as the speed
+      warning, so the audio carries what the HUD says. (S)
+- [x] **Coins on the road**: a Fake News pickup now and then that adds to the run's payout, giving the
+      player a reason to change lanes. (S)
 
 #### Shootdown
 

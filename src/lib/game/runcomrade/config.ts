@@ -39,7 +39,7 @@ export const OBSTACLE_HALF_DEPTH: Record<ObstacleKind, number> = {
 /** A runner and an obstacle share a lane while their lane positions are closer than this */
 export const LANE_OVERLAP = 0.55;
 
-export type PickupKind = 'helmet' | 'rice';
+export type PickupKind = 'helmet' | 'rice' | 'coin';
 export const PICKUP_HALF_DEPTH = 0.8;
 
 // Runner moves
@@ -65,6 +65,22 @@ export const BOOST_SPEED = 1.45;
 /** How fast the drone falls behind (units per second) while the helmet boost lasts */
 export const BOOST_DRONE_PULL = 2.4;
 export const PICKUP_SCORE = 25;
+/** A Fake News pickup is worth more than a power-up but gives no power, so it is a detour */
+export const COIN_SCORE = 40;
+/** Distance between two Fake News pickups, at least and at most */
+export const COIN_GAP_MIN = 26;
+export const COIN_GAP_SPAN = 30;
+
+// Speed surges: the world speeds up for a stretch every so often, so the pace has a rhythm
+export const SURGE_FIRST_MS = 20_000;
+export const SURGE_GAP_MIN_MS = 16_000;
+export const SURGE_GAP_SPAN_MS = 10_000;
+export const SURGE_MIN_MS = 3500;
+export const SURGE_SPAN_MS = 2000;
+export const SURGE_MIN_SPEED = 1.1;
+export const SURGE_SPEED_SPAN = 0.05;
+/** During a surge the drone recovers this much slower, so it visibly closes in and falls back */
+export const SURGE_DRONE_RECOVER_SHARE = 0.3;
 
 // Drone chase (see drone.ts)
 export const DRONE_START_GAP = 9;

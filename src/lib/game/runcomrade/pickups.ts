@@ -24,7 +24,7 @@ export function isBoosted(power: Power): boolean {
 /** Applies a collected pickup. A second helmet restarts the boost; a second bowl changes nothing. */
 export function applyPickup(power: Power, kind: PickupKind): void {
 	if (kind === 'helmet') power.boostMs = BOOST_MS;
-	else power.shield = true;
+	else if (kind === 'rice') power.shield = true;
 }
 
 /** Counts the boost down */

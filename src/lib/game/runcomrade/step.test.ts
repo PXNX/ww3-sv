@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createRandom } from '#lib/game/random.js';
 import {
 	BOOST_MS,
+	COIN_SCORE,
 	DRONE_RESET_GAP,
 	DRONE_START_GAP,
 	DUCK_MS,
@@ -15,6 +16,7 @@ import {
 	type PickupKind
 } from './config';
 import type { Cells } from './patterns';
+import { speedAt } from './patterns';
 import { createGame, isAirborne, isDucking, scoreOf, type RunEvent, type RunState } from './state';
 import { command, stepGame, type Command } from './step';
 
@@ -99,6 +101,20 @@ describe('running', () => {
 		state.over = true;
 		expect(stepGame(state, createRandom(1), STEP)).toEqual([]);
 		expect(command(state, 'jump')).toEqual([]);
+	});
+
+	it('speeds up for a surge, announces it once and settles back after', () => {
+		const state = emptyRun();
+		state.surge.nextMs = 0;
+		const events: RunEvent[] = [];
+		for (let t = 0; t < 1000; t += STEP) events.push(...stepGame(state, createRandom(1), STEP));
+		expect(types(events).filter((type) => type === 'surge')).toHaveLength(1);
+		const base = speedAt(state.distance);
+		expect(state.speed).toBeGreaterThan(base * 1.09);
+		expect(state.speed).toBeLessThanOrEqual(base * 1.16);
+		const quiet = emptyRun();
+		run(quiet, 1000);
+		expect(state.speed).toBeGreaterThan(quiet.speed);
 	});
 });
 
@@ -351,12 +367,23 @@ describe('pickups', () => {
 		expect(state.power.shield).toBe(false);
 	});
 
+	it('a Fake News coin scores without touching the power-ups', () => {
+		const state = emptyRun();
+		addPickup(state, 'coin', 1, 8);
+		const events = runTo(state, 10);
+		expect(types(events)).toContain('pickup');
+		expect(state.pickups.coin).toBe(1);
+		expect(state.bonus).toBe(COIN_SCORE);
+		expect(state.power.shield).toBe(false);
+		expect(state.power.boostMs).toBe(0);
+	});
+
 	it('is collected from the lane the runner is in, and only once', () => {
 		const state = emptyRun();
 		addPickup(state, 'rice', 0, 8);
 		addPickup(state, 'helmet', 1, 8);
 		runTo(state, 10);
-		expect(state.pickups).toEqual({ helmet: 1, rice: 0 });
+		expect(state.pickups).toEqual({ helmet: 1, rice: 0, coin: 0 });
 		expect(state.field.pickups.map((pickup) => pickup.taken)).toEqual([false, true]);
 	});
 });

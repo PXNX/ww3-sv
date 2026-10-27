@@ -20,6 +20,7 @@ import {
 	SAND,
 	TIE_RED,
 	YELLOW,
+	drawCoin,
 	drawDitch,
 	drawDrone,
 	drawHelmet,
@@ -111,7 +112,7 @@ function drawLongShadow(
 type Item =
 	| { z: number; kind: 'flower'; lane: number; height: number; seed: number }
 	| { z: number; kind: 'ditch' | 'arm' | 'mine'; lane: Lane }
-	| { z: number; kind: 'helmet' | 'rice'; lane: Lane }
+	| { z: number; kind: 'helmet' | 'rice' | 'coin'; lane: Lane }
 	| { z: number; kind: 'runner' };
 
 export function runnerPose(state: RunState, reducedMotion = true): RunnerPose {
@@ -316,6 +317,9 @@ function drawItem(ctx: CanvasRenderingContext2D, state: RunState, item: Item, ex
 				break;
 			case 'rice':
 				drawRiceBowl(ctx, x, y - (16 + Math.sin(time * 4 + item.z) * 4) * s, s, time);
+				break;
+			case 'coin':
+				drawCoin(ctx, x, y - (12 + Math.sin(time * 5 + item.z) * 4) * s, s, time * 2.4 + item.z);
 				break;
 		}
 	}

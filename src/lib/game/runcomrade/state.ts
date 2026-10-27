@@ -14,6 +14,7 @@ import { createDrone, type Drone } from './drone';
 import { createGlance, type Glance } from './glance';
 import { createField, createGenerator, type Field, type Generator } from './patterns';
 import { createPower, type Power } from './pickups';
+import { createSurge, type Surge } from './surge';
 import { createWeatherPlan, type Weather, type WeatherPlan } from './weather';
 
 export interface Runner {
@@ -45,6 +46,7 @@ export interface RunState {
 	runner: Runner;
 	drone: Drone;
 	power: Power;
+	surge: Surge;
 	field: Field;
 	generator: Generator;
 	/** The runner is among tall sunflowers */
@@ -86,6 +88,7 @@ export function createGame(seed = 1): RunState {
 		runner: createRunner(),
 		drone: createDrone(),
 		power: createPower(),
+		surge: createSurge(),
 		field: createField(),
 		generator: createGenerator(),
 		covered: false,
@@ -97,7 +100,7 @@ export function createGame(seed = 1): RunState {
 		contacts: 0,
 		shieldBlocks: 0,
 		smashes: 0,
-		pickups: { helmet: 0, rice: 0 },
+		pickups: { helmet: 0, rice: 0, coin: 0 },
 		over: false
 	};
 }
@@ -118,13 +121,14 @@ export function isDucking(runner: Runner): boolean {
 export type RunEvent =
 	| { type: 'jump' }
 	| { type: 'duck' }
-	| { type: 'land' }
+	| { type: 'land'; airMs: number }
 	| { type: 'lane'; lane: Lane }
 	| { type: 'stumble'; kind: ObstacleKind; lane: Lane; gap: number }
 	| { type: 'smash'; kind: ObstacleKind; lane: Lane }
 	| { type: 'shield-block'; source: 'obstacle' | 'drone' }
 	| { type: 'pickup'; kind: PickupKind; lane: Lane }
 	| { type: 'boost-end' }
+	| { type: 'surge'; factor: number }
 	| { type: 'drone-maneuver'; kind: 'lane' | 'swoop' | 'close-in'; gap: number; x: number }
 	| { type: 'contact'; lives: number }
 	| { type: 'game-over' };

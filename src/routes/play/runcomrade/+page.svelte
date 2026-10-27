@@ -157,6 +157,10 @@
 				<RunComradeIcon kind="rice" class="size-10 shrink-0" />
 				<span><strong>{m.runcomrade_rice_name()}</strong> {m.runcomrade_rice_hint()}</span>
 			</li>
+			<li class="flex items-center gap-2">
+				<RunComradeIcon kind="coin" class="size-10 shrink-0" />
+				<span><strong>{m.runcomrade_coin_name()}</strong> {m.runcomrade_coin_hint()}</span>
+			</li>
 		</ul>
 		<p>{m.runcomrade_tutorial_field()}</p>
 		<p>{m.runcomrade_tutorial_weather()}</p>
@@ -193,6 +197,10 @@
 			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
 				<dt class="font-bold">{m.runcomrade_stat_bowls()}</dt>
 				<dd class="text-2xl font-bold tabular-nums">{game.bowls}</dd>
+			</div>
+			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
+				<dt class="font-bold">{m.runcomrade_stat_coins()}</dt>
+				<dd class="text-2xl font-bold tabular-nums">{game.coins}</dd>
 			</div>
 		</dl>
 	</GameOverModal>

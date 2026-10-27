@@ -14,6 +14,7 @@ import {
 	DRONE_START_GAP,
 	MIDDLE_LANE,
 	STUMBLE_CLOSE,
+	SURGE_DRONE_RECOVER_SHARE,
 	type Lane,
 	type ObstacleKind
 } from './config';
@@ -42,7 +43,7 @@ export const DRONE_SLIDE_MS = 320;
 export const SWOOP_GAPS: readonly number[] = [6, 3];
 /** While the drone is this close it swoops now and then, even without a stumble */
 export const MENACE_GAP = 4;
-export const MENACE_EVERY_MS = 2600;
+export const MENACE_EVERY_MS = 2000;
 /** Two maneuver sounds are at least this far apart */
 export const MANEUVER_SOUND_GAP_MS = 500;
 
@@ -68,12 +69,21 @@ export interface DroneStep {
 	contact: boolean;
 }
 
-/** One step of the chase: the gap opens a little, a boost opens it faster, then contact is checked */
-export function stepDrone(drone: Drone, dtMs: number, boosted: boolean): DroneStep {
+/**
+ * One step of the chase: the gap opens a little, a boost opens it faster, then contact is checked.
+ * During a speed surge the runner is faster than the drone's quiet recovery, so it closes in.
+ */
+export function stepDrone(
+	drone: Drone,
+	dtMs: number,
+	boosted: boolean,
+	surging = false
+): DroneStep {
 	const seconds = dtMs / 1000;
 	drone.phase += seconds;
 	drone.graceMs = Math.max(0, drone.graceMs - dtMs);
-	const rate = DRONE_RECOVER_RATE + (boosted ? BOOST_DRONE_PULL : 0);
+	const recovery = DRONE_RECOVER_RATE * (surging ? SURGE_DRONE_RECOVER_SHARE : 1);
+	const rate = recovery + (boosted ? BOOST_DRONE_PULL : 0);
 	drone.gap = Math.min(DRONE_MAX_GAP, drone.gap + rate * seconds);
 	if (drone.gap <= DRONE_CONTACT_GAP && drone.graceMs <= 0) {
 		return { contact: true };
@@ -94,7 +104,7 @@ export function closeness(gap: number): number {
 
 /** Time between two buzzes: quick when the drone is close, lazy when it is far */
 export function buzzIntervalMs(gap: number): number {
-	return 1500 - 1100 * closeness(gap);
+	return 1300 - 1000 * closeness(gap);
 }
 
 /**
@@ -102,7 +112,7 @@ export function buzzIntervalMs(gap: number): number {
  * only warning the player has.
  */
 export function buzzIntensity(gap: number, hidden: boolean): number {
-	const base = 0.25 + 0.6 * closeness(gap);
+	const base = 0.35 + 0.65 * closeness(gap);
 	return Math.min(1, base + (hidden ? 0.15 : 0));
 }
 
