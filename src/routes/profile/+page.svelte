@@ -15,10 +15,9 @@
 	import Avatar from '#lib/components/Avatar.svelte';
 	import AvatarEditor from '#lib/components/AvatarEditor.svelte';
 	import CareerBar from '#lib/components/CareerBar.svelte';
-	import LocaleSwitcher from '#lib/components/LocaleSwitcher.svelte';
-	import SoundToggle from '#lib/components/SoundToggle.svelte';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
 	import IconBadgeCheck from '~icons/lucide/badge-check';
+	import IconSettings from '~icons/lucide/settings';
 	import IconFlame from '~icons/lucide/flame';
 	import IconGamepad from '~icons/lucide/gamepad-2';
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
@@ -54,10 +53,14 @@
 			<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
 			{m.game_back()}
 		</a>
-		<div class="flex gap-2">
-			<SoundToggle />
-			<LocaleSwitcher />
-		</div>
+		<a
+			href={resolve('/settings')}
+			class="btn-chunky size-9 rounded-full p-0"
+			aria-label={m.settings_title()}
+			title={m.settings_title()}
+		>
+			<IconSettings class="size-4" aria-hidden="true" />
+		</a>
 	</div>
 
 	<h1

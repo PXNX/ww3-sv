@@ -1,13 +1,14 @@
 <!--
 	About page: a short note that public figures appear as caricatures, other characters are fictional and that the jokes are satire aimed
-	at governments, bureaucracy and situations (roadmap Section 1.4).
+	at governments, bureaucracy and situations (roadmap Section 1.4). The legal section at the bottom links the imprint, privacy policy,
+	terms and withdrawal notice, which live as pages of their own under /legal.
 -->
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { APP_NAME } from '#lib/config.js';
-	import LocaleSwitcher from '#lib/components/LocaleSwitcher.svelte';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
+	import IconSettings from '~icons/lucide/settings';
 </script>
 
 <svelte:head>
@@ -22,7 +23,14 @@
 			<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
 			{m.game_back()}
 		</a>
-		<LocaleSwitcher />
+		<a
+			href={resolve('/settings')}
+			class="btn-chunky size-9 rounded-full p-0"
+			aria-label={m.settings_title()}
+			title={m.settings_title()}
+		>
+			<IconSettings class="size-4" aria-hidden="true" />
+		</a>
 	</div>
 
 	<h1
@@ -35,6 +43,11 @@
 		<h2 class="text-2xl font-bold">{m.about_fiction_heading()}</h2>
 		<p class="leading-relaxed">{m.about_fiction_body()}</p>
 		<p class="leading-relaxed">{m.about_satire_body()}</p>
+	</section>
+
+	<section class="sticker flex flex-col gap-3 p-5" style:--tilt="0.4deg">
+		<h2 class="text-2xl font-bold">{m.about_legal_heading()}</h2>
+		<p class="leading-relaxed">{m.about_legal_intro()}</p>
 	</section>
 
 	<p class="text-center text-xs font-semibold opacity-60">

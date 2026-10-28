@@ -10,10 +10,9 @@
 	import ClipPreloadLine from '#lib/components/ClipPreloadLine.svelte';
 	import DailyPanel from '#lib/components/DailyPanel.svelte';
 	import InstallPwaHint from '#lib/components/InstallPwaHint.svelte';
-	import LocaleSwitcher from '#lib/components/LocaleSwitcher.svelte';
 	import ModeSelect from '#lib/components/ModeSelect.svelte';
-	import SoundToggle from '#lib/components/SoundToggle.svelte';
 	import UpdatePwaHint from '#lib/components/UpdatePwaHint.svelte';
+	import IconSettings from '~icons/lucide/settings';
 
 	let leader: LeaderId | null = $state(null);
 </script>
@@ -21,7 +20,9 @@
 <main
 	class="mx-auto flex max-w-5xl flex-col gap-8 px-4 pt-[calc(1rem+var(--top-inset))] pb-[calc(3rem+env(safe-area-inset-bottom))]"
 >
-	<div class="flex items-center justify-between gap-2 pr-(--top-right-inset) pl-(--top-left-inset)">
+	<div
+		class="flex items-center justify-between gap-2 pr-(--top-right-inset) pl-(--top-left-inset)"
+	>
 		<a
 			href={resolve('/profile')}
 			class="btn-chunky overflow-hidden bg-flag-blue/25 p-0"
@@ -30,10 +31,14 @@
 		>
 			<Avatar size={36} />
 		</a>
-		<div class="flex items-center gap-2">
-			<SoundToggle />
-			<LocaleSwitcher />
-		</div>
+		<a
+			href={resolve('/settings')}
+			class="btn-chunky size-9 rounded-full p-0"
+			aria-label={m.settings_title()}
+			title={m.settings_title()}
+		>
+			<IconSettings class="size-4" aria-hidden="true" />
+		</a>
 	</div>
 
 	<ClipPreloadLine class="mx-auto w-full max-w-xs" />
@@ -68,6 +73,7 @@
 	<footer class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-center text-sm">
 		<a href={resolve('/shop')} class="font-semibold underline">{m.career_shop()}</a>
 		<a href={resolve('/profile')} class="font-semibold underline">{m.profile_link()}</a>
+		<a href={resolve('/settings')} class="font-semibold underline">{m.settings_title()}</a>
 		<a href={resolve('about')} class="font-semibold underline">{m.about_link()}</a>
 	</footer>
 </main>

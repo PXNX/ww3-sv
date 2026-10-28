@@ -18,7 +18,6 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import CareerBar from '#lib/components/CareerBar.svelte';
-	import LocaleSwitcher from '#lib/components/LocaleSwitcher.svelte';
 	import RewardedAdModal from '#lib/components/RewardedAdModal.svelte';
 	import StarsOffer from '#lib/components/StarsOffer.svelte';
 	import { telegram } from '#lib/stores/telegram.svelte.js';
@@ -27,6 +26,7 @@
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
 	import IconNewspaper from '~icons/lucide/newspaper';
 	import IconPackage from '~icons/lucide/package';
+	import IconSettings from '~icons/lucide/settings';
 	import IconSend from '~icons/lucide/send';
 	import IconSparkles from '~icons/lucide/sparkles';
 	import IconStar from '~icons/lucide/star';
@@ -79,7 +79,14 @@
 			<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
 			{m.game_back()}
 		</a>
-		<LocaleSwitcher />
+		<a
+			href={resolve('/settings')}
+			class="btn-chunky size-9 rounded-full p-0"
+			aria-label={m.settings_title()}
+			title={m.settings_title()}
+		>
+			<IconSettings class="size-4" aria-hidden="true" />
+		</a>
 	</div>
 
 	<div class="flex flex-col items-center gap-2 text-center">

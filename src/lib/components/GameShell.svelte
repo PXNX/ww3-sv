@@ -15,7 +15,6 @@
 	import { enterLandscape, leaveLandscape } from '#lib/game/landscape.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
-	import SoundToggle from './SoundToggle.svelte';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
 
 	let {
@@ -118,7 +117,6 @@
 		</div>
 		<div class="flex items-center gap-2">
 			{@render actions?.()}
-			<SoundToggle />
 		</div>
 	</div>
 
