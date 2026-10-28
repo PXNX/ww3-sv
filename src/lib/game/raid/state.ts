@@ -37,6 +37,36 @@ import {
 	DRONE_LIFETIME_MS,
 	ENEMY_BULLET_SPEED,
 	FIRST_BOSS_MS,
+	BOSS_FIGHT_ADDS,
+	BOSS_FIGHT_MS,
+	BOSS_FIGHT_SPAWN_MS,
+	VICTORY_MS,
+	DEFENSE_BREAK_MS,
+	DEFENSE_CHECKPOINT,
+	DEFENSE_FIRST_WAVE_MS,
+	DEFENSE_MINUTES_PER_WAVE,
+	OBJECTIVE_AGGRO,
+	OBJECTIVE_HP,
+	OBJECTIVE_RADIUS,
+	VOTE_MS,
+	wavePot,
+	waveSize,
+	FLAME_COOL_PER_SECOND,
+	FLAME_HEAT_PER_SHOT,
+	HAMMER_ARC,
+	HAMMER_CHARGE_PER_HIT,
+	HAMMER_FALL_DAMAGE_FACTOR,
+	HAMMER_FALL_HEAL_SHARE,
+	HAMMER_FALL_RADIUS,
+	OVERHEAT_DAMAGE_SHARE,
+	OVERHEAT_STUN_MS,
+	QUAKE_DAMAGE_FACTOR,
+	QUAKE_PUSH,
+	QUAKE_RADIUS,
+	WARCRY_DAMAGE_TAKEN,
+	WARCRY_HEAL_SHARE,
+	WARCRY_MS,
+	type RaidMode,
 	FLASHPOINT_CRIT_MULTIPLIER,
 	FLASHPOINT_DAMAGE_FACTOR,
 	FLASHPOINT_RANGE,
@@ -134,6 +164,7 @@ import {
 	makeArmor,
 	perkOf,
 	rollCrystals,
+	rollGear,
 	rollLoot,
 	upgraded,
 	weaponDamage,
@@ -192,6 +223,14 @@ export interface Player {
 	trailMs: number;
 	/** Jammer helmet: time until it can throw the next drone off course */
 	jammerMs: number;
+	/** Flamethrower heat, 0 to 1: full means it overheats */
+	heat: number;
+	/** Hammer charge, 0 to 1: full turns the next swing into a Hammer Fall */
+	rage: number;
+	/** Stunned by an overheated flamethrower: no walking, firing or skills */
+	stunMs: number;
+	/** War cry: less damage taken while above 0 */
+	warcryMs: number;
 }
 
 export interface Enemy {
@@ -347,8 +386,41 @@ export interface MoveInput {
 	y: number;
 }
 
+/** The vote on cashing out a defense, every few waves */
+export type VoteChoice = 'leave' | 'stay';
+
+/** The local player's id in votes; squad members vote under their own ids */
+export const SELF = 'self';
+
+export interface Defense {
+	objective: { x: number; y: number; hp: number; maxHp: number };
+	/** The wave being fought (or just cleared); 0 before the first */
+	wave: number;
+	/** Enemies of the current wave still to come */
+	toSpawn: number;
+	/** Time until the next wave starts, while above 0 */
+	breakMs: number;
+	/** The big reward, paid out only on cashing out */
+	pot: { xp: number; gold: number; scrap: number; crystals: Crystal[]; gear: GearItem[] };
+	/** Open while the squad decides; votes by member id */
+	vote: { ms: number; votes: Record<string, VoteChoice> } | null;
+	/** Everyone who gets a vote (the local player first) */
+	voters: string[];
+	cashedOut: boolean;
+}
+
 export interface RaidState {
 	mapId: MapId;
+	/** The endless hunt, or a boss fight against the clock */
+	mode: RaidMode;
+	/** A boss fight ends when the clock reaches this; 0 for none */
+	timeLimitMs: number;
+	/** The boss fight's boss is down: its loot flies in, then the raid ends as a win */
+	won: boolean;
+	/** Time left until the results after a win */
+	victoryMs: number;
+	/** The command post, waves and pot of a defense; null in the other modes */
+	defense: Defense | null;
 	map: RaidMap;
 	timeMs: number;
 	playerLevel: number;
@@ -437,9 +509,24 @@ export type RaidEvent =
 	| { type: 'threat'; level: number }
 	| { type: 'down' }
 	| { type: 'revive'; x: number; y: number }
+	| { type: 'victory'; x: number; y: number }
+	| { type: 'wave'; wave: number; boss: boolean }
+	| { type: 'wave-cleared'; wave: number; vote: boolean }
+	| { type: 'objective-hit'; damage: number }
+	| { type: 'objective-lost' }
+	| { type: 'vote-cast'; voter: string; choice: VoteChoice }
+	| { type: 'vote-result'; choice: VoteChoice }
+	| { type: 'cash-out' }
+	| { type: 'swing'; x: number; y: number; angle: number; hits: number }
+	| { type: 'hammer-fall'; x: number; y: number; healed: number }
+	| { type: 'overheat'; damage: number }
+	| { type: 'quake'; x: number; y: number }
+	| { type: 'warcry' }
 	| { type: 'over' };
 
+/** How far the raid has come, in minutes of a hunt; a defense counts its waves instead */
 export function minutesOf(state: RaidState): number {
+	if (state.defense) return Math.max(0, state.defense.wave - 1) * DEFENSE_MINUTES_PER_WAVE;
 	return state.timeMs / 60000;
 }
 
@@ -465,16 +552,47 @@ export function scoreOf(state: RaidState): number {
 	return Math.floor(state.timeMs / 1000) * SCORE_PER_SECOND + Math.floor(state.xp);
 }
 
-export function createRaid(mapId: MapId, loadout: Loadout, playerLevel: number): RaidState {
+export interface RaidOptions {
+	mode?: RaidMode;
+}
+
+export function createRaid(
+	mapId: MapId,
+	loadout: Loadout,
+	playerLevel: number,
+	{ mode = 'hunt' }: RaidOptions = {}
+): RaidState {
 	const map = raidMap(mapId);
 	const maxHp = maxHpFor(playerLevel, loadout.helmet);
 	return {
 		mapId,
+		mode,
+		timeLimitMs: mode === 'boss' ? BOSS_FIGHT_MS : 0,
+		won: false,
+		victoryMs: 0,
+		defense:
+			mode === 'defense'
+				? {
+						objective: {
+							x: map.spawn.x,
+							y: map.spawn.y,
+							hp: OBJECTIVE_HP,
+							maxHp: OBJECTIVE_HP
+						},
+						wave: 0,
+						toSpawn: 0,
+						breakMs: DEFENSE_FIRST_WAVE_MS,
+						pot: { xp: 0, gold: 0, scrap: 0, crystals: [], gear: [] },
+						vote: null,
+						voters: [SELF],
+						cashedOut: false
+					}
+				: null,
 		map,
 		timeMs: 0,
 		playerLevel,
 		player: {
-			x: map.spawn.x,
+			x: map.spawn.x + (mode === 'defense' ? OBJECTIVE_RADIUS + PLAYER_RADIUS + 30 : 0),
 			y: map.spawn.y,
 			vx: 0,
 			vy: 0,
@@ -501,7 +619,11 @@ export function createRaid(mapId: MapId, loadout: Loadout, playerLevel: number):
 			invulnerableMs: 0,
 			stepPhase: 0,
 			trailMs: 0,
-			jammerMs: 0
+			jammerMs: 0,
+			heat: 0,
+			rage: 0,
+			stunMs: 0,
+			warcryMs: 0
 		},
 		loadout: { ...structuredClone(loadout), boots: loadout.boots ?? null },
 		enemies: [],
@@ -516,7 +638,9 @@ export function createRaid(mapId: MapId, loadout: Loadout, playerLevel: number):
 		loot: [],
 		input: { x: 0, y: 0 },
 		spawnMs: 900,
-		nextBossMs: FIRST_BOSS_MS,
+		// A defense brings its bosses with the checkpoint waves instead
+		nextBossMs:
+			mode === 'boss' ? BOSS_FIGHT_SPAWN_MS : mode === 'defense' ? Infinity : FIRST_BOSS_MS,
 		revivesLeft: REVIVES_PER_RAID,
 		down: false,
 		over: false,
@@ -566,7 +690,7 @@ export function swapWeapon(state: RaidState): RaidEvent[] {
 /** Fires one of the held weapon's two skills (0 or 1) if it is off cooldown */
 export function useSkill(state: RaidState, slot: 0 | 1): RaidEvent[] {
 	const skill = heldSkills(state)[slot];
-	if (!active(state) || state.player.skillMs[skill] > 0) return [];
+	if (!active(state) || state.player.skillMs[skill] > 0 || state.player.stunMs > 0) return [];
 	const events: RaidEvent[] = [{ type: 'skill', skill }];
 	SKILLS[skill](state, events);
 	state.player.skillMs[skill] = SKILL_COOLDOWN_MS[skill];
@@ -577,7 +701,7 @@ export function useSkill(state: RaidState, slot: 0 | 1): RaidEvent[] {
 /** A burst forwards (where the stick points, or the aim), untouchable while it lasts */
 export function sprint(state: RaidState): RaidEvent[] {
 	const { player, input } = state;
-	if (!active(state) || player.sprintMs > 0 || player.dashMs > 0) return [];
+	if (!active(state) || player.sprintMs > 0 || player.dashMs > 0 || player.stunMs > 0) return [];
 	const moving = Math.hypot(input.x, input.y) > 0.05;
 	const angle = moving ? Math.atan2(input.y, input.x) : player.aim;
 	player.dashX = Math.cos(angle);
@@ -813,6 +937,32 @@ const SKILLS: Record<SkillId, (state: RaidState, events: RaidEvent[]) => void> =
 	},
 	overclock(state) {
 		state.player.overclockMs = OVERCLOCK_MS;
+	},
+	// Prigozhin's Hammer: a slam that shoves everything around away, and a war cry
+	quake(state, events) {
+		const { player } = state;
+		const damage = heldDamage(state) * QUAKE_DAMAGE_FACTOR;
+		for (const enemy of enemiesAround(state, QUAKE_RADIUS)) {
+			const dx = enemy.x - player.x;
+			const dy = enemy.y - player.y;
+			const distance = Math.hypot(dx, dy);
+			if (distance > 0.001 && enemy.archetype !== 'boss') {
+				enemy.x += (dx / distance) * QUAKE_PUSH;
+				enemy.y += (dy / distance) * QUAKE_PUSH;
+				keepInside(state, enemy);
+			}
+			damageEnemy(state, enemy, damage, false, events);
+		}
+		state.enemies = state.enemies.filter((enemy) => enemy.hp > 0);
+		events.push({ type: 'quake', x: player.x, y: player.y });
+	},
+	warcry(state, events) {
+		const { player } = state;
+		player.warcryMs = WARCRY_MS;
+		const amount = Math.min(player.maxHp - player.hp, Math.round(player.maxHp * WARCRY_HEAL_SHARE));
+		player.hp += amount;
+		events.push({ type: 'warcry' });
+		if (amount > 0) events.push({ type: 'heal', amount, source: 'ability' });
 	}
 };
 
@@ -851,6 +1001,43 @@ export function giveUp(state: RaidState): RaidEvent[] {
 	state.down = false;
 	state.over = true;
 	return [{ type: 'over' }];
+}
+
+/**
+ * A vote on cashing out the defense's pot (or a changed mind while it is open). Once everyone has
+ * voted it closes at once
+ */
+export function castVote(state: RaidState, voter: string, choice: VoteChoice): RaidEvent[] {
+	const defense = state.defense;
+	if (!defense?.vote || !active(state) || !defense.voters.includes(voter)) return [];
+	defense.vote.votes[voter] = choice;
+	const events: RaidEvent[] = [{ type: 'vote-cast', voter, choice }];
+	if (defense.voters.every((id) => defense.vote!.votes[id])) closeVote(state, events);
+	return events;
+}
+
+/** The majority decides; a tie (or nobody voting) cashes out, so the pot is never thrown away */
+function closeVote(state: RaidState, events: RaidEvent[]) {
+	const defense = state.defense!;
+	const votes = Object.values(defense.vote!.votes);
+	const stay = votes.filter((choice) => choice === 'stay').length;
+	const choice: VoteChoice = stay > votes.length - stay ? 'stay' : 'leave';
+	defense.vote = null;
+	events.push({ type: 'vote-result', choice });
+	if (choice === 'stay') {
+		defense.breakMs = DEFENSE_BREAK_MS;
+		return;
+	}
+	// Cashing out: the pot joins what the raid found, and the raid ends
+	const { pot } = defense;
+	state.xp += pot.xp;
+	state.gold += pot.gold;
+	state.scrap += pot.scrap;
+	state.crystals.push(...pot.crystals);
+	state.haul.push(...pot.gear);
+	defense.cashedOut = true;
+	state.over = true;
+	events.push({ type: 'cash-out' }, { type: 'over' });
 }
 
 /** Leaves the battle on the player's own choice, keeping everything found so far */
@@ -900,7 +1087,18 @@ export function stepRaid(state: RaidState, random: Random, dtMs: number): RaidEv
 	if (!active(state)) return [];
 	const events: RaidEvent[] = [];
 	const dt = dtMs / 1000;
+	if (state.won) {
+		stepVictory(state, dtMs, events);
+		return events;
+	}
 	state.timeMs += dtMs;
+	if (state.timeLimitMs > 0 && state.timeMs >= state.timeLimitMs) {
+		// The boss fight's clock ran out
+		state.timeMs = state.timeLimitMs;
+		state.over = true;
+		events.push({ type: 'over' });
+		return events;
+	}
 
 	const threat = threatLevel(minutesOf(state));
 	if (threat !== state.threat) {
@@ -925,6 +1123,21 @@ export function stepRaid(state: RaidState, random: Random, dtMs: number): RaidEv
 	updateLoot(state, dtMs, events);
 	spawn(state, random, dtMs, events);
 	return events;
+}
+
+/**
+ * After a boss fight is won the clock stands still, the player can still walk, and every piece of
+ * loot on the field flies to them; then the raid ends with whatever was not reached collected too
+ */
+function stepVictory(state: RaidState, dtMs: number, events: RaidEvent[]) {
+	movePlayer(state, dtMs);
+	updateLoot(state, dtMs, events);
+	state.victoryMs -= dtMs;
+	if (state.victoryMs > 0) return;
+	for (const loot of state.loot) collect(state, loot, events);
+	state.loot = [];
+	state.over = true;
+	events.push({ type: 'over' });
 }
 
 /**
@@ -970,7 +1183,7 @@ function movePlayer(state: RaidState, dtMs: number) {
 		return;
 	}
 	const speed = Math.hypot(input.x, input.y);
-	const walking = speed > 0.05;
+	const walking = speed > 0.05 && player.stunMs <= 0;
 	const shooting = player.firing || player.shootSlowMs > 0;
 	const wanted = walking ? playerSpeed(state) * (shooting ? SHOOTING_SPEED : 1) : 0;
 	walk(state, player, walking ? input.x * wanted : 0, walking ? input.y * wanted : 0, dt);
@@ -1012,6 +1225,11 @@ function tickCooldowns(state: RaidState, dtMs: number) {
 	player.graceMs = Math.max(0, player.graceMs - dtMs);
 	player.invulnerableMs = Math.max(0, player.invulnerableMs - dtMs);
 	player.jammerMs = Math.max(0, player.jammerMs - dtMs);
+	player.stunMs = Math.max(0, player.stunMs - dtMs);
+	player.warcryMs = Math.max(0, player.warcryMs - dtMs);
+	// The flamethrower cools down whenever it is not pouring out flames
+	const pouring = player.firing && heldWeapon(state).kind === 'flamethrower';
+	if (!pouring) player.heat = Math.max(0, player.heat - FLAME_COOL_PER_SECOND * (dtMs / 1000));
 }
 
 /** The nearest enemy within reach, optionally only one the player can see (drones always are) */
@@ -1051,7 +1269,7 @@ function firePlayer(state: RaidState, random: Random, events: RaidEvent[]) {
 	else if (Math.hypot(state.input.x, state.input.y) > 0.05)
 		player.aim = Math.atan2(state.input.y, state.input.x);
 	// Only the attack button fires: with nobody in reach the shot goes where the player faces
-	if (!(player.firing || player.fireQueued) || player.fireMs > 0) return;
+	if (!(player.firing || player.fireQueued) || player.fireMs > 0 || player.stunMs > 0) return;
 
 	const stats = weaponStats(weapon, state.playerLevel);
 	player.fireQueued = false;
@@ -1059,6 +1277,10 @@ function firePlayer(state: RaidState, random: Random, events: RaidEvent[]) {
 	player.shootSlowMs = SHOOTING_SLOW_MS;
 	if (weapon.kind === 'dronenest') {
 		buildNest(state, stats, events);
+		return;
+	}
+	if (weapon.kind === 'hammer') {
+		swingHammer(state, stats, random, events);
 		return;
 	}
 	const focused = player.focusShots > 0;
@@ -1091,6 +1313,73 @@ function firePlayer(state: RaidState, random: Random, events: RaidEvent[]) {
 		});
 	}
 	events.push({ type: 'shot', kind: weapon.kind });
+	if (weapon.kind === 'flamethrower') {
+		player.heat = Math.min(1, player.heat + FLAME_HEAT_PER_SHOT);
+		if (player.heat >= 1) overheat(state, events);
+	}
+}
+
+/** The flamethrower overheated: the player stands stunned and gets burnt */
+function overheat(state: RaidState, events: RaidEvent[]) {
+	const { player } = state;
+	const damage = Math.round(player.maxHp * OVERHEAT_DAMAGE_SHARE);
+	// Burns, but never knocks the player out on its own
+	player.hp = Math.max(1, player.hp - damage);
+	player.heat = 0;
+	player.stunMs = OVERHEAT_STUN_MS;
+	player.firing = false;
+	player.fireQueued = false;
+	events.push({ type: 'overheat', damage });
+}
+
+/** The enemies in a circle around the player, or in the slice of it facing the angle */
+function enemiesAround(state: RaidState, radius: number, angle?: number, arc = Math.PI * 2) {
+	const { player } = state;
+	return state.enemies.filter((enemy) => {
+		const dx = enemy.x - player.x;
+		const dy = enemy.y - player.y;
+		const distance = Math.hypot(dx, dy);
+		if (distance > radius + enemy.radius) return false;
+		// Anything pressed right against the player is hit whichever way it stands
+		if (angle === undefined || distance < enemy.radius + PLAYER_RADIUS + 10) return true;
+		let off = Math.abs(Math.atan2(dy, dx) - angle) % (Math.PI * 2);
+		if (off > Math.PI) off = Math.PI * 2 - off;
+		return off <= arc / 2;
+	});
+}
+
+/**
+ * A swing of Prigozhin's Hammer at everything in front within reach. Each swing that lands charges
+ * the hammer; when it is full the swing becomes a Hammer Fall instead: a big hit all around that
+ * heals the player
+ */
+function swingHammer(state: RaidState, stats: WeaponStats, random: Random, events: RaidEvent[]) {
+	const { player } = state;
+	if (player.rage >= 1) {
+		player.rage = 0;
+		const healed = Math.min(
+			player.maxHp - player.hp,
+			Math.round(player.maxHp * HAMMER_FALL_HEAL_SHARE)
+		);
+		player.hp += healed;
+		const damage = stats.damage * HAMMER_FALL_DAMAGE_FACTOR * stats.critMultiplier;
+		for (const enemy of enemiesAround(state, HAMMER_FALL_RADIUS)) {
+			damageEnemy(state, enemy, damage, true, events);
+		}
+		state.enemies = state.enemies.filter((enemy) => enemy.hp > 0);
+		events.push({ type: 'hammer-fall', x: player.x, y: player.y, healed });
+		if (healed > 0) events.push({ type: 'heal', amount: healed, source: 'ability' });
+		return;
+	}
+	const hit = enemiesAround(state, WEAPONS.hammer.range, player.aim, HAMMER_ARC);
+	for (const enemy of hit) {
+		const crit = random() < stats.critChance;
+		const damage = crit ? stats.damage * stats.critMultiplier : stats.damage;
+		damageEnemy(state, enemy, damage, crit, events);
+	}
+	state.enemies = state.enemies.filter((enemy) => enemy.hp > 0);
+	if (hit.length > 0) player.rage = Math.min(1, player.rage + HAMMER_CHARGE_PER_HIT);
+	events.push({ type: 'swing', x: player.x, y: player.y, angle: player.aim, hits: hit.length });
 }
 
 /** The drone nest weapon's attack: a nest a step ahead; the oldest goes when there are too many */
@@ -1414,6 +1703,19 @@ function defeat(state: RaidState, enemy: Enemy, events: RaidEvent[]) {
 		resolveCircle(spot, 10, state.map.obstacles, state.map.width, state.map.height);
 		state.loot.push({ id: state.nextId++, x: spot.x, y: spot.y, drop, ageMs: 0 });
 	});
+	if (boss && state.mode === 'boss' && !state.won) win(state, enemy, events);
+}
+
+/** The boss fight's boss is down: the rest of the field clears and the loot flies in */
+function win(state: RaidState, boss: Enemy, events: RaidEvent[]) {
+	state.won = true;
+	state.victoryMs = VICTORY_MS;
+	// The boss's escort scatters with it
+	state.enemies = [];
+	state.enemyBullets = [];
+	state.shells = [];
+	state.player.firing = false;
+	events.push({ type: 'victory', x: boss.x, y: boss.y });
 }
 
 /**
@@ -1438,7 +1740,11 @@ function hurtPlayer(state: RaidState, raw: number, events: RaidEvent[]): number 
 	const damage = Math.max(
 		1,
 		Math.round(
-			raw * threatDamage(minutesOf(state)) * state.map.difficulty * damageTakenFactor(player.armor)
+			raw *
+				threatDamage(minutesOf(state)) *
+				state.map.difficulty *
+				damageTakenFactor(player.armor) *
+				(player.warcryMs > 0 ? WARCRY_DAMAGE_TAKEN : 1)
 		)
 	);
 	player.hp = Math.max(0, player.hp - damage);
@@ -1499,6 +1805,44 @@ function updateJammer(state: RaidState, random: Random, events: RaidEvent[]) {
 }
 
 /** A kamikaze drone blows up; a jammed one takes the enemies around it along */
+/** Where an enemy is headed: the player, or in a defense the command post unless the player is close */
+function goalOf(
+	state: RaidState,
+	enemy: Enemy
+): { x: number; y: number; radius: number; post: boolean } {
+	const { player, defense } = state;
+	if (defense) {
+		const near =
+			Math.hypot(player.x - enemy.x, player.y - enemy.y) < OBJECTIVE_AGGRO + enemy.radius;
+		if (!near) {
+			const { objective } = defense;
+			return { x: objective.x, y: objective.y, radius: OBJECTIVE_RADIUS, post: true };
+		}
+	}
+	return { x: player.x, y: player.y, radius: PLAYER_RADIUS, post: false };
+}
+
+/** Damage to the command post; when it falls the defense is lost */
+function hurtObjective(state: RaidState, raw: number, events: RaidEvent[]) {
+	const defense = state.defense;
+	if (!defense || !active(state)) return;
+	const damage = Math.max(
+		1,
+		Math.round(raw * threatDamage(minutesOf(state)) * state.map.difficulty)
+	);
+	defense.objective.hp = Math.max(0, defense.objective.hp - damage);
+	events.push({ type: 'objective-hit', damage });
+	if (defense.objective.hp > 0) return;
+	state.over = true;
+	events.push({ type: 'objective-lost' }, { type: 'over' });
+}
+
+/** Whether a blast at this spot reaches the command post */
+function nearObjective(state: RaidState, x: number, y: number, radius: number): boolean {
+	const objective = state.defense?.objective;
+	return !!objective && Math.hypot(objective.x - x, objective.y - y) < radius + OBJECTIVE_RADIUS;
+}
+
 function crashDrone(state: RaidState, drone: Enemy, events: RaidEvent[]) {
 	const { player } = state;
 	events.push({ type: 'drone-crash', x: drone.x, y: drone.y });
@@ -1516,6 +1860,9 @@ function crashDrone(state: RaidState, drone: Enemy, events: RaidEvent[]) {
 	drone.hp = 0;
 	if (Math.hypot(player.x - drone.x, player.y - drone.y) < DRONE_BLAST_RADIUS + PLAYER_RADIUS) {
 		hurtPlayer(state, drone.damage, events);
+	}
+	if (nearObjective(state, drone.x, drone.y, DRONE_BLAST_RADIUS)) {
+		hurtObjective(state, drone.damage, events);
 	}
 }
 
@@ -1540,10 +1887,11 @@ function flyDrone(
 		if (hit || drone.jamMs <= 0) crashDrone(state, drone, events);
 		return;
 	}
-	drone.facing = Math.atan2(player.y - drone.y, player.x - drone.x);
+	const goal = goalOf(state, drone);
+	drone.facing = Math.atan2(goal.y - drone.y, goal.x - drone.x);
 	drone.x += Math.cos(drone.facing) * drone.speed * dt;
 	drone.y += Math.sin(drone.facing) * drone.speed * dt;
-	if (distance < drone.radius + PLAYER_RADIUS + 4) crashDrone(state, drone, events);
+	if (distance < drone.radius + goal.radius + 4) crashDrone(state, drone, events);
 }
 
 function updateEnemies(state: RaidState, random: Random, dtMs: number, events: RaidEvent[]) {
@@ -1554,8 +1902,9 @@ function updateEnemies(state: RaidState, random: Random, dtMs: number, events: R
 		if (enemy.hp <= 0) continue;
 		enemy.attackMs = Math.max(0, enemy.attackMs - dtMs);
 		enemy.flashMs = Math.max(0, enemy.flashMs - dtMs);
-		const dx = player.x - enemy.x;
-		const dy = player.y - enemy.y;
+		const goal = goalOf(state, enemy);
+		const dx = goal.x - enemy.x;
+		const dy = goal.y - enemy.y;
 		const distance = Math.hypot(dx, dy) || 1;
 		const toX = dx / distance;
 		const toY = dy / distance;
@@ -1587,7 +1936,7 @@ function updateEnemies(state: RaidState, random: Random, dtMs: number, events: R
 				wantY = tangentY;
 				speed *= 0.5;
 			}
-			if (enemy.attackMs <= 0) rangedAttack(state, random, enemy, distance, toX, toY, events);
+			if (enemy.attackMs <= 0) rangedAttack(state, random, enemy, goal, distance, toX, toY, events);
 		}
 
 		if (enemy.archetype === 'boss') {
@@ -1609,9 +1958,13 @@ function updateEnemies(state: RaidState, random: Random, dtMs: number, events: R
 		if (
 			spec.keepDistance === 0 &&
 			enemy.attackMs <= 0 &&
-			distance < enemy.radius + PLAYER_RADIUS + 4
+			distance < enemy.radius + goal.radius + 4
 		) {
 			enemy.attackMs = spec.attackMs;
+			if (goal.post) {
+				hurtObjective(state, enemy.damage, events);
+				continue;
+			}
 			const dealt = hurtPlayer(state, enemy.damage, events);
 			if (dealt > 0 && perkOf(state.loadout.vest) === 'spikes') {
 				events.push({ type: 'spikes', x: enemy.x, y: enemy.y });
@@ -1630,21 +1983,19 @@ function rangedAttack(
 	state: RaidState,
 	random: Random,
 	enemy: Enemy,
+	goal: { x: number; y: number },
 	distance: number,
 	toX: number,
 	toY: number,
 	events: RaidEvent[]
 ) {
-	const { player, map } = state;
+	const { map } = state;
 	const spec = ARCHETYPE_SPECS[enemy.archetype];
 	const keep = spec.keepDistance;
 	const reload = () => (enemy.attackMs = spec.attackMs * (0.85 + random() * 0.3));
 	switch (enemy.archetype) {
 		case 'ranged':
-			if (
-				distance < keep + 140 &&
-				lineOfSight(map.obstacles, enemy.x, enemy.y, player.x, player.y)
-			) {
+			if (distance < keep + 140 && lineOfSight(map.obstacles, enemy.x, enemy.y, goal.x, goal.y)) {
 				reload();
 				state.enemyBullets.push({
 					x: enemy.x + toX * enemy.radius,
@@ -1682,7 +2033,7 @@ function rangedAttack(
 		case 'mortar':
 			if (distance > keep + 160) return;
 			reload();
-			lobShell(state, random, enemy, 30, MORTAR_RADIUS, MORTAR_FLIGHT_MS, false);
+			lobShell(state, random, enemy, goal, 30, MORTAR_RADIUS, MORTAR_FLIGHT_MS, false);
 			events.push({ type: 'shell-launch', x: enemy.x, y: enemy.y, big: false });
 			return;
 		case 'artillery':
@@ -1693,6 +2044,7 @@ function rangedAttack(
 					state,
 					random,
 					enemy,
+					goal,
 					i === 0 ? 20 : ARTILLERY_SCATTER,
 					ARTILLERY_RADIUS,
 					ARTILLERY_FLIGHT_MS + i * 160,
@@ -1704,25 +2056,26 @@ function rangedAttack(
 	}
 }
 
-/** Fires a shell at the player's spot, give or take some scatter */
+/** Fires a shell at the target's spot, give or take some scatter */
 function lobShell(
 	state: RaidState,
 	random: Random,
 	from: Enemy,
+	goal: { x: number; y: number },
 	scatter: number,
 	radius: number,
 	flightMs: number,
 	big: boolean
 ) {
-	const { player, map } = state;
+	const { map } = state;
 	const angle = random() * Math.PI * 2;
 	const off = random() * scatter;
 	state.shells.push({
 		id: state.nextId++,
 		fromX: from.x,
 		fromY: from.y,
-		x: Math.max(0, Math.min(map.width, player.x + Math.cos(angle) * off)),
-		y: Math.max(0, Math.min(map.height, player.y + Math.sin(angle) * off)),
+		x: Math.max(0, Math.min(map.width, goal.x + Math.cos(angle) * off)),
+		y: Math.max(0, Math.min(map.height, goal.y + Math.sin(angle) * off)),
 		ageMs: 0,
 		flightMs,
 		radius,
@@ -1747,6 +2100,9 @@ function updateShells(state: RaidState, dtMs: number, events: RaidEvent[]) {
 		events.push({ type: 'shell-burst', x: shell.x, y: shell.y, radius: shell.radius });
 		if (Math.hypot(player.x - shell.x, player.y - shell.y) < shell.radius + PLAYER_RADIUS * 0.5) {
 			hurtPlayer(state, shell.damage, events);
+		}
+		if (nearObjective(state, shell.x, shell.y, shell.radius * 0.6)) {
+			hurtObjective(state, shell.damage, events);
 		}
 	}
 	state.shells = kept;
@@ -1841,6 +2197,15 @@ function moveEnemyBullets(state: RaidState, dtMs: number, events: RaidEvent[]) {
 			if (!active(state)) return;
 			continue;
 		}
+		const objective = state.defense?.objective;
+		if (
+			objective &&
+			segmentDistance(fromX, fromY, bullet.x, bullet.y, objective.x, objective.y) < OBJECTIVE_RADIUS
+		) {
+			hurtObjective(state, bullet.damage, events);
+			if (!active(state)) return;
+			continue;
+		}
 		kept.push(bullet);
 	}
 	state.enemyBullets = kept;
@@ -1862,7 +2227,7 @@ function updateLoot(state: RaidState, dtMs: number, events: RaidEvent[]) {
 		const dx = player.x - loot.x;
 		const dy = player.y - loot.y;
 		const distance = Math.hypot(dx, dy);
-		if (gear) {
+		if (gear && !state.won) {
 			if (distance < GEAR_PICKUP_RADIUS + PLAYER_RADIUS) {
 				collect(state, loot, events);
 				continue;
@@ -1872,8 +2237,8 @@ function updateLoot(state: RaidState, dtMs: number, events: RaidEvent[]) {
 				collect(state, loot, events);
 				continue;
 			}
-			if (distance < MAGNET_RADIUS + PLAYER_RADIUS) {
-				const pull = Math.min(distance, 520 * dt);
+			if (state.won || distance < MAGNET_RADIUS + PLAYER_RADIUS) {
+				const pull = Math.min(distance, (state.won ? 900 : 520) * dt);
 				loot.x += (dx / distance) * pull;
 				loot.y += (dy / distance) * pull;
 			}
@@ -1952,18 +2317,91 @@ function collect(state: RaidState, loot: Loot, events: RaidEvent[]) {
 // ---------------------------------------------------------------------------------------------
 // Spawning
 
+/**
+ * A defense comes in waves: a pause, then the wave's enemies arrive from all sides (every few
+ * waves with a boss). A cleared wave adds to the pot; at a checkpoint the vote opens
+ */
+function spawnDefense(state: RaidState, random: Random, dtMs: number, events: RaidEvent[]) {
+	const defense = state.defense!;
+	if (defense.vote) {
+		defense.vote.ms -= dtMs;
+		if (defense.vote.ms <= 0) closeVote(state, events);
+		return;
+	}
+	if (defense.breakMs > 0) {
+		defense.breakMs -= dtMs;
+		if (defense.breakMs > 0) return;
+		defense.wave += 1;
+		defense.toSpawn = waveSize(defense.wave);
+		const boss = defense.wave % DEFENSE_CHECKPOINT === 0;
+		events.push({ type: 'wave', wave: defense.wave, boss });
+		if (boss) {
+			const spawned = spawnEnemy(state, random, 'boss', 'normal');
+			if (spawned) events.push({ type: 'boss-spawn', variant: spawned.variant });
+		}
+		state.spawnMs = 400;
+		return;
+	}
+	if (defense.toSpawn > 0) {
+		state.spawnMs -= dtMs;
+		if (state.spawnMs > 0) return;
+		state.spawnMs = 350 + random() * 450;
+		const minutes = minutesOf(state);
+		let archetype = pickWeighted(random, archetypeWeights(minutes));
+		const cap = ARCHETYPE_CAP[archetype];
+		if (cap !== undefined && state.enemies.filter((e) => e.archetype === archetype).length >= cap) {
+			archetype = 'grunt';
+		}
+		if (spawnEnemy(state, random, archetype, rollVariant(random, minutes, surge(state)))) {
+			defense.toSpawn -= 1;
+		}
+		return;
+	}
+	if (state.enemies.length > 0) return;
+	// The wave is cleared: the pot grows, and every few waves with crystals and a piece of gear
+	const gain = wavePot(defense.wave);
+	defense.pot.xp += gain.xp * state.map.reward;
+	defense.pot.gold += Math.round(gain.gold * state.map.reward);
+	defense.pot.scrap += gain.scrap;
+	const checkpoint = defense.wave % DEFENSE_CHECKPOINT === 0;
+	if (checkpoint) {
+		defense.pot.crystals.push(...rollCrystals(random, true, 'normal'));
+		const level = Math.min(
+			MAX_ITEM_LEVEL,
+			1 + Math.floor(defense.wave / 3) + state.map.itemLevelBonus
+		);
+		defense.pot.gear.push(rollGear(random, 1.5 + defense.wave * 0.15, level, 'rare'));
+		defense.vote = { ms: VOTE_MS, votes: {} };
+	} else {
+		defense.breakMs = DEFENSE_BREAK_MS;
+	}
+	events.push({ type: 'wave-cleared', wave: defense.wave, vote: checkpoint });
+}
+
 function spawn(state: RaidState, random: Random, dtMs: number, events: RaidEvent[]) {
+	if (state.defense) {
+		spawnDefense(state, random, dtMs, events);
+		return;
+	}
 	const minutes = minutesOf(state);
+	const fight = state.mode === 'boss';
 	if (state.timeMs >= state.nextBossMs) {
-		state.nextBossMs += BOSS_EVERY_MS;
-		const boss = spawnEnemy(state, random, 'boss', rollVariant(random, minutes, surge(state)));
+		state.nextBossMs = fight ? Infinity : state.nextBossMs + BOSS_EVERY_MS;
+		// A boss fight's boss walks in close by, as a plain one
+		const angle = random() * Math.PI * 2;
+		const near = fight
+			? { x: state.player.x + Math.cos(angle) * 380, y: state.player.y + Math.sin(angle) * 380 }
+			: undefined;
+		const variant = fight ? 'normal' : rollVariant(random, minutes, surge(state));
+		const boss = spawnEnemy(state, random, 'boss', variant, near);
 		if (boss) events.push({ type: 'boss-spawn', variant: boss.variant });
 	}
 	state.spawnMs -= dtMs;
 	if (state.spawnMs > 0) return;
 	state.spawnMs = spawnIntervalMs(minutes) * (0.7 + random() * 0.6);
 	const regular = state.enemies.filter((enemy) => enemy.archetype !== 'boss').length;
-	if (regular >= maxEnemies(minutes)) return;
+	if (regular >= (fight ? Math.min(BOSS_FIGHT_ADDS, maxEnemies(minutes)) : maxEnemies(minutes)))
+		return;
 	let archetype = pickWeighted(random, archetypeWeights(minutes));
 	// Support enemies are capped, so a raid never turns into a wall of artillery
 	const cap = ARCHETYPE_CAP[archetype];
@@ -2012,8 +2450,9 @@ export function spawnEnemy(
 	for (let attempt = 0; !spot && attempt < 10; attempt++) {
 		const angle = random() * Math.PI * 2;
 		const distance = SPAWN_DISTANCE_MIN + random() * (SPAWN_DISTANCE_MAX - SPAWN_DISTANCE_MIN);
-		const x = player.x + Math.cos(angle) * distance;
-		const y = player.y + Math.sin(angle) * distance;
+		const origin = state.defense?.objective ?? player;
+		const x = origin.x + Math.cos(angle) * distance;
+		const y = origin.y + Math.sin(angle) * distance;
 		if (x < radius || y < radius || x > map.width - radius || y > map.height - radius) continue;
 		if (!flying && blocked(map.obstacles, x, y, radius)) continue;
 		spot = { x, y };

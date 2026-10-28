@@ -17,6 +17,11 @@
 			translate 250ms var(--ease-spring);
 	}
 
+	[data-theme='dark'] .sticker,
+	[data-theme='dark'] .btn-chunky {
+		box-shadow: 4px 4px 0 rgba(230,165,39,.35), 0 0 0 1px rgba(230,165,39,.15);
+	}
+
 	.sticker-interactive:hover,
 	.sticker-interactive:focus-visible,
 	.sticker-interactive:focus-within {

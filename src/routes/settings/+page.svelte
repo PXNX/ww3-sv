@@ -11,6 +11,7 @@
 	import { clipPreload } from '#lib/sound/preload.svelte.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import { appearance, THEME_CHOICES, type ThemeChoice } from '#lib/stores/appearance.svelte.js';
+	import { haptic } from '#lib/haptic/haptic.svelte.js';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
 	import IconLanguages from '~icons/lucide/languages';
 	import IconMoon from '~icons/lucide/moon';
@@ -21,6 +22,11 @@
 
 	const look = appearance();
 	const sound = soundManager();
+	const hapticFeedback = haptic();
+
+	function toggleHaptic() {
+		hapticFeedback.toggle();
+	}
 
 	const THEME_LABELS: Record<ThemeChoice, () => string> = {
 		auto: m.settings_theme_auto,
@@ -83,31 +89,9 @@
 		<p class="text-xs leading-relaxed opacity-70">{m.settings_theme_hint()}</p>
 	</section>
 
-	<section class="sticker flex flex-col gap-3 p-4" style:--tilt="0.4deg">
-		<h2 id="settings-language" class="flex items-center gap-2 font-display text-xl font-bold">
-			<IconLanguages class="size-5 text-flag-blue" aria-hidden="true" />
-			{m.language_label()}
-		</h2>
-		<div
-			class="grid grid-cols-2 gap-2 sm:grid-cols-3"
-			role="group"
-			aria-labelledby="settings-language"
-		>
-			{#each locales as locale (locale)}
-				<button
-					type="button"
-					class="btn-chunky px-2 py-2 text-sm"
-					class:bg-explosion-yellow={getLocale() === locale}
-					lang={locale}
-					aria-pressed={getLocale() === locale}
-					onclick={() => {
-						if (isLocale(locale)) setLocale(locale);
-					}}
-				>
-					{LOCALE_NAMES[locale]}
-				</button>
-			{/each}
-		</div>
+	<section class="sticker relative z-20 flex flex-col gap-3 p-4" style:--tilt="0.4deg">
+		<h2 id="settings-language" class="font-display text-xl font-bold">{m.language_label()}</h2>
+		<LanguageSelect />
 	</section>
 
 	<section class="sticker flex flex-col gap-3 p-4" style:--tilt="-0.3deg">
@@ -125,5 +109,19 @@
 			{/if}
 			{sound.muted ? m.settings_sound_off() : m.settings_sound_on()}
 		</button>
+	</section>
+
+	<section class="sticker flex flex-col gap-3 p-4" style:--tilt="-0.6deg">
+		<h2 id="settings-haptic" class="font-display text-xl font-bold">{m.settings_haptic()}</h2>
+		<button
+			type="button"
+			class="btn-chunky self-start px-3 py-2 text-sm"
+			aria-pressed={hapticFeedback.enabled}
+			onclick={toggleHaptic}
+		>
+			<IconSmartphone class="size-4" aria-hidden="true" />
+			{hapticFeedback.enabled ? m.settings_haptic_on() : m.settings_haptic_off()}
+		</button>
+		<p class="text-xs leading-relaxed opacity-70">{m.settings_haptic_hint()}</p>
 	</section>
 </main>

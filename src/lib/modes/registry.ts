@@ -42,6 +42,7 @@ import IconMusic from '~icons/lucide/music';
 import IconHandshake from '~icons/lucide/handshake';
 import IconBinoculars from '~icons/lucide/binoculars';
 import IconSailboat from '~icons/lucide/sailboat';
+import IconMap from '~icons/lucide/map';
 
 export type ModeId =
 	| 'blocks'
@@ -82,7 +83,8 @@ export type ModeId =
 	| 'redsquare'
 	| 'petrobras'
 	| 'bordershift'
-	| 'falklands';
+	| 'falklands'
+	| 'warroom';
 
 interface ModeBase {
 	id: ModeId;
@@ -497,6 +499,16 @@ export const MODES: readonly GameMode[] = [
 		leaders: ['starmer', 'milei'],
 		name: m.mode_falklands_name,
 		description: m.mode_falklands_description
+	},
+	{
+		id: 'warroom',
+		status: 'playable',
+		href: '/play/warroom',
+		icon: IconMap,
+		tileClass: 'bg-banner-slate',
+		leaders: ['merz', 'macron'],
+		name: m.mode_warroom_name,
+		description: m.mode_warroom_description
 	}
 ];
 

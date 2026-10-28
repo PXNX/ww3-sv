@@ -35,6 +35,7 @@ import {
 	type Archetype,
 	type ArmorSlot,
 	type MapId,
+	type RaidMode,
 	type SkillId,
 	type Variant,
 	type WeaponKind
@@ -87,6 +88,7 @@ import {
 import { m } from '#lib/paraglide/messages.js';
 import { highscores, type Highscores } from '#lib/services/highscore.js';
 import { localStore, type Store } from '#lib/services/storage.js';
+import { haptic } from '#lib/haptic/haptic.svelte.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
 import type { SoundId } from '#lib/sound/sounds.js';
 
@@ -168,6 +170,8 @@ export class RaidGame {
 	/** Not deeply reactive: profile updates always replace the whole object */
 	profile = $state.raw<Profile>(newProfile());
 	map = $state<MapId>('sunflower');
+	/** The endless hunt or a boss fight against the clock */
+	mode = $state<RaidMode>('hunt');
 
 	// HUD
 	score = $state(0);
@@ -344,11 +348,12 @@ export class RaidGame {
 	// -------------------------------------------------------------------------------------------
 	// Raid
 
-	start(map: MapId = this.map) {
+	start(map: MapId = this.map, mode: RaidMode = this.mode) {
 		this.map = map;
+		this.mode = mode;
 		const seed = this.#seed();
 		this.#random = createRandom(seed);
-		this.state = createRaid(map, this.profile.loadout, this.profile.level);
+		this.state = createRaid(map, this.profile.loadout, this.profile.level, { mode });
 		this.effects = [];
 		this.found = null;
 		this.result = null;
@@ -558,6 +563,9 @@ export class RaidGame {
 					event.crit ? 24 : 16,
 					event.crit ? 900 : 600
 				);
+				// Add haptic feedback for successful hits - stronger for higher damage
+				const hitDamage = Math.round(event.damage);
+				haptic().play(Math.min(1, hitDamage * 0.001));
 				break;
 			case 'splash':
 				this.#ring(event.x, event.y, event.radius, '#f5c83a', 360);
@@ -794,7 +802,9 @@ export class RaidGame {
 			flashpoint: 'explosion-small',
 			napalm: 'whoosh',
 			swarm: 'drone-brzzz',
-			overclock: 'ability-split'
+			overclock: 'ability-split',
+			quake: 'impact-stone',
+			warcry: 'alarm'
 		};
 		if (skill !== 'heal')
 			this.#text(player.x, player.y - 46, SKILL_NAMES[skill](), '#ffffff', 18, 900);

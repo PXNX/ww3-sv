@@ -1,23 +1,28 @@
 <!--
-	Raid lobby between raids, laid out for landscape: the raider's level and season progress in one
-	card (tap it for the season's rewards), the three battlefields (tap one to start the raid),
-	the live event running now or coming next and today's quests. Beside them the loadout (two
-	weapons, helmet, vest and boots; tap a weapon for all its stats and skills) with gold upgrades
-	and socketed crystals, the loose crystals (socketed from here, or combined five into one
-	rarer), and the stash, where each piece can be equipped or salvaged for gold and scrap.
+	Raid lobby between raids, in the brawler look of the other raid screens and laid out for
+	landscape. Above the fold the battlefield open right now (one at a time, the next takes over
+	every twelve hours) with its countdown and the one coming next, the three ways to play it (the
+	endless hunt, the three-minute boss fight or the wave defense of a command post) as big
+	buttons, and beside them the raider's level and season card (tap it for the season's rewards),
+	gold and scrap, the live event and room for the squad. Further down today's quests with their
+	claim buttons, the loadout (two weapons, helmet, vest and boots; tap a weapon for all its stats
+	and skills) with gold upgrades and socketed crystals, the loose crystals (socketed from here, or
+	combined five into one rarer) and the stash, where each piece can be equipped or salvaged for
+	gold and scrap.
 -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, type Snippet } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import {
+		BOSS_FIGHT_MS,
 		CRYSTAL_COMBINE_COUNT,
-		MAP_IDS,
 		RARITY_COLOR,
 		SEASON_TIERS,
 		STASH_SIZE,
 		WEAPONS,
-		type MapId
+		type MapId,
+		type RaidMode
 	} from '#lib/game/raid/config.js';
 	import { liveEventAt, nextLiveEvent } from '#lib/game/raid/events.js';
 	import {
@@ -44,13 +49,16 @@
 		type WeaponSlot
 	} from '#lib/game/raid/profile.js';
 	import { hoursUntilNewQuests, questDone } from '#lib/game/raid/quests.js';
+	import { rotationAt } from '#lib/game/raid/rotation.js';
 	import { seasonNumber, seasonTier, seasonTierProgress } from '#lib/game/raid/season.js';
 	import { rememberDetailsItem, type RaidGame } from '#lib/stores/raidGame.svelte.js';
 	import Avatar from './Avatar.svelte';
 	import RaidCrystalIcon from './RaidCrystalIcon.svelte';
 	import RaidItemIcon from './RaidItemIcon.svelte';
+	import RaidQuestCard from './RaidQuestCard.svelte';
 	import RaidSeasonScreen from './RaidSeasonScreen.svelte';
 	import {
+		BOSS_NAMES,
 		crystalEffect,
 		crystalName,
 		EVENT_HINTS,
@@ -60,7 +68,6 @@
 		MAP_DESCRIPTIONS,
 		MAP_NAMES,
 		PERK_HINTS,
-		questText,
 		RARITY_NAMES,
 		seasonRewardText,
 		SKILL_NAMES,
@@ -69,14 +76,20 @@
 	} from './raidText';
 	import IconChevronRight from '~icons/lucide/chevron-right';
 	import IconCoins from '~icons/lucide/coins';
+	import IconCrosshair from '~icons/lucide/crosshair';
 	import IconGift from '~icons/lucide/gift';
-	import IconListChecks from '~icons/lucide/list-checks';
-	import IconPlay from '~icons/lucide/play';
 	import IconRepeat from '~icons/lucide/repeat';
-	import IconSettings from '~icons/lucide/settings';
+	import IconShield from '~icons/lucide/shield';
+	import IconSkull from '~icons/lucide/skull';
+	import IconTimer from '~icons/lucide/timer';
+	import IconWrench from '~icons/lucide/wrench';
 	import IconZap from '~icons/lucide/zap';
 
-	let { game, onStart }: { game: RaidGame; onStart: (map: MapId) => void } = $props();
+	let {
+		game,
+		onStart,
+		squad
+	}: { game: RaidGame; onStart: (map: MapId, mode: RaidMode) => void; squad?: Snippet } = $props();
 
 	const profile = $derived(game.profile);
 	let selectedId = $state<string | null>(null);
@@ -95,7 +108,7 @@
 	);
 	let showSeason = $state(false);
 
-	/** The wall clock, ticking every second for the live event and quest countdowns */
+	/** The wall clock, ticking every second for the rotation, live event and quest countdowns */
 	let now = $state(Date.now());
 	onMount(() => {
 		const timer = setInterval(() => (now = Date.now()), 1000);
@@ -111,6 +124,14 @@
 	};
 	const SLOTS = ['primary', 'secondary', 'helmet', 'vest', 'boots'] as const;
 	const WEAPON_SLOTS = ['primary', 'secondary'] as const;
+
+	// Small skewed buttons in the raid screens' colours
+	const BUTTON =
+		'inline-flex -skew-x-6 items-center gap-1 rounded-md px-2.5 py-1 font-display text-xs leading-tight font-black text-white uppercase italic shadow-[0_2px_0_rgb(0_0_0/0.25)] active:translate-y-0.5 disabled:opacity-45 disabled:active:translate-y-0';
+	const ORANGE = 'border-b-3 border-[#b84300] bg-linear-to-b from-[#ff9a3c] to-[#ff6a10]';
+	const PURPLE = 'border-b-3 border-[#4b1d8f] bg-[#7a3fe0]';
+	const TEAL = 'border-b-3 border-[#0f7f73] bg-[#22c3b0]';
+	const MUTED = 'border-b-3 border-black/30 bg-white/15';
 
 	function iconKind(item: GearItem) {
 		return item.type === 'weapon' ? item.kind : item.slot;
@@ -167,8 +188,70 @@
 	const freeSockets = (slot: WeaponSlot) =>
 		socketsOf(profile.loadout[slot]) - crystalsOf(profile.loadout[slot]).length;
 
+	/** Hours, minutes and seconds, such as 05:07:42 */
+	function clock(ms: number): string {
+		const seconds = Math.max(0, Math.ceil(ms / 1000));
+		return [Math.floor(seconds / 3600), Math.floor(seconds / 60) % 60, seconds % 60]
+			.map((part) => String(part).padStart(2, '0'))
+			.join(':');
+	}
+
 	const xpShare = $derived(Math.min(1, profile.xp / game.xpNeeded));
-	const mapColors = (id: MapId) => raidMap(id).palette;
+
+	// The battlefield open right now
+	const rotation = $derived(rotationAt(now));
+	const map = $derived(rotation.map);
+	const mapInfo = $derived(raidMap(map));
+	interface ModeCard {
+		id: RaidMode;
+		icon: typeof IconCrosshair;
+		name: string;
+		hint: string;
+		best: string | null;
+		color: string;
+		bestColor: string;
+	}
+
+	/** The ways to play it, each with the player's best on this battlefield */
+	const modes = $derived.by((): ModeCard[] => {
+		const huntBest = profile.bestTimeMs[map];
+		const bossBest = profile.bossBestMs[map];
+		const defenseBest = profile.defenseBestWave[map];
+		return [
+			{
+				id: 'hunt',
+				icon: IconCrosshair,
+				name: m.raid_lobby_mode_hunt(),
+				hint: m.raid_lobby_mode_hunt_hint(),
+				best: huntBest ? m.raid_map_best({ time: formatTime(huntBest) }) : null,
+				color: 'border-[#b84300] bg-linear-to-b from-[#ff9a3c] to-[#ff6a10]',
+				bestColor: 'text-[#fff1c2]'
+			},
+			{
+				id: 'boss',
+				icon: IconSkull,
+				name: m.raid_lobby_mode_boss(),
+				hint: m.raid_lobby_mode_boss_hint({
+					boss: BOSS_NAMES[map](),
+					time: formatTime(BOSS_FIGHT_MS)
+				}),
+				best: bossBest
+					? m.raid_lobby_boss_best({ time: formatTime(bossBest) })
+					: m.raid_lobby_boss_unbeaten(),
+				color: 'border-[#4b1d8f] bg-[#7a3fe0]',
+				bestColor: 'text-[#e2c9ff]'
+			},
+			{
+				id: 'defense',
+				icon: IconShield,
+				name: m.raid_lobby_mode_defense(),
+				hint: m.raid_lobby_mode_defense_hint(),
+				best: defenseBest ? m.raid_lobby_defense_best({ wave: defenseBest }) : null,
+				color: 'border-[#0f7f73] bg-[#22c3b0]',
+				bestColor: 'text-[#d6fff8]'
+			}
+		];
+	});
 
 	// Season, shown with the level
 	const season = $derived(profile.season);
@@ -182,202 +265,242 @@
 	const questHours = $derived(hoursUntilNewQuests(now));
 </script>
 
-<div class="grid w-full gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-	<div class="flex flex-col gap-3">
-		<!-- Level and season in one card; tap it for the season's rewards -->
-		<button
-			type="button"
-			class="sticker sticker-interactive flex items-center gap-3 p-3 text-start"
-			style:--tilt="-0.5deg"
-			aria-label="{m.raid_lobby_level({ level: profile.level })}, {m.raid_season_open()}"
-			onclick={() => (showSeason = true)}
-		>
-			<!-- The player's own agent, with the raider level pinned to it -->
-			<span
-				class="relative size-14 shrink-0 rounded-full border-3 border-ink bg-flag-blue/25 font-display leading-none font-bold"
+<div class="flex w-full flex-col gap-5 text-white">
+	<!-- Above the fold: the battlefield and how to play it, the raider beside it -->
+	<div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(15rem,17rem)]">
+		<div class="flex min-w-0 flex-col gap-3">
+			<!-- The battlefield open now, in its own colours -->
+			<section
+				class="relative overflow-hidden rounded-2xl shadow-[0_4px_0_rgb(0_0_0/0.3)]"
+				style:background="repeating-linear-gradient(135deg, {mapInfo.palette.ground} 0 22px, {mapInfo
+					.palette.groundDark} 22px 32px)"
+				aria-labelledby="raid-lobby-map"
 			>
-				<span class="block size-full overflow-hidden rounded-full">
-					<Avatar size={56} class="ms-[-3px] -mt-1" />
-				</span>
-				<span
-					class="absolute -start-1.5 -bottom-1.5 flex size-6 items-center justify-center rounded-full border-2 border-ink bg-explosion-yellow text-xs tabular-nums"
-					>{profile.level}</span
+				<div
+					class="flex min-h-40 flex-col gap-1.5 bg-linear-to-r from-[#12082e]/90 via-[#12082e]/60 to-[#12082e]/10 p-3 rtl:bg-linear-to-l"
 				>
-				{#if claimable > 0}
+					<div class="flex flex-wrap items-center gap-2 font-display text-xs font-black uppercase">
+						<span
+							class="-skew-x-6 rounded bg-[#22c3b0] px-2 py-0.5 italic shadow-[0_2px_0_rgb(0_0_0/0.25)]"
+							>{m.raid_lobby_open_now()}</span
+						>
+						<span class="flex items-center gap-1 tabular-nums" aria-live="off">
+							<IconTimer class="size-4" aria-hidden="true" />
+							{m.raid_lobby_closes_in({ time: clock(rotation.endsAt - now) })}
+						</span>
+						<span
+							dir="auto"
+							class="ms-auto rounded bg-black/45 px-2 py-0.5 text-white/90 normal-case"
+							title={m.raid_lobby_rotation_hint()}
+							>{m.raid_lobby_next_map({ map: MAP_NAMES[rotation.next]() })}</span
+						>
+					</div>
+					<h2
+						id="raid-lobby-map"
+						dir="auto"
+						class="title font-display text-4xl leading-none font-black uppercase italic"
+					>
+						{MAP_NAMES[map]()}
+					</h2>
+					<p
+						dir="auto"
+						class="max-w-md text-sm leading-snug font-semibold text-white/90 drop-shadow-[0_1px_0_rgb(0_0_0/0.5)]"
+					>
+						{MAP_DESCRIPTIONS[map]()}
+					</p>
+					<div class="mt-auto flex flex-wrap items-center gap-1.5 font-display text-xs font-black">
+						<span class="rounded bg-[#e0413a] px-1.5 py-0.5"
+							>{m.raid_map_danger({ value: mapInfo.difficulty })}</span
+						>
+						<span class="rounded bg-[#ffc83a] px-1.5 py-0.5 text-[#3d1478]"
+							>{m.raid_map_reward({ value: mapInfo.reward })}</span
+						>
+						<span dir="auto" class="text-[0.7rem] font-bold text-white/75"
+							>{m.raid_lobby_rotation_hint()}</span
+						>
+					</div>
+				</div>
+			</section>
+
+			<!-- The three ways to play it -->
+			<div class="grid grid-cols-3 gap-2.5 px-1">
+				{#each modes as mode (mode.id)}
+					<button
+						type="button"
+						class="mode flex -skew-x-6 flex-col items-start gap-0.5 rounded-xl border-b-5 px-2.5 py-2 text-start shadow-[0_4px_0_rgb(0_0_0/0.25)] active:translate-y-0.5 {mode.color}"
+						onclick={() => onStart(map, mode.id)}
+					>
+						<span class="flex max-w-full items-center gap-1.5">
+							<mode.icon class="size-6 shrink-0 stroke-[2.5]" aria-hidden="true" />
+							<span
+								class="min-w-0 font-display text-lg leading-none font-black break-words uppercase italic drop-shadow-[0_2px_0_rgb(0_0_0/0.2)]"
+								>{mode.name}</span
+							>
+						</span>
+						<span dir="auto" class="text-[0.7rem] leading-tight font-bold">{mode.hint}</span>
+						{#if mode.best}
+							<span class="font-display text-[0.7rem] leading-tight font-black {mode.bestColor}"
+								>{mode.best}</span
+							>
+						{/if}
+					</button>
+				{/each}
+			</div>
+		</div>
+
+		<div class="flex min-w-0 flex-col gap-3">
+			<!-- Level and season in one card; tap it for the season's rewards -->
+			<button
+				type="button"
+				class="flex items-center gap-3 rounded-xl bg-[#1b0b3a]/80 p-2.5 text-start shadow-[0_3px_0_rgb(0_0_0/0.3)] active:translate-y-0.5"
+				aria-label="{m.raid_lobby_level({ level: profile.level })}, {m.raid_season_open()}"
+				onclick={() => (showSeason = true)}
+			>
+				<!-- The player's own agent, with the raider level pinned to it -->
+				<span class="relative size-14 shrink-0 rounded-full bg-[#7a3fe0] ring-3 ring-white/80">
+					<span class="block size-full overflow-hidden rounded-full">
+						<Avatar size={56} class="ms-[-3px] -mt-1" />
+					</span>
 					<span
-						class="absolute -end-1 -top-1 flex size-5 items-center justify-center rounded-full border-2 border-ink bg-tie-red text-[0.65rem] text-paper"
-						>{claimable}</span
+						class="absolute -start-1.5 -bottom-1.5 flex size-6 items-center justify-center rounded-full bg-[#ffc83a] font-display text-xs font-black text-[#3d1478] tabular-nums shadow-[0_2px_0_rgb(0_0_0/0.3)]"
+						>{profile.level}</span
 					>
-				{/if}
-			</span>
-			<span class="flex min-w-0 flex-1 flex-col gap-1 font-display">
-				<span class="flex items-baseline justify-between gap-2">
-					<span class="text-lg font-bold">{m.raid_lobby_level({ level: profile.level })}</span>
-					<span class="text-xs font-bold tabular-nums opacity-80"
-						>{m.raid_lobby_xp({ xp: profile.xp, next: game.xpNeeded })}</span
-					>
+					{#if claimable > 0}
+						<span
+							class="absolute -end-1 -top-1 flex size-5 items-center justify-center rounded-full bg-[#ff6b3d] font-display text-[0.65rem] font-black ring-2 ring-white"
+							>{claimable}</span
+						>
+					{/if}
 				</span>
-				<span class="h-3 w-full overflow-hidden rounded-full border-2 border-ink bg-sand">
-					<span class="block h-full bg-flag-blue" style:width="{xpShare * 100}%"></span>
-				</span>
-				<span class="flex items-center gap-2 text-xs font-bold">
-					<span class="shrink-0"
+				<span class="flex min-w-0 flex-1 flex-col gap-1 font-display font-bold">
+					<span class="flex items-baseline justify-between gap-2">
+						<span class="text-lg leading-none font-black uppercase italic"
+							>{m.raid_lobby_level({ level: profile.level })}</span
+						>
+						<span class="text-[0.65rem] text-white/75 tabular-nums"
+							>{m.raid_lobby_xp({ xp: profile.xp, next: game.xpNeeded })}</span
+						>
+					</span>
+					<span class="h-2.5 w-full overflow-hidden rounded-full bg-black/35">
+						<span class="block h-full rounded-full bg-[#7fd3ff]" style:width="{xpShare * 100}%"
+						></span>
+					</span>
+					<span class="text-[0.7rem] leading-tight text-[#e2c9ff]"
 						>{m.raid_season_title({ number: seasonNumber(season.id) })} · {m.raid_season_tier({
 							tier: reached,
 							max: SEASON_TIERS
 						})}</span
 					>
-					<span class="h-2 flex-1 overflow-hidden rounded-full border-2 border-ink bg-sand">
+					<span class="h-2 w-full overflow-hidden rounded-full bg-black/35">
 						<span
-							class="block h-full bg-mustard"
+							class="block h-full rounded-full bg-[#ffc83a]"
 							style:width="{tierProgress.needed > 0
 								? (tierProgress.xp / tierProgress.needed) * 100
 								: 100}%"
 						></span>
 					</span>
 				</span>
-			</span>
-			<span class="flex flex-col items-end gap-0.5 font-display font-bold tabular-nums">
-				<span class="flex items-center gap-1 text-lg">
-					<IconCoins class="size-5 text-mustard" aria-hidden="true" />
+				<IconChevronRight class="size-5 shrink-0 opacity-70 rtl:rotate-180" aria-hidden="true" />
+			</button>
+
+			<!-- Gold and scrap -->
+			<div class="flex gap-2 font-display text-base font-black tabular-nums">
+				<span class="flex flex-1 items-center gap-1.5 rounded-lg bg-[#1b0b3a]/60 px-2.5 py-1">
+					<IconCoins class="size-5 text-[#ffd23a]" aria-hidden="true" />
 					<span class="sr-only">{m.raid_lobby_gold({ gold: profile.gold })}</span>
 					<span aria-hidden="true">{profile.gold}</span>
 				</span>
-				<span class="flex items-center gap-1 text-sm">
-					<IconSettings class="size-4 opacity-70" aria-hidden="true" />
+				<span class="flex flex-1 items-center gap-1.5 rounded-lg bg-[#1b0b3a]/60 px-2.5 py-1">
+					<IconWrench class="size-5 text-[#c9ced4]" aria-hidden="true" />
 					<span class="sr-only">{m.raid_lobby_scrap({ scrap: profile.scrap })}</span>
 					<span aria-hidden="true">{profile.scrap}</span>
 				</span>
-			</span>
-			<IconChevronRight class="size-5 shrink-0 rtl:rotate-180" aria-hidden="true" />
-		</button>
+			</div>
 
-		<!-- Battlefields: a tap starts the raid -->
-		<section class="flex flex-col gap-2">
-			<div class="flex flex-wrap items-baseline justify-between gap-2">
-				<h2 class="font-display text-lg font-bold">{m.raid_lobby_choose_map()}</h2>
-				<span class="text-xs font-semibold opacity-80">{m.raid_lobby_tap_map()}</span>
-			</div>
-			<div class="grid grid-cols-3 gap-2">
-				{#each MAP_IDS as id (id)}
-					{@const map = raidMap(id)}
-					{@const best = profile.bestTimeMs[id]}
-					<button
-						type="button"
-						class="sticker sticker-interactive group flex flex-col gap-1 p-2 text-start"
-						aria-label="{m.raid_start()}: {MAP_NAMES[id]()}"
-						onclick={() => onStart(id)}
-					>
-						<span
-							class="relative flex h-10 w-full items-center justify-center rounded-md border-2 border-ink"
-							style:background="repeating-linear-gradient(135deg, {mapColors(id).ground} 0 14px, {mapColors(
-								id
-							).groundDark} 14px 20px)"
+			<!-- Live event now, or the next one -->
+			<section
+				class="flex items-center gap-2 rounded-xl px-2.5 py-1.5 {liveEvent
+					? 'bg-linear-to-r from-[#ffc83a] to-[#ff9a3c] text-[#3d1478]'
+					: 'bg-[#1b0b3a]/60'}"
+				aria-live="polite"
+			>
+				<IconZap
+					class="size-5 shrink-0 {liveEvent ? 'fill-[#3d1478]' : 'text-[#ffc83a]'}"
+					aria-hidden="true"
+				/>
+				<div class="flex min-w-0 flex-col leading-tight">
+					{#if liveEvent}
+						<span class="font-display text-xs font-black uppercase italic"
+							>{m.raid_event_live({ event: EVENT_NAMES[liveEvent.kind]() })} · {m.raid_event_seconds(
+								{
+									seconds: Math.max(0, Math.ceil((liveEvent.endsAt - now) / 1000))
+								}
+							)}</span
 						>
-							<span
-								class="flex size-8 items-center justify-center rounded-full border-2 border-ink bg-tie-red text-paper transition-transform group-hover:scale-110"
-							>
-								<IconPlay class="size-4" aria-hidden="true" />
-							</span>
-						</span>
-						<span dir="auto" class="font-display text-base leading-tight font-bold"
-							>{MAP_NAMES[id]()}</span
+						<span dir="auto" class="truncate text-[0.7rem] font-semibold"
+							>{EVENT_HINTS[liveEvent.kind]()}</span
 						>
-						<span dir="auto" class="hidden text-xs leading-snug sm:block"
-							>{MAP_DESCRIPTIONS[id]()}</span
+					{:else}
+						<span class="font-display text-xs font-black"
+							>{m.raid_event_next({
+								event: EVENT_NAMES[nextEvent.kind](),
+								time: formatTime(nextEvent.startsAt - now)
+							})}</span
 						>
-						<span class="flex flex-wrap gap-1 font-display text-[0.7rem] font-bold">
-							<span class="rounded bg-tie-red px-1 text-paper"
-								>{m.raid_map_danger({ value: map.difficulty })}</span
-							>
-							<span class="rounded bg-khaki px-1 text-paper"
-								>{m.raid_map_reward({ value: map.reward })}</span
-							>
-						</span>
-						{#if best}
-							<span class="text-xs font-semibold"
-								>{m.raid_map_best({ time: formatTime(best) })}</span
-							>
-						{/if}
-					</button>
-				{/each}
-			</div>
-		</section>
+						<span dir="auto" class="truncate text-[0.7rem] text-white/75"
+							>{EVENT_HINTS[nextEvent.kind]()}</span
+						>
+					{/if}
+				</div>
+			</section>
 
-		<!-- Live event now, or the next one -->
-		<section
-			class="flex items-center gap-2 rounded-xl border-3 border-ink p-2"
-			class:bg-explosion-yellow={liveEvent}
-			class:bg-paper={!liveEvent}
-			aria-live="polite"
-		>
-			<IconZap class="size-6 shrink-0" aria-hidden="true" />
-			<div class="flex min-w-0 flex-col leading-tight">
-				{#if liveEvent}
-					<span class="font-display text-sm font-bold"
-						>{m.raid_event_live({ event: EVENT_NAMES[liveEvent.kind]() })} · {m.raid_event_seconds({
-							seconds: Math.max(0, Math.ceil((liveEvent.endsAt - now) / 1000))
-						})}</span
-					>
-					<span dir="auto" class="text-xs">{EVENT_HINTS[liveEvent.kind]()}</span>
-				{:else}
-					<span class="font-display text-sm font-bold"
-						>{m.raid_event_next({
-							event: EVENT_NAMES[nextEvent.kind](),
-							time: formatTime(nextEvent.startsAt - now)
-						})}</span
-					>
-					<span dir="auto" class="text-xs opacity-80">{EVENT_HINTS[nextEvent.kind]()}</span>
-				{/if}
-			</div>
-		</section>
+			{#if squad}
+				<!-- The squad going in with the raider, beside the play buttons -->
+				<div class="mt-auto min-h-16">
+					{@render squad()}
+				</div>
+			{/if}
+		</div>
+	</div>
 
-		<!-- Daily quests -->
-		<section class="sticker flex flex-col gap-2 p-3" style:--tilt="0.4deg">
-			<div class="flex items-baseline justify-between gap-2 font-display">
-				<h2 class="flex items-center gap-1.5 text-lg font-bold">
-					<IconListChecks class="size-5" aria-hidden="true" />{m.raid_quests_title()}
-				</h2>
-				<span class="text-xs font-bold opacity-80"
-					>{m.raid_quests_new_in({ hours: questHours })}</span
-				>
-			</div>
-			<ul class="flex flex-col gap-1.5">
-				{#each profile.quests.quests as quest, index (index)}
-					{@const done = questDone(quest)}
-					<li class="flex items-center gap-2">
-						<div class="flex min-w-0 flex-1 flex-col gap-0.5">
-							<span dir="auto" class="text-sm leading-tight font-semibold">{questText(quest)}</span>
-							<span class="flex items-center gap-2">
-								<span class="h-2 flex-1 overflow-hidden rounded-full border-2 border-ink bg-sand">
-									<span
-										class="block h-full"
-										class:bg-khaki={done}
-										class:bg-flag-blue={!done}
-										style:width="{Math.min(1, quest.progress / quest.target) * 100}%"
-									></span>
-								</span>
-								<span class="font-display text-[0.65rem] font-bold tabular-nums"
-									>{quest.progress}/{quest.target}</span
+	<!-- Daily quests -->
+	<section class="flex flex-col gap-1" aria-labelledby="raid-lobby-quests">
+		<div class="flex items-baseline justify-between gap-2">
+			<h2 id="raid-lobby-quests" class="heading">{m.raid_quests_title()}</h2>
+			<span class="font-display text-xs font-bold text-white/75"
+				>{m.raid_quests_new_in({ hours: questHours })}</span
+			>
+		</div>
+		<ul class="grid gap-3 ps-2 pt-2 sm:grid-cols-3">
+			{#each profile.quests.quests as quest, index (index)}
+				{@const done = questDone(quest)}
+				<li class="flex min-w-0 flex-col gap-1.5">
+					<RaidQuestCard {quest} before={quest.progress} compact />
+					<div class="flex items-center justify-between gap-2 font-display text-xs font-bold">
+						<span class="flex items-center gap-2 tabular-nums">
+							{#if quest.reward.gold}
+								<span class="flex items-center gap-0.5"
+									><IconCoins class="size-3.5 text-[#ffd23a]" aria-hidden="true" /><span
+										class="sr-only">{m.raid_reward_gold({ amount: quest.reward.gold })}</span
+									><span aria-hidden="true">{quest.reward.gold}</span></span
 								>
-							</span>
-							<span class="text-[0.65rem] font-bold opacity-75"
-								>{m.raid_quest_reward_xp({ xp: quest.reward.xp })}{quest.reward.gold
-									? ` · ${m.raid_reward_gold({ amount: quest.reward.gold })}`
-									: ''}{quest.reward.scrap
-									? ` · ${m.raid_reward_scrap({ amount: quest.reward.scrap })}`
-									: ''}</span
-							>
-						</div>
+							{/if}
+							{#if quest.reward.scrap}
+								<span class="flex items-center gap-0.5"
+									><IconWrench class="size-3.5 text-[#c9ced4]" aria-hidden="true" /><span
+										class="sr-only">{m.raid_reward_scrap({ amount: quest.reward.scrap })}</span
+									><span aria-hidden="true">{quest.reward.scrap}</span></span
+								>
+							{/if}
+						</span>
 						{#if quest.claimed}
-							<span class="rounded bg-khaki px-1.5 font-display text-xs font-bold text-paper"
+							<span class="-skew-x-6 rounded bg-white/15 px-2 py-0.5 font-black uppercase italic"
 								>{m.raid_quest_claimed()}</span
 							>
 						{:else}
 							<button
 								type="button"
-								class="btn-chunky px-2 py-1 text-xs"
-								class:bg-explosion-yellow={done}
+								class="{BUTTON} {done ? ORANGE : MUTED}"
 								disabled={!done}
 								onclick={() => game.claimQuest(index)}
 							>
@@ -385,23 +508,19 @@
 								{m.raid_quest_claim()}
 							</button>
 						{/if}
-					</li>
-				{/each}
-			</ul>
-		</section>
-	</div>
+					</div>
+				</li>
+			{/each}
+		</ul>
+	</section>
 
-	<div class="flex flex-col gap-3">
+	<div class="grid gap-5 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
 		<!-- Loadout -->
-		<section class="flex flex-col gap-2">
+		<section class="flex min-w-0 flex-col gap-2" aria-labelledby="raid-lobby-loadout">
 			<div class="flex items-center justify-between gap-2">
-				<h2 class="font-display text-lg font-bold">{m.raid_lobby_loadout()}</h2>
-				<button
-					type="button"
-					class="btn-chunky px-2 py-1 text-sm"
-					onclick={() => game.swapLoadoutWeapons()}
-				>
-					<IconRepeat class="size-4" aria-hidden="true" />
+				<h2 id="raid-lobby-loadout" class="heading">{m.raid_lobby_loadout()}</h2>
+				<button type="button" class="{BUTTON} {PURPLE}" onclick={() => game.swapLoadoutWeapons()}>
+					<IconRepeat class="size-3.5" aria-hidden="true" />
 					{m.raid_swap_weapons()}
 				</button>
 			</div>
@@ -410,8 +529,8 @@
 					{@const item = profile.loadout[slot]}
 					{@const cost = item ? upgradeCost(item) : null}
 					<li
-						class="flex items-center gap-2 rounded-xl border-3 bg-paper p-2"
-						style:border-color={item ? RARITY_COLOR[item.rarity] : 'var(--color-ink)'}
+						class="flex items-start gap-2 rounded-xl border-s-4 bg-[#2a1a52]/85 p-2 shadow-[0_3px_0_rgb(0_0_0/0.3)]"
+						style:border-color={item ? RARITY_COLOR[item.rarity] : 'rgb(255 255 255 / 0.2)'}
 					>
 						{#if item}
 							{#if item.type === 'weapon'}
@@ -419,16 +538,18 @@
 								<a
 									href={detailsHref(item)}
 									onclick={() => openDetails(item)}
-									class="shrink-0 rounded-lg hover:scale-105"
+									class="shrink-0 rounded-lg bg-[#1b0b3a]/80 p-1 transition-transform hover:scale-105"
 								>
 									<RaidItemIcon kind={item.kind} rarity={item.rarity} class="size-12" />
 									<span class="sr-only">{m.raid_weapon_details()}</span>
 								</a>
 							{:else}
-								<RaidItemIcon kind={iconKind(item)} rarity={item.rarity} class="size-12 shrink-0" />
+								<span class="shrink-0 rounded-lg bg-[#1b0b3a]/80 p-1">
+									<RaidItemIcon kind={iconKind(item)} rarity={item.rarity} class="size-12" />
+								</span>
 							{/if}
 							<div class="flex min-w-0 flex-1 flex-col leading-tight">
-								<span class="text-[0.65rem] font-bold uppercase opacity-70"
+								<span class="font-display text-[0.65rem] font-black text-white/60 uppercase"
 									>{SLOT_LABELS[slot]()}</span
 								>
 								{#if item.type === 'weapon'}
@@ -436,20 +557,20 @@
 										href={detailsHref(item)}
 										onclick={() => openDetails(item)}
 										dir="auto"
-										class="truncate font-display text-sm font-bold underline decoration-2 underline-offset-2"
+										class="truncate font-display text-sm font-black underline decoration-white/40 decoration-2 underline-offset-2"
 										>{itemName(item)}</a
 									>
 								{:else}
-									<span dir="auto" class="truncate font-display text-sm font-bold"
+									<span dir="auto" class="truncate font-display text-sm font-black"
 										>{itemName(item)}</span
 									>
 								{/if}
 								<span class="text-xs font-bold" style:color={RARITY_COLOR[item.rarity]}
 									>{RARITY_NAMES[item.rarity]()} · {m.raid_item_level({ level: item.level })}</span
 								>
-								<span class="text-xs">{statLine(item)}</span>
+								<span class="text-xs font-semibold">{statLine(item)}</span>
 								{#if traitLine(item)}
-									<span dir="auto" class="text-[0.7rem] leading-snug opacity-80"
+									<span dir="auto" class="text-[0.7rem] leading-snug text-white/70"
 										>{traitLine(item)}</span
 									>
 								{/if}
@@ -475,17 +596,16 @@
 										{/each}
 										{#each { length: socketsOf(item) - crystalsOf(item).length }, index (index)}
 											<span
-												class="block size-6 rounded-full border-2 border-dashed border-ink/50"
+												class="block size-6 rounded-full border-2 border-dashed border-white/35"
 												title={m.raid_crystal_empty_socket()}
 											></span>
 										{/each}
 									</span>
 								{/if}
-								<div class="mt-1 flex flex-wrap gap-1">
+								<div class="mt-1.5 flex flex-wrap gap-1.5">
 									<button
 										type="button"
-										class="btn-chunky px-2 py-0.5 text-xs"
-										class:bg-explosion-yellow={cost !== null && cost <= profile.gold}
+										class="{BUTTON} {cost !== null && cost <= profile.gold ? ORANGE : MUTED}"
 										disabled={cost === null || cost > profile.gold}
 										onclick={() => game.upgrade(slot)}
 									>
@@ -493,7 +613,7 @@
 									</button>
 									{#if item.type === 'weapon'}
 										<a
-											class="btn-chunky px-2 py-0.5 text-xs"
+											class="{BUTTON} {TEAL}"
 											href={detailsHref(item)}
 											onclick={() => openDetails(item)}
 										>
@@ -503,7 +623,7 @@
 									{:else}
 										<button
 											type="button"
-											class="btn-chunky px-2 py-0.5 text-xs"
+											class="{BUTTON} {MUTED}"
 											disabled={profile.stash.length >= STASH_SIZE}
 											onclick={() => game.unequip(item.slot)}
 										>
@@ -513,15 +633,17 @@
 								</div>
 							</div>
 						{:else}
-							<RaidItemIcon
-								kind={slot === 'primary' || slot === 'secondary' ? 'rifle' : slot}
-								class="size-12 shrink-0 opacity-30"
-							/>
+							<span class="shrink-0 rounded-lg bg-[#1b0b3a]/60 p-1">
+								<RaidItemIcon
+									kind={slot === 'primary' || slot === 'secondary' ? 'rifle' : slot}
+									class="size-12 opacity-30"
+								/>
+							</span>
 							<div class="flex flex-col leading-tight">
-								<span class="text-[0.65rem] font-bold uppercase opacity-70"
+								<span class="font-display text-[0.65rem] font-black text-white/60 uppercase"
 									>{SLOT_LABELS[slot]()}</span
 								>
-								<span class="text-sm">{m.raid_slot_empty()}</span>
+								<span class="text-sm text-white/75">{m.raid_slot_empty()}</span>
 							</div>
 						{/if}
 					</li>
@@ -529,163 +651,170 @@
 			</ul>
 		</section>
 
-		<!-- Crystals -->
-		<section class="flex flex-col gap-2">
-			<h2 class="font-display text-lg font-bold">{m.raid_lobby_crystals()}</h2>
-			{#if stock.length === 0}
-				<p class="text-sm opacity-80">{m.raid_lobby_crystals_empty()}</p>
-			{:else}
-				<ul class="flex flex-wrap gap-1.5">
-					{#each stock as { crystal, count } (`${crystal.kind}:${crystal.rarity}`)}
-						{@const active =
-							selectedCrystal?.kind === crystal.kind && selectedCrystal?.rarity === crystal.rarity}
-						<li>
-							<button
-								type="button"
-								class="relative block rounded-full border-2 border-transparent p-0.5"
-								class:border-ink={active}
-								aria-pressed={active}
-								aria-label="{crystalName(crystal)} ×{count}"
-								title="{crystalName(crystal)}: {crystalEffect(crystal)}"
-								onclick={() => (selectedCrystal = active ? null : crystal)}
-							>
-								<RaidCrystalIcon kind={crystal.kind} rarity={crystal.rarity} class="size-11" />
-								<span
-									class="absolute -right-1 -bottom-1 rounded bg-ink px-1 font-display text-[0.6rem] font-bold text-paper tabular-nums"
-									>{count}</span
-								>
-							</button>
-						</li>
-					{/each}
-				</ul>
-				{#if selectedCrystal && selectedStock}
-					{@const crystal = selectedStock.crystal}
-					{@const cost = combineCost(crystal)}
-					<div
-						class="flex flex-wrap items-center gap-2 rounded-xl border-3 bg-paper p-2"
-						style:border-color={RARITY_COLOR[crystal.rarity]}
-					>
-						<div class="flex min-w-0 flex-1 flex-col leading-tight">
-							<span dir="auto" class="font-display text-sm font-bold">{crystalName(crystal)}</span>
-							<span dir="auto" class="text-xs">{crystalEffect(crystal)}</span>
-						</div>
-						<div class="flex flex-wrap gap-1">
-							{#each WEAPON_SLOTS as slot (slot)}
+		<div class="flex min-w-0 flex-col gap-5">
+			<!-- Crystals -->
+			<section class="flex flex-col gap-2" aria-labelledby="raid-lobby-crystals">
+				<h2 id="raid-lobby-crystals" class="heading">{m.raid_lobby_crystals()}</h2>
+				{#if stock.length === 0}
+					<p dir="auto" class="rounded-xl bg-[#1b0b3a]/60 px-3 py-2 text-sm text-white/85">
+						{m.raid_lobby_crystals_empty()}
+					</p>
+				{:else}
+					<ul class="flex flex-wrap gap-2">
+						{#each stock as { crystal, count } (`${crystal.kind}:${crystal.rarity}`)}
+							{@const active =
+								selectedCrystal?.kind === crystal.kind &&
+								selectedCrystal?.rarity === crystal.rarity}
+							<li>
 								<button
 									type="button"
-									class="btn-chunky bg-explosion-yellow px-2 py-1 text-xs"
-									disabled={freeSockets(slot) <= 0}
-									onclick={() => socket(slot)}
+									class="relative block rounded-xl bg-[#1b0b3a]/80 p-1 {active
+										? 'ring-3 ring-white'
+										: ''}"
+									aria-pressed={active}
+									aria-label="{crystalName(crystal)} ×{count}"
+									title="{crystalName(crystal)}: {crystalEffect(crystal)}"
+									onclick={() => (selectedCrystal = active ? null : crystal)}
 								>
-									{m.raid_crystal_socket({ weapon: WEAPON_NAMES[profile.loadout[slot].kind]() })}
+									<RaidCrystalIcon kind={crystal.kind} rarity={crystal.rarity} class="size-10" />
+									<span
+										class="absolute -end-1 -bottom-1 rounded bg-black/75 px-1 font-display text-[0.6rem] font-black tabular-nums"
+										>{count}</span
+									>
 								</button>
-							{/each}
-							{#if cost !== null}
-								<button
-									type="button"
-									class="btn-chunky px-2 py-1 text-xs"
-									disabled={!canCombine(profile, crystal)}
-									title="{selectedStock.count}/{CRYSTAL_COMBINE_COUNT}"
-									onclick={() => game.combine(crystal)}
+							</li>
+						{/each}
+					</ul>
+					{#if selectedCrystal && selectedStock}
+						{@const crystal = selectedStock.crystal}
+						{@const cost = combineCost(crystal)}
+						<div
+							class="flex flex-wrap items-center gap-2 rounded-xl border-s-4 bg-[#2a1a52]/85 p-2"
+							style:border-color={RARITY_COLOR[crystal.rarity]}
+						>
+							<div class="flex min-w-0 flex-1 flex-col leading-tight">
+								<span dir="auto" class="font-display text-sm font-black"
+									>{crystalName(crystal)}</span
 								>
-									{m.raid_crystal_combine({ scrap: cost })}
-								</button>
-							{/if}
+								<span dir="auto" class="text-xs text-white/80">{crystalEffect(crystal)}</span>
+							</div>
+							<div class="flex flex-wrap gap-1.5">
+								{#each WEAPON_SLOTS as slot (slot)}
+									<button
+										type="button"
+										class="{BUTTON} {ORANGE}"
+										disabled={freeSockets(slot) <= 0}
+										onclick={() => socket(slot)}
+									>
+										{m.raid_crystal_socket({ weapon: WEAPON_NAMES[profile.loadout[slot].kind]() })}
+									</button>
+								{/each}
+								{#if cost !== null}
+									<button
+										type="button"
+										class="{BUTTON} {PURPLE}"
+										disabled={!canCombine(profile, crystal)}
+										title="{selectedStock.count}/{CRYSTAL_COMBINE_COUNT}"
+										onclick={() => game.combine(crystal)}
+									>
+										{m.raid_crystal_combine({ scrap: cost })}
+									</button>
+								{/if}
+							</div>
 						</div>
-					</div>
+					{/if}
 				{/if}
-			{/if}
-		</section>
+			</section>
 
-		<!-- Stash -->
-		<section class="flex flex-col gap-2">
-			<h2 class="font-display text-lg font-bold">
-				{m.raid_lobby_stash({ count: profile.stash.length, max: STASH_SIZE })}
-			</h2>
-			{#if profile.stash.length === 0}
-				<p class="text-sm opacity-80">{m.raid_lobby_stash_empty()}</p>
-			{:else}
-				<ul class="flex flex-wrap gap-1.5">
-					{#each profile.stash as item (item.id)}
-						<li>
-							<button
-								type="button"
-								class="relative block rounded-lg border-2 border-transparent"
-								class:border-ink={selectedId === item.id}
-								aria-pressed={selectedId === item.id}
-								aria-label="{itemName(item)}, {RARITY_NAMES[item.rarity]()}, {m.raid_item_level({
-									level: item.level
-								})}"
-								onclick={() => (selectedId = selectedId === item.id ? null : item.id)}
-							>
-								<RaidItemIcon kind={iconKind(item)} rarity={item.rarity} class="size-12" />
-								<span
-									class="absolute -right-1 -bottom-1 rounded bg-ink px-1 font-display text-[0.6rem] font-bold text-paper tabular-nums"
-									>{item.level}</span
-								>
-								{#if isBetter(item)}
-									<span
-										class="absolute -top-1 -left-1 rounded-full bg-khaki px-1 text-[0.6rem] font-bold text-paper"
-										>▲</span
-									>
-								{/if}
-								{#if item.type === 'armor' && item.perk}
-									<span
-										class="absolute -top-1 -right-1 rounded-full bg-tie-red px-1 text-[0.6rem] font-bold text-paper"
-										>★</span
-									>
-								{/if}
-							</button>
-						</li>
-					{/each}
-				</ul>
-				{#if selected}
-					<div
-						class="flex flex-wrap items-center gap-2 rounded-xl border-3 bg-paper p-2"
-						style:border-color={RARITY_COLOR[selected.rarity]}
-					>
-						<div class="flex min-w-0 flex-1 flex-col leading-tight">
-							<span dir="auto" class="font-display text-sm font-bold">{itemName(selected)}</span>
-							<span class="text-xs font-bold" style:color={RARITY_COLOR[selected.rarity]}
-								>{RARITY_NAMES[selected.rarity]()} · {m.raid_item_level({
-									level: selected.level
-								})}</span
-							>
-							<span class="text-xs">{statLine(selected)}</span>
-							{#if traitLine(selected)}
-								<span dir="auto" class="text-[0.7rem] opacity-80">{traitLine(selected)}</span>
-							{/if}
-						</div>
-						<div class="flex flex-wrap gap-1">
-							{#each slotsFor(selected) as slot (slot)}
+			<!-- Stash -->
+			<section class="flex flex-col gap-2" aria-labelledby="raid-lobby-stash">
+				<h2 id="raid-lobby-stash" class="heading">
+					{m.raid_lobby_stash({ count: profile.stash.length, max: STASH_SIZE })}
+				</h2>
+				{#if profile.stash.length === 0}
+					<p dir="auto" class="rounded-xl bg-[#1b0b3a]/60 px-3 py-2 text-sm text-white/85">
+						{m.raid_lobby_stash_empty()}
+					</p>
+				{:else}
+					<ul class="flex flex-wrap gap-2">
+						{#each profile.stash as item (item.id)}
+							<li>
 								<button
 									type="button"
-									class="btn-chunky bg-explosion-yellow px-2 py-1 text-xs"
-									onclick={() => equip(slot)}
+									class="relative block rounded-xl bg-[#1b0b3a]/80 p-1 {selectedId === item.id
+										? 'ring-3 ring-white'
+										: ''}"
+									aria-pressed={selectedId === item.id}
+									aria-label="{itemName(item)}, {RARITY_NAMES[item.rarity]()}, {m.raid_item_level({
+										level: item.level
+									})}"
+									onclick={() => (selectedId = selectedId === item.id ? null : item.id)}
 								>
-									{m.raid_equip()}{selected.type === 'weapon' ? `: ${SLOT_LABELS[slot]()}` : ''}
+									<RaidItemIcon kind={iconKind(item)} rarity={item.rarity} class="size-11" />
+									<span
+										class="absolute -end-1 -bottom-1 rounded bg-black/75 px-1 font-display text-[0.6rem] font-black tabular-nums"
+										>{item.level}</span
+									>
+									{#if isBetter(item)}
+										<span
+											class="absolute -start-1 -top-1 rounded-full bg-[#22c3b0] px-1 text-[0.6rem] font-black"
+											>▲</span
+										>
+									{/if}
+									{#if item.type === 'armor' && item.perk}
+										<span
+											class="absolute -end-1 -top-1 rounded-full bg-[#ff6b3d] px-1 text-[0.6rem] font-black"
+											>★</span
+										>
+									{/if}
 								</button>
-							{/each}
-							{#if selected.type === 'weapon'}
-								<a
-									class="btn-chunky px-2 py-1 text-xs"
-									href={detailsHref(selected)}
-									onclick={() => openDetails(selected)}
+							</li>
+						{/each}
+					</ul>
+					{#if selected}
+						<div
+							class="flex flex-wrap items-center gap-2 rounded-xl border-s-4 bg-[#2a1a52]/85 p-2"
+							style:border-color={RARITY_COLOR[selected.rarity]}
+						>
+							<div class="flex min-w-0 flex-1 flex-col leading-tight">
+								<span dir="auto" class="font-display text-sm font-black">{itemName(selected)}</span>
+								<span class="text-xs font-bold" style:color={RARITY_COLOR[selected.rarity]}
+									>{RARITY_NAMES[selected.rarity]()} · {m.raid_item_level({
+										level: selected.level
+									})}</span
 								>
-									{m.raid_weapon_details()}
-									<IconChevronRight class="size-3.5 rtl:rotate-180" aria-hidden="true" />
-								</a>
-							{/if}
-							<button type="button" class="btn-chunky px-2 py-1 text-xs" onclick={salvageSelected}>
-								{m.raid_salvage({ gold: salvageValue(selected) })} · {m.raid_reward_scrap({
-									amount: salvageScrap(selected)
-								})}
-							</button>
+								<span class="text-xs font-semibold">{statLine(selected)}</span>
+								{#if traitLine(selected)}
+									<span dir="auto" class="text-[0.7rem] text-white/70">{traitLine(selected)}</span>
+								{/if}
+							</div>
+							<div class="flex flex-wrap gap-1.5">
+								{#each slotsFor(selected) as slot (slot)}
+									<button type="button" class="{BUTTON} {ORANGE}" onclick={() => equip(slot)}>
+										{m.raid_equip()}{selected.type === 'weapon' ? `: ${SLOT_LABELS[slot]()}` : ''}
+									</button>
+								{/each}
+								{#if selected.type === 'weapon'}
+									<a
+										class="{BUTTON} {TEAL}"
+										href={detailsHref(selected)}
+										onclick={() => openDetails(selected)}
+									>
+										{m.raid_weapon_details()}
+										<IconChevronRight class="size-3.5 rtl:rotate-180" aria-hidden="true" />
+									</a>
+								{/if}
+								<button type="button" class="{BUTTON} {PURPLE}" onclick={salvageSelected}>
+									{m.raid_salvage({ gold: salvageValue(selected) })} · {m.raid_reward_scrap({
+										amount: salvageScrap(selected)
+									})}
+								</button>
+							</div>
 						</div>
-					</div>
+					{/if}
 				{/if}
-			{/if}
-		</section>
+			</section>
+		</div>
 	</div>
 </div>
 
@@ -699,22 +828,31 @@
 
 {#if game.claimed}
 	<div
-		class="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4"
+		class="fixed inset-0 z-50 flex items-center justify-center bg-[#12082e]/70 p-4 text-white"
 		role="dialog"
 		aria-modal="true"
 		aria-labelledby="raid-claimed-title"
 	>
-		<div class="sticker pop-in flex max-w-sm flex-col gap-3 p-5" style:--tilt="-1deg">
-			<h2 id="raid-claimed-title" class="font-display text-2xl font-bold">
+		<div
+			class="pop-in flex max-w-sm flex-col gap-3 rounded-2xl bg-[radial-gradient(ellipse_at_70%_30%,#9a4fe0,#6a2bb8_55%,#3d1478)] p-5 shadow-[0_6px_0_rgb(0_0_0/0.3)]"
+		>
+			<h2
+				id="raid-claimed-title"
+				dir="auto"
+				class="font-display text-2xl leading-none font-black uppercase italic"
+			>
 				{m.raid_season_claimed_title()}
 			</h2>
 			<ul class="flex flex-col gap-1.5">
 				{#each game.claimed as reward, index (index)}
-					<li class="reward flex items-center gap-2" style:animation-delay="{index * 90}ms">
+					<li
+						class="reward flex items-center gap-2 rounded-lg bg-[#1b0b3a]/70 px-2 py-1"
+						style:animation-delay="{index * 90}ms"
+					>
 						{#if reward.type === 'gold'}
-							<IconCoins class="size-7 text-mustard" aria-hidden="true" />
+							<IconCoins class="size-7 text-[#ffd23a]" aria-hidden="true" />
 						{:else if reward.type === 'scrap'}
-							<IconSettings class="size-7 opacity-70" aria-hidden="true" />
+							<IconWrench class="size-7 text-[#c9ced4]" aria-hidden="true" />
 						{:else if reward.type === 'crystal'}
 							<RaidCrystalIcon
 								kind={reward.crystal.kind}
@@ -732,7 +870,7 @@
 			<!-- svelte-ignore a11y_autofocus -->
 			<button
 				type="button"
-				class="btn-chunky bg-explosion-yellow"
+				class="-skew-x-6 self-end rounded-lg border-b-4 border-[#b84300] bg-linear-to-b from-[#ff9a3c] to-[#ff6a10] px-6 py-2 font-display text-xl leading-none font-black uppercase italic shadow-[0_4px_0_rgb(0_0_0/0.25)] active:translate-y-0.5"
 				autofocus
 				onclick={() => game.dismissClaimed()}
 			>
@@ -743,6 +881,32 @@
 {/if}
 
 <style>
+	.heading {
+		font-family: var(--font-display);
+		font-size: 1.25rem;
+		line-height: 1;
+		font-weight: 900;
+		font-style: italic;
+		text-transform: uppercase;
+		color: #e2c9ff;
+	}
+
+	.title {
+		-webkit-text-stroke: 1.5px #12082e;
+		paint-order: stroke fill;
+		text-shadow: 0 3px 0 rgb(0 0 0 / 0.35);
+	}
+
+	.mode {
+		transition:
+			translate 120ms ease-out,
+			filter 120ms ease-out;
+	}
+
+	.mode:hover {
+		filter: brightness(1.08);
+	}
+
 	.reward {
 		animation: reward-in 380ms ease-out both;
 	}
@@ -757,6 +921,10 @@
 	@media (prefers-reduced-motion: reduce) {
 		.reward {
 			animation: none;
+		}
+
+		.mode {
+			transition: none;
 		}
 	}
 </style>

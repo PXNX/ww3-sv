@@ -17,7 +17,13 @@
 	} from '#lib/components/raidText.js';
 	import { enterLandscape } from '#lib/game/landscape.js';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
-	import { ARMOR_PERKS, WEAPON_KINDS, WEAPONS, type MapId } from '#lib/game/raid/config.js';
+	import {
+		ARMOR_PERKS,
+		WEAPON_KINDS,
+		WEAPONS,
+		type MapId,
+		type RaidMode
+	} from '#lib/game/raid/config.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
 	import { RaidGame } from '#lib/stores/raidGame.svelte.js';
@@ -45,9 +51,9 @@
 	});
 
 	/** A battlefield was tapped: the tap also lets the phone go full screen and sideways */
-	function start(map: MapId = game.map) {
+	function start(map: MapId = game.map, mode: RaidMode = game.mode) {
 		void enterLandscape();
-		game.start(map);
+		game.start(map, mode);
 	}
 
 	/** The lobby is played sideways too; the first tap in it asks for full screen and landscape */
@@ -109,7 +115,7 @@
 	{:else}
 		<!-- The lobby scrolls under the floating header -->
 		<div
-			class="absolute inset-0 overflow-y-auto ps-[calc(0.75rem+env(safe-area-inset-left))] pe-[calc(0.75rem+env(safe-area-inset-right))] pt-[calc(var(--hud-top)+0.5rem)] pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
+			class="absolute inset-0 overflow-y-auto bg-[radial-gradient(ellipse_at_30%_15%,#6a4bf0,#3b23a8_50%,#1c0f5e)] ps-[calc(0.75rem+env(safe-area-inset-left))] pe-[calc(0.75rem+env(safe-area-inset-right))] pt-[calc(var(--hud-top)+0.5rem)] pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
 		>
 			<RaidLobby {game} onStart={start} />
 		</div>

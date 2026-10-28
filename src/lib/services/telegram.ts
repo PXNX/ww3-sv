@@ -127,11 +127,36 @@ export function groupGameFromUrl(url: {
 	return entry ? { mode: entry[0] as GroupGameMode, session } : null;
 }
 
+/** One line of a chat's leaderboard, as Telegram ranks it (getGameHighScores) */
+export interface GroupBoardRow {
+	position: number;
+	name: string;
+	score: number;
+	/** The player of this run */
+	me: boolean;
+}
+
+/** Validates the leaderboard the bot sent back; null when it is not the expected shape */
+export function parseGroupBoard(value: unknown): GroupBoardRow[] | null {
+	if (!isRecord(value) || !Array.isArray(value.leaderboard)) return null;
+	const rows: GroupBoardRow[] = [];
+	for (const row of value.leaderboard) {
+		if (!isRecord(row)) return null;
+		const { position, name, score, me } = row;
+		if (!isCount(position) || position === 0 || !isCount(score) || typeof me !== 'boolean') {
+			return null;
+		}
+		rows.push({ position, name: typeof name === 'string' ? name : '', score, me });
+	}
+	return rows;
+}
+
 /**
- * Sends a finished run of a group game to the bot's server. The session is the credential, so no
- * initData goes along; without the server (VITE_TELEGRAM_API_URL) the run is not reported.
+ * Sends a finished run of a group game to the bot's server and returns the chat's leaderboard
+ * around the player. The session is the credential, so no initData goes along; without the server
+ * (VITE_TELEGRAM_API_URL) the run is not reported.
  */
-export async function postGroupScore(game: GroupGame, score: number): Promise<void> {
+export async function postGroupScore(game: GroupGame, score: number): Promise<GroupBoardRow[]> {
 	const url = apiUrl();
 	if (!url) throw new TelegramCallError('UNAVAILABLE');
 	let response: Response;
@@ -144,7 +169,11 @@ export async function postGroupScore(game: GroupGame, score: number): Promise<vo
 	} catch (error) {
 		throw toCallError(error);
 	}
-	fromApiReply(response.status, await response.json().catch(() => null));
+	const board = parseGroupBoard(
+		fromApiReply(response.status, await response.json().catch(() => null))
+	);
+	if (!board) throw new TelegramCallError('UNKNOWN', 'Unexpected leaderboard');
+	return board;
 }
 
 /** The start parameter of the current Mini App launch, once Telegram is loaded */

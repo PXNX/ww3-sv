@@ -593,7 +593,8 @@ const WEAPON_LOOK: Record<WeaponKind, { length: number; width: number; color: st
 	smg: { length: 22, width: 7, color: '#2b2b2b' },
 	launcher: { length: 36, width: 12, color: '#55603a' },
 	flamethrower: { length: 30, width: 10, color: '#8a2f1f' },
-	dronenest: { length: 16, width: 14, color: '#4a5a6a' }
+	dronenest: { length: 16, width: 14, color: '#4a5a6a' },
+	hammer: { length: 34, width: 6, color: '#6b4a2a' }
 };
 
 function drawPlayer(

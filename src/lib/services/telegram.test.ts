@@ -4,6 +4,7 @@ import {
 	endpointCode,
 	fromApiReply,
 	groupGameFromUrl,
+	parseGroupBoard,
 	inviteShareUrl,
 	isTelegramLaunch,
 	parseMe,
@@ -243,5 +244,33 @@ describe('the invite link', () => {
 		expect(inviteShareUrl(invite, 'Play with me')).toBe(
 			'https://t.me/share/url?url=https%3A%2F%2Ft.me%2Fgame_ww3_bot%3Fstart%3Dr5&text=Play%20with%20me'
 		);
+	});
+});
+
+describe("the leaderboard of a chat's game", () => {
+	it('keeps the rows Telegram ranked, with the player marked', () => {
+		const leaderboard = [
+			{ position: 1, name: 'Cleo', score: 900, me: false },
+			{ position: 5, name: 'Ada', score: 40, me: true }
+		];
+		expect(parseGroupBoard({ new_best: false, leaderboard })).toEqual(leaderboard);
+		expect(parseGroupBoard({ leaderboard: [{ position: 2, score: 1, me: false }] })).toEqual([
+			{ position: 2, name: '', score: 1, me: false }
+		]);
+		expect(parseGroupBoard({ leaderboard: [] })).toEqual([]);
+	});
+
+	it('refuses anything else', () => {
+		for (const value of [
+			null,
+			{},
+			{ leaderboard: 'x' },
+			{ leaderboard: [null] },
+			{ leaderboard: [{ position: 0, name: 'A', score: 1, me: false }] },
+			{ leaderboard: [{ position: 1, name: 'A', score: -1, me: false }] },
+			{ leaderboard: [{ position: 1, name: 'A', score: 1 }] }
+		]) {
+			expect(parseGroupBoard(value)).toBeNull();
+		}
 	});
 });

@@ -1,7 +1,8 @@
 <!--
 	Result screen shared by every mode (requirements Section 10): final score, a random cameo
 	portrait with its matching message, the game's character reacting to whether the player won or
-	lost, and a Try Again button. On a new personal best it adds confetti and a Share button.
+	lost, and a Try Again button. On a new personal best it adds confetti and a Share button; a run
+	opened from a chat's game message shows that chat's leaderboard instead of Share.
 -->
 <script lang="ts" module>
 	import type { CameoId } from '#lib/theme/cameos.js';
@@ -35,6 +36,7 @@
 	import { CHARACTER_NAME } from '#lib/theme/character.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import Confetti from './Confetti.svelte';
+	import GroupLeaderboard from './GroupLeaderboard.svelte';
 	import ResultCharacter from './ResultCharacter.svelte';
 	import RewardedAdModal from './RewardedAdModal.svelte';
 	import ShareButton from './ShareButton.svelte';
@@ -192,6 +194,8 @@
 	// same run is filtered out by the store's duplicate guard as well.
 	const careerState = career();
 	const account = telegram();
+	/** Opened from a chat's game message: the sheet shows that chat's leaderboard instead of Share */
+	const groupGame = $derived(account.isGroupGame(mode));
 	let reviving = $state(false);
 
 	/** Revival tokens on hand: the ones earned on this device plus the ones bought with Stars */
@@ -212,6 +216,8 @@
 			adOpen = false;
 			adCoins = 0;
 			previousBest = null;
+			// The next result must not show this run's leaderboard while its own is loading
+			if (untrack(() => groupGame)) account.groupBoardStatus = 'idle';
 			return;
 		}
 		if (awarded) return;
@@ -311,6 +317,10 @@
 
 			{#if children}
 				<div class="w-full">{@render children()}</div>
+			{/if}
+
+			{#if groupGame}
+				<GroupLeaderboard rows={account.groupBoard} status={account.groupBoardStatus} />
 			{/if}
 
 			{#if reward}
@@ -438,10 +448,14 @@
 					<IconRotate class="size-5" aria-hidden="true" />
 					{m.gameover_try_again()}
 				</button>
-				<a href={resolve('/')} class="btn-chunky">{m.gameover_next()}</a>
+				<!-- Telegram's game browser has no start screen to go on to -->
+				{#if !groupGame}
+					<a href={resolve('/')} class="btn-chunky">{m.gameover_next()}</a>
+				{/if}
 			</div>
 
-			{#if isNewBest}
+			<!-- A run from a chat's game message is already on that chat's leaderboard -->
+			{#if isNewBest && !groupGame}
 				<ShareButton {modeName} {score} {drawBoard} />
 			{/if}
 		</div>

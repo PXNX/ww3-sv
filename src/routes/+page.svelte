@@ -12,6 +12,7 @@
 	import CareerBar from '#lib/components/CareerBar.svelte';
 	import ClipPreloadLine from '#lib/components/ClipPreloadLine.svelte';
 	import DailyPanel from '#lib/components/DailyPanel.svelte';
+	import FriendsPanel from '#lib/components/FriendsPanel.svelte';
 	import InstallPwaHint from '#lib/components/InstallPwaHint.svelte';
 	import ModeSelect from '#lib/components/ModeSelect.svelte';
 	import UpdatePwaHint from '#lib/components/UpdatePwaHint.svelte';
@@ -90,15 +91,16 @@
 		<DailyPanel />
 	</div>
 
+	<FriendsPanel />
+
 	<section class="flex flex-col gap-4" aria-labelledby="choose-mode">
 		<h2 id="choose-mode" class="text-2xl font-bold">{m.home_choose_mode()}</h2>
 		<ModeSelect bind:leader />
 	</section>
 
-	<footer class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-center text-sm">
-		<a href={resolve('/shop')} class="font-semibold underline">{m.career_shop()}</a>
-		<a href={resolve('/profile')} class="font-semibold underline">{m.profile_link()}</a>
-		<a href={resolve('/settings')} class="font-semibold underline">{m.settings_title()}</a>
-		<a href={resolve('about')} class="font-semibold underline">{m.about_link()}</a>
+	<footer class="flex flex-wrap items-center justify-center gap-3 text-center text-sm">
+		<a href={resolve('/shop')} class="btn-chunky rounded-full px-3 py-1 text-sm font-bold">{m.career_shop()}</a>
+		<a href={resolve('/settings')} class="btn-chunky rounded-full px-3 py-1 text-sm font-bold">{m.settings_title()}</a>
+		<a href={resolve('about')} class="btn-chunky rounded-full px-3 py-1 text-sm font-bold">{m.about_link()}</a>
 	</footer>
 </main>

@@ -70,6 +70,11 @@
 			<circle cx="16" cy="13" r="3" fill="#d8dde2" />
 			<circle cx="28" cy="13" r="3" fill="#d8dde2" />
 			<rect x="19" y="16" width="6" height="5" rx="1" fill="#3d3d3d" />
+		{:else if kind === 'hammer'}
+			<path d="M22 20 L30 20 L28 42 L24 42 Z" fill="#8a5a2b" />
+			<rect x="10" y="8" width="28" height="13" rx="2" fill="#5d6670" />
+			<rect x="10" y="8" width="7" height="13" rx="1.5" fill="#7d8790" />
+			<path d="M10 14.5 h28" fill="none" />
 		{:else if kind === 'boots'}
 			<path d="M8 12 h10 v18 h8 v8 h-18z" fill="#5a4630" />
 			<path d="M24 12 h10 v18 h8 v8 h-18z" fill="#6b5338" />

@@ -7,6 +7,9 @@
 	`--hud-top` variable tells the game how far down its own overlays start to stay clear of them;
 	`--hud-left` and `--hud-right` keep overlays along the top edge clear of the corners, where
 	Telegram's full screen puts its own buttons. Landscape games also go full screen on phones while immersive, hiding the browser bars.
+	A `compact` page puts the back link and the actions into the banner, one row instead of two, for
+	games whose board needs the height; `back={false}` drops the back link, for a game opened from a
+	chat's game message that has nowhere to go back to.
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
@@ -26,6 +29,8 @@
 		wide = false,
 		immersive = false,
 		landscape = false,
+		compact = false,
+		back = true,
 		children
 	}: {
 		title: string;
@@ -41,6 +46,10 @@
 		immersive?: boolean;
 		/** Played sideways: while immersive, phones go full screen and lock to landscape */
 		landscape?: boolean;
+		/** Not immersive: the back link and the actions sit in a slimmer banner instead of a row above it */
+		compact?: boolean;
+		/** Shows the back link to the start screen */
+		back?: boolean;
 		children: Snippet;
 	} = $props();
 
@@ -74,6 +83,23 @@
 	$effect(() => () => soundManager().stopAll());
 </script>
 
+{#snippet backLink()}
+	{#if back}
+		<a
+			href={resolve('/')}
+			class="btn-chunky px-2 py-1 text-sm sm:px-3"
+			class:bg-explosion-yellow={confirmingLeave}
+			aria-label={confirmingLeave ? m.game_back_confirm() : m.game_back()}
+			onclick={onBack}
+		>
+			<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
+			<span class={confirmingLeave ? '' : 'hidden sm:inline'}>
+				{confirmingLeave ? m.game_back_confirm() : m.game_back()}
+			</span>
+		</a>
+	{/if}
+{/snippet}
+
 <svelte:head>
 	<title>{title}</title>
 </svelte:head>
@@ -83,45 +109,62 @@
 		? 'fixed inset-0 overflow-hidden [--hud-left:calc(0.5rem+var(--top-left-inset))] [--hud-right:calc(0.5rem+var(--top-right-inset))] [--hud-top:calc(3.25rem+var(--top-inset))]'
 		: `mx-auto flex h-dvh ${wide ? 'max-w-none' : 'max-w-3xl'} flex-col gap-2 overflow-hidden px-2 pt-[calc(0.5rem+var(--top-inset))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] [--hud-left:0.5rem] [--hud-right:0.5rem] [--hud-top:0.5rem] sm:gap-3 sm:px-3 sm:pt-[calc(0.75rem+var(--top-inset))] sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]`}
 >
-	<div
-		class={immersive
-			? 'pointer-events-none absolute inset-x-0 top-0 z-40 flex items-start justify-between gap-2 pt-[calc(0.5rem+var(--top-inset))] pr-(--hud-right) pl-(--hud-left) *:pointer-events-auto'
-			: 'flex items-center justify-between gap-2 pr-(--top-right-inset) pl-(--top-left-inset)'}
-	>
-		<div class="flex items-center gap-2">
-			<a
-				href={resolve('/')}
-				class="btn-chunky px-2 py-1 text-sm sm:px-3"
-				class:bg-explosion-yellow={confirmingLeave}
-				aria-label={confirmingLeave ? m.game_back_confirm() : m.game_back()}
-				onclick={onBack}
-			>
-				<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
-				<span class={confirmingLeave ? '' : 'hidden sm:inline'}>
-					{confirmingLeave ? m.game_back_confirm() : m.game_back()}
-				</span>
-			</a>
-			{#if immersive && score !== undefined}
-				<div
-					class="flex items-baseline gap-2 rounded-[10px_6px_12px_8px] border-3 border-ink bg-banner-slate px-2 py-1 font-display leading-none font-bold text-paper shadow-[3px_3px_0_var(--color-ink)]"
-				>
-					<span class="sr-only">{m.game_score()}</span>
-					{#key score}
-						<span class="pop-in text-lg tabular-nums">{score}</span>
-					{/key}
-					{#if best}
-						<span class="text-xs opacity-90">{m.game_best()}: {best}</span>
-					{/if}
-				</div>
-			{/if}
+	<!-- Without a back link or actions the row above the banner would only be empty space -->
+	{#if immersive || (!compact && (back || actions))}
+		<div
+			class={immersive
+				? 'pointer-events-none absolute inset-x-0 top-0 z-40 flex items-start justify-between gap-2 pt-[calc(0.5rem+var(--top-inset))] pr-(--hud-right) pl-(--hud-left) *:pointer-events-auto'
+				: 'flex items-center justify-between gap-2 pr-(--top-right-inset) pl-(--top-left-inset)'}
+		>
+			<div class="flex items-center gap-2">
+				{@render backLink()}
+				{#if immersive && score !== undefined}
+					<div
+						class="flex items-baseline gap-2 rounded-[10px_6px_12px_8px] border-3 border-ink bg-banner-slate px-2 py-1 font-display leading-none font-bold text-paper shadow-[3px_3px_0_var(--color-ink)]"
+					>
+						<span class="sr-only">{m.game_score()}</span>
+						{#key score}
+							<span class="pop-in text-lg tabular-nums">{score}</span>
+						{/key}
+						{#if best}
+							<span class="text-xs opacity-90">{m.game_best()}: {best}</span>
+						{/if}
+					</div>
+				{/if}
+			</div>
+			<div class="flex items-center gap-2">
+				{@render actions?.()}
+			</div>
 		</div>
-		<div class="flex items-center gap-2">
-			{@render actions?.()}
-		</div>
-	</div>
+	{/if}
 
 	{#if immersive}
 		<h1 class="sr-only">{title}</h1>
+	{:else if compact}
+		<header
+			class="ms-(--top-left-inset) me-(--top-right-inset) flex items-center gap-2 rounded-[14px_8px_16px_10px] border-3 border-ink bg-banner-slate py-1 ps-1.5 pe-3 text-paper shadow-[4px_4px_0_var(--color-ink)] sm:gap-3 sm:py-1.5 sm:ps-2 sm:pe-4"
+		>
+			{@render backLink()}
+			<h1
+				class="min-w-0 flex-1 truncate text-lg leading-tight font-bold sm:text-2xl {back
+					? ''
+					: 'ps-1.5'}"
+			>
+				{title}
+			</h1>
+			{@render actions?.()}
+			{#if score !== undefined}
+				<div class="flex items-baseline gap-2 font-display leading-none">
+					{#if best}
+						<span class="text-xs font-bold opacity-90">{m.game_best()}: {best}</span>
+					{/if}
+					<span class="sr-only">{m.game_score()}</span>
+					{#key score}
+						<span class="pop-in text-2xl font-bold tabular-nums sm:text-3xl">{score}</span>
+					{/key}
+				</div>
+			{/if}
+		</header>
 	{:else}
 		<header
 			class="{wide

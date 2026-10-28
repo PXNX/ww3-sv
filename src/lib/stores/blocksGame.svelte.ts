@@ -30,6 +30,7 @@ import {
 	scoreMove
 } from '#lib/game/blocks/scoring.js';
 import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
+import { haptic } from '#lib/haptic/haptic.svelte.js';
 import { highscores, type Highscores } from '#lib/services/highscore.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
 
@@ -242,8 +243,12 @@ export class BlocksGame {
 		if (lines > 0) {
 			// Bigger clears and longer streaks ring out with more notes
 			soundManager().play('blocks-clear', (lines - 1 + (move.combo.streak - 1) * 0.5) / 4);
+			// A clear with a longer streak vibrates harder, so the haptic grows with the combo
+			haptic().play(Math.min(1, 0.25 + move.combo.streak * 0.18));
 		} else {
 			soundManager().play('blocks-place');
+			// Placing a piece still taps the device, so the board feels alive
+			haptic().play(0.15);
 		}
 
 		const tray = this.tray.map((entry, index) => (index === slot ? null : entry));

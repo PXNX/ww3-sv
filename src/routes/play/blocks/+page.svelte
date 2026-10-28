@@ -18,8 +18,11 @@
 	import Grid from '#lib/components/Grid.svelte';
 	import PieceTray from '#lib/components/PieceTray.svelte';
 	import { firstPlay } from '#lib/services/tutorial.js';
+	import { telegram } from '#lib/stores/telegram.svelte.js';
 
 	const game = new BlocksGame();
+	// Opened from a chat's game message: Telegram's game browser has no start screen to go back to
+	const groupGame = $derived(telegram().isGroupGame('blocks'));
 	const reducedMotion = prefersReducedMotion();
 
 	/** Short labels for the three objective cards; fixed targets keep the copy parameterless */
@@ -244,16 +247,20 @@
 	score={game.score}
 	best={game.best}
 	confirmLeave={!game.over && game.score > 0}
+	compact
+	back={!groupGame}
 >
-	<div class="flex items-end gap-3">
-		<CharacterMascot pose={MOOD_POSE[game.mood]} class="w-16 shrink-0 -rotate-3 sm:w-20" />
+	<div class="flex items-end gap-2 sm:gap-3">
+		<CharacterMascot pose={MOOD_POSE[game.mood]} class="w-11 shrink-0 -rotate-3 sm:w-20" />
 		<div
-			class="relative min-h-16 flex-1 rounded-[14px_8px_12px_6px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
+			class="relative min-h-12 flex-1 rounded-[14px_8px_12px_6px] border-3 border-ink bg-paper px-2.5 py-1 shadow-[3px_3px_0_var(--color-ink)] sm:min-h-16 sm:px-3 sm:py-2"
 			role="status"
 		>
 			{#if game.feedback}
 				{#key game.feedback.id}
-					<p class="pop-in flex flex-wrap items-baseline gap-x-2 font-display text-lg font-bold">
+					<p
+						class="pop-in flex flex-wrap items-baseline gap-x-2 font-display text-base leading-tight font-bold sm:text-lg"
+					>
 						<span>
 							{game.feedback.lines > 1
 								? m.blocks_lines_cleared({ lines: game.feedback.lines })
@@ -279,7 +286,7 @@
 					<p class="pop-in font-bold text-tie-red">{notice.text}</p>
 				{/key}
 			{:else if showTutorial}
-				<p class="text-sm leading-snug">{m.blocks_instructions()}</p>
+				<p class="text-xs leading-snug sm:text-sm">{m.blocks_instructions()}</p>
 			{/if}
 			<!-- The cascade meter is always visible, so a clear streak has a place on screen -->
 			<div class="mt-1 flex items-center gap-1.5 text-[0.7rem] leading-none font-bold">
@@ -303,7 +310,7 @@
 	</div>
 
 	<section
-		class="rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-2 py-1.5 shadow-[3px_3px_0_var(--color-ink)]"
+		class="rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-2 py-1 shadow-[3px_3px_0_var(--color-ink)] sm:py-1.5"
 		aria-label={m.blocks_objectives_title()}
 	>
 		<div class="flex items-baseline justify-between gap-2">
@@ -312,7 +319,7 @@
 				{game.objectivesDone}/{game.objectives.length}
 			</span>
 		</div>
-		<ul class="mt-1 grid grid-cols-3 gap-1.5">
+		<ul class="mt-0.5 grid grid-cols-3 gap-1 sm:mt-1 sm:gap-1.5">
 			{#each game.objectives as objective (objective.id)}
 				<li
 					class="flex flex-col gap-0.5 rounded-md border-2 border-ink px-1 py-0.5"

@@ -21,6 +21,9 @@ import {
 	NOVA_BULLETS,
 	NOVA_DAMAGE_FACTOR,
 	OVERCLOCK_MS,
+	QUAKE_DAMAGE_FACTOR,
+	QUAKE_RADIUS,
+	WARCRY_MS,
 	OVERDRIVE_MS,
 	RAILSHOT_DAMAGE_FACTOR,
 	RAILSHOT_RANGE,
@@ -53,5 +56,7 @@ export const SKILL_FACTS: Record<SkillId, SkillFacts> = {
 	},
 	napalm: { radius: NAPALM_RADIUS, durationMs: NAPALM_MS },
 	swarm: { count: SWARM_DRONES },
-	overclock: { durationMs: OVERCLOCK_MS }
+	overclock: { durationMs: OVERCLOCK_MS },
+	quake: { damage: QUAKE_DAMAGE_FACTOR, radius: QUAKE_RADIUS },
+	warcry: { durationMs: WARCRY_MS }
 };

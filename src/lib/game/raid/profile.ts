@@ -21,7 +21,8 @@ import {
 	STASH_SIZE,
 	WEAPON_KINDS,
 	type ArmorSlot,
-	type MapId
+	type MapId,
+	type RaidMode
 } from './config';
 import {
 	crystalKey,
@@ -94,6 +95,10 @@ export interface Profile {
 	raids: number;
 	/** Longest survival per map in milliseconds */
 	bestTimeMs: Partial<Record<MapId, number>>;
+	/** Fastest boss fight win per map in milliseconds (missing in older saves) */
+	bossBestMs: Partial<Record<MapId, number>>;
+	/** Furthest wave held in a defense per map (missing in older saves) */
+	defenseBestWave: Partial<Record<MapId, number>>;
 }
 
 export function newProfile(now: Date = new Date()): Profile {
@@ -115,7 +120,9 @@ export function newProfile(now: Date = new Date()): Profile {
 		season: newSeason(now),
 		quests: newDailyQuests(now),
 		raids: 0,
-		bestTimeMs: {}
+		bestTimeMs: {},
+		bossBestMs: {},
+		defenseBestWave: {}
 	};
 }
 
@@ -341,6 +348,12 @@ export interface RaidHaul {
 	loadout: Loadout;
 	/** What the raid counts towards the daily quests */
 	stats: QuestStats;
+	/** A boss fight won in this many milliseconds; endless hunts leave it out */
+	bossClearMs?: number;
+	/** Boss fights do not count as survival times */
+	mode?: RaidMode;
+	/** The last wave a defense cleared */
+	defenseWave?: number;
 }
 
 export interface HaulResult {
@@ -381,6 +394,8 @@ export function bankHaul(profile: Profile, haul: RaidHaul, now: Date = new Date(
 	}
 	for (const crystal of haul.crystals) crystals = addCrystals(crystals, crystal, 1);
 	const best = current.bestTimeMs[haul.map] ?? 0;
+	const bossBest = current.bossBestMs[haul.map];
+	const hunt = (haul.mode ?? 'hunt') === 'hunt';
 	return {
 		profile: {
 			...current,
@@ -391,7 +406,23 @@ export function bankHaul(profile: Profile, haul: RaidHaul, now: Date = new Date(
 			crystals,
 			quests: addRaidToQuests(current.quests, haul.stats),
 			raids: current.raids + 1,
-			bestTimeMs: { ...current.bestTimeMs, [haul.map]: Math.max(best, haul.timeMs) }
+			bestTimeMs: hunt
+				? { ...current.bestTimeMs, [haul.map]: Math.max(best, haul.timeMs) }
+				: current.bestTimeMs,
+			defenseBestWave:
+				haul.defenseWave === undefined
+					? current.defenseBestWave
+					: {
+							...current.defenseBestWave,
+							[haul.map]: Math.max(current.defenseBestWave[haul.map] ?? 0, haul.defenseWave)
+						},
+			bossBestMs:
+				haul.bossClearMs === undefined
+					? current.bossBestMs
+					: {
+							...current.bossBestMs,
+							[haul.map]: Math.min(bossBest ?? Infinity, haul.bossClearMs)
+						}
 		},
 		levelsGained,
 		salvaged,
@@ -527,9 +558,15 @@ function isCrystalStock(value: unknown): value is CrystalStock {
 	);
 }
 
+const isMapTimes = (value: unknown) =>
+	isRecord(value) &&
+	Object.entries(value).every(
+		([map, time]) => (MAP_IDS as readonly string[]).includes(map) && isCount(time)
+	);
+
 export function isProfile(value: unknown): value is Profile {
 	if (!isRecord(value) || value.version !== 1) return false;
-	const { loadout, stash, bestTimeMs } = value;
+	const { loadout, stash, bestTimeMs, bossBestMs, defenseBestWave } = value;
 	return (
 		isLevel(value.level, MAX_PLAYER_LEVEL) &&
 		isCount(value.xp) &&
@@ -548,10 +585,9 @@ export function isProfile(value: unknown): value is Profile {
 		Array.isArray(stash) &&
 		stash.length <= STASH_SIZE * 2 &&
 		stash.every(isGear) &&
-		isRecord(bestTimeMs) &&
-		Object.entries(bestTimeMs).every(
-			([map, time]) => (MAP_IDS as readonly string[]).includes(map) && isCount(time)
-		)
+		isMapTimes(bestTimeMs) &&
+		(bossBestMs === undefined || isMapTimes(bossBestMs)) &&
+		(defenseBestWave === undefined || isMapTimes(defenseBestWave))
 	);
 }
 
@@ -569,7 +605,9 @@ export function parseProfile(value: unknown, now: Date = new Date()): Profile | 
 			scrap: loaded.scrap ?? 0,
 			crystals: loaded.crystals ?? {},
 			season: loaded.season ?? newSeason(now),
-			quests: loaded.quests ?? newDailyQuests(now)
+			quests: loaded.quests ?? newDailyQuests(now),
+			bossBestMs: loaded.bossBestMs ?? {},
+			defenseBestWave: loaded.defenseBestWave ?? {}
 		},
 		now
 	);

@@ -16,6 +16,7 @@ import {
 	requestWriteAccess,
 	toCallError,
 	type CatalogueItem,
+	type GroupBoardRow,
 	type GroupGame,
 	type PurchaseConsent,
 	type TelegramInvite,
@@ -72,7 +73,10 @@ class TelegramStore {
 	/** True while an invoice is open or a payment is being booked */
 	busy = $state(false);
 	/** Set when the launch came from a chat's game message; its runs go onto that chat's scoreboard */
-	groupGame: GroupGame | null = null;
+	groupGame = $state<GroupGame | null>(null);
+	/** The chat's leaderboard after the last reported run, for the result sheet */
+	groupBoard = $state<GroupBoardRow[] | null>(null);
+	groupBoardStatus = $state<'idle' | 'loading' | 'ready' | 'failed'>('idle');
 
 	#started = false;
 	/** The last streak report the bot accepted, so an unchanged streak is not sent again */
@@ -117,18 +121,27 @@ class TelegramStore {
 		}
 	}
 
+	/** True when runs of this mode count on the leaderboard of the chat the game was opened from */
+	isGroupGame(mode: string): boolean {
+		return this.groupGame?.mode === mode;
+	}
+
 	/**
 	 * Hands a finished run to the bot when the game was opened from a chat's game message, so it
-	 * lands on that chat's leaderboard; Telegram then posts a new best in the chat itself. Other
-	 * modes and plain launches send nothing.
+	 * lands on that chat's leaderboard (Telegram then posts a new best in the chat itself), and keeps
+	 * the leaderboard the bot answers with for the result sheet. Other modes and plain launches send
+	 * nothing.
 	 */
 	async reportGroupScore(mode: string, score: number): Promise<void> {
 		const game = this.groupGame;
 		if (!game || game.mode !== mode || !Number.isFinite(score)) return;
+		this.groupBoardStatus = 'loading';
 		try {
-			await postGroupScore(game, Math.max(0, Math.floor(score)));
+			this.groupBoard = await postGroupScore(game, Math.max(0, Math.floor(score)));
+			this.groupBoardStatus = 'ready';
 		} catch {
 			// A run that does not reach the chat only misses that one entry on its scoreboard
+			this.groupBoardStatus = 'failed';
 		}
 	}
 

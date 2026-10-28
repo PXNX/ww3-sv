@@ -5,7 +5,8 @@
  * climbs the season track) and gold or scrap.
  */
 import { createRandom, dayKey, randomInt, seedFromString } from '#lib/game/random.js';
-import { MAP_IDS, type Archetype, type MapId } from './config';
+import type { Archetype, MapId } from './config';
+import { mapsOfDay } from './rotation';
 
 export const QUEST_KINDS = [
 	'kills',
@@ -85,7 +86,8 @@ export function dailyQuests(day: string): DailyQuests {
 				scrap: i % 2 === 1 ? Math.round(20 + 20 * hard) : 0
 			}
 		};
-		if (kind === 'map') quest.map = MAP_IDS[randomInt(random, 0, MAP_IDS.length)];
+		// Only the day's two battlefields are open, so the quest picks one of them
+		if (kind === 'map') quest.map = mapsOfDay(day)[randomInt(random, 0, 2)];
 		quests.push(quest);
 	}
 	return { day, quests };

@@ -103,6 +103,8 @@
 	/* Flat, hard-edged offset shadows instead of blurred drop shadows */
 	--shadow-hard: 4px 4px 0 var(--color-ink);
 	--shadow-hard-small: 2px 2px 0 var(--color-ink);
+	/* Orange glow for dark-mode cards/shadows, like words-sv */
+	--shadow-orange-glow: 0 0 0 2px rgba(230,165,39,.35), 4px 4px 0 rgba(230,165,39,.25);
 	/* Springy easing that overshoots slightly */
 	--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }

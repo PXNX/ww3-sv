@@ -13,6 +13,8 @@
 	import IconCrosshair from '~icons/lucide/crosshair';
 	import IconFlame from '~icons/lucide/flame';
 	import IconGauge from '~icons/lucide/gauge';
+	import IconMegaphone from '~icons/lucide/megaphone';
+	import IconWaves from '~icons/lucide/waves';
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
 	import IconRocket from '~icons/lucide/rocket';
 	import IconSun from '~icons/lucide/sun';
@@ -34,7 +36,9 @@
 		flashpoint: { icon: IconFlameKindling, color: 'text-tie-red' },
 		napalm: { icon: IconDroplets, color: 'text-mustard' },
 		swarm: { icon: IconPlane, color: 'text-flag-blue' },
-		overclock: { icon: IconFastForward, color: 'text-khaki' }
+		overclock: { icon: IconFastForward, color: 'text-khaki' },
+		quake: { icon: IconWaves, color: 'text-mustard' },
+		warcry: { icon: IconMegaphone, color: 'text-tie-red' }
 	};
 
 	const Icon = $derived(ICONS[skill].icon);

@@ -83,7 +83,8 @@ export const WEAPON_KINDS = [
 	'smg',
 	'launcher',
 	'flamethrower',
-	'dronenest'
+	'dronenest',
+	'hammer'
 ] as const;
 export type WeaponKind = (typeof WEAPON_KINDS)[number];
 
@@ -102,7 +103,9 @@ export const SKILL_IDS = [
 	'flashpoint',
 	'napalm',
 	'swarm',
-	'overclock'
+	'overclock',
+	'quake',
+	'warcry'
 ] as const;
 export type SkillId = (typeof SKILL_IDS)[number];
 
@@ -232,6 +235,22 @@ export const WEAPONS: Record<WeaponKind, WeaponSpec> = {
 		pierce: 0,
 		burnMs: 0,
 		skills: ['swarm', 'overclock']
+	},
+	// Prigozhin's Hammer: no shots, a wide swing at everything in front within arm's reach. Every
+	// swing that lands charges the hammer; a full charge turns the next swing into a Hammer Fall
+	hammer: {
+		damage: 30,
+		fireMs: 620,
+		range: 95,
+		projectileSpeed: 0,
+		pellets: 1,
+		spread: 0,
+		critChance: 0.08,
+		critMultiplier: 1.8,
+		splash: 0,
+		pierce: 0,
+		burnMs: 0,
+		skills: ['quake', 'warcry']
 	}
 };
 
@@ -249,8 +268,36 @@ export const SKILL_COOLDOWN_MS: Record<SkillId, number> = {
 	flashpoint: 9000,
 	napalm: 10000,
 	swarm: 10000,
-	overclock: 14000
+	overclock: 14000,
+	quake: 8000,
+	warcry: 15000
 };
+
+// ---------------------------------------------------------------------------------------------
+// The weapon charge, the thin bar under the player's health
+
+/** Flamethrower: every flame heats it up, it cools while not firing */
+export const FLAME_HEAT_PER_SHOT = 0.02;
+export const FLAME_COOL_PER_SECOND = 0.4;
+/** Overheated: the player stands stunned for this long and loses a share of maximum health */
+export const OVERHEAT_STUN_MS = 1600;
+export const OVERHEAT_DAMAGE_SHARE = 0.1;
+
+/** Hammer: the swing's width in radians, and how much a swing that lands charges it */
+export const HAMMER_ARC = 2.2;
+export const HAMMER_CHARGE_PER_HIT = 0.14;
+/** Hammer Fall, the fully charged swing: a big hit all around, healing the player and squad */
+export const HAMMER_FALL_RADIUS = 170;
+export const HAMMER_FALL_DAMAGE_FACTOR = 4;
+export const HAMMER_FALL_HEAL_SHARE = 0.25;
+/** Quake (hammer): a slam that hurts and shoves everything around */
+export const QUAKE_RADIUS = 150;
+export const QUAKE_DAMAGE_FACTOR = 1.8;
+export const QUAKE_PUSH = 110;
+/** War cry (hammer): half the damage taken for a while, and a little health back */
+export const WARCRY_MS = 5000;
+export const WARCRY_DAMAGE_TAKEN = 0.5;
+export const WARCRY_HEAL_SHARE = 0.1;
 
 /** Field medkit (rifle): heals a share of maximum health */
 export const HEAL_SHARE = 0.35;
@@ -637,6 +684,47 @@ export function superChance(minutes: number): number {
 
 export function megaChance(minutes: number): number {
 	return Math.min(0.08, 0.006 + 0.005 * minutes);
+}
+
+/**
+ * The ways to play a battlefield: the endless hunt (survive, bosses come every few minutes), the
+ * boss fight (the battlefield's boss turns up at once; bring it down before the clock runs out, as
+ * fast as possible) and the defense (hold a command post against waves for a growing reward pot)
+ */
+export const RAID_MODES = ['hunt', 'boss', 'defense'] as const;
+export type RaidMode = (typeof RAID_MODES)[number];
+/** Time to bring the boss down in a boss fight */
+export const BOSS_FIGHT_MS = 180_000;
+/** The boss shows up this long after a boss fight starts */
+export const BOSS_FIGHT_SPAWN_MS = 1500;
+/** At most this many regular enemies keep the boss company */
+export const BOSS_FIGHT_ADDS = 6;
+/** After the boss falls, its loot flies to the player for this long before the results */
+export const VICTORY_MS = 2400;
+
+/** Defense: the command post the enemies go for, in the middle of the battlefield */
+export const OBJECTIVE_HP = 2400;
+export const OBJECTIVE_RADIUS = 44;
+/** Enemies go for the command post unless the player comes this close to them */
+export const OBJECTIVE_AGGRO = 210;
+export const DEFENSE_FIRST_WAVE_MS = 3000;
+/** The pause between two waves */
+export const DEFENSE_BREAK_MS = 5000;
+/** Every this many waves the squad votes whether to cash out the pot; those waves bring a boss */
+export const DEFENSE_CHECKPOINT = 5;
+/** How long the vote stays open; when it closes the majority wins, a tie cashes out */
+export const VOTE_MS = 12_000;
+/** Enemies of a wave are as tough as in a hunt this many minutes in, per wave */
+export const DEFENSE_MINUTES_PER_WAVE = 0.6;
+
+/** Enemies in a wave */
+export function waveSize(wave: number): number {
+	return 5 + wave * 3;
+}
+
+/** What clearing a wave adds to the pot */
+export function wavePot(wave: number): { xp: number; gold: number; scrap: number } {
+	return { xp: 80 + 45 * wave, gold: 30 + 15 * wave, scrap: 6 + 3 * wave };
 }
 
 /** The first boss arrives after two minutes, then one every two and a half */

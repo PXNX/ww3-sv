@@ -43,7 +43,8 @@ export const WEAPON_NAMES: Record<WeaponKind, () => string> = {
 	smg: m.raid_weapon_smg,
 	launcher: m.raid_weapon_launcher,
 	flamethrower: m.raid_weapon_flamethrower,
-	dronenest: m.raid_weapon_dronenest
+	dronenest: m.raid_weapon_dronenest,
+	hammer: m.raid_weapon_hammer
 };
 
 export const WEAPON_TRAITS: Record<WeaponKind, () => string> = {
@@ -53,7 +54,8 @@ export const WEAPON_TRAITS: Record<WeaponKind, () => string> = {
 	smg: m.raid_weapon_smg_trait,
 	launcher: m.raid_weapon_launcher_trait,
 	flamethrower: m.raid_weapon_flamethrower_trait,
-	dronenest: m.raid_weapon_dronenest_trait
+	dronenest: m.raid_weapon_dronenest_trait,
+	hammer: m.raid_weapon_hammer_trait
 };
 
 export const RARITY_NAMES: Record<Rarity, () => string> = {
@@ -90,7 +92,9 @@ export const SKILL_NAMES: Record<SkillId, () => string> = {
 	flashpoint: m.raid_skill_flashpoint,
 	napalm: m.raid_skill_napalm,
 	swarm: m.raid_skill_swarm,
-	overclock: m.raid_skill_overclock
+	overclock: m.raid_skill_overclock,
+	quake: m.raid_skill_quake,
+	warcry: m.raid_skill_warcry
 };
 
 export const SKILL_HINTS: Record<SkillId, () => string> = {
@@ -107,7 +111,9 @@ export const SKILL_HINTS: Record<SkillId, () => string> = {
 	flashpoint: m.raid_skill_flashpoint_hint,
 	napalm: m.raid_skill_napalm_hint,
 	swarm: m.raid_skill_swarm_hint,
-	overclock: m.raid_skill_overclock_hint
+	overclock: m.raid_skill_overclock_hint,
+	quake: m.raid_skill_quake_hint,
+	warcry: m.raid_skill_warcry_hint
 };
 
 export const ARMOR_NAMES: Record<ArmorSlot, () => string> = {
@@ -138,7 +144,8 @@ export const ATTACK_HINTS: Record<WeaponKind, () => string> = {
 	smg: m.raid_attack_smg,
 	launcher: m.raid_attack_launcher,
 	flamethrower: m.raid_attack_flamethrower,
-	dronenest: m.raid_attack_dronenest
+	dronenest: m.raid_attack_dronenest,
+	hammer: m.raid_attack_hammer
 };
 
 export const CRYSTAL_NAMES: Record<CrystalKind, () => string> = {
