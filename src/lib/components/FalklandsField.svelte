@@ -175,8 +175,8 @@
 				<span dir="auto" class="font-bold">{speedLabel(speed)}</span>
 				<span class="text-[0.65rem] tabular-nums sm:text-xs">
 					{SPEEDS[speed].zones === 1
-					? m.falklands_move_summary_one({ fuel: costFor(speed) })
-					: m.falklands_move_summary({ zones: SPEEDS[speed].zones, fuel: costFor(speed) })}
+						? m.falklands_move_summary_one({ fuel: costFor(speed) })
+						: m.falklands_move_summary({ zones: SPEEDS[speed].zones, fuel: costFor(speed) })}
 				</span>
 			</button>
 		{/each}

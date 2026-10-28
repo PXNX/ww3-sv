@@ -607,23 +607,30 @@ _Loop: defend an oil giant from a hostile takeover on one screen and a feed of l
 _Loop: one night on Poland's eastern border, a refugee surge the radio calls an invasion, and convoys
 that are not always what they claim._
 
-- **Identify, do not fire**: convoys split into families and Belarusian psy-ops; paperwork and a
-  camera are the right tools, the wrong call costs reputation rather than lives. (M)
+- [x] **Identify, do not fire**: convoys split into families and Belarusian psy-ops; paperwork and a
+      camera are the right tools, the wrong call costs reputation rather than lives. (M)
+      (Papers and camera each reveal the truth or nothing, patience pays for each look, and the night
+      ends after three wrong calls.)
 - **Radio conflict**: Warsaw and the local post give different orders; following the right one means
   reading the situation, not the volume. (M)
-- **Morning report**: the result sheet is a press conference, scored on how few people were turned
-  away and how few lies got through. (S)
+- [x] **Morning report**: the result sheet is a press conference, scored on how few people were turned
+      away and how few lies got through. (S)
+      (The sheet counts families through, psy-ops caught, families turned back and psy-ops through.)
 
 #### Falklands
 
 _Loop: run a task force across the South Atlantic while the other side counts the same islands._
 
-- **Task force**: fuel, weather and a carrier group that must arrive before the other fleet does; the
-  map is the board. (M)
-- **The other side**: Great Britain and Israel as the player's coalition, Argentina as the opponent,
-  with Buenos Aires' claim ticking up in the corner. (M)
-- **Peace option**: a diplomatic track that wins later but scores lower, so the joke is that the war
-  is the fast path. (S)
+- [x] **Task force**: fuel, weather and a carrier group that must arrive before the other fleet does; the
+      map is the board. (M)
+      (Twelve sea zones, seventy fuel, three speeds; fog and storms stop a sprint and a storm costs
+      extra fuel.)
+- [x] **The other side**: Great Britain as the player's coalition and Argentina as the opponent, with
+      the other fleet ticking up the chart. (M)
+      (Starmer and Milei host the mode; the other fleet starts three zones out and never waits.)
+- [x] **Peace option**: a diplomatic track that wins later but scores lower, so the joke is that the war
+      is the fast path. (S)
+      (Seven days of talks open the deal, which pays a flat peace score instead of the military bonus.)
 
 ### 5.2 Leaders and countries
 
