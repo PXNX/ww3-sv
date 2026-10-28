@@ -2,8 +2,9 @@
 	Convoy Runner playfield: draws the strait on a canvas that fills the whole area, with no letterbox
 	bars (crisp on high-density screens). The tanker
 	is held with a finger or the mouse and follows it 1:1 sideways (shared PointerDrag helper); a tap
-	beside it, arrow keys, and A and D change lane. Left and right are always physical, also in
-	right-to-left languages.
+	beside it, arrow keys, and A and D change lane. On a phone whose tilt sensor answers, the tanker
+	follows the tilt instead and touches on the field are left alone (see ConvoyGame.tiltOn); left
+	and right are always physical, also in right-to-left languages.
 -->
 <script lang="ts">
 	import { onMount, type Snippet } from 'svelte';
@@ -113,10 +114,11 @@
 		}
 		if (event.key === 'ArrowLeft' || event.code === 'KeyA') {
 			event.preventDefault();
-			game.steer(-1);
+			// While the phone steers by tilt, a key press would only be undone by the next reading
+			if (!game.tiltOn) game.steer(-1);
 		} else if (event.key === 'ArrowRight' || event.code === 'KeyD') {
 			event.preventDefault();
-			game.steer(1);
+			if (!game.tiltOn) game.steer(1);
 		}
 	}
 
@@ -173,8 +175,18 @@
 		onCancel: () => game.releaseShip()
 	});
 
+	/**
+	 * Whether this pointer is a finger (or an unknown pointer, which is treated as one). A mouse or
+	 * pen on a convertible keeps steering even while tilt is on: only touch hands over to the sensor.
+	 */
+	function isTouchLike(pointerType: string | undefined): boolean {
+		return pointerType !== 'mouse' && pointerType !== 'pen';
+	}
+
 	function onPointerDown(event: PointerEvent) {
+		// A phone that answers with tilt readings is steered by tilting it, so a finger is ignored
 		if (game.status !== 'running' || !canvas) return;
+		if (game.tiltOn && isTouchLike(event.pointerType)) return;
 		const rect = canvas.getBoundingClientRect();
 		const shipX = game.runner.x;
 		const began = drag.begin(event, {
@@ -187,9 +199,10 @@
 		game.grabShip();
 	}
 
-	// Pausing, game over or a restart ends any hold
+	// Pausing, game over or a restart ends any hold; so does tilt taking over from a finger
 	$effect(() => {
-		if (game.status !== 'running') drag.abort();
+		const touchHold = drag.session !== null && isTouchLike(drag.session.pointerType);
+		if (game.status !== 'running' || (game.tiltOn && touchHold)) drag.abort();
 	});
 </script>
 
@@ -199,7 +212,7 @@
 	<canvas
 		bind:this={canvas}
 		class="absolute inset-0 block size-full touch-none select-none"
-		aria-label={m.convoy_playfield_label()}
+		aria-label={game.tiltOn ? m.convoy_tilt_playfield_label() : m.convoy_playfield_label()}
 		onpointerdown={onPointerDown}
 		onpointermove={(event) => drag.pointerMove(event)}
 		onpointerup={(event) => drag.pointerUp(event)}

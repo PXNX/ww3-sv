@@ -42,6 +42,7 @@ import {
 	TANKER_HALF_LENGTH,
 	TANKER_HALF_WIDTH,
 	TANKER_OFFSET,
+	TILT_RESPONSE_MS,
 	isHazard,
 	isObstacle,
 	type ItemKind,
@@ -244,6 +245,19 @@ export function steer(state: RunnerState, direction: -1 | 1): RunnerState {
 		slideElapsedMs: 0,
 		slideDurationMs: LANE_CHANGE_MS
 	};
+}
+
+/**
+ * Analog steering from the tilt sensor: the tanker is held like a finger would hold it, but the
+ * position comes from the tilt, so it eases towards target (in lanes) instead of jumping. A slick
+ * still takes it out of the player's hands, exactly as it does for a finger.
+ */
+export function tiltShip(state: RunnerState, target: number, dtMs: number): RunnerState {
+	const held = grabShip(state);
+	if (held.dragX === null) return held;
+	const desired = clampToRange(target, shipRange(held));
+	const follow = Math.min(1, Math.max(0, dtMs) / TILT_RESPONSE_MS);
+	return dragShip(held, held.x + (desired - held.x) * follow);
 }
 
 export function makeObstacle(

@@ -127,6 +127,8 @@
 	"convoy_escort": "U-Boot-Eskorte",
 	"convoy_escort_saved": "Das U-Boot hat den Treffer abgefangen!",
 	"convoy_playfield_label": "Die Meerenge von oben. Tippe oder wische links und rechts, um den Tanker zu steuern.",
+	"convoy_tilt": "Neigen zum Lenken",
+	"convoy_tilt_playfield_label": "Die Meerenge von oben. Neige das Telefon nach links und rechts, um den Tanker zu steuern.",
 	"convoy_best_distance": "Weiteste Strecke",
 	"mode_merge_name": "Tanker-Fusion",
 	"mode_merge_description": "Verschmelze kleine Boote zu Riesenschiffen.",

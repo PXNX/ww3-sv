@@ -46,6 +46,8 @@ export const VIEW_AHEAD = FIELD_HEIGHT - TANKER_OFFSET;
 // Movement
 export const LANE_CHANGE_MS = 170;
 export const SLICK_SLIDE_MS = 360;
+/** Tilt steering closes in on the tilted position with this time constant, in ms */
+export const TILT_RESPONSE_MS = 90;
 /** Overshoot of the springy lane slide (0 would be a plain ease-out) */
 export const SLIDE_OVERSHOOT = 1.2;
 

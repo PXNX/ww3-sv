@@ -42,6 +42,9 @@ interface TelegramWebApp {
 	openInvoice?: (url: string, callback: (status: string) => void) => void;
 	requestWriteAccess?: (callback: (allowed: boolean) => void) => void;
 	openTelegramLink?: (url: string) => void;
+	DeviceOrientation?: TelegramMotion;
+	lockOrientation?: () => void;
+	unlockOrientation?: () => void;
 }
 
 type TelegramWindow = Window & { Telegram?: { WebApp?: TelegramWebApp } };
@@ -203,6 +206,68 @@ export async function openInvoice(url: string): Promise<InvoiceStatus> {
 export function endpointCode(error: unknown): string | null {
 	if (!(error instanceof TelegramCallError) || error.type !== 'ENDPOINT_ERROR') return null;
 	return error.code ?? null;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Motion detection (Bot API 8.0)
+
+/** How Telegram's motion sensor is started, with its refresh rate in milliseconds (20 to 1000) */
+export interface TelegramMotionParams {
+	refresh_rate?: number;
+	need_absolute?: boolean;
+}
+
+/**
+ * The Mini App's motion sensor, added in Bot API 8.0. The angles are in radians. Telegram keeps the
+ * latest values on the object, so the game reads them once per frame instead of handling an event
+ * for every change, and it reports `UNSUPPORTED` when the device has no sensor.
+ */
+export interface TelegramMotion {
+	isStarted?: boolean;
+	absolute?: boolean;
+	alpha?: number | null;
+	beta?: number | null;
+	gamma?: number | null;
+	start?: (params?: TelegramMotionParams, callback?: (started: boolean) => void) => unknown;
+	stop?: (callback?: (stopped: boolean) => void) => unknown;
+}
+
+/** Clients older than Bot API 8.0 never answer a start request, so the game does not wait forever */
+const MOTION_TIMEOUT_MS = 1500;
+
+/**
+ * Starts the Mini App's motion sensor and locks the screen to its current orientation, so rolling
+ * the phone to steer cannot also turn the page and mix up the axes. Resolves null outside a Mini
+ * App, on clients without Bot API 8.0 and on devices without a sensor, so the caller can fall back.
+ */
+export async function startMotion(refreshRateMs = 20): Promise<TelegramMotion | null> {
+	const app = await loadTelegram();
+	const sensor = app?.DeviceOrientation;
+	if (!sensor?.start) return null;
+	const started = await new Promise<boolean>((resolve) => {
+		const timeout = setTimeout(() => resolve(false), MOTION_TIMEOUT_MS);
+		try {
+			sensor.start?.({ refresh_rate: refreshRateMs, need_absolute: false }, (result) => {
+				clearTimeout(timeout);
+				resolve(result === true);
+			});
+		} catch {
+			clearTimeout(timeout);
+			resolve(false);
+		}
+	});
+	if (!started) return null;
+	app?.lockOrientation?.();
+	return sensor;
+}
+
+/** Stops the motion sensor and releases the orientation lock again */
+export function stopMotion(sensor: TelegramMotion): void {
+	try {
+		sensor.stop?.();
+	} finally {
+		webApp()?.unlockOrientation?.();
+	}
 }
 
 // ---------------------------------------------------------------------------------------------

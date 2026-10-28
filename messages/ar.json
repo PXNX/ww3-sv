@@ -127,6 +127,8 @@
 	"convoy_escort": "مرافقة الغواصة",
 	"convoy_escort_saved": "الغواصة تلقّت الضربة عنك!",
 	"convoy_playfield_label": "المضيق من الأعلى. اضغط أو اسحب يمينًا ويسارًا لتوجيه الناقلة.",
+	"convoy_tilt": "أمِل الهاتف للتوجيه",
+	"convoy_tilt_playfield_label": "المضيق من الأعلى. أمِل الهاتف يمينًا ويسارًا لتوجيه الناقلة.",
 	"convoy_best_distance": "أبعد مسافة",
 	"mode_merge_name": "دمج الناقلات",
 	"mode_merge_description": "ادمج القوارب الصغيرة لتصنع سفنًا عملاقة.",

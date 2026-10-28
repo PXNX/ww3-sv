@@ -36,6 +36,7 @@ import {
 	springSlide,
 	steer,
 	stepRunner,
+	tiltShip,
 	type RunnerState
 } from './runnerStep';
 
@@ -202,6 +203,50 @@ describe('holding the tanker (direct manipulation)', () => {
 		expect(clear.hull).toBe(MAX_HULL);
 		const hit = run(dragShip(grabShip(mine), 1.8), 400);
 		expect(hit.hull).toBe(MAX_HULL - 1);
+	});
+});
+
+describe('tilt steering', () => {
+	function holdTilt(state: RunnerState, target: number, ms: number): RunnerState {
+		const random = createRandom(1);
+		let current = state;
+		for (let t = 0; t < ms; t += STEP) {
+			current = tiltShip(current, target, STEP);
+			current = stepRunner(current, STEP, random);
+		}
+		return current;
+	}
+
+	it('eases towards the tilted position instead of jumping to it', () => {
+		const first = tiltShip(runnerWith(), LANE_COUNT - 1, STEP);
+		expect(first.dragX).not.toBeNull();
+		expect(first.x).toBeGreaterThan(1);
+		expect(first.x).toBeLessThan(LANE_COUNT - 1);
+		expect(holdTilt(runnerWith(), LANE_COUNT - 1, 600).x).toBeCloseTo(LANE_COUNT - 1, 2);
+	});
+
+	it('stops at the edges of the water the banks leave open', () => {
+		const open = holdTilt(runnerWith(), 99, 1000);
+		expect(open.x).toBeCloseTo(LANE_COUNT - 1, 2);
+		const narrow = {
+			...runnerWith(),
+			shorePhase: 'narrow' as const,
+			shoreLeftBlocked: 1,
+			shoreRightBlocked: 2
+		};
+		expect(holdTilt(narrow, 99, 1000).x).toBeCloseTo(2, 2);
+	});
+
+	it("is taken out of the player's hands by an oil slick, like a finger is", () => {
+		let state = tiltShip(runnerWith([{ kind: 'slick', lane: 1, ahead: 0.2, push: 1 }]), 2, STEP);
+		state = stepRunner(state, STEP, createRandom(1));
+		expect(state.slipping).toBe(true);
+		expect(tiltShip(state, 4, STEP)).toBe(state);
+	});
+
+	it('does nothing once the run is over', () => {
+		const sunk = { ...runnerWith(), over: true };
+		expect(tiltShip(sunk, 4, STEP)).toBe(sunk);
 	});
 });
 

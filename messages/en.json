@@ -127,6 +127,8 @@
 	"convoy_escort": "Submarine escort",
 	"convoy_escort_saved": "The submarine took that one!",
 	"convoy_playfield_label": "The strait, seen from above. Tap or swipe left and right to steer the tanker.",
+	"convoy_tilt": "Tilt to steer",
+	"convoy_tilt_playfield_label": "The strait, seen from above. Tilt the phone left and right to steer the tanker.",
 	"convoy_best_distance": "Best distance",
 	"mode_merge_name": "Merge Tankers",
 	"mode_merge_description": "Merge small boats into giant ships.",

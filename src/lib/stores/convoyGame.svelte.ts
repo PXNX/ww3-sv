@@ -14,11 +14,14 @@ import {
 	reviveRunner,
 	runnerNauticalMiles,
 	runnerScore,
+	shipRange,
 	steer,
 	stepRunner,
+	tiltShip,
 	type RunnerEventType,
 	type RunnerState
 } from '#lib/game/convoy/runnerStep.js';
+import { TiltSteering, tiltLane } from '#lib/game/convoy/tilt.js';
 import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
 import { highscores, type Highscores } from '#lib/services/highscore.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
@@ -74,11 +77,22 @@ export class ConvoyGame {
 	best = $state<number | null>(null);
 	bestDistance = $state<number | null>(null);
 	isNewBest = $state(false);
+	/**
+	 * True once the phone has actually reported a tilt: from then on the tanker is steered by
+	 * tilting it, and touches on the field no longer grab it. Stays false on devices without a
+	 * usable sensor (most desktops, refused permission), which keep the touch controls.
+	 */
+	tiltOn = $state(false);
 
 	/** Not reactive on purpose: read by the canvas on every frame */
 	runner: RunnerState = createRunner();
 	effects: ConvoyEffect[] = [];
 	shakeMs = 0;
+
+	/** The sensor listener; it only reports the first reading, the game polls the deflection */
+	readonly tilt = new TiltSteering(() => {
+		this.tiltOn = true;
+	});
 
 	readonly reducedMotion: boolean;
 	#random: Random = createRandom(1);
@@ -114,6 +128,8 @@ export class ConvoyGame {
 		this.shieldSaves = 0;
 		this.#sync();
 		this.status = 'running';
+		// Asks for motion access on iOS, where that only works from a tap (this is called by one)
+		void this.tilt.start();
 	}
 
 	/** Continues a finished run with one hull point (a bought revival; any number per run) */
@@ -123,6 +139,14 @@ export class ConvoyGame {
 		this.shakeMs = 0;
 		this.#sync();
 		this.status = 'running';
+		// The phone has probably been moved while the game-over card was up
+		this.tilt.recalibrate();
+	}
+
+	/** Stops listening for tilt; call it when the playfield goes away */
+	stopTilt() {
+		this.tilt.stop();
+		this.tiltOn = false;
 	}
 
 	pause() {
@@ -165,6 +189,14 @@ export class ConvoyGame {
 	/** Advances the game by one fixed step */
 	update(stepMs: number) {
 		if (this.status !== 'running') return;
+		// Telegram's sensor only updates its own fields, so it is read here, once per step
+		this.tilt.poll();
+		// Tilt steering is analog: it eases the tanker towards a point in the open water, so it
+		// behaves like a finger held on the ship. Touch and keyboard are untouched by it.
+		if (this.tilt.active) {
+			const target = tiltLane(this.tilt.deflection, shipRange(this.runner));
+			this.runner = tiltShip(this.runner, target, stepMs);
+		}
 		this.runner = stepRunner(this.runner, stepMs, this.#random, {
 			reducedMotion: this.reducedMotion
 		});

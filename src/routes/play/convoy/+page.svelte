@@ -17,6 +17,7 @@
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
 	import IconShield from '~icons/lucide/shield';
+	import IconMoveHorizontal from '~icons/lucide/move-horizontal';
 
 	const game = new ConvoyGame({ reducedMotion: prefersReducedMotion() });
 	let showTutorial = $state(false);
@@ -24,6 +25,7 @@
 	onMount(() => {
 		game.loadBest();
 		showTutorial = firstPlay('convoy');
+		return () => game.stopTilt();
 	});
 
 	// The mascot sent the gunboats: smug when the tanker is in trouble, sweating when it is not
@@ -94,6 +96,14 @@
 				{m.convoy_escort()}
 			</span>
 		{/key}
+		{#if game.tiltOn}
+			<span
+				class="inline-flex items-center gap-1 rounded-[10px_6px_12px_8px] border-3 border-ink bg-sky px-2 py-0.5"
+			>
+				<IconMoveHorizontal class="size-4" aria-hidden="true" />
+				{m.convoy_tilt()}
+			</span>
+		{/if}
 		<CharacterMascot pose={mascotPose} class="ms-auto w-12 -rotate-3" />
 	</section>
 
