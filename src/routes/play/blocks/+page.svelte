@@ -20,9 +20,10 @@
 	import { firstPlay } from '#lib/services/tutorial.js';
 	import { telegram } from '#lib/stores/telegram.svelte.js';
 
-	const game = new BlocksGame();
-	// Opened from a chat's game message: Telegram's game browser has no start screen to go back to
-	const groupGame = $derived(telegram().isGroupGame('blocks'));
+	// Opened from a chat's game message: no bonus objectives, so every run in that chat counts alike,
+	// and no back link, since Telegram's game browser has no start screen to go back to
+	const groupGame = telegram().isGroupGame('blocks');
+	const game = new BlocksGame({ objectives: !groupGame });
 	const reducedMotion = prefersReducedMotion();
 
 	/** Short labels for the three objective cards; fixed targets keep the copy parameterless */
@@ -309,38 +310,40 @@
 		</div>
 	</div>
 
-	<section
-		class="rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-2 py-1 shadow-[3px_3px_0_var(--color-ink)] sm:py-1.5"
-		aria-label={m.blocks_objectives_title()}
-	>
-		<div class="flex items-baseline justify-between gap-2">
-			<h2 class="text-xs font-bold">{m.blocks_objectives_title()}</h2>
-			<span class="text-[0.65rem] font-bold tabular-nums" dir="ltr">
-				{game.objectivesDone}/{game.objectives.length}
-			</span>
-		</div>
-		<ul class="mt-0.5 grid grid-cols-3 gap-1 sm:mt-1 sm:gap-1.5">
-			{#each game.objectives as objective (objective.id)}
-				<li
-					class="flex flex-col gap-0.5 rounded-md border-2 border-ink px-1 py-0.5"
-					class:bg-explosion-yellow={objective.done}
-					class:bg-sand={!objective.done}
-				>
-					<span class="text-[0.65rem] leading-tight font-bold">
-						{OBJECTIVE_LABEL[objective.id]()}
-					</span>
-					<span class="flex items-baseline justify-between gap-1 text-[0.6rem] leading-none">
-						<span class="font-bold tabular-nums" dir="ltr">
-							{objective.done
-								? m.blocks_objective_done()
-								: `${objective.progress}/${objective.target}`}
+	{#if game.objectives.length > 0}
+		<section
+			class="rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-2 py-1 shadow-[3px_3px_0_var(--color-ink)] sm:py-1.5"
+			aria-label={m.blocks_objectives_title()}
+		>
+			<div class="flex items-baseline justify-between gap-2">
+				<h2 class="text-xs font-bold">{m.blocks_objectives_title()}</h2>
+				<span class="text-[0.65rem] font-bold tabular-nums" dir="ltr">
+					{game.objectivesDone}/{game.objectives.length}
+				</span>
+			</div>
+			<ul class="mt-0.5 grid grid-cols-3 gap-1 sm:mt-1 sm:gap-1.5">
+				{#each game.objectives as objective (objective.id)}
+					<li
+						class="flex flex-col gap-0.5 rounded-md border-2 border-ink px-1 py-0.5"
+						class:bg-explosion-yellow={objective.done}
+						class:bg-sand={!objective.done}
+					>
+						<span class="text-[0.65rem] leading-tight font-bold">
+							{OBJECTIVE_LABEL[objective.id]()}
 						</span>
-						<span class="font-bold opacity-70" dir="ltr">+{objective.bonus}</span>
-					</span>
-				</li>
-			{/each}
-		</ul>
-	</section>
+						<span class="flex items-baseline justify-between gap-1 text-[0.6rem] leading-none">
+							<span class="font-bold tabular-nums" dir="ltr">
+								{objective.done
+									? m.blocks_objective_done()
+									: `${objective.progress}/${objective.target}`}
+							</span>
+							<span class="font-bold opacity-70" dir="ltr">+{objective.bonus}</span>
+						</span>
+					</li>
+				{/each}
+			</ul>
+		</section>
+	{/if}
 
 	<Grid
 		bind:this={gridRef}
@@ -399,33 +402,41 @@
 	onRetry={retry}
 >
 	<div class="flex w-full flex-col gap-2">
-		<div class="rounded-lg border-2 border-ink bg-sand p-2 text-start">
-			<p class="text-xs font-bold">
-				{m.blocks_objectives_title()}
-				<span class="ms-1 tabular-nums" dir="ltr">
-					{game.objectivesDone}/{game.objectives.length}
-				</span>
-			</p>
-			<ul class="mt-1 flex flex-col gap-1">
-				{#each game.objectives as objective (objective.id)}
-					<li class="flex items-center gap-1.5 text-xs">
-						<span
-							class="inline-flex size-4 shrink-0 items-center justify-center rounded-full border-2 border-ink text-[0.6rem] leading-none font-bold"
-							class:bg-explosion-yellow={objective.done}
-							class:bg-paper={!objective.done}
-							aria-hidden="true"
-						>
-							{objective.done ? '✓' : '×'}
-						</span>
-						<span class="min-w-0 flex-1">{OBJECTIVE_LABEL[objective.id]()}</span>
-						<span class="shrink-0 font-bold tabular-nums" dir="ltr">
-							{objective.done ? `+${objective.bonus}` : `${objective.progress}/${objective.target}`}
-						</span>
-					</li>
-				{/each}
-			</ul>
-		</div>
-		<dl class="grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
+		{#if game.objectives.length > 0}
+			<div class="rounded-lg border-2 border-ink bg-sand p-2 text-start">
+				<p class="text-xs font-bold">
+					{m.blocks_objectives_title()}
+					<span class="ms-1 tabular-nums" dir="ltr">
+						{game.objectivesDone}/{game.objectives.length}
+					</span>
+				</p>
+				<ul class="mt-1 flex flex-col gap-1">
+					{#each game.objectives as objective (objective.id)}
+						<li class="flex items-center gap-1.5 text-xs">
+							<span
+								class="inline-flex size-4 shrink-0 items-center justify-center rounded-full border-2 border-ink text-[0.6rem] leading-none font-bold"
+								class:bg-explosion-yellow={objective.done}
+								class:bg-paper={!objective.done}
+								aria-hidden="true"
+							>
+								{objective.done ? '✓' : '×'}
+							</span>
+							<span class="min-w-0 flex-1">{OBJECTIVE_LABEL[objective.id]()}</span>
+							<span class="shrink-0 font-bold tabular-nums" dir="ltr">
+								{objective.done
+									? `+${objective.bonus}`
+									: `${objective.progress}/${objective.target}`}
+							</span>
+						</li>
+					{/each}
+				</ul>
+			</div>
+		{/if}
+		<dl
+			class="grid gap-2 text-center {game.objectives.length > 0
+				? 'grid-cols-2 sm:grid-cols-4'
+				: 'grid-cols-3'}"
+		>
 			<div class="rounded-lg border-2 border-ink bg-sand p-1">
 				<dt class="text-xs font-bold">{m.blocks_stat_lines()}</dt>
 				<dd class="font-display text-xl font-bold tabular-nums">{game.linesCleared}</dd>
@@ -438,10 +449,12 @@
 				<dt class="text-xs font-bold">{m.blocks_stat_streak()}</dt>
 				<dd class="font-display text-xl font-bold tabular-nums">{game.longestStreak}</dd>
 			</div>
-			<div class="rounded-lg border-2 border-ink bg-sand p-1">
-				<dt class="text-xs font-bold">{m.blocks_stat_objectives()}</dt>
-				<dd class="font-display text-xl font-bold tabular-nums">{game.objectivesDone}</dd>
-			</div>
+			{#if game.objectives.length > 0}
+				<div class="rounded-lg border-2 border-ink bg-sand p-1">
+					<dt class="text-xs font-bold">{m.blocks_stat_objectives()}</dt>
+					<dd class="font-display text-xl font-bold tabular-nums">{game.objectivesDone}</dd>
+				</div>
+			{/if}
 		</dl>
 	</div>
 </GameOverModal>

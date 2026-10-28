@@ -75,6 +75,11 @@ export interface BlocksGameOptions {
 	seed?: number;
 	/** Starting board (defaults to an empty one); used by tests */
 	board?: Board;
+	/**
+	 * Whether runs draw the three bonus objectives (default true). Off for a game opened from a
+	 * chat's game message, so the luck of the draw does not decide that chat's leaderboard.
+	 */
+	objectives?: boolean;
 }
 
 export class BlocksGame {
@@ -134,9 +139,11 @@ export class BlocksGame {
 	#scores: Highscores;
 	#random: Random = Math.random;
 	#feedbackId = 0;
+	#withObjectives: boolean;
 
-	constructor({ scores = highscores(), seed, board }: BlocksGameOptions = {}) {
+	constructor({ scores = highscores(), seed, board, objectives = true }: BlocksGameOptions = {}) {
 		this.#scores = scores;
+		this.#withObjectives = objectives;
 		this.newGame(seed, board);
 	}
 
@@ -144,8 +151,10 @@ export class BlocksGame {
 		this.#random = createRandom(seed);
 		this.board = board;
 		this.tray = generateTray(board, this.#random);
-		// Drawn after the tray so a seed keeps producing the same pieces it always did
-		this.objectives = createObjectives(this.#random);
+		// Drawn after the tray so a seed keeps producing the same pieces it always did, and drawn even
+		// without objectives so the same seed deals the same pieces either way
+		const objectives = createObjectives(this.#random);
+		this.objectives = this.#withObjectives ? objectives : [];
 		this.selected = null;
 		this.score = 0;
 		this.best = this.#scores.get(BLOCKS_BEST_KEY);

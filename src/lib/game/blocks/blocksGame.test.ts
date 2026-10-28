@@ -181,6 +181,25 @@ describe('Block Puzzle game', () => {
 		expect(game.feedback?.objectives.map((objective) => objective.id)).toEqual(['lines']);
 	});
 
+	it('plays without objectives, dealing the same pieces for the same seed', () => {
+		const withObjectives = new BlocksGame({ scores: memoryScores(), seed: 11 });
+		const game = new BlocksGame({ scores: memoryScores(), seed: 11, objectives: false });
+		expect(game.objectives).toEqual([]);
+		expect(game.tray.map((piece) => piece?.id)).toEqual(
+			withObjectives.tray.map((piece) => piece?.id)
+		);
+
+		// A line clear pays its points and nothing more, and a new game stays without objectives
+		game.board = boardFromRows(['XXXXXX..', ...Array.from({ length: 7 }, () => '........')]);
+		game.tray = [pieceById('line-2-h')!, null, null];
+		game.select(0);
+		expect(game.place(0, 6)).toBe('placed');
+		expect(game.score).toBe(2 + 10);
+		expect(game.objectivePoints).toBe(0);
+		game.newGame(12);
+		expect(game.objectives).toEqual([]);
+	});
+
 	it('ends when nothing fits and records the personal best', () => {
 		const scores = memoryScores();
 		const game = new BlocksGame({ scores, seed: 6 });
