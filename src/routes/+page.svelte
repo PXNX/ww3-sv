@@ -33,9 +33,7 @@
 <main
 	class="mx-auto flex max-w-5xl flex-col gap-8 px-4 pt-[calc(1rem+var(--top-inset))] pb-[calc(3rem+env(safe-area-inset-bottom))]"
 >
-	<div
-		class="flex items-center justify-end gap-2 pr-(--top-right-inset) pl-(--top-left-inset)"
-	>
+	<div class="flex items-center justify-end gap-2 pr-(--top-right-inset) pl-(--top-left-inset)">
 		<a
 			href={resolve('/settings')}
 			class="btn-chunky size-9 rounded-full p-0"

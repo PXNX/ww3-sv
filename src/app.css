@@ -110,9 +110,17 @@
 	--color-ink: #f4efe2;
 	--color-paper: #1e2b47;
 	--color-sand: #16213a;
-	--color-banner-slate: #7b8db0;
+	/* Still the muted chip it is by day, only deep enough for cream text to sit on */
+	--color-banner-slate: #46597f;
 	--color-tie-red: #ed5a5f;
 	--color-khaki: #84966a;
+	/* The daisyUI pieces (the Stars checkbox) follow the same tones */
+	--color-base-100: #16213a;
+	--color-base-200: #1e2b47;
+	--color-base-300: #2a3a5c;
+	--color-base-content: #f4efe2;
+	--color-neutral: #f4efe2;
+	--color-neutral-content: #16213a;
 }
 
 /* Cream text on a dark ground (banners, filled chips, danger buttons) stays cream */
@@ -130,8 +138,6 @@
 [data-theme='dark'] .bg-mustard,
 [data-theme='dark'] .bg-khaki,
 [data-theme='dark'] .bg-flag-blue,
-[data-theme='dark'] .bg-tie-red,
-[data-theme='dark'] .bg-banner-slate {
+[data-theme='dark'] .bg-tie-red {
 	color: #16213a;
 }
-

@@ -88,7 +88,11 @@
 			<IconLanguages class="size-5 text-flag-blue" aria-hidden="true" />
 			{m.language_label()}
 		</h2>
-		<div class="grid grid-cols-2 gap-2 sm:grid-cols-3" role="group" aria-labelledby="settings-language">
+		<div
+			class="grid grid-cols-2 gap-2 sm:grid-cols-3"
+			role="group"
+			aria-labelledby="settings-language"
+		>
 			{#each locales as locale (locale)}
 				<button
 					type="button"
