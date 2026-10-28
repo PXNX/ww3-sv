@@ -8,8 +8,6 @@
 	import { streakDeadline } from '#lib/game/career/profile.js';
 	import { career } from '#lib/game/career/store.svelte.js';
 	import { groupGameFromUrl, launchStartParam, startRoute } from '#lib/services/telegram.js';
-	import { squadCodeOf, squadStartParam } from '#lib/services/squad.js';
-	import { squad } from '#lib/stores/squad.svelte.js';
 	import { clipPreload } from '#lib/sound/preload.svelte.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import { appearance } from '#lib/stores/appearance.svelte.js';
@@ -50,15 +48,6 @@
 		void account.start();
 		// A `startapp=shop` or `startapp=profile` link opens that page instead of the start screen
 		void launchStartParam().then((param) => {
-			// A shared squad link (`startapp=squad_<code>`, or `?join=<code>` in dev) offers joining
-			// that squad in the raid lobby
-			const join = page.url.searchParams.get('join');
-			const code = squadCodeOf(param) ?? (join ? squadCodeOf(squadStartParam(join)) : null);
-			if (code) {
-				squad().offerJoin(code);
-				if (page.url.pathname !== resolve('/play/raid')) void goto(resolve('/play/raid'));
-				return;
-			}
 			const route = startRoute(param);
 			if (route && page.url.pathname === resolve('/')) void goto(resolve(route));
 		});
