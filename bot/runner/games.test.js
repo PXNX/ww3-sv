@@ -16,6 +16,8 @@ ensureTables(sqlite, schema);
 // Every Bot API call goes through fetch; answer them here and remember what was asked
 let calls = [];
 let refuse = null;
+// What Telegram answers to getGameHighScores
+let highScores = [];
 globalThis.fetch = async (url, init) => {
   const method = String(url).split('/').pop();
   const params = JSON.parse(init.body);
@@ -23,12 +25,14 @@ globalThis.fetch = async (url, init) => {
   if (refuse?.(method, params)) {
     return Response.json({ ok: false, error_code: 400, description: 'Bad Request: BOT_SCORE_NOT_MODIFIED' });
   }
+  if (method === 'getGameHighScores') return Response.json({ ok: true, result: highScores });
   return Response.json({ ok: true, result: method === 'sendMessage' ? { message_id: 1 } : true });
 };
 
 beforeEach(() => {
   calls = [];
   refuse = null;
+  highScores = [];
 });
 
 const GROUP = -1001234567890;
@@ -68,11 +72,12 @@ test('a better run goes onto the chat scoreboard, a worse one does not', async (
   // The player is the one who pressed Play, whoever reports the score
   const first = await games.reportScore({ session, game: 'blocks', score: 100 });
   expect(first).toMatchObject({ new_best: true, best: 100, rank: 1, overtook: null });
-  expect(calls).toEqual([{ method: 'setGameScore', params: { user_id: 1, score: 100, chat_id: GROUP, message_id: 77 } }]);
+  expect(calls[0]).toEqual({ method: 'setGameScore', params: { user_id: 1, score: 100, chat_id: GROUP, message_id: 77 } });
 
+  // A worse run leaves the scoreboard alone, but still gets the leaderboard
   calls = [];
   expect(await games.reportScore({ session, game: 'blocks', score: 80 })).toMatchObject({ new_best: false, best: 100 });
-  expect(calls).toEqual([]);
+  expect(calls.map((call) => call.method)).toEqual(['getGameHighScores']);
 
   // Telegram already holds a better score (set before the bot kept a copy): nothing changes
   refuse = (method) => method === 'setGameScore';
@@ -88,21 +93,21 @@ test('taking the record from someone else is announced in the chat', async () =>
   calls = [];
   // Second place is a new personal best, but not the record
   expect(await gamescore({ session: bobSession, game: 'blocks', score: 200 }))
-    .toEqual({ new_best: true, best: 200, rank: 2 });
-  expect(calls.map((call) => call.method)).toEqual(['setGameScore']);
+    .toMatchObject({ new_best: true, best: 200, rank: 2 });
+  expect(calls.map((call) => call.method)).toEqual(['setGameScore', 'getGameHighScores']);
 
   calls = [];
   expect(await gamescore({ session: bobSession, game: 'blocks', score: 400 }))
-    .toEqual({ new_best: true, best: 400, rank: 1 });
-  expect(calls.map((call) => call.method)).toEqual(['setGameScore', 'sendMessage']);
-  expect(calls[1].params.chat_id).toBe(GROUP);
-  expect(calls[1].params.text).toContain('Bob');
-  expect(calls[1].params.text).toContain('Ada (300)');
+    .toMatchObject({ new_best: true, best: 400, rank: 1 });
+  expect(calls.map((call) => call.method)).toEqual(['setGameScore', 'getGameHighScores', 'sendMessage']);
+  expect(calls[2].params.chat_id).toBe(GROUP);
+  expect(calls[2].params.text).toContain('Bob');
+  expect(calls[2].params.text).toContain('Ada (300)');
 
   // Beating your own record is left to Telegram's own message
   calls = [];
   await gamescore({ session: bobSession, game: 'blocks', score: 500 });
-  expect(calls.map((call) => call.method)).toEqual(['setGameScore']);
+  expect(calls.map((call) => call.method)).toEqual(['setGameScore', 'getGameHighScores']);
 
   expect(await games.topScores(GROUP, 'blocks')).toEqual([{ name: 'Bob', score: 500 }, { name: 'Ada', score: 300 }]);
   expect(await games.topScores(-1, 'blocks')).toEqual([]);
@@ -165,4 +170,30 @@ test('games are played in groups only, never in private chats or channels', asyn
   await onCallback({ id: 'q4', from: ada, game_short_name: 'blocks', message: { chat: group, message_id: 6 } });
   expect(calls[0].params.url).toMatch(/\/play\/blocks\?game_session=[0-9a-f]{32}$/);
   expect(await sessions()).toBe(before + 1);
+});
+
+test("the result screen gets the chat's leaderboard as Telegram keeps it", async () => {
+  const session = await games.openSession(ada, 'blocks', { chat: { id: -1002 }, message_id: 9 });
+  highScores = [
+    { position: 1, user: { id: 7, first_name: 'Cleo', last_name: 'Top' }, score: 900 },
+    { position: 2, user: { id: 1, first_name: 'Ada' }, score: 40 },
+  ];
+  const result = await gamescore({ session, game: 'blocks', score: 40 });
+  expect(calls.find((call) => call.method === 'getGameHighScores').params).toEqual({ user_id: 1, chat_id: -1002, message_id: 9 });
+  expect(result.leaderboard).toEqual([
+    { position: 1, name: 'Cleo Top', score: 900, me: false },
+    { position: 2, name: 'Ada', score: 40, me: true },
+  ]);
+
+  // Telegram cannot answer: the bot's own copy of the chat's bests stands in
+  refuse = (method) => method === 'getGameHighScores';
+  const fallback = await gamescore({ session, game: 'blocks', score: 10 });
+  expect(fallback.leaderboard).toEqual([{ position: 1, name: 'Ada', score: 40, me: true }]);
+});
+
+test("a game is posted with Telegram's own Play button and nothing else", async () => {
+  const onCallback = (await import('../tgcloud/handlers/callback_query.js')).default;
+  await onCallback({ id: 'q5', from: ada, data: 'game:blocks', message: { chat: { id: GROUP, type: 'group' }, message_id: 3 } });
+  expect(calls.map((call) => call.method)).toEqual(['answerCallbackQuery', 'sendGame']);
+  expect(calls[1].params).toEqual({ chat_id: GROUP, game_short_name: 'blocks' });
 });

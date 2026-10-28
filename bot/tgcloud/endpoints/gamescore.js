@@ -1,4 +1,4 @@
-// endpoints/gamescore.js — `{ session, game, score }` → `{ new_best, best, rank }`. A run of a game
+// endpoints/gamescore.js — `{ session, game, score }` → `{ new_best, best, rank, leaderboard }`. A run of a game
 // opened from a chat's game message ends: the score goes onto that chat's scoreboard, where Telegram
 // posts each new personal best, and the bot announces when the player took the chat's record.
 // A game page opened by Telegram carries no initData, so the session id is the credential: the
@@ -25,5 +25,5 @@ export default async function (input) {
       console.warn('could not announce record', result.chatId, error.description ?? error.message);
     }
   }
-  return { new_best: result.new_best, best: result.best, rank: result.rank };
+  return { new_best: result.new_best, best: result.best, rank: result.rank, leaderboard: result.leaderboard };
 }

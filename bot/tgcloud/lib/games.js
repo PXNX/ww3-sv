@@ -80,15 +80,21 @@ const notModified = (error) => error instanceof BotApiError && /BOT_SCORE_NOT_MO
 
 /**
  * Puts a finished run on the scoreboard of the chat the game was opened from. Returns whether it
- * was a new personal best there, the best, the rank in that chat, and, when the run took the chat's
- * record from someone else, who held it before (the caller announces that).
+ * was a new personal best there, the best, the rank in that chat, the chat's leaderboard around the
+ * player for the result screen, and, when the run took the chat's record from someone else, who held
+ * it before (the caller announces that).
  */
 export async function reportScore(input) {
-  const { user, game, chatId, messageId } = await liveSession(input);
+  const session = await liveSession(input);
   const score = input.score;
   if (!Number.isInteger(score) || score < 0 || score > MAX_SCORE) {
     throw new GameScoreError('INVALID_INPUT', 'The score must be a whole number.');
   }
+  const result = await setScore(session, score);
+  return { ...result, leaderboard: await leaderboard(session) };
+}
+
+async function setScore({ user, game, chatId, messageId }, score) {
 
   const mine = await db.get(sql`
     SELECT score FROM group_scores WHERE chat_id = ${chatId} AND game = ${game} AND user_id = ${user.id}
@@ -118,6 +124,30 @@ export async function reportScore(input) {
     ? { name: record.first_name, score: record.score }
     : null;
   return { new_best: true, best: score, rank: await rank(chatId, game, score), user, chatId, game, overtook };
+}
+
+/**
+ * The chat's leaderboard of the game as Telegram keeps it (getGameHighScores: the player, two
+ * neighbours on each side, and the top three), with the player marked; the bot's own copy when
+ * Telegram cannot answer
+ */
+async function leaderboard({ user, game, chatId, messageId }) {
+  try {
+    const rows = await api.getGameHighScores({ user_id: user.id, chat_id: chatId, message_id: messageId });
+    return rows.map((row) => ({
+      position: row.position,
+      name: [row.user.first_name, row.user.last_name].filter(Boolean).join(' '),
+      score: row.score,
+      me: row.user.id === user.id,
+    }));
+  } catch (error) {
+    console.warn('getGameHighScores failed', chatId, error.description ?? error.message);
+    const rows = await db.all(sql`
+      SELECT user_id, first_name, score FROM group_scores WHERE chat_id = ${chatId} AND game = ${game}
+      ORDER BY score DESC, updated_at ASC LIMIT ${TOP_LIMIT}
+    `);
+    return rows.map((row, i) => ({ position: i + 1, name: row.first_name, score: row.score, me: row.user_id === user.id }));
+  }
 }
 
 async function rank(chatId, game, score) {

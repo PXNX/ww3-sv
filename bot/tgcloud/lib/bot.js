@@ -238,15 +238,8 @@ export async function postGame(chatId, user, id) {
   const lang = langOfUser(user);
   if (!findGame(id)) return await gamesMenu(chatId, user);
   try {
-    // The first button must be the one that starts the game
-    await api.sendGame({
-      chat_id: chatId,
-      game_short_name: id,
-      reply_markup: { inline_keyboard: [
-        [{ text: `🎮 ${gameName(id, lang)}`, callback_game: {} }],
-        [{ text: t(lang, 'game_top_button'), callback_data: `top:${id}` }],
-      ] },
-    });
+    // Telegram adds its own Play button, and the message shows the chat's scoreboard itself
+    await api.sendGame({ chat_id: chatId, game_short_name: id });
   } catch (error) {
     // Not registered with @BotFather under this short name (yet)
     console.warn('sendGame failed', id, error.description ?? error.message);
