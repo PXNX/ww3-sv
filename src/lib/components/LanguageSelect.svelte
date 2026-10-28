@@ -1,11 +1,6 @@
 <!--
-	The language choice as one compact dropdown instead of a wall of six buttons. DaisyUI supplies
-	the menu structure, the classes here make the trigger and the list read like the game's stickers
-	instead of a browser control. The current language is always on the trigger, so the setting can
-	be read without opening anything.
-
-	A native <details> keeps the open/close and keyboard behaviour, but it has no idea about the
-	rest of the page, so a pointer press outside and Escape close it here.
+	Language picker as one DaisyUI dropdown. The trigger shows the current locale; opening it
+	reveals the other five with the selected one marked. Closes on outside click or Escape.
 -->
 <script lang="ts">
 	import { LOCALE_NAMES } from '#lib/i18n.js';
@@ -16,7 +11,6 @@
 	import IconLanguages from '~icons/lucide/languages';
 
 	let open = $state(false);
-	let root = $state<HTMLDetailsElement | null>(null);
 
 	const current = $derived(getLocale());
 
@@ -29,13 +23,16 @@
 		if (!open) return;
 
 		function onPointerDown(event: PointerEvent) {
-			if (root && !root.contains(event.target as Node)) open = false;
+			const target = event.target as HTMLElement;
+			const inside = target.closest('.dropdown');
+			if (inside && !target.closest('summary') && !target.closest('.dropdown-content')) {
+				open = false;
+			}
 		}
 
 		function onKeyDown(event: KeyboardEvent) {
 			if (event.key !== 'Escape') return;
 			open = false;
-			root?.querySelector('summary')?.focus();
 		}
 
 		document.addEventListener('pointerdown', onPointerDown);
@@ -47,7 +44,7 @@
 	});
 </script>
 
-<details class="dropdown w-full" bind:open bind:this={root}>
+<details class="dropdown w-full" bind:open>
 	<summary
 		class="btn-chunky w-full list-none justify-between px-3 py-2 text-base [&::-webkit-details-marker]:hidden"
 	>
@@ -56,8 +53,7 @@
 			<span class="truncate" lang={current}>{LOCALE_NAMES[current]}</span>
 		</span>
 		<IconChevronDown
-			class="size-4 shrink-0 transition-transform duration-200"
-			class:rotate-180={open}
+			class="size-4 shrink-0 transition-transform duration-200 {open ? 'rotate-180' : ''}"
 			aria-hidden="true"
 		/>
 	</summary>
@@ -71,8 +67,7 @@
 			<li>
 				<button
 					type="button"
-					class="flex w-full items-center justify-between gap-2 rounded-[10px_6px_9px_7px] px-3 py-2 text-start font-display text-base font-bold"
-					class:bg-explosion-yellow={selected}
+					class="flex w-full items-center justify-between gap-2 rounded-[10px_6px_9px_7px] px-3 py-2 text-start font-display text-base font-bold {selected ? 'bg-explosion-yellow' : ''}"
 					lang={locale}
 					aria-current={selected ? 'true' : undefined}
 					onclick={() => choose(locale)}

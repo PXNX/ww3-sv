@@ -11,6 +11,7 @@
  * step returns events for sounds and effects.
  */
 import { pickWeighted, randomInt, type Random } from '#lib/game/random.js';
+import { updateSandstorms } from './sandstorm.js';
 import {
 	ARCHETYPE_CAP,
 	ARCHETYPE_SPECS,
@@ -462,6 +463,7 @@ export interface RaidState {
 	haul: GearItem[];
 	/** Crystals picked up this raid */
 	crystals: Crystal[];
+	sandstorms: { x: number; y: number; radius: number; startMs: number; active: boolean }[];
 	nextId: number;
 }
 
@@ -659,6 +661,7 @@ export function createRaid(
 		scrap: 0,
 		haul: [],
 		crystals: [],
+		sandstorms: [],
 		nextId: 1
 	};
 }
@@ -1118,6 +1121,7 @@ export function stepRaid(state: RaidState, random: Random, dtMs: number): RaidEv
 	updateBurning(state, dtMs, events);
 	updateJammer(state, random, events);
 	updateEnemies(state, random, dtMs, events);
+	updateSandstorms(state, dtMs);
 	moveEnemyBullets(state, dtMs, events);
 	updateShells(state, dtMs, events);
 	updateLoot(state, dtMs, events);
