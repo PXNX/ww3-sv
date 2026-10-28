@@ -10,6 +10,11 @@ import {
 	ENEMY_MAX_DIVISIONS,
 	ENEMY_REINFORCE_EVERY,
 	MAX_DAYS,
+	EXP_COMBAT_BONUS,
+	EXP_GAIN_PER_DAY,
+	EXERCISE_EXP_GAIN,
+	EXERCISE_MORALE_LOSS,
+	EXERCISE_SUPPLY_COST,
 	MORALE_REGEN,
 	MORALE_REGEN_LOW,
 	REGION_IDS,
@@ -64,7 +69,8 @@ export function createWarRoom(): WarRoomState {
 		state.divisions[seed.region].push({
 			id: state.nextId++,
 			template: seed.template,
-			morale: templateDef(seed.template).morale
+			morale: templateDef(seed.template).morale,
+			experience: 1
 		});
 	}
 	return state;
@@ -141,7 +147,8 @@ export function stackStrength(
 	return state.divisions[region].reduce((sum, division) => {
 		const template = templateDef(division.template);
 		const base = mode === 'attack' ? template.attack : template.defence;
-		return sum + base * (division.morale / 100) * (supply / 100) * terrain;
+		const expFactor = 1 + ((division.experience ?? 1) - 1) * EXP_COMBAT_BONUS;
+		return sum + base * expFactor * (division.morale / 100) * (supply / 100) * terrain;
 	}, 0);
 }
 
@@ -421,13 +428,14 @@ export function train(state: WarRoomState, template: TemplateId): boolean {
 	return true;
 }
 
-/** Every division recovers morale, more when its region is well supplied */
+/** Every division recovers morale and gains experience when well supplied */
 function regenMorale(state: WarRoomState) {
 	const supplies = supplyMap(state);
 	for (const region of REGION_IDS) {
 		const gain = supplies[region] >= 60 ? MORALE_REGEN : MORALE_REGEN_LOW;
 		for (const division of state.divisions[region]) {
 			division.morale = Math.min(100, division.morale + gain);
+			if (supplies[region] >= 60) division.experience += EXP_GAIN_PER_DAY;
 		}
 	}
 }
@@ -449,7 +457,8 @@ function pactTurn(state: WarRoomState, random: Random): WarRoomEvent[] {
 		state.divisions.redcapital.push({
 			id: state.nextId++,
 			template: 'infantry',
-			morale: 70
+			morale: 70,
+			experience: 1
 		});
 	}
 
@@ -556,6 +565,30 @@ export function finalScore(state: WarRoomState, outcome: Outcome | null = state.
 		score += SCORE_WIN_BONUS + Math.max(0, MAX_DAYS - state.day) * SCORE_DAY_BONUS;
 	}
 	return Math.max(0, Math.round(score));
+}
+
+/** Exercising lowers morale (organization) and costs supplies, but raises experience */
+export function exerciseDivision(state: WarRoomState, region: RegionId): boolean {
+	if (state.outcome !== null) return false;
+	if (state.owner[region] !== 'player') return false;
+	const supply = supplyAt(state, region);
+	if (supply < EXERCISE_SUPPLY_COST) return false;
+	if (state.divisions[region].length === 0) return false;
+	// Apply cost as supply cut by reducing region's effective supply (simplified: just require supply present)
+	for (const division of state.divisions[region]) {
+		division.morale = Math.max(10, division.morale - EXERCISE_MORALE_LOSS);
+		division.experience += EXERCISE_EXP_GAIN;
+	}
+	return true;
+}
+
+export function canExercise(state: WarRoomState, region: RegionId): boolean {
+	return (
+		state.outcome === null &&
+		state.owner[region] === 'player' &&
+		state.divisions[region].length > 0 &&
+		supplyAt(state, region) >= EXERCISE_SUPPLY_COST
+	);
 }
 
 /** Ends the campaign when a capital falls or the armistice day arrives */

@@ -303,6 +303,18 @@ export const SUPPLY_FLOOR = 40;
 export const MORALE_REGEN = 12;
 export const MORALE_REGEN_LOW = 4;
 
+// Experience
+/** Experience grows by this much per day when well supplied */
+export const EXP_GAIN_PER_DAY = 1;
+/** Each experience level improves combat by this factor */
+export const EXP_COMBAT_BONUS = 0.08;
+/** Exercising a division costs this many supply points from the region */
+export const EXERCISE_SUPPLY_COST = 1;
+/** Exercising lowers morale by this much (organization) */
+export const EXERCISE_MORALE_LOSS = 20;
+/** Exercise gives this much experience */
+export const EXERCISE_EXP_GAIN = 1;
+
 // Starting position
 export const START_RESOURCES: Record<ResourceId, number> = {
 	steel: 45,

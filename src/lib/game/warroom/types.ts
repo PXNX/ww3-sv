@@ -6,6 +6,8 @@ export interface Division {
 	template: TemplateId;
 	/** 0 to 100; combat strength scales with it */
 	morale: number;
+	/** Experience level; starts at 1, grows with combat and time */
+	experience: number;
 }
 
 export interface Building {

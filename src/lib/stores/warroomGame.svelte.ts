@@ -15,7 +15,9 @@ import {
 	orderStack,
 	slotsUsed as slotsUsedRule,
 	supplyMap,
-	train as trainRule
+	train as trainRule,
+	exerciseDivision,
+	canExercise as canExerciseRule
 } from '#lib/game/warroom/state.js';
 import {
 	REGIONS,
@@ -185,6 +187,21 @@ export class WarRoomGame {
 		this.#note(m.warroom_toast_training({ template: templateName(template) }));
 		this.#play('click', 0.6);
 		this.#sync();
+	}
+
+	exercise(region: RegionId) {
+		if (this.status !== 'playing') return;
+		if (!exerciseDivision(this.state, region) || !canExerciseRule(this.state, region)) {
+			this.#play('ui-error', 0.6);
+			return;
+		}
+		this.#note(m.warroom_toast_exercised({ region: regionName(region) }));
+		this.#play('blocks-clear', 0.4);
+		this.#sync();
+	}
+
+	canExercise(region: RegionId): boolean {
+		return canExerciseRule(this.state, region);
 	}
 
 	canBuild(region: RegionId, factory: FactoryId): boolean {
