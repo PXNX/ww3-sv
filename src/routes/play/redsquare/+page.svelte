@@ -66,7 +66,7 @@
 		{/if}
 	{/snippet}
 
-	<section class="mx-auto flex w-full max-w-xl flex-1 flex-col items-center gap-2">
+	<section class="mx-auto flex w-full flex-1 flex-col items-center gap-2">
 		<div
 			class="flex w-full items-center justify-between gap-2 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
 		>

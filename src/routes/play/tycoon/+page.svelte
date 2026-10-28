@@ -143,7 +143,7 @@
 		</button>
 	{/snippet}
 
-	<section class="mx-auto flex w-full max-w-xl flex-col gap-3">
+	<section class="mx-auto flex w-full flex-col gap-3">
 		{#if game.welcome}
 			<div class="sticker pop-in flex flex-col gap-1 bg-explosion-yellow p-3" role="status">
 				<h2 dir="auto" class="font-display text-xl font-bold">{m.tycoon_welcome_title()}</h2>
@@ -200,11 +200,7 @@
 
 		<!-- The playfield: the derrick, active crisis effects and the crisis card -->
 		<div data-playfield dir="ltr" class="flex flex-col gap-2" style:touch-action="none">
-			<div
-				class="relative mx-auto w-full max-w-[22rem]"
-				aria-label={m.tycoon_playfield_label()}
-				role="group"
-			>
+			<div class="relative mx-auto w-full" aria-label={m.tycoon_playfield_label()} role="group">
 				<TycoonDerrick {game} />
 				{#if game.toast}
 					{#key game.toast.id}
