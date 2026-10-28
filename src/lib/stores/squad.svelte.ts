@@ -24,6 +24,7 @@ import {
 	type SquadErrorCode,
 	type SquadEvent,
 	type SquadInvite,
+	type SquadLink,
 	type SquadMember,
 	type SquadTransport,
 	type TransportStatus
@@ -74,6 +75,8 @@ class SquadStore {
 	now = $state(Date.now());
 	/** How many mounted panels list incoming invites; the global toast stays quiet while any do */
 	inviteSurfaces = $state(0);
+	/** The code of a shared squad link the app was opened with, until it is joined or dismissed */
+	joinCode = $state<string | null>(null);
 
 	#invites = $state<SquadInvite[]>([]);
 	#api: SquadApi | null = null;
@@ -198,6 +201,42 @@ class SquadStore {
 	async kick(memberId: string): Promise<SquadActionResult> {
 		return this.#act(memberId, async (api) => {
 			this.squad = await api.kick(memberId);
+		});
+	}
+
+	/**
+	 * A link for anyone to join the player's squad, to share in a chat. Only the leader (or a player
+	 * without a squad, who would lead it) gets one.
+	 */
+	async link(): Promise<SquadLink | Exclude<SquadActionResult, 'ok'>> {
+		if (!this.isLeader) return 'NOT_LEADER';
+		const made: { link?: SquadLink } = {};
+		const result = await this.#act('link', async (api) => {
+			made.link = await api.link();
+		});
+		if (result !== 'ok') return result;
+		return made.link ?? 'failed';
+	}
+
+	/** Remembers a squad link the app was opened with, to offer joining once friends are ready */
+	offerJoin(code: string): void {
+		this.joinCode = code;
+	}
+
+	dismissJoin(): void {
+		this.joinCode = null;
+	}
+
+	/** Joins the squad behind the shared link the app was opened with */
+	async joinLink(): Promise<SquadActionResult> {
+		const code = this.joinCode;
+		if (!code) return 'INVITE_EXPIRED';
+		return this.#act('join', async (api) => {
+			try {
+				this.squad = await api.join(code);
+			} finally {
+				this.joinCode = null;
+			}
 		});
 	}
 

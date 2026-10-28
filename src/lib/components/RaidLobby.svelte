@@ -4,21 +4,20 @@
 	every twelve hours) with its countdown and the one coming next, the three ways to play it (the
 	endless hunt, the three-minute boss fight or the wave defense of a command post) as big
 	buttons, and beside them the raider's level and season card (tap it for the season's rewards),
-	gold and scrap, the live event and room for the squad. Further down today's quests with their
-	claim buttons, the loadout (two weapons, helmet, vest and boots; tap a weapon for all its stats
-	and skills) with gold upgrades and socketed crystals, the loose crystals (socketed from here, or
+	gold and scrap and the live event. Below that the squad (online friends to invite, a join link
+	to share in any chat), today's quests with their claim buttons, the loadout (two weapons,
+	helmet, vest and boots; tap a weapon for all its stats and skills) with gold upgrades and socketed crystals, the loose crystals (socketed from here, or
 	combined five into one rarer) and the stash, where each piece can be equipped or salvaged for
 	gold and scrap.
 -->
 <script lang="ts">
-	import { onMount, type Snippet } from 'svelte';
+	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import {
 		BOSS_FIGHT_MS,
 		CRYSTAL_COMBINE_COUNT,
 		RARITY_COLOR,
-		SEASON_TIERS,
 		STASH_SIZE,
 		WEAPONS,
 		type MapId,
@@ -50,13 +49,14 @@
 	} from '#lib/game/raid/profile.js';
 	import { hoursUntilNewQuests, questDone } from '#lib/game/raid/quests.js';
 	import { rotationAt } from '#lib/game/raid/rotation.js';
-	import { seasonNumber, seasonTier, seasonTierProgress } from '#lib/game/raid/season.js';
+	import { seasonTier } from '#lib/game/raid/season.js';
 	import { rememberDetailsItem, type RaidGame } from '#lib/stores/raidGame.svelte.js';
 	import Avatar from './Avatar.svelte';
 	import RaidCrystalIcon from './RaidCrystalIcon.svelte';
 	import RaidItemIcon from './RaidItemIcon.svelte';
 	import RaidQuestCard from './RaidQuestCard.svelte';
 	import RaidSeasonScreen from './RaidSeasonScreen.svelte';
+	import RaidSquadSection from './RaidSquadSection.svelte';
 	import {
 		BOSS_NAMES,
 		crystalEffect,
@@ -85,11 +85,8 @@
 	import IconWrench from '~icons/lucide/wrench';
 	import IconZap from '~icons/lucide/zap';
 
-	let {
-		game,
-		onStart,
-		squad
-	}: { game: RaidGame; onStart: (map: MapId, mode: RaidMode) => void; squad?: Snippet } = $props();
+	let { game, onStart }: { game: RaidGame; onStart: (map: MapId, mode: RaidMode) => void } =
+		$props();
 
 	const profile = $derived(game.profile);
 	let selectedId = $state<string | null>(null);
@@ -256,7 +253,6 @@
 	// Season, shown with the level
 	const season = $derived(profile.season);
 	const reached = $derived(seasonTier(season.xp));
-	const tierProgress = $derived(seasonTierProgress(season.xp));
 	const claimable = $derived(reached - season.claimed);
 
 	// Live events and quests
@@ -375,10 +371,13 @@
 				<span class="flex min-w-0 flex-1 flex-col gap-1 font-display font-bold">
 					<span class="flex items-center gap-2 text-sm leading-none font-black uppercase italic">
 						<span>{m.raid_lobby_level({ level: profile.level })}</span>
-						<span class="text-[0.65rem] text-white/75">{m.raid_lobby_xp({ xp: profile.xp, next: game.xpNeeded })}</span>
+						<span class="text-[0.65rem] text-white/75"
+							>{m.raid_lobby_xp({ xp: profile.xp, next: game.xpNeeded })}</span
+						>
 					</span>
 					<span class="h-3 w-full overflow-hidden rounded-full bg-black/35">
-						<span class="block h-full rounded-full bg-[#7fd3ff]" style:width="{xpShare * 100}%"></span>
+						<span class="block h-full rounded-full bg-[#7fd3ff]" style:width="{xpShare * 100}%"
+						></span>
 					</span>
 				</span>
 				<IconChevronRight class="size-5 shrink-0 opacity-70 rtl:rotate-180" aria-hidden="true" />
@@ -434,15 +433,14 @@
 					{/if}
 				</div>
 			</section>
-
-			{#if squad}
-				<!-- The squad going in with the raider, beside the play buttons -->
-				<div class="mt-auto min-h-16">
-					{@render squad()}
-				</div>
-			{/if}
 		</div>
 	</div>
+
+	<!-- The squad going in with the raider: friends to invite, and a link to share in any chat -->
+	<section class="flex flex-col gap-1" aria-labelledby="raid-lobby-squad">
+		<h2 id="raid-lobby-squad" class="heading">{m.squad_title()}</h2>
+		<RaidSquadSection />
+	</section>
 
 	<!-- Daily quests -->
 	<section class="flex flex-col gap-1" aria-labelledby="raid-lobby-quests">

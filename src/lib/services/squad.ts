@@ -14,6 +14,12 @@ export const INVITE_TTL_MS = 60_000;
 export const ONLINE_WINDOW_MS = 60_000;
 /** How often the open app reports that it is open */
 export const PRESENCE_INTERVAL_MS = 30_000;
+/** How long a shared squad link can be used to join */
+export const SQUAD_LINK_TTL_MS = 60 * 60_000;
+/** The start parameter of a shared squad link: `squad_` and the link's code */
+const SQUAD_START_PREFIX = 'squad_';
+/** A link code fits a Telegram start parameter: letters, digits, `_` and `-` */
+const SQUAD_CODE = /^[A-Za-z0-9_-]{4,40}$/;
 
 export interface Friend {
 	id: string;
@@ -152,6 +158,31 @@ export function parseOutgoing(value: unknown): OutgoingInvite | null {
 	return { id, toId, expiresAt };
 }
 
+/** A link anyone can open to join the player's squad */
+export interface SquadLink {
+	code: string;
+	expiresAt: number;
+}
+
+export function parseSquadLink(value: unknown): SquadLink | null {
+	if (!isRecord(value)) return null;
+	const { code, expires_at: expiresAt } = value;
+	if (typeof code !== 'string' || !SQUAD_CODE.test(code) || !isTime(expiresAt)) return null;
+	return { code, expiresAt };
+}
+
+/** The Mini App start parameter that joins the squad behind a link code */
+export function squadStartParam(code: string): string {
+	return SQUAD_START_PREFIX + code;
+}
+
+/** The link code in a start parameter such as `squad_ab12cd`, or null for any other */
+export function squadCodeOf(startParam: string | null | undefined): string | null {
+	if (!startParam?.startsWith(SQUAD_START_PREFIX)) return null;
+	const code = startParam.slice(SQUAD_START_PREFIX.length);
+	return SQUAD_CODE.test(code) ? code : null;
+}
+
 /** `squad` is either a squad or null; anything else is malformed */
 function parseSquadOrNull(value: unknown): Squad | null | undefined {
 	if (value === null) return null;
@@ -253,6 +284,10 @@ export interface SquadApi {
 	respond(inviteId: string, accept: boolean): Promise<Squad | null>;
 	leave(): Promise<void>;
 	kick(memberId: string): Promise<Squad | null>;
+	/** A link to share that lets anyone join the player's squad (or the one they would lead) */
+	link(): Promise<SquadLink>;
+	/** Joins the squad behind a shared link */
+	join(code: string): Promise<Squad>;
 }
 
 /** Thrown when a reply does not have the expected shape */
@@ -295,6 +330,13 @@ export const remoteSquadApi: SquadApi = {
 	async kick(memberId) {
 		const reply = parseSquadReply(await call('squad_kick', { member_id: memberId }));
 		return checked('squad_kick', reply).squad;
+	},
+	async link() {
+		return checked('squad_link', parseSquadLink(await call('squad_link')));
+	},
+	async join(code) {
+		const reply = parseSquadReply(await call('squad_join', { code }));
+		return checked('squad_join', reply?.squad ?? null);
 	}
 };
 

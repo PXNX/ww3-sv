@@ -91,12 +91,16 @@ OutgoingInvite = {
 | `squad_respond` | `{ invite_id: string, accept: boolean }` | `{ squad: Squad \| null }` (the joined squad on accept, `null` on decline)                  | `INVITE_EXPIRED`, `SQUAD_FULL`                                              |
 | `squad_leave`   | `{}`                                     | `{}`                                                                                        | `NOT_IN_SQUAD`                                                              |
 | `squad_kick`    | `{ member_id: string }`                  | `{ squad: Squad \| null }`                                                                  | `NOT_LEADER`, `NOT_IN_SQUAD`                                                |
+| `squad_link`    | `{}`                                     | `{ code: string, expires_at: number }`                                                      | `NOT_LEADER`                                                                |
+| `squad_join`    | `{ code: string }`                       | `{ squad: Squad }` (the joined squad)                                                       | `INVITE_EXPIRED`, `SQUAD_FULL`, `ALREADY_IN_SQUAD`                          |
 
 - `you` in `squad_state` is the player's own id as the server knows it, so the client can tell itself apart from the other members.
 - `invites` lists only unexpired invites addressed to the player; `outgoing` only unexpired invites the player sent.
 - `INVITE_EXPIRED` covers every invite that can no longer be accepted: expired, cancelled, unknown, or the inviter is no longer a leader.
 - `ALREADY_IN_SQUAD`: the friend is already a member of the player's squad.
 - `NOT_IN_SQUAD`: leaving without a squad, or kicking someone who is not a member.
+- `squad_link` gives the leader (or a player without a squad, who would lead it) a code to share. The code matches `[A-Za-z0-9_-]{4,40}`, stays the same for the same player while it is valid, and is valid for 1 hour (asking again extends it). The game shares it as `https://t.me/<bot>?startapp=squad_<code>` through Telegram's share sheet; opening that link launches the Mini App with the start parameter `squad_<code>`, and the game offers joining in the raid lobby.
+- `squad_join` works like accepting an invite from the link's owner, but without the friend requirement: anyone with the link may join. The server should make the two players friends on joining, so they find each other in the friends list later. `INVITE_EXPIRED` covers unknown and expired codes, an owner who is offline or no longer leads their squad; `SQUAD_FULL` counts members plus the owner's open invites; `ALREADY_IN_SQUAD` when the owner opens their own link.
 - Every successful change (invite, respond, leave, kick, presence timeout) pushes the matching realtime events to everyone affected.
 
 ## Realtime: `${VITE_TELEGRAM_API_URL}/ws/squad`

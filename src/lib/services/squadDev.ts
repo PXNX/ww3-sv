@@ -10,6 +10,7 @@ import {
 	EventHub,
 	INVITE_TTL_MS,
 	ONLINE_WINDOW_MS,
+	SQUAD_LINK_TTL_MS,
 	SQUAD_SIZE,
 	type Friend,
 	type OutgoingInvite,
@@ -19,6 +20,7 @@ import {
 	type SquadErrorCode,
 	type SquadEvent,
 	type SquadInvite,
+	type SquadLink,
 	type SquadState,
 	type SquadTransport
 } from '#lib/services/squad.js';
@@ -53,10 +55,18 @@ interface DevInvite {
 	expiresAt: number;
 }
 
+interface DevLink {
+	code: string;
+	from: string;
+	expiresAt: number;
+}
+
 export interface DevDb {
 	players: Record<string, DevPlayer>;
 	squads: DevSquad[];
 	invites: DevInvite[];
+	/** Shared squad links; missing in databases written before links existed */
+	links?: DevLink[];
 }
 
 /** Two friends who are never online, so the list also shows what offline looks like */
@@ -82,7 +92,7 @@ export interface DevChannel {
 	close(): void;
 }
 
-const emptyDb = (): DevDb => ({ players: {}, squads: [], invites: [] });
+const emptyDb = (): DevDb => ({ players: {}, squads: [], invites: [], links: [] });
 
 const refuse = (code: SquadErrorCode) => new TelegramCallError('ENDPOINT_ERROR', code, code);
 
@@ -250,6 +260,46 @@ export class LocalSquadBackend implements SquadApi {
 		});
 	}
 
+	async link(): Promise<SquadLink> {
+		return this.#mutate((db) => {
+			const squad = this.#squadOf(db, this.me.id);
+			if (squad && squad.leaderId !== this.me.id) throw refuse('NOT_LEADER');
+			const links = (db.links ??= []);
+			const expiresAt = this.#now() + SQUAD_LINK_TTL_MS;
+			const existing = links.find((entry) => entry.from === this.me.id);
+			if (existing) {
+				existing.expiresAt = expiresAt;
+				return { code: existing.code, expiresAt };
+			}
+			const code = randomId('sq').replace('sq-', '');
+			links.push({ code, from: this.me.id, expiresAt });
+			return { code, expiresAt };
+		});
+	}
+
+	async join(code: string): Promise<Squad> {
+		return this.#mutate((db) => {
+			const link = db.links?.find((entry) => entry.code === code);
+			if (!link) throw refuse('INVITE_EXPIRED');
+			if (link.from === this.me.id) throw refuse('ALREADY_IN_SQUAD');
+			const leader = db.players[link.from];
+			if (!leader || !this.#online(leader)) throw refuse('INVITE_EXPIRED');
+			let squad = this.#squadOf(db, link.from);
+			if (squad && squad.leaderId !== link.from) throw refuse('INVITE_EXPIRED');
+			if (squad?.members.includes(this.me.id)) return this.#toSquad(db, squad);
+			const open = db.invites.filter((entry) => entry.from === link.from).length;
+			if ((squad?.members.length ?? 1) + open >= SQUAD_SIZE) throw refuse('SQUAD_FULL');
+
+			this.#leave(db, this.me.id);
+			if (!squad) {
+				squad = { id: randomId('sq'), leaderId: link.from, members: [link.from] };
+				db.squads.push(squad);
+			}
+			squad.members.push(this.me.id);
+			return this.#toSquad(db, squad);
+		});
+	}
+
 	// -- The database -------------------------------------------------------------------------------
 
 	#read(): DevDb {
@@ -279,6 +329,7 @@ export class LocalSquadBackend implements SquadApi {
 	#prune(db: DevDb): void {
 		const now = this.#now();
 		db.invites = db.invites.filter((invite) => invite.expiresAt > now);
+		db.links = (db.links ?? []).filter((link) => link.expiresAt > now);
 		for (const player of Object.values(db.players)) {
 			if (player.id === this.me.id) continue;
 			if (!this.#online(player)) this.#leave(db, player.id);

@@ -7,11 +7,15 @@ import {
 	parseInvite,
 	parseSquad,
 	parseSquadEvent,
+	parseSquadLink,
 	parseSquadReply,
 	parseSquadState,
 	reconnectDelay,
+	SQUAD_LINK_TTL_MS,
+	squadCodeOf,
 	squadErrorCode,
 	squadSocketUrl,
+	squadStartParam,
 	type SquadEvent
 } from '#lib/services/squad.js';
 import {
@@ -360,5 +364,56 @@ describe('local fake backend', () => {
 		expect(
 			a.events.some((event) => event.type === 'presence' && event.friendId === 'b' && !event.online)
 		).toBe(true);
+	});
+});
+
+describe('squad links', () => {
+	it('reads only well-formed link codes from start parameters', () => {
+		expect(squadCodeOf(squadStartParam('ab12-cd_9'))).toBe('ab12-cd_9');
+		expect(squadCodeOf('squad_x')).toBeNull();
+		expect(squadCodeOf('squad_has space')).toBeNull();
+		expect(squadCodeOf('shop')).toBeNull();
+		expect(squadCodeOf(null)).toBeNull();
+	});
+
+	it('parses a link reply and refuses malformed ones', () => {
+		expect(parseSquadLink({ code: 'abcd1234', expires_at: 5 })).toEqual({
+			code: 'abcd1234',
+			expiresAt: 5
+		});
+		expect(parseSquadLink({ code: 'a b', expires_at: 5 })).toBeNull();
+		expect(parseSquadLink({ code: 'abcd1234' })).toBeNull();
+	});
+
+	it('lets anyone join through a link, keeps it stable and holds the squad to three', async () => {
+		const net = network();
+		const a = net.tab('a');
+		const b = net.tab('b');
+		const c = net.tab('c');
+		const d = net.tab('d');
+		const link = await a.backend.link();
+		expect((await a.backend.link()).code).toBe(link.code);
+		expect(await refusal(a.backend.join(link.code))).toBe('ALREADY_IN_SQUAD');
+
+		const joined = await b.backend.join(link.code);
+		expect(joined.leaderId).toBe('a');
+		expect(joined.members.map((member) => member.id)).toEqual(['a', 'b']);
+		// Only the leader shares links
+		expect(await refusal(b.backend.link())).toBe('NOT_LEADER');
+
+		await c.backend.join(link.code);
+		expect(await refusal(d.backend.join(link.code))).toBe('SQUAD_FULL');
+	});
+
+	it('refuses unknown and expired links', async () => {
+		const net = network();
+		const a = net.tab('a');
+		const b = net.tab('b');
+		expect(await refusal(b.backend.join('nope1234'))).toBe('INVITE_EXPIRED');
+		const link = await a.backend.link();
+		net.advance(SQUAD_LINK_TTL_MS + 1);
+		await a.backend.presence(false);
+		await b.backend.presence(false);
+		expect(await refusal(b.backend.join(link.code))).toBe('INVITE_EXPIRED');
 	});
 });

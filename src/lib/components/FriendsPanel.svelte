@@ -14,6 +14,8 @@
 	import RaidSquadPanel from './RaidSquadPanel.svelte';
 	import SquadAvatar from './SquadAvatar.svelte';
 	import SquadInviteCard from './SquadInviteCard.svelte';
+	import SquadLinkCard from './SquadLinkCard.svelte';
+	import SquadShareButton from './SquadShareButton.svelte';
 	import { squadResultText } from './squadText';
 	import IconCheck from '~icons/lucide/check';
 	import IconHourglass from '~icons/lucide/hourglass';
@@ -100,6 +102,10 @@
 			</p>
 		{/if}
 
+		{#if store.joinCode}
+			<SquadLinkCard onnotice={say} />
+		{/if}
+
 		{#each store.pendingInvites as squadInvite (squadInvite.id)}
 			<SquadInviteCard invite={squadInvite} onnotice={say} />
 		{/each}
@@ -114,7 +120,10 @@
 					>
 				{/if}
 			</span>
-			<RaidSquadPanel invites={false} />
+			<div class="flex flex-wrap items-start gap-2">
+				<RaidSquadPanel invites={false} class="min-w-0 flex-1" />
+				<SquadShareButton compact onnotice={say} />
+			</div>
 		</div>
 
 		{#if store.friends.length === 0}

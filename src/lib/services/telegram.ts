@@ -434,9 +434,14 @@ export interface TelegramInvite {
 	revivesPerFriend: number;
 }
 
+/** A Telegram share sheet for a link, with a line of text to go with it */
+export function telegramShareUrl(link: string, text: string): string {
+	return `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
+}
+
 /** A Telegram share sheet for the invite link, with a line of text to go with it */
 export function inviteShareUrl(invite: TelegramInvite, text: string): string {
-	return `https://t.me/share/url?url=${encodeURIComponent(invite.link)}&text=${encodeURIComponent(text)}`;
+	return telegramShareUrl(invite.link, text);
 }
 
 /** Opens a t.me link inside Telegram (a share sheet, a chat); false outside a Mini App */

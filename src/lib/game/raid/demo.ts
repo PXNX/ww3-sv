@@ -35,6 +35,15 @@ const LINEUP = [
 	{ x: 225, y: 75 }
 ];
 
+/** For the hammer the enemies stand within a swing, the back row only in reach of its skills */
+const MELEE_LINEUP = [
+	{ x: 60, y: -25 },
+	{ x: 70, y: 25 },
+	{ x: 85, y: 0 },
+	{ x: 135, y: -60 },
+	{ x: 135, y: 60 }
+];
+
 /** The demo camera looks between the player and the enemies */
 export const DEMO_CENTER_OFFSET = 110;
 
@@ -47,6 +56,9 @@ export interface Demo {
 	effects: Effect[];
 }
 
+/** Skills that heal the player; the demo leaves the player hurt for them */
+const HEALS: readonly (SkillId | null)[] = ['heal', 'warcry'];
+
 /** Skills that only show something once the weapon has been used for a moment */
 const NEEDS_ATTACK: readonly SkillId[] = ['flashpoint', 'swarm', 'overclock'];
 
@@ -58,7 +70,7 @@ export function createDemo(kind: WeaponKind, action: DemoAction): Demo {
 	state.nextBossMs = Infinity;
 	const random = createRandom(7);
 	const skill = action === 'attack' ? null : WEAPONS[kind].skills[action];
-	for (const spot of LINEUP) {
+	for (const spot of kind === 'hammer' ? MELEE_LINEUP : LINEUP) {
 		const enemy = spawnEnemy(state, random, 'grunt', 'normal', {
 			x: state.player.x + spot.x,
 			y: state.player.y + spot.y
@@ -68,7 +80,8 @@ export function createDemo(kind: WeaponKind, action: DemoAction): Demo {
 		// Only the landmine needs enemies that walk into it
 		enemy.speed = skill === 'mine' ? 45 : 0;
 	}
-	if (skill === 'heal') state.player.hp = Math.round(state.player.maxHp * 0.35);
+	// Skills that heal start the player hurt, so the healing shows
+	if (HEALS.includes(skill)) state.player.hp = Math.round(state.player.maxHp * 0.35);
 	return { state, random, kind, action, skill, effects: [] };
 }
 
@@ -96,7 +109,7 @@ export function stepDemo(demo: Demo, dtMs: number, elapsedMs: number) {
 
 	handle(demo, stepRaid(state, demo.random, dtMs));
 	// The demo player is never in danger, and the enemies never strike
-	if (skill !== 'heal') state.player.hp = state.player.maxHp;
+	if (!HEALS.includes(skill)) state.player.hp = state.player.maxHp;
 	for (const enemy of state.enemies) enemy.attackMs = 1e9;
 	state.enemyBullets = [];
 
