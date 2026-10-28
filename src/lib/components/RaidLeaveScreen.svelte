@@ -125,27 +125,8 @@
 		</div>
 	</section>
 
-	<div class="grid flex-1 gap-4 sm:grid-cols-[auto_minmax(0,1fr)]">
-		<!-- The battlefield -->
-		<div class="flex items-start justify-center">
-			{#if size}
-				<div
-					class="rounded-2xl bg-[#1d2f78]/50 p-1.5 shadow-[inset_0_0_0_2px_rgb(255_255_255/0.15)]"
-				>
-					<RaidMinimap
-						raid={() => raid}
-						width={size.width}
-						height={size.height}
-						markScale={1.6}
-						label={m.raid_hud_minimap()}
-						class="rounded-lg"
-					/>
-				</div>
-			{/if}
-		</div>
-
-		<div class="flex min-w-0 flex-col gap-2">
-			<h2
+	<div class="flex min-w-0 flex-col gap-2">
+		<h2
 				id="raid-leave-title"
 				dir="auto"
 				class="font-display text-2xl leading-none font-black uppercase italic drop-shadow-[0_2px_0_rgb(0_0_0/0.3)]"

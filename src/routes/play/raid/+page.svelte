@@ -77,23 +77,28 @@
 
 <GameShell
 	title={modeName}
-	score={inRaid ? game.score : undefined}
+	// While in raid mode the whole header (back link, score and the help button) stays out
+	// of the floating hud so it never sits on top of the RaidCanvas overlays.
+	score={inRaid ? undefined : game.score}
 	best={game.best}
 	wide
 	immersive
 	landscape
 	confirmLeave={game.status === 'playing' || game.status === 'paused' || game.status === 'down'}
+	back={!inRaid}
 >
 	{#snippet actions()}
-		<button
-			type="button"
-			class="btn-chunky px-2 py-1 text-sm sm:px-3"
-			aria-label={m.raid_help_button()}
-			onclick={openHelp}
-		>
-			<IconHelp class="size-4" aria-hidden="true" />
-			<span class="hidden sm:inline">{m.raid_help_button()}</span>
-		</button>
+		{#if !inRaid}
+			<button
+				type="button"
+				class="btn-chunky px-2 py-1 text-sm sm:px-3"
+				aria-label={m.raid_help_button()}
+				onclick={openHelp}
+			>
+				<IconHelp class="size-4" aria-hidden="true" />
+				<span class="hidden sm:inline">{m.raid_help_button()}</span>
+			</button>
+		{/if}
 		{#if game.status === 'playing' || game.status === 'paused'}
 			<!-- Opens the leave screen: the big map, the haul so far and the quests -->
 			<button

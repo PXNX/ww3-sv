@@ -21,6 +21,7 @@
 	import LivesBar from './LivesBar.svelte';
 	import RaidItemIcon from './RaidItemIcon.svelte';
 	import RaidLeaveScreen from './RaidLeaveScreen.svelte';
+	import RaidMapOverlay from './RaidMapOverlay.svelte';
 	import RaidMinimap from './RaidMinimap.svelte';
 	import RaidSkillIcon from './RaidSkillIcon.svelte';
 	import {
@@ -48,6 +49,7 @@
 	let context: CanvasRenderingContext2D | null = null;
 	let cssWidth = 1;
 	let cssHeight = 1;
+	let mapOpen = $state(false);
 
 	function draw() {
 		if (!canvas || !context) return;
@@ -404,12 +406,12 @@
 			{/if}
 		</div>
 
-		<!-- Top right: the minimap, which opens the leave screen with the big map -->
+		<!-- Top right: the minimap opens the map overlay -->
 		<button
 			type="button"
 			class="absolute top-(--hud-top) right-(--hud-right) rounded-xl bg-[#1b1036]/40 p-1 ring-2 ring-white/25 active:scale-95"
-			aria-label="{m.raid_hud_minimap()}: {m.raid_leave_button()}"
-			onclick={() => game.pause()}
+			aria-label="{m.raid_hud_minimap()}: Map"
+			onclick={() => (mapOpen = true)}
 		>
 			{#key game.map}
 				<RaidMinimap
@@ -543,6 +545,10 @@
 			() => game.swap(),
 			swapIcon
 		)}
+	{/if}
+
+	{#if mapOpen}
+		<RaidMapOverlay {game} onResume={() => { mapOpen = false; if (game.status === 'paused') game.resume(); }} />
 	{/if}
 
 	{#if game.status === 'paused'}
