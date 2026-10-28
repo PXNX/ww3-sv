@@ -49,7 +49,7 @@
 
 {#if deferredPrompt && !dismissed}
 	<div
-		class="sticker pop-in flex items-center justify-between gap-3 px-3 py-2 text-sm"
+		class="sticky z-50 mb-4 inline-block w-full rounded-[14px_8px_12px_9px] border-3 border-ink bg-mustard px-3 py-2 text-sm font-semibold shadow-[4px_4px_0_var(--color-ink)]"
 		style:--tilt="-1deg"
 	>
 		<p class="font-semibold">{m.install_app_hint()}</p>

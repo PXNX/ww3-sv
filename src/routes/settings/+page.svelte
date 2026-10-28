@@ -19,6 +19,7 @@
 	import IconSun from '~icons/lucide/sun';
 	import IconVolume2 from '~icons/lucide/volume-2';
 	import IconVolumeX from '~icons/lucide/volume-x';
+	import LanguageSelect from '#lib/components/LanguageSelect.svelte';
 
 	const look = appearance();
 	const sound = soundManager();

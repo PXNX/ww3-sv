@@ -47,9 +47,6 @@
 
 	<ClipPreloadLine class="mx-auto w-full max-w-xs" />
 
-	<InstallPwaHint />
-	<UpdatePwaHint />
-
 	<header class="flex flex-col items-center gap-3 text-center">
 		<h1
 			class="pop-in inline-block rotate-1 rounded-[16px_8px_14px_10px] border-3 border-ink bg-banner-slate px-4 pt-2 pb-1 text-4xl leading-none font-bold text-paper shadow-[4px_4px_0_var(--color-ink)] sm:text-5xl"
@@ -103,4 +100,9 @@
 		<a href={resolve('/settings')} class="btn-chunky rounded-full px-3 py-1 text-sm font-bold">{m.settings_title()}</a>
 		<a href={resolve('about')} class="btn-chunky rounded-full px-3 py-1 text-sm font-bold">{m.about_link()}</a>
 	</footer>
+
+	<div class="relative z-50 mx-auto w-full max-w-5xl px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-2">
+		<InstallPwaHint />
+		<UpdatePwaHint />
+	</div>
 </main>
