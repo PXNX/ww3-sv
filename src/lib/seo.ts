@@ -5,6 +5,7 @@
  * always come out in English, the base language.
  */
 import { APP_DESCRIPTION, APP_NAME } from '#lib/config.js';
+import { LEGAL_PAGES } from '#lib/legal/pages.js';
 import { MODES } from '#lib/modes/registry.js';
 import { m } from '#lib/paraglide/messages.js';
 
@@ -41,6 +42,12 @@ function buildPages(): Map<string, PageMeta> {
 		title: `${m.shop_title()} | ${APP_NAME}`,
 		description: shorten(m.shop_intro())
 	});
+	for (const page of LEGAL_PAGES) {
+		pages.set(page.path, {
+			title: `${page.title()} | ${APP_NAME}`,
+			description: shorten(page.summary())
+		});
+	}
 	for (const mode of MODES) {
 		if (mode.status !== 'playable') continue;
 		pages.set(mode.href, {

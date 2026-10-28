@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { LEGAL_PAGES } from '#lib/legal/pages.js';
 import { MODES } from '#lib/modes/registry.js';
 import { metaTags, pageMeta } from './seo';
 
@@ -10,6 +11,15 @@ describe('page metadata', () => {
 		expect(pageMeta('/shop')?.title).toBe('Supply depot | World War 3');
 		for (const mode of MODES) {
 			if (mode.status === 'playable') expect(pageMeta(mode.href), mode.id).toBeDefined();
+		}
+	});
+
+	it('gives every legal page a title and a short description', () => {
+		for (const page of LEGAL_PAGES) {
+			const meta = pageMeta(page.path);
+			expect(meta, page.id).toBeDefined();
+			expect(meta!.title, page.id).toBe(`${page.title()} | World War 3`);
+			expect(meta!.description.length, page.id).toBeLessThanOrEqual(200);
 		}
 	});
 
