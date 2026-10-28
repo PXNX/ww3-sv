@@ -15,6 +15,7 @@ import {
 	requestWriteAccess,
 	toCallError,
 	type CatalogueItem,
+	type GroupGame,
 	type PurchaseConsent,
 	type TelegramInvite,
 	type TelegramUser
@@ -69,6 +70,8 @@ class TelegramStore {
 	invite = $state<TelegramInvite | null>(null);
 	/** True while an invoice is open or a payment is being booked */
 	busy = $state(false);
+	/** Set when the launch came from a chat's game message; its runs go onto that chat's scoreboard */
+	groupGame: GroupGame | null = null;
 
 	#started = false;
 	/** The last streak report the bot accepted, so an unchanged streak is not sent again */
@@ -110,6 +113,25 @@ class TelegramStore {
 		} catch {
 			// A missed report only costs one reminder; try again on the next change
 			this.#streakSent = '';
+		}
+	}
+
+	/**
+	 * Hands a finished run to the bot when the game was opened from a chat's game message, so it
+	 * lands on that chat's leaderboard; Telegram then posts a new best in the chat itself. Other
+	 * modes and plain launches send nothing.
+	 */
+	async reportGroupScore(mode: string, score: number): Promise<void> {
+		const game = this.groupGame;
+		if (!game || game.mode !== mode || !Number.isFinite(score)) return;
+		try {
+			await call('gamescore', {
+				session: game.session,
+				game: mode,
+				score: Math.max(0, Math.floor(score))
+			});
+		} catch {
+			// A run that does not reach the chat only misses that one entry on its scoreboard
 		}
 	}
 

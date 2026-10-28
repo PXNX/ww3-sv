@@ -99,6 +99,30 @@ export function startRoute(startParam: string | undefined | null): StartRoute | 
 	return START_ROUTES[startParam as keyof typeof START_ROUTES];
 }
 
+/**
+ * A game opened from a chat's game message: the bot answers the Play button with a `startapp`
+ * link carrying `g_<mode>_<session>`. The session ties the run's score to that chat's scoreboard.
+ */
+export interface GroupGame {
+	/** The mode id, which is also the game's short name at @BotFather */
+	mode: GroupGameMode;
+	session: string;
+	route: (typeof GROUP_GAME_ROUTES)[GroupGameMode];
+}
+
+/** The modes offered as Telegram games in groups, for now only Block Puzzle (see todo.md) */
+const GROUP_GAME_ROUTES = { blocks: '/play/blocks' } as const;
+
+export type GroupGameMode = keyof typeof GROUP_GAME_ROUTES;
+
+/** The game a launch from a chat's game message asked for, or null for any other start */
+export function groupGameLaunch(startParam: string | undefined | null): GroupGame | null {
+	const match = /^g_([a-z]+)_([0-9a-f]{20})$/.exec(startParam ?? '');
+	if (!match || !Object.hasOwn(GROUP_GAME_ROUTES, match[1])) return null;
+	const mode = match[1] as GroupGameMode;
+	return { mode, session: match[2], route: GROUP_GAME_ROUTES[mode] };
+}
+
 /** The start parameter of the current Mini App launch, once Telegram is loaded */
 export async function launchStartParam(): Promise<string | null> {
 	const app = await loadTelegram();

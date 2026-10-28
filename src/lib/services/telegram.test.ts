@@ -3,6 +3,7 @@ import {
 	TelegramCallError,
 	endpointCode,
 	fromApiReply,
+	groupGameLaunch,
 	inviteShareUrl,
 	isTelegramLaunch,
 	parseMe,
@@ -132,6 +133,30 @@ describe('a startapp link', () => {
 		expect(startRoute('toString')).toBeNull();
 		expect(startRoute('../admin')).toBeNull();
 		expect(startRoute(null)).toBeNull();
+	});
+
+	it("carries the mode and session of a chat's game message", () => {
+		const session = '0123456789abcdef0123';
+		expect(groupGameLaunch(`g_blocks_${session}`)).toEqual({
+			mode: 'blocks',
+			session,
+			route: '/play/blocks'
+		});
+		expect(startRoute(`g_blocks_${session}`)).toBeNull();
+		for (const param of [
+			'shop',
+			`g__${session}`,
+			`g_Blocks_${session}`,
+			`g_blocks_${session.slice(1)}`,
+			`g_blocks_${session}0`,
+			// Not offered as a Telegram game yet
+			`g_minefield_${session}`,
+			`g_toString_${session}`,
+			`g_../shop_${session}`,
+			null
+		]) {
+			expect(groupGameLaunch(param)).toBeNull();
+		}
 	});
 });
 

@@ -216,6 +216,8 @@
 		}
 		if (awarded) return;
 		awarded = true;
+		// Opened from a chat's game message: the run also counts on that chat's leaderboard
+		void untrack(() => account.reportGroupScore(mode, score));
 		const careerMode = isCareerMode(mode) ? mode : null;
 		if (!careerMode) return;
 		previousBest = untrack(() => careerState.profile.modes[careerMode]?.best ?? null);
