@@ -19,6 +19,7 @@ const HANDLERS = {
   message: (await import('../tgcloud/handlers/message.js')).default,
   callback_query: (await import('../tgcloud/handlers/callback_query.js')).default,
   pre_checkout_query: (await import('../tgcloud/handlers/pre_checkout_query.js')).default,
+  my_chat_member: (await import('../tgcloud/handlers/my_chat_member.js')).default,
 };
 
 async function dispatch(update) {
@@ -32,6 +33,7 @@ const ENDPOINTS = {
   invoice: (await import('../tgcloud/endpoints/invoice.js')).default,
   spend: (await import('../tgcloud/endpoints/spend.js')).default,
   streak: (await import('../tgcloud/endpoints/streak.js')).default,
+  gamescore: (await import('../tgcloud/endpoints/gamescore.js')).default,
 };
 
 const LEGAL_PAGES = Object.fromEntries(Object.keys(PAGES).map((page) => [page, renderHtml(page, TEXTS[page])]));

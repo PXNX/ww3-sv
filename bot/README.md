@@ -18,19 +18,24 @@ for this bot, so until then the same handlers run on nyx (see *Run on nyx*):
   Widerrufsbelehrung with the model withdrawal form, as `/impressum`, `/datenschutz`, `/agb`,
   `/widerruf` (aliases `/imprint`, `/privacy`, `/terms`, `/withdrawal`) and as web pages. `/paysupport`
   is the support contact Telegram requires for bots that sell.
+- **Group leaderboards** through [Telegram's gaming platform](https://core.telegram.org/bots/games), for now
+  Block Puzzle only: added to a group, the bot posts the game with `/games`; Telegram keeps its scoreboard per
+  chat and posts every new best there, `/top` lists the group's leaderboard, and the bot announces when
+  someone takes the group's record.
 
 ## Layout
 
 | Path                         | What it is                                                              |
 | ---------------------------- | ----------------------------------------------------------------------- |
-| `tgcloud/schema.js`          | SQLite tables: accounts, consents, invoices, purchases, spends          |
+| `tgcloud/schema.js`          | SQLite tables: accounts, consents, invoices, purchases, spends, game sessions, group scores |
 | `tgcloud/lib/catalogue.js`   | The items and their Stars prices (server-owned)                         |
 | `tgcloud/lib/ledger.js`      | Wallet, invoices, idempotent booking and atomic spending                |
 | `tgcloud/lib/legal.js`       | Consent wording and version, legal pages as Telegram messages           |
 | `tgcloud/lib/texts.js`       | Every bot text, German first and English otherwise (like ptb-words' texts.py) |
-| `tgcloud/lib/bot.js`         | Chat flows: start, login, shop, consent, confirmation, support          |
-| `tgcloud/handlers/`          | `message` (commands, `successful_payment`), `callback_query`, `pre_checkout_query` |
-| `tgcloud/endpoints/`         | `me`, `invoice`, `spend`, called by the Mini App via `Telegram.WebApp.Serverless.call` |
+| `tgcloud/lib/bot.js`         | Chat flows: start, login, shop, consent, confirmation, support, games and /top |
+| `tgcloud/lib/games.js`       | The Telegram games, Play sessions, scores and the groups' leaderboards  |
+| `tgcloud/handlers/`          | `message` (commands, `successful_payment`), `callback_query` (incl. Play), `pre_checkout_query`, `my_chat_member` (added to a group) |
+| `tgcloud/endpoints/`         | `me`, `invoice`, `spend`, `streak`, `gamescore`, called by the Mini App via `Telegram.WebApp.Serverless.call` |
 | `legal/*.txt`                | Sources of the legal pages, with `{placeholders}` for the operator data |
 | `tgcloud/lib/profile.js`     | Name, descriptions, commands and photo (`res/profile.jpg`), applied by `/set_cmd` |
 | `scripts/build.mjs`          | Fills the legal texts, writes `tgcloud/lib/generated.js`, assembles `app/` |
@@ -45,6 +50,7 @@ for this bot, so until then the same handlers run on nyx (see *Run on nyx*):
 | `invoice`| `{ sku, consent? }`      | `{ url }` for `Telegram.WebApp.openInvoice`; `CONSENT_REQUIRED`, `RATE_LIMITED`, `UNKNOWN_SKU` |
 | `spend`  | `{ mode }`               | takes one bought revival: `{ wallet, pro }`; `NO_REVIVES`                 |
 | `streak` | `{ streak, expires_at, write_access? }` | stores the streak deadline for the reminder: `{ reminder }` (unix seconds or null); `INVALID_INPUT` |
+| `gamescore` | `{ session, game, score }` | puts a run onto the scoreboard of the chat the game was opened from: `{ new_best, best, rank }`; `INVALID_INPUT`, `SESSION_UNKNOWN`, `SESSION_EXPIRED` |
 
 The `paid` callback of `openInvoice` only refreshes the UI; call `me` again (a few times) until the
 `successful_payment` has been booked.
@@ -61,6 +67,21 @@ The `paid` callback of `openInvoice` only refreshes the UI; call `me` again (a f
    again, so buttons and legal links point at it. In @BotFather set it as the Mini App / menu
    button URL, and make it the main Mini App so `https://t.me/game_ww3_bot?startapp` works.
 6. Optionally put your Telegram user id into `adminIds` for `/stats` and payment alerts.
+
+## Group leaderboards
+
+Each mode offered in groups is a game at @BotFather whose short name is the mode id (`GAMES` in
+`tgcloud/lib/games.js`; for now only `blocks`). Register it once with `/newgame` (title, description,
+a 640×360 picture), and keep **Allow Groups** on (`/setjoingroups`). Until a game is registered,
+`/games` answers that it is not set up yet.
+
+1. In a group, `/games` (or `/start@game_ww3_bot`) shows the menu; a button posts the game with `sendGame`.
+2. Play sends a `callback_query` with `game_short_name`. The bot stores a session (player, chat, message,
+   game, valid for a day) and answers with `https://t.me/game_ww3_bot?startapp=g_<game>_<session>`, so the game
+   opens as the Mini App with the verified initData.
+3. The game's result sheet calls `gamescore` with the session. A new best goes to `setGameScore` on that
+   message: Telegram updates the scoreboard of that chat and posts the new score itself. When it beats
+   someone else's record, the bot also posts a record message. `/top` and `/top <game>` read the bot's copy.
 
 ## Run on nyx
 

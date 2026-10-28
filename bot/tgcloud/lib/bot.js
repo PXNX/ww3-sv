@@ -1,11 +1,13 @@
 // The chat side of the bot: opening the game (which is the login: a Mini App session carries the
 // player's verified Telegram identity), the shop, the wallet, invites, streak reminders, the legal
-// pages and the purchase confirmation. Shared by handlers/message and handlers/callback_query.
+// pages, the purchase confirmation, and the games and leaderboards of a group. Shared by
+// handlers/message, handlers/callback_query and handlers/my_chat_member.
 // Every text comes from texts.js, in German or English after the player's Telegram language.
 
 import { api } from 'sdk';
 import { PRODUCTS, localized, product } from './catalogue.js';
 import { ADMIN_IDS, APP_URL, OPERATOR, SALES_OPEN } from './generated.js';
+import { GAMES, chatRecords, findGame, gameName, openSession, sessionLink, topScores } from './games.js';
 import { accountLanguage, createInvoice, hasConsent, recordConsent, upsertAccount, wallet } from './ledger.js';
 import { CONSENT_TEXT, CONSENT_VERSION, PAGES, escapeHtml, legalMessages, pageUrl } from './legal.js';
 import { inviteLink, inviteStats, parseInvite, recordReferral } from './referrals.js';
@@ -204,4 +206,88 @@ async function thankReferrer(referrerId) {
     // The inviter may have blocked the bot; the token is booked either way
     console.warn('could not thank referrer', referrerId, error.description ?? error.message);
   }
+}
+
+// Two games per row keeps the menu of 30-odd games short enough to scroll
+function gameKeyboard(lang) {
+  const buttons = GAMES.map((entry) => ({ text: gameName(entry.id, lang), callback_data: `game:${entry.id}` }));
+  const rows = [];
+  for (let i = 0; i < buttons.length; i += 2) rows.push(buttons.slice(i, i + 2));
+  return { inline_keyboard: rows };
+}
+
+/** /games: a button per game; pressing one posts that game to the chat */
+export async function gamesMenu(chatId, user) {
+  const lang = langOfUser(user);
+  await send(chatId, t(lang, 'games_menu'), { reply_markup: gameKeyboard(lang) });
+}
+
+/** Posts a game message; Telegram shows the chat's scoreboard on it and posts each new best */
+export async function postGame(chatId, user, id) {
+  const lang = langOfUser(user);
+  if (!findGame(id)) return await gamesMenu(chatId, user);
+  try {
+    // The first button must be the one that starts the game
+    await api.sendGame({
+      chat_id: chatId,
+      game_short_name: id,
+      reply_markup: { inline_keyboard: [
+        [{ text: `🎮 ${gameName(id, lang)}`, callback_game: {} }],
+        [{ text: t(lang, 'game_top_button'), callback_data: `top:${id}` }],
+      ] },
+    });
+  } catch (error) {
+    // Not registered with @BotFather under this short name (yet)
+    console.warn('sendGame failed', id, error.description ?? error.message);
+    await send(chatId, t(lang, 'game_missing', { game: escapeHtml(gameName(id, lang)) }));
+  }
+}
+
+/**
+ * A press on a game message's Play button. The answer opens the game as the Mini App, with a
+ * session that ties the scores of this run to the chat and the message the button belongs to.
+ */
+export async function openGame(query) {
+  const id = query.game_short_name;
+  if (!findGame(id) || !query.message) {
+    return await api.answerCallbackQuery({ callback_query_id: query.id, text: t(langOfUser(query.from), 'game_unavailable'), show_alert: true });
+  }
+  const session = await openSession(query.from, id, query.message);
+  await api.answerCallbackQuery({ callback_query_id: query.id, url: sessionLink(id, session) });
+}
+
+const MEDALS = ['🥇', '🥈', '🥉'];
+
+/** /top <game>: the chat's leaderboard of one game; /top alone: the record of every game played */
+export async function showTop(chatId, user, id) {
+  const lang = langOfUser(user);
+  if (findGame(id)) {
+    const game = escapeHtml(gameName(id, lang));
+    const rows = await topScores(chatId, id);
+    if (rows.length === 0) return await send(chatId, t(lang, 'top_empty', { game }));
+    const lines = rows.map((row, i) => `${MEDALS[i] ?? `${i + 1}.`} ${escapeHtml(row.name)} – ${row.score}`);
+    return await send(chatId, t(lang, 'top', { game, lines: lines.join('\n') }));
+  }
+  const records = await chatRecords(chatId);
+  if (records.length === 0) return await send(chatId, t(lang, 'records_none'));
+  const lines = records.map((row) => `${escapeHtml(gameName(row.game, lang))}: ${row.score} – ${escapeHtml(row.name)}`);
+  await send(chatId, t(lang, 'records', { lines: lines.join('\n'), example: records[0].game }));
+}
+
+/** The bot was added to a group: say what it does there */
+export async function welcomeGroup(chat, user) {
+  const lang = langOfUser(user);
+  await send(chat.id, t(lang, 'group_welcome', { title: escapeHtml(chat.title ?? '') }), { reply_markup: gameKeyboard(lang) });
+}
+
+/** Tells the chat that a player took its record in a game from someone else */
+export async function announceRecord(user, result) {
+  const lang = langOfUser(user);
+  await send(result.chatId, t(lang, 'record', {
+    game: escapeHtml(gameName(result.game, lang)),
+    name: escapeHtml(user.first_name ?? ''),
+    score: result.best,
+    previous: escapeHtml(result.overtook.name),
+    previousScore: result.overtook.score,
+  }));
 }

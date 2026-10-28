@@ -61,6 +61,18 @@ const COMMANDS = {
 // res/profile.jpg, read next to the project; Telegram only takes the photo as an upload
 const PHOTO = new URL('../../res/profile.jpg', import.meta.url);
 
+// The menu in groups, where the bot only posts games and their leaderboards
+const GROUP_COMMANDS = {
+  en: [
+    ['games', 'Post a game to this group'],
+    ['top', "This group's leaderboards"],
+  ],
+  de: [
+    ['games', 'Ein Spiel in die Gruppe posten'],
+    ['top', 'Bestenlisten dieser Gruppe'],
+  ],
+};
+
 // Admins also see these in their own chat's menu; they are never advertised publicly
 const ADMIN_COMMANDS = [
   ['set_cmd', 'Profilbild, Name und Beschreibung setzen'],
@@ -82,13 +94,17 @@ function collector() {
 }
 
 /**
- * The command menus (English, German, and the admins' own) and the menu button that opens the game.
+ * The command menus (English, German, groups', and the admins' own) and the menu button that opens the game.
  * Cheap, so like ptb-words' post_init it runs on every start; returns one line per failed step.
  */
 export async function applyCommands() {
   const { errors, attempt } = collector();
   await attempt('Commands (en)', () => api.setMyCommands({ commands: toCommands(COMMANDS.en) }));
   await attempt('Commands (de)', () => api.setMyCommands({ commands: toCommands(COMMANDS.de), language_code: 'de' }));
+  const groups = { type: 'all_group_chats' };
+  await attempt('Group commands (en)', () => api.setMyCommands({ commands: toCommands(GROUP_COMMANDS.en), scope: groups }));
+  await attempt('Group commands (de)', () =>
+    api.setMyCommands({ commands: toCommands(GROUP_COMMANDS.de), scope: groups, language_code: 'de' }));
   for (const admin of ADMIN_IDS) {
     await attempt(`Admin commands (${admin})`, () =>
       api.setMyCommands({ commands: toCommands([...COMMANDS.de, ...ADMIN_COMMANDS]), scope: { type: 'chat', chat_id: admin } }));

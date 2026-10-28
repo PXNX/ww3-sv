@@ -15,7 +15,8 @@ const TEXTS = {
       '❤️ /wallet – deine Käufe\n' +
       '📨 /invite – Freunde einladen, Revival-Token verdienen\n' +
       '🔔 /reminders – Serien-Erinnerungen an oder aus\n' +
-      '🧾 /paysupport – Hilfe zu Käufen\n\n' +
+      '🧾 /paysupport – Hilfe zu Käufen\n' +
+      '👥 Füge mich einer Gruppe hinzu und sende dort /games: jedes Spiel bekommt eine eigene Bestenliste nur für eure Gruppe.\n\n' +
       '{footer}',
     invited: '🎉 Ein Freund hat dich eingeladen – schön, dass du da bist!',
     open_app: '🎮 World War 3 spielen',
@@ -75,6 +76,19 @@ const TEXTS = {
     reminder_unmute: '🔔 Erinnerungen einschalten',
     reminders_off: '🔕 Serien-Erinnerungen sind aus. Mit /reminders schaltest du sie wieder ein.',
     reminders_on: '🔔 Serien-Erinnerungen sind an: 2 Stunden bevor deine Serie endet, bekommst du eine Nachricht.',
+    group_welcome:
+      '👋 <b>World War 3 ist jetzt in {title}!</b>\n\n' +
+      'Mit /games postet ihr ein Spiel in die Gruppe. Jedes Spiel hat eine Bestenliste nur für diese Gruppe, und ' +
+      'Telegram meldet hier jede neue Bestleistung. /top zeigt, wer vorne liegt.',
+    games_menu: '🎮 <b>Welches Spiel?</b>\nJedes Spiel hat eine eigene Bestenliste für diesen Chat.',
+    game_missing: '{game} ist noch nicht als Telegram-Spiel eingerichtet.',
+    game_unavailable: 'Dieses Spiel gibt es hier nicht. Hol dir mit /games ein neues.',
+    game_top_button: '🏆 Bestenliste',
+    top: '🏆 <b>{game}</b> – Bestenliste dieses Chats\n\n{lines}',
+    top_empty: 'In {game} hat in diesem Chat noch niemand gepunktet. /games',
+    records: '🏆 <b>Rekorde in diesem Chat</b>\n\n{lines}\n\nDie ganze Liste eines Spiels: /top {example}',
+    records_none: 'In diesem Chat hat noch niemand gespielt. Los geht’s mit /games.',
+    record: '👑 <b>Neuer Rekord in {game}!</b> {name} holt {score} Punkte und überholt {previous} ({previousScore}).',
     legal_footer: '<a href="{agb}">AGB</a> · <a href="{widerruf}">Widerruf</a> · <a href="{datenschutz}">Datenschutz</a> · <a href="{impressum}">Impressum</a>',
     legal_footer_commands: '/agb · /widerruf · /datenschutz · /impressum',
   },
@@ -87,7 +101,8 @@ const TEXTS = {
       '❤️ /wallet – what you bought\n' +
       '📨 /invite – invite friends, earn revival tokens\n' +
       '🔔 /reminders – streak reminders on or off\n' +
-      '🧾 /paysupport – help with purchases\n\n' +
+      '🧾 /paysupport – help with purchases\n' +
+      '👥 Add me to a group and send /games there: every game gets a leaderboard of its own, just for your group.\n\n' +
       '{footer}',
     invited: '🎉 A friend invited you – great to have you here!',
     open_app: '🎮 Play World War 3',
@@ -147,6 +162,19 @@ const TEXTS = {
     reminder_unmute: '🔔 Turn reminders on',
     reminders_off: '🔕 Streak reminders are off. Turn them back on with /reminders.',
     reminders_on: '🔔 Streak reminders are on: you get a message 2 hours before your streak ends.',
+    group_welcome:
+      '👋 <b>World War 3 is now in {title}!</b>\n\n' +
+      'Send /games to post a game to the group. Every game has a leaderboard for this group only, and ' +
+      'Telegram posts every new high score here. /top shows who is ahead.',
+    games_menu: '🎮 <b>Which game?</b>\nEvery game has a leaderboard of its own for this chat.',
+    game_missing: '{game} is not set up as a Telegram game yet.',
+    game_unavailable: 'This game is not available here. Get a new one with /games.',
+    game_top_button: '🏆 Leaderboard',
+    top: '🏆 <b>{game}</b> – leaderboard of this chat\n\n{lines}',
+    top_empty: 'Nobody in this chat has scored in {game} yet. /games',
+    records: '🏆 <b>Records in this chat</b>\n\n{lines}\n\nThe full list of one game: /top {example}',
+    records_none: 'Nobody has played in this chat yet. Start with /games.',
+    record: '👑 <b>New record in {game}!</b> {name} scores {score} and overtakes {previous} ({previousScore}).',
     legal_footer: '<a href="{agb}">Terms</a> · <a href="{widerruf}">Withdrawal</a> · <a href="{datenschutz}">Privacy</a> · <a href="{impressum}">Legal notice</a> (German)',
     legal_footer_commands: '/agb · /widerruf · /datenschutz · /impressum (German)',
   },

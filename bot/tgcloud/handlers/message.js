@@ -1,12 +1,15 @@
-// handlers/message.js — commands, and `successful_payment`, the only place goods are granted.
+// handlers/message.js — commands (in groups only the game commands), and `successful_payment`, the
+// only place goods are granted.
 
 import { product } from '../lib/catalogue.js';
 import { ADMIN_IDS } from '../lib/generated.js';
 import { bookPayment, findInvoice, stats, upsertAccount } from '../lib/ledger.js';
 import { BOT_NAME, applyProfile } from '../lib/profile.js';
+import { BOT_USERNAME } from '../lib/referrals.js';
 import { unblock } from '../lib/reminders.js';
 import {
-  confirmPurchase, invite, login, notifyAdmins, offer, paysupport, reminderSettings, send, sendLegal, shop, showWallet, start,
+  confirmPurchase, gamesMenu, invite, login, notifyAdmins, offer, paysupport, postGame, reminderSettings, send, sendLegal, shop,
+  showTop, showWallet, start,
 } from '../lib/bot.js';
 import { escapeHtml } from '../lib/legal.js';
 import { langOfUser, t } from '../lib/texts.js';
@@ -46,19 +49,53 @@ async function paid(message) {
   );
 }
 
+/** `/top@game_ww3_bot minefield` → `{ command: 'top', args: ['minefield'] }`; null for plain text or another bot's command */
+export function parseCommand(text) {
+  if (!text?.startsWith('/')) return null;
+  const [head, ...args] = text.trim().split(/\s+/);
+  const [command, target] = head.slice(1).split('@');
+  if (target && target.toLowerCase() !== BOT_USERNAME.toLowerCase()) return null;
+  return { command: command.toLowerCase(), args };
+}
+
+/** The game commands, the same in a group and in the private chat */
+async function gameCommand(message, command, args) {
+  const chatId = message.chat.id;
+  const id = args[0]?.toLowerCase();
+  switch (command) {
+    case 'games': return await gamesMenu(chatId, message.from);
+    case 'game': return id ? await postGame(chatId, message.from, id) : await gamesMenu(chatId, message.from);
+    case 'top':
+    case 'leaderboard': return await showTop(chatId, message.from, id);
+  }
+}
+
+/** In a group the bot only plays: /games, /game <id> and /top; /start there opens the games menu */
+async function groupMessage(message) {
+  if (message.chat.type !== 'group' && message.chat.type !== 'supergroup') return;
+  const parsed = parseCommand(message.text);
+  if (!parsed) return;
+  if (parsed.command === 'start') return await gamesMenu(message.chat.id, message.from);
+  await gameCommand(message, parsed.command, parsed.args);
+}
+
 export default async function (message) {
   if (message.successful_payment) return await paid(message);
-  if (message.chat.type !== 'private') return;
+  if (message.chat.type !== 'private') return await groupMessage(message);
   // Writing to the bot means it may message the player again
   await unblock(message.from.id);
-  if (!message.text?.startsWith('/')) return;
+  const parsed = parseCommand(message.text);
+  if (!parsed) return;
 
-  const [head, ...args] = message.text.trim().split(/\s+/);
-  const command = head.slice(1).split('@')[0].toLowerCase();
+  const { command, args } = parsed;
   const chatId = message.chat.id;
 
   if (LEGAL_COMMANDS[command]) return await sendLegal(chatId, LEGAL_COMMANDS[command]);
   switch (command) {
+    case 'games':
+    case 'game':
+    case 'top':
+    case 'leaderboard': return await gameCommand(message, command, args);
     case 'start': return await start(message, args[0]);
     case 'login': return await login(message);
     case 'shop': return await shop(chatId, message.from);

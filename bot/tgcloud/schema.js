@@ -97,3 +97,34 @@ export const referrals = table('referrals', {
 }, (t) => ({
   referrer: index('idx_referrals_referrer').on(t.referrerId),
 }));
+
+// A press on a game message's Play button: who opened which game from which chat message. The id is
+// the game's start parameter and comes back with every score, so a score lands on the right chat's
+// scoreboard. Sessions older than a day are deleted when the next one is opened.
+export const gameSessions = table('game_sessions', {
+  id: text('id').primaryKey(),
+  userId: integer('user_id').notNull(),
+  // The game's short name at @BotFather, which is the mode id in the game
+  game: text('game').notNull(),
+  chatId: integer('chat_id').notNull(),
+  messageId: integer('message_id').notNull(),
+  createdAt: integer('created_at').notNull(),
+}, (t) => ({
+  created: index('idx_game_sessions_created').on(t.createdAt),
+}));
+
+// Each player's best per game and chat, as it was set on Telegram's scoreboard; a copy, so /top can
+// list a chat's leaderboard and the bot can tell when someone takes the chat's record
+export const groupScores = table('group_scores', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  chatId: integer('chat_id').notNull(),
+  game: text('game').notNull(),
+  userId: integer('user_id').notNull(),
+  // As the player was called when they set the score, for the leaderboard
+  firstName: text('first_name').notNull(),
+  score: integer('score').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+}, (t) => ({
+  player: uniqueIndex('uidx_group_scores_chat_game_user').on(t.chatId, t.game, t.userId),
+  board: index('idx_group_scores_chat_game_score').on(t.chatId, t.game, t.score),
+}));
