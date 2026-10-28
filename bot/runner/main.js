@@ -33,6 +33,10 @@ const ENDPOINTS = {
   invoice: (await import('../tgcloud/endpoints/invoice.js')).default,
   spend: (await import('../tgcloud/endpoints/spend.js')).default,
   streak: (await import('../tgcloud/endpoints/streak.js')).default,
+};
+
+// Called by the game page of a Telegram game, which has a session id instead of initData
+const OPEN_ENDPOINTS = {
   gamescore: (await import('../tgcloud/endpoints/gamescore.js')).default,
 };
 
@@ -40,7 +44,7 @@ const LEGAL_PAGES = Object.fromEntries(Object.keys(PAGES).map((page) => [page, r
 
 const port = Number(process.env.API_PORT || 3790);
 const origins = (process.env.API_ORIGINS || 'https://ww3-sv.vercel.app').split(',').map((o) => o.trim());
-Bun.serve({ port, hostname: '0.0.0.0', fetch: createApi({ token: process.env.TELEGRAM, endpoints: ENDPOINTS, origins, pages: LEGAL_PAGES }) });
+Bun.serve({ port, hostname: '0.0.0.0', fetch: createApi({ token: process.env.TELEGRAM, endpoints: ENDPOINTS, openEndpoints: OPEN_ENDPOINTS, origins, pages: LEGAL_PAGES }) });
 console.info(`endpoints on :${port} for ${origins.join(', ')}`);
 
 const REMINDER_INTERVAL_MS = 60_000;

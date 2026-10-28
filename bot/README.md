@@ -1,8 +1,8 @@
 # ptb-ww3
 
 The Telegram side of [World War 3](https://github.com/PXNX/ww3-sv) (`@game_ww3_bot`), written for
-[Telegram Serverless](https://core.telegram.org/bots/serverless). Serverless is still behind a waitlist
-for this bot, so until then the same handlers run on nyx (see *Run on nyx*):
+[Telegram Serverless](https://core.telegram.org/bots/serverless). **Serverless does not work for this bot
+yet** (it is still behind a waitlist), so the same handlers run on nyx (see *Run on nyx*):
 
 - **Mini App hosting**: the game's static export (`ww3-sv`, `bun run build:static`) is served at
   `https://app<id>.tgcloud.ai/`, together with the legal pages under `/legal/<page>.html`.
@@ -35,7 +35,7 @@ for this bot, so until then the same handlers run on nyx (see *Run on nyx*):
 | `tgcloud/lib/bot.js`         | Chat flows: start, login, shop, consent, confirmation, support, games and /top |
 | `tgcloud/lib/games.js`       | The Telegram games, Play sessions, scores and the groups' leaderboards  |
 | `tgcloud/handlers/`          | `message` (commands, `successful_payment`), `callback_query` (incl. Play), `pre_checkout_query`, `my_chat_member` (added to a group) |
-| `tgcloud/endpoints/`         | `me`, `invoice`, `spend`, `streak`, `gamescore`, called by the Mini App via `Telegram.WebApp.Serverless.call` |
+| `tgcloud/endpoints/`         | `me`, `invoice`, `spend`, `streak` (Mini App, with initData), `gamescore` (game page, with a session) |
 | `legal/*.txt`                | Sources of the legal pages, with `{placeholders}` for the operator data |
 | `tgcloud/lib/profile.js`     | Name, descriptions, commands and photo (`res/profile.jpg`), applied by `/set_cmd` |
 | `scripts/build.mjs`          | Fills the legal texts, writes `tgcloud/lib/generated.js`, assembles `app/` |
@@ -50,7 +50,7 @@ for this bot, so until then the same handlers run on nyx (see *Run on nyx*):
 | `invoice`| `{ sku, consent? }`      | `{ url }` for `Telegram.WebApp.openInvoice`; `CONSENT_REQUIRED`, `RATE_LIMITED`, `UNKNOWN_SKU` |
 | `spend`  | `{ mode }`               | takes one bought revival: `{ wallet, pro }`; `NO_REVIVES`                 |
 | `streak` | `{ streak, expires_at, write_access? }` | stores the streak deadline for the reminder: `{ reminder }` (unix seconds or null); `INVALID_INPUT` |
-| `gamescore` | `{ session, game, score }` | puts a run onto the scoreboard of the chat the game was opened from: `{ new_best, best, rank }`; `INVALID_INPUT`, `SESSION_UNKNOWN`, `SESSION_EXPIRED` |
+| `gamescore` | `{ session, game, score }` | no initData: the session is the credential. Puts a run onto the scoreboard of the chat the game was opened from: `{ new_best, best, rank }`; `INVALID_INPUT`, `SESSION_UNKNOWN`, `SESSION_EXPIRED` |
 
 The `paid` callback of `openInvoice` only refreshes the UI; call `me` again (a few times) until the
 `successful_payment` has been booked.
@@ -80,12 +80,18 @@ Games are played together, so only in groups and supergroups. In the private cha
 a group answer with an alert, and channels are ignored.
 
 1. In a group, `/games` (or `/start@game_ww3_bot`) shows the menu; a button posts the game with `sendGame`.
-2. Play sends a `callback_query` with `game_short_name`. The bot stores a session (player, chat, message,
-   game, valid for a day) and answers with `https://t.me/game_ww3_bot?startapp=g_<game>_<session>`, so the game
-   opens as the Mini App with the verified initData.
-3. The game's result sheet calls `gamescore` with the session. A new best goes to `setGameScore` on that
-   message: Telegram updates the scoreboard of that chat and posts the new score itself. When it beats
+2. Play sends a `callback_query` with `game_short_name`. The bot stores a session (player, name, language,
+   chat, message, game, valid for a day) and answers with `<appUrl>/play/<game>?game_session=<id>`, which
+   Telegram opens in its game browser. That page has no Mini App initData, so the session id (128 random
+   bits, sent only to the player who pressed Play) is the credential. A t.me `startapp` link does not work
+   as the answer: the game browser flashes open and shut instead of starting the Mini App.
+3. The game's result sheet posts the score with the session to `gamescore`, which the runner serves
+   without the initData check (`openEndpoints` in `runner/api.js`). A new best goes to `setGameScore` on
+   that message: Telegram updates the scoreboard of that chat and posts the new score itself. When it beats
    someone else's record, the bot also posts a record message. `/top` and `/top <game>` read the bot's copy.
+
+This only works on nyx for now: Telegram Serverless does not work for the bot yet, and it checks initData
+for every endpoint, so `gamescore` will need another way in there.
 
 ## Run on nyx
 

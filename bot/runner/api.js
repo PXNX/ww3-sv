@@ -36,7 +36,11 @@ export function verifyInitData(raw, token, now = Math.floor(Date.now() / 1000)) 
 const json = (status, body, headers) =>
   new Response(JSON.stringify(body), { status, headers: { ...headers, 'content-type': 'application/json' } });
 
-export function createApi({ token, endpoints, origins, pages = {} }) {
+/**
+ * `endpoints` get the verified initData; `openEndpoints` run without it and check their own
+ * credential (the game page of a Telegram game has no initData, only its session id).
+ */
+export function createApi({ token, endpoints, openEndpoints = {}, origins, pages = {} }) {
   return async function handle(request) {
     // The legal pages as web pages, linked from the bot's messages and the Mini App's consent box
     const page = new URL(request.url).pathname.match(/^\/legal\/([a-z]+)\.html$/)?.[1];
@@ -57,11 +61,12 @@ export function createApi({ token, endpoints, origins, pages = {} }) {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
 
     const name = new URL(request.url).pathname.match(/^\/api\/([A-Za-z_][A-Za-z0-9_]*)$/)?.[1];
-    const endpoint = name && Object.hasOwn(endpoints, name) ? endpoints[name] : null;
+    const open = Boolean(name) && Object.hasOwn(openEndpoints, name);
+    const endpoint = open ? openEndpoints[name] : name && Object.hasOwn(endpoints, name) ? endpoints[name] : null;
     if (request.method !== 'POST' || !endpoint) return json(404, { ok: false, description: 'Not found' }, cors);
 
-    const initData = verifyInitData(request.headers.get('x-telegram-init-data'), token);
-    if (!initData) return json(401, { ok: false, type: 'UNAUTHORIZED', description: 'Invalid init data' }, cors);
+    const initData = open ? null : verifyInitData(request.headers.get('x-telegram-init-data'), token);
+    if (!open && !initData) return json(401, { ok: false, type: 'UNAUTHORIZED', description: 'Invalid init data' }, cors);
 
     let input;
     try {

@@ -1,15 +1,17 @@
 // Group leaderboards through Telegram's gaming platform (https://core.telegram.org/bots/games). Each
 // mode is a game registered with @BotFather under its mode id; /games in a group posts one with
-// sendGame. Pressing Play stores a session (player, chat, message, game) and opens the game as the
-// Mini App through a startapp link, so the player keeps their verified account. At the end of a run
-// the game sends the score back with the session id, and setGameScore puts it on that chat's
-// scoreboard: Telegram keeps one table per chat and posts its own message on every new personal
-// best. The bot keeps a copy of the bests for /top and announces when someone takes the record.
+// sendGame. Pressing Play stores a session (player, chat, message, game) and opens the game page with
+// the session id in its URL; Telegram opens a game's URL in its own browser, without the Mini App's
+// initData, so the id (128 random bits, given only to the player who pressed Play, valid for a day)
+// is what proves who plays. At the end of a run the game sends the score back with it, and
+// setGameScore puts it on that chat's scoreboard: Telegram keeps one table per chat and posts its
+// own message on every new personal best. The bot keeps a copy of the bests for /top and announces
+// when someone takes the record.
 
 import { api, db, BotApiError } from 'sdk';
 import { sql } from 'sdk/db';
+import { APP_URL } from './generated.js';
 import { nowSeconds } from './ledger.js';
-import { BOT_USERNAME } from './referrals.js';
 
 // The modes offered as Telegram games, for now only Block Puzzle (todo.md in ww3-sv lists the rest).
 // The id is both the game's short name at @BotFather and its route in the game (/play/<id>); a mode
@@ -36,12 +38,12 @@ export const findGame = (id) => GAMES.find((entry) => entry.id === id) ?? null;
 export const gameName = (id, lang) => findGame(id)?.[lang] ?? findGame(id)?.en ?? id;
 
 function sessionId() {
-  const bytes = crypto.getRandomValues(new Uint8Array(10));
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
   return [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-/** The Mini App link a Play press answers with: `g_<game>_<session>` is the start parameter */
-export const sessionLink = (game, session) => `https://t.me/${BOT_USERNAME}?startapp=g_${game}_${session}`;
+/** The game page a Play press opens, with the session that its scores are reported with; null without a deployed game */
+export const sessionLink = (game, session) => (APP_URL ? `${APP_URL}/play/${game}?game_session=${session}` : null);
 
 /** Remembers who pressed Play on which game message; returns the session id */
 export async function openSession(user, game, message) {
@@ -49,28 +51,29 @@ export async function openSession(user, game, message) {
   const now = nowSeconds();
   await db.run(sql`DELETE FROM game_sessions WHERE created_at < ${now - SESSION_TTL}`);
   await db.run(sql`
-    INSERT INTO game_sessions (id, user_id, game, chat_id, message_id, created_at)
-    VALUES (${id}, ${user.id}, ${game}, ${message.chat.id}, ${message.message_id}, ${now})
+    INSERT INTO game_sessions (id, user_id, first_name, language, game, chat_id, message_id, created_at)
+    VALUES (${id}, ${user.id}, ${user.first_name ?? ''}, ${user.language_code ?? null}, ${game}, ${message.chat.id}, ${message.message_id}, ${now})
   `);
   return id;
 }
 
-/** The session for this player and game, or a GameScoreError */
-async function liveSession(user, input) {
+/** The session for this game, with the player who opened it, or a GameScoreError */
+async function liveSession(input) {
   const { session, game } = input ?? {};
-  if (typeof session !== 'string' || !/^[0-9a-f]{20}$/.test(session) || !findGame(game)) {
+  if (typeof session !== 'string' || !/^[0-9a-f]{32}$/.test(session) || !findGame(game)) {
     throw new GameScoreError('INVALID_INPUT', 'Unknown game or session.');
   }
   const row = await db.get(sql`
-    SELECT user_id, game, chat_id, message_id, created_at FROM game_sessions WHERE id = ${session}
+    SELECT user_id, first_name, language, game, chat_id, message_id, created_at FROM game_sessions WHERE id = ${session}
   `);
-  if (!row || row.user_id !== user.id || row.game !== game) {
+  if (!row || row.game !== game) {
     throw new GameScoreError('SESSION_UNKNOWN', 'This game was not opened from a chat.');
   }
   if (nowSeconds() - row.created_at > SESSION_TTL) {
     throw new GameScoreError('SESSION_EXPIRED', 'Open the game from the chat again.');
   }
-  return { game, chatId: row.chat_id, messageId: row.message_id };
+  const user = { id: row.user_id, first_name: row.first_name ?? '', language_code: row.language ?? undefined };
+  return { user, game, chatId: row.chat_id, messageId: row.message_id };
 }
 
 const notModified = (error) => error instanceof BotApiError && /BOT_SCORE_NOT_MODIFIED/i.test(error.description ?? '');
@@ -80,8 +83,8 @@ const notModified = (error) => error instanceof BotApiError && /BOT_SCORE_NOT_MO
  * was a new personal best there, the best, the rank in that chat, and, when the run took the chat's
  * record from someone else, who held it before (the caller announces that).
  */
-export async function reportScore(user, input) {
-  const { game, chatId, messageId } = await liveSession(user, input);
+export async function reportScore(input) {
+  const { user, game, chatId, messageId } = await liveSession(input);
   const score = input.score;
   if (!Number.isInteger(score) || score < 0 || score > MAX_SCORE) {
     throw new GameScoreError('INVALID_INPUT', 'The score must be a whole number.');
@@ -114,7 +117,7 @@ export async function reportScore(user, input) {
   const overtook = record && record.user_id !== user.id && score > record.score
     ? { name: record.first_name, score: record.score }
     : null;
-  return { new_best: true, best: score, rank: await rank(chatId, game, score), chatId, game, overtook };
+  return { new_best: true, best: score, rank: await rank(chatId, game, score), user, chatId, game, overtook };
 }
 
 async function rank(chatId, game, score) {

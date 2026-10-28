@@ -36,60 +36,63 @@ const message = { chat: { id: GROUP }, message_id: 77 };
 const ada = { id: 1, first_name: 'Ada' };
 const bob = { id: 2, first_name: 'Bob' };
 
-test('every game has a unique id that works as a short name and in the start parameter', () => {
+test('every game has a unique id that works as a short name and as a route', async () => {
   const ids = games.GAMES.map((entry) => entry.id);
   expect(new Set(ids).size).toBe(ids.length);
   for (const entry of games.GAMES) {
     expect(entry.id).toMatch(/^[a-z]+$/);
     expect(entry.en && entry.de).toBeTruthy();
   }
-  expect(games.sessionLink('blocks', 'ab'.repeat(10))).toBe(`https://t.me/game_ww3_bot?startapp=g_blocks_${'ab'.repeat(10)}`);
+  const { APP_URL } = await import('../tgcloud/lib/generated.js');
+  expect(games.sessionLink('blocks', 'ab'.repeat(16))).toBe(APP_URL ? `${APP_URL}/play/blocks?game_session=${'ab'.repeat(16)}` : null);
 });
 
-test('a session only takes scores from its player, for its game', async () => {
+test('a session only takes scores for its game, and only while it is fresh', async () => {
   const session = await games.openSession(ada, 'blocks', message);
-  expect(session).toMatch(/^[0-9a-f]{20}$/);
-  await expect(games.reportScore(bob, { session, game: 'blocks', score: 5 })).rejects.toMatchObject({ code: 'SESSION_UNKNOWN' });
+  expect(session).toMatch(/^[0-9a-f]{32}$/);
+  expect(await games.openSession(ada, 'blocks', message)).not.toBe(session);
+  await expect(games.reportScore({ session: '0'.repeat(32), game: 'blocks', score: 5 })).rejects.toMatchObject({ code: 'SESSION_UNKNOWN' });
   // A mode that is not a Telegram game (yet)
-  await expect(games.reportScore(ada, { session, game: 'minefield', score: 5 })).rejects.toMatchObject({ code: 'INVALID_INPUT' });
-  await expect(games.reportScore(ada, { session: 'nope', game: 'blocks', score: 5 })).rejects.toMatchObject({ code: 'INVALID_INPUT' });
+  await expect(games.reportScore({ session, game: 'minefield', score: 5 })).rejects.toMatchObject({ code: 'INVALID_INPUT' });
+  await expect(games.reportScore({ session: 'nope', game: 'blocks', score: 5 })).rejects.toMatchObject({ code: 'INVALID_INPUT' });
   for (const score of [-1, 1.5, '9', games.MAX_SCORE + 1]) {
-    await expect(games.reportScore(ada, { session, game: 'blocks', score })).rejects.toMatchObject({ code: 'INVALID_INPUT' });
+    await expect(games.reportScore({ session, game: 'blocks', score })).rejects.toMatchObject({ code: 'INVALID_INPUT' });
   }
   sqlite.exec(`UPDATE game_sessions SET created_at = created_at - ${games.SESSION_TTL + 1} WHERE id = '${session}'`);
-  await expect(games.reportScore(ada, { session, game: 'blocks', score: 5 })).rejects.toMatchObject({ code: 'SESSION_EXPIRED' });
+  await expect(games.reportScore({ session, game: 'blocks', score: 5 })).rejects.toMatchObject({ code: 'SESSION_EXPIRED' });
   expect(calls).toEqual([]);
 });
 
 test('a better run goes onto the chat scoreboard, a worse one does not', async () => {
   const session = await games.openSession(ada, 'blocks', message);
-  const first = await games.reportScore(ada, { session, game: 'blocks', score: 100 });
+  // The player is the one who pressed Play, whoever reports the score
+  const first = await games.reportScore({ session, game: 'blocks', score: 100 });
   expect(first).toMatchObject({ new_best: true, best: 100, rank: 1, overtook: null });
   expect(calls).toEqual([{ method: 'setGameScore', params: { user_id: 1, score: 100, chat_id: GROUP, message_id: 77 } }]);
 
   calls = [];
-  expect(await games.reportScore(ada, { session, game: 'blocks', score: 80 })).toMatchObject({ new_best: false, best: 100 });
+  expect(await games.reportScore({ session, game: 'blocks', score: 80 })).toMatchObject({ new_best: false, best: 100 });
   expect(calls).toEqual([]);
 
   // Telegram already holds a better score (set before the bot kept a copy): nothing changes
   refuse = (method) => method === 'setGameScore';
-  expect(await games.reportScore(ada, { session, game: 'blocks', score: 120 })).toMatchObject({ new_best: false });
+  expect(await games.reportScore({ session, game: 'blocks', score: 120 })).toMatchObject({ new_best: false });
   expect((await games.topScores(GROUP, 'blocks'))[0].score).toBe(100);
 });
 
 test('taking the record from someone else is announced in the chat', async () => {
   const adaSession = await games.openSession(ada, 'blocks', message);
   const bobSession = await games.openSession(bob, 'blocks', message);
-  await gamescore({ session: adaSession, game: 'blocks', score: 300 }, { initData: { user: ada } });
+  await gamescore({ session: adaSession, game: 'blocks', score: 300 });
 
   calls = [];
   // Second place is a new personal best, but not the record
-  expect(await gamescore({ session: bobSession, game: 'blocks', score: 200 }, { initData: { user: bob } }))
+  expect(await gamescore({ session: bobSession, game: 'blocks', score: 200 }))
     .toEqual({ new_best: true, best: 200, rank: 2 });
   expect(calls.map((call) => call.method)).toEqual(['setGameScore']);
 
   calls = [];
-  expect(await gamescore({ session: bobSession, game: 'blocks', score: 400 }, { initData: { user: bob } }))
+  expect(await gamescore({ session: bobSession, game: 'blocks', score: 400 }))
     .toEqual({ new_best: true, best: 400, rank: 1 });
   expect(calls.map((call) => call.method)).toEqual(['setGameScore', 'sendMessage']);
   expect(calls[1].params.chat_id).toBe(GROUP);
@@ -98,7 +101,7 @@ test('taking the record from someone else is announced in the chat', async () =>
 
   // Beating your own record is left to Telegram's own message
   calls = [];
-  await gamescore({ session: bobSession, game: 'blocks', score: 500 }, { initData: { user: bob } });
+  await gamescore({ session: bobSession, game: 'blocks', score: 500 });
   expect(calls.map((call) => call.method)).toEqual(['setGameScore']);
 
   expect(await games.topScores(GROUP, 'blocks')).toEqual([{ name: 'Bob', score: 500 }, { name: 'Ada', score: 300 }]);
@@ -108,7 +111,7 @@ test('taking the record from someone else is announced in the chat', async () =>
 });
 
 test('the endpoint refuses a bad session with a code the game can read', async () => {
-  await expect(gamescore({ session: 'x', game: 'blocks', score: 1 }, { initData: { user: ada } }))
+  await expect(gamescore({ session: 'x', game: 'blocks', score: 1 }))
     .rejects.toMatchObject({ parameters: { code: 'INVALID_INPUT' } });
 });
 
@@ -160,6 +163,6 @@ test('games are played in groups only, never in private chats or channels', asyn
   // In the group, Play opens the game with a fresh session
   calls = [];
   await onCallback({ id: 'q4', from: ada, game_short_name: 'blocks', message: { chat: group, message_id: 6 } });
-  expect(calls[0].params.url).toMatch(/^https:\/\/t\.me\/game_ww3_bot\?startapp=g_blocks_[0-9a-f]{20}$/);
+  expect(calls[0].params.url).toMatch(/\/play\/blocks\?game_session=[0-9a-f]{32}$/);
   expect(await sessions()).toBe(before + 1);
 });

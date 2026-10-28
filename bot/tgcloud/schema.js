@@ -99,11 +99,15 @@ export const referrals = table('referrals', {
 }));
 
 // A press on a game message's Play button: who opened which game from which chat message. The id is
-// the game's start parameter and comes back with every score, so a score lands on the right chat's
-// scoreboard. Sessions older than a day are deleted when the next one is opened.
+// in the game page's URL and comes back with every score; it is the only proof of who plays (a game
+// page has no Mini App initData), so it is long and random. Sessions older than a day are deleted
+// when the next one is opened.
 export const gameSessions = table('game_sessions', {
   id: text('id').primaryKey(),
   userId: integer('user_id').notNull(),
+  // The player's name and Telegram language at the Play press, for the leaderboard and the record message
+  firstName: text('first_name'),
+  language: text('language'),
   // The game's short name at @BotFather, which is the mode id in the game
   game: text('game').notNull(),
   chatId: integer('chat_id').notNull(),

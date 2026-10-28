@@ -255,8 +255,9 @@ export async function postGame(chatId, user, id) {
 }
 
 /**
- * A press on a game message's Play button. The answer opens the game as the Mini App, with a
- * session that ties the scores of this run to the chat and the message the button belongs to.
+ * A press on a game message's Play button. The answer opens the game page in Telegram's game
+ * browser, with a session that ties the scores to the chat and the message the button belongs to.
+ * (A t.me startapp link here only flashes the browser open and shut instead of starting the Mini App.)
  */
 export async function openGame(query) {
   const id = query.game_short_name;
@@ -267,6 +268,9 @@ export async function openGame(query) {
   // A game message forwarded into a private chat: its scores would have no group to count for
   if (!isGroup(query.message.chat)) {
     return await api.answerCallbackQuery({ callback_query_id: query.id, text: t(lang, 'group_only_alert'), show_alert: true });
+  }
+  if (!APP_URL) {
+    return await api.answerCallbackQuery({ callback_query_id: query.id, text: t(lang, 'not_deployed'), show_alert: true });
   }
   const session = await openSession(query.from, id, query.message);
   await api.answerCallbackQuery({ callback_query_id: query.id, url: sessionLink(id, session) });

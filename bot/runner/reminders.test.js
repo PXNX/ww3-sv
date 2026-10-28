@@ -108,3 +108,19 @@ test('the API answers like the platform', async () => {
   expect((await refused.json()).parameters.code).toBe('NOPE');
   expect((await post('missing', { 'x-telegram-init-data': initData })).status).toBe(404);
 });
+
+test('open endpoints run without initData and never see one', async () => {
+  const handle = createApi({
+    token: 'tok',
+    origins: ['https://game.test'],
+    endpoints: { echo: async () => 'checked' },
+    openEndpoints: { score: async (input, ctx) => ({ input, initData: ctx.initData }) },
+  });
+  const post = (name) => handle(new Request(`http://x/api/${name}`, {
+    method: 'POST', headers: { origin: 'https://game.test' }, body: JSON.stringify({ a: 1 }),
+  }));
+  const open = await post('score');
+  expect(open.status).toBe(200);
+  expect(await open.json()).toEqual({ ok: true, result: { input: { a: 1 }, initData: null } });
+  expect((await post('echo')).status).toBe(401);
+});
