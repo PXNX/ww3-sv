@@ -16,6 +16,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import {
 		BOSS_FIGHT_MS,
+		BOSS_MAX_STARS,
 		CRYSTAL_COMBINE_COUNT,
 		RARITY_COLOR,
 		STASH_SIZE,
@@ -209,18 +210,16 @@
 		bestColor: string;
 	}
 
-	/** The ways to play it, each with the player's best on this battlefield */
+	/** The ways to play it; only the boss fight keeps a record: its stars on this battlefield */
 	const modes = $derived.by((): ModeCard[] => {
-		const huntBest = profile.bestTimeMs[map];
-		const bossBest = profile.bossBestMs[map];
-		const defenseBest = profile.defenseBestWave[map];
+		const stars = profile.bossStars[map] ?? 0;
 		return [
 			{
 				id: 'hunt',
 				icon: IconCrosshair,
 				name: m.raid_lobby_mode_hunt(),
 				hint: m.raid_lobby_mode_hunt_hint(),
-				best: huntBest ? m.raid_map_best({ time: formatTime(huntBest) }) : null,
+				best: null,
 				color: 'border-[#b84300] bg-linear-to-b from-[#ff9a3c] to-[#ff6a10]',
 				bestColor: 'text-[#fff1c2]'
 			},
@@ -232,9 +231,10 @@
 					boss: BOSS_NAMES[map](),
 					time: formatTime(BOSS_FIGHT_MS)
 				}),
-				best: bossBest
-					? m.raid_lobby_boss_best({ time: formatTime(bossBest) })
-					: m.raid_lobby_boss_unbeaten(),
+				best:
+					stars > 0
+						? '★'.repeat(stars) + '☆'.repeat(BOSS_MAX_STARS - stars)
+						: m.raid_lobby_boss_unbeaten(),
 				color: 'border-[#4b1d8f] bg-[#7a3fe0]',
 				bestColor: 'text-[#e2c9ff]'
 			},
@@ -243,7 +243,7 @@
 				icon: IconShield,
 				name: m.raid_lobby_mode_defense(),
 				hint: m.raid_lobby_mode_defense_hint(),
-				best: defenseBest ? m.raid_lobby_defense_best({ wave: defenseBest }) : null,
+				best: null,
 				color: 'border-[#0f7f73] bg-[#22c3b0]',
 				bestColor: 'text-[#d6fff8]'
 			}

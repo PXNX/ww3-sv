@@ -11,9 +11,17 @@
  * step returns events for sounds and effects.
  */
 import { pickWeighted, randomInt, type Random } from '#lib/game/random.js';
-import { updateSandstorms } from './sandstorm.js';
+import { updateSandstorms, type Flung, type Tornado } from './sandstorm';
 import {
 	ARCHETYPE_CAP,
+	VOTE_SETTLE_MS,
+	isElite,
+	PION_FIRE_DAMAGE_SHARE,
+	PION_FIRE_MS,
+	PION_FIRE_TICK_MS,
+	PION_FLIGHT_MS,
+	PION_SCATTER,
+	PION_SHELL_RADIUS,
 	ARCHETYPE_SPECS,
 	ARTILLERY_FLIGHT_MS,
 	ARTILLERY_RADIUS,
@@ -315,6 +323,8 @@ export interface Shell {
 	radius: number;
 	damage: number;
 	big: boolean;
+	/** The elite Pion's shells leave the ground burning */
+	fire: boolean;
 }
 
 export interface Grenade {
@@ -360,7 +370,10 @@ export interface FriendlyDrone {
 	crit: boolean;
 }
 
-/** Fire on the ground (napalm or the trail of fire boots) that sets enemies walking in it alight */
+/**
+ * Fire on the ground: napalm or the trail of fire boots sets enemies walking in it alight; the
+ * burning ground an elite Pion's shell leaves (hostile) hurts the player and the command post
+ */
 export interface FirePool {
 	id: number;
 	x: number;
@@ -371,6 +384,10 @@ export interface FirePool {
 	burnMs: number;
 	burnDps: number;
 	trail: boolean;
+	hostile: boolean;
+	/** Hostile fire: damage per tick, and time to the next tick */
+	damage: number;
+	tickMs: number;
 }
 
 export interface Loot {
@@ -463,7 +480,10 @@ export interface RaidState {
 	haul: GearItem[];
 	/** Crystals picked up this raid */
 	crystals: Crystal[];
-	sandstorms: { x: number; y: number; radius: number; startMs: number; active: boolean }[];
+	/** Dust devils on the desert map, whoever they just spat out, and the wait for the next one */
+	tornadoes: Tornado[];
+	flung: Flung[];
+	tornadoRiseMs: number;
 	nextId: number;
 }
 
@@ -524,6 +544,8 @@ export type RaidEvent =
 	| { type: 'overheat'; damage: number }
 	| { type: 'quake'; x: number; y: number }
 	| { type: 'warcry' }
+	| { type: 'tornado-catch'; x: number; y: number; player: boolean }
+	| { type: 'tornado-spit'; x: number; y: number; player: boolean }
 	| { type: 'over' };
 
 /** How far the raid has come, in minutes of a hunt; a defense counts its waves instead */
@@ -661,7 +683,9 @@ export function createRaid(
 		scrap: 0,
 		haul: [],
 		crystals: [],
-		sandstorms: [],
+		tornadoes: [],
+		flung: [],
+		tornadoRiseMs: 0,
 		nextId: 1
 	};
 }
@@ -917,7 +941,10 @@ const SKILLS: Record<SkillId, (state: RaidState, events: RaidEvent[]) => void> =
 			lifeMs: NAPALM_MS,
 			burnMs: Math.max(stats.burnMs, WEAPONS.flamethrower.burnMs * stats.statusFactor),
 			burnDps: stats.burnDps,
-			trail: false
+			trail: false,
+			hostile: false,
+			damage: 0,
+			tickMs: 0
 		});
 		events.push({ type: 'napalm', x: spot.x, y: spot.y });
 	},
@@ -1008,14 +1035,16 @@ export function giveUp(state: RaidState): RaidEvent[] {
 
 /**
  * A vote on cashing out the defense's pot (or a changed mind while it is open). Once everyone has
- * voted it closes at once
+ * voted it closes shortly after, so everyone sees where the others went
  */
 export function castVote(state: RaidState, voter: string, choice: VoteChoice): RaidEvent[] {
 	const defense = state.defense;
 	if (!defense?.vote || !active(state) || !defense.voters.includes(voter)) return [];
 	defense.vote.votes[voter] = choice;
 	const events: RaidEvent[] = [{ type: 'vote-cast', voter, choice }];
-	if (defense.voters.every((id) => defense.vote!.votes[id])) closeVote(state, events);
+	if (defense.voters.every((id) => defense.vote!.votes[id])) {
+		defense.vote.ms = Math.min(defense.vote.ms, VOTE_SETTLE_MS);
+	}
 	return events;
 }
 
@@ -1117,11 +1146,11 @@ export function stepRaid(state: RaidState, random: Random, dtMs: number): RaidEv
 	updateMines(state, dtMs, events);
 	updateNests(state, dtMs, events);
 	updateDrones(state, dtMs, events);
-	updateFires(state, dtMs);
+	updateFires(state, dtMs, events);
 	updateBurning(state, dtMs, events);
 	updateJammer(state, random, events);
 	updateEnemies(state, random, dtMs, events);
-	updateSandstorms(state, dtMs);
+	updateSandstorms(state, random, dtMs, events);
 	moveEnemyBullets(state, dtMs, events);
 	updateShells(state, dtMs, events);
 	updateLoot(state, dtMs, events);
@@ -1208,7 +1237,10 @@ function movePlayer(state: RaidState, dtMs: number) {
 				lifeMs: TRAIL_MS,
 				burnMs: TRAIL_BURN_MS,
 				burnDps: TRAIL_DPS + TRAIL_DPS_PER_LEVEL * state.playerLevel,
-				trail: true
+				trail: true,
+				hostile: false,
+				damage: 0,
+				tickMs: 0
 			});
 		}
 	}
@@ -1609,13 +1641,26 @@ export function ignite(enemy: Enemy, ms: number, dps: number) {
 	enemy.burnDps = Math.max(enemy.burnDps, dps);
 }
 
-/** Napalm and fire trails set every walking enemy in them alight */
-function updateFires(state: RaidState, dtMs: number) {
+/** Napalm and fire trails set every walking enemy in them alight; hostile fire burns the player */
+function updateFires(state: RaidState, dtMs: number, events: RaidEvent[]) {
+	const { player } = state;
 	const kept: FirePool[] = [];
 	for (const fire of state.fires) {
 		fire.ageMs += dtMs;
 		if (fire.ageMs > fire.lifeMs) continue;
 		kept.push(fire);
+		if (fire.hostile) {
+			fire.tickMs -= dtMs;
+			if (fire.tickMs > 0 || !active(state)) continue;
+			fire.tickMs += PION_FIRE_TICK_MS;
+			if (Math.hypot(player.x - fire.x, player.y - fire.y) < fire.radius + PLAYER_RADIUS * 0.4) {
+				hurtPlayer(state, fire.damage, events);
+			}
+			if (nearObjective(state, fire.x, fire.y, fire.radius * 0.5)) {
+				hurtObjective(state, fire.damage, events);
+			}
+			continue;
+		}
 		for (const enemy of state.enemies) {
 			if (enemy.flying) continue;
 			if (Math.hypot(enemy.x - fire.x, enemy.y - fire.y) > fire.radius + enemy.radius * 0.6)
@@ -1623,8 +1668,13 @@ function updateFires(state: RaidState, dtMs: number) {
 			ignite(enemy, fire.burnMs, fire.burnDps);
 		}
 	}
-	// A long walk in fire boots leaves only its newest patches burning
-	state.fires = kept.length > 60 ? kept.slice(-60) : kept;
+	// A long walk in fire boots leaves only its newest patches burning (hostile fire always stays)
+	if (kept.length > 60) {
+		const hostile = kept.filter((fire) => fire.hostile);
+		state.fires = [...hostile, ...kept.filter((fire) => !fire.hostile).slice(-60)];
+	} else {
+		state.fires = kept;
+	}
 }
 
 function updateBurning(state: RaidState, dtMs: number, events: RaidEvent[]) {
@@ -1686,6 +1736,7 @@ function defeat(state: RaidState, enemy: Enemy, events: RaidEvent[]) {
 	});
 
 	const boss = enemy.archetype === 'boss';
+	const elite = isElite(enemy.archetype);
 	const random = lootRandom(state, enemy);
 	const drops = rollLoot(random, {
 		dropChance: spec.dropChance + variant.dropBonus,
@@ -1693,11 +1744,15 @@ function defeat(state: RaidState, enemy: Enemy, events: RaidEvent[]) {
 		luck: spec.luck + variant.luck + minutes * 0.15 + (state.map.reward - 1),
 		gold: spec.gold * reward,
 		itemLevel: Math.min(MAX_ITEM_LEVEL, 1 + Math.floor(minutes / 1.5) + state.map.itemLevelBonus),
-		// Only bosses are sure to drop gear; for everyone else it is a rare find
-		guaranteedGear: boss,
-		floor: boss ? (enemy.variant === 'normal' ? 'rare' : 'epic') : undefined
+		// Only bosses and elites are sure to drop gear; for everyone else it is a rare find
+		guaranteedGear: boss || elite,
+		floor: boss ? (enemy.variant === 'normal' ? 'rare' : 'epic') : elite ? 'rare' : undefined
 	});
-	for (const crystal of rollCrystals(random, boss, enemy.variant)) {
+	// An elite drops one crystal from the boss table
+	const crystals = elite
+		? rollCrystals(random, true, 'normal').slice(0, 1)
+		: rollCrystals(random, boss, enemy.variant);
+	for (const crystal of crystals) {
 		drops.push({ type: 'crystal', crystal });
 	}
 	drops.forEach((drop, index) => {
@@ -1877,7 +1932,6 @@ function flyDrone(
 	distance: number,
 	events: RaidEvent[]
 ) {
-	const { player } = state;
 	drone.phase += dt * 30;
 	if (drone.jammed) {
 		drone.jamMs -= dt * 1000;
@@ -1899,7 +1953,7 @@ function flyDrone(
 }
 
 function updateEnemies(state: RaidState, random: Random, dtMs: number, events: RaidEvent[]) {
-	const { player, map } = state;
+	const { map } = state;
 	const dt = dtMs / 1000;
 	for (const enemy of state.enemies) {
 		if (!active(state)) break;
@@ -2057,6 +2111,22 @@ function rangedAttack(
 			}
 			events.push({ type: 'shell-launch', x: enemy.x, y: enemy.y, big: true });
 			return;
+		case 'pion':
+			if (distance > keep + 200) return;
+			reload();
+			lobShell(
+				state,
+				random,
+				enemy,
+				goal,
+				PION_SCATTER,
+				PION_SHELL_RADIUS,
+				PION_FLIGHT_MS,
+				true,
+				true
+			);
+			events.push({ type: 'shell-launch', x: enemy.x, y: enemy.y, big: true });
+			return;
 	}
 }
 
@@ -2069,7 +2139,8 @@ function lobShell(
 	scatter: number,
 	radius: number,
 	flightMs: number,
-	big: boolean
+	big: boolean,
+	fire = false
 ) {
 	const { map } = state;
 	const angle = random() * Math.PI * 2;
@@ -2084,7 +2155,8 @@ function lobShell(
 		flightMs,
 		radius,
 		damage: from.damage,
-		big
+		big,
+		fire
 	});
 }
 
@@ -2107,6 +2179,22 @@ function updateShells(state: RaidState, dtMs: number, events: RaidEvent[]) {
 		}
 		if (nearObjective(state, shell.x, shell.y, shell.radius * 0.6)) {
 			hurtObjective(state, shell.damage, events);
+		}
+		if (shell.fire) {
+			state.fires.push({
+				id: state.nextId++,
+				x: shell.x,
+				y: shell.y,
+				radius: shell.radius,
+				ageMs: 0,
+				lifeMs: PION_FIRE_MS,
+				burnMs: 0,
+				burnDps: 0,
+				trail: false,
+				hostile: true,
+				damage: shell.damage * PION_FIRE_DAMAGE_SHARE,
+				tickMs: PION_FIRE_TICK_MS
+			});
 		}
 	}
 	state.shells = kept;
@@ -2447,6 +2535,8 @@ export function spawnEnemy(
 ): Enemy | null {
 	const { map, player } = state;
 	const spec = ARCHETYPE_SPECS[archetype];
+	// Elites are elite enough as they are
+	if (isElite(archetype)) variant = 'normal';
 	const variantSpec = VARIANT_SPECS[variant];
 	const radius = spec.radius * variantSpec.radius;
 	const flying = archetype === 'drone';

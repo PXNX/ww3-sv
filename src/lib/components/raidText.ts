@@ -188,6 +188,7 @@ export const ENEMY_NAMES: Record<Archetype, () => string> = {
 	medic: m.raid_enemy_medic,
 	mortar: m.raid_enemy_mortar,
 	artillery: m.raid_enemy_artillery,
+	pion: m.raid_enemy_pion,
 	boss: m.raid_enemy_boss
 };
 

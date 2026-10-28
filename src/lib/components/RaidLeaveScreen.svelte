@@ -40,7 +40,7 @@
 </script>
 
 <div
-	class="fixed inset-0 z-50 flex flex-col gap-3 overflow-y-auto bg-[radial-gradient(ellipse_at_40%_55%,#5f93ec,#2f58b8_55%,#1f3c8a)] pt-[calc(0.75rem+var(--top-inset))] pr-(--hud-right) pb-[calc(0.75rem+env(safe-area-inset-bottom))] pl-(--hud-left) text-white"
+	class="fixed inset-0 z-50 flex flex-col gap-3 overflow-y-auto bg-[radial-gradient(ellipse_at_40%_55%,rgb(95_147_236/0.86),rgb(47_88_184/0.88)_55%,rgb(31_60_138/0.9))] pt-[calc(0.75rem+var(--top-inset))] pr-(--hud-right) pb-[calc(0.75rem+env(safe-area-inset-bottom))] pl-(--hud-left) text-white backdrop-blur-[3px]"
 	role="dialog"
 	aria-modal="true"
 	aria-labelledby="raid-leave-title"
@@ -94,7 +94,9 @@
 
 	<!-- Confirms leaving, in the bottom right -->
 	<div class="mt-auto flex flex-col items-end gap-1 pt-2">
-		<p dir="auto" class="text-end text-xs font-semibold opacity-85">{m.raid_leave_note()}</p>
+		<p dir="auto" class="text-end text-xs font-semibold opacity-85">
+			{raid.defense ? m.raid_leave_note_defense() : m.raid_leave_note()}
+		</p>
 		<button
 			type="button"
 			class="me-1 flex -skew-x-6 items-center gap-2 rounded-lg border-b-4 border-[#b84300] bg-linear-to-b from-[#ff9a3c] to-[#ff6a10] px-5 py-2.5 font-display text-xl leading-none font-black text-white uppercase italic shadow-[0_4px_0_rgb(0_0_0/0.25)] active:translate-y-0.5"

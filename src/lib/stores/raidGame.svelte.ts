@@ -30,7 +30,12 @@ import {
 	BOSS_EVERY_MS,
 	CRYSTAL_COLOR,
 	FIRST_BOSS_MS,
+	bossStars,
+	HAMMER_ARC,
+	HAMMER_FALL_RADIUS,
+	QUAKE_RADIUS,
 	SKILL_COOLDOWN_MS,
+	WEAPONS,
 	SPRINT_COOLDOWN_MS,
 	type Archetype,
 	type ArmorSlot,
@@ -67,8 +72,10 @@ import { addRaidToQuests, type Quest, type QuestStats } from '#lib/game/raid/que
 import { dateAt, type SeasonReward } from '#lib/game/raid/season.js';
 import { drawRaidPreview, type Effect, type SceneExtras } from '#lib/game/raid/render.js';
 import {
+	castVote,
 	createRaid,
 	currentBoss,
+	SELF,
 	equipFromHaul,
 	giveUp,
 	heldSkills,
@@ -83,10 +90,10 @@ import {
 	swapWeapon,
 	useSkill,
 	type RaidEvent,
-	type RaidState
+	type RaidState,
+	type VoteChoice
 } from '#lib/game/raid/state.js';
 import { m } from '#lib/paraglide/messages.js';
-import { highscores, type Highscores } from '#lib/services/highscore.js';
 import { localStore, type Store } from '#lib/services/storage.js';
 import { haptic } from '#lib/haptic/haptic.svelte.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
@@ -118,11 +125,51 @@ export function detailsItem(): string | null {
 }
 /** How long the "found new gear" card stays up */
 const FOUND_MS = 6000;
+/** How long the crystal toast stays up */
+const CRYSTAL_TOAST_MS = 2600;
+
+/**
+ * How a raid ended: a hunt that simply ended, a boss fight won or lost on time, or a defense
+ * cashed out, lost with its command post, or given up (down or left) without cashing out
+ */
+export type RaidOutcome =
+	'raid' | 'victory' | 'time-up' | 'cashed-out' | 'post-lost' | 'defense-lost';
+
+/** The defense as the HUD shows it */
+export interface DefenseHud {
+	/** The command post's health, as a share */
+	post: number;
+	wave: number;
+	/** Enemies of the wave still to beat */
+	left: number;
+	/** Seconds until the next wave, 0 while one is on */
+	breakSeconds: number;
+	pot: { xp: number; gold: number; scrap: number; crystals: number; gear: number };
+	/** The open vote: seconds left, the player's own choice, and the count on each side */
+	vote: {
+		seconds: number;
+		mine: VoteChoice | null;
+		leave: number;
+		stay: number;
+		voters: number;
+	} | null;
+}
 /** The same sound never plays more often than this, so a fast weapon does not drown the rest */
 const SOUND_GAP_MS = 70;
 
 export interface RaidResult {
 	map: MapId;
+	mode: RaidMode;
+	outcome: RaidOutcome;
+	/** A defense that was not cashed out loses everything */
+	forfeited: boolean;
+	/** Defense: waves held */
+	wavesHeld: number;
+	/** Boss fight: the stars earned, the map's best before, how many were new and their XP */
+	stars: number;
+	starsBefore: number;
+	newStars: number;
+	starXp: number;
 	timeMs: number;
 	kills: number;
 	/** Defeated enemies by archetype */
@@ -157,13 +204,10 @@ export interface RaidOptions {
 	reducedMotion?: boolean;
 	/** Injected for tests; default to the browser's local storage */
 	store?: () => Store;
-	scores?: () => Highscores;
 	seed?: () => number;
 	/** The wall clock for the live events, in epoch milliseconds; injected for tests */
 	now?: () => number;
 }
-
-const scoreKey = (map: MapId) => ['raid', map, 'score'] as const;
 
 export class RaidGame {
 	status = $state<RaidStatus>('lobby');
@@ -204,11 +248,16 @@ export class RaidGame {
 	boss = $state<{ share: number; variant: Variant } | null>(null);
 	/** While no boss is out: how far the wait for the next one is, and its seconds left */
 	nextBoss = $state<{ share: number; seconds: number } | null>(null);
+	/** Boss fight: seconds left on the clock; null in the other modes */
+	timeLeft = $state<number | null>(null);
+	/** Defense: the command post, the wave, the pot and the vote; null in the other modes */
+	defense = $state.raw<DefenseHud | null>(null);
+	/** The newest crystal picked up, for the toast */
+	crystalToast = $state.raw<{ crystal: Crystal; id: number } | null>(null);
 	/** The last piece of gear picked up, offered for equipping for a few seconds */
 	found = $state.raw<{ item: GearItem; better: boolean } | null>(null);
 	hurtCount = $state(0);
 	result = $state.raw<RaidResult | null>(null);
-	best = $state<number | null>(null);
 	isNewBest = $state(false);
 	/** Season rewards just claimed in the lobby, shown until dismissed */
 	claimed = $state.raw<SeasonReward[] | null>(null);
@@ -220,10 +269,11 @@ export class RaidGame {
 	readonly reducedMotion: boolean;
 	#random: Random = createRandom(1);
 	#store: () => Store;
-	#scores: () => Highscores;
 	#seed: () => number;
 	#now: () => number;
 	#foundMs = 0;
+	#crystalMs = 0;
+	#defenseKey = '';
 	/** When each sound last played, on the raid clock */
 	#soundAt: Partial<Record<SoundId, number>> = {};
 	#clockMs = 0;
@@ -231,25 +281,22 @@ export class RaidGame {
 	constructor({
 		reducedMotion = false,
 		store = localStore,
-		scores = highscores,
 		seed = randomSeed,
 		now = Date.now
 	}: RaidOptions = {}) {
 		this.reducedMotion = reducedMotion;
 		this.#store = store;
-		this.#scores = scores;
 		this.#seed = seed;
 		this.#now = now;
 		this.state = createRaid(this.map, this.profile.loadout, this.profile.level);
 		this.#syncChrome();
 	}
 
-	/** Reads the saved profile and best score; call in the browser only */
+	/** Reads the saved profile; call in the browser only */
 	load() {
 		const today = dateAt(this.#now());
 		const saved = parseProfile(this.#store().read<unknown>(PROFILE_KEY, null), today);
 		this.#setProfile(saved ?? newProfile(today));
-		this.best = this.#scores().get(scoreKey(this.map));
 		this.state = createRaid(this.map, this.profile.loadout, this.profile.level);
 		this.#syncChrome();
 	}
@@ -264,7 +311,6 @@ export class RaidGame {
 	selectMap(map: MapId) {
 		if (this.status !== 'lobby' && this.status !== 'over') return;
 		this.map = map;
-		this.best = this.#scores().get(scoreKey(map));
 	}
 
 	equip(itemId: string, slot: LoadoutSlot) {
@@ -356,9 +402,11 @@ export class RaidGame {
 		this.state = createRaid(map, this.profile.loadout, this.profile.level, { mode });
 		this.effects = [];
 		this.found = null;
+		this.crystalToast = null;
+		this.defense = null;
+		this.#defenseKey = '';
 		this.result = null;
 		this.isNewBest = false;
-		this.best = this.#scores().get(scoreKey(map));
 		this.#clockMs = 0;
 		this.#soundAt = {};
 		this.liveEvent = null;
@@ -443,6 +491,11 @@ export class RaidGame {
 		};
 	}
 
+	/** The player's vote at a defense checkpoint: leave with the pot, or keep holding */
+	vote(choice: VoteChoice) {
+		if (this.status === 'playing') this.#apply(castVote(this.state, SELF, choice));
+	}
+
 	/** Puts the gear from the "found" card on */
 	equipFound() {
 		if (!this.found || (this.status !== 'playing' && this.status !== 'paused')) return;
@@ -459,6 +512,10 @@ export class RaidGame {
 		if (this.found) {
 			this.#foundMs -= dtMs;
 			if (this.#foundMs <= 0) this.found = null;
+		}
+		if (this.crystalToast) {
+			this.#crystalMs -= dtMs;
+			if (this.#crystalMs <= 0) this.crystalToast = null;
 		}
 		this.#followClock();
 		this.#apply(stepRaid(this.state, this.#random, dtMs));
@@ -563,9 +620,8 @@ export class RaidGame {
 					event.crit ? 24 : 16,
 					event.crit ? 900 : 600
 				);
-				// Add haptic feedback for successful hits - stronger for higher damage
-				const hitDamage = Math.round(event.damage);
-				haptic().play(Math.min(1, hitDamage * 0.001));
+				// Haptic feedback for hits, stronger for higher damage
+				haptic().play(Math.min(1, Math.round(event.damage) * 0.001));
 				break;
 			case 'splash':
 				this.#ring(event.x, event.y, event.radius, '#f5c83a', 360);
@@ -662,6 +718,20 @@ export class RaidGame {
 					1400
 				);
 				this.#ring(event.x, event.y, 40, CRYSTAL_COLOR[crystal.kind], 500);
+				this.#ring(event.x, event.y, 90, RARITY_COLOR[crystal.rarity], 750);
+				this.effects.push({
+					kind: 'shards',
+					x: event.x,
+					y: event.y,
+					color: CRYSTAL_COLOR[crystal.kind],
+					glow: RARITY_COLOR[crystal.rarity],
+					seed: this.#clockMs,
+					ageMs: 0,
+					durationMs: this.reducedMotion ? 300 : 900
+				});
+				this.crystalToast = { crystal, id: this.#clockMs };
+				this.#crystalMs = CRYSTAL_TOAST_MS;
+				haptic().play(0.6);
 				this.#play(
 					crystal.rarity === 'legendary' || crystal.rarity === 'epic' ? 'chime-big' : 'sparkle'
 				);
@@ -779,6 +849,106 @@ export class RaidGame {
 				this.#text(event.x, event.y - 50, m.raid_popup_revive(), '#7fd3ff', 26, 1300);
 				this.#play('explosion-big');
 				break;
+			case 'swing':
+				this.effects.push({
+					kind: 'cone',
+					x: event.x,
+					y: event.y,
+					angle: event.angle,
+					spread: HAMMER_ARC,
+					radius: WEAPONS.hammer.range,
+					color: event.hits > 0 ? '#ffe3a3' : '#ffffff',
+					ageMs: 0,
+					durationMs: 220
+				});
+				this.#play(event.hits > 0 ? 'impact-stone' : 'whoosh', event.hits > 0 ? 0.6 : 0.3);
+				break;
+			case 'hammer-fall':
+				this.#ring(event.x, event.y, HAMMER_FALL_RADIUS, '#ffd23a', 700);
+				this.#ring(event.x, event.y, HAMMER_FALL_RADIUS * 0.6, '#5bd16b', 900);
+				this.#text(event.x, event.y - 70, m.raid_popup_hammer_fall(), '#ffd23a', 28, 1300);
+				this.#play('explosion-big');
+				haptic().play(1);
+				break;
+			case 'overheat':
+				this.hurtCount += 1;
+				this.#text(
+					player.x,
+					player.y - 60,
+					m.raid_popup_overheat({ damage: event.damage }),
+					'#ff6a2b',
+					22,
+					1400
+				);
+				this.#ring(player.x, player.y, 60, '#ff6a2b', 500);
+				this.#play('alarm', 0.6);
+				break;
+			case 'quake':
+				this.#ring(event.x, event.y, QUAKE_RADIUS, '#c9a35d', 600);
+				this.#play('break-stone', 0.8);
+				break;
+			case 'warcry':
+				this.#ring(player.x, player.y, 110, '#e5484d', 600);
+				break;
+			case 'victory':
+				this.#text(event.x, event.y - 80, m.raid_popup_victory(), '#ffd23a', 34, 2200);
+				this.#ring(event.x, event.y, 220, '#ffd23a', 900);
+				this.#play('new-best');
+				break;
+			case 'wave':
+				this.#text(
+					player.x,
+					player.y - 80,
+					event.boss
+						? m.raid_popup_wave_boss({ wave: event.wave })
+						: m.raid_popup_wave({ wave: event.wave }),
+					event.boss ? '#ff4d4d' : '#ffffff',
+					event.boss ? 28 : 26,
+					1800
+				);
+				this.#play('alarm', event.boss ? 1 : 0.5);
+				break;
+			case 'wave-cleared':
+				this.#text(
+					player.x,
+					player.y - 80,
+					m.raid_popup_wave_cleared({ wave: event.wave }),
+					'#5bd16b',
+					26,
+					1800
+				);
+				this.#play(event.vote ? 'chime-big' : 'chime');
+				break;
+			case 'objective-lost':
+				this.#play('explosion-big');
+				break;
+			case 'vote-cast':
+				this.#play('ui-toggle');
+				break;
+			case 'vote-result':
+				this.#text(
+					player.x,
+					player.y - 80,
+					event.choice === 'stay' ? m.raid_vote_stay() : m.raid_vote_leave(),
+					'#ffd23a',
+					26,
+					1600
+				);
+				break;
+			case 'cash-out':
+				this.#play('chime-big');
+				break;
+			case 'tornado-catch':
+				if (event.player) {
+					this.#text(player.x, player.y - 60, m.raid_popup_tornado(), '#e8c27a', 24, 1200);
+					haptic().play(0.5);
+				}
+				this.#play('draft', event.player ? 1 : 0.4);
+				break;
+			case 'tornado-spit':
+				this.#ring(event.x, event.y, 50, '#d9b56a', 380);
+				this.#play('whoosh', event.player ? 0.9 : 0.4);
+				break;
 			case 'over':
 				this.#finish();
 				break;
@@ -855,6 +1025,11 @@ export class RaidGame {
 		}
 		this.sprintCooldown = share(player.sprintMs, SPRINT_COOLDOWN_MS);
 		this.sprintSeconds = Math.ceil(Math.max(0, player.sprintMs) / 1000);
+		this.timeLeft =
+			state.timeLimitMs > 0
+				? Math.ceil(Math.max(0, state.timeLimitMs - state.timeMs) / 1000)
+				: null;
+		this.#syncDefense();
 		const boss = currentBoss(state);
 		this.boss = boss
 			? { share: Math.max(0, Math.ceil((boss.hp / boss.maxHp) * 100) / 100), variant: boss.variant }
@@ -873,9 +1048,67 @@ export class RaidGame {
 		}
 	}
 
+	/** The defense for the HUD; only handed on when something it shows changed */
+	#syncDefense() {
+		const defense = this.state.defense;
+		if (!defense) {
+			if (this.defense) this.defense = null;
+			return;
+		}
+		const { objective, pot, vote } = defense;
+		const votes = vote ? Object.values(vote.votes) : [];
+		const hud: DefenseHud = {
+			post: Math.ceil((objective.hp / objective.maxHp) * 100) / 100,
+			wave: defense.wave,
+			left: defense.toSpawn + this.state.enemies.length,
+			breakSeconds: defense.breakMs > 0 ? Math.ceil(defense.breakMs / 1000) : 0,
+			pot: {
+				xp: Math.floor(pot.xp),
+				gold: pot.gold,
+				scrap: pot.scrap,
+				crystals: pot.crystals.length,
+				gear: pot.gear.length
+			},
+			vote: vote
+				? {
+						seconds: Math.ceil(Math.max(0, vote.ms) / 1000),
+						mine: vote.votes[SELF] ?? null,
+						leave: votes.filter((choice) => choice === 'leave').length,
+						stay: votes.filter((choice) => choice === 'stay').length,
+						voters: defense.voters.length
+					}
+				: null
+		};
+		const key = JSON.stringify(hud);
+		if (key === this.#defenseKey) return;
+		this.#defenseKey = key;
+		this.defense = hud;
+	}
+
+	#outcome(): RaidOutcome {
+		const state = this.state;
+		if (state.won) return 'victory';
+		if (state.timeLimitMs > 0 && state.timeMs >= state.timeLimitMs) return 'time-up';
+		const defense = state.defense;
+		if (!defense) return 'raid';
+		if (defense.cashedOut) return 'cashed-out';
+		return defense.objective.hp <= 0 ? 'post-lost' : 'defense-lost';
+	}
+
 	#finish() {
 		this.#syncChrome();
 		const state = this.state;
+		const defense = state.defense;
+		const outcome = this.#outcome();
+		// A defense pays only when cashed out: losing it (or giving up) loses everything
+		const forfeited = defense !== null && !defense.cashedOut;
+		const wavesHeld = defense
+			? defense.cashedOut || defense.vote || defense.breakMs > 0
+				? defense.wave
+				: Math.max(0, defense.wave - 1)
+			: 0;
+		// A boss fight earns a star for every 20 seconds left on the clock
+		const stars = bossStars(state.won, state.timeLimitMs - state.timeMs);
 		const today = dateAt(this.#now());
 		const before = withToday(this.profile, today);
 		const banked = bankHaul(
@@ -883,22 +1116,34 @@ export class RaidGame {
 			{
 				map: state.mapId,
 				timeMs: state.timeMs,
-				xp: state.xp,
-				gold: state.gold,
-				scrap: state.scrap,
-				gear: state.haul,
-				crystals: state.crystals,
+				xp: forfeited ? 0 : state.xp,
+				gold: forfeited ? 0 : state.gold,
+				scrap: forfeited ? 0 : state.scrap,
+				gear: forfeited ? [] : state.haul,
+				crystals: forfeited ? [] : state.crystals,
 				loadout: state.loadout,
-				stats: this.#questStats()
+				stats: this.#questStats(),
+				mode: state.mode,
+				bossClearMs: state.won ? state.timeMs : undefined,
+				defenseWave: defense ? wavesHeld : undefined,
+				bossStars: stars,
+				starWeapon: state.loadout[state.player.held].kind
 			},
 			today
 		);
 		this.#setProfile(banked.profile);
-		const best = this.#scores().submit(scoreKey(state.mapId), this.score);
-		this.best = best.best;
-		this.isNewBest = best.isNewBest;
+		// No high scores in raids: only stars newly reached in a boss fight count as a best
+		this.isNewBest = banked.newStars > 0;
 		this.result = {
 			map: state.mapId,
+			mode: state.mode,
+			outcome,
+			forfeited,
+			wavesHeld,
+			stars,
+			starsBefore: before.bossStars[state.mapId] ?? 0,
+			newStars: banked.newStars,
+			starXp: banked.starXp,
 			timeMs: state.timeMs,
 			kills: state.kills,
 			killsBy: { ...state.killsBy },
@@ -906,11 +1151,11 @@ export class RaidGame {
 			eliteKills: state.superKills + state.megaKills,
 			damageDealt: Math.round(state.damageDealt),
 			biggestHit: Math.round(state.biggestHit),
-			xp: Math.floor(state.xp),
-			gold: state.gold,
-			scrap: state.scrap,
-			gear: [...state.haul],
-			crystals: [...state.crystals],
+			xp: forfeited ? 0 : Math.floor(state.xp),
+			gold: forfeited ? 0 : state.gold,
+			scrap: forfeited ? 0 : state.scrap,
+			gear: forfeited ? [] : [...state.haul],
+			crystals: forfeited ? [] : [...state.crystals],
 			levelsGained: banked.levelsGained,
 			levelBefore: before.level,
 			xpBefore: before.xp,

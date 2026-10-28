@@ -77,10 +77,8 @@
 
 <GameShell
 	title={modeName}
-	// While in raid mode the whole header (back link, score and the help button) stays out
-	// of the floating hud so it never sits on top of the RaidCanvas overlays.
-	score={inRaid ? undefined : game.score}
-	best={game.best}
+	// While in raid mode the whole header (back link and the help button) stays out of the
+	// floating hud so it never sits on top of the RaidCanvas overlays. Raids keep no high score.
 	wide
 	immersive
 	landscape
@@ -190,7 +188,6 @@
 	{#if game.status === 'over' && result}
 		<RaidResults
 			{result}
-			score={game.score}
 			isNewBest={game.isNewBest}
 			{modeName}
 			drawBoard={game.drawBoard}

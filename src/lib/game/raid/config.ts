@@ -437,9 +437,14 @@ export const ARCHETYPES = [
 	'medic',
 	'mortar',
 	'artillery',
+	'pion',
 	'boss'
 ] as const;
 export type Archetype = (typeof ARCHETYPES)[number];
+
+/** Elite enemies: one of a kind, never super or mega, marked orange on the map */
+export const ELITE_ARCHETYPES: readonly Archetype[] = ['pion'];
+export const isElite = (archetype: Archetype) => ELITE_ARCHETYPES.includes(archetype);
 
 export interface ArchetypeSpec {
 	hp: number;
@@ -561,6 +566,20 @@ export const ARCHETYPE_SPECS: Record<Archetype, ArchetypeSpec> = {
 		attackMs: 6500,
 		keepDistance: 560
 	},
+	// The elite Pion tank: a slow heavy that shells from mid range, and its shells leave the ground
+	// burning for a while, so standing still is not an option
+	pion: {
+		hp: 900,
+		speed: 34,
+		damage: 16,
+		radius: 40,
+		xp: 120,
+		gold: 25,
+		dropChance: 1,
+		luck: 1.2,
+		attackMs: 3800,
+		keepDistance: 420
+	},
 	boss: {
 		hp: 1700,
 		speed: 66,
@@ -597,6 +616,14 @@ export const ARTILLERY_SHELLS = 3;
 export const ARTILLERY_RADIUS = 95;
 export const ARTILLERY_FLIGHT_MS = 1700;
 export const ARTILLERY_SCATTER = 110;
+/** The elite Pion's fire shells: they burst, then the ground burns for five seconds */
+export const PION_SHELL_RADIUS = 80;
+export const PION_FLIGHT_MS = 1100;
+export const PION_SCATTER = 40;
+export const PION_FIRE_MS = 5000;
+/** Burning ground hurts whoever stands in it this often, for this share of the shell's damage */
+export const PION_FIRE_TICK_MS = 500;
+export const PION_FIRE_DAMAGE_SHARE = 0.35;
 
 export const VARIANTS = ['normal', 'super', 'mega'] as const;
 export type Variant = (typeof VARIANTS)[number];
@@ -701,6 +728,19 @@ export const BOSS_FIGHT_SPAWN_MS = 1500;
 export const BOSS_FIGHT_ADDS = 6;
 /** After the boss falls, its loot flies to the player for this long before the results */
 export const VICTORY_MS = 2400;
+/**
+ * Boss fight stars: one for every 20 seconds still on the clock when the boss falls (any win
+ * earns at least one), up to five. Each star reached on a map for the first time pays XP once.
+ */
+export const BOSS_STAR_MS = 20_000;
+export const BOSS_MAX_STARS = 5;
+export const BOSS_STAR_XP = 150;
+
+/** The stars a boss fight earned: 0 unless the boss fell before the clock ran out */
+export function bossStars(won: boolean, timeLeftMs: number): number {
+	if (!won) return 0;
+	return Math.max(1, Math.min(BOSS_MAX_STARS, Math.ceil(timeLeftMs / BOSS_STAR_MS)));
+}
 
 /** Defense: the command post the enemies go for, in the middle of the battlefield */
 export const OBJECTIVE_HP = 2400;
@@ -714,6 +754,8 @@ export const DEFENSE_BREAK_MS = 5000;
 export const DEFENSE_CHECKPOINT = 5;
 /** How long the vote stays open; when it closes the majority wins, a tie cashes out */
 export const VOTE_MS = 12_000;
+/** Once everyone has voted, the vote still stays open this long, so a mind can still change */
+export const VOTE_SETTLE_MS = 1400;
 /** Enemies of a wave are as tough as in a hunt this many minutes in, per wave */
 export const DEFENSE_MINUTES_PER_WAVE = 0.6;
 
@@ -741,7 +783,8 @@ export function archetypeWeights(minutes: number): { item: Archetype; weight: nu
 		{ item: 'drone', weight: minutes < 0.75 ? 0 : 2 + minutes * 0.6 },
 		{ item: 'mortar', weight: minutes < 1 ? 0 : 1.2 + minutes * 0.45 },
 		{ item: 'medic', weight: minutes < 1.5 ? 0 : 1 + minutes * 0.35 },
-		{ item: 'artillery', weight: minutes < 3 ? 0 : 0.5 + minutes * 0.2 }
+		{ item: 'artillery', weight: minutes < 3 ? 0 : 0.5 + minutes * 0.2 },
+		{ item: 'pion', weight: minutes < 2.5 ? 0 : 0.3 + minutes * 0.1 }
 	];
 }
 
@@ -749,7 +792,8 @@ export function archetypeWeights(minutes: number): { item: Archetype; weight: nu
 export const ARCHETYPE_CAP: Partial<Record<Archetype, number>> = {
 	medic: 3,
 	mortar: 4,
-	artillery: 2
+	artillery: 2,
+	pion: 1
 };
 
 /** Spawns appear just outside the camera, at this distance from the player */

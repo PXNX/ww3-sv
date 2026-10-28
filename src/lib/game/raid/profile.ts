@@ -9,6 +9,8 @@ import { dayKey } from '#lib/game/random.js';
 import {
 	ARMOR_SLOTS,
 	ARMOR_PERKS,
+	BOSS_MAX_STARS,
+	BOSS_STAR_XP,
 	CRYSTAL_COMBINE_COUNT,
 	CRYSTAL_COMBINE_SCRAP,
 	CRYSTAL_KINDS,
@@ -22,7 +24,8 @@ import {
 	WEAPON_KINDS,
 	type ArmorSlot,
 	type MapId,
-	type RaidMode
+	type RaidMode,
+	type WeaponKind
 } from './config';
 import {
 	crystalKey,
@@ -99,6 +102,10 @@ export interface Profile {
 	bossBestMs: Partial<Record<MapId, number>>;
 	/** Furthest wave held in a defense per map (missing in older saves) */
 	defenseBestWave: Partial<Record<MapId, number>>;
+	/** Most boss fight stars per map (missing in older saves) */
+	bossStars: Partial<Record<MapId, number>>;
+	/** Most boss fight stars per map won with each weapon kind, the weapon's star stat */
+	weaponStars: Partial<Record<WeaponKind, Partial<Record<MapId, number>>>>;
 }
 
 export function newProfile(now: Date = new Date()): Profile {
@@ -122,7 +129,9 @@ export function newProfile(now: Date = new Date()): Profile {
 		raids: 0,
 		bestTimeMs: {},
 		bossBestMs: {},
-		defenseBestWave: {}
+		defenseBestWave: {},
+		bossStars: {},
+		weaponStars: {}
 	};
 }
 
@@ -354,6 +363,9 @@ export interface RaidHaul {
 	mode?: RaidMode;
 	/** The last wave a defense cleared */
 	defenseWave?: number;
+	/** The stars a boss fight earned, and the weapon held when the boss fell */
+	bossStars?: number;
+	starWeapon?: WeaponKind;
 }
 
 export interface HaulResult {
@@ -365,6 +377,9 @@ export interface HaulResult {
 	salvageScrap: number;
 	/** Season tiers reached by this raid */
 	seasonTiersGained: number;
+	/** Boss fight stars reached on this map for the first time, and the XP they paid */
+	newStars: number;
+	starXp: number;
 }
 
 /**
@@ -373,7 +388,18 @@ export interface HaulResult {
  */
 export function bankHaul(profile: Profile, haul: RaidHaul, now: Date = new Date()): HaulResult {
 	const today = withToday(profile, now);
-	const { profile: current, levelsGained } = gainXp(today, haul.xp);
+	const stars = haul.bossStars ?? 0;
+	const newStars = Math.max(0, stars - (today.bossStars[haul.map] ?? 0));
+	const starXp = newStars * BOSS_STAR_XP;
+	const { profile: current, levelsGained } = gainXp(today, haul.xp + starXp);
+	const weaponStars = { ...current.weaponStars };
+	if (stars > 0 && haul.starWeapon) {
+		const byMap = weaponStars[haul.starWeapon] ?? {};
+		weaponStars[haul.starWeapon] = {
+			...byMap,
+			[haul.map]: Math.max(byMap[haul.map] ?? 0, stars)
+		};
+	}
 	const incoming = [...haul.gear].sort((a, b) => gearScore(b) - gearScore(a));
 	const stash = [...current.stash];
 	let salvaged = 0;
@@ -422,14 +448,26 @@ export function bankHaul(profile: Profile, haul: RaidHaul, now: Date = new Date(
 					: {
 							...current.bossBestMs,
 							[haul.map]: Math.min(bossBest ?? Infinity, haul.bossClearMs)
-						}
+						},
+			bossStars:
+				stars > (current.bossStars[haul.map] ?? 0)
+					? { ...current.bossStars, [haul.map]: stars }
+					: current.bossStars,
+			weaponStars
 		},
 		levelsGained,
 		salvaged,
 		salvageGold,
 		salvageScrap: scrapFromSalvage,
-		seasonTiersGained: seasonTier(current.season.xp) - seasonTier(today.season.xp)
+		seasonTiersGained: seasonTier(current.season.xp) - seasonTier(today.season.xp),
+		newStars,
+		starXp
 	};
+}
+
+/** A weapon's star stat: its best boss fight stars added up over the maps */
+export function weaponStarCount(profile: Profile, kind: WeaponKind): number {
+	return Object.values(profile.weaponStars[kind] ?? {}).reduce((sum, stars) => sum + stars, 0);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -564,9 +602,22 @@ const isMapTimes = (value: unknown) =>
 		([map, time]) => (MAP_IDS as readonly string[]).includes(map) && isCount(time)
 	);
 
+/** Star counts by map, each 0 to BOSS_MAX_STARS */
+const isMapStars = (value: unknown) =>
+	isMapTimes(value) &&
+	Object.values(value as Record<string, number>).every(
+		(stars) => Number.isInteger(stars) && stars <= BOSS_MAX_STARS
+	);
+
+const isWeaponStars = (value: unknown) =>
+	isRecord(value) &&
+	Object.entries(value).every(
+		([kind, byMap]) => (WEAPON_KINDS as readonly string[]).includes(kind) && isMapStars(byMap)
+	);
+
 export function isProfile(value: unknown): value is Profile {
 	if (!isRecord(value) || value.version !== 1) return false;
-	const { loadout, stash, bestTimeMs, bossBestMs, defenseBestWave } = value;
+	const { loadout, stash, bestTimeMs, bossBestMs, defenseBestWave, bossStars, weaponStars } = value;
 	return (
 		isLevel(value.level, MAX_PLAYER_LEVEL) &&
 		isCount(value.xp) &&
@@ -587,7 +638,9 @@ export function isProfile(value: unknown): value is Profile {
 		stash.every(isGear) &&
 		isMapTimes(bestTimeMs) &&
 		(bossBestMs === undefined || isMapTimes(bossBestMs)) &&
-		(defenseBestWave === undefined || isMapTimes(defenseBestWave))
+		(defenseBestWave === undefined || isMapTimes(defenseBestWave)) &&
+		(bossStars === undefined || isMapStars(bossStars)) &&
+		(weaponStars === undefined || isWeaponStars(weaponStars))
 	);
 }
 
@@ -607,7 +660,9 @@ export function parseProfile(value: unknown, now: Date = new Date()): Profile | 
 			season: loaded.season ?? newSeason(now),
 			quests: loaded.quests ?? newDailyQuests(now),
 			bossBestMs: loaded.bossBestMs ?? {},
-			defenseBestWave: loaded.defenseBestWave ?? {}
+			defenseBestWave: loaded.defenseBestWave ?? {},
+			bossStars: loaded.bossStars ?? {},
+			weaponStars: loaded.weaponStars ?? {}
 		},
 		now
 	);

@@ -27,7 +27,14 @@
 		WEAPON_TRAITS
 	} from '#lib/components/raidText.js';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
-	import { RARITY_COLOR, SKILL_COOLDOWN_MS, WEAPON_KINDS, WEAPONS } from '#lib/game/raid/config.js';
+	import {
+		BOSS_MAX_STARS,
+		MAP_IDS,
+		RARITY_COLOR,
+		SKILL_COOLDOWN_MS,
+		WEAPON_KINDS,
+		WEAPONS
+	} from '#lib/game/raid/config.js';
 	import type { DemoAction } from '#lib/game/raid/demo.js';
 	import {
 		crystalsOf,
@@ -37,7 +44,7 @@
 		weaponStats,
 		type WeaponItem
 	} from '#lib/game/raid/items.js';
-	import { parseProfile } from '#lib/game/raid/profile.js';
+	import { parseProfile, weaponStarCount } from '#lib/game/raid/profile.js';
 	import { SKILL_FACTS } from '#lib/game/raid/skillFacts.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { localStore } from '#lib/services/storage.js';
@@ -56,11 +63,14 @@
 
 	/** The player's own weapon when the lobby passed one, and the player's level */
 	let own = $state<{ item: WeaponItem; level: number; equipped: boolean } | null>(null);
+	/** The weapon's star stat: its best boss fight stars added up over the maps */
+	let stars = $state(0);
 	onMount(() => {
-		const id = detailsItem();
-		if (!id) return;
 		const profile = parseProfile(localStore().read<unknown>(PROFILE_KEY, null));
 		if (!profile) return;
+		stars = weaponStarCount(profile, kind);
+		const id = detailsItem();
+		if (!id) return;
 		const { primary, secondary } = profile.loadout;
 		const item = [primary, secondary, ...profile.stash].find(
 			(candidate): candidate is WeaponItem => candidate.id === id && candidate.type === 'weapon'
@@ -78,6 +88,10 @@
 
 	const rows = $derived(
 		[
+			{
+				label: m.raid_details_stat_stars(),
+				value: `★ ${stars}/${MAP_IDS.length * BOSS_MAX_STARS}`
+			},
 			{
 				label: m.raid_details_stat_dps(),
 				value: `${Math.round(weaponDps(item, own?.level ?? 1))}`

@@ -533,7 +533,8 @@ export function endTurn(state: WarRoomState, random: Random): WarRoomEvent[] {
 		state.divisions.capital.push({
 			id: state.nextId++,
 			template: item.template,
-			morale: templateDef(item.template).morale
+			morale: templateDef(item.template).morale,
+			experience: 1
 		});
 		events.push({ type: 'trained', template: item.template });
 	}

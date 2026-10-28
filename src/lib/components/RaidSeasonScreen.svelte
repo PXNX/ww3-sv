@@ -184,42 +184,42 @@
 				{@const ready = !done && tier <= reached}
 				{@const locked = tier > reached}
 				{@const milestone = reward.type === 'weapon'}
-				<li data-tier={tier} class="flex w-36 shrink-0 snap-center flex-col items-center">
+				<li
+					data-tier={tier}
+					class="flex w-36 shrink-0 snap-center flex-col items-center justify-center"
+					aria-label={m.raid_season_card_tier({ tier })}
+				>
 					<!-- The reward -->
 					<div
-						class="card relative flex max-h-56 w-full flex-1 flex-col items-center justify-between gap-1 overflow-hidden rounded-xl border-b-5 border-black/30 p-2 text-center shadow-[0_4px_0_rgb(0_0_0/0.3)]"
+						class="card relative flex h-36 w-full shrink-0 flex-col items-center justify-between gap-1 overflow-hidden rounded-xl border-b-5 border-black/30 p-2 text-center shadow-[0_4px_0_rgb(0_0_0/0.3)]"
 						class:ready
 						class:milestone
 						class:brightness-75={locked}
 						class:saturate-50={locked}
 						style:background={cardBackground(reward)}
 					>
-						<span
-							class="font-display text-xs font-black uppercase italic drop-shadow-[0_1px_0_rgb(0_0_0/0.35)]"
-							>{m.raid_season_card_tier({ tier })}</span
-						>
 						<span class="flex min-h-0 flex-1 items-center justify-center">
 							{#if reward.type === 'gold'}
 								<IconCoins
-									class="size-16 text-white drop-shadow-[0_3px_0_rgb(0_0_0/0.25)]"
+									class="size-14 text-white drop-shadow-[0_3px_0_rgb(0_0_0/0.25)]"
 									aria-hidden="true"
 								/>
 							{:else if reward.type === 'scrap'}
 								<IconWrench
-									class="size-16 text-white drop-shadow-[0_3px_0_rgb(0_0_0/0.25)]"
+									class="size-14 text-white drop-shadow-[0_3px_0_rgb(0_0_0/0.25)]"
 									aria-hidden="true"
 								/>
 							{:else if reward.type === 'crystal'}
 								<RaidCrystalIcon
 									kind={reward.crystal.kind}
 									rarity={reward.crystal.rarity}
-									class="size-16 drop-shadow-[0_3px_0_rgb(0_0_0/0.25)]"
+									class="size-14 drop-shadow-[0_3px_0_rgb(0_0_0/0.25)]"
 								/>
 							{:else}
 								<RaidItemIcon
 									kind={reward.kind}
 									rarity={reward.rarity}
-									class="size-20 drop-shadow-[0_3px_0_rgb(0_0_0/0.25)]"
+									class="size-16 drop-shadow-[0_3px_0_rgb(0_0_0/0.25)]"
 								/>
 							{/if}
 						</span>

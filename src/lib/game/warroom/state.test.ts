@@ -73,9 +73,9 @@ describe('War Room start', () => {
 		expect(supply.ridge).toBe(80);
 
 		state.divisions.ridge.push(
-			{ id: 900, template: 'infantry', morale: 70 },
-			{ id: 901, template: 'infantry', morale: 70 },
-			{ id: 902, template: 'infantry', morale: 70 }
+			{ id: 900, template: 'infantry', morale: 70, experience: 1 },
+			{ id: 901, template: 'infantry', morale: 70, experience: 1 },
+			{ id: 902, template: 'infantry', morale: 70, experience: 1 }
 		);
 		expect(demandIn(state, 'ridge')).toBe(6);
 		expect(supplyMap(state).ridge).toBe(53);
@@ -147,7 +147,7 @@ describe('War Room orders', () => {
 		expect(battlePreview(state, 'marsh', 'ridge').terrain).toBe(1.5);
 		expect(battlePreview(state, 'marsh', 'plains').terrain).toBe(1);
 
-		state.divisions.ridge.push({ id: 910, template: 'armour', morale: 100 });
+		state.divisions.ridge.push({ id: 910, template: 'armour', morale: 100, experience: 1 });
 		const full = stackStrength(state, 'ridge', 'defence', 100);
 		const low = stackStrength(state, 'ridge', 'defence', 50);
 		expect(full).toBeGreaterThan(low);

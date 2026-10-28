@@ -4,8 +4,9 @@
  * landscape. Each map has its own ground, cover and enemy cast: soldiers, drones and a crowned
  * tank in the sunflower field, oil blobs, scorpions and a kraken in the strait, penguins, yetis
  * and a polar bear icebreaker in the arctic. Kamikaze drones, medics, mortar crews and Pion guns
- * turn up everywhere. Super enemies wear a golden aura, mega ones a red one. Drones are drawn
- * above the cover they fly over, with their shadow far below them.
+ * turn up everywhere, and the elite Pion tank glows orange. Super enemies wear a golden aura,
+ * mega ones a red one. Drones are drawn above the cover they fly over, with their shadow far below
+ * them. In a defense the command post stands in the middle with its own health bar.
  */
 import {
 	ARTILLERY_RADIUS,
@@ -19,9 +20,12 @@ import {
 	JAMMER_RADIUS,
 	MEDIC_HEAL_RADIUS,
 	NEST_LIFETIME_MS,
+	OBJECTIVE_RADIUS,
+	OVERHEAT_STUN_MS,
 	PLAYER_RADIUS,
 	RARITY_COLOR,
 	SPRINT_COOLDOWN_MS,
+	isElite,
 	VIEW_HEIGHT,
 	VIEW_MAX_WIDTH,
 	type CrystalKind,
@@ -43,11 +47,14 @@ import type {
 	RaidState,
 	Shell
 } from './state';
+import { TORNADO_LIFE_MS, type Tornado } from './sandstorm';
 
 const INK = '#111111';
 const PAPER = '#ffffff';
 const RED = '#e5484d';
 const YELLOW = '#f5c83a';
+/** Elite enemies glow in this, on the field and on the map */
+const ELITE = '#ff8a1a';
 
 export type Effect =
 	| {
@@ -77,6 +84,17 @@ export type Effect =
 			y: number;
 			radius: number;
 			color: string;
+			ageMs: number;
+			durationMs: number;
+	  }
+	| {
+			/** A crystal bursting into sparkling shards as it is picked up */
+			kind: 'shards';
+			x: number;
+			y: number;
+			color: string;
+			glow: string;
+			seed: number;
 			ageMs: number;
 			durationMs: number;
 	  };
@@ -197,6 +215,7 @@ function drawWorld(
 	for (const enemy of state.enemies) {
 		if (enemy.archetype === 'boss' && enemy.slamWindupMs > 0) drawSlamWarning(context, enemy);
 	}
+	if (state.defense) drawPost(context, state.defense.objective, time);
 	for (const shell of state.shells) drawShellMarker(context, shell);
 	for (const fire of state.fires) {
 		if (visible(camera, fire.x, fire.y, fire.radius)) drawFirePool(context, fire, time);
@@ -221,6 +240,7 @@ function drawWorld(
 		if (!enemy.flying && visible(camera, enemy.x, enemy.y, enemy.radius + 30))
 			drawEnemy(context, enemy, state.mapId, time);
 	}
+	if (state.player.warcryMs > 0) drawWarcry(context, state, time);
 	drawPlayer(context, state, time, extras.look);
 	for (const obstacle of map.obstacles) {
 		if (visible(camera, obstacle.x, obstacle.y, obstacle.r + 20)) drawObstacle(context, obstacle);
@@ -237,13 +257,187 @@ function drawWorld(
 		circle(context, bullet.x - 1.5, bullet.y - 1.5, 2, YELLOW, 0);
 	}
 	for (const shell of state.shells) drawShell(context, shell);
+	// Dust devils are tall: drawn over whoever they hold
+	for (const tornado of state.tornadoes) {
+		if (visible(camera, tornado.x, tornado.y - 50, 90)) drawTornado(context, tornado, time);
+	}
 	for (const grenade of state.grenades)
 		drawGrenade(context, grenade.fromX, grenade.fromY, grenade.x, grenade.y, grenade.ageMs);
 	for (const enemy of state.enemies) {
 		if (visible(camera, enemy.x, enemy.y, enemy.radius + 40)) drawEnemyBar(context, enemy);
 	}
+	if (state.defense) drawPostBar(context, state.defense.objective);
 	drawPlayerTag(context, state);
+	if (state.player.stunMs > 0) drawStun(context, state, time);
 	for (const effect of extras.effects) drawEffect(context, effect);
+}
+
+/** A dust devil: a swaying funnel of sand with streaks spinning round it and grit flying up */
+function drawTornado(context: CanvasRenderingContext2D, tornado: Tornado, time: number) {
+	const { x, y } = tornado;
+	const grow = Math.min(1, tornado.ageMs / 600);
+	const fade = tornado.captive
+		? 1
+		: Math.min(grow, Math.max(0, (TORNADO_LIFE_MS - tornado.ageMs) / 1500));
+	if (fade <= 0) return;
+	context.save();
+	// Dust whirling on the ground
+	context.globalAlpha = 0.3 * fade;
+	context.fillStyle = '#b08a4a';
+	ellipse(context, x, y + 4, 34 * grow, 12 * grow);
+	const layers = 7;
+	for (let i = 0; i < layers; i++) {
+		const t = i / (layers - 1);
+		const sway = Math.sin(time / 260 + i * 0.7 + tornado.id) * 7 * t;
+		const cy = y - t * 95 * grow;
+		const rx = (7 + t * 30) * grow;
+		const ry = rx * 0.32;
+		context.globalAlpha = (0.7 - t * 0.25) * fade;
+		context.fillStyle = i % 2 === 0 ? '#d9b56a' : '#c9a35d';
+		ellipse(context, x + sway, cy, rx, ry);
+		context.lineWidth = 2;
+		context.strokeStyle = INK;
+		context.stroke();
+		// A streak of lighter sand spinning round this layer
+		const start = (time / 90 + i * 1.3) % (Math.PI * 2);
+		context.beginPath();
+		context.ellipse(x + sway, cy, rx * 0.8, ry * 0.8, 0, start, start + 1.6);
+		context.strokeStyle = '#fff3d0';
+		context.lineWidth = 2.5;
+		context.stroke();
+	}
+	// Grit flying up the funnel
+	context.fillStyle = '#8a6a32';
+	for (let i = 0; i < 7; i++) {
+		const rise = (time / 7 + i * 15) % 95;
+		const angle = time / 140 + i * 0.9;
+		const reach = 10 + rise * 0.32;
+		context.globalAlpha = fade * (1 - rise / 95);
+		circle(
+			context,
+			x + Math.cos(angle) * reach,
+			y - rise * grow + Math.sin(angle) * reach * 0.3,
+			2.2,
+			'#8a6a32',
+			0
+		);
+	}
+	context.restore();
+}
+
+/** The command post of a defense: sandbags around a bunker with an antenna and a flag */
+function drawPost(
+	context: CanvasRenderingContext2D,
+	post: { x: number; y: number; hp: number; maxHp: number },
+	time: number
+) {
+	const { x, y } = post;
+	const r = OBJECTIVE_RADIUS;
+	const hurt = post.hp / post.maxHp;
+	// The ring enemies go for
+	context.save();
+	context.globalAlpha = 0.25;
+	circle(context, x, y, r * 1.6, '#22c3b0', 0);
+	context.globalAlpha = 1;
+	context.setLineDash([10, 8]);
+	context.lineDashOffset = -time / 40;
+	context.beginPath();
+	context.arc(x, y, r * 1.6, 0, Math.PI * 2);
+	context.strokeStyle = '#22c3b0';
+	context.lineWidth = 3;
+	context.stroke();
+	context.restore();
+	// Sandbags
+	for (let i = 0; i < 10; i++) {
+		const angle = (i / 10) * Math.PI * 2;
+		context.fillStyle = '#c9b07a';
+		ellipse(context, x + Math.cos(angle) * r * 0.95, y + Math.sin(angle) * r * 0.95, 13, 8);
+		context.lineWidth = 2.5;
+		context.strokeStyle = INK;
+		context.stroke();
+	}
+	// The bunker, darker the more it is hurt
+	roundRect(
+		context,
+		x - r * 0.62,
+		y - r * 0.5,
+		r * 1.24,
+		r * 1.0,
+		8,
+		hurt > 0.35 ? '#6d7c45' : '#5a4a3a'
+	);
+	roundRect(context, x - r * 0.4, y - r * 0.1, r * 0.8, r * 0.16, 3, INK, 0);
+	// Antenna and flag
+	context.beginPath();
+	context.moveTo(x + r * 0.35, y - r * 0.5);
+	context.lineTo(x + r * 0.35, y - r * 1.4);
+	context.lineWidth = 3;
+	context.strokeStyle = INK;
+	context.stroke();
+	const wave = Math.sin(time / 180) * 4;
+	context.beginPath();
+	context.moveTo(x + r * 0.35, y - r * 1.4);
+	context.lineTo(x + r * 0.35 + 26, y - r * 1.3 + wave);
+	context.lineTo(x + r * 0.35, y - r * 1.15);
+	context.closePath();
+	context.fillStyle = '#22c3b0';
+	context.fill();
+	context.lineWidth = 2;
+	context.stroke();
+	if (hurt <= 0.35) drawFlames(context, x - r * 0.2, y - r * 0.3, 16, time);
+}
+
+/** The command post's health over it */
+function drawPostBar(
+	context: CanvasRenderingContext2D,
+	post: { x: number; y: number; hp: number; maxHp: number }
+) {
+	const width = 96;
+	const left = post.x - width / 2;
+	const top = post.y - OBJECTIVE_RADIUS * 1.5 - 18;
+	const share = Math.max(0, Math.min(1, post.hp / post.maxHp));
+	roundRect(context, left, top, width, 12, 4, INK, 0);
+	context.fillStyle = share > 0.35 ? '#22c3b0' : RED;
+	context.fillRect(left + 2, top + 2, (width - 4) * share, 8);
+}
+
+/** Warcry: a red aura and shouting arcs around the player while it lasts */
+function drawWarcry(context: CanvasRenderingContext2D, state: RaidState, time: number) {
+	const { player } = state;
+	const pulse = 1 + Math.sin(time / 120) * 0.08;
+	context.save();
+	context.globalAlpha = 0.25;
+	circle(context, player.x, player.y, 44 * pulse, '#e5484d', 0);
+	context.globalAlpha = 0.8;
+	for (let i = 0; i < 3; i++) {
+		const reach = 30 + ((time / 8 + i * 14) % 42);
+		context.globalAlpha = 0.8 * (1 - (reach - 30) / 42);
+		context.beginPath();
+		context.arc(player.x, player.y, reach, -Math.PI * 0.85, -Math.PI * 0.15);
+		context.strokeStyle = '#e5484d';
+		context.lineWidth = 3;
+		context.stroke();
+	}
+	context.restore();
+}
+
+/** Stunned (an overheated flamethrower): stars circle over the player's head */
+function drawStun(context: CanvasRenderingContext2D, state: RaidState, time: number) {
+	const { player } = state;
+	const fade = Math.min(1, player.stunMs / (OVERHEAT_STUN_MS * 0.25));
+	context.save();
+	context.globalAlpha = fade;
+	for (let i = 0; i < 3; i++) {
+		const angle = time / 180 + (i * Math.PI * 2) / 3;
+		drawStar(
+			context,
+			player.x + 9 + Math.cos(angle) * 20,
+			player.y - 68 + Math.sin(angle) * 6,
+			7,
+			YELLOW
+		);
+	}
+	context.restore();
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -774,7 +968,8 @@ function drawEnemy(context: CanvasRenderingContext2D, enemy: Enemy, mapId: MapId
 		context.restore();
 	}
 	const flash = enemy.flashMs > 0;
-	if (SUPPORT.includes(enemy.archetype)) drawSupport(context, enemy, mapId, flash, time);
+	if (enemy.archetype === 'pion') drawElitePion(context, enemy, flash, time);
+	else if (SUPPORT.includes(enemy.archetype)) drawSupport(context, enemy, mapId, flash, time);
 	else drawCast(context, enemy, mapId, flash);
 	if (enemy.burnMs > 0) {
 		drawFlames(context, enemy.x, enemy.y - enemy.radius * 0.3, enemy.radius, time + enemy.id * 77);
@@ -955,6 +1150,63 @@ function drawSupport(
 			break;
 	}
 	if (enemy.variant === 'mega') drawCrown(context, x + r * 0.7, y - r * 0.9, r * 0.25, RED);
+}
+
+/** The elite Pion: a heavy tank in steel grey with orange elite markings, glowing orange */
+function drawElitePion(
+	context: CanvasRenderingContext2D,
+	enemy: Enemy,
+	flash: boolean,
+	time: number
+) {
+	const { x, y, radius: r, facing } = enemy;
+	const pulse = 1 + Math.sin(time / 200 + enemy.id) * 0.07;
+	context.save();
+	context.globalAlpha = 0.28;
+	circle(context, x, y, r * 1.55 * pulse, ELITE, 0);
+	context.globalAlpha = 1;
+	context.setLineDash([10, 7]);
+	context.lineDashOffset = -time / 25;
+	context.beginPath();
+	context.arc(x, y, r * 1.35, 0, Math.PI * 2);
+	context.strokeStyle = ELITE;
+	context.lineWidth = 4;
+	context.stroke();
+	context.restore();
+	facingFrame(context, x, y, facing, () => {
+		// Tracks with their links
+		for (const side of [-1, 1]) {
+			const top = side < 0 ? -r * 1.0 : r * 0.6;
+			roundRect(context, -r * 1.05, top, r * 2.1, r * 0.4, 7, '#26282c');
+			context.fillStyle = '#4a4d52';
+			for (let i = 0; i < 7; i++) {
+				const link = ((i * r * 0.3 + time / 20) % (r * 2.1)) - r * 1.05;
+				context.fillRect(link, top + 3, 3, r * 0.4 - 6);
+			}
+		}
+		// The hull, with an orange chevron on the front
+		roundRect(context, -r * 0.95, -r * 0.66, r * 1.9, r * 1.32, 9, tint(flash, '#555b63'));
+		context.beginPath();
+		context.moveTo(r * 0.45, -r * 0.55);
+		context.lineTo(r * 0.85, 0);
+		context.lineTo(r * 0.45, r * 0.55);
+		context.lineWidth = 6;
+		context.strokeStyle = flash ? PAPER : ELITE;
+		context.stroke();
+		// The turret and its thick gun with a muzzle brake
+		roundRect(context, r * 0.2, -r * 0.15, r * 1.55, r * 0.3, 3, tint(flash, '#3b4047'));
+		roundRect(context, r * 1.7, -r * 0.24, r * 0.34, r * 0.48, 2, tint(flash, ELITE), 2);
+		roundRect(context, -r * 0.55, -r * 0.48, r * 0.95, r * 0.96, r * 0.3, tint(flash, '#454a52'));
+		circle(context, -r * 0.1, 0, r * 0.16, flash ? PAPER : ELITE, 2);
+	});
+	eyes(
+		context,
+		x - Math.cos(facing) * r * 0.1,
+		y - Math.sin(facing) * r * 0.1 - r * 0.15,
+		facing,
+		r * 0.2,
+		r * 0.12
+	);
 }
 
 /** Picks the fill colour, or white while hit */
@@ -1297,10 +1549,29 @@ function drawPlayerTag(context: CanvasRenderingContext2D, state: RaidState) {
 	roundRect(context, left, top, width, 11, 4, INK, 0);
 	context.fillStyle = share > 0.3 ? '#3ddc5a' : RED;
 	context.fillRect(left + 2, top + 2, (width - 4) * share, 7);
-	roundRect(context, left, top + 12, width, 5, 2, INK, 0);
-	context.fillStyle = '#4fc8ff';
-	const charge = 1 - Math.max(0, player.sprintMs) / SPRINT_COOLDOWN_MS;
-	context.fillRect(left + 1.5, top + 13, (width - 3) * charge, 3);
+	// The bar under it: the flamethrower's heat (red and blinking near the top), the hammer's
+	// rage (gold and pulsing when full), or the sprint for every other weapon
+	const kind = state.loadout[player.held].kind;
+	const blink = Math.floor(state.timeMs / 120) % 2 === 0;
+	let charge = 1 - Math.max(0, player.sprintMs) / SPRINT_COOLDOWN_MS;
+	let color = '#4fc8ff';
+	if (kind === 'flamethrower') {
+		charge = player.heat;
+		color =
+			player.heat > 0.8 ? (blink ? RED : '#ff9a3c') : player.heat > 0.5 ? '#ff9a3c' : '#4fc8ff';
+	} else if (kind === 'hammer') {
+		charge = player.rage;
+		color = player.rage >= 1 ? (blink ? YELLOW : PAPER) : '#4fc8ff';
+	}
+	const full = kind === 'hammer' && player.rage >= 1;
+	roundRect(context, left, top + 12, width, full ? 7 : 5, 2, INK, 0);
+	context.fillStyle = color;
+	context.fillRect(
+		left + 1.5,
+		top + 13,
+		(width - 3) * Math.max(0, Math.min(1, charge)),
+		full ? 5 : 3
+	);
 
 	// The level badge, a purple hexagon over the start of the bars
 	const bx = left - 4;
@@ -1327,7 +1598,21 @@ function drawEnemyBar(context: CanvasRenderingContext2D, enemy: Enemy) {
 	// Bosses have their own bar in the HUD
 	if (enemy.archetype === 'boss') return;
 	const damaged = enemy.hp < enemy.maxHp;
-	const y = enemy.y - enemy.radius * (enemy.variant === 'normal' ? 1.15 : 1.45) - 10;
+	const elite = isElite(enemy.archetype);
+	const y = enemy.y - enemy.radius * (enemy.variant === 'normal' && !elite ? 1.15 : 1.45) - 10;
+	if (elite) {
+		const width = Math.max(40, enemy.radius * 2);
+		roundRect(context, enemy.x - width / 2, y, width, 8, 3, INK, 0);
+		context.fillStyle = ELITE;
+		context.fillRect(
+			enemy.x - width / 2 + 1.5,
+			y + 1.5,
+			(width - 3) * Math.max(0, enemy.hp / enemy.maxHp),
+			5
+		);
+		drawStar(context, enemy.x - width / 2 - 4, y + 4, 8, ELITE);
+		return;
+	}
 	if (enemy.variant !== 'normal') {
 		const stars = enemy.variant === 'mega' ? 2 : 1;
 		for (let i = 0; i < stars; i++)
@@ -1498,6 +1783,36 @@ function drawTerrain(context: CanvasRenderingContext2D, patch: Terrain, time: nu
 function drawFirePool(context: CanvasRenderingContext2D, fire: FirePool, time: number) {
 	const left = 1 - fire.ageMs / fire.lifeMs;
 	const fade = Math.min(1, left * 4);
+	if (fire.hostile) {
+		// The ground an elite Pion set burning: scorched black, a red rim, flames all over
+		context.globalAlpha = 0.55 * fade;
+		circle(context, fire.x, fire.y, fire.radius, '#2a1208', 0);
+		context.globalAlpha = 0.5 * fade;
+		circle(context, fire.x, fire.y, fire.radius * 0.75, '#e0301a', 0);
+		context.globalAlpha = fade;
+		context.save();
+		context.setLineDash([12, 8]);
+		context.lineDashOffset = time / 30;
+		context.beginPath();
+		context.arc(fire.x, fire.y, fire.radius, 0, Math.PI * 2);
+		context.strokeStyle = '#ff4a1a';
+		context.lineWidth = 4;
+		context.stroke();
+		context.restore();
+		for (let i = 0; i < 6; i++) {
+			const angle = fire.id + i * 1.05;
+			const reach = fire.radius * (i % 2 === 0 ? 0.55 : 0.25);
+			drawFlames(
+				context,
+				fire.x + Math.cos(angle) * reach,
+				fire.y + Math.sin(angle) * reach * 0.6 + 6,
+				18,
+				time + fire.id * 53 + i * 90
+			);
+		}
+		context.globalAlpha = 1;
+		return;
+	}
 	context.globalAlpha = 0.45 * fade;
 	circle(context, fire.x, fire.y, fire.radius, fire.trail ? '#ff8a2b' : '#ff5a1a', 0);
 	context.globalAlpha = 0.6 * fade;
@@ -1729,17 +2044,35 @@ function drawLoot(context: CanvasRenderingContext2D, loot: Loot, time: number) {
 			break;
 		case 'crystal': {
 			const { kind, rarity } = drop.crystal;
-			// Rare and better crystals shine a beam, like good gear
-			if (rarity !== 'common' && rarity !== 'uncommon') {
-				const gradient = context.createLinearGradient(x, y - 110, x, y);
-				gradient.addColorStop(0, 'rgba(255,255,255,0)');
-				gradient.addColorStop(1, RARITY_COLOR[rarity]);
-				context.globalAlpha = 0.5;
-				context.fillStyle = gradient;
-				context.fillRect(x - 6, y - 110, 12, 110);
-				context.globalAlpha = 1;
+			// Every crystal shines a beam that pulses, taller and wider the rarer it is
+			const rank = ['common', 'uncommon', 'rare', 'epic', 'legendary'].indexOf(rarity);
+			const reach = 90 + rank * 30;
+			const pulse = 0.75 + Math.sin(time / 260 + loot.id) * 0.25;
+			const gradient = context.createLinearGradient(x, y - reach, x, y);
+			gradient.addColorStop(0, 'rgba(255,255,255,0)');
+			gradient.addColorStop(1, RARITY_COLOR[rarity]);
+			context.globalAlpha = (0.35 + rank * 0.07) * pulse;
+			context.fillStyle = gradient;
+			const half = 5 + rank * 1.5;
+			context.fillRect(x - half, y - reach, half * 2, reach);
+			// A glow on the ground and twinkles around it
+			context.globalAlpha = 0.4 * pulse;
+			circle(context, x, loot.y + 8, 14 + rank * 2, RARITY_COLOR[rarity], 0);
+			context.globalAlpha = 1;
+			for (let i = 0; i < 2 + Math.min(2, rank); i++) {
+				const angle = time / 500 + i * 2.4 + loot.id;
+				const twinkle = Math.max(0, Math.sin(time / 180 + i * 1.7));
+				if (twinkle > 0.2) {
+					drawStar(
+						context,
+						x + Math.cos(angle) * 18,
+						y - 8 + Math.sin(angle) * 10,
+						3.5 * twinkle,
+						PAPER
+					);
+				}
 			}
-			drawCrystal(context, x, y, 9, kind, rarity);
+			drawCrystal(context, x, y, 9 + rank * 0.8, kind, rarity);
 			break;
 		}
 		case 'medkit':
@@ -1829,6 +2162,10 @@ function drawEffect(context: CanvasRenderingContext2D, effect: Effect) {
 		context.globalAlpha = 1;
 		return;
 	}
+	if (effect.kind === 'shards') {
+		drawShards(context, effect, t);
+		return;
+	}
 	if (effect.kind === 'ring') {
 		context.globalAlpha = Math.max(0, 1 - t);
 		context.beginPath();
@@ -1857,6 +2194,57 @@ function drawEffect(context: CanvasRenderingContext2D, effect: Effect) {
 	context.globalAlpha = 1;
 }
 
+/** Shards fly out and spin, a star flashes in the middle, and a glow column rises */
+function drawShards(
+	context: CanvasRenderingContext2D,
+	effect: Extract<Effect, { kind: 'shards' }>,
+	t: number
+) {
+	const fade = Math.max(0, 1 - t);
+	const ease = 1 - (1 - t) * (1 - t);
+	context.save();
+	// The column of light the crystal leaves
+	const height = 160 * (0.4 + 0.6 * ease);
+	const gradient = context.createLinearGradient(effect.x, effect.y - height, effect.x, effect.y);
+	gradient.addColorStop(0, 'rgba(255,255,255,0)');
+	gradient.addColorStop(1, effect.glow);
+	context.globalAlpha = 0.6 * fade;
+	context.fillStyle = gradient;
+	context.fillRect(effect.x - 14 * fade, effect.y - height, 28 * fade, height);
+	// The star flash
+	context.globalAlpha = fade;
+	drawStar(
+		context,
+		effect.x,
+		effect.y - 10,
+		10 + 22 * Math.sin(Math.min(1, t * 2) * Math.PI),
+		PAPER
+	);
+	// The shards
+	for (let i = 0; i < 12; i++) {
+		const angle = (i / 12) * Math.PI * 2 + effect.seed;
+		const reach = (40 + (i % 3) * 18) * ease;
+		const sx = effect.x + Math.cos(angle) * reach;
+		const sy = effect.y + Math.sin(angle) * reach - 30 * ease + 40 * t * t;
+		context.save();
+		context.translate(sx, sy);
+		context.rotate(angle + t * 8);
+		context.beginPath();
+		context.moveTo(0, -6);
+		context.lineTo(3.5, 0);
+		context.lineTo(0, 6);
+		context.lineTo(-3.5, 0);
+		context.closePath();
+		context.fillStyle = i % 2 === 0 ? effect.color : effect.glow;
+		context.fill();
+		context.lineWidth = 1.2;
+		context.strokeStyle = INK;
+		context.stroke();
+		context.restore();
+	}
+	context.restore();
+}
+
 /** The score card picture: a square around where the raid ended */
 export function drawRaidPreview(
 	context: CanvasRenderingContext2D,
@@ -1874,18 +2262,40 @@ export function drawRaidPreview(
 	context.restore();
 }
 
-/** What a marker on the minimap stands for; the legend on the leave screen explains them */
-export type MinimapMark = 'fighter' | 'shooter' | 'drone' | 'support' | 'boss' | 'friend' | 'loot';
+/**
+ * What a marker on the minimap stands for; the legend on the map overlay explains them. Colours
+ * are reserved: red for enemies (shaped by what they do), orange for elites, violet for bosses,
+ * blue for squad mates, green for allies (the player's drones and nests, the command post),
+ * yellow for loot, and sand for the dust devils of the desert.
+ */
+export type MinimapMark =
+	| 'fighter'
+	| 'shooter'
+	| 'drone'
+	| 'support'
+	| 'elite'
+	| 'boss'
+	| 'squad'
+	| 'ally'
+	| 'post'
+	| 'tornado'
+	| 'loot';
 export type MarkShape = 'circle' | 'diamond' | 'triangle' | 'square' | 'ring';
+
+const ENEMY_RED = '#ff4a4a';
 
 export const MINIMAP_MARKS: Record<MinimapMark, { color: string; shape: MarkShape; size: number }> =
 	{
-		fighter: { color: '#ff5a5a', shape: 'circle', size: 1.6 },
-		shooter: { color: '#ff7ad9', shape: 'diamond', size: 2.2 },
-		drone: { color: '#ffb02e', shape: 'triangle', size: 2.4 },
-		support: { color: '#c6f24a', shape: 'square', size: 2.2 },
-		boss: { color: '#ff7a1a', shape: 'ring', size: 5 },
-		friend: { color: '#4fc8ff', shape: 'circle', size: 2.2 },
+		fighter: { color: ENEMY_RED, shape: 'circle', size: 1.7 },
+		shooter: { color: ENEMY_RED, shape: 'diamond', size: 2.3 },
+		drone: { color: ENEMY_RED, shape: 'triangle', size: 2.4 },
+		support: { color: ENEMY_RED, shape: 'square', size: 2.2 },
+		elite: { color: ELITE, shape: 'square', size: 3.4 },
+		boss: { color: '#b45cff', shape: 'ring', size: 5 },
+		squad: { color: '#3d8bff', shape: 'circle', size: 2.8 },
+		ally: { color: '#3ddc5a', shape: 'circle', size: 2.2 },
+		post: { color: '#3ddc5a', shape: 'square', size: 4.2 },
+		tornado: { color: '#e8c27a', shape: 'ring', size: 3.2 },
 		loot: { color: '#ffe066', shape: 'ring', size: 2.6 }
 	};
 
@@ -1898,8 +2308,12 @@ const ENEMY_MARK: Record<Enemy['archetype'], MinimapMark> = {
 	medic: 'support',
 	mortar: 'support',
 	artillery: 'support',
+	pion: 'elite',
 	boss: 'boss'
 };
+
+/** Super enemies get one ring around their marker on the map, mega ones two */
+export const VARIANT_RINGS: Record<Enemy['variant'], number> = { normal: 0, super: 1, mega: 2 };
 
 /** One marker of the given shape and radius around (x, y), in the context's current units */
 export function drawMark(
@@ -1974,21 +2388,33 @@ export function drawMinimap(
 		context.arc(obstacle.x, obstacle.y, obstacle.r, 0, Math.PI * 2);
 		context.fill();
 	}
-	const mark = (kind: MinimapMark, x: number, y: number) => {
+	const unit = markScale / scale;
+	const mark = (kind: MinimapMark, x: number, y: number, rings = 0) => {
 		const { color, shape, size } = MINIMAP_MARKS[kind];
-		drawMark(context, shape, x, y, (size * markScale) / scale, color);
+		drawMark(context, shape, x, y, size * unit, color);
+		for (let i = 1; i <= rings; i++) {
+			context.beginPath();
+			context.arc(x, y, (size + 1.6 * i + 0.4) * unit, 0, Math.PI * 2);
+			context.lineWidth = 0.8 * unit;
+			context.strokeStyle = color;
+			context.stroke();
+		}
 	};
+	if (state.defense) mark('post', state.defense.objective.x, state.defense.objective.y);
+	for (const tornado of state.tornadoes) mark('tornado', tornado.x, tornado.y);
 	for (const loot of state.loot) {
 		if (loot.drop.type === 'gear' || loot.drop.type === 'crystal') mark('loot', loot.x, loot.y);
 	}
-	for (const nest of state.nests) mark('friend', nest.x, nest.y);
-	for (const drone of state.drones) mark('friend', drone.x, drone.y);
-	// Bosses last, so the crowd never hides them
-	for (const enemy of state.enemies) {
-		if (enemy.archetype !== 'boss') mark(ENEMY_MARK[enemy.archetype], enemy.x, enemy.y);
-	}
-	for (const enemy of state.enemies) {
-		if (enemy.archetype === 'boss') mark('boss', enemy.x, enemy.y);
+	for (const nest of state.nests) mark('ally', nest.x, nest.y);
+	for (const drone of state.drones) mark('ally', drone.x, drone.y);
+	// Regular enemies first, then elites, then bosses, so the crowd never hides them
+	const rank = (enemy: Enemy) =>
+		enemy.archetype === 'boss' ? 2 : ENEMY_MARK[enemy.archetype] === 'elite' ? 1 : 0;
+	for (const level of [0, 1, 2]) {
+		for (const enemy of state.enemies) {
+			if (rank(enemy) !== level) continue;
+			mark(ENEMY_MARK[enemy.archetype], enemy.x, enemy.y, VARIANT_RINGS[enemy.variant]);
+		}
 	}
 	context.translate(player.x, player.y);
 	context.scale(markScale / scale, markScale / scale);

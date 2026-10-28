@@ -2,8 +2,10 @@
 	Raid playfield: a crisp high-DPI canvas that fills the space it gets (landscape), driven by the
 	fixed-step loop, with the HUD and the touch controls laid over it, laid out like a mobile
 	brawler. The player's health and level float over their head on the canvas. The top left holds
-	the shared goal: the boss's health while one is out, else the wait for the next one, with the
-	time, threat and a live event under it. The minimap sits in the top right; tapping it opens the
+	the shared goal: the boss's health while one is out, else the wait for the next one (in a
+	defense the command post, the wave and the pot instead), with the time (the clock running down
+	in a boss fight), threat and a live event under it. A picked-up crystal drops in as a banner at
+	the top, and at every fifth wave of a defense the vote on cashing out covers the field. The minimap sits in the top right; tapping it opens the
 	leave screen, as does the exit button and every pause. A resting stick waits at the bottom left
 	and jumps to wherever the field is dragged. The big weapon button at the bottom right attacks
 	(tap or hold; every shot aims at the closest enemy), the two skills, the weapon swap and the
@@ -19,6 +21,8 @@
 	import { drawRaid, raiderLook } from '#lib/game/raid/render.js';
 	import type { RaidGame } from '#lib/stores/raidGame.svelte.js';
 	import LivesBar from './LivesBar.svelte';
+	import RaidCrystalToast from './RaidCrystalToast.svelte';
+	import RaidDefenseVote from './RaidDefenseVote.svelte';
 	import RaidItemIcon from './RaidItemIcon.svelte';
 	import RaidLeaveScreen from './RaidLeaveScreen.svelte';
 	import RaidMapOverlay from './RaidMapOverlay.svelte';
@@ -33,7 +37,11 @@
 		SKILL_NAMES,
 		WEAPON_NAMES
 	} from './raidText';
+	import IconCoins from '~icons/lucide/coins';
+	import IconGem from '~icons/lucide/gem';
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
+	import IconShield from '~icons/lucide/shield';
+	import IconTimer from '~icons/lucide/timer';
 	import IconWind from '~icons/lucide/wind';
 	import IconZap from '~icons/lucide/zap';
 	import IconRepeat from '~icons/lucide/repeat';
@@ -306,51 +314,127 @@
 		<div
 			class="pointer-events-none absolute top-(--hud-top) left-(--hud-left) flex w-72 max-w-[45%] flex-col items-start gap-1.5"
 		>
-			<div
-				class="w-full rounded-s-lg bg-linear-to-r from-[#1b1036]/85 via-[#1b1036]/60 to-transparent py-1.5 ps-3 pe-6 text-white"
-			>
-				<span
-					class="block font-display text-[0.7rem] font-bold tracking-wide text-[#b9a4ff] uppercase"
-					>{game.boss ? m.raid_hud_boss_now() : m.raid_hud_boss_next()}</span
+			{#if game.defense}
+				{@const defense = game.defense}
+				<!-- The command post, the wave and the pot -->
+				<div
+					class="w-full rounded-s-lg bg-linear-to-r from-[#0e3a3a]/90 via-[#0e3a3a]/60 to-transparent py-1.5 ps-3 pe-6 text-white"
 				>
-				<span dir="auto" class="block text-sm leading-tight font-bold">
-					{#if game.boss && game.boss.variant !== 'normal'}
-						<span class={game.boss.variant === 'mega' ? 'text-[#ff6b6b]' : 'text-[#ffd23a]'}
-							>{game.boss.variant === 'mega' ? '★★' : '★'}</span
-						>
-					{/if}
-					{game.boss
-						? m.raid_hud_boss_fight({ boss: BOSS_NAMES[game.map]() })
-						: m.raid_hud_boss_soon({ boss: BOSS_NAMES[game.map]() })}
-				</span>
-				<div class="mt-1 flex items-center">
 					<span
-						class="z-10 flex size-7 shrink-0 items-center justify-center rounded-full border-2 border-white bg-[#ff6b3d]"
+						class="block font-display text-[0.7rem] font-bold tracking-wide text-[#7ff0e0] uppercase"
+						>{m.raid_hud_post()}</span
 					>
-						<IconSkull class="size-4" aria-hidden="true" />
+					<span dir="auto" class="block text-sm leading-tight font-bold">
+						{#if defense.wave === 0}
+							{m.raid_hud_post_hold()}
+						{:else}
+							{m.raid_hud_wave({ wave: defense.wave })}
+							<span class="opacity-80"
+								>· {defense.breakSeconds > 0
+									? m.raid_hud_next_wave({ seconds: defense.breakSeconds })
+									: m.raid_hud_wave_left({ count: defense.left })}</span
+							>
+						{/if}
 					</span>
-					<div class="relative -ms-2 h-4 flex-1 overflow-hidden rounded-e-sm bg-black/45">
-						<div
-							class="h-full transition-[width] duration-300 {game.boss
-								? 'bg-linear-to-r from-[#a64dff] to-[#ff5ad1]'
-								: 'bg-linear-to-r from-[#ff6b3d] to-[#ff9a3c]'}"
-							style:width="{(game.boss ? game.boss.share : (game.nextBoss?.share ?? 0)) * 100}%"
-						></div>
+					<div class="mt-1 flex items-center">
 						<span
-							class="absolute inset-y-0 start-3 flex items-center font-display text-xs font-bold tabular-nums"
+							class="z-10 flex size-7 shrink-0 items-center justify-center rounded-full border-2 border-white bg-[#22c3b0]"
 						>
-							{game.boss
-								? `${Math.round(game.boss.share * 100)}%`
-								: formatTime((game.nextBoss?.seconds ?? 0) * 1000)}
+							<IconShield class="size-4" aria-hidden="true" />
 						</span>
+						<div class="relative -ms-2 h-4 flex-1 overflow-hidden rounded-e-sm bg-black/45">
+							<div
+								class="h-full transition-[width] duration-300 {defense.post > 0.35
+									? 'bg-linear-to-r from-[#22c3b0] to-[#7ff0e0]'
+									: 'bg-linear-to-r from-[#e5484d] to-[#ff8a5a]'}"
+								style:width="{defense.post * 100}%"
+							></div>
+							<span
+								class="absolute inset-y-0 start-3 flex items-center font-display text-xs font-bold tabular-nums"
+								>{Math.round(defense.post * 100)}%</span
+							>
+						</div>
+					</div>
+					<div
+						class="mt-1 flex items-center gap-2 font-display text-[0.7rem] font-black tabular-nums"
+					>
+						<span class="uppercase opacity-80">{m.raid_hud_pot()}</span>
+						<span class="flex items-center gap-0.5"
+							><IconCoins class="size-3.5 text-[#ffd23a]" aria-hidden="true" />{defense.pot
+								.gold}</span
+						>
+						<span class="flex items-center gap-0.5"
+							><span class="text-[#7fd3ff]">XP</span>{defense.pot.xp}</span
+						>
+						{#if defense.pot.crystals > 0}
+							<span class="flex items-center gap-0.5"
+								><IconGem class="size-3.5 text-[#c79bff]" aria-hidden="true" />{defense.pot
+									.crystals}</span
+							>
+						{/if}
 					</div>
 				</div>
-			</div>
+			{/if}
+			{#if !game.defense || game.boss}
+				<div
+					class="w-full rounded-s-lg bg-linear-to-r from-[#1b1036]/85 via-[#1b1036]/60 to-transparent py-1.5 ps-3 pe-6 text-white"
+				>
+					<span
+						class="block font-display text-[0.7rem] font-bold tracking-wide text-[#b9a4ff] uppercase"
+						>{game.boss ? m.raid_hud_boss_now() : m.raid_hud_boss_next()}</span
+					>
+					<span dir="auto" class="block text-sm leading-tight font-bold">
+						{#if game.boss && game.boss.variant !== 'normal'}
+							<span class={game.boss.variant === 'mega' ? 'text-[#ff6b6b]' : 'text-[#ffd23a]'}
+								>{game.boss.variant === 'mega' ? '★★' : '★'}</span
+							>
+						{/if}
+						{game.boss
+							? m.raid_hud_boss_fight({ boss: BOSS_NAMES[game.map]() })
+							: m.raid_hud_boss_soon({ boss: BOSS_NAMES[game.map]() })}
+					</span>
+					<div class="mt-1 flex items-center">
+						<span
+							class="z-10 flex size-7 shrink-0 items-center justify-center rounded-full border-2 border-white bg-[#ff6b3d]"
+						>
+							<IconSkull class="size-4" aria-hidden="true" />
+						</span>
+						<div class="relative -ms-2 h-4 flex-1 overflow-hidden rounded-e-sm bg-black/45">
+							<div
+								class="h-full transition-[width] duration-300 {game.boss
+									? 'bg-linear-to-r from-[#a64dff] to-[#ff5ad1]'
+									: 'bg-linear-to-r from-[#ff6b3d] to-[#ff9a3c]'}"
+								style:width="{(game.boss ? game.boss.share : (game.nextBoss?.share ?? 0)) * 100}%"
+							></div>
+							<span
+								class="absolute inset-y-0 start-3 flex items-center font-display text-xs font-bold tabular-nums"
+							>
+								{game.boss
+									? `${Math.round(game.boss.share * 100)}%`
+									: formatTime((game.nextBoss?.seconds ?? 0) * 1000)}
+							</span>
+						</div>
+					</div>
+				</div>
+			{/if}
 
 			<div
 				class="flex items-center gap-2 rounded-md bg-[#1b1036]/60 px-2 py-0.5 font-display text-xs font-bold text-white"
 			>
-				<span class="tabular-nums">{formatTime(game.timeMs)}</span>
+				{#if game.timeLeft !== null}
+					<span
+						class="flex items-center gap-1 rounded px-1 text-sm tabular-nums {game.timeLeft <= 30
+							? 'timer-low bg-tie-red'
+							: 'bg-[#a64dff]'}"
+						title={m.raid_hud_time_left()}
+					>
+						<IconTimer class="size-3.5" aria-hidden="true" />
+						<span class="sr-only">{m.raid_hud_time_left()}</span>
+						{formatTime(game.timeLeft * 1000)}
+					</span>
+				{:else}
+					<span class="tabular-nums">{formatTime(game.timeMs)}</span>
+				{/if}
 				<span class="rounded bg-tie-red px-1 text-white"
 					>{m.raid_hud_threat({ level: game.threat })}</span
 				>
@@ -547,8 +631,26 @@
 		)}
 	{/if}
 
+	{#if game.crystalToast && game.status === 'playing'}
+		<div class="pointer-events-none absolute top-(--hud-top) left-1/2 z-10 -translate-x-1/2">
+			{#key game.crystalToast.id}
+				<RaidCrystalToast crystal={game.crystalToast.crystal} />
+			{/key}
+		</div>
+	{/if}
+
+	{#if game.defense?.vote && game.status === 'playing'}
+		<RaidDefenseVote {game} />
+	{/if}
+
 	{#if mapOpen}
-		<RaidMapOverlay {game} onResume={() => { mapOpen = false; if (game.status === 'paused') game.resume(); }} />
+		<RaidMapOverlay
+			{game}
+			onResume={() => {
+				mapOpen = false;
+				if (game.status === 'paused') game.resume();
+			}}
+		/>
 	{/if}
 
 	{#if game.status === 'paused'}
@@ -614,6 +716,10 @@
 		animation: live-event 900ms ease-in-out infinite alternate;
 	}
 
+	.timer-low {
+		animation: live-event 500ms ease-in-out infinite alternate;
+	}
+
 	@keyframes live-event {
 		to {
 			scale: 1.06;
@@ -625,7 +731,8 @@
 			animation-duration: 1ms;
 		}
 
-		.live-event {
+		.live-event,
+		.timer-low {
 			animation: none;
 		}
 	}

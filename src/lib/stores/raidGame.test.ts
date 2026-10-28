@@ -5,7 +5,6 @@ import { makeWeapon } from '#lib/game/raid/items.js';
 import { newProfile } from '#lib/game/raid/profile.js';
 import { spawnEnemy } from '#lib/game/raid/state.js';
 import { createRandom } from '#lib/game/random.js';
-import { createHighscores } from '#lib/services/highscore.js';
 import { createStore, type KeyValueStorage } from '#lib/services/storage.js';
 import { missingMessages } from '#lib/testing/messages.js';
 import { RaidGame } from './raidGame.svelte';
@@ -23,11 +22,9 @@ const STEP = 1000 / 60;
 
 function newGame() {
 	const store = createStore(memoryStorage());
-	const scores = createHighscores(store);
 	// Five minutes into a ten-minute window: no live event running
 	let now = Date.UTC(2026, 9, 24, 12, 5);
-	const make = () =>
-		new RaidGame({ store: () => store, scores: () => scores, seed: () => 7, now: () => now });
+	const make = () => new RaidGame({ store: () => store, seed: () => 7, now: () => now });
 	return { game: make(), make, store, setNow: (ms: number) => (now = ms) };
 }
 

@@ -1,7 +1,9 @@
 <!--
-	The end of a raid, in two beats. First a banner over the frozen battlefield: "Raid over", stars
-	for how long the player held out (one per two minutes, up to five), the time and a new personal
-	best. A tap or a moment later the full result screen follows: the XP earned counting up with the
+	The end of a raid, in two beats. First a banner over the frozen battlefield saying how it ended:
+	a hunt shows the time held out; a boss fight "Victory" with its stars (one per 20 seconds left on
+	the clock, the ones reached on this map for the first time lit up and paying XP) or "Time's up";
+	a defense the waves held and whether the pot was cashed out or lost. Raids keep no high score.
+	A tap or a moment later the full result screen follows: the XP earned counting up with the
 	gold and scrap under it, the loot as tiles, today's quests as job cards whose bars grow by what
 	this raid added, the level and season bars, the raid's numbers, and the player's agent beside the
 	buttons to raid again or close, which goes back to the lobby.
@@ -11,7 +13,7 @@
 	import { cubicOut } from 'svelte/easing';
 	import { Tween } from 'svelte/motion';
 	import { m } from '#lib/paraglide/messages.js';
-	import { MAX_PLAYER_LEVEL, SEASON_TIERS } from '#lib/game/raid/config.js';
+	import { BOSS_MAX_STARS, MAX_PLAYER_LEVEL, SEASON_TIERS } from '#lib/game/raid/config.js';
 	import { xpToNext } from '#lib/game/raid/profile.js';
 	import { seasonTier, seasonTierProgress } from '#lib/game/raid/season.js';
 	import type { ScoreCard } from '#lib/services/share.js';
@@ -33,6 +35,7 @@
 	} from './raidText';
 	import IconCoins from '~icons/lucide/coins';
 	import IconRotate from '~icons/lucide/rotate-ccw';
+	import IconShield from '~icons/lucide/shield';
 	import IconSparkles from '~icons/lucide/sparkles';
 	import IconStar from '~icons/lucide/star';
 	import IconTimer from '~icons/lucide/timer';
@@ -40,7 +43,6 @@
 
 	let {
 		result,
-		score,
 		isNewBest,
 		modeName,
 		drawBoard,
@@ -49,7 +51,6 @@
 		onClose
 	}: {
 		result: RaidResult;
-		score: number;
 		isNewBest: boolean;
 		modeName: string;
 		drawBoard?: ScoreCard['drawBoard'];
@@ -58,8 +59,22 @@
 		onClose: () => void;
 	} = $props();
 
-	const STAR_MS = 120_000;
-	const stars = $derived(Math.min(5, Math.floor(result.timeMs / STAR_MS)));
+	/** The banner's headline, by how the raid ended */
+	const title = $derived(
+		{
+			raid: m.raid_gameover_title(),
+			victory: m.raid_result_victory(),
+			'time-up': m.raid_result_time_up(),
+			'cashed-out': m.raid_result_cashed_out(),
+			'post-lost': m.raid_result_post_lost(),
+			'defense-lost': m.raid_result_defense_lost()
+		}[result.outcome]
+	);
+	const lost = $derived(
+		result.outcome === 'time-up' ||
+			result.outcome === 'post-lost' ||
+			result.outcome === 'defense-lost'
+	);
 
 	/** The banner first, then the full screen */
 	let banner = $state(true);
@@ -114,28 +129,54 @@
 	>
 		<span
 			class="banner-title font-display text-6xl font-black tracking-tight uppercase italic sm:text-7xl"
-			>{m.raid_gameover_title()}</span
+			class:text-[#ff8a8a]={lost}>{title}</span
 		>
-		<span class="flex gap-1" aria-label="{stars}/5">
-			{#each { length: 5 }, index (index)}
-				<IconStar
-					class="raid-star size-10 {index < stars
-						? 'fill-[#ffc83a] text-[#e09a12]'
-						: 'fill-white/20 text-white/40'}"
-					style="animation-delay: {reducedMotion ? 0 : 300 + index * 120}ms"
-					aria-hidden="true"
-				/>
-			{/each}
-		</span>
-		{#if isNewBest}
-			<span class="mt-4 font-display text-xl font-black text-white/85 uppercase italic"
-				>{m.gameover_new_best()}</span
-			>
+		{#if result.mode === 'boss'}
+			<!-- The stars: new ones on this map burst in gold, ones reached before stay pale gold -->
+			<span class="flex gap-1" aria-label="{result.stars}/{BOSS_MAX_STARS}">
+				{#each { length: BOSS_MAX_STARS }, index (index)}
+					{@const earned = index < result.stars}
+					{@const fresh = earned && index >= result.starsBefore}
+					<IconStar
+						class="raid-star size-11 {fresh
+							? 'fresh fill-[#ffc83a] text-[#e09a12]'
+							: earned
+								? 'fill-[#ffe9a8] text-[#c9a24a]'
+								: 'fill-white/20 text-white/40'}"
+						style="animation-delay: {reducedMotion ? 0 : 300 + index * 140}ms"
+						aria-hidden="true"
+					/>
+				{/each}
+			</span>
+			{#if result.newStars > 0}
+				<span
+					class="pop-in mt-1 rounded-lg bg-[#ffc83a] px-3 py-0.5 font-display text-lg font-black text-[#3d1478]"
+					>{m.raid_result_new_stars({ count: result.newStars, xp: result.starXp })}</span
+				>
+			{/if}
+			{#if result.outcome === 'victory'}
+				<span class="flex items-center gap-2 font-display text-4xl font-bold tabular-nums">
+					<span class="text-xl uppercase opacity-80">{m.raid_result_boss_time()}</span>
+					{formatTime(result.timeMs)}
+				</span>
+			{/if}
+		{:else if result.mode === 'defense'}
+			<span class="flex items-center gap-2 font-display text-5xl font-bold tabular-nums">
+				<IconShield class="size-9" aria-hidden="true" />
+				{result.wavesHeld}
+				<span class="text-xl uppercase opacity-80">{m.raid_result_waves()}</span>
+			</span>
+			{#if result.forfeited}
+				<span dir="auto" class="max-w-sm text-center text-base font-bold text-[#ffb3b3]"
+					>{m.raid_result_pot_lost()}</span
+				>
+			{/if}
+		{:else}
+			<span class="flex items-center gap-2 font-display text-5xl font-bold tabular-nums">
+				{formatTime(result.timeMs)}
+				<IconTimer class="size-8" aria-hidden="true" />
+			</span>
 		{/if}
-		<span class="flex items-center gap-2 font-display text-5xl font-bold tabular-nums">
-			{formatTime(result.timeMs)}
-			<IconTimer class="size-8" aria-hidden="true" />
-		</span>
 		<span class="mt-2 text-xs font-bold opacity-70">{m.raid_result_continue()}</span>
 	</button>
 {:else}
@@ -149,7 +190,7 @@
 			<Confetti />
 		{/if}
 		<h2 id="raid-result-title" class="sr-only">
-			{m.raid_gameover_title()}: {MAP_NAMES[result.map]()}
+			{title}: {MAP_NAMES[result.map]()}
 		</h2>
 
 		<div class="grid min-h-full gap-4 md:grid-cols-[minmax(0,1fr)_14rem]">
@@ -182,6 +223,19 @@
 									>{formatTime(result.timeMs)}</span
 								>
 							</span>
+							{#if result.starXp > 0}
+								<span
+									class="flex items-center justify-end gap-1 font-display text-sm font-black text-[#ffc83a]"
+								>
+									<IconStar class="size-4 fill-[#ffc83a]" aria-hidden="true" />
+									{m.raid_result_new_stars({ count: result.newStars, xp: result.starXp })}
+								</span>
+							{/if}
+							{#if result.forfeited}
+								<span dir="auto" class="max-w-60 text-xs font-bold text-[#ffb3b3]"
+									>{m.raid_result_pot_lost()}</span
+								>
+							{/if}
 						</div>
 					</section>
 
@@ -321,7 +375,7 @@
 					<Avatar size={150} />
 				</div>
 				{#if isNewBest}
-					<ShareButton {modeName} {score} {drawBoard} />
+					<ShareButton {modeName} score={result.stars} {drawBoard} />
 				{/if}
 				<button
 					type="button"
@@ -366,6 +420,20 @@
 		animation: banner-in 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 	}
 
+	/* A star reached for the first time on this map lands bigger and glows */
+	:global(.raid-star.fresh) {
+		animation: star-new 620ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+		filter: drop-shadow(0 0 10px rgb(255 200 58 / 0.9));
+	}
+
+	@keyframes star-new {
+		from {
+			opacity: 0;
+			scale: 2.4;
+			rotate: -90deg;
+		}
+	}
+
 	@keyframes banner-in {
 		from {
 			opacity: 0;
@@ -384,6 +452,7 @@
 	@media (prefers-reduced-motion: reduce) {
 		.banner-title,
 		:global(.raid-star),
+		:global(.raid-star.fresh),
 		.loot {
 			animation: none;
 		}
