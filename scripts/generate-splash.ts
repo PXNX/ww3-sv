@@ -1,5 +1,6 @@
 /*
- * Builds brand/splash.svg, the Mini App loading-screen icon: just the bomb as one monochrome
+ * Builds brand/splash.svg and brand/splash-dark.svg, the Mini App loading-screen icons for light
+ * and dark mode: just the bomb as one monochrome
  * outline, a single closed path (one M … Z) with no fill colour, so Telegram can colour it. Like
  * Telegram's sample (https://telegram.org/resources/web-app-icon-sample.svg) it only uses straight
  * lines and cubic curves (M, L, H, V, C, Z): arcs and quadratic curves are turned into cubics. The
@@ -96,10 +97,18 @@ const d =
 if (!/^M[^M]*Z$/.test(d) || /[AQSTaqst]/.test(d))
 	throw new Error('splash: not one outline of lines and cubics');
 
-const svg = `<?xml version="1.0" encoding="utf-8"?>
+// Light mode: no fill, so it is black (or whatever colour Telegram gives it); dark mode: cream
+const VARIANTS = [
+	{ file: 'splash.svg', fill: '' },
+	{ file: 'splash-dark.svg', fill: ' fill="#f5efd6"' }
+];
+
+for (const { file, fill } of VARIANTS) {
+	const svg = `<?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <path d="${d}"/>
+  <path${fill} d="${d}"/>
 </svg>
 `;
-writeFileSync(join(root, 'brand', 'splash.svg'), svg);
-console.log(`splash.svg: one closed path of lines and cubic curves, ${svg.length} bytes`);
+	writeFileSync(join(root, 'brand', file), svg);
+	console.log(`${file}: one closed path of lines and cubic curves, ${svg.length} bytes`);
+}
