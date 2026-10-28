@@ -373,31 +373,12 @@
 					{/if}
 				</span>
 				<span class="flex min-w-0 flex-1 flex-col gap-1 font-display font-bold">
-					<span class="flex items-baseline justify-between gap-2">
-						<span class="text-lg leading-none font-black uppercase italic"
-							>{m.raid_lobby_level({ level: profile.level })}</span
-						>
-						<span class="text-[0.65rem] text-white/75 tabular-nums"
-							>{m.raid_lobby_xp({ xp: profile.xp, next: game.xpNeeded })}</span
-						>
+					<span class="flex items-center gap-2 text-sm leading-none font-black uppercase italic">
+						<span>{m.raid_lobby_level({ level: profile.level })}</span>
+						<span class="text-[0.65rem] text-white/75">{m.raid_lobby_xp({ xp: profile.xp, next: game.xpNeeded })}</span>
 					</span>
-					<span class="h-2.5 w-full overflow-hidden rounded-full bg-black/35">
-						<span class="block h-full rounded-full bg-[#7fd3ff]" style:width="{xpShare * 100}%"
-						></span>
-					</span>
-					<span class="text-[0.7rem] leading-tight text-[#e2c9ff]"
-						>{m.raid_season_title({ number: seasonNumber(season.id) })} · {m.raid_season_tier({
-							tier: reached,
-							max: SEASON_TIERS
-						})}</span
-					>
-					<span class="h-2 w-full overflow-hidden rounded-full bg-black/35">
-						<span
-							class="block h-full rounded-full bg-[#ffc83a]"
-							style:width="{tierProgress.needed > 0
-								? (tierProgress.xp / tierProgress.needed) * 100
-								: 100}%"
-						></span>
+					<span class="h-3 w-full overflow-hidden rounded-full bg-black/35">
+						<span class="block h-full rounded-full bg-[#7fd3ff]" style:width="{xpShare * 100}%"></span>
 					</span>
 				</span>
 				<IconChevronRight class="size-5 shrink-0 opacity-70 rtl:rotate-180" aria-hidden="true" />
