@@ -24,7 +24,7 @@
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import { requirementText } from './unlockText.js';
 	import Avatar from './Avatar.svelte';
-	import IconDices from '~icons/lucide/dices';
+	import PlayCubeIcon from './PlayCubeIcon.svelte';
 	import IconLock from '~icons/lucide/lock';
 	import IconRotateCcw from '~icons/lucide/rotate-ccw';
 	import IconSparkles from '~icons/lucide/sparkles';
@@ -59,6 +59,8 @@
 	let part = $state<LookPart>('hair');
 	/** Bumped on every change to replay the wobble */
 	let wobble = $state(0);
+	/** True for one spin of the play cube while the new look is already being drawn */
+	let rolling = $state(false);
 	/** What tapping a locked option said, cleared after a moment */
 	let lockNote = $state('');
 	let lockTimer: ReturnType<typeof setTimeout> | undefined;
@@ -111,6 +113,9 @@
 		avatarState.randomize((entry, value) => isUnlocked(entry, value, progress));
 		lockNote = '';
 		changed('sparkle');
+		// Restart the spin even when the player taps twice quickly
+		rolling = false;
+		requestAnimationFrame(() => (rolling = true));
 	}
 
 	function reset() {
@@ -122,32 +127,37 @@
 
 <div class="flex flex-col gap-3 sm:flex-row sm:items-start">
 	<div class="flex shrink-0 flex-col items-center gap-2">
-		{#key wobble}
-			<div
-				class="avatar-wobble rounded-[18px_10px_16px_8px] border-3 border-ink bg-flag-blue/25 p-2"
-			>
-				<Avatar size={large ? 180 : 120} label={m.avatar_title()} />
-			</div>
-		{/key}
-		<div class="flex gap-2">
+		<div class="relative">
+			{#key wobble}
+				<div
+					class="avatar-wobble rounded-[18px_10px_16px_8px] border-3 border-ink bg-flag-blue/25 p-2"
+				>
+					<Avatar size={large ? 180 : 120} label={m.avatar_title()} />
+				</div>
+			{/key}
+			<!-- Sits on the corner of the preview like the roll button in the word game: one tap
+			     redraws a whole new agent, and the cube spins so the tap lands before the wobble -->
 			<button
 				type="button"
-				class="btn-chunky bg-explosion-yellow px-3 py-1 text-sm"
+				class="avatar-roll btn-chunky absolute -end-2 -top-2 size-9 rounded-full bg-explosion-yellow p-0"
+				class:rolling
 				onclick={surprise}
+				onanimationend={() => (rolling = false)}
+				aria-label={m.avatar_randomize()}
+				title={m.avatar_randomize()}
 			>
-				<IconDices class="size-4" aria-hidden="true" />
-				{m.avatar_randomize()}
-			</button>
-			<button
-				type="button"
-				class="btn-chunky px-2 py-1 text-sm"
-				onclick={reset}
-				aria-label={m.avatar_reset()}
-				title={m.avatar_reset()}
-			>
-				<IconRotateCcw class="size-4" aria-hidden="true" />
+				<PlayCubeIcon class="size-5" />
 			</button>
 		</div>
+		<button
+			type="button"
+			class="btn-chunky size-9 rounded-full p-0"
+			onclick={reset}
+			aria-label={m.avatar_reset()}
+			title={m.avatar_reset()}
+		>
+			<IconRotateCcw class="size-4" aria-hidden="true" />
+		</button>
 	</div>
 
 	<div class="flex min-w-0 flex-1 flex-col gap-2">
@@ -285,6 +295,27 @@
 		animation: avatar-wobble 420ms var(--ease-spring);
 	}
 
+	/* The play cube turns over once per roll; the spin belongs to the face, not the button */
+	.avatar-roll :global(svg) {
+		transform-origin: 50% 50%;
+	}
+
+	.avatar-roll.rolling :global(svg) {
+		animation: avatar-roll 520ms var(--ease-spring);
+	}
+
+	@keyframes avatar-roll {
+		0% {
+			transform: rotate(0deg) scale(1);
+		}
+		50% {
+			transform: rotate(200deg) scale(1.22);
+		}
+		100% {
+			transform: rotate(360deg) scale(1);
+		}
+	}
+
 	.lock-note {
 		animation: lock-note 2800ms ease-out forwards;
 	}
@@ -308,6 +339,7 @@
 
 	@media (prefers-reduced-motion: reduce) {
 		.avatar-wobble,
+		.avatar-roll.rolling :global(svg),
 		.lock-note {
 			animation: none;
 		}
