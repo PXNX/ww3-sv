@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { createRandom } from '../random.js';
 import { nextColumn } from './columns.js';
 import {
+	AIR_FIRST_WAVE,
+	AIR_POINTS,
 	COLUMN_COUNT,
 	FEEDBACK_MS,
 	GAME_OVER_FEEDBACK_MS,
@@ -13,7 +15,7 @@ import {
 	WINDOW_MIN
 } from './config.js';
 import { loadMessages } from '#lib/testing/messages.js';
-import { createGame, cue, markerOf, step } from './state.js';
+import { airProgress, createGame, cue, markerOf, shootAir, step, type AirTarget } from './state.js';
 import { cueWindow, interceptorsFor, slotMs, windowShare } from './timing.js';
 
 const seed = 3;
@@ -178,6 +180,80 @@ describe('red square state', () => {
 		cueAtCentre(state);
 		expect(cue(state)).toEqual([]);
 		expect(state.score).toBe(POINTS_MAX);
+	});
+});
+
+describe('the air over the square', () => {
+	const drone = (crossMs = 1000): AirTarget => ({ kind: 'drone', elapsedMs: 0, crossMs });
+
+	it('stays empty through the whole first wave', () => {
+		for (let seed = 1; seed <= 40; seed++) {
+			expect(createGame(createRandom(seed)).air).toBeNull();
+		}
+		// Even a random source that would always send one cannot do it in wave 1
+		const forced = createGame(() => 0);
+		expect(forced.wave).toBeLessThan(AIR_FIRST_WAVE);
+		expect(forced.air).toBeNull();
+	});
+
+	it('sends a target along with a column from the second wave on', () => {
+		const { state } = fresh();
+		state.wave = AIR_FIRST_WAVE;
+		cueAtCentre(state);
+		// A random source that lands below the spawn chance every time
+		const events = nextRound(state, () => 0);
+		expect(state.air).toMatchObject({ kind: 'drone', elapsedMs: 0 });
+		expect(events).toContainEqual({ type: 'air', kind: 'drone' });
+
+		// ...and one that never spawns
+		const { state: quiet } = fresh();
+		quiet.wave = AIR_FIRST_WAVE;
+		cueAtCentre(quiet);
+		nextRound(quiet, () => 0.99);
+		expect(quiet.air).toBeNull();
+	});
+
+	it('scores a target that is shot down and clears the sky', () => {
+		const { state } = fresh();
+		const before = state.score;
+		state.air = drone();
+		expect(shootAir(state)).toEqual([{ type: 'air-down', kind: 'drone', points: AIR_POINTS }]);
+		expect(state.score).toBe(before + AIR_POINTS);
+		expect(state.air).toBeNull();
+		expect(shootAir(state)).toEqual([]);
+	});
+
+	it('costs a mood when a target crosses unopposed, and can end the parade', () => {
+		const { state, random } = fresh();
+		state.streak = 3;
+		state.bestStreak = 3;
+		state.air = drone(200);
+		const events = step(state, 250, random);
+		expect(events).toContainEqual({ type: 'air-escaped', kind: 'drone' });
+		expect(state.air).toBeNull();
+		expect(state.mood).toBe(STARTING_MOOD - 1);
+		// A missile that gets through is the general's problem, not a broken streak
+		expect(state.streak).toBe(3);
+
+		state.mood = 1;
+		state.air = drone(200);
+		expect(state.doomed).toBe(false);
+		step(state, 250, random);
+		expect(state.mood).toBe(0);
+		expect(state.doomed).toBe(true);
+	});
+
+	it('keeps flying while the verdict is up, so it cannot be waited out', () => {
+		const { state, random } = fresh();
+		cueAtCentre(state);
+		state.air = drone();
+		for (let i = 0; i < 3; i++) step(state, 100, random);
+		expect(state.phase).toBe('feedback');
+		expect(state.air).not.toBeNull();
+		expect(airProgress(state)).toBeCloseTo(0.3, 5);
+		// Which leaves time to shoot it down even after a hit
+		shootAir(state);
+		expect(state.air).toBeNull();
 	});
 });
 

@@ -1,8 +1,9 @@
 <!--
 	Red Square playfield: the square with the lit band in front of the tribune, the column that
-	crosses it, one big cue button, the fixed-step loop and the overlays (start card, pause card,
-	the verdict toast, the radio line about the next wave, the red flash for a lost mood point).
-	The playfield stays left to right and never scrolls. Reduced motion: no shake, the toast simply
+	crosses it, the air targets that have to be shot down, the fixed-step loop and the overlays
+	(start card, pause card, the verdict toast, the radio line about the next wave, the red flash for
+	a lost mood point). The whole square is the cue, so there is no separate button to aim for. The
+	playfield stays left to right and never scrolls. Reduced motion: no shake, the toast simply
 	fades.
 -->
 <script lang="ts">
@@ -12,9 +13,8 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import type { RedSquareGame } from '#lib/stores/redsquareGame.svelte.js';
 	import PauseOverlay from './PauseOverlay.svelte';
-	import { columnText } from './redsquareText.js';
+	import { airName, columnText } from './redsquareText.js';
 	import IconPlay from '~icons/lucide/play';
-	import IconTrumpet from '~icons/lucide/megaphone';
 
 	let { game }: { game: RedSquareGame } = $props();
 
@@ -56,14 +56,6 @@
 
 	const window = $derived(cueWindow(game.wave));
 	const share = $derived(windowShare(game.wave));
-	const verdictUp = $derived(game.phase !== 'march');
-	const cueClass = $derived(
-		verdictUp
-			? game.last?.kind === 'hit'
-				? 'bg-[#8fd19e]'
-				: 'bg-explosion-yellow'
-			: 'bg-tie-red text-paper'
-	);
 
 	function onKey(event: KeyboardEvent) {
 		if (game.status === 'over' || event.ctrlKey || event.metaKey || event.altKey) return;
@@ -78,10 +70,28 @@
 			return;
 		}
 		if ((event.code === 'Space' || event.code === 'Enter') && !event.repeat) {
+			// A focused square or target handles the key itself through its click
 			if (target instanceof HTMLButtonElement) return;
 			event.preventDefault();
 			game.cue();
 		}
+	}
+
+	// The whole square is one target: a tap anywhere on it cues the column. The target over it is a
+	// sibling button, so tapping the drone never also cues.
+	function onSquarePointerDown(event: PointerEvent) {
+		if (event.pointerType === 'mouse' && event.button !== 0) return;
+		game.cue();
+	}
+
+	// A click with no pointer behind it (detail 0) comes from the keyboard
+	function onSquareClick(event: MouseEvent) {
+		if (event.detail === 0) game.cue();
+	}
+
+	function onAirPointerDown(event: PointerEvent) {
+		if (event.pointerType === 'mouse' && event.button !== 0) return;
+		game.shootDown();
 	}
 </script>
 
@@ -114,79 +124,109 @@
 		</p>
 	</div>
 
-	<!-- The square: the band in front of the tribune is the lit target -->
-	<div
-		class="relative min-h-28 flex-1 overflow-hidden rounded-md border-3 border-ink bg-[#b8ac8f] sm:min-h-36"
-		role="group"
-		aria-label={m.redsquare_aria_square()}
-	>
-		<!-- The tribune and its guest, drawn flat behind the band -->
-		<div class="absolute inset-y-0 right-0 left-0" aria-hidden="true">
-			<div class="absolute inset-y-0 w-2 bg-ink/15" style:left="0%"></div>
-			<div
-				class="absolute inset-y-2 rounded-sm border-2 border-dashed border-ink bg-explosion-yellow/55"
-				style:left="{window.start * 100}%"
-				style:width="{share * 100}%"
-			></div>
-			<div
-				class="absolute top-2 flex h-5 items-end justify-center gap-0.5 rounded-t-sm border-2 border-ink bg-paper px-1"
-				style:left="{window.start * 100}%"
-				style:width="{share * 100}%"
-			>
-				<span class="mb-0.5 block h-2 w-1.5 rounded-sm bg-ink"></span>
-				<span class="mb-0.5 block h-3 w-1.5 rounded-sm bg-tie-red"></span>
-				<span class="mb-0.5 block h-2.5 w-1.5 rounded-sm bg-ink"></span>
-			</div>
-		</div>
-
-		<!-- The column, riding the marker -->
-		<div
-			class="absolute top-1/2 -translate-x-1/2 -translate-y-1/2"
-			style:left="{game.marker * 100}%"
-			aria-hidden="true"
+	<!-- The square: the band in front of the tribune is the lit target, and any tap on the square cues -->
+	<div class="relative min-h-28 flex-1 sm:min-h-36">
+		<button
+			type="button"
+			class="absolute inset-0 block w-full overflow-hidden rounded-md border-3 border-ink bg-[#b8ac8f] focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-ink"
+			aria-label="{m.redsquare_cue()}. {m.redsquare_aria_square()}"
+			aria-keyshortcuts="Space"
+			disabled={game.status !== 'playing'}
+			onpointerdown={onSquarePointerDown}
+			onclick={onSquareClick}
 		>
-			<div class="relative h-10 w-14 sm:h-12 sm:w-16">
-				<div
-					class="absolute inset-x-0 bottom-0 h-3 rounded-sm border-2 border-ink bg-[#4b5a34]"
-				></div>
-				<div
-					class="absolute inset-x-2 bottom-2 h-5 rounded-sm border-2 border-ink bg-[#6f8d4b]"
-				></div>
-				<div class="absolute right-1 bottom-6 h-4 w-1 rounded-sm border-2 border-ink bg-ink"></div>
-				<div class="absolute top-0 left-1/2 h-6 w-1 -translate-x-1/2 bg-ink"></div>
-				<div
-					class="absolute top-0 left-1/2 h-4 w-6 -translate-x-1/2 rounded-sm border-2 border-ink bg-tie-red"
-				></div>
-				<div class="absolute inset-x-1 bottom-0 h-1.5 bg-ink/40"></div>
-			</div>
-		</div>
+			<!-- The tribune and its guest, drawn flat behind the band -->
+			<span class="absolute inset-y-0 right-0 left-0 block" aria-hidden="true">
+				<span class="absolute inset-y-0 block w-2 bg-ink/15" style:left="0%"></span>
+				<span
+					class="absolute inset-y-2 block rounded-sm border-2 border-dashed border-ink bg-explosion-yellow/55"
+					style:left="{window.start * 100}%"
+					style:width="{share * 100}%"
+				></span>
+				<span
+					class="absolute top-2 flex h-5 items-end justify-center gap-0.5 rounded-t-sm border-2 border-ink bg-paper px-1"
+					style:left="{window.start * 100}%"
+					style:width="{share * 100}%"
+				>
+					<span class="mb-0.5 block h-2 w-1.5 rounded-sm bg-ink"></span>
+					<span class="mb-0.5 block h-3 w-1.5 rounded-sm bg-tie-red"></span>
+					<span class="mb-0.5 block h-2.5 w-1.5 rounded-sm bg-ink"></span>
+				</span>
+			</span>
 
-		<!-- The marker line, so the exact position is readable -->
-		<div
-			class="absolute inset-y-0 w-0.5 bg-tie-red/70"
-			style:left="{game.marker * 100}%"
-			aria-hidden="true"
-		></div>
+			<!-- The column, riding the marker -->
+			<span
+				class="absolute top-1/2 block -translate-x-1/2 -translate-y-1/2"
+				style:left="{game.marker * 100}%"
+				aria-hidden="true"
+			>
+				<span class="relative block h-10 w-14 sm:h-12 sm:w-16">
+					<span
+						class="absolute inset-x-0 bottom-0 block h-3 rounded-sm border-2 border-ink bg-[#4b5a34]"
+					></span>
+					<span
+						class="absolute inset-x-2 bottom-2 block h-5 rounded-sm border-2 border-ink bg-[#6f8d4b]"
+					></span>
+					<span
+						class="absolute right-1 bottom-6 block h-4 w-1 rounded-sm border-2 border-ink bg-ink"
+					></span>
+					<span class="absolute top-0 left-1/2 block h-6 w-1 -translate-x-1/2 bg-ink"></span>
+					<span
+						class="absolute top-0 left-1/2 block h-4 w-6 -translate-x-1/2 rounded-sm border-2 border-ink bg-tie-red"
+					></span>
+					<span class="absolute inset-x-1 bottom-0 block h-1.5 bg-ink/40"></span>
+				</span>
+			</span>
+
+			<!-- The marker line, so the exact position is readable -->
+			<span
+				class="absolute inset-y-0 block w-0.5 bg-tie-red/70"
+				style:left="{game.marker * 100}%"
+				aria-hidden="true"
+			></span>
+		</button>
+
+		<!-- A drone or a Flamingo crossing the square: its own target, so a tap never also cues -->
+		{#if game.air}
+			<button
+				type="button"
+				class="air-target absolute top-[28%] z-10 block size-11 -translate-x-1/2 -translate-y-1/2 cursor-crosshair sm:size-14"
+				style:left="{game.air.progress * 100}%"
+				aria-label={m.redsquare_air_label({ kind: airName(game.air.kind) })}
+				onpointerdown={onAirPointerDown}
+				onclick={(event) => {
+					if (event.detail === 0) game.shootDown();
+				}}
+			>
+				{#if game.air.kind === 'drone'}
+					<!-- A long-range drone: straight wings, pusher propeller at the tail -->
+					<svg viewBox="0 0 48 32" class="pop-in size-full" aria-hidden="true" focusable="false">
+						<g stroke="#111" stroke-width="2.5" stroke-linejoin="round" fill="#5b6f8a">
+							<path d="M22 13 L28 3 L32 3 L27 13 Z" />
+							<path d="M22 19 L28 29 L32 29 L27 19 Z" />
+							<path d="M16 12 L24 12 L40 15 L40 17 L24 20 L16 20 L12 16 Z" />
+							<path d="M16 13 L8 8 L8 11 L16 15 Z" />
+						</g>
+						<g stroke="#111" stroke-width="2" stroke-linecap="round">
+							<path d="M4 12 L2 20" />
+							<circle cx="16" cy="16" r="2" fill="#111" />
+						</g>
+					</svg>
+				{:else}
+					<!-- A Flamingo: a cruise missile with swept wings and a burning tail -->
+					<svg viewBox="0 0 48 32" class="pop-in size-full" aria-hidden="true" focusable="false">
+						<g stroke="#111" stroke-width="2.5" stroke-linejoin="round" fill="#c9c3b4">
+							<path d="M14 14 L30 14 L44 16 L30 18 L14 18 Z" />
+							<path d="M18 14 L26 6 L30 6 L24 14 Z" />
+							<path d="M18 18 L26 26 L30 26 L24 18 Z" />
+							<path d="M12 14 L6 9 L6 14 Z" />
+						</g>
+						<path d="M4 16 L0 12 L0 20 Z" fill="#e1a53c" stroke="#111" stroke-width="1.5" />
+					</svg>
+				{/if}
+			</button>
+		{/if}
 	</div>
-
-	<!-- Cue -->
-	<button
-		type="button"
-		class="btn-chunky flex-col gap-0.5 py-3 text-lg leading-tight disabled:opacity-60 sm:text-xl {cueClass}"
-		aria-keyshortcuts="Space"
-		disabled={game.status !== 'playing'}
-		onpointerdown={(event) => {
-			if (event.pointerType === 'mouse' && event.button !== 0) return;
-			game.cue();
-		}}
-		onclick={(event) => {
-			// A tap already cued on pointer-down; this catches keyboard and assistive activation
-			if (event.detail === 0) game.cue();
-		}}
-	>
-		<IconTrumpet class="size-6 sm:size-7" aria-hidden="true" />
-		<span dir="auto">{m.redsquare_cue()}</span>
-	</button>
 
 	{#if game.toast && game.status === 'playing'}
 		{#key game.toast.id}
@@ -250,6 +290,11 @@
 		animation: hurt 420ms ease-out forwards;
 	}
 
+	/* The target rocks as it crosses, so it reads as flying rather than sliding */
+	.air-target {
+		animation: air-sway 2200ms ease-in-out infinite;
+	}
+
 	@keyframes notice {
 		0% {
 			opacity: 0;
@@ -280,6 +325,16 @@
 		}
 	}
 
+	@keyframes air-sway {
+		0%,
+		100% {
+			rotate: -2.5deg;
+		}
+		50% {
+			rotate: 2.5deg;
+		}
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		.notice {
 			animation: none;
@@ -287,6 +342,10 @@
 
 		.hurt {
 			animation-duration: 1ms;
+		}
+
+		.air-target {
+			animation: none;
 		}
 	}
 </style>

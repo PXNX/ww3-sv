@@ -95,6 +95,7 @@
 		<p>{m.redsquare_tutorial_rules()}</p>
 		<p>{m.redsquare_tutorial_mood()}</p>
 		<p>{m.redsquare_tutorial_waves()}</p>
+		<p>{m.redsquare_tutorial_air()}</p>
 		<p>{m.redsquare_tutorial_keys()}</p>
 	</TutorialModal>
 

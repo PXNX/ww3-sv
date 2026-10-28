@@ -1,22 +1,26 @@
 /*
  * Red Square game store: wraps the pure timing rules with the toast, the shake on a missed slot,
- * sounds and personal bests. Only what the page shows is reactive; the rules state stays plain and
- * is synced after every event (the marker every step).
+ * the drone and missile over the square, sounds and personal bests. Only what the page shows is
+ * reactive; the rules state stays plain and is synced after every event (the marker every step).
  */
+import { airName } from '#lib/components/redsquareText.js';
+import { INTERCEPTORS_BASE, STARTING_MOOD } from '#lib/game/redsquare/config.js';
+import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
 import {
+	airProgress,
 	createGame,
 	cue,
 	interceptors,
 	markerOf,
+	shootAir,
 	step,
+	type AirKind,
 	type CueMissReason,
 	type CueResult,
 	type RedSquareEvent,
 	type RedSquarePhase,
 	type RedSquareState
 } from '#lib/game/redsquare/state.js';
-import { INTERCEPTORS_BASE, STARTING_MOOD } from '#lib/game/redsquare/config.js';
-import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
 import { m } from '#lib/paraglide/messages.js';
 import { highscores, type Highscores } from '#lib/services/highscore.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
@@ -57,6 +61,8 @@ export class RedSquareGame {
 	hits = $state(0);
 	misses = $state(0);
 	interceptors = $state(INTERCEPTORS_BASE);
+	/** The drone or missile over the square, with where it has got to, 0 to 1 */
+	air = $state.raw<{ kind: AirKind; progress: number } | null>(null);
 	last = $state.raw<CueResult | null>(null);
 	toast = $state.raw<Toast | null>(null);
 	/** The radio line about the next wave */
@@ -78,6 +84,8 @@ export class RedSquareGame {
 	#toastMs = 0;
 	#waveMs = 0;
 	#toastId = 0;
+	/** The hint about tapping the drone is only worth showing the first time */
+	#airSeen = false;
 
 	constructor({
 		reducedMotion = false,
@@ -107,6 +115,7 @@ export class RedSquareGame {
 		this.hurtCount = 0;
 		this.#toastMs = 0;
 		this.#waveMs = 0;
+		this.#airSeen = false;
 		this.#sync();
 		this.status = 'playing';
 	}
@@ -132,6 +141,14 @@ export class RedSquareGame {
 		if (events.length > 0) this.#sync();
 	}
 
+	/** The player taps the drone or missile flying over the square */
+	shootDown() {
+		if (this.status !== 'playing') return;
+		const events = shootAir(this.state);
+		for (const event of events) this.#handle(event);
+		if (events.length > 0) this.#sync();
+	}
+
 	/** One fixed step: called by the game loop */
 	update(dtMs: number) {
 		if (this.status !== 'playing') return;
@@ -140,6 +157,7 @@ export class RedSquareGame {
 		const events = step(this.state, dtMs, this.#random);
 		for (const event of events) this.#handle(event);
 		this.marker = markerOf(this.state);
+		this.#syncAir();
 		if (events.length > 0) this.#sync();
 	}
 
@@ -199,12 +217,30 @@ export class RedSquareGame {
 				this.#play('ui-error', 1);
 				break;
 			case 'wave':
-				this.waveNote = {
-					id: ++this.#toastId,
-					text: m.redsquare_popup_wave({ wave: event.wave, interceptors: event.interceptors })
-				};
-				this.#waveMs = TOAST_MS * (this.reducedMotion ? 1.4 : 1);
+				this.#showWaveNote(
+					m.redsquare_popup_wave({ wave: event.wave, interceptors: event.interceptors })
+				);
 				this.#play('alarm', 0.5);
+				break;
+			case 'air':
+				// The first one gets a hint; after that the drone itself is the warning
+				if (!this.#airSeen) {
+					this.#airSeen = true;
+					this.#showWaveNote(m.redsquare_popup_air({ kind: airName(event.kind) }));
+				}
+				this.#play(event.kind === 'drone' ? 'drone-buzz' : 'alarm', 0.6);
+				break;
+			case 'air-down':
+				this.#showToast(
+					m.redsquare_popup_air_down({ kind: airName(event.kind), points: event.points })
+				);
+				this.#play('explosion-small', 0.9);
+				break;
+			case 'air-escaped':
+				this.hurtCount += 1;
+				this.shakeCount += 1;
+				this.#showToast(m.redsquare_popup_air_escaped({ kind: airName(event.kind) }));
+				this.#play('ui-error', 1);
 				break;
 			case 'game-over':
 				this.#sync();
@@ -216,6 +252,12 @@ export class RedSquareGame {
 	#showToast(text: string) {
 		this.toast = { id: ++this.#toastId, text };
 		this.#toastMs = TOAST_MS * (this.reducedMotion ? 1.4 : 1);
+	}
+
+	/** The radio line above the square, for waves and for the first air target */
+	#showWaveNote(text: string) {
+		this.waveNote = { id: ++this.#toastId, text };
+		this.#waveMs = TOAST_MS * (this.reducedMotion ? 1.4 : 1);
 	}
 
 	#play(id: SoundId, intensity: number) {
@@ -237,6 +279,13 @@ export class RedSquareGame {
 		this.misses = state.misses;
 		this.interceptors = interceptors(state);
 		this.last = state.last;
+		this.#syncAir();
+	}
+
+	/** The air target moves every step, so it is mirrored on its own */
+	#syncAir() {
+		const air = this.state.air;
+		this.air = air ? { kind: air.kind, progress: airProgress(this.state) } : null;
 	}
 
 	#finish() {

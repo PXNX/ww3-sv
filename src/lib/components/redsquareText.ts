@@ -1,4 +1,5 @@
-/* Translated texts of Red Square: the parade columns that cross the square */
+/* Translated texts of Red Square: the parade columns that cross the square, and the air targets */
+import type { AirKind } from '#lib/game/redsquare/state.js';
 import { COLUMN_COUNT } from '#lib/game/redsquare/config.js';
 import { m } from '#lib/paraglide/messages.js';
 
@@ -19,4 +20,9 @@ if (COLUMNS.length !== COLUMN_COUNT) {
 
 export function columnText(index: number): string {
 	return (COLUMNS[index] ?? COLUMNS[0])();
+}
+
+/** What is overhead: a long-range drone or a Flamingo cruise missile */
+export function airName(kind: AirKind): string {
+	return kind === 'drone' ? m.redsquare_air_drone() : m.redsquare_air_flamingo();
 }

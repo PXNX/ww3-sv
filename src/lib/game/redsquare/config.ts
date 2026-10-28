@@ -42,5 +42,20 @@ export const GAME_OVER_FEEDBACK_MS = 1000;
 export const INTERCEPTORS_BASE = 12;
 export const INTERCEPTORS_STEP = 2;
 
+/**
+ * Air targets: now and then a Ukrainian long-range drone or a Flamingo missile crosses the square
+ * while the column is marching, and has to be tapped before it gets across. They start with the
+ * second wave, so the first columns can be learned in peace.
+ */
+export const AIR_FIRST_WAVE = 2;
+/** Chance that a column brings one along; the rest of the parade stays undisturbed */
+export const AIR_CHANCE = 0.5;
+/** How long a target takes to cross the square in the first wave, quicker every wave */
+export const AIR_CROSS_BASE_MS = 2600;
+export const AIR_CROSS_MIN_MS = 1500;
+export const AIR_CROSS_STEP_MS = 130;
+/** Points for shooting one down; letting it through costs a mood point instead */
+export const AIR_POINTS = 150;
+
 /** How many columns the generator can choose from (redsquare_column_0 ... redsquare_column_7) */
 export const COLUMN_COUNT = 8;
