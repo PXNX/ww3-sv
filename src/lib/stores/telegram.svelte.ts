@@ -12,6 +12,7 @@ import {
 	loadTelegram,
 	openInvoice,
 	parseMe,
+	postGroupScore,
 	requestWriteAccess,
 	toCallError,
 	type CatalogueItem,
@@ -125,11 +126,7 @@ class TelegramStore {
 		const game = this.groupGame;
 		if (!game || game.mode !== mode || !Number.isFinite(score)) return;
 		try {
-			await call('gamescore', {
-				session: game.session,
-				game: mode,
-				score: Math.max(0, Math.floor(score))
-			});
+			await postGroupScore(game, Math.max(0, Math.floor(score)));
 		} catch {
 			// A run that does not reach the chat only misses that one entry on its scoreboard
 		}

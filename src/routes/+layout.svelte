@@ -7,7 +7,7 @@
 	import { APP_NAME } from '#lib/config.js';
 	import { streakDeadline } from '#lib/game/career/profile.js';
 	import { career } from '#lib/game/career/store.svelte.js';
-	import { groupGameLaunch, launchStartParam, startRoute } from '#lib/services/telegram.js';
+	import { groupGameFromUrl, launchStartParam, startRoute } from '#lib/services/telegram.js';
 	import { clipPreload } from '#lib/sound/preload.svelte.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import { appearance } from '#lib/stores/appearance.svelte.js';
@@ -43,18 +43,12 @@
 		if (!soundManager().muted) clipPreload().start();
 		// Early, while the URL hash still holds the Mini App launch parameters
 		void account.start();
-		// A `startapp=shop` or `startapp=profile` link opens that page instead of the start screen,
-		// and the Play button of a chat's game message opens its mode for that chat's leaderboard
+		// Opened by the Play button of a chat's game message: its runs count on that chat's leaderboard
+		account.groupGame = groupGameFromUrl(page.url);
+		// A `startapp=shop` or `startapp=profile` link opens that page instead of the start screen
 		void launchStartParam().then((param) => {
-			if (page.url.pathname !== resolve('/')) return;
-			const game = groupGameLaunch(param);
-			if (game) {
-				account.groupGame = game;
-				void goto(resolve(game.route));
-				return;
-			}
 			const route = startRoute(param);
-			if (route) void goto(resolve(route));
+			if (route && page.url.pathname === resolve('/')) void goto(resolve(route));
 		});
 		if ('serviceWorker' in navigator) {
 			navigator.serviceWorker.register('/service-worker.js', {

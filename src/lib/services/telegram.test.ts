@@ -3,7 +3,7 @@ import {
 	TelegramCallError,
 	endpointCode,
 	fromApiReply,
-	groupGameLaunch,
+	groupGameFromUrl,
 	inviteShareUrl,
 	isTelegramLaunch,
 	parseMe,
@@ -134,28 +134,30 @@ describe('a startapp link', () => {
 		expect(startRoute('../admin')).toBeNull();
 		expect(startRoute(null)).toBeNull();
 	});
+});
 
-	it("carries the mode and session of a chat's game message", () => {
-		const session = '0123456789abcdef0123';
-		expect(groupGameLaunch(`g_blocks_${session}`)).toEqual({
-			mode: 'blocks',
-			session,
-			route: '/play/blocks'
-		});
-		expect(startRoute(`g_blocks_${session}`)).toBeNull();
-		for (const param of [
-			'shop',
-			`g__${session}`,
-			`g_Blocks_${session}`,
-			`g_blocks_${session.slice(1)}`,
-			`g_blocks_${session}0`,
+describe("a game page opened from a chat's game message", () => {
+	const session = '0123456789abcdef0123456789abcdef';
+	const at = (path: string) => new URL(path, 'https://ww3-sv.vercel.app');
+
+	it('carries the mode and the session', () => {
+		const game = { mode: 'blocks', session };
+		expect(groupGameFromUrl(at(`/play/blocks?game_session=${session}`))).toEqual(game);
+		expect(groupGameFromUrl(at(`/play/blocks/?game_session=${session}#tgShareScoreUrl=x`))).toEqual(
+			game
+		);
+	});
+
+	it('ignores any other page or session', () => {
+		for (const path of [
+			'/play/blocks',
+			`/?game_session=${session}`,
+			`/play/blocks?game_session=${session.slice(1)}`,
+			`/play/blocks?game_session=${session.toUpperCase()}`,
 			// Not offered as a Telegram game yet
-			`g_minefield_${session}`,
-			`g_toString_${session}`,
-			`g_../shop_${session}`,
-			null
+			`/play/minefield?game_session=${session}`
 		]) {
-			expect(groupGameLaunch(param)).toBeNull();
+			expect(groupGameFromUrl(at(path))).toBeNull();
 		}
 	});
 });
