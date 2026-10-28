@@ -20,9 +20,7 @@
 
 	const regions = $derived(REGION_IDS.filter((id) => game.owner[id] === 'player'));
 	const buildable = $derived(regions.filter((id) => regionDef(id).slots > 0));
-	const hasFreeSlot = $derived(
-		buildable.some((id) => game.slotsUsed(id) < regionDef(id).slots)
-	);
+	const hasFreeSlot = $derived(buildable.some((id) => game.slotsUsed(id) < regionDef(id).slots));
 
 	function factoriesIn(region: RegionId): FactoryId[] {
 		return game.buildings
@@ -65,7 +63,7 @@
 		{/each}
 	</ul>
 
-	{#if !canBuildAnywhere}
+	{#if !hasFreeSlot}
 		<p
 			dir="auto"
 			class="rounded-md border-2 border-dashed border-ink/40 px-2 py-2 text-sm font-semibold"
