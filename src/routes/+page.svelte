@@ -19,9 +19,9 @@
 </script>
 
 <main
-	class="mx-auto flex max-w-5xl flex-col gap-8 px-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(3rem+env(safe-area-inset-bottom))]"
+	class="mx-auto flex max-w-5xl flex-col gap-8 px-4 pt-[calc(1rem+var(--top-inset))] pb-[calc(3rem+env(safe-area-inset-bottom))]"
 >
-	<div class="flex items-center justify-between gap-2">
+	<div class="flex items-center justify-between gap-2 pr-(--top-right-inset) pl-(--top-left-inset)">
 		<a
 			href={resolve('/profile')}
 			class="btn-chunky overflow-hidden bg-flag-blue/25 p-0"
