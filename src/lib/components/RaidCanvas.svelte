@@ -1,14 +1,17 @@
 <!--
 	Raid playfield: a crisp high-DPI canvas that fills the space it gets (landscape), driven by the
-	fixed-step loop, with the HUD and the touch controls laid over it. Dragging anywhere on the
-	field opens a floating stick to walk. The big weapon button at the bottom right attacks (tap
-	or hold; every shot aims at the closest enemy), and the held weapon's two skills and the
-	weapon swap sit in an arc towards its top left, the sprint button to their left. The time and
-	threat sit at the bottom left, a live event above them with its seconds left. Keys work too.
-	The playfield never mirrors in right-to-left languages and never scrolls.
+	fixed-step loop, with the HUD and the touch controls laid over it, laid out like a mobile
+	brawler. The player's health and level float over their head on the canvas. The top left holds
+	the shared goal: the boss's health while one is out, else the wait for the next one, with the
+	time, threat and a live event under it. The minimap sits in the top right; tapping it opens the
+	leave screen, as does the exit button and every pause. A resting stick waits at the bottom left
+	and jumps to wherever the field is dragged. The big weapon button at the bottom right attacks
+	(tap or hold; every shot aims at the closest enemy), the two skills, the weapon swap and the
+	sprint sit around it with their seconds left while they recharge. Keys work too. The playfield
+	never mirrors in right-to-left languages and never scrolls.
 -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, type Snippet } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { createFixedLoop, onAppHidden } from '#lib/game/loop.js';
 	import { RARITY_COLOR } from '#lib/game/raid/config.js';
@@ -16,8 +19,9 @@
 	import { drawRaid, raiderLook } from '#lib/game/raid/render.js';
 	import type { RaidGame } from '#lib/stores/raidGame.svelte.js';
 	import LivesBar from './LivesBar.svelte';
-	import PauseOverlay from './PauseOverlay.svelte';
 	import RaidItemIcon from './RaidItemIcon.svelte';
+	import RaidLeaveScreen from './RaidLeaveScreen.svelte';
+	import RaidMinimap from './RaidMinimap.svelte';
 	import RaidSkillIcon from './RaidSkillIcon.svelte';
 	import {
 		BOSS_NAMES,
@@ -32,8 +36,6 @@
 	import IconWind from '~icons/lucide/wind';
 	import IconZap from '~icons/lucide/zap';
 	import IconRepeat from '~icons/lucide/repeat';
-	import IconCoins from '~icons/lucide/coins';
-	import IconGem from '~icons/lucide/gem';
 	import IconSkull from '~icons/lucide/skull';
 
 	let { game }: { game: RaidGame } = $props();
@@ -248,21 +250,32 @@
 		}
 	}
 
-	const hpShare = $derived(Math.max(0, Math.min(1, game.hp / game.maxHp)));
 	const cooldownStyle = (share: number) =>
 		share > 0
-			? `background-image: conic-gradient(rgb(17 17 17 / 0.55) ${share * 360}deg, transparent 0)`
+			? `background-image: conic-gradient(rgb(10 6 24 / 0.6) ${share * 360}deg, transparent 0)`
 			: '';
 
-	// The skills sit on an arc towards the top left of the attack button, the sprint to their left
-	const ATTACK_SIZE = 88;
-	const SKILL_SIZE = 58;
-	const ARC = 102;
-	function arcSpot(degrees: number) {
+	// The skills, the swap and the sprint sit on an arc around the attack button
+	const ATTACK_SIZE = 92;
+	const ATTACK_RIGHT = 36;
+	const ATTACK_BOTTOM = 30;
+	const SKILL_SIZE = 60;
+	const ARC = 106;
+	function arcSpot(degrees: number, size = SKILL_SIZE) {
 		const angle = (degrees * Math.PI) / 180;
-		const center = 14 + ATTACK_SIZE / 2;
-		return `right: ${center - Math.cos(angle) * ARC - SKILL_SIZE / 2}px; bottom: ${center + Math.sin(angle) * ARC - SKILL_SIZE / 2}px; width: ${SKILL_SIZE}px; height: ${SKILL_SIZE}px;`;
+		const right = ATTACK_RIGHT + ATTACK_SIZE / 2;
+		const bottom = ATTACK_BOTTOM + ATTACK_SIZE / 2;
+		return `right: ${right - Math.cos(angle) * ARC - size / 2}px; bottom: ${bottom + Math.sin(angle) * ARC - size / 2}px; width: ${size}px; height: ${size}px;`;
 	}
+
+	/** The small map keeps the battlefield's proportions inside a fixed box */
+	const MINIMAP_BOX = { width: 128, height: 92 };
+	const minimap = $derived.by(() => {
+		const { map } = game.state;
+		void game.map;
+		const scale = Math.min(MINIMAP_BOX.width / map.width, MINIMAP_BOX.height / map.height);
+		return { width: Math.round(map.width * scale), height: Math.round(map.height * scale) };
+	});
 </script>
 
 <svelte:window onkeydown={onKeyDown} onkeyup={onKeyUp} />
@@ -287,75 +300,69 @@
 	{/key}
 
 	{#if game.status !== 'lobby'}
-		<!-- HUD: health and revive on the left, XP, gold, kills and crystals on the right; both kept clear of the corners -->
+		<!-- Top left: the shared goal (the boss), then time, threat and revive, a live event and found gear -->
 		<div
-			class="pointer-events-none absolute top-(--hud-top) right-(--hud-right) left-(--hud-left) flex items-start justify-between gap-2"
+			class="pointer-events-none absolute top-(--hud-top) left-(--hud-left) flex w-72 max-w-[45%] flex-col items-start gap-1.5"
 		>
-			<div class="flex flex-col gap-1">
-				<div
-					class="flex items-center gap-2 rounded-lg border-2 border-ink bg-paper/90 px-2 py-1 font-display text-sm font-bold"
+			<div
+				class="w-full rounded-s-lg bg-linear-to-r from-[#1b1036]/85 via-[#1b1036]/60 to-transparent py-1.5 ps-3 pe-6 text-white"
+			>
+				<span
+					class="block font-display text-[0.7rem] font-bold tracking-wide text-[#b9a4ff] uppercase"
+					>{game.boss ? m.raid_hud_boss_now() : m.raid_hud_boss_next()}</span
 				>
-					<div
-						class="relative h-4 w-28 overflow-hidden rounded-full border-2 border-ink bg-sand sm:w-40"
-					>
-						<div
-							class="h-full bg-tie-red transition-[width] duration-150"
-							style:width="{hpShare * 100}%"
-						></div>
-					</div>
-					<span class="tabular-nums">{game.hp}/{game.maxHp}</span>
-					<span title={game.revivesLeft > 0 ? m.raid_hud_revive_ready() : m.raid_hud_revive_used()}>
-						<LivesBar lives={game.revivesLeft} max={1} class="text-base" />
-						<span class="sr-only"
-							>{game.revivesLeft > 0 ? m.raid_hud_revive_ready() : m.raid_hud_revive_used()}</span
+				<span dir="auto" class="block text-sm leading-tight font-bold">
+					{#if game.boss && game.boss.variant !== 'normal'}
+						<span class={game.boss.variant === 'mega' ? 'text-[#ff6b6b]' : 'text-[#ffd23a]'}
+							>{game.boss.variant === 'mega' ? '★★' : '★'}</span
 						>
+					{/if}
+					{game.boss
+						? m.raid_hud_boss_fight({ boss: BOSS_NAMES[game.map]() })
+						: m.raid_hud_boss_soon({ boss: BOSS_NAMES[game.map]() })}
+				</span>
+				<div class="mt-1 flex items-center">
+					<span
+						class="z-10 flex size-7 shrink-0 items-center justify-center rounded-full border-2 border-white bg-[#ff6b3d]"
+					>
+						<IconSkull class="size-4" aria-hidden="true" />
 					</span>
+					<div class="relative -ms-2 h-4 flex-1 overflow-hidden rounded-e-sm bg-black/45">
+						<div
+							class="h-full transition-[width] duration-300 {game.boss
+								? 'bg-linear-to-r from-[#a64dff] to-[#ff5ad1]'
+								: 'bg-linear-to-r from-[#ff6b3d] to-[#ff9a3c]'}"
+							style:width="{(game.boss ? game.boss.share : (game.nextBoss?.share ?? 0)) * 100}%"
+						></div>
+						<span
+							class="absolute inset-y-0 start-3 flex items-center font-display text-xs font-bold tabular-nums"
+						>
+							{game.boss
+								? `${Math.round(game.boss.share * 100)}%`
+								: formatTime((game.nextBoss?.seconds ?? 0) * 1000)}
+						</span>
+					</div>
 				</div>
 			</div>
-
-			{#if game.boss}
-				<div
-					class="mx-auto flex max-w-[40%] flex-1 flex-col items-center rounded-lg border-2 border-ink bg-paper/90 px-2 py-1"
-				>
-					<span dir="auto" class="flex items-center gap-1 font-display text-xs font-bold">
-						{#if game.boss.variant !== 'normal'}
-							<span class={game.boss.variant === 'mega' ? 'text-tie-red' : 'text-mustard'}
-								>{game.boss.variant === 'mega' ? '★★' : '★'}</span
-							>
-						{/if}
-						{BOSS_NAMES[game.map]()}
-					</span>
-					<div class="h-3 w-full overflow-hidden rounded-full border-2 border-ink bg-sand">
-						<div class="h-full bg-[#a64dff]" style:width="{game.boss.share * 100}%"></div>
-					</div>
-				</div>
-			{/if}
 
 			<div
-				class="flex items-center gap-2 rounded-lg border-2 border-ink bg-paper/90 px-2 py-1 font-display text-sm font-bold tabular-nums"
+				class="flex items-center gap-2 rounded-md bg-[#1b1036]/60 px-2 py-0.5 font-display text-xs font-bold text-white"
 			>
-				<span class="text-flag-blue">{game.xp} XP</span>
-				<span class="flex items-center gap-0.5"
-					><IconCoins class="size-4" aria-hidden="true" />{game.gold}</span
+				<span class="tabular-nums">{formatTime(game.timeMs)}</span>
+				<span class="rounded bg-tie-red px-1 text-white"
+					>{m.raid_hud_threat({ level: game.threat })}</span
 				>
-				<span class="flex items-center gap-0.5"
-					><IconSkull class="size-4" aria-hidden="true" />{game.kills}</span
-				>
-				{#if game.crystalsFound > 0}
-					<span class="flex items-center gap-0.5 text-[#a64dff]"
-						><IconGem class="size-4" aria-hidden="true" />{game.crystalsFound}</span
+				<span title={game.revivesLeft > 0 ? m.raid_hud_revive_ready() : m.raid_hud_revive_used()}>
+					<LivesBar lives={game.revivesLeft} max={1} class="text-sm" />
+					<span class="sr-only"
+						>{game.revivesLeft > 0 ? m.raid_hud_revive_ready() : m.raid_hud_revive_used()}</span
 					>
-				{/if}
+				</span>
 			</div>
-		</div>
 
-		<!-- The bottom left is free (the stick opens wherever the field is dragged): time, threat and a live event -->
-		<div
-			class="pointer-events-none absolute bottom-[calc(0.5rem+env(safe-area-inset-bottom))] left-[calc(0.5rem+env(safe-area-inset-left))] flex flex-col items-start gap-1"
-		>
 			{#if game.liveEvent}
 				<div
-					class="live-event flex w-fit origin-bottom-left items-center gap-1 rounded-lg border-2 border-ink bg-explosion-yellow px-2 py-0.5 font-display text-xs font-bold"
+					class="live-event flex w-fit origin-left items-center gap-1 rounded-md bg-explosion-yellow px-2 py-0.5 font-display text-xs font-bold text-[#111]"
 				>
 					<IconZap class="size-3.5" aria-hidden="true" />
 					<span>{m.raid_event_live({ event: EVENT_NAMES[game.liveEvent.kind]() })}</span>
@@ -364,70 +371,131 @@
 					>
 				</div>
 			{/if}
-			<div
-				class="flex w-fit items-center gap-2 rounded-lg border-2 border-ink bg-paper/90 px-2 py-0.5 font-display text-xs font-bold"
-			>
-				<span class="tabular-nums">{formatTime(game.timeMs)}</span>
-				<span class="rounded bg-tie-red px-1 text-paper"
-					>{m.raid_hud_threat({ level: game.threat })}</span
-				>
-			</div>
-		</div>
-	{/if}
 
-	{#if game.found && (game.status === 'playing' || game.status === 'paused')}
-		{@const item = game.found.item}
-		<div
-			class="pop-in absolute top-[calc(var(--hud-top)+2.75rem)] left-(--hud-left) flex max-w-[15rem] items-center gap-2 rounded-xl border-3 bg-paper p-2 shadow-[3px_3px_0_var(--color-ink)]"
-			style:border-color={RARITY_COLOR[item.rarity]}
-		>
-			<RaidItemIcon
-				kind={item.type === 'weapon' ? item.kind : item.slot}
-				rarity={item.rarity}
-				class="size-11 shrink-0"
-			/>
-			<div class="flex min-w-0 flex-col font-display leading-tight">
-				<span class="text-[0.65rem] font-bold uppercase opacity-70">{m.raid_found()}</span>
-				<span dir="auto" class="truncate text-sm font-bold">{itemName(item)}</span>
-				<span class="text-xs font-bold" style:color={RARITY_COLOR[item.rarity]}
-					>{RARITY_NAMES[item.rarity]()} · {m.raid_item_level({ level: item.level })}</span
+			{#if game.found && (game.status === 'playing' || game.status === 'paused')}
+				{@const item = game.found.item}
+				<div
+					class="pop-in pointer-events-auto flex max-w-[15rem] items-center gap-2 rounded-xl border-3 bg-paper p-2 shadow-[3px_3px_0_var(--color-ink)]"
+					style:border-color={RARITY_COLOR[item.rarity]}
 				>
-				{#if game.found.better}
-					<span class="text-[0.65rem] font-bold text-khaki">▲ {m.raid_found_better()}</span>
-				{/if}
-			</div>
-			<button
-				type="button"
-				class="btn-chunky shrink-0 bg-explosion-yellow px-2 py-1 text-sm"
-				onclick={() => game.equipFound()}
-			>
-				{m.raid_found_equip()}
-			</button>
+					<RaidItemIcon
+						kind={item.type === 'weapon' ? item.kind : item.slot}
+						rarity={item.rarity}
+						class="size-11 shrink-0"
+					/>
+					<div class="flex min-w-0 flex-col font-display leading-tight">
+						<span class="text-[0.65rem] font-bold uppercase opacity-70">{m.raid_found()}</span>
+						<span dir="auto" class="truncate text-sm font-bold">{itemName(item)}</span>
+						<span class="text-xs font-bold" style:color={RARITY_COLOR[item.rarity]}
+							>{RARITY_NAMES[item.rarity]()} · {m.raid_item_level({ level: item.level })}</span
+						>
+						{#if game.found.better}
+							<span class="text-[0.65rem] font-bold text-khaki">▲ {m.raid_found_better()}</span>
+						{/if}
+					</div>
+					<button
+						type="button"
+						class="btn-chunky shrink-0 bg-explosion-yellow px-2 py-1 text-sm"
+						onclick={() => game.equipFound()}
+					>
+						{m.raid_found_equip()}
+					</button>
+				</div>
+			{/if}
 		</div>
+
+		<!-- Top right: the minimap, which opens the leave screen with the big map -->
+		<button
+			type="button"
+			class="absolute top-(--hud-top) right-(--hud-right) rounded-xl bg-[#1b1036]/40 p-1 ring-2 ring-white/25 active:scale-95"
+			aria-label="{m.raid_hud_minimap()}: {m.raid_leave_button()}"
+			onclick={() => game.pause()}
+		>
+			{#key game.map}
+				<RaidMinimap
+					raid={() => game.state}
+					width={minimap.width}
+					height={minimap.height}
+					live
+					label={m.raid_hud_minimap()}
+					class="rounded-lg"
+				/>
+			{/key}
+		</button>
 	{/if}
 
 	{#if stick}
 		<div
-			class="pointer-events-none absolute rounded-full border-3 border-ink/60 bg-paper/25"
+			class="pointer-events-none absolute rounded-full border-3 border-white/50 bg-black/15"
 			style:left="{stick.baseX - STICK_RADIUS}px"
 			style:top="{stick.baseY - STICK_RADIUS}px"
 			style:width="{STICK_RADIUS * 2}px"
 			style:height="{STICK_RADIUS * 2}px"
 		>
 			<div
-				class="absolute size-12 rounded-full border-3 border-ink bg-paper/80"
-				style:left="{STICK_RADIUS - 24 + stick.dx}px"
-				style:top="{STICK_RADIUS - 24 + stick.dy}px"
+				class="absolute size-14 rounded-full border-3 border-white/80 bg-white/55"
+				style:left="{STICK_RADIUS - 28 + stick.dx}px"
+				style:top="{STICK_RADIUS - 28 + stick.dy}px"
 			></div>
 		</div>
+	{:else if game.status === 'playing'}
+		<!-- The stick at rest; it jumps to wherever the field is dragged -->
+		<div
+			class="pointer-events-none absolute bottom-[calc(1.25rem+env(safe-area-inset-bottom))] left-[calc(1.75rem+env(safe-area-inset-left))] flex items-center justify-center rounded-full border-3 border-white/30 bg-black/10"
+			style:width="{STICK_RADIUS * 2}px"
+			style:height="{STICK_RADIUS * 2}px"
+		>
+			<div class="size-14 rounded-full border-3 border-white/45 bg-white/25"></div>
+		</div>
 	{/if}
+
+	{#snippet roundButton(
+		spot: string,
+		label: string,
+		share: number,
+		seconds: number,
+		onpress: () => void,
+		icon: Snippet
+	)}
+		<button
+			type="button"
+			class="skill absolute flex touch-none items-center justify-center rounded-full bg-[#1b1036]/45 ring-3 ring-white/30"
+			style="{spot} {cooldownStyle(share)}"
+			title={label}
+			aria-label={label}
+			onpointerdown={skill(onpress)}
+		>
+			<span
+				class="relative flex size-[78%] items-center justify-center rounded-full bg-paper transition-opacity"
+				class:opacity-45={seconds > 0}
+				class:grayscale={seconds > 0}
+			>
+				{@render icon()}
+			</span>
+			{#if seconds > 0}
+				<span
+					class="cooldown-number absolute font-display text-2xl font-black text-white tabular-nums"
+					aria-hidden="true">{seconds}</span
+				>
+			{/if}
+		</button>
+	{/snippet}
+
+	{#snippet sprintIcon()}<IconWind class="size-8 text-flag-blue" aria-hidden="true" />{/snippet}
+	{#snippet swapIcon()}
+		<RaidItemIcon kind={game.otherKind} class="size-7" />
+		<IconRepeat
+			class="absolute -top-1 -right-1 size-4 rounded-full bg-[#1b1036] p-0.5 text-white"
+			aria-hidden="true"
+		/>
+	{/snippet}
 
 	{#if game.status === 'playing' || game.status === 'paused'}
 		<!-- Attack: tap or hold -->
 		<button
 			type="button"
-			class="attack absolute flex touch-none flex-col items-center justify-center rounded-full border-4 border-ink bg-explosion-yellow shadow-[3px_3px_0_var(--color-ink)]"
-			style="right: 14px; bottom: 14px; width: {ATTACK_SIZE}px; height: {ATTACK_SIZE}px; {cooldownStyle(
+			class="attack absolute flex touch-none items-center justify-center rounded-full bg-[#1b1036]/45 ring-4 ring-white/35"
+			style="right: {ATTACK_RIGHT}px; bottom: {ATTACK_BOTTOM}px; width: {ATTACK_SIZE}px; height: {ATTACK_SIZE}px; {cooldownStyle(
 				game.fireCooldown
 			)}"
 			aria-label="{m.raid_button_attack()}: {WEAPON_NAMES[game.heldKind]()}"
@@ -437,59 +505,48 @@
 			onlostpointercapture={onAttackUp}
 			oncontextmenu={(event) => event.preventDefault()}
 		>
-			<RaidItemIcon kind={game.heldKind} class="size-14" />
 			<span
-				class="absolute -bottom-1 rounded bg-ink px-1 font-display text-[0.65rem] font-bold text-paper"
+				class="flex size-[76%] items-center justify-center rounded-full bg-linear-to-b from-[#ffe27a] to-[#f5b52a] shadow-[inset_0_-4px_0_rgb(0_0_0/0.18)]"
+			>
+				<RaidItemIcon kind={game.heldKind} class="size-14" />
+			</span>
+			<span
+				class="absolute -bottom-1 rounded bg-[#1b1036] px-1 font-display text-[0.65rem] font-bold text-white"
 				>{m.raid_item_level({ level: game.heldLevel })}</span
 			>
 		</button>
 
 		{#each game.skills as id, slot (id)}
-			<button
-				type="button"
-				class="skill absolute flex touch-none items-center justify-center rounded-full border-3 border-ink bg-paper shadow-[2px_2px_0_var(--color-ink)]"
-				style="{arcSpot(slot === 0 ? 180 : 135)} {cooldownStyle(game.skillCooldowns[slot])}"
-				title={SKILL_NAMES[id]()}
-				aria-label={SKILL_NAMES[id]()}
-				onpointerdown={skill(() => game.skill(slot === 0 ? 0 : 1))}
-			>
-				<RaidSkillIcon skill={id} />
-			</button>
+			{#snippet skillIcon()}<RaidSkillIcon skill={id} class="size-8" />{/snippet}
+			{@render roundButton(
+				arcSpot(slot === 0 ? 160 : 112),
+				SKILL_NAMES[id](),
+				game.skillCooldowns[slot],
+				game.skillSeconds[slot],
+				() => game.skill(slot === 0 ? 0 : 1),
+				skillIcon
+			)}
 		{/each}
-		<button
-			type="button"
-			class="skill absolute flex touch-none items-center justify-center rounded-full border-3 border-ink bg-paper shadow-[2px_2px_0_var(--color-ink)]"
-			style="right: {14 +
-				ATTACK_SIZE / 2 +
-				ARC +
-				SKILL_SIZE / 2 +
-				12}px; bottom: 18px; width: {SKILL_SIZE}px; height: {SKILL_SIZE}px; {cooldownStyle(
-				game.sprintCooldown
-			)}"
-			title={m.raid_button_sprint()}
-			aria-label={m.raid_button_sprint()}
-			onpointerdown={skill(() => game.sprint())}
-		>
-			<IconWind class="size-7 text-flag-blue" aria-hidden="true" />
-		</button>
-		<button
-			type="button"
-			class="skill absolute flex touch-none items-center justify-center rounded-full border-3 border-ink bg-sky shadow-[2px_2px_0_var(--color-ink)]"
-			style={arcSpot(90)}
-			title="{m.raid_button_swap()}: {WEAPON_NAMES[game.otherKind]()}"
-			aria-label="{m.raid_button_swap()}: {WEAPON_NAMES[game.otherKind]()}"
-			onpointerdown={skill(() => game.swap())}
-		>
-			<RaidItemIcon kind={game.otherKind} class="size-9" />
-			<IconRepeat
-				class="absolute -top-1 -right-1 size-5 rounded-full border-2 border-ink bg-paper p-0.5"
-				aria-hidden="true"
-			/>
-		</button>
+		{@render roundButton(
+			arcSpot(200),
+			m.raid_button_sprint(),
+			game.sprintCooldown,
+			game.sprintSeconds,
+			() => game.sprint(),
+			sprintIcon
+		)}
+		{@render roundButton(
+			arcSpot(64, 50),
+			`${m.raid_button_swap()}: ${WEAPON_NAMES[game.otherKind]()}`,
+			0,
+			0,
+			() => game.swap(),
+			swapIcon
+		)}
 	{/if}
 
 	{#if game.status === 'paused'}
-		<PauseOverlay onResume={() => game.resume()} />
+		<RaidLeaveScreen {game} onResume={() => game.resume()} onLeave={() => game.leave()} />
 	{:else if game.status === 'down'}
 		<div
 			class="absolute inset-0 z-20 flex items-center justify-center bg-tie-red/40 p-4"
@@ -527,6 +584,11 @@
 	.attack:active,
 	.skill:active {
 		scale: 0.92;
+	}
+
+	.cooldown-number {
+		-webkit-text-stroke: 1.5px #1b1036;
+		paint-order: stroke fill;
 	}
 
 	.hurt {

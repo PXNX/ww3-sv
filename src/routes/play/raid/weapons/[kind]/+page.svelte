@@ -1,13 +1,17 @@
 <!--
-	A raid weapon's own page: every stat (of the player's own weapon with its level and crystals
-	when opened from it in the lobby, else of a common level 1 one), and the base attack and the two
-	skills as buttons; tapping one shows what it does, its numbers and a looping example on a
-	staged battlefield. Laid out side by side for landscape.
+	A raid weapon's own page, laid out like a brawler's hero screen for landscape. On the left the
+	weapon's name on a black banner, its trait, the headline stats (all of them behind "Show all";
+	of the player's own weapon with its level and crystals when opened from it in the lobby, else
+	of a common level 1 one), its crystal sockets and the other weapons. On the right the player's
+	agent with the weapon, and the attack and the two skills as round buttons placed as in a raid.
+	Tapping one swaps the left side for a purple panel with what it does, its cooldown and numbers
+	and a looping example on a staged battlefield. The cross closes the page.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { APP_NAME } from '#lib/config.js';
+	import Avatar from '#lib/components/Avatar.svelte';
 	import RaidCrystalIcon from '#lib/components/RaidCrystalIcon.svelte';
 	import RaidItemIcon from '#lib/components/RaidItemIcon.svelte';
 	import RaidSkillIcon from '#lib/components/RaidSkillIcon.svelte';
@@ -38,8 +42,9 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { localStore } from '#lib/services/storage.js';
 	import { detailsItem, PROFILE_KEY } from '#lib/stores/raidGame.svelte.js';
-	import IconArrowLeft from '~icons/lucide/arrow-left';
 	import IconCrosshair from '~icons/lucide/crosshair';
+	import IconTimer from '~icons/lucide/timer';
+	import IconX from '~icons/lucide/x';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -50,7 +55,7 @@
 	const name = $derived(WEAPON_NAMES[kind]());
 
 	/** The player's own weapon when the lobby passed one, and the player's level */
-	let own = $state<{ item: WeaponItem; level: number } | null>(null);
+	let own = $state<{ item: WeaponItem; level: number; equipped: boolean } | null>(null);
 	onMount(() => {
 		const id = detailsItem();
 		if (!id) return;
@@ -60,7 +65,8 @@
 		const item = [primary, secondary, ...profile.stash].find(
 			(candidate): candidate is WeaponItem => candidate.id === id && candidate.type === 'weapon'
 		);
-		if (item && item.kind === kind) own = { item, level: profile.level };
+		if (item && item.kind === kind)
+			own = { item, level: profile.level, equipped: item === primary || item === secondary };
 	});
 
 	const item = $derived(own?.item ?? makeWeapon(kind));
@@ -80,10 +86,10 @@
 				label: m.raid_details_stat_damage(),
 				value: `${round(stats.damage)}${spec.pellets > 1 ? ` × ${spec.pellets}` : ''}`
 			},
+			{ label: m.raid_details_stat_range(), value: `${spec.range}` },
 			{ label: m.raid_details_stat_rate(), value: (1000 / stats.fireMs).toFixed(1) },
 			{ label: m.raid_details_stat_crit(), value: `${Math.round(stats.critChance * 100)}%` },
 			{ label: m.raid_details_stat_crit_damage(), value: `×${stats.critMultiplier}` },
-			{ label: m.raid_details_stat_range(), value: `${spec.range}` },
 			{ label: m.raid_details_stat_speed(), value: `${spec.projectileSpeed}` },
 			spec.pellets > 1 ? { label: m.raid_details_stat_pellets(), value: `${spec.pellets}` } : null,
 			spec.pierce > 0 ? { label: m.raid_details_stat_pierce(), value: `${spec.pierce}` } : null,
@@ -100,18 +106,35 @@
 			{ label: m.raid_details_stat_sockets(), value: `${socketsOf(item)}` }
 		].filter((row) => row !== null)
 	);
+	/** The first three stats are always shown, the rest behind "Show all" */
+	let allStats = $state(false);
+	const shownRows = $derived(allStats ? rows : rows.slice(0, 3));
 
-	// The attack and the two skills; one at a time is shown
-	let action = $state<DemoAction>('attack');
-	const actions = $derived([
-		{ action: 'attack' as const, label: m.raid_details_attack() },
-		...spec.skills.map((skill, slot) => ({
-			action: (slot === 0 ? 0 : 1) as DemoAction,
-			label: SKILL_NAMES[skill]()
-		}))
-	]);
-	const skill = $derived(action === 'attack' ? null : spec.skills[action]);
+	/** The attack or skill whose panel is open; none shows the weapon itself */
+	let action = $state<DemoAction | null>(null);
+	const skill = $derived(action === null || action === 'attack' ? null : spec.skills[action]);
 	const facts = $derived(skill ? SKILL_FACTS[skill] : null);
+	const actionName = $derived(skill ? SKILL_NAMES[skill]() : m.raid_details_attack());
+	$effect(() => {
+		// Another weapon's page starts on its overview
+		void kind;
+		action = null;
+		allStats = false;
+	});
+
+	function pick(next: DemoAction) {
+		action = action === next ? null : next;
+	}
+
+	// The buttons sit on an arc around the attack, as in a raid
+	const ATTACK = 104;
+	const SKILL = 70;
+	const ARC = 112;
+	function arcSpot(degrees: number) {
+		const angle = (degrees * Math.PI) / 180;
+		const center = ATTACK / 2;
+		return `right: ${center - Math.cos(angle) * ARC - SKILL / 2}px; bottom: ${center + Math.sin(angle) * ARC - SKILL / 2}px; width: ${SKILL}px; height: ${SKILL}px;`;
+	}
 </script>
 
 <svelte:head>
@@ -119,152 +142,253 @@
 </svelte:head>
 
 <main
-	class="mx-auto flex max-w-5xl flex-col gap-3 ps-[calc(0.75rem+env(safe-area-inset-left))] pe-[calc(0.75rem+env(safe-area-inset-right))] pt-[calc(0.75rem+var(--top-inset))] pb-[calc(2rem+env(safe-area-inset-bottom))]"
+	class="relative min-h-dvh overflow-x-hidden bg-[radial-gradient(ellipse_at_62%_45%,#3fe0d0,#17a9a6_45%,#0b6f78)] ps-[calc(1rem+env(safe-area-inset-left))] pe-[calc(1rem+env(safe-area-inset-right))] pt-[calc(1rem+var(--top-inset))] pb-[calc(1rem+env(safe-area-inset-bottom))] text-white"
 >
-	<div class="flex items-center gap-2 pr-(--top-right-inset) pl-(--top-left-inset)">
-		<a href={resolve('/play/raid')} class="btn-chunky px-3 py-1 text-sm">
-			<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
-			{m.raid_details_back()}
-		</a>
-	</div>
+	<a
+		href={resolve('/play/raid')}
+		class="absolute top-[calc(0.5rem+var(--top-inset))] right-[calc(0.5rem+var(--top-right-inset))] z-20 flex size-12 -skew-x-6 items-center justify-center rounded-md bg-[#d9f3ff] text-[#7a2fd0] shadow-[0_3px_0_rgb(0_0_0/0.25)] active:scale-95"
+		aria-label={m.raid_details_back()}
+		title={m.raid_details_back()}
+	>
+		<IconX class="size-8 stroke-[3.5]" aria-hidden="true" />
+	</a>
 
-	<div class="grid gap-3 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-		<!-- The weapon and all its stats -->
-		<div class="flex flex-col gap-3">
-			<header
-				class="flex items-center gap-3 rounded-[14px_8px_16px_10px] border-3 border-ink bg-banner-slate p-3 text-paper shadow-[4px_4px_0_var(--color-ink)]"
-			>
-				<RaidItemIcon {kind} rarity={item.rarity} class="size-16 shrink-0" />
-				<div class="flex min-w-0 flex-col">
-					<h1 dir="auto" class="text-2xl leading-tight font-bold sm:text-3xl">{name}</h1>
-					<p dir="auto" class="text-sm">{WEAPON_TRAITS[kind]()}</p>
-					{#if own}
-						<p
-							class="w-fit rounded bg-paper px-1.5 text-sm font-bold"
-							style:color={RARITY_COLOR[item.rarity]}
+	<div class="grid min-h-[calc(100dvh-2rem)] gap-4 md:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
+		<!-- Left: the weapon, or the panel of the picked attack or skill -->
+		<div class="relative z-10 flex flex-col gap-3">
+			{#if action === null}
+				<header class="flex items-center gap-1 pt-2">
+					<RaidItemIcon
+						{kind}
+						rarity={item.rarity}
+						class="z-10 size-20 shrink-0 -rotate-6 drop-shadow-[0_3px_0_rgb(0_0_0/0.3)]"
+					/>
+					<div class="-ms-5 flex min-w-0 flex-col items-start">
+						<h1
+							dir="auto"
+							class="-skew-x-6 bg-[#111] py-1.5 ps-7 pe-6 font-display text-3xl leading-none font-black uppercase italic sm:text-4xl"
 						>
-							{RARITY_NAMES[item.rarity]()} · {m.raid_item_level({ level: item.level })}
-						</p>
-					{/if}
-				</div>
-			</header>
-			<p class="text-xs font-semibold opacity-80">
-				{own ? m.raid_details_yours() : m.raid_details_base()}
-			</p>
-			<dl class="grid grid-cols-2 gap-1.5 font-display sm:grid-cols-3">
-				{#each rows as row (row.label)}
-					<div
-						class="flex flex-col items-center justify-center rounded-md border-2 border-ink bg-sand p-1.5 text-center"
-					>
-						<dt class="text-[0.7rem] leading-tight font-bold">{row.label}</dt>
-						<dd class="text-base font-bold tabular-nums">{row.value}</dd>
-					</div>
-				{/each}
-			</dl>
-			{#if own && crystalsOf(item).length > 0}
-				<ul class="flex flex-col gap-1">
-					{#each crystalsOf(item) as crystal, index (index)}
-						<li class="flex items-center gap-2 text-sm">
-							<RaidCrystalIcon kind={crystal.kind} rarity={crystal.rarity} class="size-7" />
-							<span dir="auto"
-								><strong>{crystalName(crystal)}</strong>: {crystalEffect(crystal)}</span
+							{name}
+						</h1>
+						{#if own}
+							<span
+								class="ms-6 -skew-x-6 rounded-b-md bg-paper px-2 font-display text-sm font-black uppercase italic"
+								style:color={RARITY_COLOR[item.rarity]}
 							>
-						</li>
+								{RARITY_NAMES[item.rarity]()} · {m.raid_item_level({ level: item.level })}
+							</span>
+						{/if}
+					</div>
+				</header>
+				<p dir="auto" class="max-w-sm text-lg leading-snug font-bold text-[#c9fff6] italic">
+					{WEAPON_TRAITS[kind]()}
+				</p>
+				<p class="text-xs font-semibold text-white/75">
+					{own ? m.raid_details_yours() : m.raid_details_base()}<br />{m.raid_details_pick()}
+				</p>
+
+				<dl class="grid grid-cols-3 gap-x-4 gap-y-2 font-display">
+					{#each shownRows as row (row.label)}
+						<div class="flex flex-col">
+							<dt class="text-[0.7rem] leading-tight font-black text-white uppercase">
+								{row.label}
+							</dt>
+							<dd class="text-2xl leading-tight font-bold tabular-nums">{row.value}</dd>
+						</div>
 					{/each}
-				</ul>
+				</dl>
+				{#if rows.length > 3}
+					<button
+						type="button"
+						class="w-fit -skew-x-6 rounded-md bg-[#7a3fe0] px-3 py-1 font-display text-sm font-black text-white uppercase italic shadow-[0_3px_0_rgb(0_0_0/0.25)]"
+						aria-expanded={allStats}
+						onclick={() => (allStats = !allStats)}
+					>
+						{allStats ? m.raid_details_fewer_stats() : m.raid_details_all_stats()}
+					</button>
+				{/if}
+
+				<!-- Crystal sockets -->
+				<section class="flex flex-col gap-1.5">
+					<h2 class="font-display text-sm font-black uppercase">{m.raid_details_crystals()}</h2>
+					<ul class="flex flex-wrap gap-2">
+						{#each { length: socketsOf(item) }, index (index)}
+							{@const crystal = own ? crystalsOf(item)[index] : undefined}
+							<li
+								class="flex size-14 items-center justify-center rounded-lg bg-[#0b5560]/60 shadow-[inset_0_0_0_2px_rgb(255_255_255/0.12)]"
+								title={crystal ? `${crystalName(crystal)}: ${crystalEffect(crystal)}` : undefined}
+							>
+								{#if crystal}
+									<RaidCrystalIcon kind={crystal.kind} rarity={crystal.rarity} class="size-11" />
+									<span class="sr-only">{crystalName(crystal)}: {crystalEffect(crystal)}</span>
+								{/if}
+							</li>
+						{/each}
+					</ul>
+				</section>
+
+				<nav class="mt-auto flex flex-col gap-1" aria-label={m.raid_details_other()}>
+					<h2 class="font-display text-sm font-black uppercase">{m.raid_details_other()}</h2>
+					<ul class="flex flex-wrap gap-1.5">
+						{#each WEAPON_KINDS.filter((other) => other !== kind) as other (other)}
+							<li>
+								<a
+									href={resolve('/play/raid/weapons/[kind]', { kind: other })}
+									class="flex size-12 items-center justify-center rounded-lg bg-[#0b5560]/60 active:scale-95"
+									title={WEAPON_NAMES[other]()}
+								>
+									<RaidItemIcon kind={other} class="size-9" />
+									<span class="sr-only">{WEAPON_NAMES[other]()}</span>
+								</a>
+							</li>
+						{/each}
+					</ul>
+				</nav>
+			{:else}
+				<section
+					class="-ms-[calc(1rem+env(safe-area-inset-left))] -mt-[calc(1rem+var(--top-inset))] flex min-h-dvh flex-col gap-3 bg-[#3b0d5c] ps-[calc(1.5rem+env(safe-area-inset-left))] pe-6 pt-[calc(1.25rem+var(--top-inset))] pb-6"
+					aria-labelledby="raid-action-title"
+				>
+					<div class="flex items-center gap-3">
+						<span
+							class="flex size-14 shrink-0 items-center justify-center rounded-full bg-paper shadow-[0_3px_0_rgb(0_0_0/0.3)]"
+						>
+							{#if skill}
+								<RaidSkillIcon {skill} class="size-9" />
+							{:else}
+								<IconCrosshair class="size-9 text-tie-red" aria-hidden="true" />
+							{/if}
+						</span>
+						<h2
+							id="raid-action-title"
+							dir="auto"
+							class="font-display text-3xl leading-none font-black uppercase italic"
+						>
+							{actionName}
+						</h2>
+					</div>
+					{#key `${kind}:${action}`}
+						<div class="max-w-[22rem] overflow-hidden rounded-md">
+							<RaidWeaponDemo {kind} {action} label="{name}: {actionName}" {reducedMotion} />
+						</div>
+					{/key}
+					{#if skill}
+						<div
+							class="flex items-center justify-between rounded-md bg-black/25 px-3 py-2 font-display font-bold"
+						>
+							<span class="flex items-center gap-2 uppercase"
+								><IconTimer class="size-5" aria-hidden="true" />{m.raid_details_cooldown({
+									seconds: SKILL_COOLDOWN_MS[skill] / 1000
+								})}</span
+							>
+							<span class="rounded bg-white/15 px-1.5 text-sm">{action === 0 ? 'E' : 'R'}</span>
+						</div>
+					{/if}
+					<p dir="auto" class="text-lg leading-snug text-white/85">
+						{skill ? sentence(SKILL_HINTS[skill]()) : ATTACK_HINTS[kind]()}
+					</p>
+					{#if facts}
+						<ul class="flex flex-wrap gap-1.5 font-display text-sm font-bold">
+							{#if facts.damage}
+								<li class="rounded bg-tie-red px-2 text-white">
+									{m.raid_details_skill_damage({ value: facts.damage })}
+								</li>
+							{/if}
+							{#if facts.radius}
+								<li class="rounded bg-flag-blue px-2 text-white">
+									{m.raid_details_skill_radius({ value: facts.radius })}
+								</li>
+							{/if}
+							{#if facts.durationMs}
+								<li class="rounded bg-[#5f7a3a] px-2 text-white">
+									{m.raid_details_skill_duration({ seconds: facts.durationMs / 1000 })}
+								</li>
+							{/if}
+							{#if facts.count}
+								<li class="rounded bg-black/40 px-2 text-white">
+									{m.raid_details_skill_count({ value: facts.count })}
+								</li>
+							{/if}
+						</ul>
+					{/if}
+				</section>
 			{/if}
 		</div>
 
-		<!-- The attack and the skills, one at a time -->
-		<div class="flex flex-col gap-2">
-			<p class="text-xs font-semibold opacity-80">{m.raid_details_pick()}</p>
-			<div class="grid grid-cols-3 gap-2" role="tablist" aria-label={m.raid_details_skills()}>
-				{#each actions as entry (entry.action)}
-					{@const active = action === entry.action}
+		<!-- Right: the agent with the weapon, and the attack and skills placed as in a raid -->
+		<div
+			class="relative flex min-h-80 items-center justify-start md:sticky md:top-0 md:h-[calc(100dvh-2rem)]"
+		>
+			<div class="relative" aria-hidden="true">
+				<Avatar size={170} class="drop-shadow-[0_8px_0_rgb(0_0_0/0.15)]" />
+				<RaidItemIcon
+					{kind}
+					class="absolute -bottom-6 left-1/2 size-32 -translate-x-1/3 -rotate-12 drop-shadow-[0_6px_0_rgb(0_0_0/0.25)]"
+				/>
+			</div>
+
+			<div
+				class="absolute right-2 bottom-24 sm:right-6"
+				style:width="{ATTACK}px"
+				style:height="{ATTACK}px"
+				role="tablist"
+				aria-label={m.raid_details_skills()}
+			>
+				<button
+					type="button"
+					role="tab"
+					aria-selected={action === 'attack'}
+					class="absolute inset-0 flex items-center justify-center rounded-full bg-[#0b5560]/50 ring-4 transition-transform active:scale-95 {action ===
+					'attack'
+						? 'scale-110 ring-[#ff7ad9]'
+						: 'ring-white/30'}"
+					aria-label={m.raid_details_attack()}
+					title={m.raid_details_attack()}
+					onclick={() => pick('attack')}
+				>
+					<span
+						class="flex size-[78%] items-center justify-center rounded-full bg-linear-to-b from-[#ffe27a] to-[#f5b52a]"
+					>
+						<RaidItemIcon {kind} class="size-14" />
+					</span>
+				</button>
+				{#each spec.skills as id, slot (id)}
+					{@const entry = (slot === 0 ? 0 : 1) as DemoAction}
 					<button
 						type="button"
 						role="tab"
-						aria-selected={active}
-						class="btn-chunky flex-col gap-0.5 px-1 py-1.5 text-xs leading-tight"
-						class:bg-explosion-yellow={active}
-						onclick={() => (action = entry.action)}
+						aria-selected={action === entry}
+						class="absolute flex items-center justify-center rounded-full ring-4 transition-transform active:scale-95 {action ===
+						entry
+							? 'scale-110 bg-[#ff7ad9]/70 ring-[#ff7ad9]'
+							: 'bg-[#0b5560]/50 ring-white/30'}"
+						style={arcSpot(slot === 0 ? 160 : 112)}
+						aria-label={SKILL_NAMES[id]()}
+						title={SKILL_NAMES[id]()}
+						onclick={() => pick(entry)}
 					>
-						{#if entry.action === 'attack'}
-							<IconCrosshair class="size-6" aria-hidden="true" />
-						{:else}
-							<RaidSkillIcon skill={spec.skills[entry.action]} class="size-6" />
-						{/if}
-						<span dir="auto">{entry.label}</span>
+						<span class="flex size-[78%] items-center justify-center rounded-full bg-paper">
+							<RaidSkillIcon skill={id} class="size-9" />
+						</span>
 					</button>
 				{/each}
 			</div>
 
-			<section class="sticker flex flex-col gap-2 p-3" role="tabpanel" style:--tilt="-0.3deg">
-				<div class="flex flex-wrap items-center gap-2">
-					<h2 dir="auto" class="font-display text-xl font-bold">
-						{skill ? SKILL_NAMES[skill]() : m.raid_details_attack()}
-					</h2>
-					{#if skill}
-						<span class="ms-auto rounded bg-ink px-1.5 font-display text-xs font-bold text-paper"
-							>{action === 0 ? 'E' : 'R'} · {m.raid_details_cooldown({
-								seconds: SKILL_COOLDOWN_MS[skill] / 1000
-							})}</span
-						>
-					{/if}
-				</div>
-				<p dir="auto" class="text-sm">
-					{skill ? sentence(SKILL_HINTS[skill]()) : ATTACK_HINTS[kind]()}
-				</p>
-				{#if facts}
-					<ul class="flex flex-wrap gap-1.5 font-display text-xs font-bold">
-						{#if facts.damage}
-							<li class="rounded bg-tie-red px-1.5 text-paper">
-								{m.raid_details_skill_damage({ value: facts.damage })}
-							</li>
-						{/if}
-						{#if facts.radius}
-							<li class="rounded bg-flag-blue px-1.5 text-paper">
-								{m.raid_details_skill_radius({ value: facts.radius })}
-							</li>
-						{/if}
-						{#if facts.durationMs}
-							<li class="rounded bg-khaki px-1.5 text-paper">
-								{m.raid_details_skill_duration({ seconds: facts.durationMs / 1000 })}
-							</li>
-						{/if}
-						{#if facts.count}
-							<li class="rounded bg-ink px-1.5 text-paper">
-								{m.raid_details_skill_count({ value: facts.count })}
-							</li>
-						{/if}
-					</ul>
+			<div class="absolute right-2 bottom-0 flex items-center gap-3 sm:right-6">
+				<a
+					href={resolve('/play/raid')}
+					class="-skew-x-6 rounded-md bg-[#7a3fe0] px-4 py-2.5 font-display text-sm font-black uppercase italic shadow-[0_3px_0_rgb(0_0_0/0.25)] active:translate-y-0.5"
+				>
+					{m.raid_details_play()}
+				</a>
+				{#if own?.equipped}
+					<span
+						class="-skew-x-6 rounded-md bg-[#6b6b6b] px-5 py-2 font-display text-2xl font-black uppercase italic shadow-[0_4px_0_rgb(0_0_0/0.3)]"
+					>
+						{m.raid_details_equipped()}
+					</span>
 				{/if}
-				{#key `${kind}:${action}`}
-					<RaidWeaponDemo
-						{kind}
-						{action}
-						label="{name}: {skill ? SKILL_NAMES[skill]() : m.raid_details_attack()}"
-						{reducedMotion}
-					/>
-				{/key}
-			</section>
+			</div>
 		</div>
 	</div>
-
-	<nav class="flex flex-col gap-2" aria-label={m.raid_details_other()}>
-		<h2 class="font-display text-lg font-bold">{m.raid_details_other()}</h2>
-		<ul class="flex flex-wrap gap-2">
-			{#each WEAPON_KINDS.filter((other) => other !== kind) as other (other)}
-				<li>
-					<a
-						href={resolve('/play/raid/weapons/[kind]', { kind: other })}
-						class="btn-chunky flex items-center gap-1.5 px-2 py-1 text-sm"
-					>
-						<RaidItemIcon kind={other} class="size-7" />
-						{WEAPON_NAMES[other]()}
-					</a>
-				</li>
-			{/each}
-		</ul>
-	</nav>
 </main>

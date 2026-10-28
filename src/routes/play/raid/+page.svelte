@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import RaidCanvas from '#lib/components/RaidCanvas.svelte';
 	import RaidItemIcon from '#lib/components/RaidItemIcon.svelte';
@@ -23,8 +22,7 @@
 	import { firstPlay } from '#lib/services/tutorial.js';
 	import { RaidGame } from '#lib/stores/raidGame.svelte.js';
 	import IconHelp from '~icons/lucide/circle-help';
-	import IconPause from '~icons/lucide/pause';
-	import IconPlay from '~icons/lucide/play';
+	import IconZap from '~icons/lucide/zap';
 	import IconRotate from '~icons/lucide/smartphone';
 
 	const game = new RaidGame({ reducedMotion: prefersReducedMotion() });
@@ -91,14 +89,15 @@
 			<span class="hidden sm:inline">{m.raid_help_button()}</span>
 		</button>
 		{#if game.status === 'playing' || game.status === 'paused'}
-			<button type="button" class="btn-chunky px-3 py-1 text-sm" onclick={() => game.togglePause()}>
-				{#if game.status === 'paused'}
-					<IconPlay class="size-4" aria-hidden="true" />
-					{m.game_resume()}
-				{:else}
-					<IconPause class="size-4" aria-hidden="true" />
-					{m.game_pause()}
-				{/if}
+			<!-- Opens the leave screen: the big map, the haul so far and the quests -->
+			<button
+				type="button"
+				class="flex h-9 w-12 -skew-x-6 items-center justify-center rounded-md border-b-4 border-[#0f7f73] bg-[#22c3b0] text-white shadow-[0_2px_0_rgb(0_0_0/0.25)] active:translate-y-0.5"
+				aria-label={m.raid_leave_button()}
+				title={m.raid_leave_button()}
+				onclick={() => game.pause()}
+			>
+				<IconZap class="size-5 fill-white" aria-hidden="true" />
 			</button>
 		{/if}
 	{/snippet}
@@ -177,26 +176,18 @@
 		<p class="hidden text-sm sm:block">{m.raid_keyboard_hint()}</p>
 	</TutorialModal>
 
-	<GameOverModal
-		open={game.status === 'over'}
-		score={game.score}
-		mode="raid"
-		{modeName}
-		isNewBest={game.isNewBest}
-		wide
-		withCharacter={false}
-		customCameo={null}
-		title={m.raid_gameover_title()}
-		drawBoard={game.drawBoard}
-		onRetry={start}
-	>
-		{#if result}
-			<RaidResults {result} reducedMotion={game.reducedMotion} />
-			<button type="button" class="btn-chunky text-sm" onclick={() => game.backToLobby()}>
-				{m.raid_back_to_lobby()}
-			</button>
-		{/if}
-	</GameOverModal>
+	{#if game.status === 'over' && result}
+		<RaidResults
+			{result}
+			score={game.score}
+			isNewBest={game.isNewBest}
+			{modeName}
+			drawBoard={game.drawBoard}
+			reducedMotion={game.reducedMotion}
+			onRetry={() => start()}
+			onClose={() => game.backToLobby()}
+		/>
+	{/if}
 </GameShell>
 
 <style>

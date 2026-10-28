@@ -27,7 +27,9 @@ import {
 	RARITY_COLOR,
 	REVIVE_BLAST_RADIUS,
 	BOSS_SLAM_RADIUS,
+	BOSS_EVERY_MS,
 	CRYSTAL_COLOR,
+	FIRST_BOSS_MS,
 	SKILL_COOLDOWN_MS,
 	SPRINT_COOLDOWN_MS,
 	type Archetype,
@@ -60,6 +62,7 @@ import {
 	type WeaponSlot
 } from '#lib/game/raid/profile.js';
 import { liveEventAt, type ActiveEvent } from '#lib/game/raid/events.js';
+import { addRaidToQuests, type Quest, type QuestStats } from '#lib/game/raid/quests.js';
 import { dateAt, type SeasonReward } from '#lib/game/raid/season.js';
 import { drawRaidPreview, type Effect, type SceneExtras } from '#lib/game/raid/render.js';
 import {
@@ -68,6 +71,7 @@ import {
 	equipFromHaul,
 	giveUp,
 	heldSkills,
+	leaveRaid,
 	revive,
 	scoreOf,
 	setFiring,
@@ -142,6 +146,9 @@ export interface RaidResult {
 	/** Season XP before and after the raid */
 	seasonXpBefore: number;
 	seasonXpAfter: number;
+	/** Today's quests before and after the raid counted towards them */
+	questsBefore: Quest[];
+	quests: Quest[];
 }
 
 export interface RaidOptions {
@@ -181,13 +188,18 @@ export class RaidGame {
 	/** Share of each skill's cooldown still to go, 0 when ready */
 	skillCooldowns = $state<readonly [number, number]>([0, 0]);
 	fireCooldown = $state(0);
+	/** Whole seconds until each skill is ready again, shown on its button */
+	skillSeconds = $state<readonly [number, number]>([0, 0]);
 	/** Share of the sprint's recharge still to go, 0 when ready */
 	sprintCooldown = $state(0);
+	sprintSeconds = $state(0);
 	/** The live event running during the raid, with its end on the wall clock */
 	liveEvent = $state.raw<ActiveEvent | null>(null);
 	/** Whole seconds the live event still runs */
 	liveEventSeconds = $state(0);
 	boss = $state<{ share: number; variant: Variant } | null>(null);
+	/** While no boss is out: how far the wait for the next one is, and its seconds left */
+	nextBoss = $state<{ share: number; seconds: number } | null>(null);
 	/** The last piece of gear picked up, offered for equipping for a few seconds */
 	found = $state.raw<{ item: GearItem; better: boolean } | null>(null);
 	hurtCount = $state(0);
@@ -399,6 +411,31 @@ export class RaidGame {
 
 	giveUp() {
 		if (this.status === 'down') this.#apply(giveUp(this.state));
+	}
+
+	/** Leaves the battle from the leave screen, banking everything found so far */
+	leave() {
+		if (this.status === 'playing' || this.status === 'paused') this.#apply(leaveRaid(this.state));
+	}
+
+	/** Today's quests as they would stand if the raid ended now, for the leave screen */
+	liveQuests(): { before: Quest[]; after: Quest[] } {
+		const today = withToday(this.profile, dateAt(this.#now())).quests;
+		return { before: today.quests, after: addRaidToQuests(today, this.#questStats()).quests };
+	}
+
+	#questStats(): QuestStats {
+		const state = this.state;
+		return {
+			map: state.mapId,
+			timeMs: state.timeMs,
+			kills: state.kills,
+			killsBy: state.killsBy,
+			bossKills: state.bossKills,
+			crystals: state.crystals.length,
+			damage: state.damageDealt,
+			skillsUsed: state.skillsUsed
+		};
 	}
 
 	/** Puts the gear from the "found" card on */
@@ -800,11 +837,30 @@ export class RaidGame {
 			this.skillCooldowns = cooldowns;
 		}
 		this.fireCooldown = share(player.fireMs, weaponStats(held, state.playerLevel).fireMs);
+		const seconds = skills.map((skill) =>
+			Math.ceil(player.skillMs[skill] / 1000)
+		) as unknown as readonly [number, number];
+		if (seconds[0] !== this.skillSeconds[0] || seconds[1] !== this.skillSeconds[1]) {
+			this.skillSeconds = seconds;
+		}
 		this.sprintCooldown = share(player.sprintMs, SPRINT_COOLDOWN_MS);
+		this.sprintSeconds = Math.ceil(Math.max(0, player.sprintMs) / 1000);
 		const boss = currentBoss(state);
 		this.boss = boss
 			? { share: Math.max(0, Math.ceil((boss.hp / boss.maxHp) * 100) / 100), variant: boss.variant }
 			: null;
+		if (boss) this.nextBoss = null;
+		else {
+			const wait = state.nextBossMs <= FIRST_BOSS_MS ? FIRST_BOSS_MS : BOSS_EVERY_MS;
+			const left = Math.max(0, state.nextBossMs - state.timeMs);
+			const next = {
+				share: Math.floor((1 - left / wait) * 100) / 100,
+				seconds: Math.ceil(left / 1000)
+			};
+			if (next.share !== this.nextBoss?.share || next.seconds !== this.nextBoss.seconds) {
+				this.nextBoss = next;
+			}
+		}
 	}
 
 	#finish() {
@@ -823,16 +879,7 @@ export class RaidGame {
 				gear: state.haul,
 				crystals: state.crystals,
 				loadout: state.loadout,
-				stats: {
-					map: state.mapId,
-					timeMs: state.timeMs,
-					kills: state.kills,
-					killsBy: state.killsBy,
-					bossKills: state.bossKills,
-					crystals: state.crystals.length,
-					damage: state.damageDealt,
-					skillsUsed: state.skillsUsed
-				}
+				stats: this.#questStats()
 			},
 			today
 		);
@@ -863,7 +910,9 @@ export class RaidGame {
 			salvageGold: banked.salvageGold,
 			salvageScrap: banked.salvageScrap,
 			seasonXpBefore: before.season.xp,
-			seasonXpAfter: banked.profile.season.xp
+			seasonXpAfter: banked.profile.season.xp,
+			questsBefore: before.quests.quests,
+			quests: banked.profile.quests.quests
 		};
 		this.found = null;
 		this.status = 'over';

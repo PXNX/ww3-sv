@@ -21,6 +21,7 @@ import {
 	NEST_LIFETIME_MS,
 	PLAYER_RADIUS,
 	RARITY_COLOR,
+	SPRINT_COOLDOWN_MS,
 	VIEW_HEIGHT,
 	VIEW_MAX_WIDTH,
 	type CrystalKind,
@@ -241,6 +242,7 @@ function drawWorld(
 	for (const enemy of state.enemies) {
 		if (visible(camera, enemy.x, enemy.y, enemy.radius + 40)) drawEnemyBar(context, enemy);
 	}
+	drawPlayerTag(context, state);
 	for (const effect of extras.effects) drawEffect(context, effect);
 }
 
@@ -1284,6 +1286,42 @@ function drawCrown(
 	context.stroke();
 }
 
+/** Over the player's head: a badge with their level, the health bar and under it the sprint charge */
+function drawPlayerTag(context: CanvasRenderingContext2D, state: RaidState) {
+	const { player } = state;
+	const width = 64;
+	const left = player.x - width / 2 + 9;
+	const top = player.y - 54;
+	const share = Math.max(0, Math.min(1, player.hp / player.maxHp));
+	roundRect(context, left, top, width, 11, 4, INK, 0);
+	context.fillStyle = share > 0.3 ? '#3ddc5a' : RED;
+	context.fillRect(left + 2, top + 2, (width - 4) * share, 7);
+	roundRect(context, left, top + 12, width, 5, 2, INK, 0);
+	context.fillStyle = '#4fc8ff';
+	const charge = 1 - Math.max(0, player.sprintMs) / SPRINT_COOLDOWN_MS;
+	context.fillRect(left + 1.5, top + 13, (width - 3) * charge, 3);
+
+	// The level badge, a purple hexagon over the start of the bars
+	const bx = left - 4;
+	const by = top + 8;
+	context.beginPath();
+	for (let i = 0; i < 6; i++) {
+		const angle = Math.PI / 6 + (i * Math.PI) / 3;
+		context.lineTo(bx + Math.cos(angle) * 13, by + Math.sin(angle) * 13);
+	}
+	context.closePath();
+	context.fillStyle = '#6b3fd4';
+	context.fill();
+	context.lineWidth = 2.5;
+	context.strokeStyle = PAPER;
+	context.stroke();
+	context.font = '800 12px "Baloo 2", system-ui, sans-serif';
+	context.textAlign = 'center';
+	context.textBaseline = 'middle';
+	context.fillStyle = PAPER;
+	context.fillText(`${state.playerLevel}`, bx, by + 1);
+}
+
 function drawEnemyBar(context: CanvasRenderingContext2D, enemy: Enemy) {
 	// Bosses have their own bar in the HUD
 	if (enemy.archetype === 'boss') return;
@@ -1832,5 +1870,138 @@ export function drawRaidPreview(
 	context.clip();
 	context.translate(x, y);
 	drawRaid(context, state, size, size, { effects: [], reducedMotion: true });
+	context.restore();
+}
+
+/** What a marker on the minimap stands for; the legend on the leave screen explains them */
+export type MinimapMark = 'fighter' | 'shooter' | 'drone' | 'support' | 'boss' | 'friend' | 'loot';
+export type MarkShape = 'circle' | 'diamond' | 'triangle' | 'square' | 'ring';
+
+export const MINIMAP_MARKS: Record<MinimapMark, { color: string; shape: MarkShape; size: number }> =
+	{
+		fighter: { color: '#ff5a5a', shape: 'circle', size: 1.6 },
+		shooter: { color: '#ff7ad9', shape: 'diamond', size: 2.2 },
+		drone: { color: '#ffb02e', shape: 'triangle', size: 2.4 },
+		support: { color: '#c6f24a', shape: 'square', size: 2.2 },
+		boss: { color: '#ff7a1a', shape: 'ring', size: 5 },
+		friend: { color: '#4fc8ff', shape: 'circle', size: 2.2 },
+		loot: { color: '#ffe066', shape: 'ring', size: 2.6 }
+	};
+
+const ENEMY_MARK: Record<Enemy['archetype'], MinimapMark> = {
+	grunt: 'fighter',
+	fast: 'fighter',
+	heavy: 'fighter',
+	ranged: 'shooter',
+	drone: 'drone',
+	medic: 'support',
+	mortar: 'support',
+	artillery: 'support',
+	boss: 'boss'
+};
+
+/** One marker of the given shape and radius around (x, y), in the context's current units */
+export function drawMark(
+	context: CanvasRenderingContext2D,
+	shape: MarkShape,
+	x: number,
+	y: number,
+	radius: number,
+	color: string
+) {
+	context.beginPath();
+	switch (shape) {
+		case 'circle':
+		case 'ring':
+			context.arc(x, y, radius, 0, Math.PI * 2);
+			break;
+		case 'diamond':
+			context.moveTo(x, y - radius);
+			context.lineTo(x + radius, y);
+			context.lineTo(x, y + radius);
+			context.lineTo(x - radius, y);
+			context.closePath();
+			break;
+		case 'triangle':
+			context.moveTo(x, y - radius);
+			context.lineTo(x + radius, y + radius * 0.8);
+			context.lineTo(x - radius, y + radius * 0.8);
+			context.closePath();
+			break;
+		case 'square':
+			context.rect(x - radius * 0.8, y - radius * 0.8, radius * 1.6, radius * 1.6);
+			break;
+	}
+	if (shape === 'ring') {
+		context.lineWidth = radius * 0.55;
+		context.strokeStyle = color;
+		context.stroke();
+		return;
+	}
+	context.fillStyle = color;
+	context.fill();
+}
+
+/**
+ * The minimap: the battlefield with its cover, every enemy marked by its kind (fighters,
+ * shooters, drones, support units and bosses), the player's own drones and nests, the loot worth
+ * walking to, and the player as an arrow pointing where the weapon aims. Draws into a width ×
+ * height box at the origin; the context must already be scaled to CSS pixels. Markers grow with
+ * markScale, for the big map on the leave screen.
+ */
+export function drawMinimap(
+	context: CanvasRenderingContext2D,
+	state: RaidState,
+	width: number,
+	height: number,
+	markScale = 1
+) {
+	const { map, player } = state;
+	const scale = Math.min(width / map.width, height / map.height);
+	context.clearRect(0, 0, width, height);
+	context.save();
+	context.translate((width - map.width * scale) / 2, (height - map.height * scale) / 2);
+	context.scale(scale, scale);
+	context.fillStyle = 'rgba(24, 16, 48, 0.82)';
+	context.fillRect(0, 0, map.width, map.height);
+	context.lineWidth = 2 / scale;
+	context.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+	context.strokeRect(0, 0, map.width, map.height);
+	context.fillStyle = 'rgba(255, 255, 255, 0.2)';
+	for (const obstacle of map.obstacles) {
+		context.beginPath();
+		context.arc(obstacle.x, obstacle.y, obstacle.r, 0, Math.PI * 2);
+		context.fill();
+	}
+	const mark = (kind: MinimapMark, x: number, y: number) => {
+		const { color, shape, size } = MINIMAP_MARKS[kind];
+		drawMark(context, shape, x, y, (size * markScale) / scale, color);
+	};
+	for (const loot of state.loot) {
+		if (loot.drop.type === 'gear' || loot.drop.type === 'crystal') mark('loot', loot.x, loot.y);
+	}
+	for (const nest of state.nests) mark('friend', nest.x, nest.y);
+	for (const drone of state.drones) mark('friend', drone.x, drone.y);
+	// Bosses last, so the crowd never hides them
+	for (const enemy of state.enemies) {
+		if (enemy.archetype !== 'boss') mark(ENEMY_MARK[enemy.archetype], enemy.x, enemy.y);
+	}
+	for (const enemy of state.enemies) {
+		if (enemy.archetype === 'boss') mark('boss', enemy.x, enemy.y);
+	}
+	context.translate(player.x, player.y);
+	context.scale(markScale / scale, markScale / scale);
+	context.rotate(player.aim);
+	context.beginPath();
+	context.moveTo(8, 0);
+	context.lineTo(-6, -6);
+	context.lineTo(-3, 0);
+	context.lineTo(-6, 6);
+	context.closePath();
+	context.fillStyle = PAPER;
+	context.fill();
+	context.lineWidth = 1.5;
+	context.strokeStyle = INK;
+	context.stroke();
 	context.restore();
 }

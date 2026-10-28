@@ -853,6 +853,16 @@ export function giveUp(state: RaidState): RaidEvent[] {
 	return [{ type: 'over' }];
 }
 
+/** Leaves the battle on the player's own choice, keeping everything found so far */
+export function leaveRaid(state: RaidState): RaidEvent[] {
+	if (state.over) return [];
+	state.down = false;
+	state.over = true;
+	state.input = { x: 0, y: 0 };
+	state.player.firing = false;
+	return [{ type: 'over' }];
+}
+
 /** Puts a piece of gear from the haul on: weapons replace the held one */
 export function equipFromHaul(state: RaidState, itemId: string): RaidEvent[] {
 	if (state.over) return [];
