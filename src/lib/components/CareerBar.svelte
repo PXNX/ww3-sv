@@ -7,6 +7,7 @@
 	import { resolve } from '$app/paths';
 	import { CAREER_MODES } from '#lib/game/career/config.js';
 	import { career } from '#lib/game/career/store.svelte.js';
+	import { rankLabel } from '#lib/game/career/rankText.js';
 	import { telegram } from '#lib/stores/telegram.svelte.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import IconAward from '~icons/lucide/award';
@@ -22,23 +23,11 @@
 		state.profile.revives + (account.status === 'verified' ? account.wallet.revives : 0)
 	);
 
-	const RANK_LABELS = {
-		intern: m.career_rank_intern,
-		lobbyist: m.career_rank_lobbyist,
-		fixer: m.career_rank_fixer,
-		broker: m.career_rank_broker,
-		tycoon: m.career_rank_tycoon,
-		oligarch: m.career_rank_oligarch,
-		shadow: m.career_rank_shadow,
-		survivor: m.career_rank_survivor
-	} as const;
-
-	const rankLabel = $derived(RANK_LABELS[state.rank]());
 	const info = $derived(state.levelInfo);
 	const percent = $derived(
 		info.needed > 0 ? Math.min(100, Math.max(0, (info.xpInto / info.needed) * 100)) : 100
 	);
-	const title = $derived(m.career_title({ rank: rankLabel, level: state.level }));
+	const title = $derived(m.career_title({ rank: rankLabel(state.rank), level: state.level }));
 </script>
 
 <section class="sticker flex flex-col gap-3 bg-paper p-4" style:--tilt="0.7deg" aria-label={title}>
