@@ -10,12 +10,24 @@
 	import { launchStartParam, startRoute } from '#lib/services/telegram.js';
 	import { clipPreload } from '#lib/sound/preload.svelte.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
+	import { appearance } from '#lib/stores/appearance.svelte.js';
 	import { telegram } from '#lib/stores/telegram.svelte.js';
 
 	let { children } = $props();
 
 	const account = telegram();
 	const careerState = career();
+	const look = appearance();
+
+	// Keeps <html data-theme> and the browser chrome colour in step with the choice, including a
+	// device switch while the theme follows the device. The boot script in app.html paints first.
+	$effect(() => {
+		const dark = look.dark;
+		document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+		document
+			.querySelector('meta[name="theme-color"]')
+			?.setAttribute('content', dark ? '#16213a' : '#e8e1bc');
+	});
 
 	// Inside Telegram the bot learns when the streak breaks, to remind the player two hours before;
 	// this runs again after every claim, which moves the deadline a day on

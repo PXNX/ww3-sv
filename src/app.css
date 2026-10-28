@@ -6,6 +6,9 @@
 	themes: false;
 }
 
+/* Dark is a choice, not a media query: the settings page sets data-theme on <html> */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
 @plugin 'daisyui/theme' {
 	name: 'ww3';
 	default: true;
@@ -90,3 +93,45 @@
 		);
 	}
 }
+
+/*
+ * Light and dark. The choice lives on <html data-theme="light|dark">; the boot script in app.html
+ * sets it before the first paint and the settings page switches it. Dark swaps the two base tones:
+ * the page becomes the deep navy of the night sky and paper becomes the surface on it, while ink
+ * turns into the warm cream that text and outlines are drawn with. The accent colours stay bright,
+ * so their text goes back to the dark ink instead of the cream.
+ */
+:root {
+	color-scheme: light;
+}
+
+[data-theme='dark'] {
+	color-scheme: dark;
+	--color-ink: #f4efe2;
+	--color-paper: #1e2b47;
+	--color-sand: #16213a;
+	--color-banner-slate: #7b8db0;
+	--color-tie-red: #ed5a5f;
+	--color-khaki: #84966a;
+}
+
+/* Cream text on a dark ground (banners, filled chips, danger buttons) stays cream */
+[data-theme='dark'] .text-paper {
+	color: var(--color-ink);
+}
+
+/* Filled ink shapes stay the darkest thing on the page, so they still read as the strong button */
+[data-theme='dark'] .bg-ink {
+	background-color: #0d1729;
+}
+
+/* The bright accent fields keep their colour, so their own text is the dark ink, not the cream */
+[data-theme='dark'] .bg-explosion-yellow,
+[data-theme='dark'] .bg-mustard,
+[data-theme='dark'] .bg-khaki,
+[data-theme='dark'] .bg-flag-blue,
+[data-theme='dark'] .bg-tie-red,
+[data-theme='dark'] .bg-banner-slate {
+	color: #16213a;
+}
+
