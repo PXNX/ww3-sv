@@ -6,7 +6,7 @@ The World War 3 artwork that is not served by the app itself: sources of the ico
 | --- | --- |
 | `app-icon.svg` | Source of `static/icons/icon-192.png`, `icon-512.png` and `apple-touch-icon.png` |
 | `app-icon-maskable.svg` | Source of `static/icons/icon-maskable-512.png` (art inside the safe circle) |
-| `splash.svg` | Loading screen icon for the Mini App (BotFather › Mini App › Loading Screen): 512×512, one single `<path>` without fill colour or fill rule, like Telegram's [sample](https://telegram.org/resources/web-app-icon-sample.svg); Telegram colours it. Built by `bun scripts/generate-splash.ts` from `app-icon.svg` |
+| `splash.svg` | Loading screen icon for the Mini App (BotFather › Mini App › Loading Screen): just the bomb, one monochrome `<path>` without fill colour or fill rule in 512×512, under 400 bytes, like Telegram's [sample](https://telegram.org/resources/web-app-icon-sample.svg). Built by `bun scripts/generate-splash.ts` |
 | `loading.svg` | Loading screen icon, 512×512 on transparency (BotFather › Mini App › Loading Screen); `#fuse` and `#spark` can be animated. Background: `#e8e1bc` in light mode, `#16213a` in dark mode |
 | `telegram-description.svg` / `.png` | The picture above the bot's description in an empty chat (640×360, BotFather › Edit Bot › Edit Description Picture) |
 | `telegram-profile.jpg` | The bot's profile photo, as set by `/set_cmd` (source: `mn/ptb-ww3/res/icon.svg`) |
