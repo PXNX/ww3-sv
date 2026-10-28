@@ -8,8 +8,8 @@ import { BOT_NAME, applyProfile } from '../lib/profile.js';
 import { BOT_USERNAME } from '../lib/referrals.js';
 import { unblock } from '../lib/reminders.js';
 import {
-  confirmPurchase, gamesMenu, invite, login, notifyAdmins, offer, paysupport, postGame, reminderSettings, send, sendLegal, shop,
-  showTop, showWallet, start,
+  confirmPurchase, gamesMenu, groupOnly, invite, isGroup, login, notifyAdmins, offer, paysupport, postGame, reminderSettings,
+  send, sendLegal, shop, showTop, showWallet, start,
 } from '../lib/bot.js';
 import { escapeHtml } from '../lib/legal.js';
 import { langOfUser, t } from '../lib/texts.js';
@@ -58,7 +58,9 @@ export function parseCommand(text) {
   return { command: command.toLowerCase(), args };
 }
 
-/** The game commands, the same in a group and in the private chat */
+const GAME_COMMANDS = ['games', 'game', 'top', 'leaderboard'];
+
+/** The game commands of a group */
 async function gameCommand(message, command, args) {
   const chatId = message.chat.id;
   const id = args[0]?.toLowerCase();
@@ -72,7 +74,7 @@ async function gameCommand(message, command, args) {
 
 /** In a group the bot only plays: /games, /game <id> and /top; /start there opens the games menu */
 async function groupMessage(message) {
-  if (message.chat.type !== 'group' && message.chat.type !== 'supergroup') return;
+  if (!isGroup(message.chat)) return;
   const parsed = parseCommand(message.text);
   if (!parsed) return;
   if (parsed.command === 'start') return await gamesMenu(message.chat.id, message.from);
@@ -91,11 +93,9 @@ export default async function (message) {
   const chatId = message.chat.id;
 
   if (LEGAL_COMMANDS[command]) return await sendLegal(chatId, LEGAL_COMMANDS[command]);
+  // Games are played together, so the private chat only points to a group
+  if (GAME_COMMANDS.includes(command)) return await groupOnly(chatId, message.from);
   switch (command) {
-    case 'games':
-    case 'game':
-    case 'top':
-    case 'leaderboard': return await gameCommand(message, command, args);
     case 'start': return await start(message, args[0]);
     case 'login': return await login(message);
     case 'shop': return await shop(chatId, message.from);

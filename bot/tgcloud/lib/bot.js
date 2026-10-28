@@ -10,7 +10,7 @@ import { ADMIN_IDS, APP_URL, OPERATOR, SALES_OPEN } from './generated.js';
 import { GAMES, chatRecords, findGame, gameName, openSession, sessionLink, topScores } from './games.js';
 import { accountLanguage, createInvoice, hasConsent, recordConsent, upsertAccount, wallet } from './ledger.js';
 import { CONSENT_TEXT, CONSENT_VERSION, PAGES, escapeHtml, legalMessages, pageUrl } from './legal.js';
-import { inviteLink, inviteStats, parseInvite, recordReferral } from './referrals.js';
+import { BOT_USERNAME, inviteLink, inviteStats, parseInvite, recordReferral } from './referrals.js';
 import { isMuted, setMuted } from './reminders.js';
 import { langOfUser, t } from './texts.js';
 
@@ -208,6 +208,17 @@ async function thankReferrer(referrerId) {
   }
 }
 
+/** Games and leaderboards are played together, so only in groups; never in private chats or channels */
+export const isGroup = (chat) => chat?.type === 'group' || chat?.type === 'supergroup';
+
+/** A game command in the private chat: points to a group, with a button that adds the bot to one */
+export async function groupOnly(chatId, user) {
+  const lang = langOfUser(user);
+  await send(chatId, t(lang, 'group_only'), {
+    reply_markup: { inline_keyboard: [[{ text: t(lang, 'add_to_group'), url: `https://t.me/${BOT_USERNAME}?startgroup=games` }]] },
+  });
+}
+
 // Two games per row keeps the menu of 30-odd games short enough to scroll
 function gameKeyboard(lang) {
   const buttons = GAMES.map((entry) => ({ text: gameName(entry.id, lang), callback_data: `game:${entry.id}` }));
@@ -249,8 +260,13 @@ export async function postGame(chatId, user, id) {
  */
 export async function openGame(query) {
   const id = query.game_short_name;
+  const lang = langOfUser(query.from);
   if (!findGame(id) || !query.message) {
-    return await api.answerCallbackQuery({ callback_query_id: query.id, text: t(langOfUser(query.from), 'game_unavailable'), show_alert: true });
+    return await api.answerCallbackQuery({ callback_query_id: query.id, text: t(lang, 'game_unavailable'), show_alert: true });
+  }
+  // A game message forwarded into a private chat: its scores would have no group to count for
+  if (!isGroup(query.message.chat)) {
+    return await api.answerCallbackQuery({ callback_query_id: query.id, text: t(lang, 'group_only_alert'), show_alert: true });
   }
   const session = await openSession(query.from, id, query.message);
   await api.answerCallbackQuery({ callback_query_id: query.id, url: sessionLink(id, session) });

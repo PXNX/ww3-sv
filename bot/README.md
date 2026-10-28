@@ -75,6 +75,10 @@ Each mode offered in groups is a game at @BotFather whose short name is the mode
 a 640×360 picture), and keep **Allow Groups** on (`/setjoingroups`). Until a game is registered,
 `/games` answers that it is not set up yet.
 
+Games are played together, so only in groups and supergroups. In the private chat `/games`, `/game` and
+`/top` point to a group (with a `startgroup` button that adds the bot to one), game and menu buttons outside
+a group answer with an alert, and channels are ignored.
+
 1. In a group, `/games` (or `/start@game_ww3_bot`) shows the menu; a button posts the game with `sendGame`.
 2. Play sends a `callback_query` with `game_short_name`. The bot stores a session (player, chat, message,
    game, valid for a day) and answers with `https://t.me/game_ww3_bot?startapp=g_<game>_<session>`, so the game

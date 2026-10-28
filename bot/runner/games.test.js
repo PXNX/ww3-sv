@@ -119,3 +119,47 @@ test('commands addressed to another bot are not ours', () => {
   expect(parseCommand('hello')).toBeNull();
   expect(parseCommand(undefined)).toBeNull();
 });
+
+test('games are played in groups only, never in private chats or channels', async () => {
+  const onMessage = (await import('../tgcloud/handlers/message.js')).default;
+  const onCallback = (await import('../tgcloud/handlers/callback_query.js')).default;
+  const privateChat = { id: ada.id, type: 'private' };
+  const group = { id: GROUP, type: 'supergroup', title: 'Test' };
+  const sessions = () => sqlite.query('SELECT COUNT(*) AS n FROM game_sessions').get().n;
+
+  await onMessage({ chat: group, from: ada, text: '/games@game_ww3_bot' });
+  expect(calls.map((call) => call.method)).toEqual(['sendMessage']);
+  expect(calls[0].params.reply_markup.inline_keyboard[0][0].callback_data).toBe('game:blocks');
+
+  // The private chat points to a group, with a button that adds the bot to one
+  calls = [];
+  await onMessage({ chat: privateChat, from: ada, text: '/games' });
+  expect(calls.map((call) => call.method)).toEqual(['sendMessage']);
+  expect(calls[0].params.reply_markup.inline_keyboard[0][0].url).toBe('https://t.me/game_ww3_bot?startgroup=games');
+
+  // A channel post never reaches this handler as a message, but a channel chat is ignored anyway
+  calls = [];
+  await onMessage({ chat: { id: -100999, type: 'channel' }, from: ada, text: '/games' });
+  expect(calls).toEqual([]);
+
+  // Menu buttons and Play outside a group answer with an alert and post or open nothing
+  const before = await sessions();
+  for (const query of [
+    { id: 'q1', from: ada, data: 'game:blocks', message: { chat: privateChat, message_id: 5 } },
+    { id: 'q2', from: ada, data: 'top:blocks', message: { chat: privateChat, message_id: 5 } },
+    { id: 'q3', from: ada, game_short_name: 'blocks', message: { chat: privateChat, message_id: 5 } },
+  ]) {
+    calls = [];
+    await onCallback(query);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toMatchObject({ method: 'answerCallbackQuery', params: { callback_query_id: query.id, show_alert: true } });
+    expect(calls[0].params.url).toBeUndefined();
+  }
+  expect(await sessions()).toBe(before);
+
+  // In the group, Play opens the game with a fresh session
+  calls = [];
+  await onCallback({ id: 'q4', from: ada, game_short_name: 'blocks', message: { chat: group, message_id: 6 } });
+  expect(calls[0].params.url).toMatch(/^https:\/\/t\.me\/game_ww3_bot\?startapp=g_blocks_[0-9a-f]{20}$/);
+  expect(await sessions()).toBe(before + 1);
+});
