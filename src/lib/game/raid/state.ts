@@ -270,6 +270,8 @@ export interface Player {
 	jammerMs: number;
 	/** Flamethrower heat, 0 to 1: full means it overheats */
 	heat: number;
+	/** Energy ball shot count for massive flip */
+	energyShots: number;
 	/** Hammer charge, 0 to 1: full turns the next swing into a Hammer Fall */
 	rage: number;
 	/** Stunned by an overheated flamethrower: no walking, firing or skills */
@@ -361,6 +363,8 @@ export interface Bullet {
 	burnDps: number;
 	/** Enemies this bullet already hit, so a piercing shot hits each one once */
 	hit: number[];
+	/** Massive energyball from every 8th energy shot */
+	massive?: boolean;
 	/** An echo shot: turns around after this long and flies back, able to hit everything again */
 	returnMs?: number;
 }
@@ -728,6 +732,7 @@ export function createRaid(
 			jammerMs: 0,
 			heat: 0,
 			rage: 0,
+			energyShots: 0,
 			stunMs: 0,
 			warcryMs: 0,
 			smokeMs: 0
@@ -1482,22 +1487,24 @@ function firePlayer(state: RaidState, random: Random, events: RaidEvent[]) {
 		const crit = focused || random() < stats.critChance;
 		// Only a chance below 1 (a status crystal) rolls, so plain weapons keep their random stream
 		const burns = stats.burnMs > 0 && (stats.burnChance >= 1 || random() < stats.burnChance);
+		const massiveBall = weapon.kind === 'energy' && (player.energyShots % 8 === 0);
 		state.bullets.push({
 			x: player.x + Math.cos(angle) * (PLAYER_RADIUS + 6),
 			y: player.y + Math.sin(angle) * (PLAYER_RADIUS + 6),
-			vx: Math.cos(angle) * spec.projectileSpeed,
-			vy: Math.sin(angle) * spec.projectileSpeed,
-			damage: crit ? stats.damage * stats.critMultiplier : stats.damage,
+			vx: Math.cos(angle) * (massiveBall ? spec.projectileSpeed * 1.3 : spec.projectileSpeed),
+			vy: Math.sin(angle) * (massiveBall ? spec.projectileSpeed * 1.3 : spec.projectileSpeed),
+			damage: massiveBall ? stats.damage * 2.5 : (crit ? stats.damage * stats.critMultiplier : stats.damage),
 			crit,
-			rangeLeft: spec.range * 1.2,
-			pierceLeft: spec.pierce,
-			splash: spec.splash,
+			rangeLeft: massiveBall ? spec.range * 2.2 : spec.range * 1.2,
+			pierceLeft: massiveBall ? 99 : spec.pierce,
+			splash: massiveBall ? 60 : spec.splash,
 			kind: weapon.kind,
 			rail: false,
 			flame: weapon.kind === 'flamethrower',
 			burnMs: burns ? stats.burnMs : 0,
 			burnDps: burns ? stats.burnDps : 0,
-			hit: []
+			hit: [],
+			massive: massiveBall
 		});
 	}
 	events.push({ type: 'shot', kind: weapon.kind });
@@ -1509,6 +1516,11 @@ function firePlayer(state: RaidState, random: Random, events: RaidEvent[]) {
 		player.heat = Math.min(1, player.heat + MINIGUN_HEAT_PER_SHOT);
 		const heatFactor = MINIGUN_MIN_FIRE_FACTOR + (1 - MINIGUN_MIN_FIRE_FACTOR) * (1 - player.heat);
 		player.fireMs = Math.round(stats.fireMs * heatFactor);
+	}
+	if (weapon.kind === 'energy') {
+		player.energyShots += 1;
+		const massive = player.energyShots % 8 === 0;
+		// The massive shot carries extra range, set when the bullet is created
 	}
 }
 
@@ -1738,6 +1750,24 @@ function moveBullets(state: RaidState, dt: number, events: RaidEvent[]) {
 			}
 			damageEnemy(state, enemy, bullet.damage, bullet.crit, events);
 			if (bullet.burnMs > 0) ignite(enemy, bullet.burnMs, bullet.burnDps);
+			if (bullet.kind === 'energy') {
+				// Energy ball flips toward nearest other enemy instead of piercing
+				let bestDist = Infinity;
+				let best: Enemy | null = null;
+				for (const e of state.enemies) {
+					if (e.hp <= 0 || bullet.hit.includes(e.id)) continue;
+					const dist = Math.hypot(e.x - bullet.x, e.y - bullet.y);
+					if (dist < bestDist) { bestDist = dist; best = e; }
+				}
+				if (best) {
+					const speed = Math.hypot(bullet.vx, bullet.vy) || 1;
+					const angle = Math.atan2(best.y - bullet.y, best.x - bullet.x);
+					bullet.vx = Math.cos(angle) * speed;
+					bullet.vy = Math.sin(angle) * speed;
+					bullet.rangeLeft = Math.max(bullet.rangeLeft, 250);
+				}
+				continue;
+			}
 			if (bullet.pierceLeft <= 0) {
 				alive = false;
 				break;

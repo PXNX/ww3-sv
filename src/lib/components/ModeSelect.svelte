@@ -100,6 +100,7 @@
 					src="/cards/{mode.id}.webp"
 					alt=""
 					class="pointer-events-none absolute inset-0 -z-10 size-full object-cover object-top opacity-45"
+					decoding="async"
 					loading="lazy"
 					draggable="false"
 				/>

@@ -138,10 +138,21 @@
 /* A soft lamp-lit glow high on the page and a little depth at the bottom, instead of a flat fill */
 [data-theme='dark'] body {
 	background-color: var(--color-sand);
+}
+
+/*
+ * The glow is painted on a fixed layer of its own instead of with background-attachment: fixed,
+ * which makes the browser repaint the whole page on every scroll frame.
+ */
+[data-theme='dark'] body::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	z-index: -1;
+	pointer-events: none;
 	background-image:
 		radial-gradient(ellipse 80% 45% at 50% -8%, rgb(230 165 39 / 0.1), transparent 70%),
 		linear-gradient(180deg, transparent 55%, rgb(5 9 20 / 0.55));
-	background-attachment: fixed;
 }
 
 [data-theme='dark'] ::selection {

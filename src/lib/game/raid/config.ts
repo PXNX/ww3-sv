@@ -87,7 +87,8 @@ export const WEAPON_KINDS = [
 	'hammer',
 	'minigun',
 	'boomerang',
-	'daggers'
+	'daggers',
+	'energy'
 ] as const;
 export type WeaponKind = (typeof WEAPON_KINDS)[number];
 
@@ -112,7 +113,8 @@ export const SKILL_IDS = [
 	'tower',
 	'echo',
 	'smoke',
-	'spin'
+	'spin',
+	'flip'
 ] as const;
 export type SkillId = (typeof SKILL_IDS)[number];
 
@@ -300,6 +302,21 @@ export const WEAPONS: Record<WeaponKind, WeaponSpec> = {
 		pierce: 0,
 		burnMs: 0,
 		skills: ['smoke', 'dash']
+	},
+	// Energy ball: one fast shot plus every eighth shot launches a massive flipping ball that hits more and does more
+	energy: {
+		damage: 16,
+		fireMs: 240,
+		range: 320,
+		projectileSpeed: 760,
+		pellets: 1,
+		spread: 0,
+		critChance: 0.1,
+		critMultiplier: 2.4,
+		splash: 0,
+		pierce: 0,
+		burnMs: 0,
+		skills: ['flip', 'nova']
 	}
 };
 
@@ -321,9 +338,11 @@ export const SKILL_COOLDOWN_MS: Record<SkillId, number> = {
 	quake: 8000,
 	warcry: 15000,
 	tower: 12000,
+	flip: 12000,
 	echo: 8000,
 	smoke: 10000,
-	spin: 6000
+	spin: 6000,
+	flip: 10000
 };
 
 // ---------------------------------------------------------------------------------------------
