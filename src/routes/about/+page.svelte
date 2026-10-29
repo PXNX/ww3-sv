@@ -10,7 +10,6 @@
 	import { LEGAL_PAGES } from '#lib/legal/pages.js';
 	import { LEGAL_HREFS } from '#lib/legal/paths.js';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
-	import IconSettings from '~icons/lucide/settings';
 </script>
 
 <svelte:head>
@@ -24,14 +23,6 @@
 		<a href={resolve('/')} class="btn-chunky px-3 py-1 text-sm">
 			<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
 			{m.game_back()}
-		</a>
-		<a
-			href={resolve('/settings')}
-			class="btn-chunky size-9 rounded-full p-0"
-			aria-label={m.settings_title()}
-			title={m.settings_title()}
-		>
-			<IconSettings class="size-4" aria-hidden="true" />
 		</a>
 	</div>
 

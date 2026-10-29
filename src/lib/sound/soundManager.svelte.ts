@@ -12,15 +12,27 @@ const SETTINGS_KEY = 'sound:settings';
 
 interface SoundSettings {
 	muted: boolean;
+	/** Master volume from 0 to 1; saves from before the slider have none */
+	volume?: number;
 }
 
 const isSettings = (value: unknown): value is SoundSettings =>
 	typeof value === 'object' &&
 	value !== null &&
-	typeof (value as SoundSettings).muted === 'boolean';
+	typeof (value as SoundSettings).muted === 'boolean' &&
+	((value as SoundSettings).volume === undefined ||
+		typeof (value as SoundSettings).volume === 'number');
+
+/** The master gain at full volume, as the sounds were balanced against */
+const FULL_GAIN = 0.5;
+
+const clampVolume = (value: number) =>
+	Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 1;
 
 class SoundManager {
 	muted = $state(false);
+	/** Master volume from 0 to 1 */
+	volume = $state(1);
 
 	#ctx: AudioContext | null = null;
 	#master: GainNode | null = null;
@@ -28,7 +40,9 @@ class SoundManager {
 	#warmed = false;
 
 	constructor() {
-		this.muted = localStore().read(SETTINGS_KEY, { muted: false }, isSettings).muted;
+		const saved = localStore().read<SoundSettings>(SETTINGS_KEY, { muted: false }, isSettings);
+		this.muted = saved.muted;
+		this.volume = clampVolume(saved.volume ?? 1);
 	}
 
 	/**
@@ -58,7 +72,23 @@ class SoundManager {
 
 	setMuted(muted: boolean) {
 		this.muted = muted;
-		localStore().write(SETTINGS_KEY, { muted } satisfies SoundSettings);
+		this.#save();
+	}
+
+	/** Sets the master volume (0 to 1); sounds that are playing follow at once */
+	setVolume(volume: number) {
+		this.volume = clampVolume(volume);
+		if (this.#master && this.#ctx) {
+			this.#master.gain.setTargetAtTime(FULL_GAIN * this.volume, this.#ctx.currentTime, 0.02);
+		}
+		this.#save();
+	}
+
+	#save() {
+		localStore().write(SETTINGS_KEY, {
+			muted: this.muted,
+			volume: this.volume
+		} satisfies SoundSettings);
 	}
 
 	toggleMuted() {
@@ -67,7 +97,7 @@ class SoundManager {
 
 	#createMaster(context: AudioContext): GainNode {
 		const master = context.createGain();
-		master.gain.value = 0.5;
+		master.gain.value = FULL_GAIN * this.volume;
 		master.connect(context.destination);
 		return master;
 	}

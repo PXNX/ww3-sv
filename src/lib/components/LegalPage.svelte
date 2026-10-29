@@ -13,7 +13,6 @@
 	import { LEGAL_HREFS } from '#lib/legal/paths.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
-	import IconSettings from '~icons/lucide/settings';
 	import IconTriangleAlert from '~icons/lucide/triangle-alert';
 
 	interface Props {
@@ -37,14 +36,6 @@
 		<a href={resolve('/about')} class="btn-chunky px-3 py-1 text-sm whitespace-nowrap">
 			<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
 			{m.legal_back_about()}
-		</a>
-		<a
-			href={resolve('/settings')}
-			class="btn-chunky size-9 rounded-full p-0"
-			aria-label={m.settings_title()}
-			title={m.settings_title()}
-		>
-			<IconSettings class="size-4" aria-hidden="true" />
 		</a>
 	</div>
 

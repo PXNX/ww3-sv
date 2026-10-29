@@ -4,6 +4,7 @@
  * and guards against paying the same run twice when a result sheet is re-mounted.
  */
 import type { ModeId } from '#lib/modes/registry.js';
+import { redeemGift as redeemGiftIn, type RedeemResult } from '#lib/game/giftcode/redeem.js';
 import { localStore } from '#lib/services/storage.js';
 import type { CareerRankId } from './config';
 import {
@@ -34,6 +35,11 @@ import {
 } from './profile';
 
 const CAREER_KEY = 'career:profile';
+/** The gift codes this device has redeemed */
+const GIFT_KEY = 'career:gift-codes';
+
+const isStringList = (value: unknown): value is string[] =>
+	Array.isArray(value) && value.every((entry) => typeof entry === 'string');
 
 /** A result sheet re-mounted within this window for the same run is not paid twice */
 const DUPLICATE_WINDOW_MS = 5000;
@@ -86,6 +92,16 @@ class CareerStore {
 		if (!next) return false;
 		this.#commit(next);
 		return true;
+	}
+
+	/** Redeems a gift code once per device; the reward goes straight into the wallet */
+	redeemGift(input: string, now: Date = new Date()): RedeemResult {
+		const redeemed = localStore().read<string[]>(GIFT_KEY, [], isStringList);
+		const result = redeemGiftIn(this.profile, redeemed, input, now.getTime());
+		if (result.status !== 'ok') return result;
+		this.#commit(result.profile);
+		localStore().write(GIFT_KEY, [...redeemed, result.gift.code]);
+		return result;
 	}
 
 	/** Pays Fake News within today's cap; returns how many coins were paid */

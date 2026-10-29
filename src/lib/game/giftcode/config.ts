@@ -1,29 +1,33 @@
-/* Universal giftcode system: admin-managed codes, once-per-user, date/limit caps */
+/*
+ * Gift codes, redeemed in the supply depot. A code gives revival tokens or Fake News, the two things
+ * the depot deals in, and can be redeemed once per device. There is no server behind the list, so
+ * it keeps honest players honest and nothing more: the codes are in the app, and the redeemed ones
+ * are remembered in local storage.
+ */
+
+export type GiftReward = 'revive' | 'coins';
+
 export interface GiftCode {
+	/** Upper case, no spaces */
 	code: string;
-	reward: 'revive' | 'barrels' | 'item';
+	reward: GiftReward;
+	/** Revival tokens or Fake News */
 	value: number;
-	maxUses: number;
-	used: number;
-	expiresAt?: number; // timestamp ms
+	/** Timestamp in milliseconds after which the code no longer works */
+	expiresAt?: number;
 }
 
-export const GIFT_CODES: GiftCode[] = [
-	{ code: 'WW3GIFT', reward: 'revive', value: 1, maxUses: 100, used: 0 },
-	{
-		code: 'OILBOOM',
-		reward: 'barrels',
-		value: 1_000_000,
-		maxUses: 50,
-		used: 0,
-		expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000
-	}
+export const GIFT_CODES: readonly GiftCode[] = [
+	{ code: 'WW3GIFT', reward: 'revive', value: 1 },
+	{ code: 'OILBOOM', reward: 'coins', value: 100 }
 ];
 
-export function isValid(code: string): boolean {
-	const c = GIFT_CODES.find((g) => g.code === code.toUpperCase());
-	if (!c) return false;
-	if (c.expiresAt && Date.now() > c.expiresAt) return false;
-	if (c.used >= c.maxUses) return false;
-	return true;
+/** A code as typed: spaces and dashes do not matter, nor does the case */
+export function normalizeCode(input: string): string {
+	return input.replace(/[\s-]+/g, '').toUpperCase();
+}
+
+export function findGift(input: string): GiftCode | undefined {
+	const code = normalizeCode(input);
+	return code === '' ? undefined : GIFT_CODES.find((gift) => gift.code === code);
 }

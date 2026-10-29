@@ -18,7 +18,6 @@
 	import ReferralCard from '#lib/components/ReferralCard.svelte';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
 	import IconBadgeCheck from '~icons/lucide/badge-check';
-	import IconSettings from '~icons/lucide/settings';
 	import IconFlame from '~icons/lucide/flame';
 	import IconGamepad from '~icons/lucide/gamepad-2';
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
@@ -52,14 +51,6 @@
 		<a href={resolve('/')} class="btn-chunky px-3 py-1 text-sm">
 			<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
 			{m.game_back()}
-		</a>
-		<a
-			href={resolve('/settings')}
-			class="btn-chunky size-9 rounded-full p-0"
-			aria-label={m.settings_title()}
-			title={m.settings_title()}
-		>
-			<IconSettings class="size-4" aria-hidden="true" />
 		</a>
 	</div>
 
