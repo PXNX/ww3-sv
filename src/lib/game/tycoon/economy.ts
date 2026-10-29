@@ -6,6 +6,8 @@
 import {
 	ACHIEVEMENTS,
 	BASE_TAP,
+	CRIT_CHANCE,
+	CRIT_MULT,
 	COST_GROWTH,
 	MAX_OWNED,
 	MIN_CYCLE_MS,
@@ -276,6 +278,21 @@ export function calmProduction(state: TycoonState): number {
 /** Multiplier of a tap from the tap boosts of achievements and the shop */
 export function tapMultiplier(state: TycoonState): number {
 	return (1 + achievementBonus(state, 'tap')) * (1 + perkEffect('tap', state.perks.tap));
+}
+
+/** Upgraded critical-tap chance from click upgrades; capped at 0.95 */
+export function critChanceUpgrade(state: TycoonState): number {
+	const base = UPGRADES.find((upgrade) => upgrade.id === 'crit_chance');
+	if (!base || !hasUpgrade(state, 'crit_chance')) return CRIT_CHANCE;
+	return Math.min(0.95, CRIT_CHANCE * base.value);
+}
+
+/** Upgraded critical-tap multiplier from click upgrades */
+export function critMultUpgrade(state: TycoonState): number {
+	const base = UPGRADES.find((upgrade) => upgrade.id === 'crit_mult');
+	let mult = 1 + CRIT_MULT + achievementBonus(state, 'tap');
+	if (base && hasUpgrade(state, 'crit_mult')) mult *= base.value;
+	return mult;
 }
 
 /** Barrels one tap pumps */

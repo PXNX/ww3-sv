@@ -143,7 +143,7 @@
 		</button>
 	{/snippet}
 
-	<section class="mx-auto flex w-full flex-col gap-3">
+	<section class="mx-auto flex w-full max-w-none flex-col gap-3">
 		{#if game.welcome}
 			<div class="sticker pop-in flex flex-col gap-1 bg-explosion-yellow p-3" role="status">
 				<h2 dir="auto" class="font-display text-xl font-bold">{m.tycoon_welcome_title()}</h2>

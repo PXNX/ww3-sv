@@ -34,7 +34,15 @@ export const PRODUCER_IDS = [
 	'platform12',
 	'platform13',
 	'platform14',
-	'platform15'
+	'platform15',
+	'platform16',
+	'platform17',
+	'platform18',
+	'platform19',
+	'platform20',
+	'platform21',
+	'platform22',
+	'platform23'
 ] as const;
 
 export type ProducerId = (typeof PRODUCER_IDS)[number];
@@ -83,7 +91,15 @@ export const PRODUCERS: readonly ProducerDef[] = [
 	{ id: 'platform12', baseCost: 42_000_000_000_000_000_000_000_000_000_000, baseCps: 38_000_000_000_000_000_000, cycleMs: 230_000 },
 	{ id: 'platform13', baseCost: 600_000_000_000_000_000_000_000_000_000_000, baseCps: 210_000_000_000_000_000_000, cycleMs: 240_000 },
 	{ id: 'platform14', baseCost: 8_500_000_000_000_000_000_000_000_000_000_000, baseCps: 1_200_000_000_000_000_000_000, cycleMs: 250_000 },
-	{ id: 'platform15', baseCost: 120_000_000_000_000_000_000_000_000_000_000_000, baseCps: 6_500_000_000_000_000_000_000, cycleMs: 260_000 }
+	{ id: 'platform15', baseCost: 120_000_000_000_000_000_000_000_000_000_000_000, baseCps: 6_500_000_000_000_000_000_000, cycleMs: 260_000 },
+	{ id: 'platform16', baseCost: 1_700_000_000_000_000_000_000_000_000_000_000, baseCps: 3_500_000_000_000_000_000, cycleMs: 270_000 },
+	{ id: 'platform17', baseCost: 2_700_000_000_000_000_000_000_000_000_000_000, baseCps: 19_000_000_000_000_000_000, cycleMs: 280_000 },
+	{ id: 'platform18', baseCost: 4_000_000_000_000_000_000_000_000_000_000_000, baseCps: 11_000_000_000_000_000_000, cycleMs: 290_000 },
+	{ id: 'platform19', baseCost: 5_800_000_000_000_000_000_000_000_000_000_000, baseCps: 6_000_000_000_000_000_000, cycleMs: 300_000 },
+	{ id: 'platform20', baseCost: 8_300_000_000_000_000_000_000_000_000_000_000, baseCps: 33_000_000_000_000_000_000, cycleMs: 310_000 },
+	{ id: 'platform21', baseCost: 12_000_000_000_000_000_000_000_000_000_000_000_000, baseCps: 1_700_000_000_000_000_000, cycleMs: 320_000 },
+	{ id: 'platform22', baseCost: 18_000_000_000_000_000_000_000_000_000_000_000_000, baseCps: 9_200_000_000_000_000_000, cycleMs: 330_000 },
+	{ id: 'platform23', baseCost: 27_000_000_000_000_000_000_000_000_000_000_000_000, baseCps: 5_100_000_000_000_000_000, cycleMs: 340_000 }
 ];
 
 /** No speed bonus makes a cycle shorter than this */
@@ -98,9 +114,9 @@ export const MAX_OWNED = 1000;
 /** Barrels one tap pumps before any multiplier */
 export const BASE_TAP = 1;
 /** Chance for a critical tap */
-export const CRIT_CHANCE = 0.1;
+export const CRIT_CHANCE = 0.05;
 /** Critical tap multiplier */
-export const CRIT_MULT = 5;
+export const CRIT_MULT = 2;
 
 /** The game logic advances in steps of this many milliseconds */
 export const STEP_MS = 100;
@@ -235,6 +251,20 @@ const CLICK_UPGRADES: readonly UpgradeDef[] = [
 		cost: 5_000_000,
 		requires: { type: 'total', count: 50 },
 		value: 0.02
+	},
+	{
+		id: 'crit_chance',
+		kind: 'click',
+		cost: 10_000,
+		requires: { type: 'none' },
+		value: 1.5
+	},
+	{
+		id: 'crit_mult',
+		kind: 'click',
+		cost: 250_000,
+		requires: { type: 'owned', producer: 'pumpjack', count: 5 },
+		value: 2
 	}
 ];
 
