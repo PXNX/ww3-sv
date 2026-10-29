@@ -43,6 +43,7 @@ export const CAREER_MODES = [
 	'redsquare',
 	'petrobras',
 	'bordershift',
+	'droneworks',
 	'falklands',
 	'warroom'
 ] as const satisfies readonly ModeId[];

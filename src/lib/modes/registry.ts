@@ -42,6 +42,7 @@ import IconMusic from '~icons/lucide/music';
 import IconHandshake from '~icons/lucide/handshake';
 import IconBinoculars from '~icons/lucide/binoculars';
 import IconSailboat from '~icons/lucide/sailboat';
+import IconFactory from '~icons/lucide/factory';
 import IconMap from '~icons/lucide/map';
 
 export type ModeId =
@@ -83,6 +84,7 @@ export type ModeId =
 	| 'redsquare'
 	| 'petrobras'
 	| 'bordershift'
+	| 'droneworks'
 	| 'falklands'
 	| 'warroom';
 
@@ -489,6 +491,16 @@ export const MODES: readonly GameMode[] = [
 		leaders: ['tusk', 'zelensky', 'putin'],
 		name: m.mode_bordershift_name,
 		description: m.mode_bordershift_description
+	},
+	{
+		id: 'droneworks',
+		status: 'playable',
+		href: '/play/droneworks',
+		icon: IconFactory,
+		tileClass: 'bg-mustard',
+		leaders: ['zelensky', 'putin'],
+		name: m.mode_droneworks_name,
+		description: m.mode_droneworks_description
 	},
 	{
 		id: 'falklands',
