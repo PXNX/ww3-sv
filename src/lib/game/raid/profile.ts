@@ -1,9 +1,10 @@
 /*
- * The raider's profile that lasts between raids: level and XP, gold and scrap, the equipped
- * loadout (two weapons, a helmet, a vest and boots), the stash, the crystals, the season track and
- * the daily quests. Raids hand their haul in here when they end; the lobby equips, upgrades and
- * salvages gear, sockets and combines crystals and claims season and quest rewards. Pure
- * functions on plain data, so the store only has to read and write it.
+ * The raider's profile that lasts between raids: gold and scrap, the equipped loadout (two weapons,
+ * a helmet, a vest and boots), the stash, the crystals, the season track and the daily quests. The
+ * raider's own level is the career level, so raids keep no second ladder of their own; their XP
+ * only fills the season track. Raids hand their haul in here when they end; the lobby equips,
+ * upgrades and salvages gear, sockets and combines crystals and claims season and quest rewards.
+ * Pure functions on plain data, so the store only has to read and write it.
  */
 import { dayKey } from '#lib/game/random.js';
 import {
@@ -17,7 +18,6 @@ import {
 	HP_PER_LEVEL,
 	MAP_IDS,
 	MAX_ITEM_LEVEL,
-	MAX_PLAYER_LEVEL,
 	PLAYER_BASE_HP,
 	RARITIES,
 	STASH_SIZE,
@@ -82,9 +82,6 @@ export type WeaponSlot = 'primary' | 'secondary';
 
 export interface Profile {
 	version: 1;
-	level: number;
-	/** XP towards the next level */
-	xp: number;
 	gold: number;
 	/** Salvaged material, spent on combining crystals */
 	scrap: number;
@@ -111,8 +108,6 @@ export interface Profile {
 export function newProfile(now: Date = new Date()): Profile {
 	return {
 		version: 1,
-		level: 1,
-		xp: 0,
 		gold: 0,
 		scrap: 0,
 		loadout: {
@@ -135,34 +130,13 @@ export function newProfile(now: Date = new Date()): Profile {
 	};
 }
 
-/** XP needed to go from this level to the next */
-export function xpToNext(level: number): number {
-	return Math.round(120 * level ** 1.45);
-}
-
+/** The raider's health at a career level, plus what the helmet adds */
 export function maxHpFor(level: number, helmet: ArmorItem | null): number {
 	return PLAYER_BASE_HP + HP_PER_LEVEL * (Math.max(1, level) - 1) + helmetHp(helmet);
 }
 
 export function armorFor(vest: ArmorItem | null): number {
 	return vestArmor(vest);
-}
-
-export interface XpResult {
-	level: number;
-	xp: number;
-	levelsGained: number;
-}
-
-export function addXp(level: number, xp: number, gained: number): XpResult {
-	let nextLevel = level;
-	let nextXp = xp + Math.max(0, Math.round(gained));
-	while (nextLevel < MAX_PLAYER_LEVEL && nextXp >= xpToNext(nextLevel)) {
-		nextXp -= xpToNext(nextLevel);
-		nextLevel += 1;
-	}
-	if (nextLevel >= MAX_PLAYER_LEVEL) nextXp = 0;
-	return { level: nextLevel, xp: nextXp, levelsGained: nextLevel - level };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -297,17 +271,11 @@ export function withCurrentSeason(profile: Profile, now: Date = new Date()): Pro
 	return { ...claimed, season: newSeason(now) };
 }
 
-/** Raid XP (or quest XP) for both the level and the season track */
-function gainXp(profile: Profile, gained: number): { profile: Profile; levelsGained: number } {
-	const xp = addXp(profile.level, profile.xp, gained);
+/** Raid XP (or quest XP) for the season track; the raider's level is the career level */
+function gainSeasonXp(profile: Profile, gained: number): Profile {
 	return {
-		profile: {
-			...profile,
-			level: xp.level,
-			xp: xp.xp,
-			season: { ...profile.season, xp: profile.season.xp + Math.max(0, Math.round(gained)) }
-		},
-		levelsGained: xp.levelsGained
+		...profile,
+		season: { ...profile.season, xp: profile.season.xp + Math.max(0, Math.round(gained)) }
 	};
 }
 
@@ -332,7 +300,7 @@ export function claimQuest(profile: Profile, index: number): Profile {
 	const quests = profile.quests.quests.map((other, i) =>
 		i === index ? { ...other, claimed: true } : other
 	);
-	const next = gainXp(profile, quest.reward.xp).profile;
+	const next = gainSeasonXp(profile, quest.reward.xp);
 	return {
 		...next,
 		gold: next.gold + quest.reward.gold,
@@ -370,7 +338,6 @@ export interface RaidHaul {
 
 export interface HaulResult {
 	profile: Profile;
-	levelsGained: number;
 	/** Gear that did not fit in the stash and was salvaged */
 	salvaged: number;
 	salvageGold: number;
@@ -383,15 +350,15 @@ export interface HaulResult {
 }
 
 /**
- * Banks a finished raid: XP (also for the season), gold, scrap, crystals, loadout, gear and the
- * progress of the daily quests
+ * Banks a finished raid: XP for the season, gold, scrap, crystals, loadout, gear and the progress
+ * of the daily quests
  */
 export function bankHaul(profile: Profile, haul: RaidHaul, now: Date = new Date()): HaulResult {
 	const today = withToday(profile, now);
 	const stars = haul.bossStars ?? 0;
 	const newStars = Math.max(0, stars - (today.bossStars[haul.map] ?? 0));
 	const starXp = newStars * BOSS_STAR_XP;
-	const { profile: current, levelsGained } = gainXp(today, haul.xp + starXp);
+	const current = gainSeasonXp(today, haul.xp + starXp);
 	const weaponStars = { ...current.weaponStars };
 	if (stars > 0 && haul.starWeapon) {
 		const byMap = weaponStars[haul.starWeapon] ?? {};
@@ -455,7 +422,6 @@ export function bankHaul(profile: Profile, haul: RaidHaul, now: Date = new Date(
 					: current.bossStars,
 			weaponStars
 		},
-		levelsGained,
 		salvaged,
 		salvageGold,
 		salvageScrap: scrapFromSalvage,
@@ -619,8 +585,6 @@ export function isProfile(value: unknown): value is Profile {
 	if (!isRecord(value) || value.version !== 1) return false;
 	const { loadout, stash, bestTimeMs, bossBestMs, defenseBestWave, bossStars, weaponStars } = value;
 	return (
-		isLevel(value.level, MAX_PLAYER_LEVEL) &&
-		isCount(value.xp) &&
 		isCount(value.gold) &&
 		isCount(value.raids) &&
 		(value.scrap === undefined || isCount(value.scrap)) &&
@@ -646,11 +610,14 @@ export function isProfile(value: unknown): value is Profile {
 
 /**
  * A saved profile, or null if it is not one. Saves from before boots, scrap, crystals, seasons
- * and quests get those filled in, and the season and quests move on to the current ones.
+ * and quests get those filled in, and the season and quests move on to the current ones. Saves
+ * from when raids had their own level and XP lose them: the career level is the raider's level now.
  */
 export function parseProfile(value: unknown, now: Date = new Date()): Profile | null {
 	if (!isProfile(value)) return null;
-	const loaded = value as Partial<Profile> & Profile;
+	const loaded = { ...(value as Partial<Profile> & Profile & { level?: number; xp?: number }) };
+	delete loaded.level;
+	delete loaded.xp;
 	return withToday(
 		{
 			...loaded,

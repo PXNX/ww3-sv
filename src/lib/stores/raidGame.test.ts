@@ -24,7 +24,8 @@ function newGame() {
 	const store = createStore(memoryStorage());
 	// Five minutes into a ten-minute window: no live event running
 	let now = Date.UTC(2026, 9, 24, 12, 5);
-	const make = () => new RaidGame({ store: () => store, seed: () => 7, now: () => now });
+	const make = () =>
+		new RaidGame({ store: () => store, seed: () => 7, now: () => now, level: () => 1 });
 	return { game: make(), make, store, setNow: (ms: number) => (now = ms) };
 }
 
@@ -100,11 +101,11 @@ describe('RaidGame', () => {
 		knockOut(game);
 		game.giveUp();
 		expect(game.status).toBe('over');
-		expect(game.result?.levelsGained).toBeGreaterThan(0);
+		expect(game.result?.xp).toBe(500);
 
 		const reloaded = make();
 		reloaded.load();
-		expect(reloaded.profile.level).toBeGreaterThan(1);
+		expect(reloaded.profile.season.xp).toBe(500);
 		expect(reloaded.profile.gold).toBe(42);
 		expect(reloaded.profile.stash.map((item) => item.id)).toEqual([found.id]);
 		expect(reloaded.profile.raids).toBe(1);

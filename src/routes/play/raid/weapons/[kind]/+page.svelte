@@ -27,6 +27,7 @@
 		WEAPON_TRAITS
 	} from '#lib/components/raidText.js';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
+	import { career } from '#lib/game/career/store.svelte.js';
 	import {
 		BOSS_MAX_STARS,
 		MAP_IDS,
@@ -61,7 +62,7 @@
 	const reducedMotion = prefersReducedMotion();
 	const name = $derived(WEAPON_NAMES[kind]());
 
-	/** The player's own weapon when the lobby passed one, and the player's level */
+	/** The player's own weapon when the lobby passed one, and the career level it is played at */
 	let own = $state<{ item: WeaponItem; level: number; equipped: boolean } | null>(null);
 	/** The weapon's star stat: its best boss fight stars added up over the maps */
 	let stars = $state(0);
@@ -76,7 +77,7 @@
 			(candidate): candidate is WeaponItem => candidate.id === id && candidate.type === 'weapon'
 		);
 		if (item && item.kind === kind)
-			own = { item, level: profile.level, equipped: item === primary || item === secondary };
+			own = { item, level: career().level, equipped: item === primary || item === secondary };
 	});
 
 	const item = $derived(own?.item ?? makeWeapon(kind));

@@ -15,6 +15,7 @@ import {
 	SKILL_NAMES,
 	WEAPON_NAMES
 } from '#lib/components/raidText.js';
+import { career } from '#lib/game/career/store.svelte.js';
 import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
 import {
 	BLAST_ANGLE,
@@ -62,7 +63,6 @@ import {
 	upgradeSlot,
 	withCurrentSeason,
 	withToday,
-	xpToNext,
 	type LoadoutSlot,
 	type Profile,
 	type WeaponSlot
@@ -188,12 +188,8 @@ export interface RaidResult {
 	scrap: number;
 	gear: GearItem[];
 	crystals: Crystal[];
-	levelsGained: number;
-	/** Level and XP before and after banking, for the animated level bar */
-	levelBefore: number;
-	xpBefore: number;
+	/** The career level the raid was played at, shown with its rank on the result screen */
 	level: number;
-	xpAfter: number;
 	salvaged: number;
 	salvageGold: number;
 	salvageScrap: number;
@@ -212,6 +208,8 @@ export interface RaidOptions {
 	seed?: () => number;
 	/** The wall clock for the live events, in epoch milliseconds; injected for tests */
 	now?: () => number;
+	/** The raider's level, which is the career level; injected for tests */
+	level?: () => number;
 }
 
 export class RaidGame {
@@ -276,6 +274,7 @@ export class RaidGame {
 	#store: () => Store;
 	#seed: () => number;
 	#now: () => number;
+	#level: () => number;
 	#foundMs = 0;
 	#crystalMs = 0;
 	#defenseKey = '';
@@ -287,13 +286,15 @@ export class RaidGame {
 		reducedMotion = false,
 		store = localStore,
 		seed = randomSeed,
-		now = Date.now
+		now = Date.now,
+		level = () => career().level
 	}: RaidOptions = {}) {
 		this.reducedMotion = reducedMotion;
 		this.#store = store;
 		this.#seed = seed;
 		this.#now = now;
-		this.state = createRaid(this.map, this.profile.loadout, this.profile.level);
+		this.#level = level;
+		this.state = createRaid(this.map, this.profile.loadout, this.level);
 		this.#syncChrome();
 	}
 
@@ -302,12 +303,13 @@ export class RaidGame {
 		const today = dateAt(this.#now());
 		const saved = parseProfile(this.#store().read<unknown>(PROFILE_KEY, null), today);
 		this.#setProfile(saved ?? newProfile(today));
-		this.state = createRaid(this.map, this.profile.loadout, this.profile.level);
+		this.state = createRaid(this.map, this.profile.loadout, this.level);
 		this.#syncChrome();
 	}
 
-	get xpNeeded(): number {
-		return xpToNext(this.profile.level);
+	/** The raider's level: the career level, shared with every other game */
+	get level(): number {
+		return Math.max(1, Math.round(this.#level()));
 	}
 
 	// -------------------------------------------------------------------------------------------
@@ -404,7 +406,7 @@ export class RaidGame {
 		this.mode = mode;
 		const seed = this.#seed();
 		this.#random = createRandom(seed);
-		this.state = createRaid(map, this.profile.loadout, this.profile.level, { mode });
+		this.state = createRaid(map, this.profile.loadout, this.level, { mode });
 		this.effects = [];
 		this.found = null;
 		this.crystalToast = null;
@@ -1166,11 +1168,7 @@ export class RaidGame {
 			scrap: forfeited ? 0 : state.scrap,
 			gear: forfeited ? [] : [...state.haul],
 			crystals: forfeited ? [] : [...state.crystals],
-			levelsGained: banked.levelsGained,
-			levelBefore: before.level,
-			xpBefore: before.xp,
-			level: banked.profile.level,
-			xpAfter: banked.profile.xp,
+			level: this.level,
 			salvaged: banked.salvaged,
 			salvageGold: banked.salvageGold,
 			salvageScrap: banked.salvageScrap,

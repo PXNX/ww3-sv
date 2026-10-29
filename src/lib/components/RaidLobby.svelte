@@ -3,7 +3,8 @@
 	landscape. Above the fold the battlefield open right now (one at a time, the next takes over
 	every twelve hours) with its countdown and the one coming next, the three ways to play it (the
 	endless hunt, the three-minute boss fight or the wave defense of a command post) as big
-	buttons, and beside them the raider's level and season card (tap it for the season's rewards),
+	buttons, and beside them the raider's career level and season card (tap it for the season's
+	rewards),
 	gold and scrap and the live event. Below that the squad (online friends to invite, a join link
 	to share in any chat), today's quests with their claim buttons, the loadout (two weapons,
 	helmet, vest and boots; tap a weapon for all its stats and skills) with gold upgrades and socketed crystals, the loose crystals (socketed from here, or
@@ -13,12 +14,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
+	import { rankFor } from '#lib/game/career/config.js';
+	import { rankLabel } from '#lib/game/career/rankText.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import {
 		BOSS_FIGHT_MS,
 		BOSS_MAX_STARS,
 		CRYSTAL_COMBINE_COUNT,
 		RARITY_COLOR,
+		SEASON_TIERS,
 		STASH_SIZE,
 		WEAPONS,
 		type MapId,
@@ -50,7 +54,7 @@
 	} from '#lib/game/raid/profile.js';
 	import { hoursUntilNewQuests, questDone } from '#lib/game/raid/quests.js';
 	import { rotationAt } from '#lib/game/raid/rotation.js';
-	import { seasonTier } from '#lib/game/raid/season.js';
+	import { seasonTier, seasonTierProgress } from '#lib/game/raid/season.js';
 	import { rememberDetailsItem, type RaidGame } from '#lib/stores/raidGame.svelte.js';
 	import Avatar from './Avatar.svelte';
 	import RaidCrystalIcon from './RaidCrystalIcon.svelte';
@@ -142,7 +146,7 @@
 
 	function statLine(item: GearItem): string {
 		if (item.type === 'weapon')
-			return m.raid_stat_dps({ value: Math.round(weaponDps(item, profile.level)) });
+			return m.raid_stat_dps({ value: Math.round(weaponDps(item, game.level)) });
 		if (item.slot === 'helmet') return m.raid_stat_hp({ value: helmetHp(item) });
 		if (item.slot === 'boots')
 			return m.raid_stat_speed({ value: Math.round(bootsSpeed(item) * 100) });
@@ -194,7 +198,9 @@
 			.join(':');
 	}
 
-	const xpShare = $derived(Math.min(1, profile.xp / game.xpNeeded));
+	// The raider's level is the career level; the season track is what raids feed
+	const level = $derived(game.level);
+	const rank = $derived(rankFor(level));
 
 	// The battlefield open right now
 	const rotation = $derived(rotationAt(now));
@@ -254,6 +260,10 @@
 	const season = $derived(profile.season);
 	const reached = $derived(seasonTier(season.xp));
 	const claimable = $derived(reached - season.claimed);
+	const seasonProgress = $derived(seasonTierProgress(season.xp));
+	const seasonShare = $derived(
+		seasonProgress.needed > 0 ? seasonProgress.xp / seasonProgress.needed : 1
+	);
 
 	// Live events and quests
 	const liveEvent = $derived(liveEventAt(now));
@@ -345,21 +355,21 @@
 		</div>
 
 		<div class="flex min-w-0 flex-col gap-3">
-			<!-- Level and season in one card; tap it for the season's rewards -->
+			<!-- The career level and the season track in one card; tap it for the season's rewards -->
 			<button
 				type="button"
 				class="flex items-center gap-3 rounded-xl bg-[#1b0b3a]/80 p-2.5 text-start shadow-[0_3px_0_rgb(0_0_0/0.3)] active:translate-y-0.5"
-				aria-label="{m.raid_lobby_level({ level: profile.level })}, {m.raid_season_open()}"
+				aria-label="{m.raid_lobby_level({ level })}, {m.raid_season_open()}"
 				onclick={() => (showSeason = true)}
 			>
-				<!-- The player's own agent, with the raider level pinned to it -->
+				<!-- The player's own agent, with the career level pinned to it -->
 				<span class="relative size-14 shrink-0 rounded-full bg-[#7a3fe0] ring-3 ring-white/80">
 					<span class="block size-full overflow-hidden rounded-full">
 						<Avatar size={56} class="ms-[-3px] -mt-1" />
 					</span>
 					<span
 						class="absolute -start-1.5 -bottom-1.5 flex size-6 items-center justify-center rounded-full bg-[#ffc83a] font-display text-xs font-black text-[#3d1478] tabular-nums shadow-[0_2px_0_rgb(0_0_0/0.3)]"
-						>{profile.level}</span
+						>{level}</span
 					>
 					{#if claimable > 0}
 						<span
@@ -369,14 +379,15 @@
 					{/if}
 				</span>
 				<span class="flex min-w-0 flex-1 flex-col gap-1 font-display font-bold">
-					<span class="flex items-center gap-2 text-sm leading-none font-black uppercase italic">
-						<span>{m.raid_lobby_level({ level: profile.level })}</span>
-						<span class="text-[0.65rem] text-white/75"
-							>{m.raid_lobby_xp({ xp: profile.xp, next: game.xpNeeded })}</span
+					<span class="flex items-baseline gap-2 text-sm leading-none font-black uppercase italic">
+						<span>{m.raid_lobby_level({ level })}</span>
+						<span dir="auto" class="text-[0.65rem] font-bold text-white/75">{rankLabel(rank)}</span>
+						<span class="ms-auto shrink-0 text-[0.65rem] text-white/75"
+							>{m.raid_season_tier({ tier: reached, max: SEASON_TIERS })}</span
 						>
 					</span>
 					<span class="h-3 w-full overflow-hidden rounded-full bg-black/35">
-						<span class="block h-full rounded-full bg-[#7fd3ff]" style:width="{xpShare * 100}%"
+						<span class="block h-full rounded-full bg-[#ffc83a]" style:width="{seasonShare * 100}%"
 						></span>
 					</span>
 				</span>

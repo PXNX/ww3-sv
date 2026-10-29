@@ -3,7 +3,6 @@ import {
 	ARCHETYPES,
 	CRYSTAL_COMBINE_COUNT,
 	CRYSTAL_COMBINE_SCRAP,
-	MAX_PLAYER_LEVEL,
 	PLAYER_BASE_HP,
 	SEASON_XP_PER_TIER,
 	STASH_SIZE,
@@ -21,7 +20,6 @@ import {
 	type Crystal
 } from './items';
 import {
-	addXp,
 	bankHaul,
 	claimSeasonRewards,
 	combineCrystals,
@@ -37,8 +35,7 @@ import {
 	claimQuest,
 	swapWeapons,
 	unequipArmor,
-	upgradeSlot,
-	xpToNext
+	upgradeSlot
 } from './profile';
 
 /** A raid that counts for nothing on the quests */
@@ -56,9 +53,8 @@ function noStats(map: MapId): QuestStats {
 }
 
 describe('a new profile', () => {
-	it('starts at level 1 with the rifle and the marksman rifle and no armour', () => {
+	it('starts with the rifle and the marksman rifle and no armour', () => {
 		const profile = newProfile();
-		expect(profile.level).toBe(1);
 		expect(profile.loadout.primary.kind).toBe('rifle');
 		expect(profile.loadout.secondary.kind).toBe('marksman');
 		expect(profile.loadout.helmet).toBeNull();
@@ -67,26 +63,15 @@ describe('a new profile', () => {
 	});
 });
 
-describe('XP', () => {
-	it('carries leftover XP over several level-ups', () => {
-		const result = addXp(1, 0, xpToNext(1) + xpToNext(2) + 5);
-		expect(result).toEqual({ level: 3, xp: 5, levelsGained: 2 });
-	});
-
-	it('stops at the level cap', () => {
-		expect(addXp(MAX_PLAYER_LEVEL, 0, 1e9).level).toBe(MAX_PLAYER_LEVEL);
-	});
-});
-
 describe('banking a raid', () => {
-	it('adds XP, gold, the field loadout, the gear and the best time', () => {
+	it('adds season XP, gold, the field loadout, the gear and the best time', () => {
 		const profile = newProfile();
 		const loadout = { ...profile.loadout, vest: makeArmor('vest', 'rare') };
 		const found = makeWeapon('shotgun', 'epic', 4);
-		const { profile: next, levelsGained } = bankHaul(profile, {
+		const { profile: next } = bankHaul(profile, {
 			map: 'strait',
 			timeMs: 90_000,
-			xp: xpToNext(1),
+			xp: SEASON_XP_PER_TIER / 2,
 			gold: 33,
 			scrap: 7,
 			gear: [found],
@@ -94,7 +79,6 @@ describe('banking a raid', () => {
 			loadout,
 			stats: noStats('strait')
 		});
-		expect(levelsGained).toBe(1);
 		expect(next.gold).toBe(33);
 		expect(next.loadout.vest?.rarity).toBe('rare');
 		expect(next.stash).toEqual([found]);
@@ -102,7 +86,7 @@ describe('banking a raid', () => {
 		expect(next.raids).toBe(1);
 		expect(next.scrap).toBe(7);
 		expect(crystalCount(next.crystals, { kind: 'crit', rarity: 'rare' })).toBe(1);
-		expect(next.season.xp).toBe(xpToNext(1));
+		expect(next.season.xp).toBe(SEASON_XP_PER_TIER / 2);
 		expect(isProfile(next)).toBe(true);
 	});
 
@@ -172,13 +156,21 @@ describe('stored profiles', () => {
 	it('rejects broken or foreign data', () => {
 		expect(isProfile(null)).toBe(false);
 		expect(isProfile({ ...newProfile(), version: 2 })).toBe(false);
-		expect(isProfile({ ...newProfile(), level: 0 })).toBe(false);
+		expect(isProfile({ ...newProfile(), gold: -1 })).toBe(false);
 		const bad = newProfile();
 		expect(isProfile({ ...bad, loadout: { ...bad.loadout, helmet: makeArmor('vest') } })).toBe(
 			false
 		);
 		expect(isProfile({ ...bad, stash: [{ type: 'weapon', kind: 'laser' }] })).toBe(false);
 		expect(isProfile(JSON.parse(JSON.stringify(bad)))).toBe(true);
+	});
+
+	it('still reads saves from when raids had a level of their own', () => {
+		const legacy = { ...newProfile(), level: 7, xp: 120 };
+		const parsed = parseProfile(legacy);
+		expect(parsed).not.toBeNull();
+		expect(parsed).not.toHaveProperty('level');
+		expect(parsed).not.toHaveProperty('xp');
 	});
 });
 

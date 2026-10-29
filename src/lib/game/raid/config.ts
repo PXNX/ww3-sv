@@ -904,7 +904,7 @@ export const CRYSTAL_BOSS_WEIGHTS: Record<Variant, readonly number[]> = {
 };
 
 // ---------------------------------------------------------------------------------------------
-// Season: raid XP also fills a monthly track of rewards
+// Season: raid XP fills a monthly track of rewards
 
 export const SEASON_TIERS = 30;
 export const SEASON_XP_PER_TIER = 600;
@@ -912,7 +912,6 @@ export const SEASON_XP_PER_TIER = 600;
 // ---------------------------------------------------------------------------------------------
 // Profile
 
-export const MAX_PLAYER_LEVEL = 50;
 /** Stash slots between raids; extra gear is salvaged into gold when a raid ends */
 export const STASH_SIZE = 40;
 

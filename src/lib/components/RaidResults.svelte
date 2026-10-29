@@ -5,7 +5,7 @@
 	a defense the waves held and whether the pot was cashed out or lost. Raids keep no high score.
 	A tap or a moment later the full result screen follows: the XP earned counting up with the
 	gold and scrap under it, the loot as tiles, today's quests as job cards whose bars grow by what
-	this raid added, the level and season bars, the raid's numbers, and the player's agent beside the
+	this raid added, the season bar, the raid's numbers, and the player's agent beside the
 	buttons to raid again or close, which goes back to the lobby.
 -->
 <script lang="ts">
@@ -13,8 +13,9 @@
 	import { cubicOut } from 'svelte/easing';
 	import { Tween } from 'svelte/motion';
 	import { m } from '#lib/paraglide/messages.js';
-	import { BOSS_MAX_STARS, MAX_PLAYER_LEVEL, SEASON_TIERS } from '#lib/game/raid/config.js';
-	import { xpToNext } from '#lib/game/raid/profile.js';
+	import { rankFor } from '#lib/game/career/config.js';
+	import { rankLabel } from '#lib/game/career/rankText.js';
+	import { BOSS_MAX_STARS, SEASON_TIERS } from '#lib/game/raid/config.js';
 	import { seasonTier, seasonTierProgress } from '#lib/game/raid/season.js';
 	import type { ScoreCard } from '#lib/services/share.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
@@ -94,12 +95,7 @@
 		return () => clearTimeout(timer);
 	});
 
-	const levelShare = $derived(
-		result.level >= MAX_PLAYER_LEVEL ? 1 : Math.min(1, result.xpAfter / xpToNext(result.level))
-	);
-	const levelFrom = $derived(
-		result.levelsGained > 0 ? 0 : Math.min(1, result.xpBefore / xpToNext(result.levelBefore))
-	);
+	const rank = $derived(rankFor(result.level));
 	const tierBefore = $derived(seasonTier(result.seasonXpBefore));
 	const tierAfter = $derived(seasonTier(result.seasonXpAfter));
 	const seasonProgress = $derived(seasonTierProgress(result.seasonXpAfter));
@@ -309,26 +305,13 @@
 					</div>
 				</section>
 
-				<!-- Level, season and the raid's numbers -->
+				<!-- Career level, season and the raid's numbers -->
 				<section class="grid gap-3 font-display text-xs font-bold sm:grid-cols-2">
 					<div class="flex flex-col gap-1.5">
-						<div class="flex items-center gap-2">
-							<span class="w-24 shrink-0">{m.raid_result_level({ level: result.level })}</span>
-							<span class="h-3 flex-1 overflow-hidden rounded-full bg-black/35">
-								<span
-									class="bar block h-full rounded-full bg-[#7fd3ff]"
-									style:width="{(shown ? levelShare : levelFrom) * 100}%"
-								></span>
-							</span>
+						<div class="flex items-center justify-between gap-2">
+							<span>{m.raid_result_level({ level: result.level })}</span>
+							<span dir="auto" class="text-white/75">{rankLabel(rank)}</span>
 						</div>
-						{#if result.levelsGained > 0}
-							<p
-								dir="auto"
-								class="pop-in w-fit rounded-md bg-[#ffc83a] px-2 text-sm text-[#3d1478]"
-							>
-								{m.raid_result_level_up({ level: result.level })}
-							</p>
-						{/if}
 						<div class="flex items-center gap-2">
 							<span class="w-24 shrink-0"
 								>{m.raid_season_tier({ tier: tierAfter, max: SEASON_TIERS })}</span
