@@ -252,6 +252,7 @@ export function buyPerk(
 		return { bought: false, events: [] };
 	}
 	state.perks[id] = level + 1;
+	state.prestigePoints -= perkCost(def, level);
 	return { bought: true, events: checkAchievements(state) };
 }
 
