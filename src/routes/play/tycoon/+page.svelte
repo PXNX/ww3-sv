@@ -298,7 +298,8 @@
 				{:else}
 					<ul class="flex flex-col gap-2">
 						{#each availableUpgrades as upgrade (upgrade.id)}
-							{@const affordable = game.barrels >= upgrade.cost}
+							{@const price = game.upgradePrices[upgrade.id] ?? upgrade.cost}
+							{@const affordable = game.barrels >= price}
 							<li>
 								<button
 									type="button"
@@ -307,7 +308,7 @@
 									disabled={!affordable}
 									aria-label={m.tycoon_upgrade_buy_label({
 										name: upgradeName(upgrade),
-										cost: formatBig(upgrade.cost, locale)
+										cost: formatBig(price, locale)
 									})}
 									onclick={() => game.buyUpgrade(upgrade.id)}
 								>
@@ -318,7 +319,7 @@
 										<span dir="auto" class="text-xs leading-tight">{upgradeEffect(upgrade)}</span>
 									</span>
 									<span class="shrink-0 font-display text-base font-bold tabular-nums" dir="ltr">
-										{formatBig(upgrade.cost, locale)}
+										{formatBig(price, locale)}
 									</span>
 								</button>
 							</li>

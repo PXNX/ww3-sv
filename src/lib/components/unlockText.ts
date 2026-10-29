@@ -4,6 +4,7 @@
  */
 import { modeById } from '#lib/modes/registry.js';
 import { m } from '#lib/paraglide/messages.js';
+import { achievementName } from './tycoonText.js';
 import type { UnlockRequirement } from '#lib/game/avatar/unlocks.js';
 
 /** One sentence naming what unlocks the look, for the editor's lock hints */
@@ -17,5 +18,10 @@ export function requirementText(requirement: UnlockRequirement): string {
 			return m.avatar_unlock_mode({ mode: modeById(requirement.mode).name() });
 		case 'fakeNews':
 			return m.avatar_unlock_fakenews({ coins: requirement.coins });
+		case 'tycoon':
+			return m.avatar_unlock_tycoon({
+				name: achievementName(requirement.achievement),
+				mode: modeById('tycoon').name()
+			});
 	}
 }

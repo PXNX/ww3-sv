@@ -12,7 +12,9 @@ export type UnlockRequirement =
 	| { kind: 'level'; level: number }
 	| { kind: 'streak'; days: number }
 	| { kind: 'mode'; mode: ModeId }
-	| { kind: 'fakeNews'; coins: number };
+	| { kind: 'fakeNews'; coins: number }
+	/** An achievement of the Oil Tycoon, which keeps its own save outside the career */
+	| { kind: 'tycoon'; achievement: string };
 
 export interface LookUnlock {
 	id: string;
@@ -91,13 +93,15 @@ export const LOOK_UNLOCKS: readonly LookUnlock[] = [
 		id: 'monocle',
 		part: 'hat',
 		value: 'monocle',
-		requirement: { kind: 'mode', mode: 'tycoon' }
+		// Every producer owned at the most
+		requirement: { kind: 'tycoon', achievement: 'maxed_all' }
 	},
 	{
 		id: 'cylinder',
 		part: 'hat',
 		value: 'cylinder',
-		requirement: { kind: 'mode', mode: 'tycoon' }
+		// Nationalized and restarted 25 times
+		requirement: { kind: 'tycoon', achievement: 'tycoon_king' }
 	},
 	{
 		id: 'alien-skin',
@@ -115,20 +119,26 @@ export interface UnlockProgress {
 	modes: Partial<Record<ModeId, unknown>>;
 	/** Fake News the player holds; zero when not given */
 	coins?: number;
+	/** Ids of the Oil Tycoon achievements earned; none when not given */
+	tycoon?: readonly string[];
 }
 
 /**
- * What the player has reached, from the career profile. `played` names modes the career does not
- * track, such as the Oil Tycoon, that were played at least once.
+ * What the player has reached, from the career profile. `tycoon` lists the achievements earned in
+ * the Oil Tycoon, which the career does not track.
  */
 export function unlockProgress(
 	profile: CareerProfile,
 	level: number,
-	played: readonly ModeId[] = []
+	tycoon: readonly string[] = []
 ): UnlockProgress {
-	const modes: UnlockProgress['modes'] = { ...profile.modes };
-	for (const mode of played) modes[mode] ??= true;
-	return { level, bestStreak: profile.bestStreak, modes, coins: profile.coins };
+	return {
+		level,
+		bestStreak: profile.bestStreak,
+		modes: profile.modes,
+		coins: profile.coins,
+		tycoon
+	};
 }
 
 /** The unlock that guards a part value, or undefined when the option is free */
@@ -146,6 +156,8 @@ export function requirementMet(requirement: UnlockRequirement, progress: UnlockP
 			return progress.modes[requirement.mode] !== undefined;
 		case 'fakeNews':
 			return (progress.coins ?? 0) >= requirement.coins;
+		case 'tycoon':
+			return progress.tycoon?.includes(requirement.achievement) ?? false;
 	}
 }
 
@@ -205,6 +217,8 @@ export function requirementShare(requirement: UnlockRequirement, progress: Unloc
 			return progress.modes[requirement.mode] === undefined ? 0 : 1;
 		case 'fakeNews':
 			return Math.min(1, (progress.coins ?? 0) / requirement.coins);
+		case 'tycoon':
+			return progress.tycoon?.includes(requirement.achievement) ? 1 : 0;
 	}
 }
 

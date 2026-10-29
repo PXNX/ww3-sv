@@ -67,8 +67,9 @@ describe('the extra looks', () => {
 				progress({
 					level: 30,
 					bestStreak: 7,
-					modes: { redsquare: {}, petrobras: {}, runcomrade: {}, tycoon: {} },
-					coins: 120
+					modes: { redsquare: {}, petrobras: {}, runcomrade: {} },
+					coins: 120,
+					tycoon: ['maxed_all', 'tycoon_king']
 				})
 			)
 		).toBe(LOOK_UNLOCKS.length);
@@ -117,8 +118,9 @@ describe('the extra looks', () => {
 				progress({
 					level: 30,
 					bestStreak: 7,
-					modes: { redsquare: {}, petrobras: {}, runcomrade: {}, tycoon: {} },
-					coins: 120
+					modes: { redsquare: {}, petrobras: {}, runcomrade: {} },
+					coins: 120,
+					tycoon: ['maxed_all', 'tycoon_king']
 				})
 			)
 		).toBeNull();
@@ -141,17 +143,21 @@ describe('the extra looks', () => {
 			level: 7,
 			bestStreak: 4,
 			modes: profile.modes,
-			coins: profile.coins
+			coins: profile.coins,
+			tycoon: []
 		});
 	});
 
-	it('counts modes the career does not track as played when told so', () => {
-		const profile = newCareer(new Date(2026, 9, 27, 12));
-		expect(unlockProgress(profile, 1).modes.tycoon).toBeUndefined();
-		expect(unlockProgress(profile, 1, ['tycoon']).modes.tycoon).toBeDefined();
+	it('opens the monocle for maxing every producer and the cylinder for 25 restarts', () => {
 		const monocle = unlockFor('hat', 'monocle')!;
+		const cylinder = unlockFor('hat', 'cylinder')!;
+		expect(monocle.requirement).toEqual({ kind: 'tycoon', achievement: 'maxed_all' });
+		expect(cylinder.requirement).toEqual({ kind: 'tycoon', achievement: 'tycoon_king' });
 		expect(requirementMet(monocle.requirement, progress())).toBe(false);
-		expect(requirementMet(monocle.requirement, unlockProgress(profile, 1, ['tycoon']))).toBe(true);
+		expect(requirementMet(monocle.requirement, progress({ tycoon: ['tycoon_king'] }))).toBe(false);
+		expect(requirementMet(monocle.requirement, progress({ tycoon: ['maxed_all'] }))).toBe(true);
+		expect(requirementMet(cylinder.requirement, progress({ tycoon: ['tycoon_king'] }))).toBe(true);
+		expect(requirementShare(cylinder.requirement, progress())).toBe(0);
 	});
 
 	it('opens the Fake News look once enough Fake News is held', () => {

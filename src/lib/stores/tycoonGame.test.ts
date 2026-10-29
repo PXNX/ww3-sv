@@ -9,7 +9,7 @@ import {
 	PRODUCERS,
 	UPGRADES
 } from '#lib/game/tycoon/config.js';
-import { perkCost } from '#lib/game/tycoon/economy.js';
+import { perkCost, upgradeCost, upgradeDef } from '#lib/game/tycoon/economy.js';
 import { SAVE_KEY } from '#lib/game/tycoon/save.js';
 import { createHighscores } from '#lib/services/highscore.js';
 import { createStore, type KeyValueStorage } from '#lib/services/storage.js';
@@ -156,6 +156,21 @@ describe('TycoonGame', () => {
 	});
 });
 
+describe('upgrades in the shop', () => {
+	it('lists the available upgrades with the cheapest first and their real prices', () => {
+		const { game } = setup();
+		game.state.owned.pumpjack = 600;
+		game.state.owned.tanker = 300;
+		game.update(0);
+		const prices = game.availableIds.map((id) => game.upgradePrices[id]);
+		expect(prices.length).toBeGreaterThan(5);
+		expect([...prices].sort((a, b) => a - b)).toEqual(prices);
+		for (const id of game.availableIds) {
+			expect(game.upgradePrices[id]).toBe(upgradeCost(game.state, upgradeDef(id)!));
+		}
+	});
+});
+
 describe('the Fake News investment', () => {
 	const fakeNews = PERKS.find((perk) => perk.id === 'fake_news')!;
 
@@ -163,10 +178,13 @@ describe('the Fake News investment', () => {
 		const { game, coins } = setup();
 		game.state.prestigePoints = 10_000;
 		game.update(0);
+		// The price shown is the price paid
+		const price = game.perkPrices.fake_news;
+		expect(price).toBe(perkCost(fakeNews, 0, game.state));
 		expect(game.buyPerk('fake_news')).toBe(true);
 		expect(coins.paid).toBe(fakeNews.value);
 		expect(game.perks.fake_news).toBe(1);
-		expect(game.prestigePoints).toBe(10_000 - perkCost(fakeNews, 0));
+		expect(game.prestigePoints).toBe(10_000 - price);
 	});
 
 	it('pays only what is left of the daily cap', () => {

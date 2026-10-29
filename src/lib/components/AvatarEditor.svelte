@@ -30,7 +30,6 @@
 		unlockedCount,
 		type LookUnlock
 	} from '#lib/game/avatar/unlocks.js';
-	import type { ModeId } from '#lib/modes/registry.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import { requirementText } from './unlockText.js';
@@ -78,9 +77,14 @@
 
 	onDestroy(() => clearTimeout(lockTimer));
 
-	// The Oil Tycoon is not part of the career, so a saved game there counts as having played it
-	const played: ModeId[] = localStore().read(TYCOON_SAVE_KEY, null) === null ? [] : ['tycoon'];
-	const progress = $derived(unlockProgress(careerState.profile, careerState.level, played));
+	// The Oil Tycoon keeps its own save, so its achievements are read from there
+	const tycoonSave = localStore().read<{ achievements?: unknown } | null>(TYCOON_SAVE_KEY, null);
+	const tycoonAchievements = Array.isArray(tycoonSave?.achievements)
+		? tycoonSave.achievements.filter((id): id is string => typeof id === 'string')
+		: [];
+	const progress = $derived(
+		unlockProgress(careerState.profile, careerState.level, tycoonAchievements)
+	);
 	const collected = $derived(unlockedCount(progress));
 
 	const options = $derived(

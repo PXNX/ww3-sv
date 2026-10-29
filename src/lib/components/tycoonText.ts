@@ -147,7 +147,8 @@ export function upgradeName(upgrade: UpgradeDef): string {
 		const producer = producerName(upgrade.producer);
 		if (upgrade.tier === 2) return m.tycoon_upgrade_tier2({ producer });
 		if (upgrade.tier === 3) return m.tycoon_upgrade_tier3({ producer });
-		return m.tycoon_upgrade_tier1({ producer });
+		if (upgrade.tier === 1) return m.tycoon_upgrade_tier1({ producer });
+		return m.tycoon_upgrade_tiern({ producer, tier: upgrade.tier ?? 0 });
 	}
 	return UNIQUE_UPGRADE_NAMES[upgrade.id]?.() ?? upgrade.id;
 }
@@ -211,7 +212,16 @@ const ACHIEVEMENT_NAMES: Record<string, () => string> = {
 	pipeline_king: m.tycoon_ach_name_pipeline_king,
 	well_king: m.tycoon_ach_name_well_king,
 	rig_king: m.tycoon_ach_name_rig_king,
-	monocle_king: m.tycoon_ach_name_monocle_king
+	monocle_king: m.tycoon_ach_name_monocle_king,
+	max_200: m.tycoon_ach_name_max_200,
+	max_400: m.tycoon_ach_name_max_400,
+	max_600: m.tycoon_ach_name_max_600,
+	max_800: m.tycoon_ach_name_max_800,
+	max_1000: m.tycoon_ach_name_max_1000,
+	maxed_5: m.tycoon_ach_name_maxed_5,
+	maxed_10: m.tycoon_ach_name_maxed_10,
+	maxed_25: m.tycoon_ach_name_maxed_25,
+	maxed_all: m.tycoon_ach_name_maxed_all
 };
 
 export function achievementName(id: string): string {
@@ -243,6 +253,8 @@ export function achievementDescription(def: AchievementDef): string {
 			return m.tycoon_ach_desc_prestige({ count });
 		case 'perks':
 			return m.tycoon_ach_desc_perks({ count });
+		case 'maxed':
+			return m.tycoon_ach_desc_maxed({ count });
 	}
 }
 

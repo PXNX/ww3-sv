@@ -4,7 +4,7 @@
 	amount (1, 10 or as many as affordable).
 -->
 <script lang="ts">
-	import type { ProducerId } from '#lib/game/tycoon/config.js';
+	import { MAX_OWNED, type ProducerId } from '#lib/game/tycoon/config.js';
 	import { maxAffordable, producerCost, producerDef } from '#lib/game/tycoon/economy.js';
 	import { formatBig, formatCount, formatCycle } from '#lib/game/tycoon/format.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
@@ -18,14 +18,20 @@
 	const locale = getLocale();
 	const def = $derived(producerDef(id));
 	const owned = $derived(game.owned[id]);
-	// "Max" buys what the barrels allow, but always shows the price of at least one unit
+	// Nothing more can be bought once the most is owned
+	const maxed = $derived(owned >= MAX_OWNED);
+	// "Max" buys what the barrels allow, but always shows the price of at least one unit; no amount
+	// goes beyond what is still allowed, so the price shown is the price paid
 	const count = $derived(
-		game.buyAmount === 'max'
-			? Math.max(1, maxAffordable(def, owned, game.barrels, game.pricing))
-			: game.buyAmount
+		Math.min(
+			MAX_OWNED - owned,
+			game.buyAmount === 'max'
+				? Math.max(1, maxAffordable(def, owned, game.barrels, game.pricing))
+				: game.buyAmount
+		)
 	);
 	const cost = $derived(producerCost(def, owned, count, game.pricing));
-	const affordable = $derived(game.barrels >= cost);
+	const affordable = $derived(!maxed && game.barrels >= cost);
 	const sanctioned = $derived(game.cut.includes(id));
 	const upgradeReady = $derived(game.availableIds.some((uid) => uid.startsWith(id + '_')));
 	const name = $derived(producerName(id));
@@ -38,12 +44,16 @@
 <li>
 	<button
 		type="button"
-		class="btn-chunky flex w-full items-center gap-3 bg-paper px-3 py-2 text-start"
-		class:opacity-60={!affordable}
+		class="btn-chunky flex w-full items-center gap-3 px-3 py-2 text-start {maxed
+			? 'bg-khaki'
+			: 'bg-paper'}"
+		class:opacity-60={!affordable && !maxed}
 		class:ring-3={upgradeReady}
 		class:ring-success={upgradeReady}
 		disabled={!affordable}
-		aria-label={m.tycoon_buy_label({ count, name, cost: formatBig(cost, locale) })}
+		aria-label={maxed
+			? `${name}: ${m.tycoon_perk_maxed()}`
+			: m.tycoon_buy_label({ count, name, cost: formatBig(cost, locale) })}
 		onclick={() => game.buy(id)}
 	>
 		<span
@@ -62,7 +72,7 @@
 			</span>
 			<span dir="auto" class="truncate text-xs leading-tight">{producerFlavor(id)}</span>
 			<span dir="auto" class="text-xs leading-tight font-semibold tabular-nums">
-				{m.tycoon_producer_owned({ count: formatCount(owned, locale) })}
+				{m.tycoon_producer_owned({ count: formatCount(owned, locale) })}{maxed ? ' ★' : ''}
 				·
 				{m.tycoon_producer_cycle({
 					amount: formatBig(payout, locale, 1),
@@ -81,8 +91,12 @@
 			</span>
 		</span>
 		<span class="flex shrink-0 flex-col items-end font-display leading-tight font-bold" dir="ltr">
-			<span class="text-xs">{m.tycoon_buy_count({ count: formatCount(count, locale) })}</span>
-			<span class="text-base tabular-nums">{formatBig(cost, locale)}</span>
+			{#if maxed}
+				<span class="text-base">{m.tycoon_perk_maxed()}</span>
+			{:else}
+				<span class="text-xs">{m.tycoon_buy_count({ count: formatCount(count, locale) })}</span>
+				<span class="text-base tabular-nums">{formatBig(cost, locale)}</span>
+			{/if}
 		</span>
 	</button>
 </li>

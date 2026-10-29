@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { createRandom } from '#lib/game/random.js';
 import {
 	ACHIEVEMENTS,
+	MAX_OWNED,
 	OFFLINE_CAP_MS,
 	OFFLINE_EFFICIENCY,
 	PERKS,
 	PRESTIGE_UNIT,
+	PRODUCERS,
 	STEP_MS,
 	UPGRADES
 } from './config.js';
@@ -15,7 +17,8 @@ import {
 	producerCost,
 	producerDef,
 	productionPerSecond,
-	tapValue
+	tapValue,
+	upgradeCost
 } from './economy.js';
 import {
 	applyOffline,
@@ -61,6 +64,51 @@ describe('tapping', () => {
 		const crit = tap(state, () => 0).gained;
 		expect(crit).toBeCloseTo(expected, 9);
 		expect(crit).toBeGreaterThan(tap(state, noCrit).gained);
+	});
+});
+
+describe('maxing out producers', () => {
+	it('never buys more than the most that can be owned', () => {
+		const state = fresh();
+		state.barrels = Infinity;
+		state.owned.pumpjack = MAX_OWNED - 3;
+		expect(buyProducer(state, 'pumpjack', 10).bought).toBe(3);
+		expect(state.owned.pumpjack).toBe(MAX_OWNED);
+		expect(buyProducer(state, 'pumpjack', 1).bought).toBe(0);
+		expect(buyProducer(state, 'pumpjack', 'max').bought).toBe(0);
+		expect(state.owned.pumpjack).toBe(MAX_OWNED);
+	});
+
+	it('unlocks the achievements for maxing several producers and all of them', () => {
+		const state = fresh();
+		const maxedIds = () =>
+			ACHIEVEMENTS.filter((def) => def.kind === 'maxed').flatMap((def) =>
+				state.achievements.includes(def.id) ? [def.id] : []
+			);
+		for (const [index, producer] of PRODUCERS.entries()) {
+			state.owned[producer.id] = MAX_OWNED;
+			checkAchievements(state);
+			if (index === 3) expect(maxedIds()).toEqual([]);
+			if (index === 4) expect(maxedIds()).toEqual(['maxed_5']);
+			if (index === PRODUCERS.length - 2) expect(maxedIds()).not.toContain('maxed_all');
+		}
+		expect(maxedIds()).toEqual(['maxed_5', 'maxed_10', 'maxed_25', 'maxed_all']);
+	});
+});
+
+describe('upgrade prices', () => {
+	it('charges exactly the price shown, which grows with the producers owned', () => {
+		const state = fresh();
+		const upgrade = UPGRADES.find((def) => def.id === 'click_bucket')!;
+		expect(upgradeCost(state, upgrade)).toBe(upgrade.cost);
+		state.owned.pumpjack = 500;
+		const price = upgradeCost(state, upgrade);
+		expect(price).toBe(Math.ceil(upgrade.cost * 1.5));
+		state.barrels = price - 1;
+		expect(buyUpgrade(state, upgrade.id).bought).toBe(false);
+		state.barrels = price + 7;
+		expect(buyUpgrade(state, upgrade.id).bought).toBe(true);
+		expect(state.barrels).toBe(7);
 	});
 });
 

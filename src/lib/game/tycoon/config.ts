@@ -414,7 +414,7 @@ export interface UpgradeDef {
 	/** click and global: a multiplier; clickCps: the share of output a tap adds; producer: a multiplier */
 	value: number;
 	producer?: ProducerId;
-	/** Position among the producer's tiers, 1 to 3 (producer upgrades only) */
+	/** Position among the producer's tiers, counting from 1 (producer upgrades only) */
 	tier?: number;
 }
 
@@ -521,7 +521,9 @@ export type AchievementKind =
 	| 'events'
 	| 'evaded'
 	| 'prestige'
-	| 'perks';
+	| 'perks'
+	/** Producers owned at the most that can be owned */
+	| 'maxed';
 
 /**
  * The small permanent boost an achievement unlocks. tap, output and speed: a bonus share;
@@ -624,5 +626,14 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
 	{ id: 'max_400', kind: 'owned', threshold: 400, reward: { kind: 'discount', value: 0.08 } },
 	{ id: 'max_600', kind: 'owned', threshold: 600, reward: { kind: 'discount', value: 0.1 } },
 	{ id: 'max_800', kind: 'owned', threshold: 800, reward: { kind: 'discount', value: 0.12 } },
-	{ id: 'max_1000', kind: 'owned', threshold: 1000, reward: { kind: 'discount', value: 0.15 } }
+	{ id: 'max_1000', kind: 'owned', threshold: 1000, reward: { kind: 'discount', value: 0.15 } },
+	{ id: 'maxed_5', kind: 'maxed', threshold: 5, reward: { kind: 'output', value: 0.05 } },
+	{ id: 'maxed_10', kind: 'maxed', threshold: 10, reward: { kind: 'output', value: 0.1 } },
+	{ id: 'maxed_25', kind: 'maxed', threshold: 25, reward: { kind: 'output', value: 0.15 } },
+	{
+		id: 'maxed_all',
+		kind: 'maxed',
+		threshold: PRODUCER_IDS.length,
+		reward: { kind: 'output', value: 0.25 }
+	}
 ];

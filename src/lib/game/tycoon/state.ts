@@ -8,6 +8,7 @@ import {
 	ACHIEVEMENTS,
 	OFFLINE_CAP_MS,
 	EVENT_AFTER_RETURN_MS,
+	MAX_OWNED,
 	PERK_IDS,
 	PRODUCER_IDS,
 	PRODUCERS,
@@ -22,6 +23,7 @@ import {
 	hasUpgrade,
 	isCut,
 	maxAffordable,
+	maxedCount,
 	offlineEfficiency,
 	perkCost,
 	perkDef,
@@ -37,6 +39,7 @@ import {
 	critChanceUpgrade,
 	critMultUpgrade,
 	totalPerkLevels,
+	upgradeCost,
 	upgradeDef
 } from './economy.js';
 import { firstEventDelay, nextEventDelay, stepEvents } from './events.js';
@@ -102,8 +105,10 @@ export function buyProducer(
 	const def = producerDef(id);
 	const owned = state.owned[id];
 	const prices = pricing(state);
-	const wanted =
+	let wanted =
 		amount === 'max' ? maxAffordable(def, owned, state.barrels, prices) : Math.floor(amount);
+	// Never more than the most that can be owned
+	wanted = Math.min(wanted, MAX_OWNED - owned);
 	if (wanted <= 0) return { bought: 0, events: [] };
 	const cost = producerCost(def, owned, wanted, prices);
 	if (!(cost <= state.barrels)) return { bought: 0, events: [] };
@@ -121,10 +126,9 @@ export function buyUpgrade(
 	if (!upgrade || hasUpgrade(state, id) || !requirementMet(state, upgrade)) {
 		return { bought: false, events: [] };
 	}
-	const totalOwned = Object.values(state.owned).reduce((a, b) => a + b, 0);
-	const scaledCost = Math.max(upgrade.cost, Math.ceil(upgrade.cost * (1 + totalOwned / 1000)));
-	if (state.barrels < scaledCost) return { bought: false, events: [] };
-	state.barrels -= scaledCost;
+	const cost = upgradeCost(state, upgrade);
+	if (state.barrels < cost) return { bought: false, events: [] };
+	state.barrels -= cost;
 	state.upgrades.push(id);
 	return { bought: true, events: checkAchievements(state) };
 }
@@ -151,6 +155,8 @@ function achieved(state: TycoonState, def: AchievementDef): boolean {
 			return state.prestiges >= def.threshold;
 		case 'perks':
 			return totalPerkLevels(state) >= def.threshold;
+		case 'maxed':
+			return maxedCount(state) >= def.threshold;
 	}
 }
 
@@ -253,11 +259,13 @@ export function buyPerk(
 ): { bought: boolean; events: TycoonEvent[] } {
 	const def = perkDef(id);
 	const level = state.perks[id];
-	if (level >= def.maxLevel || availablePoints(state) < perkCost(def, level, state)) {
+	// The price is worked out once, before the level is bought, so the price shown is the price paid
+	const cost = perkCost(def, level, state);
+	if (level >= def.maxLevel || availablePoints(state) < cost) {
 		return { bought: false, events: [] };
 	}
 	state.perks[id] = level + 1;
-	state.prestigePoints -= perkCost(def, level, state);
+	state.prestigePoints -= cost;
 	return { bought: true, events: checkAchievements(state) };
 }
 

@@ -8,7 +8,6 @@
 	import { onDestroy } from 'svelte';
 	import { career } from '#lib/game/career/store.svelte.js';
 	import { PERKS, PRESTIGE_BONUS, PRESTIGE_UNIT } from '#lib/game/tycoon/config.js';
-	import { perkCost } from '#lib/game/tycoon/economy.js';
 	import { formatBig, formatCount, formatMultiplier } from '#lib/game/tycoon/format.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -99,7 +98,7 @@
 			{#each PERKS as perk (perk.id)}
 				{@const level = game.perks[perk.id]}
 				{@const maxed = level >= perk.maxLevel}
-				{@const cost = perkCost(perk, level)}
+				{@const cost = game.perkPrices[perk.id]}
 				{@const capped = perk.id === 'fake_news' && !maxed && career().coinsLeftToday <= 0}
 				{@const affordable = !maxed && !capped && game.spendablePoints >= cost}
 				<li>

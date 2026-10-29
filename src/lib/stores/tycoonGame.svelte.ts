@@ -28,6 +28,7 @@ import {
 	speedMultiplier,
 	tapValue,
 	unitOutput,
+	upgradeCost,
 	type Pricing
 } from '#lib/game/tycoon/economy.js';
 import { canChoose, choiceCost, resolveEvent, spikeSellValue } from '#lib/game/tycoon/events.js';
@@ -112,8 +113,10 @@ export class TycoonGame {
 	/** Producers silenced by sanctions right now */
 	cut = $state.raw<ProducerId[]>([]);
 	upgradeIds = $state.raw<string[]>([]);
-	/** Upgrades that are unlocked and not yet bought */
+	/** Upgrades that are unlocked and not yet bought, the cheapest first */
 	availableIds = $state.raw<string[]>([]);
+	/** What each of them really costs now (the price grows with the producers owned) */
+	upgradePrices = $state.raw<Record<string, number>>({});
 	achievementIds = $state.raw<string[]>([]);
 	/** What the unlocked achievements add up to, per kind of boost (shares, 0.05 is 5 percent) */
 	achievementBoosts = $state.raw({ tap: 0, output: 0, speed: 0, discount: 0 });
@@ -121,6 +124,8 @@ export class TycoonGame {
 	/** Points left to spend in the nationalization shop, and the levels bought there */
 	spendablePoints = $state(0);
 	perks = $state.raw<Record<PerkId, number>>(emptyPerks());
+	/** What the next level of each investment really costs now, in points */
+	perkPrices = $state.raw<Record<PerkId, number>>(emptyPerks());
 	/** Whether the spare points buy at least one more level */
 	canInvest = $state(false);
 	prestiges = $state(0);
@@ -418,7 +423,11 @@ export class TycoonGame {
 		this.speed = speedMultiplier(state);
 		this.cut = state.effects.flatMap((effect) => (effect.producer ? [effect.producer] : []));
 		this.upgradeIds = [...state.upgrades];
-		this.availableIds = availableUpgrades(state).map((upgrade) => upgrade.id);
+		const priced = availableUpgrades(state)
+			.map((upgrade) => ({ id: upgrade.id, cost: upgradeCost(state, upgrade) }))
+			.sort((a, b) => a.cost - b.cost);
+		this.availableIds = priced.map((entry) => entry.id);
+		this.upgradePrices = Object.fromEntries(priced.map((entry) => [entry.id, entry.cost]));
 		this.achievementIds = [...state.achievements];
 		this.achievementBoosts = {
 			tap: achievementBonus(state, 'tap'),
@@ -429,10 +438,11 @@ export class TycoonGame {
 		this.prestigePoints = state.prestigePoints;
 		this.spendablePoints = availablePoints(state);
 		this.perks = { ...state.perks };
+		this.perkPrices = Object.fromEntries(
+			PERKS.map((def) => [def.id, perkCost(def, state.perks[def.id], state)])
+		) as Record<PerkId, number>;
 		this.canInvest = PERKS.some(
-			(def) =>
-				state.perks[def.id] < def.maxLevel &&
-				perkCost(def, state.perks[def.id]) <= this.spendablePoints
+			(def) => state.perks[def.id] < def.maxLevel && this.perkPrices[def.id] <= this.spendablePoints
 		);
 		this.prestiges = state.prestiges;
 		this.pendingPoints = pendingPrestige(state);

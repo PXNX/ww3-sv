@@ -93,7 +93,7 @@ export function hasUpgrade(state: TycoonState, id: string): boolean {
 	return state.upgrades.includes(id);
 }
 
-export function totalOwned(state: TycoonState): number {
+export function totalOwned(state: Pick<TycoonState, 'owned'>): number {
 	return PRODUCERS.reduce((sum, producer) => sum + state.owned[producer.id], 0);
 }
 
@@ -107,6 +107,16 @@ export function requirementMet(state: TycoonState, upgrade: UpgradeDef): boolean
 		case 'total':
 			return totalOwned(state) >= upgrade.requires.count;
 	}
+}
+
+/** How many producers have reached the most that can be owned */
+export function maxedCount(state: Pick<TycoonState, 'owned'>): number {
+	return PRODUCERS.filter((producer) => state.owned[producer.id] >= MAX_OWNED).length;
+}
+
+/** What an upgrade really costs: its price grows with the producers owned in total */
+export function upgradeCost(state: Pick<TycoonState, 'owned'>, upgrade: UpgradeDef): number {
+	return Math.ceil(upgrade.cost * (1 + totalOwned(state) / 1000));
 }
 
 /** The upgrades the player can see and buy now */
@@ -135,7 +145,11 @@ export function achievementBonus(
 // The nationalization shop
 
 /** Points the next level of a perk costs, when `level` levels are bought */
-export function perkCost(def: PerkDef, level: number, state?: { perks: Record<PerkId, number>; prestigePoints: number }): number {
+export function perkCost(
+	def: PerkDef,
+	level: number,
+	state?: { perks: Record<PerkId, number>; prestigePoints: number }
+): number {
 	let cost = Math.ceil(def.baseCost * def.costGrowth ** level);
 	if (def.id === 'fake_news' && state) {
 		const spent = pointsSpent(state.perks);
