@@ -22,8 +22,11 @@ export function giftcodeStep(state: BotState, input?: string): { reply: string; 
 		case 'giftcode_add':
 			if (!input) return { reply: 'Enter gift code (or LIST):', state };
 			if (input === 'LIST') return { reply: 'Codes: WW3GIFT (revive), OILBOOM (barrels).', state: { step: 'idle' } };
-			return { reply: `Added ${input.toUpperCase()}.`, state: { step: 'idle' } };
+			return { reply: `Added ${input.toUpperCase()}. Redeem via bot: send the code.`, state: { step: 'idle' } };
 		default:
-			return { reply: 'Send /stats or /giftcode.', state: { step: 'idle' } };
+			if (input) {
+				const up = input.toUpperCase();
+				if (up === 'WW3GIFT' || up === 'OILBOOM') return { reply: `Redeemed ${up}!`, state: { step: 'idle' }, webAppUrl: 'https://example.com/redeem?code=' + up };
+			}
 	}
 }
