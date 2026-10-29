@@ -77,8 +77,8 @@ export function createDemo(kind: WeaponKind, action: DemoAction): Demo {
 	state.spawnMs = Infinity;
 	state.nextBossMs = Infinity;
 	const random = createRandom(7);
-	const skill = action === 'attack' ? null : WEAPONS[kind].skills[action];
-	for (const spot of kind === 'hammer' ? MELEE_LINEUP : LINEUP) {
+	const skill = action === 'attack' ? null : (WEAPONS[kind].skills[action] ?? null);
+	for (const spot of kind === 'hammer' || kind === 'daggers' ? MELEE_LINEUP : LINEUP) {
 		const enemy = spawnEnemy(state, random, 'grunt', 'normal', {
 			x: state.player.x + spot.x,
 			y: state.player.y + spot.y

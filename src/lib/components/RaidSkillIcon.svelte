@@ -12,6 +12,7 @@
 	import IconCircleDot from '~icons/lucide/circle-dot';
 	import IconCloudFog from '~icons/lucide/cloud-fog';
 	import IconRepeat from '~icons/lucide/repeat';
+	import IconRepeat2 from '~icons/lucide/repeat-2';
 	import IconRotateCw from '~icons/lucide/rotate-cw';
 	import IconTowerControl from '~icons/lucide/tower-control';
 	import IconCrosshair from '~icons/lucide/crosshair';
@@ -46,7 +47,8 @@
 		tower: { icon: IconTowerControl, color: 'text-khaki' },
 		echo: { icon: IconRepeat, color: 'text-flag-blue' },
 		smoke: { icon: IconCloudFog, color: 'text-ink' },
-		spin: { icon: IconRotateCw, color: 'text-mustard' }
+		spin: { icon: IconRotateCw, color: 'text-mustard' },
+		flip: { icon: IconRepeat2, color: 'text-flag-blue' }
 	};
 
 	const Icon = $derived(ICONS[skill].icon);

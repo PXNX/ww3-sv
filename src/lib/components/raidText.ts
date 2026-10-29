@@ -47,7 +47,9 @@ export const WEAPON_NAMES: Record<WeaponKind, () => string> = {
 	hammer: m.raid_weapon_hammer,
 	minigun: m.raid_weapon_minigun,
 	boomerang: m.raid_weapon_boomerang,
-	daggers: m.raid_weapon_daggers
+	daggers: m.raid_weapon_daggers,
+	energy: m.raid_weapon_energy,
+	nuke: m.raid_weapon_nuke
 };
 
 export const WEAPON_TRAITS: Record<WeaponKind, () => string> = {
@@ -61,7 +63,9 @@ export const WEAPON_TRAITS: Record<WeaponKind, () => string> = {
 	hammer: m.raid_weapon_hammer_trait,
 	minigun: m.raid_weapon_minigun_trait,
 	boomerang: m.raid_weapon_boomerang_trait,
-	daggers: m.raid_weapon_daggers_trait
+	daggers: m.raid_weapon_daggers_trait,
+	energy: m.raid_weapon_energy_trait,
+	nuke: m.raid_weapon_nuke_trait
 };
 
 export const RARITY_NAMES: Record<Rarity, () => string> = {
@@ -104,7 +108,8 @@ export const SKILL_NAMES: Record<SkillId, () => string> = {
 	tower: m.raid_skill_tower,
 	echo: m.raid_skill_echo,
 	smoke: m.raid_skill_smoke,
-	spin: m.raid_skill_spin
+	spin: m.raid_skill_spin,
+	flip: m.raid_skill_flip
 };
 
 export const SKILL_HINTS: Record<SkillId, () => string> = {
@@ -127,7 +132,8 @@ export const SKILL_HINTS: Record<SkillId, () => string> = {
 	tower: m.raid_skill_tower_hint,
 	echo: m.raid_skill_echo_hint,
 	smoke: m.raid_skill_smoke_hint,
-	spin: m.raid_skill_spin_hint
+	spin: m.raid_skill_spin_hint,
+	flip: m.raid_skill_flip_hint
 };
 
 export const ARMOR_NAMES: Record<ArmorSlot, () => string> = {
@@ -170,7 +176,9 @@ export const ATTACK_HINTS: Record<WeaponKind, () => string> = {
 	hammer: m.raid_attack_hammer,
 	minigun: m.raid_attack_minigun,
 	boomerang: m.raid_attack_boomerang,
-	daggers: m.raid_attack_daggers
+	daggers: m.raid_attack_daggers,
+	energy: m.raid_attack_energy,
+	nuke: m.raid_attack_nuke
 };
 
 export const CRYSTAL_NAMES: Record<CrystalKind, () => string> = {

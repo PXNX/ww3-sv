@@ -33,6 +33,7 @@ import {
 	isElite,
 	VIEW_HEIGHT,
 	VIEW_MAX_WIDTH,
+	WEAPONS,
 	type Archetype,
 	type CrystalKind,
 	type MapId,
@@ -864,7 +865,9 @@ const WEAPON_LOOK: Record<WeaponKind, { length: number; width: number; color: st
 	hammer: { length: 34, width: 6, color: '#6b4a2a' },
 	minigun: { length: 34, width: 11, color: '#4b4f55' },
 	boomerang: { length: 20, width: 8, color: '#a8742f' },
-	daggers: { length: 16, width: 4, color: '#aab4be' }
+	daggers: { length: 16, width: 4, color: '#aab4be' },
+	energy: { length: 24, width: 11, color: '#3d6fd8' },
+	nuke: { length: 38, width: 14, color: '#5b6b3a' }
 };
 
 function drawPlayer(

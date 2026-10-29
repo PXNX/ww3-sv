@@ -29,12 +29,17 @@ describe('weapons', () => {
 		expect(WEAPONS.marksman.critChance).toBeGreaterThan(highestOther * 2);
 	});
 
-	it('gives every weapon two different skills and uses every skill', () => {
+	it('gives every weapon up to two different skills and uses every skill', () => {
 		const skills = Object.values(WEAPONS).flatMap((spec) => spec.skills);
-		expect(skills).toHaveLength(WEAPON_KINDS.length * 2);
-		for (const spec of Object.values(WEAPONS)) expect(spec.skills[0]).not.toBe(spec.skills[1]);
-		// A few skills are shared, but no two weapons have the same pair
-		const pairs = Object.values(WEAPONS).map((spec) => [...spec.skills].sort().join('+'));
+		for (const spec of Object.values(WEAPONS)) {
+			expect(spec.skills.length).toBeLessThanOrEqual(2);
+			expect(new Set(spec.skills).size).toBe(spec.skills.length);
+		}
+		// Only the nuke has none; a few skills are shared, but no two weapons have the same pair
+		expect(WEAPON_KINDS.filter((kind) => WEAPONS[kind].skills.length === 0)).toEqual(['nuke']);
+		const pairs = Object.values(WEAPONS)
+			.filter((spec) => spec.skills.length > 0)
+			.map((spec) => [...spec.skills].sort().join('+'));
 		expect(new Set(pairs).size).toBe(pairs.length);
 		expect([...new Set(skills)].sort()).toEqual([...SKILL_IDS].sort());
 	});

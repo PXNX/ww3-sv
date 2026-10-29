@@ -138,8 +138,8 @@ export interface WeaponSpec {
 	pierce: number;
 	/** How long a hit sets the enemy on fire, 0 for weapons that do not burn */
 	burnMs: number;
-	/** The two skills on the buttons around the attack button while this weapon is held */
-	skills?: readonly [SkillId, SkillId];
+	/** Up to two skills on the buttons around the attack button while this weapon is held */
+	skills: readonly SkillId[];
 }
 
 export const WEAPONS: Record<WeaponKind, WeaponSpec> = {
@@ -332,7 +332,6 @@ export const WEAPONS: Record<WeaponKind, WeaponSpec> = {
 		splash: 180,
 		pierce: 0,
 		burnMs: 10000,
-		burnDps: 8,
 		skills: []
 	}
 };
@@ -355,7 +354,6 @@ export const SKILL_COOLDOWN_MS: Record<SkillId, number> = {
 	quake: 8000,
 	warcry: 15000,
 	tower: 12000,
-	flip: 12000,
 	echo: 8000,
 	smoke: 10000,
 	spin: 6000,

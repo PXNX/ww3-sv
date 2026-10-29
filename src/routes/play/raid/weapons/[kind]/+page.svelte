@@ -127,7 +127,9 @@
 
 	/** The attack or skill whose panel is open; none shows the weapon itself */
 	let action = $state<DemoAction | null>(null);
-	const skill = $derived(action === null || action === 'attack' ? null : spec.skills[action]);
+	const skill = $derived(
+		action === null || action === 'attack' ? null : (spec.skills[action] ?? null)
+	);
 	const facts = $derived(skill ? SKILL_FACTS[skill] : null);
 	const actionName = $derived(skill ? SKILL_NAMES[skill]() : m.raid_details_attack());
 	$effect(() => {

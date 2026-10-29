@@ -39,6 +39,9 @@ interface TelegramWebApp {
 	initData?: string;
 	initDataUnsafe?: { start_param?: string; user?: unknown };
 	ready?: () => void;
+	expand?: () => void;
+	isVersionAtLeast?: (version: string) => boolean;
+	disableVerticalSwipes?: () => void;
 	Serverless?: ServerlessApi;
 	openInvoice?: (url: string, callback: (status: string) => void) => void;
 	requestWriteAccess?: (callback: (allowed: boolean) => void) => void;
@@ -63,6 +66,25 @@ function webApp(): TelegramWebApp | undefined {
 
 let loading: Promise<TelegramWebApp | null> | null = null;
 
+const prepared = new WeakSet<object>();
+
+/**
+ * Gets the Mini App ready once: tells Telegram it is up, opens it to full height and turns off the
+ * swipe down that closes it. The games are full of swipes, and on Android a downward one would
+ * otherwise drag the whole app shut. Older clients lack the swipe setting; a refusal is harmless.
+ */
+function prepare(app: TelegramWebApp): void {
+	if (prepared.has(app)) return;
+	prepared.add(app);
+	try {
+		app.ready?.();
+		app.expand?.();
+		if (!app.isVersionAtLeast || app.isVersionAtLeast('7.7')) app.disableVerticalSwipes?.();
+	} catch {
+		// Best-effort: the game works without it
+	}
+}
+
 /**
  * Loads Telegram's script once, only inside a Mini App launch; resolves to the WebApp object, or
  * null in a normal browser or when the script cannot be loaded.
@@ -71,7 +93,10 @@ export function loadTelegram(): Promise<TelegramWebApp | null> {
 	if (loading) return loading;
 	if (typeof window === 'undefined') return Promise.resolve(null);
 	const existing = webApp();
-	if (existing?.initData) return (loading = Promise.resolve(existing));
+	if (existing?.initData) {
+		prepare(existing);
+		return (loading = Promise.resolve(existing));
+	}
 	if (!isTelegramLaunch(window.location.hash)) return Promise.resolve(null);
 
 	loading = new Promise((resolve) => {
@@ -80,7 +105,7 @@ export function loadTelegram(): Promise<TelegramWebApp | null> {
 		script.async = true;
 		script.onload = () => {
 			const app = webApp();
-			app?.ready?.();
+			if (app) prepare(app);
 			resolve(app?.initData ? app : null);
 		};
 		script.onerror = () => resolve(null);

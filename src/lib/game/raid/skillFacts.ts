@@ -68,5 +68,6 @@ export const SKILL_FACTS: Record<SkillId, SkillFacts> = {
 	tower: { durationMs: TOWER_LIFETIME_MS, radius: TOWER_RADIUS },
 	echo: { damage: 0.8, durationMs: ECHO_RETURN_MS },
 	smoke: { durationMs: SMOKE_MS, radius: SMOKE_SIGHT },
-	spin: { damage: 0.7, count: SPIN_BULLETS }
+	spin: { damage: 0.7, count: SPIN_BULLETS },
+	flip: { damage: 2.5, radius: 60 }
 };

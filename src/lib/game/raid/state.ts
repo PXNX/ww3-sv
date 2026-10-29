@@ -642,9 +642,9 @@ export function heldWeapon(state: RaidState) {
 	return state.loadout[state.player.held];
 }
 
-/** The two skills of the held weapon */
+/** The skills of the held weapon: two, or fewer for a weapon like the nuke */
 export function heldSkills(state: RaidState): readonly SkillId[] {
-	return WEAPONS[heldWeapon(state).kind].skills ?? [];
+	return WEAPONS[heldWeapon(state).kind].skills;
 }
 
 const readySkills = () =>
@@ -808,6 +808,8 @@ export function swapWeapon(state: RaidState): RaidEvent[] {
 /** Fires one of the held weapon's two skills (0 or 1) if it is off cooldown */
 export function useSkill(state: RaidState, slot: 0 | 1): RaidEvent[] {
 	const skill = heldSkills(state)[slot];
+	// A weapon may have fewer than two skills (the nuke has none)
+	if (!skill) return [];
 	if (!active(state) || state.player.skillMs[skill] > 0 || state.player.stunMs > 0) return [];
 	const events: RaidEvent[] = [{ type: 'skill', skill }];
 	SKILLS[skill](state, events);
@@ -1101,6 +1103,22 @@ const SKILLS: Record<SkillId, (state: RaidState, events: RaidEvent[]) => void> =
 		const { player } = state;
 		player.smokeMs = SMOKE_MS;
 		events.push({ type: 'smoke', x: player.x, y: player.y });
+	},
+	// Energy: a massive ball right now, which then flips from enemy to enemy
+	flip(state, events) {
+		const { player } = state;
+		const stats = heldStats(state);
+		const spec = WEAPONS.energy;
+		const angle = aimAngle(state, spec.range * 2.2);
+		player.aim = angle;
+		pushBullet(state, angle, spec.projectileSpeed * 1.3, {
+			damage: stats.damage * 2.5,
+			rangeLeft: spec.range * 2.2,
+			pierceLeft: 99,
+			splash: 60,
+			massive: true
+		});
+		events.push({ type: 'shot', kind: heldWeapon(state).kind });
 	},
 	echo(state, events) {
 		const { player } = state;
@@ -1522,11 +1540,8 @@ function firePlayer(state: RaidState, random: Random, events: RaidEvent[]) {
 		const heatFactor = MINIGUN_MIN_FIRE_FACTOR + (1 - MINIGUN_MIN_FIRE_FACTOR) * (1 - player.heat);
 		player.fireMs = Math.round(stats.fireMs * heatFactor);
 	}
-	if (weapon.kind === 'energy') {
-		player.energyShots += 1;
-		const massive = player.energyShots % 8 === 0;
-		// The massive shot carries extra range, set when the bullet is created
-	}
+	// Every eighth energy shot is a massive ball (see where the bullet is made)
+	if (weapon.kind === 'energy') player.energyShots += 1;
 }
 
 /** The flamethrower overheated: the player stands stunned and gets burnt */

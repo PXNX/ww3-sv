@@ -89,6 +89,14 @@
 			<path d="M18 42 L38 14 L42 18 Z" fill="#d8dde2" />
 			<rect x="6" y="38" width="8" height="4" rx="1" fill="#5a4630" />
 			<rect x="16" y="40" width="8" height="4" rx="1" fill="#5a4630" />
+		{:else if kind === 'energy'}
+			<circle cx="26" cy="24" r="13" fill="#3d6fd8" />
+			<circle cx="26" cy="24" r="6" fill="#bfe0ff" />
+			<path d="M8 36 L16 30 M8 12 L16 18" fill="none" />
+		{:else if kind === 'nuke'}
+			<path d="M24 6 C34 10 36 28 24 38 C12 28 14 10 24 6 Z" fill="#5b6b3a" />
+			<path d="M17 36 L12 44 L20 40 Z M31 36 L36 44 L28 40 Z" fill="#3e4a28" />
+			<circle cx="24" cy="20" r="5" fill="#f5c83a" />
 		{:else if kind === 'boots'}
 			<path d="M8 12 h10 v18 h8 v8 h-18z" fill="#5a4630" />
 			<path d="M24 12 h10 v18 h8 v8 h-18z" fill="#6b5338" />

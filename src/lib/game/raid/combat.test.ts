@@ -298,7 +298,12 @@ describe('drops', () => {
 describe('weapon demos', () => {
 	it('every attack and skill of every weapon shows something happening', () => {
 		for (const kind of WEAPON_KINDS) {
-			for (const action of ['attack', 0, 1] as const) {
+			// Every skill the weapon has; the nuke has none
+			const actions = [
+				'attack',
+				...WEAPONS[kind].skills.map((_, index) => index as 0 | 1)
+			] as const;
+			for (const action of actions) {
 				const demo = createDemo(kind, action);
 				const hp = () => demo.state.enemies.reduce((sum, enemy) => sum + enemy.hp, 0);
 				const before = hp() + demo.state.player.hp;

@@ -26,6 +26,7 @@
 	const resolveRoute = resolve as (route: RouteId) => ResolvedPathname;
 
 	const careerState = career();
+	const account = telegram();
 
 	let now = $state(new Date());
 
@@ -107,7 +108,6 @@
 			</p>
 		</div>
 
-		{@const account = telegram()}
 		{#if account.inTelegram && account.groupBoard && account.groupBoardStatus === 'ready' && contest.mode === (account.groupGame?.mode ?? '')}
 			<GroupLeaderboard rows={account.groupBoard} status={account.groupBoardStatus} />
 		{/if}

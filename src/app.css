@@ -63,6 +63,13 @@
 	direction: ltr;
 }
 
+/* No pull-to-refresh or rubber band at the ends of a page, which inside a Mini App starts a swipe
+   that can close it */
+html,
+body {
+	overscroll-behavior-y: none;
+}
+
 /*
  * What to keep clear along the top edge. In full screen Telegram floats its close button over the
  * top left corner and its menu over the top right, and its script reports the band they take as

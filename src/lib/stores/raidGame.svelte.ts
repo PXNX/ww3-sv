@@ -236,13 +236,13 @@ export class RaidGame {
 	heldKind = $state<WeaponKind>('rifle');
 	otherKind = $state<WeaponKind>('marksman');
 	heldLevel = $state(1);
-	/** The held weapon's two skills, on the buttons around the attack button */
-	skills = $state<readonly [SkillId, SkillId]>(['heal', 'grenade']);
+	/** The held weapon's skills (two, or fewer), on the buttons around the attack button */
+	skills = $state<readonly SkillId[]>(['heal', 'grenade']);
 	/** Share of each skill's cooldown still to go, 0 when ready */
-	skillCooldowns = $state<readonly [number, number]>([0, 0]);
+	skillCooldowns = $state<readonly number[]>([0, 0]);
 	fireCooldown = $state(0);
 	/** Whole seconds until each skill is ready again, shown on its button */
-	skillSeconds = $state<readonly [number, number]>([0, 0]);
+	skillSeconds = $state<readonly number[]>([0, 0]);
 	/** Share of the sprint's recharge still to go, 0 when ready */
 	sprintCooldown = $state(0);
 	sprintSeconds = $state(0);
@@ -1005,7 +1005,8 @@ export class RaidGame {
 			tower: 'chime',
 			echo: 'whoosh',
 			smoke: 'draft',
-			spin: 'ability-blast'
+			spin: 'ability-blast',
+			flip: 'zap'
 		};
 		if (skill !== 'heal')
 			this.#text(player.x, player.y - 46, SKILL_NAMES[skill](), '#ffffff', 18, 900);
@@ -1040,20 +1041,14 @@ export class RaidGame {
 		// Rounded to twentieths, so the HUD only updates when it visibly changes
 		const share = (left: number, total: number) => Math.ceil((left / total) * 20) / 20;
 		const skills = heldSkills(state);
-		if (skills[0] !== this.skills[0] || skills[1] !== this.skills[1]) this.skills = skills;
-		const cooldowns = skills.map((skill) =>
-			share(player.skillMs[skill], SKILL_COOLDOWN_MS[skill])
-		) as unknown as readonly [number, number];
-		if (cooldowns[0] !== this.skillCooldowns[0] || cooldowns[1] !== this.skillCooldowns[1]) {
-			this.skillCooldowns = cooldowns;
-		}
+		const same = (a: readonly unknown[], b: readonly unknown[]) =>
+			a.length === b.length && a.every((value, index) => value === b[index]);
+		if (!same(skills, this.skills)) this.skills = skills;
+		const cooldowns = skills.map((skill) => share(player.skillMs[skill], SKILL_COOLDOWN_MS[skill]));
+		if (!same(cooldowns, this.skillCooldowns)) this.skillCooldowns = cooldowns;
 		this.fireCooldown = share(player.fireMs, weaponStats(held, state.playerLevel).fireMs);
-		const seconds = skills.map((skill) =>
-			Math.ceil(player.skillMs[skill] / 1000)
-		) as unknown as readonly [number, number];
-		if (seconds[0] !== this.skillSeconds[0] || seconds[1] !== this.skillSeconds[1]) {
-			this.skillSeconds = seconds;
-		}
+		const seconds = skills.map((skill) => Math.ceil(player.skillMs[skill] / 1000));
+		if (!same(seconds, this.skillSeconds)) this.skillSeconds = seconds;
 		this.sprintCooldown = share(player.sprintMs, SPRINT_COOLDOWN_MS);
 		this.sprintSeconds = Math.ceil(Math.max(0, player.sprintMs) / 1000);
 		this.timeLeft =

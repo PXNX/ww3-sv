@@ -156,10 +156,11 @@
 	function traitLine(item: GearItem): string | null {
 		if (item.type !== 'weapon') return item.perk ? PERK_HINTS[item.perk]() : null;
 		const [first, second] = WEAPONS[item.kind].skills;
-		const skills = m.raid_lobby_skills({
-			first: SKILL_NAMES[first](),
-			second: SKILL_NAMES[second]()
-		});
+		// A weapon like the nuke has no skills, and one could have a single skill
+		if (!first) return WEAPON_TRAITS[item.kind]();
+		const skills = second
+			? m.raid_lobby_skills({ first: SKILL_NAMES[first](), second: SKILL_NAMES[second]() })
+			: SKILL_NAMES[first]();
 		return `${WEAPON_TRAITS[item.kind]()} · ${skills}`;
 	}
 
