@@ -83,6 +83,9 @@ import {
 	waveSize,
 	FLAME_COOL_PER_SECOND,
 	FLAME_HEAT_PER_SHOT,
+	MINIGUN_COOL_PER_SECOND,
+	MINIGUN_HEAT_PER_SHOT,
+	MINIGUN_MIN_FIRE_FACTOR,
 	HAMMER_ARC,
 	HAMMER_CHARGE_PER_HIT,
 	HAMMER_FALL_DAMAGE_FACTOR,
@@ -1400,6 +1403,9 @@ function tickCooldowns(state: RaidState, dtMs: number) {
 	// The flamethrower cools down whenever it is not pouring out flames
 	const pouring = player.firing && heldWeapon(state).kind === 'flamethrower';
 	if (!pouring) player.heat = Math.max(0, player.heat - FLAME_COOL_PER_SECOND * (dtMs / 1000));
+	// The minigun cools while not firing
+	const holdingMinigun = heldWeapon(state).kind === 'minigun';
+	if (holdingMinigun && !player.firing) player.heat = Math.max(0, player.heat - MINIGUN_COOL_PER_SECOND * (dtMs / 1000));
 }
 
 /** The nearest enemy within reach, optionally only one the player can see (drones always are) */
@@ -1486,6 +1492,11 @@ function firePlayer(state: RaidState, random: Random, events: RaidEvent[]) {
 	if (weapon.kind === 'flamethrower') {
 		player.heat = Math.min(1, player.heat + FLAME_HEAT_PER_SHOT);
 		if (player.heat >= 1) overheat(state, events);
+	}
+	if (weapon.kind === 'minigun') {
+		player.heat = Math.min(1, player.heat + MINIGUN_HEAT_PER_SHOT);
+		const heatFactor = MINIGUN_MIN_FIRE_FACTOR + (1 - MINIGUN_MIN_FIRE_FACTOR) * (1 - player.heat);
+		player.fireMs = Math.round(stats.fireMs * heatFactor);
 	}
 }
 

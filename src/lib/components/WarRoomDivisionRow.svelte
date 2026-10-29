@@ -22,9 +22,7 @@
 	);
 </script>
 
-<li
-	class="flex items-center gap-2 rounded-[8px_5px_10px_6px] border-2 border-ink bg-paper px-2 py-1"
->
+<li class="flex items-center gap-2 rounded-xl border-2 border-ink bg-paper px-2 py-1">
 	<NatoSymbol kind={division.template} {side} class="h-5 w-7 shrink-0" />
 	<span class="flex min-w-0 flex-1 flex-col">
 		<span class="flex items-baseline justify-between gap-2">
@@ -32,11 +30,11 @@
 				{templateName(division.template)}
 			</span>
 			<span
-				class="shrink-0 rounded-full border border-ink bg-sand px-1 text-[0.55rem] font-bold tabular-nums"
+				class="shrink-0 rounded-full border border-ink bg-sand px-1 text-[0.7rem] font-bold tabular-nums"
 			>
 				{m.warroom_division_level({ level })}
 			</span>
-			<span class="shrink-0 text-[0.65rem] font-semibold tabular-nums" dir="ltr">
+			<span class="shrink-0 text-[0.75rem] font-semibold tabular-nums" dir="ltr">
 				{m.warroom_division_stats({ attack, defence })}
 			</span>
 		</span>
@@ -44,7 +42,7 @@
 			<span class="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full border border-ink bg-sand">
 				<span class="block h-full {tone}" style:width="{division.morale}%"></span>
 			</span>
-			<span class="shrink-0 text-[0.6rem] font-bold tabular-nums" dir="ltr">
+			<span class="shrink-0 text-[0.7rem] font-bold tabular-nums" dir="ltr">
 				{m.warroom_stat_morale()}
 				{division.morale}
 			</span>

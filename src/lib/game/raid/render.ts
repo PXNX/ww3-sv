@@ -1642,7 +1642,7 @@ function drawPlayerTag(context: CanvasRenderingContext2D, state: RaidState) {
 	const blink = Math.floor(state.timeMs / 120) % 2 === 0;
 	let charge = 1 - Math.max(0, player.sprintMs) / SPRINT_COOLDOWN_MS;
 	let color = '#4fc8ff';
-	if (kind === 'flamethrower') {
+	if (kind === 'flamethrower' || kind === 'minigun') {
 		charge = player.heat;
 		color =
 			player.heat > 0.8 ? (blink ? RED : '#ff9a3c') : player.heat > 0.5 ? '#ff9a3c' : '#4fc8ff';

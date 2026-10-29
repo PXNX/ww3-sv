@@ -50,11 +50,11 @@
 </script>
 
 <section
-	class="flex flex-col gap-2 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper p-2 shadow-[3px_3px_0_var(--color-ink)]"
+	class="flex flex-col gap-2 rounded-2xl border-3 border-ink bg-paper p-2 shadow-[3px_3px_0_var(--color-ink)]"
 >
 	<header class="flex items-start justify-between gap-2">
 		<div class="flex min-w-0 flex-col">
-			<p class="text-[0.6rem] font-bold tracking-wide uppercase opacity-70">
+			<p class="text-[0.7rem] font-bold tracking-wide uppercase opacity-70">
 				{m.warroom_inspector_title()}
 			</p>
 			<h2 dir="auto" class="truncate font-display text-xl leading-tight font-bold">
@@ -62,7 +62,7 @@
 			</h2>
 			<p
 				dir="auto"
-				class="inline-flex w-fit items-center gap-1 rounded-full border-2 border-ink px-2 text-[0.65rem] font-bold {ours
+				class="inline-flex w-fit items-center gap-1 rounded-full border-2 border-ink px-2 text-[0.75rem] font-bold {ours
 					? 'bg-[#cfe9f7]'
 					: 'bg-[#f7cfd1]'}"
 			>
@@ -89,19 +89,19 @@
 	</header>
 
 	<dl class="grid grid-cols-2 gap-1 text-xs">
-		<div class="rounded-md border-2 border-ink bg-sand px-2 py-1">
-			<dt class="text-[0.6rem] font-bold uppercase opacity-70">{m.warroom_stat_terrain()}</dt>
+		<div class="rounded-xl border-2 border-ink bg-sand px-2 py-1">
+			<dt class="text-[0.7rem] font-bold uppercase opacity-70">{m.warroom_stat_terrain()}</dt>
 			<dd dir="auto" class="font-display leading-tight font-bold">
 				{terrainName(def.terrain)}
 			</dd>
 			{#if terrainBonus(def.terrain) > 0}
-				<dd class="text-[0.6rem] font-semibold tabular-nums">
+				<dd class="text-[0.7rem] font-semibold tabular-nums">
 					{m.warroom_terrain_bonus({ percent: terrainBonus(def.terrain) })}
 				</dd>
 			{/if}
 		</div>
-		<div class="rounded-md border-2 border-ink bg-sand px-2 py-1">
-			<dt class="text-[0.6rem] font-bold uppercase opacity-70">{m.warroom_stat_supply()}</dt>
+		<div class="rounded-xl border-2 border-ink bg-sand px-2 py-1">
+			<dt class="text-[0.7rem] font-bold uppercase opacity-70">{m.warroom_stat_supply()}</dt>
 			<dd class="font-display leading-tight font-bold tabular-nums" dir="ltr">{supply}%</dd>
 			<dd class="h-1.5 overflow-hidden rounded-full border border-ink bg-paper">
 				<span
@@ -114,8 +114,8 @@
 				></span>
 			</dd>
 		</div>
-		<div class="rounded-md border-2 border-ink bg-sand px-2 py-1">
-			<dt class="text-[0.6rem] font-bold uppercase opacity-70">{m.warroom_stat_income()}</dt>
+		<div class="rounded-xl border-2 border-ink bg-sand px-2 py-1">
+			<dt class="text-[0.7rem] font-bold uppercase opacity-70">{m.warroom_stat_income()}</dt>
 			<dd dir="auto" class="font-display leading-tight font-bold">
 				{m.warroom_income_value({
 					amount: def.income.amount,
@@ -123,8 +123,8 @@
 				})}
 			</dd>
 		</div>
-		<div class="rounded-md border-2 border-ink bg-sand px-2 py-1">
-			<dt class="text-[0.6rem] font-bold uppercase opacity-70">{m.warroom_stat_slots()}</dt>
+		<div class="rounded-xl border-2 border-ink bg-sand px-2 py-1">
+			<dt class="text-[0.7rem] font-bold uppercase opacity-70">{m.warroom_stat_slots()}</dt>
 			<dd class="font-display leading-tight font-bold tabular-nums" dir="ltr">
 				{m.warroom_slots_value({
 					used: game.slotsUsed(game.focused),
@@ -138,7 +138,7 @@
 		<div class="flex items-baseline justify-between gap-2">
 			<h3 dir="auto" class="font-display text-sm font-bold">{m.warroom_stat_divisions()}</h3>
 			{#if stack.length > 0}
-				<span class="text-[0.65rem] font-bold tabular-nums">
+				<span class="text-[0.75rem] font-bold tabular-nums">
 					{stack.length === 1
 						? m.warroom_division_count_one()
 						: m.warroom_division_count({ count: stack.length })}
@@ -148,7 +148,7 @@
 		{#if stack.length === 0}
 			<p
 				dir="auto"
-				class="rounded-md border-2 border-dashed border-ink/40 px-2 py-1 text-xs font-semibold"
+				class="rounded-xl border-2 border-dashed border-ink/40 px-2 py-1 text-xs font-semibold"
 			>
 				{m.warroom_region_empty()}
 			</p>
@@ -172,7 +172,7 @@
 				<IconDumbbell class="size-3.5" aria-hidden="true" />
 				<span dir="auto" class="font-bold">{m.warroom_exercise()}</span>
 			</span>
-			<span class="shrink-0 text-[0.6rem] font-semibold tabular-nums" dir="ltr">
+			<span class="shrink-0 text-[0.7rem] font-semibold tabular-nums" dir="ltr">
 				{m.warroom_exercise_cost({ amount: EXERCISE_SUPPLY_COST })}
 			</span>
 		</button>
@@ -186,7 +186,7 @@
 
 	{#if ours && stack.length > 0 && !selected}
 		{#if moved}
-			<p dir="auto" class="rounded-md border-2 border-ink bg-sand px-2 py-1 text-xs font-semibold">
+			<p dir="auto" class="rounded-xl border-2 border-ink bg-sand px-2 py-1 text-xs font-semibold">
 				{m.warroom_region_moved()}
 			</p>
 		{:else}
@@ -231,7 +231,7 @@
 								</span>
 							</span>
 							{#if entry.preview}
-								<span class="shrink-0 text-[0.6rem] font-semibold tabular-nums" dir="ltr">
+								<span class="shrink-0 text-[0.7rem] font-semibold tabular-nums" dir="ltr">
 									{oddsLabel(entry.preview.attack, entry.preview.defence)}
 								</span>
 							{/if}

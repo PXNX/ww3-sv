@@ -34,7 +34,7 @@
 </script>
 
 <section
-	class="flex flex-col gap-2 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper p-2 shadow-[3px_3px_0_var(--color-ink)]"
+	class="flex flex-col gap-2 rounded-2xl border-3 border-ink bg-paper p-2 shadow-[3px_3px_0_var(--color-ink)]"
 >
 	<div class="flex flex-col gap-0.5">
 		<h2 dir="auto" class="font-display text-lg leading-tight font-bold">
@@ -46,7 +46,7 @@
 	{#if rows.length === 0}
 		<p
 			dir="auto"
-			class="rounded-md border-2 border-dashed border-ink/40 px-2 py-2 text-sm font-semibold"
+			class="rounded-xl border-2 border-dashed border-ink/40 px-2 py-2 text-sm font-semibold"
 		>
 			{m.warroom_army_empty()}
 		</p>
@@ -60,7 +60,7 @@
 				<li>
 					<button
 						type="button"
-						class="flex w-full items-center gap-2 rounded-[9px_5px_11px_6px] border-2 border-ink px-2 py-1.5 text-start {selected
+						class="flex w-full items-center gap-2 rounded-xl border-2 border-ink px-2 py-1.5 text-start {selected
 							? 'bg-explosion-yellow'
 							: 'bg-sand'}"
 						aria-pressed={selected}
@@ -71,7 +71,7 @@
 								<span dir="auto" class="truncate font-display text-sm leading-tight font-bold">
 									{regionName(id)}
 								</span>
-								<span dir="auto" class="shrink-0 text-[0.6rem] font-semibold">
+								<span dir="auto" class="shrink-0 text-[0.7rem] font-semibold">
 									{terrainName(regionDef(id).terrain)}
 								</span>
 							</span>
@@ -80,9 +80,9 @@
 									<NatoSymbol kind={division.template} side="player" class="h-3 w-4 shrink-0" />
 								{/each}
 								{#if stack.length > 4}
-									<span class="text-[0.6rem] font-bold">+{stack.length - 4}</span>
+									<span class="text-[0.7rem] font-bold">+{stack.length - 4}</span>
 								{/if}
-								<span class="text-[0.6rem] font-bold tabular-nums">
+								<span class="text-[0.7rem] font-bold tabular-nums">
 									{stack.length === 1
 										? m.warroom_division_count_one()
 										: m.warroom_division_count({ count: stack.length })}
@@ -94,15 +94,15 @@
 								>
 									<span class="block h-full {supplyTone(supply)}" style:width="{supply}%"></span>
 								</span>
-								<span class="shrink-0 text-[0.6rem] font-semibold tabular-nums" dir="ltr">
+								<span class="shrink-0 text-[0.7rem] font-semibold tabular-nums" dir="ltr">
 									{m.warroom_army_supply({ supply })}
 								</span>
-								<span class="shrink-0 text-[0.6rem] font-semibold tabular-nums" dir="ltr">
+								<span class="shrink-0 text-[0.7rem] font-semibold tabular-nums" dir="ltr">
 									{m.warroom_army_morale({ morale: moraleOf(id) })}
 								</span>
 							</span>
 						</span>
-						<span class="flex shrink-0 flex-col items-center gap-0.5 text-[0.6rem] font-bold">
+						<span class="flex shrink-0 flex-col items-center gap-0.5 text-[0.7rem] font-bold">
 							{#if selected}
 								<IconCheck class="size-4" aria-hidden="true" />
 								<span dir="auto">{m.warroom_army_selected()}</span>

@@ -93,19 +93,19 @@
 		onRetry={() => game.start()}
 	>
 		<dl class="grid grid-cols-2 gap-2 font-display text-sm">
-			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
+			<div class="flex flex-col items-center rounded-xl border-2 border-ink bg-sand p-2">
 				<dt class="text-center font-bold">{m.droneworks_stat_shipped()}</dt>
 				<dd class="text-2xl font-bold tabular-nums">{game.stats.shipped}</dd>
 			</div>
-			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
+			<div class="flex flex-col items-center rounded-xl border-2 border-ink bg-sand p-2">
 				<dt class="text-center font-bold">{m.droneworks_stat_intercepted()}</dt>
 				<dd class="text-2xl font-bold tabular-nums">{game.stats.intercepted}</dd>
 			</div>
-			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
+			<div class="flex flex-col items-center rounded-xl border-2 border-ink bg-sand p-2">
 				<dt class="text-center font-bold">{m.droneworks_stat_hits()}</dt>
 				<dd class="text-2xl font-bold tabular-nums">{game.stats.hits}</dd>
 			</div>
-			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
+			<div class="flex flex-col items-center rounded-xl border-2 border-ink bg-sand p-2">
 				<dt class="text-center font-bold">{m.droneworks_stat_repaired()}</dt>
 				<dd class="text-2xl font-bold tabular-nums">{game.stats.repaired}</dd>
 			</div>

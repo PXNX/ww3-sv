@@ -34,7 +34,7 @@
 </script>
 
 <section
-	class="flex flex-col gap-2 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper p-2 shadow-[3px_3px_0_var(--color-ink)]"
+	class="flex flex-col gap-2 rounded-2xl border-3 border-ink bg-paper p-2 shadow-[3px_3px_0_var(--color-ink)]"
 >
 	<div class="flex flex-col gap-0.5">
 		<h2 dir="auto" class="font-display text-lg leading-tight font-bold">
@@ -48,15 +48,15 @@
 	<ul class="grid grid-cols-1 gap-1 sm:grid-cols-2">
 		{#each FACTORY_IDS as id (id)}
 			{@const def = factoryDef(id)}
-			<li class="rounded-md border-2 border-ink bg-sand px-2 py-1">
+			<li class="rounded-xl border-2 border-ink bg-sand px-2 py-1">
 				<p dir="auto" class="font-display text-sm leading-tight font-bold">{factoryName(id)}</p>
-				<p dir="auto" class="text-[0.65rem] font-semibold tabular-nums">
+				<p dir="auto" class="text-[0.75rem] font-semibold tabular-nums">
 					{m.warroom_industry_output({
 						amount: def.output.amount,
 						equipment: equipmentName(def.output.equipment)
 					})}
 				</p>
-				<p dir="auto" class="text-[0.6rem] leading-tight opacity-80">
+				<p dir="auto" class="text-[0.7rem] leading-tight opacity-80">
 					{m.warroom_industry_input({ input: resourceCost(def.input) })}
 				</p>
 			</li>
@@ -66,7 +66,7 @@
 	{#if !hasFreeSlot}
 		<p
 			dir="auto"
-			class="rounded-md border-2 border-dashed border-ink/40 px-2 py-2 text-sm font-semibold"
+			class="rounded-xl border-2 border-dashed border-ink/40 px-2 py-2 text-sm font-semibold"
 		>
 			{m.warroom_industry_none()}
 		</p>
@@ -77,12 +77,10 @@
 			{@const used = game.slotsUsed(region)}
 			{@const total = regionDef(region).slots}
 			{@const built = factoriesIn(region)}
-			<div
-				class="flex flex-col gap-1 rounded-[9px_5px_11px_6px] border-2 border-ink bg-sand px-2 py-1.5"
-			>
+			<div class="flex flex-col gap-1 rounded-xl border-2 border-ink bg-sand px-2 py-1.5">
 				<div class="flex items-baseline justify-between gap-2">
 					<h3 dir="auto" class="font-display text-sm font-bold">{regionName(region)}</h3>
-					<span class="text-[0.65rem] font-bold tabular-nums" dir="ltr">
+					<span class="text-[0.75rem] font-bold tabular-nums" dir="ltr">
 						{m.warroom_industry_slots({ used, total })}
 					</span>
 				</div>
@@ -91,7 +89,7 @@
 						{#each built as factory, index (factory + index)}
 							<li
 								dir="auto"
-								class="inline-flex items-center gap-1 rounded-full border-2 border-ink bg-paper px-1.5 text-[0.6rem] font-bold"
+								class="inline-flex items-center gap-1 rounded-full border-2 border-ink bg-paper px-1.5 text-[0.7rem] font-bold"
 							>
 								<IconFactory class="size-3" aria-hidden="true" />
 								{factoryName(factory)}
@@ -100,7 +98,7 @@
 					</ul>
 				{/if}
 				{#if used >= total}
-					<p dir="auto" class="text-[0.65rem] font-semibold opacity-70">
+					<p dir="auto" class="text-[0.75rem] font-semibold opacity-70">
 						{m.warroom_industry_full()}
 					</p>
 				{:else}
@@ -118,7 +116,7 @@
 									<IconFactory class="size-3.5" aria-hidden="true" />
 									<span dir="auto">{m.warroom_industry_build()} {factoryName(id)}</span>
 								</span>
-								<span dir="auto" class="text-[0.6rem] font-semibold tabular-nums">
+								<span dir="auto" class="text-[0.7rem] font-semibold tabular-nums">
 									{m.warroom_build_cost({ cost: resourceCost(def.cost) })}
 								</span>
 							</button>

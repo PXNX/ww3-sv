@@ -106,7 +106,7 @@
 
 				<p
 					dir="auto"
-					class="min-h-9 rounded-md border-2 border-ink bg-paper px-2 py-1 text-xs leading-snug font-semibold sm:text-sm"
+					class="min-h-9 rounded-xl border-2 border-ink bg-paper px-2 py-1 text-xs leading-snug font-semibold sm:text-sm"
 					aria-live="polite"
 				>
 					{game.note?.text ?? m.warroom_note_idle()}
@@ -180,21 +180,21 @@
 		onRetry={() => game.start()}
 	>
 		<dl class="grid grid-cols-2 gap-2 font-display text-sm sm:grid-cols-4">
-			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
+			<div class="flex flex-col items-center rounded-xl border-2 border-ink bg-sand p-2">
 				<dt dir="auto" class="text-center font-bold">{m.warroom_stat_days()}</dt>
 				<dd class="text-2xl font-bold tabular-nums">{Math.min(game.day, MAX_DAYS)}</dd>
 			</div>
-			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
+			<div class="flex flex-col items-center rounded-xl border-2 border-ink bg-sand p-2">
 				<dt dir="auto" class="text-center font-bold">{m.warroom_stat_regions()}</dt>
 				<dd class="text-2xl font-bold tabular-nums">
 					{Object.values(game.owner).filter((owner) => owner === 'player').length}
 				</dd>
 			</div>
-			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
+			<div class="flex flex-col items-center rounded-xl border-2 border-ink bg-sand p-2">
 				<dt dir="auto" class="text-center font-bold">{m.warroom_stat_kills()}</dt>
 				<dd class="text-2xl font-bold tabular-nums">{game.state.kills}</dd>
 			</div>
-			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
+			<div class="flex flex-col items-center rounded-xl border-2 border-ink bg-sand p-2">
 				<dt dir="auto" class="text-center font-bold">{m.warroom_stat_losses()}</dt>
 				<dd class="text-2xl font-bold tabular-nums">{game.state.losses}</dd>
 			</div>

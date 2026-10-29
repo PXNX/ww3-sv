@@ -336,6 +336,11 @@ export const FLAME_COOL_PER_SECOND = 0.4;
 export const OVERHEAT_STUN_MS = 1600;
 export const OVERHEAT_DAMAGE_SHARE = 0.1;
 
+/** Minigun: fills while firing, cools when not; faster at high charge */
+export const MINIGUN_HEAT_PER_SHOT = 0.08;
+export const MINIGUN_COOL_PER_SECOND = 0.6;
+export const MINIGUN_MIN_FIRE_FACTOR = 0.3;
+
 /** Hammer: the swing's width in radians, and how much a swing that lands charges it */
 export const HAMMER_ARC = 2.2;
 export const HAMMER_CHARGE_PER_HIT = 0.14;

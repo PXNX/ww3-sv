@@ -41,7 +41,7 @@
 <div class="flex w-full flex-col gap-1">
 	<div
 		dir="ltr"
-		class="relative aspect-[5/3] w-full overflow-hidden rounded-[12px_6px_14px_8px] border-3 border-ink bg-[#e2e8cf] shadow-[3px_3px_0_var(--color-ink)]"
+		class="relative aspect-[5/3] w-full overflow-hidden rounded-2xl border-3 border-ink bg-[#e2e8cf] shadow-[3px_3px_0_var(--color-ink)]"
 		role="group"
 		aria-label={m.warroom_aria_map()}
 	>

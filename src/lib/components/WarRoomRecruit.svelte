@@ -17,7 +17,7 @@
 </script>
 
 <section
-	class="flex flex-col gap-2 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper p-2 shadow-[3px_3px_0_var(--color-ink)]"
+	class="flex flex-col gap-2 rounded-2xl border-3 border-ink bg-paper p-2 shadow-[3px_3px_0_var(--color-ink)]"
 >
 	<div class="flex flex-col gap-0.5">
 		<h2 dir="auto" class="font-display text-lg leading-tight font-bold">
@@ -28,7 +28,7 @@
 		</p>
 	</div>
 
-	<div class="rounded-md border-2 border-ink bg-sand px-2 py-1">
+	<div class="rounded-xl border-2 border-ink bg-sand px-2 py-1">
 		<h3 dir="auto" class="font-display text-sm font-bold">{m.warroom_recruit_queue_title()}</h3>
 		{#if game.training.length === 0}
 			<p dir="auto" class="text-xs font-semibold opacity-70">{m.warroom_recruit_queue_empty()}</p>
@@ -57,16 +57,14 @@
 		{#each TEMPLATES as template (template.id)}
 			{@const def = templateDef(template.id)}
 			{@const affordable = game.canTrain(template.id)}
-			<li
-				class="flex flex-col gap-1 rounded-[9px_5px_11px_6px] border-2 border-ink bg-sand px-2 py-1.5"
-			>
+			<li class="flex flex-col gap-1 rounded-xl border-2 border-ink bg-sand px-2 py-1.5">
 				<div class="flex items-center gap-2">
 					<NatoSymbol kind={template.id} side="player" class="h-6 w-8 shrink-0" />
 					<div class="flex min-w-0 flex-col">
 						<h3 dir="auto" class="truncate font-display text-sm leading-tight font-bold">
 							{templateName(template.id)}
 						</h3>
-						<p dir="auto" class="text-[0.6rem] leading-tight opacity-80">
+						<p dir="auto" class="text-[0.7rem] leading-tight opacity-80">
 							{templateNote(template.id)}
 						</p>
 					</div>
@@ -74,25 +72,25 @@
 
 				<dl class="grid grid-cols-4 gap-1 text-center">
 					<div class="rounded border border-ink bg-paper px-0.5 py-0.5">
-						<dt class="text-[0.5rem] font-bold uppercase opacity-70">{m.warroom_stat_attack()}</dt>
+						<dt class="text-[0.7rem] font-bold uppercase opacity-70">{m.warroom_stat_attack()}</dt>
 						<dd class="font-display text-sm leading-none font-bold tabular-nums" dir="ltr">
 							{def.attack}
 						</dd>
 					</div>
 					<div class="rounded border border-ink bg-paper px-0.5 py-0.5">
-						<dt class="text-[0.5rem] font-bold uppercase opacity-70">{m.warroom_stat_defence()}</dt>
+						<dt class="text-[0.7rem] font-bold uppercase opacity-70">{m.warroom_stat_defence()}</dt>
 						<dd class="font-display text-sm leading-none font-bold tabular-nums" dir="ltr">
 							{def.defence}
 						</dd>
 					</div>
 					<div class="rounded border border-ink bg-paper px-0.5 py-0.5">
-						<dt class="text-[0.5rem] font-bold uppercase opacity-70">{m.warroom_stat_morale()}</dt>
+						<dt class="text-[0.7rem] font-bold uppercase opacity-70">{m.warroom_stat_morale()}</dt>
 						<dd class="font-display text-sm leading-none font-bold tabular-nums" dir="ltr">
 							{def.morale}
 						</dd>
 					</div>
 					<div class="rounded border border-ink bg-paper px-0.5 py-0.5">
-						<dt class="text-[0.5rem] font-bold uppercase opacity-70">
+						<dt class="text-[0.7rem] font-bold uppercase opacity-70">
 							{m.warroom_stat_supply_use()}
 						</dt>
 						<dd class="font-display text-sm leading-none font-bold tabular-nums" dir="ltr">
@@ -101,11 +99,11 @@
 					</div>
 				</dl>
 
-				<p dir="auto" class="text-[0.6rem] font-semibold tabular-nums">
+				<p dir="auto" class="text-[0.7rem] font-semibold tabular-nums">
 					{m.warroom_recruit_cost({ cost: equipmentCost(def.cost) })}
 				</p>
 				<div class="flex items-center justify-between gap-2">
-					<span class="inline-flex items-center gap-1 text-[0.6rem] font-semibold">
+					<span class="inline-flex items-center gap-1 text-[0.7rem] font-semibold">
 						<IconHourglass class="size-3" aria-hidden="true" />
 						{def.trainDays === 1
 							? m.warroom_recruit_time_one()
