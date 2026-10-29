@@ -135,8 +135,15 @@ export function achievementBonus(
 // The nationalization shop
 
 /** Points the next level of a perk costs, when `level` levels are bought */
-export function perkCost(def: PerkDef, level: number): number {
-	return Math.ceil(def.baseCost * def.costGrowth ** level);
+export function perkCost(def: PerkDef, level: number, state?: { perks: Record<PerkId, number>; prestigePoints: number }): number {
+	let cost = Math.ceil(def.baseCost * def.costGrowth ** level);
+	if (def.id === 'fake_news' && state) {
+		const spent = pointsSpent(state.perks);
+		const total = spent + state.prestigePoints;
+		const percent = total > 0 ? spent / total : 0;
+		cost = Math.ceil(cost * (1 + percent));
+	}
+	return cost;
 }
 
 /** Points all the bought levels cost together */

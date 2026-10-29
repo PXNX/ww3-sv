@@ -121,8 +121,10 @@ export function buyUpgrade(
 	if (!upgrade || hasUpgrade(state, id) || !requirementMet(state, upgrade)) {
 		return { bought: false, events: [] };
 	}
-	if (state.barrels < upgrade.cost) return { bought: false, events: [] };
-	state.barrels -= upgrade.cost;
+	const totalOwned = Object.values(state.owned).reduce((a, b) => a + b, 0);
+	const scaledCost = Math.max(upgrade.cost, Math.ceil(upgrade.cost * (1 + totalOwned / 1000)));
+	if (state.barrels < scaledCost) return { bought: false, events: [] };
+	state.barrels -= scaledCost;
 	state.upgrades.push(id);
 	return { bought: true, events: checkAchievements(state) };
 }
@@ -251,11 +253,11 @@ export function buyPerk(
 ): { bought: boolean; events: TycoonEvent[] } {
 	const def = perkDef(id);
 	const level = state.perks[id];
-	if (level >= def.maxLevel || availablePoints(state) < perkCost(def, level)) {
+	if (level >= def.maxLevel || availablePoints(state) < perkCost(def, level, state)) {
 		return { bought: false, events: [] };
 	}
 	state.perks[id] = level + 1;
-	state.prestigePoints -= perkCost(def, level);
+	state.prestigePoints -= perkCost(def, level, state);
 	return { bought: true, events: checkAchievements(state) };
 }
 
