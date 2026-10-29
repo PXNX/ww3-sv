@@ -393,5 +393,6 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
 	{ id: 'platform_king', kind: 'producers', threshold: 15, reward: { kind: 'producer', value: 0.2, producer: 'platform' } },
 	{ id: 'pipeline_king', kind: 'producers', threshold: 5, reward: { kind: 'producer', value: 0.15, producer: 'pipeline' } },
 	{ id: 'well_king', kind: 'producers', threshold: 5, reward: { kind: 'producer', value: 0.15, producer: 'wellhead' } },
-	{ id: 'rig_king', kind: 'producers', threshold: 5, reward: { kind: 'producer', value: 0.15, producer: 'rig' } }
+	{ id: 'rig_king', kind: 'producers', threshold: 5, reward: { kind: 'producer', value: 0.15, producer: 'rig' } },
+	{ id: 'monocle_king', kind: 'perks', threshold: 5, reward: { kind: 'tap', value: 0.2 } }
 ];

@@ -88,6 +88,18 @@ export const LOOK_UNLOCKS: readonly LookUnlock[] = [
 		requirement: { kind: 'fakeNews', coins: 120 }
 	},
 	{
+		id: 'monocle',
+		part: 'hat',
+		value: 'monocle',
+		requirement: { kind: 'mode', mode: 'tycoon' }
+	},
+	{
+		id: 'cylinder',
+		part: 'hat',
+		value: 'cylinder',
+		requirement: { kind: 'mode', mode: 'tycoon' }
+	},
+	{
 		id: 'alien-skin',
 		part: 'skin',
 		value: '#9fd36a',

@@ -27,6 +27,7 @@
 	const cost = $derived(producerCost(def, owned, count, game.pricing));
 	const affordable = $derived(game.barrels >= cost);
 	const sanctioned = $derived(game.cut.includes(id));
+	const upgradeReady = $derived(game.availableIds.some((uid) => uid.startsWith(id + '_')));
 	const name = $derived(producerName(id));
 	const cycle = $derived(game.cycles[id]);
 	// What one cycle pays: for all owned units, or for the first one before any is bought
@@ -39,6 +40,8 @@
 		type="button"
 		class="btn-chunky flex w-full items-center gap-3 bg-paper px-3 py-2 text-start"
 		class:opacity-60={!affordable}
+		class:ring-3={upgradeReady}
+		class:ring-success={upgradeReady}
 		disabled={!affordable}
 		aria-label={m.tycoon_buy_label({ count, name, cost: formatBig(cost, locale) })}
 		onclick={() => game.buy(id)}
