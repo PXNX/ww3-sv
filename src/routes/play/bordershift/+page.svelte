@@ -149,6 +149,14 @@
 				<dt class="font-bold">{m.bordershift_stat_slipped()}</dt>
 				<dd class="text-2xl font-bold tabular-nums">{game.stats.slipped}</dd>
 			</div>
+			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
+				<dt class="font-bold">{m.bordershift_stat_tunnels()}</dt>
+				<dd class="text-2xl font-bold tabular-nums">{game.stats.tunnels}</dd>
+			</div>
+			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
+				<dt class="font-bold">{m.bordershift_stat_smuggled()}</dt>
+				<dd class="text-2xl font-bold tabular-nums">{game.stats.smuggled}</dd>
+			</div>
 		</dl>
 	</GameOverModal>
 </GameShell>

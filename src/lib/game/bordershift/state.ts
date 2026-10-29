@@ -13,12 +13,14 @@ import {
 	DESTABILISATION_MAX,
 	DESTAB_RELIEF,
 	DESTAB_SLIPPED,
+	DESTAB_TUNNEL,
 	DESTAB_TURNED_AWAY,
 	FEEDBACK_MS,
 	GAME_OVER_FEEDBACK_MS,
 	INSPECT_MS,
 	POINTS_BASE,
 	POINTS_PATIENCE,
+	POINTS_TUNNEL_BONUS,
 	STARTING_REPUTATION,
 	STREAK_BONUS,
 	STREAK_BONUS_MAX
@@ -60,6 +62,10 @@ export interface BorderShiftStats {
 	turnedAway: number;
 	/** Psy-ops waved through */
 	slipped: number;
+	/** Digging crews turned back before the tunnel was finished */
+	tunnels: number;
+	/** Tunnels waved through: the shaft was finished and a route is open */
+	smuggled: number;
 }
 
 export interface BorderShiftState {
@@ -109,7 +115,7 @@ function deal(state: BorderShiftState, random: Random) {
 	state.convoy = dealConvoy(random, state.wave, previous);
 	state.patienceMs = patienceFor(state.wave);
 	state.patienceLeftMs = state.patienceMs;
-	state.revealed = { documents: null, camera: null };
+	state.revealed = { documents: null, camera: null, ground: null };
 	state.phase = 'watch';
 	state.last = null;
 }
@@ -119,10 +125,14 @@ export function createGame(random: Random): BorderShiftState {
 		phase: 'watch',
 		wave: 1,
 		convoyNumber: 0,
-		convoy: { vehicle: 0, truth: 'family', hints: { documents: 'unclear', camera: 'unclear' } },
+		convoy: {
+			vehicle: 0,
+			truth: 'family',
+			hints: { documents: 'unclear', camera: 'unclear', ground: 'unclear' }
+		},
 		patienceMs: patienceFor(1),
 		patienceLeftMs: patienceFor(1),
-		revealed: { documents: null, camera: null },
+		revealed: { documents: null, camera: null, ground: null },
 		feedbackLeftMs: 0,
 		doomed: false,
 		outcome: null,
@@ -133,7 +143,7 @@ export function createGame(random: Random): BorderShiftState {
 		bestStreak: 0,
 		correct: 0,
 		wrong: 0,
-		stats: { admitted: 0, caught: 0, turnedAway: 0, slipped: 0 },
+		stats: { admitted: 0, caught: 0, turnedAway: 0, slipped: 0, tunnels: 0, smuggled: 0 },
 		last: null
 	};
 	deal(state, random);
@@ -168,7 +178,8 @@ function resolve(
 	const events: BorderShiftEvent[] = [];
 
 	if (correct) {
-		const points = pointsFor(state);
+		// A digging crew is the heaviest call of the night, so turning one back pays extra
+		const points = pointsFor(state) + (truth === 'tunnel' ? POINTS_TUNNEL_BONUS : 0);
 		state.score += points;
 		state.correct += 1;
 		state.streak += 1;
@@ -176,7 +187,8 @@ function resolve(
 		// A right call is a small counter-story: trust in the post creeps back up
 		state.destabilisation = Math.max(0, state.destabilisation - DESTAB_RELIEF);
 		if (truth === 'family') state.stats.admitted += 1;
-		else state.stats.caught += 1;
+		else if (truth === 'psyops') state.stats.caught += 1;
+		else state.stats.tunnels += 1;
 		state.last = { kind: 'correct', truth, decision, reason, points };
 		events.push({ type: 'correct', points, truth, decision, reason });
 
@@ -189,13 +201,16 @@ function resolve(
 		state.wrong += 1;
 		state.streak = 0;
 		state.reputation = Math.max(0, state.reputation - 1);
-		// The radio's win: a psy-op through is the loud version, a family turned away the quiet one
-		const damage = truth === 'family' ? DESTAB_TURNED_AWAY : DESTAB_SLIPPED;
+		// The radio's win: a tunnel through is the loudest story, a psy-op through the next, a
+		// family turned away the quiet one
+		const damage =
+			truth === 'family' ? DESTAB_TURNED_AWAY : truth === 'tunnel' ? DESTAB_TUNNEL : DESTAB_SLIPPED;
 		state.destabilisation = Math.min(DESTABILISATION_MAX, state.destabilisation + damage);
 		state.doomed = state.reputation === 0 || state.destabilisation >= DESTABILISATION_MAX;
 		state.outcome = state.doomed ? (state.reputation === 0 ? 'reputation' : 'destabilised') : null;
 		if (truth === 'family') state.stats.turnedAway += 1;
-		else state.stats.slipped += 1;
+		else if (truth === 'psyops') state.stats.slipped += 1;
+		else state.stats.smuggled += 1;
 		state.last = { kind: 'wrong', truth, decision, reason, points: 0 };
 		events.push({ type: 'wrong', truth, decision, reason });
 	}

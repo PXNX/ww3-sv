@@ -16,15 +16,24 @@ import {
 	PSYOPS_BASE,
 	PSYOPS_MAX,
 	PSYOPS_STEP,
+	TUNNEL_BASE,
+	TUNNEL_MAX,
+	TUNNEL_STEP,
 	VEHICLE_COUNT
 } from './config.js';
 
-export type ConvoyTruth = 'family' | 'psyops';
+/**
+ * A family, a staged psy-op, or a digging crew that is opening a tunnel under the post. The tunnel
+ * is the neighbours' other route: the trucks at the barrier are the distraction, and waving them
+ * through lets the shaft be finished with people already waiting in it.
+ */
+export type ConvoyTruth = 'family' | 'psyops' | 'tunnel';
 
 /** What one tool shows: the truth, or an unhelpful blur */
 export type Hint = ConvoyTruth | 'unclear';
 
-export type Tool = 'documents' | 'camera';
+/** The papers, the camera, and a seismic probe that only ever finds a tunnel */
+export type Tool = 'documents' | 'camera' | 'ground';
 
 export interface Convoy {
 	/** Index into the bordershift_vehicle_* messages */
@@ -43,6 +52,11 @@ export function psyopsShare(wave: number): number {
 	return Math.min(PSYOPS_MAX, PSYOPS_BASE + PSYOPS_STEP * (wave - 1));
 }
 
+/** Share of convoys that are a digging crew in this shift */
+export function tunnelShare(wave: number): number {
+	return Math.min(TUNNEL_MAX, TUNNEL_BASE + TUNNEL_STEP * (wave - 1));
+}
+
 /** Chance a tool shows something useful in this shift */
 export function clearChance(wave: number): number {
 	return Math.max(CLEAR_MIN, CLEAR_BASE - CLEAR_STEP * (wave - 1));
@@ -58,8 +72,18 @@ function hintFor(random: Random, truth: ConvoyTruth, chance: number): Hint {
 }
 
 /**
+ * The seismic probe only ever reports a tunnel: on any other convoy it says nothing, because there
+ * is nothing under the road to hear. It is therefore useless on a family or a psy-op, and the price
+ * of using it there is the patience it costs.
+ */
+function groundHint(random: Random, truth: ConvoyTruth, chance: number): Hint {
+	return truth === 'tunnel' && random() < chance ? 'tunnel' : 'unclear';
+}
+
+/**
  * Deals one convoy. The previous vehicle is never repeated back to back, so the queue does not
- * look like a glitch.
+ * look like a glitch. The tunnel share is rolled first, so a shift with more digging crews cannot
+ * push the psy-op share past what the config allows.
  */
 export function dealConvoy(
 	random: Random,
@@ -69,14 +93,19 @@ export function dealConvoy(
 	const offset = Math.floor(random() * (VEHICLE_COUNT - (previousVehicle === null ? 0 : 1)));
 	const vehicle =
 		previousVehicle === null || offset < previousVehicle ? offset : (offset + 1) % VEHICLE_COUNT;
-	const truth: ConvoyTruth = random() < psyopsShare(wave) ? 'psyops' : 'family';
+	const roll = random();
+	const tunnel = tunnelShare(wave);
+	const psyops = psyopsShare(wave);
+	const truth: ConvoyTruth =
+		roll < tunnel ? 'tunnel' : roll < tunnel + psyops ? 'psyops' : 'family';
 	const chance = clearChance(wave);
 	return {
 		vehicle,
 		truth,
 		hints: {
 			documents: hintFor(random, truth, chance),
-			camera: hintFor(random, truth, chance)
+			camera: hintFor(random, truth, chance),
+			ground: groundHint(random, truth, chance)
 		}
 	};
 }

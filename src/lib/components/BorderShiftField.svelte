@@ -15,6 +15,7 @@
 	import IconCamera from '~icons/lucide/camera';
 	import IconFileText from '~icons/lucide/file-text';
 	import IconPlay from '~icons/lucide/play';
+	import IconRadar from '~icons/lucide/radar';
 
 	let { game }: { game: BorderShiftGame } = $props();
 
@@ -78,6 +79,7 @@
 		if (!watching) return;
 		if (event.code === 'KeyD' && !event.repeat) game.inspect('documents');
 		if (event.code === 'KeyC' && !event.repeat) game.inspect('camera');
+		if (event.code === 'KeyG' && !event.repeat) game.inspect('ground');
 		if (
 			event.code === 'ArrowRight' ||
 			(event.code === 'Enter' && !(target instanceof HTMLButtonElement))
@@ -163,11 +165,11 @@
 		</div>
 	</div>
 
-	<!-- The two tools and the clues they found -->
-	<div class="grid grid-cols-2 gap-2">
+	<!-- The three tools and the clues they found -->
+	<div class="grid grid-cols-3 gap-2">
 		<button
 			type="button"
-			class="btn-chunky flex-col gap-1 px-2 py-2 text-sm leading-tight disabled:opacity-60 sm:text-base"
+			class="btn-chunky flex-col gap-1 px-1.5 py-2 text-xs leading-tight disabled:opacity-60 sm:text-sm"
 			disabled={!watching || game.revealed.documents !== null}
 			onclick={() => game.inspect('documents')}
 		>
@@ -176,16 +178,25 @@
 		</button>
 		<button
 			type="button"
-			class="btn-chunky flex-col gap-1 px-2 py-2 text-sm leading-tight disabled:opacity-60 sm:text-base"
+			class="btn-chunky flex-col gap-1 px-1.5 py-2 text-xs leading-tight disabled:opacity-60 sm:text-sm"
 			disabled={!watching || game.revealed.camera !== null}
 			onclick={() => game.inspect('camera')}
 		>
 			<IconCamera class="size-5" aria-hidden="true" />
 			<span dir="auto">{toolLabel('camera')}</span>
 		</button>
+		<button
+			type="button"
+			class="btn-chunky flex-col gap-1 px-1.5 py-2 text-xs leading-tight disabled:opacity-60 sm:text-sm"
+			disabled={!watching || game.revealed.ground !== null}
+			onclick={() => game.inspect('ground')}
+		>
+			<IconRadar class="size-5" aria-hidden="true" />
+			<span dir="auto">{toolLabel('ground')}</span>
+		</button>
 	</div>
 
-	{#if game.revealed.documents !== null || game.revealed.camera !== null}
+	{#if game.revealed.documents !== null || game.revealed.camera !== null || game.revealed.ground !== null}
 		<div class="flex flex-col gap-1.5">
 			{#if game.revealed.documents !== null}
 				<p
@@ -203,6 +214,15 @@
 				>
 					<span class="font-bold">{m.bordershift_photo_label()}</span>
 					{clueText('camera', game.revealed.camera)}
+				</p>
+			{/if}
+			{#if game.revealed.ground !== null}
+				<p
+					dir="auto"
+					class="rounded-md border-2 border-ink bg-explosion-yellow/25 px-2 py-1 text-xs leading-snug font-semibold sm:text-sm"
+				>
+					<span class="font-bold">{m.bordershift_ground_label()}</span>
+					{clueText('ground', game.revealed.ground)}
 				</p>
 			{/if}
 		</div>

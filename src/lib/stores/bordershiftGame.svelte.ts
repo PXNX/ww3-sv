@@ -63,13 +63,19 @@ export class BorderShiftGame {
 	bestStreak = $state(0);
 	correct = $state(0);
 	wrong = $state(0);
-	revealed = $state.raw<Record<Tool, Hint | null>>({ documents: null, camera: null });
+	revealed = $state.raw<Record<Tool, Hint | null>>({
+		documents: null,
+		camera: null,
+		ground: null
+	});
 	last = $state.raw<DecisionResult | null>(null);
 	stats = $state.raw<BorderShiftStats>({
 		admitted: 0,
 		caught: 0,
 		turnedAway: 0,
-		slipped: 0
+		slipped: 0,
+		tunnels: 0,
+		smuggled: 0
 	});
 	toast = $state.raw<Toast | null>(null);
 	/** The radio line about the next shift */
@@ -225,7 +231,9 @@ export class BorderShiftGame {
 						? event.reason === 'timeout'
 							? m.bordershift_popup_timeout_admitted({ points: event.points })
 							: m.bordershift_popup_admitted({ points: event.points })
-						: m.bordershift_popup_caught({ points: event.points })
+						: event.truth === 'tunnel'
+							? m.bordershift_popup_tunnel_caught({ points: event.points })
+							: m.bordershift_popup_caught({ points: event.points })
 				);
 				this.#play(event.points >= 130 ? 'chime' : 'pop', 0.8);
 				break;
@@ -235,9 +243,11 @@ export class BorderShiftGame {
 				this.#showToast(
 					event.truth === 'family'
 						? m.bordershift_popup_turned_away()
-						: event.reason === 'timeout'
-							? m.bordershift_popup_timeout_slipped()
-							: m.bordershift_popup_slipped()
+						: event.truth === 'tunnel'
+							? m.bordershift_popup_tunnel_smuggled()
+							: event.reason === 'timeout'
+								? m.bordershift_popup_timeout_slipped()
+								: m.bordershift_popup_slipped()
 				);
 				this.#play('ui-error', 1);
 				break;

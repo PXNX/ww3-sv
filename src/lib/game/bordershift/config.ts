@@ -26,6 +26,19 @@ export const PSYOPS_BASE = 0.46;
 export const PSYOPS_MAX = 0.72;
 export const PSYOPS_STEP = 0.06;
 
+/**
+ * Share of convoys that are a digging crew rather than a queue of people. The neighbours open a
+ * tunnel under the post, and the trucks in front of the barrier are there to keep the guards busy:
+ * a family waved through is a person, a tunnel waved through is a whole route. The share grows with
+ * the night, so the last shifts are as much about the ground as about the papers.
+ */
+export const TUNNEL_BASE = 0.1;
+export const TUNNEL_MAX = 0.26;
+export const TUNNEL_STEP = 0.04;
+
+/** A caught tunnel is worth extra points: it is the heaviest call of the night */
+export const POINTS_TUNNEL_BONUS = 40;
+
 /** Chance that a tool actually shows a useful clue instead of a fogged lens */
 export const CLEAR_BASE = 0.8;
 export const CLEAR_MIN = 0.52;
@@ -48,6 +61,7 @@ export const GAME_OVER_FEEDBACK_MS = 1400;
  */
 export const DESTABILISATION_MAX = 100;
 export const DESTAB_SLIPPED = 34;
+export const DESTAB_TUNNEL = 40;
 export const DESTAB_TURNED_AWAY = 20;
 export const DESTAB_RELIEF = 6;
 

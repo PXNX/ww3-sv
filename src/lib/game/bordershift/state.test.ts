@@ -4,15 +4,18 @@ import {
 	DESTABILISATION_MAX,
 	DESTAB_RELIEF,
 	DESTAB_SLIPPED,
+	DESTAB_TUNNEL,
 	DESTAB_TURNED_AWAY,
 	GAME_OVER_FEEDBACK_MS,
 	HITS_PER_WAVE,
 	INSPECT_MS,
 	PATIENCE_BASE_MS,
+	POINTS_TUNNEL_BONUS,
 	STARTING_REPUTATION,
+	TUNNEL_MAX,
 	VEHICLE_COUNT
 } from './config.js';
-import { clearChance, dealConvoy, patienceFor, psyopsShare } from './convoys.js';
+import { clearChance, dealConvoy, patienceFor, psyopsShare, tunnelShare } from './convoys.js';
 import {
 	createGame,
 	decide,
@@ -26,8 +29,10 @@ import { missingMessages } from '#lib/testing/messages.js';
 
 /** A convoy that is always a family, with both clues fogged up */
 const family = () => 0.99;
-/** A convoy that is always psy-ops, with both clues clear */
-const psyched = () => 0;
+/** A convoy that is always psy-ops, with both clues clear (the roll sits above the tunnel share) */
+const psyched = () => 0.2;
+/** A convoy that is always a digging crew, with both clues clear */
+const diggers = () => 0.05;
 
 function advance(game: BorderShiftState, random: () => number, dtMs: number) {
 	return step(game, dtMs, random);
@@ -46,6 +51,12 @@ describe('Border Shift convoys', () => {
 		expect(psyopsShare(2)).toBeGreaterThan(psyopsShare(1));
 		expect(psyopsShare(99)).toBe(psyopsShare(100));
 		expect(clearChance(2)).toBeLessThan(clearChance(1));
+	});
+
+	it('sends more digging crews the longer the night goes, up to a cap', () => {
+		expect(tunnelShare(2)).toBeGreaterThan(tunnelShare(1));
+		expect(tunnelShare(99)).toBe(tunnelShare(100));
+		expect(tunnelShare(100)).toBeLessThanOrEqual(TUNNEL_MAX);
 	});
 
 	it('never sends the same vehicle twice in a row', () => {
@@ -67,7 +78,30 @@ describe('Border Shift convoys', () => {
 			for (const hint of [convoy.hints.documents, convoy.hints.camera]) {
 				expect(hint === 'unclear' || hint === convoy.truth).toBe(true);
 			}
+			// The probe is one-sided: it either names a tunnel or stays silent
+			expect(convoy.hints.ground === 'unclear' || convoy.truth === 'tunnel').toBe(true);
 		}
+	});
+
+	it('lets the probe find a tunnel and nothing else', () => {
+		const tunnel = dealConvoy(diggers, 1, null);
+		expect(tunnel.truth).toBe('tunnel');
+		expect(tunnel.hints.ground).toBe('tunnel');
+		for (const generator of [family, psyched]) {
+			const convoy = dealConvoy(generator, 1, null);
+			expect(convoy.truth).not.toBe('tunnel');
+			expect(convoy.hints.ground).toBe('unclear');
+		}
+	});
+
+	it('deals tunnels often enough to matter, and never more than the psy-op share allows', () => {
+		const random = createRandom(21);
+		let tunnels = 0;
+		for (let i = 0; i < 500; i++) {
+			if (dealConvoy(random, 3, null).truth === 'tunnel') tunnels += 1;
+		}
+		expect(tunnels).toBeGreaterThan(20);
+		expect(tunnels / 500).toBeLessThan(tunnelShare(3) + 0.08);
 	});
 });
 
@@ -80,7 +114,7 @@ describe('Border Shift state', () => {
 		expect(game.reputation).toBe(STARTING_REPUTATION);
 		expect(game.patienceLeftMs).toBe(patienceFor(1));
 		expect(game.score).toBe(0);
-		expect(game.revealed).toEqual({ documents: null, camera: null });
+		expect(game.revealed).toEqual({ documents: null, camera: null, ground: null });
 	});
 
 	it('spends patience on a tool and reveals its clue once', () => {
@@ -92,12 +126,14 @@ describe('Border Shift state', () => {
 		expect(game.patienceLeftMs).toBe(patienceFor(1) - INSPECT_MS);
 	});
 
-	it('shows the truth through both tools when the night is clear', () => {
+	it('shows the truth through all three tools when the night is clear', () => {
 		const game = createGame(psyched);
 		expect(game.convoy.truth).toBe('psyops');
 		inspect(game, 'documents');
 		inspect(game, 'camera');
-		expect(game.revealed).toEqual({ documents: 'psyops', camera: 'psyops' });
+		inspect(game, 'ground');
+		// The probe hears no tunnel on a psy-op, so it only ever adds the silent answer
+		expect(game.revealed).toEqual({ documents: 'psyops', camera: 'psyops', ground: 'unclear' });
 	});
 
 	it('rewards a family waved through and counts it as admitted', () => {
@@ -133,6 +169,42 @@ describe('Border Shift state', () => {
 		decide(game, 'pass');
 		expect(game.reputation).toBe(STARTING_REPUTATION - 1);
 		expect(game.stats.slipped).toBe(1);
+	});
+
+	it('pays a tunnel bonus for turning a digging crew back', () => {
+		const game = createGame(diggers);
+		expect(game.convoy.truth).toBe('tunnel');
+		const expected = pointsFor(game) + POINTS_TUNNEL_BONUS;
+		const events = decide(game, 'refuse');
+		expect(events[0]).toMatchObject({ type: 'correct', truth: 'tunnel', points: expected });
+		expect(game.score).toBe(expected);
+		expect(game.stats.tunnels).toBe(1);
+		expect(game.stats.caught).toBe(0);
+		expect(game.stats.smuggled).toBe(0);
+	});
+
+	it('pays no tunnel bonus for any other right call', () => {
+		const game = createGame(family);
+		const expected = pointsFor(game);
+		decide(game, 'pass');
+		expect(game.score).toBe(expected);
+	});
+
+	it('lets a tunnel through when the trucks are waved on', () => {
+		const game = createGame(diggers);
+		decide(game, 'pass');
+		expect(game.reputation).toBe(STARTING_REPUTATION - 1);
+		expect(game.stats.smuggled).toBe(1);
+		expect(game.stats.slipped).toBe(0);
+		expect(game.last).toMatchObject({ kind: 'wrong', truth: 'tunnel', decision: 'pass' });
+	});
+
+	it('charges the ground probe patience like the other tools', () => {
+		const game = createGame(diggers);
+		const events = inspect(game, 'ground');
+		expect(events).toEqual([{ type: 'hint', tool: 'ground', hint: 'tunnel' }]);
+		expect(game.patienceLeftMs).toBe(patienceFor(1) - INSPECT_MS);
+		expect(inspect(game, 'ground')).toEqual([]);
 	});
 
 	it('opens the barrier by itself when the convoy runs out of patience', () => {
@@ -198,6 +270,15 @@ describe('the destabilisation campaign', () => {
 		expect(slipped.destabilisation).toBe(DESTAB_SLIPPED);
 		expect(turnedAway.destabilisation).toBe(DESTAB_TURNED_AWAY);
 		expect(slipped.destabilisation).toBeGreaterThan(turnedAway.destabilisation);
+	});
+
+	it('counts a finished tunnel as the heaviest story of the night', () => {
+		const tunnel = createGame(diggers);
+		decide(tunnel, 'pass');
+		const slipped = createGame(psyched);
+		decide(slipped, 'pass');
+		expect(tunnel.destabilisation).toBe(DESTAB_TUNNEL);
+		expect(tunnel.destabilisation).toBeGreaterThan(slipped.destabilisation);
 	});
 
 	it('buys a little calm back with every right call, but never below zero', () => {
