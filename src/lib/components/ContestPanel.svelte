@@ -96,7 +96,7 @@
 			<p class="truncate text-sm leading-tight font-bold">
 				{m.contest_goal({ mode: game.name() })}
 			</p>
-			<p class="truncate text-[0.65rem] leading-tight font-semibold opacity-70 tabular-nums">
+			<p class="truncate text-[0.65rem] leading-tight font-semibold tabular-nums opacity-70">
 				{#if contest.best > 0}
 					{m.contest_best({ score: contest.best })}
 				{:else}
