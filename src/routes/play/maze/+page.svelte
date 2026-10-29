@@ -151,7 +151,6 @@
 					<IconRotate class="size-4" aria-hidden="true" />
 					{m.maze_restart()}
 				</button>
-
 			</div>
 		</section>
 	{/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
@@ -17,13 +18,15 @@
 	}
 
 	let showedTutorial = $state(false);
-	onMount(() => { showedTutorial = firstPlay('maze'); });
+	onMount(() => {
+		showedTutorial = firstPlay('maze');
+	});
 </script>
 
 <GameShell title={m.mode_maze_name()} back={false}>
 	<div class="mx-auto flex w-full max-w-xl flex-col gap-4 px-2 py-2">
 		{#if showedTutorial}
-			<p class="text-sm leading-snug opacity-80">{m.maze_controls_hint()}</p>
+			<p class="text-sm leading-snug opacity-80">{m.maze_keyboard_hint()}</p>
 		{/if}
 
 		<MazeSizePicker {game} />
