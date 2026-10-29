@@ -422,7 +422,7 @@ export class TycoonGame {
 		);
 		this.prestiges = state.prestiges;
 		this.pendingPoints = pendingPrestige(state);
-		this.multiplier = prestigeMultiplier(state.prestigePoints);
+		this.multiplier = prestigeMultiplier(state.prestigePoints, state);
 		this.buyMode = state.buyMode;
 		this.event = state.event ? { ...state.event } : null;
 		this.effects = state.effects.map((effect) => ({ ...effect }));

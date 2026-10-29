@@ -115,7 +115,7 @@ export const PRESTIGE_BONUS = 0.05;
 export const MIN_PRICE_FACTOR = 0.5;
 
 // The nationalization shop: permanent investments bought with prestige points
-export const PERK_IDS = ['growth', 'output', 'speed', 'tap', 'seed', 'offline', 'fake_news'] as const;
+export const PERK_IDS = ['growth', 'output', 'speed', 'tap', 'seed', 'offline', 'fake_news', 'invest_boost'] as const;
 
 export type PerkId = (typeof PERK_IDS)[number];
 
@@ -140,7 +140,8 @@ export const PERKS: readonly PerkDef[] = [
 	{ id: 'tap', maxLevel: 10, baseCost: 2, costGrowth: 1.7, value: 0.4 },
 	{ id: 'seed', maxLevel: 6, baseCost: 2, costGrowth: 2.8, value: 80 },
 	{ id: 'offline', maxLevel: 5, baseCost: 3, costGrowth: 2.0, value: 0.08 },
-	{ id: 'fake_news', maxLevel: 3, baseCost: 500, costGrowth: 5, value: 2.5 }
+	{ id: 'fake_news', maxLevel: 3, baseCost: 500, costGrowth: 5, value: 2.5 },
+	{ id: 'invest_boost', maxLevel: 10, baseCost: 50, costGrowth: 3, value: 0.01 }
 ];
 
 // Offline progress

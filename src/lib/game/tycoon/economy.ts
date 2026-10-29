@@ -193,8 +193,13 @@ export function producerMultiplier(state: TycoonState, id: ProducerId): number {
 	return multiplier;
 }
 
-export function prestigeMultiplier(points: number): number {
-	return 1 + PRESTIGE_BONUS * Math.max(0, points);
+export function prestigeMultiplier(points: number, state?: any): number {
+	let bonus = PRESTIGE_BONUS * Math.max(0, points);
+	if (state) {
+		const invest = state.perks?.invest_boost ?? 0;
+		bonus += 0.01 * invest * Math.max(0, points);
+	}
+	return 1 + bonus;
 }
 
 /**
@@ -203,7 +208,7 @@ export function prestigeMultiplier(points: number): number {
  */
 export function globalMultiplier(state: TycoonState): number {
 	let multiplier =
-		prestigeMultiplier(state.prestigePoints) *
+		prestigeMultiplier(state.prestigePoints, state) *
 		(1 + achievementBonus(state, 'output')) *
 		(1 + perkEffect('output', state.perks.output));
 	for (const upgrade of UPGRADES) {
