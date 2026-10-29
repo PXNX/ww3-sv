@@ -276,7 +276,7 @@
 							></span>
 						</span>
 						<span
-							class="absolute start-1/2 top-1/2 flex size-8 -translate-1/2 rotate-45 items-center justify-center rounded-md shadow-[0_2px_0_rgb(0_0_0/0.3)] rtl:translate-x-1/2 {locked
+							class="absolute start-1/2 top-1/2 z-10 flex size-8 -translate-1/2 rotate-45 items-center justify-center rounded-md shadow-[0_2px_0_rgb(0_0_0/0.3)] rtl:translate-x-1/2 {locked
 								? 'bg-[#2a1a52] text-white/80 ring-2 ring-white/25'
 								: 'bg-[#ffd23a] text-[#3d1478] ring-2 ring-white'}"
 						>
