@@ -245,9 +245,9 @@
 		{/if}
 	{/key}
 
-	<!-- Barrels, hearts and the boosters that are running -->
+	<!-- Barrels, hearts and the boosters that are running: top left, out of the way of the jumps -->
 	<div
-		class="pointer-events-none absolute top-[calc(0.5rem+var(--top-inset))] left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1"
+		class="pointer-events-none absolute top-(--hud-top) left-(--hud-left) z-10 flex max-w-[60%] flex-wrap items-center gap-1.5"
 	>
 		<div
 			class="flex items-center gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-0.5 shadow-[3px_3px_0_var(--color-ink)]"
@@ -263,25 +263,23 @@
 			</span>
 			<LivesBar lives={game.hearts} max={STARTING_HEARTS} class="shrink-0 text-xl" />
 		</div>
-		<div class="flex gap-1.5">
-			{#each BOOSTS as kind (kind)}
-				{#if game.boosts[kind] > 0}
-					<div
-						class="flex items-center gap-1 rounded-full border-3 border-ink bg-paper py-0.5 ps-1 pe-2"
-						role="img"
-						aria-label={boostLabels[kind]()}
-					>
-						<VenezuelaIcon {kind} class="size-6 shrink-0" />
-						<span class="h-2.5 w-12 overflow-hidden rounded-full border-2 border-ink bg-sand">
-							<span
-								class="block h-full bg-explosion-yellow transition-[width] duration-100 ease-linear"
-								style:width="{Math.min(100, (game.boosts[kind] / BOOST_SECONDS[kind]) * 100)}%"
-							></span>
-						</span>
-					</div>
-				{/if}
-			{/each}
-		</div>
+		{#each BOOSTS as kind (kind)}
+			{#if game.boosts[kind] > 0}
+				<div
+					class="flex items-center gap-1 rounded-full border-3 border-ink bg-paper py-0.5 ps-1 pe-2"
+					role="img"
+					aria-label={boostLabels[kind]()}
+				>
+					<VenezuelaIcon {kind} class="size-6 shrink-0" />
+					<span class="h-2.5 w-12 overflow-hidden rounded-full border-2 border-ink bg-sand">
+						<span
+							class="block h-full bg-explosion-yellow transition-[width] duration-100 ease-linear"
+							style:width="{Math.min(100, (game.boosts[kind] / BOOST_SECONDS[kind]) * 100)}%"
+						></span>
+					</span>
+				</div>
+			{/if}
+		{/each}
 	</div>
 
 	<!-- The thumb controls, only on devices with a touch screen -->
@@ -290,7 +288,7 @@
 	>
 		<div
 			bind:this={movePad}
-			class="pointer-events-auto flex h-[clamp(5rem,30vh,7.5rem)] w-[clamp(12rem,32vw,18rem)] touch-none gap-2"
+			class="pointer-events-auto flex h-[clamp(4.5rem,25vh,6.5rem)] w-[clamp(11rem,30vw,16rem)] touch-none gap-2"
 			style:touch-action="none"
 			role="group"
 			aria-label={m.venezuela_ctrl_move()}
@@ -318,7 +316,7 @@
 			</span>
 		</div>
 
-		<div class="relative h-[clamp(7rem,44vh,11rem)] w-[clamp(10rem,30vw,15rem)]">
+		<div class="relative h-[clamp(7rem,44vh,11rem)] w-[clamp(9rem,26vw,13rem)]">
 			<!-- A tap anywhere on the pad jumps; the round button only shows where the thumb rests -->
 			<div
 				class="pointer-events-auto absolute inset-0 touch-none"
@@ -333,7 +331,7 @@
 				oncontextmenu={(event) => event.preventDefault()}
 			></div>
 			<span
-				class="btn-chunky pointer-events-none absolute right-0 bottom-0 size-[clamp(5.5rem,30vh,7.5rem)] flex-col rounded-full p-0 text-sm {jumpOn
+				class="btn-chunky pointer-events-none absolute right-0 bottom-0 size-[clamp(4.5rem,25vh,6.5rem)] flex-col rounded-full p-0 text-sm {jumpOn
 					? 'bg-explosion-yellow'
 					: 'bg-tie-red'}"
 				aria-hidden="true"
@@ -343,7 +341,7 @@
 			</span>
 			<button
 				type="button"
-				class="btn-chunky absolute top-0 left-0 size-[clamp(3.5rem,17vh,4.5rem)] touch-none flex-col rounded-full p-0 text-xs {slamOn
+				class="btn-chunky absolute bottom-0 left-0 size-[clamp(3.25rem,15vh,4.25rem)] touch-none flex-col rounded-full p-0 text-xs {slamOn
 					? 'bg-explosion-yellow'
 					: 'bg-banner-slate text-paper'}"
 				style:touch-action="none"

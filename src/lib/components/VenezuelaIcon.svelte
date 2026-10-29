@@ -80,15 +80,16 @@
 			<circle cx="9.5" cy="30.5" r="1.4" fill="#111111" stroke="none" />
 			<circle cx="30.5" cy="30.5" r="1.4" fill="#111111" stroke="none" />
 			<path d="M14 15 A6 6 0 1 1 22 20.5 Q20 22 20 25" fill="none" stroke-width="5.5" />
-			<path d="M14 15 A6 6 0 1 1 22 20.5 Q20 22 20 25" fill="none" stroke="#ffffff" stroke-width="2.6" />
+			<path
+				d="M14 15 A6 6 0 1 1 22 20.5 Q20 22 20 25"
+				fill="none"
+				stroke="#ffffff"
+				stroke-width="2.6"
+			/>
 			<circle cx="20" cy="30" r="2.2" fill="#ffffff" stroke-width="1.6" />
 		{:else if kind === 'arepa'}
 			<ellipse cx="20" cy="21" rx="16" ry="14" fill="#e6b866" />
-			<path
-				d="M20 29 C8 20 12 11 20 16 C28 11 32 20 20 29 Z"
-				fill="#e5484d"
-				stroke-width="1.8"
-			/>
+			<path d="M20 29 C8 20 12 11 20 16 C28 11 32 20 20 29 Z" fill="#e5484d" stroke-width="1.8" />
 		{:else if kind === 'turbo'}
 			<path d="M13 9 Q9 5 14 2 M22 9 Q18 5 23 2" fill="none" stroke-width="1.8" />
 			<path d="M31 20 A6 6 0 0 1 31 31" fill="none" stroke-width="3" />
@@ -98,7 +99,12 @@
 		{:else if kind === 'boots'}
 			<path d="M9 4 H23 V22 L34 25 V31 H9 Z" fill="#e5484d" />
 			<path d="M11 31 L29 33 L11 35 L29 37 L11 39" fill="none" stroke-width="3.6" />
-			<path d="M11 31 L29 33 L11 35 L29 37 L11 39" fill="none" stroke="#d5dbe3" stroke-width="1.4" />
+			<path
+				d="M11 31 L29 33 L11 35 L29 37 L11 39"
+				fill="none"
+				stroke="#d5dbe3"
+				stroke-width="1.4"
+			/>
 			<path d="M9 12 H23" fill="none" stroke="#f5c83a" stroke-width="2" />
 		{:else if kind === 'star'}
 			<path
@@ -106,11 +112,20 @@
 				fill="#ffd23f"
 				stroke-width="2"
 			/>
-			<path d="M32 4 L33.2 7.6 L37 8.5 L33.2 9.6 L32 13 L30.8 9.6 L27 8.5 L30.8 7.6 Z" fill="#ffffff" stroke-width="1.2" />
+			<path
+				d="M32 4 L33.2 7.6 L37 8.5 L33.2 9.6 L32 13 L30.8 9.6 L27 8.5 L30.8 7.6 Z"
+				fill="#ffffff"
+				stroke-width="1.2"
+			/>
 		{:else if kind === 'spring'}
 			<rect x="7" y="31" width="26" height="5" rx="2" fill="#6a7c9b" />
 			<path d="M13 31 L27 27 L13 23 L27 19 L13 15 L20 13" fill="none" stroke-width="5" />
-			<path d="M13 31 L27 27 L13 23 L27 19 L13 15 L20 13" fill="none" stroke="#d5dbe3" stroke-width="2" />
+			<path
+				d="M13 31 L27 27 L13 23 L27 19 L13 15 L20 13"
+				fill="none"
+				stroke="#d5dbe3"
+				stroke-width="2"
+			/>
 			<rect x="8" y="7" width="24" height="6" rx="2.5" fill="#e5484d" />
 		{:else if kind === 'barge'}
 			<path d="M10 24 Q12 31 14 36 Q16 31 18 24 Z" fill="#ffb347" stroke-width="1.8" />

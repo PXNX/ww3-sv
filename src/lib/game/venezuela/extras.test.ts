@@ -217,7 +217,10 @@ describe('spring pads', () => {
 		const world = worldOf('..Ps....');
 		steps(world, 5);
 		// Leaping from the tile next to it sails over the pad, which only catches a falling or walking body
-		const events = [...steps(world, 1, { ...JUMP, move: 1 }), ...steps(world, 40, { ...RIGHT, jumpHeld: true })];
+		const events = [
+			...steps(world, 1, { ...JUMP, move: 1 }),
+			...steps(world, 40, { ...RIGHT, jumpHeld: true })
+		];
 		expect(types(events)).not.toContain('spring');
 	});
 });
@@ -330,7 +333,11 @@ describe('the shipped levels use the new pieces sensibly', () => {
 				const sweep = platformSweepBox(createPlatform(id, spot));
 				const covered = { x: sweep.x, y: sweep.y - 1, w: sweep.w, h: sweep.h + 1 };
 				for (let ty = Math.floor(covered.y); ty <= Math.floor(covered.y + covered.h - 1e-6); ty++) {
-					for (let tx = Math.floor(covered.x); tx <= Math.floor(covered.x + covered.w - 1e-6); tx++) {
+					for (
+						let tx = Math.floor(covered.x);
+						tx <= Math.floor(covered.x + covered.w - 1e-6);
+						tx++
+					) {
 						if (tileAt(level, tx, ty) !== 'solid') continue;
 						expect(
 							overlaps(covered, { x: tx, y: ty, w: 1, h: 1 }),
@@ -344,7 +351,8 @@ describe('the shipped levels use the new pieces sensibly', () => {
 		it('puts springs on firm ground with room to fly', () => {
 			for (const spot of level.springs) {
 				expect(['solid', 'oneway']).toContain(tileAt(level, spot.x, spot.y + 1));
-				for (let up = 1; up <= 3; up++) expect(tileAt(level, spot.x, spot.y - up)).not.toBe('solid');
+				for (let up = 1; up <= 3; up++)
+					expect(tileAt(level, spot.x, spot.y - up)).not.toBe('solid');
 			}
 		});
 
@@ -359,9 +367,7 @@ describe('the shipped levels use the new pieces sensibly', () => {
 	it('really needs the barges, the lift and the springs where they stand in the new levels', () => {
 		const strip = (id: string, replace: Record<string, string>) => {
 			const level = levelAt(RAW_LEVELS.findIndex((raw) => raw.id === id));
-			const rows = level.rows.map((row) =>
-				[...row].map((char) => replace[char] ?? char).join('')
-			);
+			const rows = level.rows.map((row) => [...row].map((char) => replace[char] ?? char).join(''));
 			return { ...level, rows, platforms: [], springs: [] };
 		};
 		expect(analyzeReach(strip('gantry', { '~': '.', ':': '.' })).goal).toBe(false);

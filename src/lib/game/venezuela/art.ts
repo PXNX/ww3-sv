@@ -4,7 +4,8 @@
  * the ground (x = horizontal center, y = feet), so the same drawing serves the level and the small
  * legend pictures. All of it is original and generic: the hero is a made-up caricature with a huge
  * mustache and a sash, not anyone's likeness; the goons wear plain hard hats; the helicopters carry
- * a round cartoon patch.
+ * a round cartoon patch. The mystery blocks, spring pads, hover barges and boosters follow the same
+ * style.
  */
 import type { BoosterKind } from './boosters';
 
