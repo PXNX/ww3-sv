@@ -119,6 +119,7 @@ import {
 	MORTAR_FLIGHT_MS,
 	MORTAR_RADIUS,
 	MUD_SPEED,
+	ICE_FREEZE_MS,
 	NAPALM_MS,
 	NAPALM_RADIUS,
 	NAPALM_THROW_RANGE,
@@ -243,6 +244,10 @@ export interface Player {
 	stepPhase: number;
 	/** Fire trail boots: time to the next patch of fire */
 	trailMs: number;
+	/** Ice freeze timer: how long the player has stayed on ice */
+	iceMs: number;
+	/** Frozen by ice: movement blocked */
+	frozen: boolean;
 	/** Jammer helmet: time until it can throw the next drone off course */
 	jammerMs: number;
 	/** Flamethrower heat, 0 to 1: full means it overheats */
@@ -282,6 +287,10 @@ export interface Enemy {
 	phase: number;
 	/** Drones fly over all cover */
 	flying: boolean;
+	/** Frozen by ice: movement blocked */
+	frozen: boolean;
+	/** Ice freeze timer: how long on ice */
+	iceMs: number;
 	/** A drone thrown off course by the jammer: it flies at this enemy (or nowhere) and crashes */
 	jammed: boolean;
 	jamTargetId: number | null;
@@ -681,6 +690,8 @@ export function createRaid(
 			invulnerableMs: 0,
 			stepPhase: 0,
 			trailMs: 0,
+			iceMs: 0,
+			frozen: false,
 			jammerMs: 0,
 			heat: 0,
 			rage: 0,
@@ -1257,9 +1268,18 @@ function movePlayer(state: RaidState, dtMs: number) {
 		return;
 	}
 	const speed = Math.hypot(input.x, input.y);
-	const walking = speed > 0.05 && player.stunMs <= 0;
+	const walking = speed > 0.05 && player.stunMs <= 0 && !player.frozen;
 	const shooting = player.firing || player.shootSlowMs > 0;
 	const wanted = walking ? playerSpeed(state) * (shooting ? SHOOTING_SPEED : 1) : 0;
+
+	// Freeze on ice
+	const ground = terrainAt(map, player.x, player.y);
+	if (ground === 'ice') {
+		player.iceMs += dtMs;
+	} else {
+		player.iceMs = Math.max(0, player.iceMs - dtMs);
+	}
+	player.frozen = player.iceMs >= ICE_FREEZE_MS;
 	walk(state, player, walking ? input.x * wanted : 0, walking ? input.y * wanted : 0, dt);
 	player.moving = walking || Math.hypot(player.vx, player.vy) > 20;
 	if (walking) player.stepPhase += speed * dt * 9;
@@ -2014,10 +2034,23 @@ function updateEnemies(state: RaidState, random: Random, dtMs: number, events: R
 		}
 		enemy.facing = Math.atan2(dy, dx);
 
+		// Freeze on ice
+		const enemyGround = terrainAt(map, enemy.x, enemy.y);
+		if (enemyGround === 'ice') {
+			enemy.iceMs += dtMs;
+		} else {
+			enemy.iceMs = Math.max(0, enemy.iceMs - dtMs);
+		}
+		if (enemy.iceMs >= ICE_FREEZE_MS) {
+			enemy.frozen = true;
+		} else {
+			enemy.frozen = false;
+		}
+
 		const spec = ARCHETYPE_SPECS[enemy.archetype];
 		let wantX = toX;
 		let wantY = toY;
-		let speed = enemy.speed;
+		let speed = enemy.frozen ? 0 : enemy.speed;
 
 		// Enemies that fight from afar hold their distance and circle the player
 		if (spec.keepDistance > 0) {
@@ -2707,6 +2740,8 @@ export function spawnEnemy(
 		phase: random() * 10,
 		flying,
 		jammed: false,
+		frozen: false,
+		iceMs: 0,
 		jamTargetId: null,
 		jamMs: 0,
 		burnMs: 0,

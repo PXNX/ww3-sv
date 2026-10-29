@@ -27,6 +27,7 @@ import {
 	PLAYER_RADIUS,
 	RARITY_COLOR,
 	SPRINT_COOLDOWN_MS,
+	ICE_FREEZE_MS,
 	isElite,
 	VIEW_HEIGHT,
 	VIEW_MAX_WIDTH,
@@ -59,6 +60,38 @@ const RED = '#e5484d';
 const YELLOW = '#f5c83a';
 /** Elite enemies glow in this, on the field and on the map */
 const ELITE = '#ff8a1a';
+
+function drawFreezeIndicator(context: CanvasRenderingContext2D, x: number, y: number, progress: number) {
+	const r = 10;
+	const cx = x;
+	const cy = y - 18;
+	context.save();
+	// Background ring
+	context.strokeStyle = '#aaccff';
+	context.lineWidth = 2.5;
+	context.beginPath();
+	context.arc(cx, cy, r, 0, Math.PI * 2);
+	context.stroke();
+	// Progress arc
+	context.strokeStyle = '#4fa8ff';
+	context.lineWidth = 2.5;
+	context.beginPath();
+	context.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress);
+	context.stroke();
+	// Freeze icon (small snowflake)
+	context.fillStyle = '#ffffff';
+	context.strokeStyle = '#111111';
+	context.lineWidth = 1;
+	context.beginPath();
+	for (let i = 0; i < 6; i++) {
+		const angle = (i / 6) * Math.PI * 2;
+		const len = 5;
+		context.moveTo(cx + Math.cos(angle) * 2, cy + Math.sin(angle) * 2);
+		context.lineTo(cx + Math.cos(angle) * len, cy + Math.sin(angle) * len);
+	}
+	context.stroke();
+	context.restore();
+}
 
 export type Effect =
 	| {

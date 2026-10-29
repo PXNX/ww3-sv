@@ -424,6 +424,8 @@ export type TerrainKind = (typeof TERRAIN_KINDS)[number];
 /** On ice and oil a walker only turns its speed towards where it wants to go this fast, per second */
 export const SLIPPERY_GRIP = 1.6;
 export const MUD_SPEED = 0.55;
+/** How long an entity must stay on ice before freezing */
+export const ICE_FREEZE_MS = 2500;
 
 // ---------------------------------------------------------------------------------------------
 // Enemies
@@ -692,9 +694,9 @@ export function rewardMultiplier(minutes: number): number {
 	return 1 + 0.25 * minutes;
 }
 
-/** Shown in the HUD: 1 at the start, one more every 45 seconds */
+/** Shown in the HUD: 1 at the start, one more every 5 minutes */
 export function threatLevel(minutes: number): number {
-	return 1 + Math.floor((minutes * 60) / 45);
+	return 1 + Math.floor((minutes * 60) / 300);
 }
 
 export function spawnIntervalMs(minutes: number): number {

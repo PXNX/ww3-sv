@@ -261,6 +261,8 @@ export class RaidGame {
 	found = $state.raw<{ item: GearItem; better: boolean } | null>(null);
 	hurtCount = $state(0);
 	result = $state.raw<RaidResult | null>(null);
+	threatAnnouncement = $state<{ level: number } | null>(null);
+	#lastThreat = 1;
 	isNewBest = $state(false);
 	/** Season rewards just claimed in the lobby, shown until dismissed */
 	claimed = $state.raw<SeasonReward[] | null>(null);
@@ -841,6 +843,12 @@ export class RaidGame {
 				this.#play('ui-toggle');
 				break;
 			case 'threat':
+				if (event.level > 1) {
+					this.threatAnnouncement = { level: event.level };
+					setTimeout(() => {
+						if (this.threatAnnouncement?.level === event.level) this.threatAnnouncement = null;
+					}, 2000);
+				}
 				this.#text(
 					player.x,
 					player.y - 70,

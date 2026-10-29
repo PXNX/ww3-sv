@@ -1,3 +1,8 @@
+﻿<!--
+</style>
+	}
+\t\t\t</div>
+</style>
 <!--
 	Raid playfield: a crisp high-DPI canvas that fills the space it gets (landscape), driven by the
 	fixed-step loop, with the HUD and the touch controls laid over it, laid out like a mobile
@@ -330,7 +335,7 @@
 						{:else}
 							{m.raid_hud_wave({ wave: defense.wave })}
 							<span class="opacity-80"
-								>· {defense.breakSeconds > 0
+								>Â· {defense.breakSeconds > 0
 									? m.raid_hud_next_wave({ seconds: defense.breakSeconds })
 									: m.raid_hud_wave_left({ count: defense.left })}</span
 							>
@@ -386,7 +391,7 @@
 					<span dir="auto" class="block text-sm leading-tight font-bold">
 						{#if game.boss && game.boss.variant !== 'normal'}
 							<span class={game.boss.variant === 'mega' ? 'text-[#ff6b6b]' : 'text-[#ffd23a]'}
-								>{game.boss.variant === 'mega' ? '★★' : '★'}</span
+								>{game.boss.variant === 'mega' ? 'â˜…â˜…' : 'â˜…'}</span
 							>
 						{/if}
 						{game.boss
@@ -421,31 +426,14 @@
 			<div
 				class="flex items-center gap-2 rounded-md bg-[#1b1036]/60 px-2 py-0.5 font-display text-xs font-bold text-white"
 			>
-				{#if game.timeLeft !== null}
-					<span
-						class="flex items-center gap-1 rounded px-1 text-sm tabular-nums {game.timeLeft <= 30
-							? 'timer-low bg-tie-red'
-							: 'bg-[#a64dff]'}"
-						title={m.raid_hud_time_left()}
-					>
-						<IconTimer class="size-3.5" aria-hidden="true" />
-						<span class="sr-only">{m.raid_hud_time_left()}</span>
-						{formatTime(game.timeLeft * 1000)}
-					</span>
-				{:else}
-					<span class="tabular-nums">{formatTime(game.timeMs)}</span>
-				{/if}
-				<span class="rounded bg-tie-red px-1 text-white"
-					>{m.raid_hud_threat({ level: game.threat })}</span
-				>
-				<span title={game.revivesLeft > 0 ? m.raid_hud_revive_ready() : m.raid_hud_revive_used()}>
-					<LivesBar lives={game.revivesLeft} max={1} class="text-sm" />
-					<span class="sr-only"
-						>{game.revivesLeft > 0 ? m.raid_hud_revive_ready() : m.raid_hud_revive_used()}</span
-					>
-				</span>
-			</div>
 
+\t\t\t\t<span title={game.revivesLeft > 0 ? m.raid_hud_revive_ready() : m.raid_hud_revive_used()}>
+\t\t\t\t\t<LivesBar lives={game.revivesLeft} max={1} class="text-sm" />
+\t\t\t\t\t<span class="sr-only"
+\t\t\t\t\t\t>{game.revivesLeft > 0 ? m.raid_hud_revive_ready() : m.raid_hud_revive_used()}</span
+\t\t\t\t\t>
+\t\t\t\t</span>
+\t\t\t</div>
 			{#if game.liveEvent}
 				<div
 					class="live-event flex w-fit origin-left items-center gap-1 rounded-md bg-explosion-yellow px-2 py-0.5 font-display text-xs font-bold text-[#111]"
@@ -473,10 +461,10 @@
 						<span class="text-[0.65rem] font-bold uppercase opacity-70">{m.raid_found()}</span>
 						<span dir="auto" class="truncate text-sm font-bold">{itemName(item)}</span>
 						<span class="text-xs font-bold" style:color={RARITY_COLOR[item.rarity]}
-							>{RARITY_NAMES[item.rarity]()} · {m.raid_item_level({ level: item.level })}</span
+							>{RARITY_NAMES[item.rarity]()} Â· {m.raid_item_level({ level: item.level })}</span
 						>
 						{#if game.found.better}
-							<span class="text-[0.65rem] font-bold text-khaki">▲ {m.raid_found_better()}</span>
+							<span class="text-[0.65rem] font-bold text-khaki">â–² {m.raid_found_better()}</span>
 						{/if}
 					</div>
 					<button
@@ -654,6 +642,19 @@
 		/>
 	{/if}
 
+	{#if game.threatAnnouncement}
+		<div
+			class="pointer-events-none absolute inset-0 z-40 flex items-center justify-center"
+			style="animation: threat-banner 2s ease-in-out forwards"
+		>
+			<span
+				class="banner-title font-display text-6xl font-black tracking-tight uppercase italic text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)]"
+			>
+				{m.raid_hud_threat({ level: game.threatAnnouncement.level })}
+			</span>
+		</div>
+	{/if}
+
 	{#if game.status === 'paused'}
 		<RaidLeaveScreen {game} onResume={() => game.resume()} onLeave={() => game.leave()} />
 	{:else if game.status === 'down'}
@@ -724,6 +725,25 @@
 	@keyframes live-event {
 		to {
 			scale: 1.06;
+		}
+	}
+
+	@keyframes threat-banner {
+		0% {
+			opacity: 0;
+			scale: 0.8;
+		}
+		15% {
+			opacity: 1;
+			scale: 1.05;
+		}
+		85% {
+			opacity: 1;
+			scale: 0.95;
+		}
+		100% {
+			opacity: 0;
+			scale: 0.9;
 		}
 	}
 
