@@ -22,7 +22,7 @@ export function columnText(index: number): string {
 	return (COLUMNS[index] ?? COLUMNS[0])();
 }
 
-/** What is overhead: a long-range drone or a Flamingo cruise missile */
+/** What is overhead: a long-range drone or a flamingo bird */
 export function airName(kind: AirKind): string {
 	return kind === 'drone' ? m.redsquare_air_drone() : m.redsquare_air_flamingo();
 }

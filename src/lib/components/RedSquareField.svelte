@@ -186,7 +186,7 @@
 			></span>
 		</button>
 
-		<!-- A drone or a Flamingo crossing the square: its own target, so a tap never also cues -->
+		<!-- A drone or a flamingo bird crossing the square: its own target, so a tap never also cues -->
 		{#if game.air}
 			<button
 				type="button"
@@ -213,15 +213,18 @@
 						</g>
 					</svg>
 				{:else}
-					<!-- A Flamingo: a cruise missile with swept wings and a burning tail -->
-					<svg viewBox="0 0 48 32" class="pop-in size-full" aria-hidden="true" focusable="false">
-						<g stroke="#111" stroke-width="2.5" stroke-linejoin="round" fill="#c9c3b4">
-							<path d="M14 14 L30 14 L44 16 L30 18 L14 18 Z" />
-							<path d="M18 14 L26 6 L30 6 L24 14 Z" />
-							<path d="M18 18 L26 26 L30 26 L24 18 Z" />
-							<path d="M12 14 L6 9 L6 14 Z" />
+					<!-- A real flamingo bird from the bird gamemodes -->
+					<svg viewBox="0 0 92 90" class="pop-in size-full" aria-hidden="true" focusable="false">
+						<g stroke="#111111" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+							<path d="M24 66 L6 74 M24 70 L8 80" stroke-width="4" />
+							<path d="M50 40 Q60 22 66 32 L66 42 Q58 46 50 46 Z" fill="#F29BB8" />
+							<ellipse cx="40" cy="50" rx="25" ry="20" fill="#F29BB8" />
+							<path d="M20 40 Q34 22 48 38 Q34 48 20 40 Z" fill="#D9668D" />
+							<circle cx="66" cy="32" r="9" fill="#F29BB8" />
+							<path d="M74 29 L88 32 L74 35 Z" fill="#FFFFFF" />
+							<path d="M83 31 L88 32 L83 33 Z" fill="#111111" />
+							<circle cx="68" cy="27" r="2" fill="#111111" stroke="none" />
 						</g>
-						<path d="M4 16 L0 12 L0 20 Z" fill="#e1a53c" stroke="#111" stroke-width="1.5" />
 					</svg>
 				{/if}
 			</button>
