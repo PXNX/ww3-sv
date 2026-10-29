@@ -725,7 +725,7 @@ export function createRaid(
 		flung: [],
 		tornadoRiseMs: 0,
 		allies: [],
-		allySpawnMs: ALLY_FIRST_MS,
+		allySpawnMs: 0,
 		nextId: 1
 	};
 }
@@ -2112,13 +2112,8 @@ function updateAllies(state: RaidState, random: Random, dtMs: number, events: Ra
 			ally.phase += dt * 11;
 		}
 		resolveCircle(ally, ALLY_RADIUS, map.obstacles, map.width, map.height);
-		if (!target) {
-			kept.push(ally);
-			continue;
-		}
-
-		const apart = Math.hypot(target.x - ally.x, target.y - ally.y);
-		if (apart < target.radius + ALLY_RADIUS + 4) {
+		const apart = target ? Math.hypot(target.x - ally.x, target.y - ally.y) : Infinity;
+		if (target && apart < target.radius + ALLY_RADIUS + 4) {
 			ally.facing = Math.atan2(target.y - ally.y, target.x - ally.x);
 			if (ally.attackMs <= 0) {
 				ally.attackMs = ALLY_ATTACK_MS;
