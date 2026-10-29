@@ -163,6 +163,8 @@ import {
 	TRAIL_RADIUS,
 	REFLECT_FACTOR,
 	LEECH_HEAL_SHARE,
+	TOWER_HEAL_SHARE,
+	TOWER_LIFETIME_MS,
 	VARIANT_SPECS,
 	WEAPONS,
 	archetypeWeights,
@@ -532,6 +534,8 @@ export interface RaidState {
 	tornadoes: Tornado[];
 	flung: Flung[];
 	tornadoRiseMs: number;
+	/** Placed healing towers */
+	towers?: { x: number; y: number; ageMs: number; hostile: boolean }[];
 	/** The player's assault helpers and the wait for the next crate */
 	allies: Ally[];
 	allySpawnMs: number;
@@ -1245,6 +1249,7 @@ export function stepRaid(state: RaidState, random: Random, dtMs: number): RaidEv
 	updateGrenades(state, dtMs, events);
 	updateMines(state, dtMs, events);
 	updateNests(state, dtMs, events);
+	updateTowers(state, dtMs, events);
 	updateDrones(state, dtMs, events);
 	updateFires(state, dtMs, events);
 	updateBurning(state, dtMs, events);
@@ -1595,6 +1600,22 @@ function updateNests(state: RaidState, dtMs: number, events: RaidEvent[]) {
 		events.push({ type: 'nest-launch' });
 	}
 	state.nests = kept;
+}
+
+function updateTowers(state: RaidState, dtMs: number, events: RaidEvent[]) {
+	const dt = dtMs / 1000;
+	const towers = state.towers ?? [];
+	const kept: typeof towers = [];
+	for (const tower of towers) {
+		tower.ageMs += dtMs;
+		if (tower.ageMs >= TOWER_LIFETIME_MS) continue;
+		const { player } = state;
+		const heal = Math.round(TOWER_HEAL_SHARE * player.maxHp * Math.max(1, dt));
+		player.hp = Math.min(player.maxHp, player.hp + heal);
+		events.push({ type: 'heal', amount: Math.round(heal), source: 'medkit' });
+		kept.push(tower);
+	}
+	state.towers = kept;
 }
 
 function updateDrones(state: RaidState, dtMs: number, events: RaidEvent[]) {
