@@ -1,8 +1,8 @@
 <!--
 	The raid's minimap: the battlefield with the markers that matter (bosses, super and mega enemies,
-	enemy support, the enemies an open quest asks for, the player's own drones and nests) and the
-	player. Live, it redraws a few times a second (the small one in the HUD); otherwise it draws once
-	(the big one in the map overlay, while the raid stands still).
+	enemy support, the enemies an open quest asks for, the player's own drones, nests and soldiers)
+	and the player. Live, it redraws a few times a second (the small one in the HUD); otherwise it
+	draws once (the big one in the map overlay, while the raid stands still).
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';

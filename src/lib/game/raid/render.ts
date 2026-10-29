@@ -2430,7 +2430,8 @@ export function drawMark(
 
 /**
  * The minimap: the battlefield with its cover and only what is worth walking to, the player's own
- * drones and nests, the command post, and the player as an arrow pointing where the weapon aims.
+ * drones, nests and assault allies, the command post, and the player as an arrow pointing where the
+ * weapon aims.
  * Enemies are marked only when they matter: bosses, super and mega enemies (one and two rings),
  * enemy support units, and whatever an open daily quest still asks to be killed (questTargets).
  * Regular fighters, shooters and enemy drones stay off it unless a quest wants them, and so do
@@ -2484,6 +2485,7 @@ export function drawMinimap(
 	if (state.defense) mark('post', state.defense.objective.x, state.defense.objective.y);
 	for (const nest of state.nests) mark('ally', nest.x, nest.y);
 	for (const drone of state.drones) mark('ally', drone.x, drone.y);
+	for (const ally of state.allies) mark('ally', ally.x, ally.y);
 	// Regular enemies first, then elites, then bosses, so the crowd never hides them
 	const rank = (enemy: Enemy) =>
 		enemy.archetype === 'boss' ? 2 : ENEMY_MARK[enemy.archetype] === 'elite' ? 1 : 0;
