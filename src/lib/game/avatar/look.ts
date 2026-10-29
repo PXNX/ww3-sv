@@ -201,7 +201,9 @@ export function randomLook(seed: number = randomSeed(), allowed?: LookAllowed): 
 				: pickAllowed(random, 'hat', randomHats.slice(1), DEFAULT_LOOK.hat, allowed),
 		// Few agents wear a mustache, and only one that is open to them
 		facial:
-			random() < 0.85 ? 'none' : pickAllowed(random, 'facial', FACIAL_HAIR, DEFAULT_LOOK.facial, allowed)
+			random() < 0.85
+				? 'none'
+				: pickAllowed(random, 'facial', FACIAL_HAIR, DEFAULT_LOOK.facial, allowed)
 	};
 }
 

@@ -11,6 +11,7 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { career } from '#lib/game/career/store.svelte.js';
+	import { readGameProgress } from '#lib/game/avatar/gameProgress.js';
 	import { SAVE_KEY as TYCOON_SAVE_KEY } from '#lib/game/tycoon/save.js';
 	import { localStore } from '#lib/services/storage.js';
 	import {
@@ -60,7 +61,8 @@
 		nose: m.avatar_part_nose,
 		hair: m.avatar_part_hair,
 		hairColor: m.avatar_part_hair_color,
-		hat: m.avatar_part_hat
+		hat: m.avatar_part_hat,
+		facial: m.avatar_part_facial
 	};
 	const COLOR_PARTS: readonly LookPart[] = ['shirtColor', 'skin', 'hairColor'];
 	const PARTS = Object.keys(LOOK_PARTS) as LookPart[];
@@ -77,13 +79,15 @@
 
 	onDestroy(() => clearTimeout(lockTimer));
 
+	// What the other games have recorded, for the looks they unlock
+	const gameProgress = readGameProgress();
 	// The Oil Tycoon keeps its own save, so its achievements are read from there
 	const tycoonSave = localStore().read<{ achievements?: unknown } | null>(TYCOON_SAVE_KEY, null);
 	const tycoonAchievements = Array.isArray(tycoonSave?.achievements)
 		? tycoonSave.achievements.filter((id): id is string => typeof id === 'string')
 		: [];
 	const progress = $derived(
-		unlockProgress(careerState.profile, careerState.level, tycoonAchievements)
+		unlockProgress(careerState.profile, careerState.level, tycoonAchievements, gameProgress)
 	);
 	const collected = $derived(unlockedCount(progress));
 

@@ -6,13 +6,23 @@
  */
 import type { CareerProfile } from '#lib/game/career/profile.js';
 import type { ModeId } from '#lib/modes/registry.js';
+import type { GameProgress } from './gameProgress.js';
 import { LOOK_PARTS, type AvatarLook, type LookPart } from './look.js';
 
 export type UnlockRequirement =
 	| { kind: 'level'; level: number }
 	| { kind: 'streak'; days: number }
 	| { kind: 'mode'; mode: ModeId }
-	| { kind: 'fakeNews'; coins: number }
+	/** Every prepared level of Magyar's Birds won */
+	| { kind: 'fury' }
+	/** The Purr Pentagram ritual completed */
+	| { kind: 'purr' }
+	/** Every level of El Presidente finished */
+	| { kind: 'venezuela' }
+	/** A streak of this many in Petrobras */
+	| { kind: 'petrobras'; streak: number }
+	/** A best score above this in Block Puzzle */
+	| { kind: 'blocks'; score: number }
 	/** An achievement of the Oil Tycoon, which keeps its own save outside the career */
 	| { kind: 'tycoon'; achievement: string };
 
@@ -87,7 +97,32 @@ export const LOOK_UNLOCKS: readonly LookUnlock[] = [
 		id: 'lula-hat',
 		part: 'hat',
 		value: 'lula',
-		requirement: { kind: 'fakeNews', coins: 120 }
+		requirement: { kind: 'petrobras', streak: 10 }
+	},
+	{
+		id: 'pelican-beak',
+		part: 'nose',
+		value: 'beak',
+		requirement: { kind: 'fury' }
+	},
+	{
+		id: 'cat-ears',
+		part: 'hat',
+		value: 'cat-ears',
+		requirement: { kind: 'purr' }
+	},
+	{
+		id: 'mustache',
+		part: 'facial',
+		value: 'mustache',
+		requirement: { kind: 'venezuela' }
+	},
+	{
+		id: 'trump-suit',
+		part: 'shirt',
+		value: 'trump-suit',
+		// Over 9000
+		requirement: { kind: 'blocks', score: 9000 }
 	},
 	{
 		id: 'monocle',
@@ -117,27 +152,28 @@ export interface UnlockProgress {
 	bestStreak: number;
 	/** Modes played at least once; only the keys matter */
 	modes: Partial<Record<ModeId, unknown>>;
-	/** Fake News the player holds; zero when not given */
-	coins?: number;
 	/** Ids of the Oil Tycoon achievements earned; none when not given */
 	tycoon?: readonly string[];
+	/** What the other games have recorded; nothing done when not given */
+	games?: GameProgress;
 }
 
 /**
  * What the player has reached, from the career profile. `tycoon` lists the achievements earned in
- * the Oil Tycoon, which the career does not track.
+ * the Oil Tycoon and `games` what a few other games have recorded; the career tracks neither.
  */
 export function unlockProgress(
 	profile: CareerProfile,
 	level: number,
-	tycoon: readonly string[] = []
+	tycoon: readonly string[] = [],
+	games?: GameProgress
 ): UnlockProgress {
 	return {
 		level,
 		bestStreak: profile.bestStreak,
 		modes: profile.modes,
-		coins: profile.coins,
-		tycoon
+		tycoon,
+		games
 	};
 }
 
@@ -154,10 +190,18 @@ export function requirementMet(requirement: UnlockRequirement, progress: UnlockP
 			return progress.bestStreak >= requirement.days;
 		case 'mode':
 			return progress.modes[requirement.mode] !== undefined;
-		case 'fakeNews':
-			return (progress.coins ?? 0) >= requirement.coins;
 		case 'tycoon':
 			return progress.tycoon?.includes(requirement.achievement) ?? false;
+		case 'fury':
+			return requirementShare(requirement, progress) >= 1;
+		case 'venezuela':
+			return requirementShare(requirement, progress) >= 1;
+		case 'purr':
+			return progress.games?.purrSolved ?? false;
+		case 'petrobras':
+			return (progress.games?.petrobrasStreak ?? 0) >= requirement.streak;
+		case 'blocks':
+			return (progress.games?.blocksBest ?? 0) > requirement.score;
 	}
 }
 
@@ -215,10 +259,24 @@ export function requirementShare(requirement: UnlockRequirement, progress: Unloc
 			return Math.min(1, progress.bestStreak / requirement.days);
 		case 'mode':
 			return progress.modes[requirement.mode] === undefined ? 0 : 1;
-		case 'fakeNews':
-			return Math.min(1, (progress.coins ?? 0) / requirement.coins);
 		case 'tycoon':
 			return progress.tycoon?.includes(requirement.achievement) ? 1 : 0;
+		case 'fury': {
+			const games = progress.games;
+			return games && games.furyTotal > 0 ? Math.min(1, games.furyWon / games.furyTotal) : 0;
+		}
+		case 'venezuela': {
+			const games = progress.games;
+			return games && games.venezuelaTotal > 0
+				? Math.min(1, games.venezuelaWon / games.venezuelaTotal)
+				: 0;
+		}
+		case 'purr':
+			return progress.games?.purrSolved ? 1 : 0;
+		case 'petrobras':
+			return Math.min(1, (progress.games?.petrobrasStreak ?? 0) / requirement.streak);
+		case 'blocks':
+			return Math.min(1, (progress.games?.blocksBest ?? 0) / (requirement.score + 1));
 	}
 }
 

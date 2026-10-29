@@ -77,6 +77,13 @@ describe('an avatar look', () => {
 		expect(parseLook({ ...DEFAULT_LOOK })).toEqual(DEFAULT_LOOK);
 	});
 
+	it('keeps a look saved before the mustache existed, without a mustache', () => {
+		const { facial, ...old } = DEFAULT_LOOK;
+		expect(facial).toBe('none');
+		expect(parseLook(old)).toEqual(DEFAULT_LOOK);
+		expect(parseLook({ ...old, facial: 'beard' })).toBeNull();
+	});
+
 	it('offers at least two choices for every part', () => {
 		for (const part of Object.keys(LOOK_PARTS) as LookPart[]) {
 			expect(LOOK_PARTS[part].length).toBeGreaterThan(1);

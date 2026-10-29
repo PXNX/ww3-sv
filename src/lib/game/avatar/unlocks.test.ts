@@ -21,6 +21,7 @@ import {
 	type UnlockProgress
 } from './unlocks';
 import { newCareer } from '#lib/game/career/profile.js';
+import type { GameProgress } from './gameProgress';
 import {
 	loadMessages,
 	locales,
@@ -29,6 +30,27 @@ import {
 	messageParameters,
 	missingMessages
 } from '#lib/testing/messages.js';
+
+/** What the other games have recorded for a player who has done nothing in them */
+const NOTHING: GameProgress = {
+	furyWon: 0,
+	furyTotal: 15,
+	venezuelaWon: 0,
+	venezuelaTotal: 6,
+	purrSolved: false,
+	petrobrasStreak: 0,
+	blocksBest: 0
+};
+
+/** ...and for one who has done everything */
+const FINISHED: GameProgress = {
+	...NOTHING,
+	furyWon: 15,
+	venezuelaWon: 6,
+	purrSolved: true,
+	petrobrasStreak: 10,
+	blocksBest: 9001
+};
 
 /** A player with nothing earned yet, plus whatever the test cares about */
 const progress = (overrides: Partial<UnlockProgress> = {}): UnlockProgress => ({
@@ -68,8 +90,8 @@ describe('the extra looks', () => {
 					level: 30,
 					bestStreak: 7,
 					modes: { redsquare: {}, petrobras: {}, runcomrade: {} },
-					coins: 120,
-					tycoon: ['maxed_all', 'tycoon_king']
+					tycoon: ['maxed_all', 'tycoon_king'],
+					games: FINISHED
 				})
 			)
 		).toBe(LOOK_UNLOCKS.length);
@@ -119,8 +141,8 @@ describe('the extra looks', () => {
 					level: 30,
 					bestStreak: 7,
 					modes: { redsquare: {}, petrobras: {}, runcomrade: {} },
-					coins: 120,
-					tycoon: ['maxed_all', 'tycoon_king']
+					tycoon: ['maxed_all', 'tycoon_king'],
+					games: FINISHED
 				})
 			)
 		).toBeNull();
@@ -143,8 +165,8 @@ describe('the extra looks', () => {
 			level: 7,
 			bestStreak: 4,
 			modes: profile.modes,
-			coins: profile.coins,
-			tycoon: []
+			tycoon: [],
+			games: undefined
 		});
 	});
 
@@ -160,13 +182,51 @@ describe('the extra looks', () => {
 		expect(requirementShare(cylinder.requirement, progress())).toBe(0);
 	});
 
-	it('opens the Fake News look once enough Fake News is held', () => {
+	it('opens the pelican beak for winning every Magyar level and the mustache for every El Presidente level', () => {
+		const beak = unlockFor('nose', 'beak')!;
+		const mustache = unlockFor('facial', 'mustache')!;
+		expect(beak.requirement.kind).toBe('fury');
+		expect(mustache.requirement.kind).toBe('venezuela');
+		expect(requirementMet(beak.requirement, progress())).toBe(false);
+		const almost = { ...NOTHING, furyWon: 14, furyTotal: 15, venezuelaWon: 5, venezuelaTotal: 6 };
+		expect(requirementMet(beak.requirement, progress({ games: almost }))).toBe(false);
+		expect(requirementShare(beak.requirement, progress({ games: almost }))).toBeCloseTo(14 / 15);
+		expect(requirementMet(mustache.requirement, progress({ games: almost }))).toBe(false);
+		expect(requirementMet(beak.requirement, progress({ games: FINISHED }))).toBe(true);
+		expect(requirementMet(mustache.requirement, progress({ games: FINISHED }))).toBe(true);
+	});
+
+	it('opens the cat ears once the Purr Pentagram is solved', () => {
+		const ears = unlockFor('hat', 'cat-ears')!;
+		expect(requirementMet(ears.requirement, progress())).toBe(false);
+		expect(requirementMet(ears.requirement, progress({ games: NOTHING }))).toBe(false);
+		expect(
+			requirementMet(ears.requirement, progress({ games: { ...NOTHING, purrSolved: true } }))
+		).toBe(true);
+	});
+
+	it('opens the Lula hat with a streak of ten in Petrobras', () => {
 		const lula = unlockFor('hat', 'lula')!;
-		expect(lula.requirement.kind).toBe('fakeNews');
-		expect(requirementMet(lula.requirement, progress())).toBe(false);
-		expect(requirementMet(lula.requirement, progress({ coins: 119 }))).toBe(false);
-		expect(requirementMet(lula.requirement, progress({ coins: 120 }))).toBe(true);
-		expect(requirementShare(lula.requirement, progress({ coins: 60 }))).toBe(0.5);
+		expect(lula.requirement).toEqual({ kind: 'petrobras', streak: 10 });
+		expect(
+			requirementMet(lula.requirement, progress({ games: { ...NOTHING, petrobrasStreak: 9 } }))
+		).toBe(false);
+		expect(
+			requirementMet(lula.requirement, progress({ games: { ...NOTHING, petrobrasStreak: 10 } }))
+		).toBe(true);
+		expect(
+			requirementShare(lula.requirement, progress({ games: { ...NOTHING, petrobrasStreak: 5 } }))
+		).toBe(0.5);
+	});
+
+	it('opens the Trump suit for a Block Puzzle score over 9000', () => {
+		const suit = unlockFor('shirt', 'trump-suit')!;
+		expect(
+			requirementMet(suit.requirement, progress({ games: { ...NOTHING, blocksBest: 9000 } }))
+		).toBe(false);
+		expect(
+			requirementMet(suit.requirement, progress({ games: { ...NOTHING, blocksBest: 9001 } }))
+		).toBe(true);
 	});
 
 	it('leaves locked options out of a surprise look', () => {

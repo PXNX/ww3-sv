@@ -16,8 +16,19 @@ export function requirementText(requirement: UnlockRequirement): string {
 			return m.avatar_unlock_streak({ days: requirement.days });
 		case 'mode':
 			return m.avatar_unlock_mode({ mode: modeById(requirement.mode).name() });
-		case 'fakeNews':
-			return m.avatar_unlock_fakenews({ coins: requirement.coins });
+		case 'fury':
+			return m.avatar_unlock_fury({ game: modeById('fury').name() });
+		case 'purr':
+			return m.avatar_unlock_purr({ game: modeById('purrpentagram').name() });
+		case 'venezuela':
+			return m.avatar_unlock_venezuela({ game: modeById('venezuela').name() });
+		case 'petrobras':
+			return m.avatar_unlock_petrobras({
+				game: modeById('petrobras').name(),
+				streak: requirement.streak
+			});
+		case 'blocks':
+			return m.avatar_unlock_blocks({ game: modeById('blocks').name(), score: requirement.score });
 		case 'tycoon':
 			return m.avatar_unlock_tycoon({
 				name: achievementName(requirement.achievement),
