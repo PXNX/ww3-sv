@@ -6,10 +6,12 @@
 import {
 	createGame,
 	decide,
+	destabilisationShare,
 	inspect,
 	patienceShare,
 	step,
 	type BorderShiftEvent,
+	type BorderShiftOutcome,
 	type BorderShiftPhase,
 	type BorderShiftState,
 	type BorderShiftStats,
@@ -53,6 +55,9 @@ export class BorderShiftGame {
 	/** Share of the patience still left, 0 to 1 */
 	patience = $state(1);
 	reputation = $state(STARTING_REPUTATION);
+	/** The radio's campaign, 0 to 1; the night ends at 1 even with reputation left */
+	destabilisation = $state(0);
+	outcome = $state<BorderShiftOutcome | null>(null);
 	score = $state(0);
 	streak = $state(0);
 	bestStreak = $state(0);
@@ -268,6 +273,8 @@ export class BorderShiftGame {
 		this.vehicle = state.convoy.vehicle;
 		this.patience = patienceShare(state);
 		this.reputation = state.reputation;
+		this.destabilisation = destabilisationShare(state);
+		this.outcome = state.outcome;
 		this.score = state.score;
 		this.streak = state.streak;
 		this.bestStreak = state.bestStreak;

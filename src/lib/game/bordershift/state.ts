@@ -1,13 +1,19 @@
 /*
  * Border Shift rules as a plain state machine. A convoy waits at the barrier while its patience
  * runs down; the player may look at the papers and take a photo, each of which costs time, and then
- * waves the convoy through or turns it back. A family turned away and a psy-op waved through are
- * both wrong calls, and each costs one reputation point. Every third correct call the radio
- * announces a new shift: shorter patience, more psy-ops, blurrier clues. When reputation runs out
- * the night is over and the result sheet is the morning press conference.
+ * waves the convoy through or turns it back. The neighbours are not trying to win a battle, they are
+ * trying to make Europe doubt itself: a psy-op waved through is their big win, but a genuine family
+ * turned away feeds the same story more slowly. Both wrong calls cost reputation and push the
+ * destabilisation meter up; right calls buy a little calm back. Every third correct call the radio
+ * announces a new shift: shorter patience, more psy-ops, blurrier clues. When reputation runs out or
+ * Europe has lost faith, the night is over and the result sheet is the morning press conference.
  */
 import type { Random } from '../random.js';
 import {
+	DESTABILISATION_MAX,
+	DESTAB_RELIEF,
+	DESTAB_SLIPPED,
+	DESTAB_TURNED_AWAY,
 	FEEDBACK_MS,
 	GAME_OVER_FEEDBACK_MS,
 	INSPECT_MS,
@@ -32,6 +38,9 @@ export type BorderShiftPhase = 'watch' | 'verdict' | 'over';
 export type Decision = 'pass' | 'refuse';
 
 export type DecisionKind = 'correct' | 'wrong';
+
+/** Which meter ended the night: the post's reputation or Europe's faith in itself */
+export type BorderShiftOutcome = 'reputation' | 'destabilised';
 
 export interface DecisionResult {
 	kind: DecisionKind;
@@ -66,7 +75,11 @@ export interface BorderShiftState {
 	feedbackLeftMs: number;
 	/** The last reputation point is gone: the night ends when the verdict has been shown */
 	doomed: boolean;
+	/** Why the night ended, once it has */
+	outcome: BorderShiftOutcome | null;
 	reputation: number;
+	/** The radio's campaign: 0 calm, 100 Europe no longer believes in itself */
+	destabilisation: number;
 	score: number;
 	streak: number;
 	bestStreak: number;
@@ -112,7 +125,9 @@ export function createGame(random: Random): BorderShiftState {
 		revealed: { documents: null, camera: null },
 		feedbackLeftMs: 0,
 		doomed: false,
+		outcome: null,
 		reputation: STARTING_REPUTATION,
+		destabilisation: 0,
 		score: 0,
 		streak: 0,
 		bestStreak: 0,
@@ -129,6 +144,11 @@ export function createGame(random: Random): BorderShiftState {
 export function patienceShare(state: BorderShiftState): number {
 	if (state.patienceMs <= 0) return 0;
 	return Math.max(0, Math.min(1, state.patienceLeftMs / state.patienceMs));
+}
+
+/** How far the radio's campaign has got, 0 to 1 */
+export function destabilisationShare(state: BorderShiftState): number {
+	return Math.max(0, Math.min(1, state.destabilisation / DESTABILISATION_MAX));
 }
 
 /** The points a correct call is worth right now */
@@ -153,6 +173,8 @@ function resolve(
 		state.correct += 1;
 		state.streak += 1;
 		state.bestStreak = Math.max(state.bestStreak, state.streak);
+		// A right call is a small counter-story: trust in the post creeps back up
+		state.destabilisation = Math.max(0, state.destabilisation - DESTAB_RELIEF);
 		if (truth === 'family') state.stats.admitted += 1;
 		else state.stats.caught += 1;
 		state.last = { kind: 'correct', truth, decision, reason, points };
@@ -167,7 +189,11 @@ function resolve(
 		state.wrong += 1;
 		state.streak = 0;
 		state.reputation = Math.max(0, state.reputation - 1);
-		state.doomed = state.reputation === 0;
+		// The radio's win: a psy-op through is the loud version, a family turned away the quiet one
+		const damage = truth === 'family' ? DESTAB_TURNED_AWAY : DESTAB_SLIPPED;
+		state.destabilisation = Math.min(DESTABILISATION_MAX, state.destabilisation + damage);
+		state.doomed = state.reputation === 0 || state.destabilisation >= DESTABILISATION_MAX;
+		state.outcome = state.doomed ? (state.reputation === 0 ? 'reputation' : 'destabilised') : null;
 		if (truth === 'family') state.stats.turnedAway += 1;
 		else state.stats.slipped += 1;
 		state.last = { kind: 'wrong', truth, decision, reason, points: 0 };

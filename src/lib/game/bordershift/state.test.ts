@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { createRandom } from '../random.js';
 import {
+	DESTABILISATION_MAX,
+	DESTAB_RELIEF,
+	DESTAB_SLIPPED,
+	DESTAB_TURNED_AWAY,
 	GAME_OVER_FEEDBACK_MS,
 	HITS_PER_WAVE,
 	INSPECT_MS,
@@ -9,7 +13,15 @@ import {
 	VEHICLE_COUNT
 } from './config.js';
 import { clearChance, dealConvoy, patienceFor, psyopsShare } from './convoys.js';
-import { createGame, decide, inspect, pointsFor, step, type BorderShiftState } from './state.js';
+import {
+	createGame,
+	decide,
+	destabilisationShare,
+	inspect,
+	pointsFor,
+	step,
+	type BorderShiftState
+} from './state.js';
 import { missingMessages } from '#lib/testing/messages.js';
 
 /** A convoy that is always a family, with both clues fogged up */
@@ -174,6 +186,60 @@ describe('Border Shift state', () => {
 		expect(pointsFor(quick)).toBeGreaterThan(pointsFor(slow));
 		quick.streak = 3;
 		expect(pointsFor(quick)).toBeGreaterThan(pointsFor(createGame(family)));
+	});
+});
+
+describe('the destabilisation campaign', () => {
+	it('rises with a wrong call, harder for a psy-op than for a family turned away', () => {
+		const slipped = createGame(psyched);
+		decide(slipped, 'pass');
+		const turnedAway = createGame(family);
+		decide(turnedAway, 'refuse');
+		expect(slipped.destabilisation).toBe(DESTAB_SLIPPED);
+		expect(turnedAway.destabilisation).toBe(DESTAB_TURNED_AWAY);
+		expect(slipped.destabilisation).toBeGreaterThan(turnedAway.destabilisation);
+	});
+
+	it('buys a little calm back with every right call, but never below zero', () => {
+		const game = createGame(family);
+		game.destabilisation = 10;
+		passAndAdvance(game, family);
+		expect(game.destabilisation).toBe(10 - DESTAB_RELIEF);
+		game.destabilisation = 2;
+		passAndAdvance(game, family);
+		expect(game.destabilisation).toBe(0);
+	});
+
+	it('ends the night early once Europe stops believing in itself', () => {
+		const game = createGame(psyched);
+		game.destabilisation = DESTABILISATION_MAX - DESTAB_SLIPPED + 1;
+		game.reputation = 3;
+		decide(game, 'pass');
+		expect(game.destabilisation).toBe(DESTABILISATION_MAX);
+		expect(game.doomed).toBe(true);
+		expect(game.outcome).toBe('destabilised');
+		expect(game.reputation).toBe(2);
+		const events = advance(game, psyched, GAME_OVER_FEEDBACK_MS + 10);
+		expect(events).toEqual([{ type: 'game-over' }]);
+		expect(game.phase).toBe('over');
+	});
+
+	it('keeps the reputation ending when the post runs out of credit first', () => {
+		const game = createGame(psyched);
+		game.destabilisation = 0;
+		for (let i = 0; i < STARTING_REPUTATION; i++) {
+			decide(game, 'pass');
+			if (game.phase === 'verdict') advance(game, psyched, 2000);
+		}
+		expect(game.reputation).toBe(0);
+		expect(game.outcome).toBe('reputation');
+	});
+
+	it('reports the share for the meter between 0 and 1', () => {
+		const game = createGame(family);
+		expect(destabilisationShare(game)).toBe(0);
+		game.destabilisation = DESTABILISATION_MAX;
+		expect(destabilisationShare(game)).toBe(1);
 	});
 });
 

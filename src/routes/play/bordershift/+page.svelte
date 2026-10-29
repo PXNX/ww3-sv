@@ -1,9 +1,10 @@
 <!--
 	Border Shift (improvements 5.1): one night on Poland's eastern border. Convoys wait at the
 	barrier, the radio calls the queue an invasion, and not all of them are what they claim. The
-	player checks the papers or takes a photo, then waves the convoy through or turns it back. A
-	family turned away and a psy-op waved through both cost reputation; the result sheet is the
-	morning press conference.
+	player checks the papers or takes a photo, then waves the convoy through or turns it back. The
+	radio is not after a battle, it wants Europe to doubt itself: a psy-op waved through is its big
+	win, a family turned away feeds the same story, and both empty the reputation and push the
+	destabilisation meter up. The result sheet is the morning press conference.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -68,18 +69,38 @@
 
 	<section class="mx-auto flex w-full max-w-xl flex-1 flex-col items-center gap-2">
 		<div
-			class="flex w-full items-center justify-between gap-2 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
+			class="flex w-full flex-col gap-2 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
 		>
-			<LivesBar lives={game.reputation} max={STARTING_REPUTATION} class="shrink-0 text-xl" />
-			<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
-				{m.bordershift_hud_convoy({ count: game.convoyNumber })}
-			</p>
-			<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
-				{m.bordershift_hud_wave({ wave: game.wave })}
-			</p>
-			<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
-				{m.bordershift_hud_streak({ count: game.streak })}
-			</p>
+			<div class="flex w-full items-center justify-between gap-2">
+				<LivesBar lives={game.reputation} max={STARTING_REPUTATION} class="shrink-0 text-xl" />
+				<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
+					{m.bordershift_hud_convoy({ count: game.convoyNumber })}
+				</p>
+				<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
+					{m.bordershift_hud_wave({ wave: game.wave })}
+				</p>
+				<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
+					{m.bordershift_hud_streak({ count: game.streak })}
+				</p>
+			</div>
+			<div
+				class="flex items-center gap-2"
+				role="progressbar"
+				aria-label={m.bordershift_aria_destabilisation()}
+				aria-valuemin={0}
+				aria-valuemax={100}
+				aria-valuenow={Math.round(game.destabilisation * 100)}
+			>
+				<p dir="auto" class="shrink-0 font-display text-xs font-bold tabular-nums sm:text-sm">
+					{m.bordershift_hud_destabilisation({ value: Math.round(game.destabilisation * 100) })}
+				</p>
+				<div class="h-2.5 w-full overflow-hidden rounded-full border-2 border-ink bg-sand">
+					<div
+						class="h-full bg-tie-red transition-[width] duration-300"
+						style:width="{game.destabilisation * 100}%"
+					></div>
+				</div>
+			</div>
 		</div>
 
 		<BorderShiftField {game} />
@@ -92,6 +113,7 @@
 		onclose={() => (showTutorial = false)}
 	>
 		<p>{m.bordershift_tutorial_goal()}</p>
+		<p>{m.bordershift_tutorial_destabilisation()}</p>
 		<p>{m.bordershift_tutorial_tools()}</p>
 		<p>{m.bordershift_tutorial_patience()}</p>
 		<p>{m.bordershift_tutorial_waves()}</p>
@@ -104,7 +126,9 @@
 		mode="bordershift"
 		{modeName}
 		isNewBest={game.isNewBest}
-		title={m.bordershift_gameover_title()}
+		title={game.outcome === 'destabilised'
+			? m.bordershift_gameover_destabilised()
+			: m.bordershift_gameover_title()}
 		drawBoard={game.drawBoard}
 		onRetry={() => game.start()}
 	>
