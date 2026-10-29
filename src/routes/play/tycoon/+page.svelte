@@ -43,6 +43,8 @@
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
 	import { TycoonGame, type BuyAmount } from '#lib/stores/tycoonGame.svelte.js';
+	import { GIFT_CODES } from '#lib/game/giftcode/config.js';
+	let giftInput = $state('');
 	import IconCheck from '~icons/lucide/check';
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconTrophy from '~icons/lucide/trophy';
@@ -92,6 +94,17 @@
 	function openHelp() {
 		game.pause();
 		showTutorial = true;
+	}
+
+	function applyGift() {
+		const c = GIFT_CODES.find((g) => g.code === giftInput.toUpperCase());
+		if (c && c.used < c.maxUses && (!c.expiresAt || c.expiresAt > Date.now())) {
+			c.used++;
+			if (c.reward === 'revive') game.tap();
+			if (c.reward === 'barrels') game.state.barrels += c.value;
+			giftInput = '';
+			game.save();
+		}
 	}
 
 	function closeHelp() {
