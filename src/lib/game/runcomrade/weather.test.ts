@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createRandom } from '#lib/game/random.js';
-import { LANE_COST_MS, REACTION_MS, VIEW_AHEAD } from './config';
+import { BASE_SPEED, LANE_COST_MS, MAX_SPEED, REACTION_MS, VIEW_AHEAD } from './config';
 import { createField, createGenerator, extendField, speedAt } from './patterns';
 import {
 	CLEAR_START,
@@ -92,6 +92,28 @@ describe('visibility in fog', () => {
 		expect(visibility({ dawn: 0, fog: 0 }, 7)).toBe(VIEW_AHEAD);
 		expect(visibility({ dawn: 0, fog: 1 }, 7)).toBeLessThan(VIEW_AHEAD);
 		expect(visibility({ dawn: 0, fog: 1 }, 7)).toBeGreaterThanOrEqual(FOG_VIEW);
+	});
+
+	it('is a real threat: thick fog only shows things quite late', () => {
+		const clear = visibility({ dawn: 0, fog: 0 }, BASE_SPEED);
+		const thick = visibility({ dawn: 0, fog: 1 }, BASE_SPEED);
+		// At a jog the thick fog is barely half a clear day's view...
+		expect(thick).toBe(FOG_VIEW);
+		expect(thick).toBeLessThanOrEqual(clear * 0.5);
+		// ...so an object that is obvious in the open is still swallowed by the grey
+		expect(opacityAt(22, clear)).toBe(1);
+		expect(opacityAt(22, thick)).toBe(0);
+		// and half-thick fog sits between the two extremes
+		const half = visibility({ dawn: 0, fog: 0.5 }, BASE_SPEED);
+		expect(half).toBeGreaterThan(thick);
+		expect(half).toBeLessThan(clear);
+	});
+
+	it('still pulls the view in at full speed, down to the reaction floor', () => {
+		const view = visibility({ dawn: 0, fog: 1 }, MAX_SPEED);
+		expect(view).toBeCloseTo(MAX_SPEED * MIN_VISIBILITY_SECONDS, 10);
+		// noticeably later than the generous view the game used to offer at this speed
+		expect(view).toBeLessThan(MAX_SPEED * 1.6);
 	});
 
 	it('never drops below what a runner needs to react, at any speed or distance', () => {

@@ -3,10 +3,11 @@
  * seeded plan cuts the course into stretches and blends smoothly from one to the next over a short
  * distance, so the same seed gives the same weather at the same distance.
  *
- * Fog shortens how far the player can see, but never below what a runner needs to react to an
- * obstacle (MIN_VISIBILITY_SECONDS of running at the current speed), so every obstacle is still on
- * screen early enough to avoid. Heavy fog also hides a drone that is still far away; the buzz
- * (drone.ts) always stays.
+ * Fog is meant to be a real threat, not decoration: it pulls the view in hard, so obstacles and
+ * pickups only come out of the grey quite late. It never drops below what a runner needs to react
+ * to an obstacle (MIN_VISIBILITY_SECONDS of running at the current speed), so every obstacle is
+ * still on screen early enough to avoid — but with far less of a look ahead than on a clear day.
+ * Heavy fog also hides a drone that is still far away; the buzz (drone.ts) always stays.
  */
 import { createRandom, pickWeighted, type Random } from '#lib/game/random.js';
 import { VIEW_AHEAD } from './config';
@@ -44,10 +45,10 @@ export const STRETCH_MIN = 170;
 export const STRETCH_SPAN = 130;
 /** Distance over which one stretch's weather melts into the next */
 export const TRANSITION = 55;
-/** Fog never takes the view below this many seconds of running */
-export const MIN_VISIBILITY_SECONDS = 1.6;
-/** The thickest fog's view, in units, at a standstill */
-export const FOG_VIEW = 26;
+/** Fog never takes the view below this many seconds of running; tight enough that things appear late */
+export const MIN_VISIBILITY_SECONDS = 1.3;
+/** The thickest fog's view, in units, at a standstill — barely half of a clear day */
+export const FOG_VIEW = 17;
 /** Heavy fog hides a drone further away than this many units */
 export const FOG_HIDES_ABOVE = 0.6;
 export const FOG_HIDE_GAP = 3;

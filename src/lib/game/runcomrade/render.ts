@@ -327,23 +327,24 @@ function drawItem(ctx: CanvasRenderingContext2D, state: RunState, item: Item, ex
 }
 
 /**
- * Fog haze over the far field, the dark tint of heavy fog and the warm light of dawn. Fog only
- * shades the distance and darkens a little: things near the runner stay readable.
+ * Fog haze over the far field, the dark tint of heavy fog and the warm light of dawn. Fog shades the
+ * distance hard so that anything far enough away simply dissolves into the grey; things close to the
+ * runner stay readable.
  */
 function drawAtmosphere(ctx: CanvasRenderingContext2D, state: RunState, extras: SceneExtras) {
 	const { dawn, fog } = state.weather;
 	if (fog > 0.01) {
 		// A slow drift in the density, skipped for reduced motion
 		const drift = extras.reducedMotion ? 1 : 1 + 0.06 * Math.sin(state.timeMs / 1100);
-		const reach = groundY(visibility(state.weather, speedAt(state.distance)) * 0.5);
+		const reach = groundY(visibility(state.weather, speedAt(state.distance)) * 0.55);
 		const haze = ctx.createLinearGradient(0, 0, 0, reach);
-		const alpha = Math.min(1, fog * 0.9 * drift);
-		haze.addColorStop(0, `rgba(190, 196, 204, ${alpha * 0.55})`);
-		haze.addColorStop(HORIZON_Y / reach, `rgba(190, 196, 204, ${alpha})`);
-		haze.addColorStop(1, 'rgba(190, 196, 204, 0)');
+		const alpha = Math.min(1, fog * 0.98 * drift);
+		haze.addColorStop(0, `rgba(186, 193, 202, ${alpha * 0.7})`);
+		haze.addColorStop(HORIZON_Y / reach, `rgba(186, 193, 202, ${alpha})`);
+		haze.addColorStop(1, 'rgba(186, 193, 202, 0)');
 		ctx.fillStyle = haze;
 		ctx.fillRect(0, 0, WORLD_WIDTH, reach);
-		ctx.fillStyle = `rgba(10, 16, 34, ${0.4 * fog})`;
+		ctx.fillStyle = `rgba(10, 16, 34, ${0.5 * fog})`;
 		ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 	}
 	if (dawn > 0.01) {
