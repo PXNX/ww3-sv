@@ -5,6 +5,9 @@
  */
 import { estimateSecondsLeft, preloadClips } from './clips.js';
 
+/** The progress line is refreshed at most this often */
+const PROGRESS_EVERY_MS = 150;
+
 type PreloadState = 'idle' | 'loading' | 'ready';
 
 class ClipPreload {
@@ -27,7 +30,12 @@ class ClipPreload {
 		this.#started = true;
 		this.state = 'loading';
 		this.#startedAt = performance.now();
+		let shownAt = 0;
 		void preloadClips(({ loaded, total }) => {
+			// Every received chunk reports; the line only needs a few updates a second
+			const now = performance.now();
+			if (now - shownAt < PROGRESS_EVERY_MS && loaded < total) return;
+			shownAt = now;
 			this.loaded = loaded;
 			this.total = total;
 			this.eta = estimateSecondsLeft(loaded, total, (performance.now() - this.#startedAt) / 1000);

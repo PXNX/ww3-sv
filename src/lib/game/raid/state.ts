@@ -1411,7 +1411,8 @@ function tickCooldowns(state: RaidState, dtMs: number) {
 	if (!pouring) player.heat = Math.max(0, player.heat - FLAME_COOL_PER_SECOND * (dtMs / 1000));
 	// The minigun cools while not firing
 	const holdingMinigun = heldWeapon(state).kind === 'minigun';
-	if (holdingMinigun && !player.firing) player.heat = Math.max(0, player.heat - MINIGUN_COOL_PER_SECOND * (dtMs / 1000));
+	if (holdingMinigun && !player.firing)
+		player.heat = Math.max(0, player.heat - MINIGUN_COOL_PER_SECOND * (dtMs / 1000));
 }
 
 /** The nearest enemy within reach, optionally only one the player can see (drones always are) */
@@ -1487,13 +1488,17 @@ function firePlayer(state: RaidState, random: Random, events: RaidEvent[]) {
 		const crit = focused || random() < stats.critChance;
 		// Only a chance below 1 (a status crystal) rolls, so plain weapons keep their random stream
 		const burns = stats.burnMs > 0 && (stats.burnChance >= 1 || random() < stats.burnChance);
-		const massiveBall = weapon.kind === 'energy' && (player.energyShots % 8 === 0);
+		const massiveBall = weapon.kind === 'energy' && player.energyShots % 8 === 0;
 		state.bullets.push({
 			x: player.x + Math.cos(angle) * (PLAYER_RADIUS + 6),
 			y: player.y + Math.sin(angle) * (PLAYER_RADIUS + 6),
 			vx: Math.cos(angle) * (massiveBall ? spec.projectileSpeed * 1.3 : spec.projectileSpeed),
 			vy: Math.sin(angle) * (massiveBall ? spec.projectileSpeed * 1.3 : spec.projectileSpeed),
-			damage: massiveBall ? stats.damage * 2.5 : (crit ? stats.damage * stats.critMultiplier : stats.damage),
+			damage: massiveBall
+				? stats.damage * 2.5
+				: crit
+					? stats.damage * stats.critMultiplier
+					: stats.damage,
 			crit,
 			rangeLeft: massiveBall ? spec.range * 2.2 : spec.range * 1.2,
 			pierceLeft: massiveBall ? 99 : spec.pierce,
@@ -1757,7 +1762,10 @@ function moveBullets(state: RaidState, dt: number, events: RaidEvent[]) {
 				for (const e of state.enemies) {
 					if (e.hp <= 0 || bullet.hit.includes(e.id)) continue;
 					const dist = Math.hypot(e.x - bullet.x, e.y - bullet.y);
-					if (dist < bestDist) { bestDist = dist; best = e; }
+					if (dist < bestDist) {
+						bestDist = dist;
+						best = e;
+					}
 				}
 				if (best) {
 					const speed = Math.hypot(bullet.vx, bullet.vy) || 1;
