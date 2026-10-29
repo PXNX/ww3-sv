@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_LOOK, isAvatarLook, LOOK_PARTS, LOOK_PRESETS, randomLook, type LookPart } from './look';
+import {
+	DEFAULT_LOOK,
+	isAvatarLook,
+	LOOK_PARTS,
+	LOOK_PRESETS,
+	randomLook,
+	type LookPart
+} from './look';
 import {
 	LOOK_UNLOCKS,
 	firstLockedPart,
