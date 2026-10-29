@@ -1,47 +1,42 @@
 /*
- * How the app looks: light, dark, or following the device. The choice is remembered on this device.
+ * How the app looks: light or dark. There are only these two choices; the first visit starts on
+ * whatever the device itself is set to, and a pick in the settings is remembered on this device.
  * The boot script in app.html applies it before the first paint, and the layout keeps
- * <html data-theme> in step while the app runs, including a device switch while on "auto".
+ * <html data-theme> in step while the app runs.
  */
 import { localStore } from '#lib/services/storage.js';
 
-export type ThemeChoice = 'auto' | 'light' | 'dark';
+export type ThemeChoice = 'light' | 'dark';
 
-export const THEME_CHOICES: readonly ThemeChoice[] = ['auto', 'light', 'dark'];
+export const THEME_CHOICES: readonly ThemeChoice[] = ['light', 'dark'];
 
 const SETTINGS_KEY = 'appearance:theme';
 
 const isChoice = (value: unknown): value is ThemeChoice =>
 	THEME_CHOICES.includes(value as ThemeChoice);
 
-class Appearance {
-	choice = $state<ThemeChoice>('auto');
-	/** The device's own preference, followed while the choice is "auto" */
-	deviceDark = $state(false);
+/** What the device itself is set to; light when that cannot be asked */
+function deviceChoice(): ThemeChoice {
+	if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return 'light';
+	return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
 
-	#media: MediaQueryList | null = null;
+class Appearance {
+	choice = $state<ThemeChoice>('light');
 
 	constructor() {
-		this.choice = localStore().read(SETTINGS_KEY, 'auto', isChoice);
-		if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
-		this.#media = window.matchMedia('(prefers-color-scheme: dark)');
-		this.deviceDark = this.#media.matches;
-		this.#media.addEventListener('change', this.#onDeviceChange);
+		this.choice = localStore().read(SETTINGS_KEY, deviceChoice(), isChoice);
 	}
 
 	/** True while the dark palette should be used */
 	get dark(): boolean {
-		return this.choice === 'dark' || (this.choice === 'auto' && this.deviceDark);
+		return this.choice === 'dark';
 	}
 
 	set(choice: ThemeChoice) {
 		this.choice = choice;
 		localStore().write(SETTINGS_KEY, choice);
 	}
-
-	#onDeviceChange = (event: MediaQueryListEvent) => {
-		this.deviceDark = event.matches;
-	};
 }
 
 let shared: Appearance | undefined;

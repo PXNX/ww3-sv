@@ -30,13 +30,11 @@
 	}
 
 	const THEME_LABELS: Record<ThemeChoice, () => string> = {
-		auto: m.settings_theme_auto,
 		light: m.settings_theme_light,
 		dark: m.settings_theme_dark
 	};
 
 	const THEME_ICONS = {
-		auto: IconSmartphone,
 		light: IconSun,
 		dark: IconMoon
 	} as const;
@@ -72,7 +70,7 @@
 		<h2 id="settings-appearance" class="font-display text-xl font-bold">
 			{m.settings_appearance()}
 		</h2>
-		<div class="grid grid-cols-3 gap-2" role="group" aria-labelledby="settings-appearance">
+		<div class="grid grid-cols-2 gap-2" role="group" aria-labelledby="settings-appearance">
 			{#each THEME_CHOICES as choice (choice)}
 				{@const Icon = THEME_ICONS[choice]}
 				<button

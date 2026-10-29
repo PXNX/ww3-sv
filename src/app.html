@@ -9,10 +9,11 @@
 		<meta name="theme-color" content="#e8e1bc" />
 		<script>
 			// Applies the remembered theme before the first paint, so the page never flashes the
-			// wrong one. Kept in step with the appearance store while the app runs.
+			// wrong one. Without a remembered pick the device's own light or dark setting is the
+			// default. Kept in step with the appearance store while the app runs.
 			try {
 				var stored = localStorage.getItem('ww3:appearance:theme');
-				var choice = stored ? JSON.parse(stored) : 'auto';
+				var choice = stored ? JSON.parse(stored) : null;
 				var dark =
 					choice === 'dark' ||
 					(choice !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);

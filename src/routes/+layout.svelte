@@ -24,8 +24,8 @@
 	const careerState = career();
 	const look = appearance();
 
-	// Keeps <html data-theme> and the browser chrome colour in step with the choice, including a
-	// device switch while the theme follows the device. The boot script in app.html paints first.
+	// Keeps <html data-theme> and the browser chrome colour in step with the chosen light or dark
+	// theme. The boot script in app.html paints the first frame.
 	$effect(() => {
 		const dark = look.dark;
 		document.documentElement.dataset.theme = dark ? 'dark' : 'light';
