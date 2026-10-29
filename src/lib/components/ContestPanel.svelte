@@ -18,6 +18,8 @@
 	import IconMedal from '~icons/lucide/medal';
 	import IconPlay from '~icons/lucide/play';
 	import IconTrophy from '~icons/lucide/trophy';
+	import GroupLeaderboard from './GroupLeaderboard.svelte';
+	import { telegram } from '#lib/stores/telegram.svelte.js';
 
 	// resolve() has one overload per route, and TypeScript gives up on matching a union of more
 	// than 25 routes against them. The mode registry already type-checks every href.
@@ -104,6 +106,11 @@
 				{/if}
 			</p>
 		</div>
+
+		{@const account = telegram()}
+		{#if account.inTelegram && account.groupBoard && account.groupBoardStatus === 'ready' && contest.mode === (account.groupGame?.mode ?? '')}
+			<GroupLeaderboard rows={account.groupBoard} status={account.groupBoardStatus} />
+		{/if}
 
 		{#if gameHref}
 			<a href={gameHref} class="btn-chunky shrink-0 bg-khaki px-2.5 py-1 text-xs whitespace-nowrap">

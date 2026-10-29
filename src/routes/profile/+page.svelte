@@ -85,7 +85,9 @@
 
 	<CareerBar />
 
-	<FriendsPanel />
+	{#if session.inTelegram}
+		<FriendsPanel />
+	{/if}
 
 	<ReferralCard />
 
