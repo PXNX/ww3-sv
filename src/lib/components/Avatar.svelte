@@ -256,7 +256,26 @@
 	{/if}
 
 	<!-- Hat -->
-	{#if current.hat === 'beret'}
+	{#if current.hat === 'ogre-ears'}
+		<!-- Two trumpet ears in the skin colour: horns without the headgear -->
+		<path
+			d="M{left + 4} 68 C{left - 8} 64 {left - 18} 54 {left - 24} 40 Q{left - 19} 33 {left -
+				11} 38 C{left - 4} 48 {left + 1} 56 {left + 4} 58 Z"
+			fill={current.skin}
+		/>
+		<path
+			d="M{right - 4} 68 C{right + 8} 64 {right + 18} 54 {right + 24} 40 Q{right + 19} 33 {right +
+				11} 38 C{right + 4} 48 {right - 1} 56 {right - 4} 58 Z"
+			fill={current.skin}
+		/>
+		<path
+			d="M{left - 19} 41 Q{left - 16} 37 {left - 13} 39 M{right + 19} 41 Q{right + 16} 37 {right +
+				13} 39"
+			fill="none"
+			stroke-width="2"
+			opacity="0.35"
+		/>
+	{:else if current.hat === 'beret'}
 		<path
 			d="M{left - 6} {head.top + 12} C{left - 8} {head.top - 10} {right + 2} {head.top -
 				14} {right + 8} {head.top + 6} C{right} {head.top + 14} {left + 4} {head.top + 18} {left -

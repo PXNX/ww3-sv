@@ -11,14 +11,22 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { career } from '#lib/game/career/store.svelte.js';
-	import { LOOK_PARTS, withPart, type LookPart } from '#lib/game/avatar/look.js';
+	import {
+		LOOK_PARTS,
+		LOOK_PRESETS,
+		withPart,
+		type AvatarLook,
+		type LookPart
+	} from '#lib/game/avatar/look.js';
 	import { avatar } from '#lib/game/avatar/store.svelte.js';
 	import {
+		firstLockedPart,
 		isUnlocked,
 		LOOK_UNLOCKS,
 		unlockFor,
 		unlockProgress,
-		unlockedCount
+		unlockedCount,
+		type LookUnlock
 	} from '#lib/game/avatar/unlocks.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
@@ -91,7 +99,10 @@
 
 	function showLocked(value: string) {
 		const unlock = unlockFor(part, value);
-		if (!unlock) return;
+		if (unlock) showUnlock(unlock);
+	}
+
+	function showUnlock(unlock: LookUnlock) {
 		lockNote = m.avatar_locked_hint({ requirement: requirementText(unlock.requirement) });
 		clearTimeout(lockTimer);
 		lockTimer = setTimeout(() => (lockNote = ''), 2800);
@@ -107,6 +118,24 @@
 		avatarState.set(part, value);
 		lockNote = '';
 		changed();
+	}
+
+	/** True when the whole look on screen is this preset */
+	function wearing(look: AvatarLook): boolean {
+		return (Object.keys(LOOK_PARTS) as LookPart[]).every(
+			(entry) => avatarState.look[entry] === look[entry]
+		);
+	}
+
+	function wearPreset(look: AvatarLook) {
+		const blocked = firstLockedPart(look, progress);
+		if (blocked) {
+			showUnlock(blocked.unlock);
+			return;
+		}
+		avatarState.setLook(look);
+		lockNote = '';
+		changed('sparkle');
 	}
 
 	function surprise() {
@@ -190,6 +219,43 @@
 				</p>
 				<div class="h-1.5 w-14 shrink-0 overflow-hidden rounded-full border-2 border-ink bg-sand">
 					<div class="h-full bg-mustard" style:width="{(collected / TOTAL_UNLOCKS) * 100}%"></div>
+				</div>
+			</div>
+		{/if}
+
+		{#if showUnlocks}
+			<div class="flex flex-col gap-1">
+				<p class="text-xs font-bold opacity-70">{m.avatar_presets()}</p>
+				<div class="flex flex-wrap gap-2">
+					{#each LOOK_PRESETS as preset (preset.id)}
+						{@const blocked = firstLockedPart(preset.look, progress)}
+						<button
+							type="button"
+							class="flex items-center gap-2 rounded-[10px_5px_9px_6px] border-2 border-ink px-1.5 py-1 text-xs font-bold transition-transform active:scale-95 {wearing(
+								preset.look
+							)
+								? '-rotate-1 bg-explosion-yellow'
+								: 'bg-paper'} {blocked ? 'opacity-45 grayscale' : ''}"
+							aria-pressed={wearing(preset.look)}
+							aria-label={blocked
+								? m.avatar_locked_option({
+										name: preset.name,
+										requirement: requirementText(blocked.unlock.requirement)
+									})
+								: preset.name}
+							onclick={() => wearPreset(preset.look)}
+						>
+							<span class="relative flex">
+								<Avatar look={preset.look} size={34} />
+								{#if blocked}
+									<span class="absolute inset-0 grid place-items-center">
+										<IconLock class="size-4 text-ink" aria-hidden="true" />
+									</span>
+								{/if}
+							</span>
+							{preset.name}
+						</button>
+					{/each}
 				</div>
 			</div>
 		{/if}

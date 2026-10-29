@@ -6,7 +6,7 @@
  */
 import type { CareerMode } from '#lib/game/career/config.js';
 import type { CareerProfile } from '#lib/game/career/profile.js';
-import { LOOK_PARTS, type LookPart } from './look.js';
+import { LOOK_PARTS, type AvatarLook, type LookPart } from './look.js';
 
 export type UnlockRequirement =
 	| { kind: 'level'; level: number }
@@ -120,6 +120,29 @@ export function requirementMet(requirement: UnlockRequirement, progress: UnlockP
 export function isUnlocked(part: LookPart, value: string, progress: UnlockProgress): boolean {
 	const unlock = unlockFor(part, value);
 	return unlock === undefined || requirementMet(unlock.requirement, progress);
+}
+
+export interface BlockedLookPart {
+	part: LookPart;
+	value: string;
+	unlock: LookUnlock;
+}
+
+/**
+ * The first part of a whole look that is still locked, so a ready-made look can say what it wants
+ * instead of silently changing only some of its parts. Null when every part is open.
+ */
+export function firstLockedPart(
+	look: AvatarLook,
+	progress: UnlockProgress
+): BlockedLookPart | null {
+	for (const part of Object.keys(LOOK_PARTS) as LookPart[]) {
+		const value = look[part];
+		if (isUnlocked(part, value, progress)) continue;
+		const unlock = unlockFor(part, value);
+		if (unlock) return { part, value, unlock };
+	}
+	return null;
 }
 
 /** How many of the extra looks have been collected */

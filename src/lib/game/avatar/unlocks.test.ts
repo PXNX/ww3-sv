@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_LOOK, isAvatarLook, LOOK_PARTS, randomLook, type LookPart } from './look';
+import { DEFAULT_LOOK, isAvatarLook, LOOK_PARTS, LOOK_PRESETS, randomLook, type LookPart } from './look';
 import {
 	LOOK_UNLOCKS,
+	firstLockedPart,
 	isUnlocked,
 	nextUnlock,
 	requirementMet,
@@ -147,6 +148,15 @@ describe('the extra looks', () => {
 		const nothingAllowed = () => false;
 		expect(isAvatarLook(randomLook(9, nothingAllowed))).toBe(true);
 		expect(randomLook(9, nothingAllowed)).toEqual(DEFAULT_LOOK);
+	});
+
+	it('names the first locked part of a ready-made look', () => {
+		const hitman = LOOK_PRESETS.find((preset) => preset.id === 'agent-47')!;
+		const ogre = LOOK_PRESETS.find((preset) => preset.id === 'ogre')!;
+		expect(firstLockedPart(hitman.look, progress())?.unlock.id).toBe('suit');
+		expect(firstLockedPart(hitman.look, progress({ level: 10 }))).toBeNull();
+		expect(firstLockedPart(ogre.look, progress({ level: 10 }))?.unlock.id).toBe('alien-skin');
+		expect(firstLockedPart(ogre.look, progress({ level: 30 }))).toBeNull();
 	});
 });
 

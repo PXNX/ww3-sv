@@ -38,6 +38,11 @@ class AvatarStore {
 		this.#commit(withPart(this.look, part, value));
 	}
 
+	/** Puts on a whole ready-made look at once */
+	setLook(look: AvatarLook) {
+		this.#commit(look);
+	}
+
 	cycle(part: LookPart, step = 1) {
 		this.#commit(cyclePart(this.look, part, step));
 	}

@@ -3,6 +3,7 @@ import {
 	DEFAULT_LOOK,
 	HATS,
 	LOOK_PARTS,
+	LOOK_PRESETS,
 	SHIRT_TYPES,
 	SKIN_COLORS,
 	cyclePart,
@@ -32,6 +33,25 @@ describe('an avatar look', () => {
 		const bare = hats.filter((hat) => hat === 'none').length;
 		expect(bare).toBeGreaterThan(80);
 		expect(bare).toBeLessThan(200);
+	});
+
+	it('keeps the ogre ears and the green skin out of random looks', () => {
+		for (let seed = 1; seed <= 300; seed++) {
+			const look = randomLook(seed);
+			expect(look.hat).not.toBe('ogre-ears');
+			expect(look.skin).not.toBe(SKIN_COLORS.at(-1));
+		}
+	});
+
+	it('builds the ready-made looks from the same parts as any other agent', () => {
+		expect(LOOK_PRESETS.map((preset) => preset.id)).toEqual(['agent-47', 'ogre']);
+		for (const preset of LOOK_PRESETS) {
+			expect(isAvatarLook(preset.look)).toBe(true);
+			expect(preset.name.length).toBeGreaterThan(0);
+		}
+		// Both are recognisable from a single part that no other preset uses
+		expect(LOOK_PRESETS[0].look.shirt).toBe('suit');
+		expect(LOOK_PRESETS[1].look.hat).toBe('ogre-ears');
 	});
 
 	it('sets a part only to one of its own choices', () => {
