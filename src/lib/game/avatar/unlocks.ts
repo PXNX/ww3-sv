@@ -11,7 +11,8 @@ import { LOOK_PARTS, type AvatarLook, type LookPart } from './look.js';
 export type UnlockRequirement =
 	| { kind: 'level'; level: number }
 	| { kind: 'streak'; days: number }
-	| { kind: 'mode'; mode: CareerMode };
+	| { kind: 'mode'; mode: CareerMode }
+	| { kind: 'fakeNews'; coins: number };
 
 export interface LookUnlock {
 	id: string;
@@ -81,6 +82,12 @@ export const LOOK_UNLOCKS: readonly LookUnlock[] = [
 		requirement: { kind: 'level', level: 20 }
 	},
 	{
+		id: 'lula-hat',
+		part: 'hat',
+		value: 'lula',
+		requirement: { kind: 'fakeNews', coins: 120 }
+	},
+	{
 		id: 'alien-skin',
 		part: 'skin',
 		value: '#9fd36a',
@@ -113,6 +120,8 @@ export function requirementMet(requirement: UnlockRequirement, progress: UnlockP
 			return progress.bestStreak >= requirement.days;
 		case 'mode':
 			return progress.modes[requirement.mode] !== undefined;
+		case 'fakeNews':
+			return (progress as unknown as { fakeNews?: number }).fakeNews ?? 0 >= requirement.coins;
 	}
 }
 
