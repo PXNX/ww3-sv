@@ -367,7 +367,7 @@ export const TOWER_HEAL_SHARE = 0.15;
 export const TOWER_LIFETIME_MS = 15000;
 
 /** Smoke screen (daggers): enemies further away than this lose sight of the player for a while */
-export const SMOKE_MS = 4000;
+export const SMOKE_MS = 8000;
 export const SMOKE_SIGHT = 110;
 
 /** Echo (boomerang): the projectile returns after a delay */
