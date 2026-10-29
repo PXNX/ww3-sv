@@ -58,6 +58,8 @@ export interface PetrobrasState {
 	prompt: Prompt;
 	board: number;
 	society: number;
+	/** Censorship meta: how much the feed suppresses dissent (0 to 100, lower is freer) */
+	censorship: number;
 	score: number;
 	elapsedMs: number;
 	promptMs: number;
@@ -158,6 +160,7 @@ export function createGame(random: Random): PetrobrasState {
 		prompt: { front: 'board', index: 0, correct: 'firm' },
 		board: START_TRACK,
 		society: START_TRACK,
+		censorship: 50,
 		score: START_TRACK,
 		elapsedMs: 0,
 		promptMs: promptMs(1),
