@@ -1,8 +1,9 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
-	import { DIFFICULTY_NAMES, type DifficultyId } from '#lib/game/minefield/difficulty.js';
+	import type { DifficultyId } from '#lib/game/minefield/difficulty.js';
 	import { MinefieldGame } from '#lib/stores/minefieldGame.svelte.js';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import MinefieldDifficultyPicker from '#lib/components/MinefieldDifficultyPicker.svelte';
@@ -19,7 +20,9 @@
 	}
 
 	let showedTutorial = $state(false);
-	onMount(() => { showedTutorial = firstPlay('minefield'); });
+	onMount(() => {
+		showedTutorial = firstPlay('minefield');
+	});
 </script>
 
 <GameShell title={m.mode_minefield_name()} back={false}>
@@ -31,9 +34,7 @@
 		<MinefieldDifficultyPicker selected={game.difficultyId} onpick={pick} />
 
 		<div class="flex justify-end">
-			<button type="button" class="btn-chunky px-4 py-1 text-lg" onclick={start}>
-				Start
-			</button>
+			<button type="button" class="btn-chunky px-4 py-1 text-lg" onclick={start}> Start </button>
 		</div>
 	</div>
 </GameShell>

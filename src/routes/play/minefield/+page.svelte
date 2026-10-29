@@ -5,12 +5,13 @@
 	import GameShell from '#lib/components/GameShell.svelte';
 	import MineGrid, { convoyDurationMs } from '#lib/components/MineGrid.svelte';
 	import MinefieldScoreBreakdown from '#lib/components/MinefieldScoreBreakdown.svelte';
+	import { DIFFICULTY_NAMES } from '#lib/components/MinefieldDifficultyPicker.svelte';
 	import MinefieldVictory from '#lib/components/MinefieldVictory.svelte';
 	import PauseOverlay from '#lib/components/PauseOverlay.svelte';
 	import SubmarineTool from '#lib/components/SubmarineTool.svelte';
 	import TankerQueue from '#lib/components/TankerQueue.svelte';
 	import { onAppHidden, prefersReducedMotion } from '#lib/game/loop.js';
-	import { TANKER_COUNT, DIFFICULTY_NAMES, type DifficultyId } from '#lib/game/minefield/difficulty.js';
+	import { TANKER_COUNT, type DifficultyId } from '#lib/game/minefield/difficulty.js';
 	import { drawMinefieldBoard } from '#lib/game/minefield/drawBoard.js';
 	import { formatTime } from '#lib/game/minefield/scoring.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -88,7 +89,6 @@
 		gameOverOpen = false;
 		game.newGame();
 	}
-
 </script>
 
 <GameShell
@@ -117,83 +117,83 @@
 	{/snippet}
 
 	<div class="flex shrink-0 flex-wrap items-center gap-2 font-display font-bold">
-			<span class="-rotate-1 rounded-md border-2 border-ink bg-khaki px-2 py-0.5">
-				{m.minefield_current_difficulty({ level: DIFFICULTY_NAMES[game.difficultyId]() })}
-			</span>
-			<span
-				class="flex items-center gap-1 rounded-md border-2 border-ink bg-paper px-2 py-0.5 tabular-nums"
-			>
-				<IconTimer class="size-4" aria-hidden="true" />
-				<span class="sr-only">{m.minefield_time_label()}:</span>
-				{formatTime(game.result ? game.result.seconds : game.elapsedMs / 1000)}
-			</span>
-			<span
-				class="flex rotate-1 items-center gap-1 rounded-md border-2 border-ink bg-paper px-2 py-0.5 tabular-nums"
-			>
-				<img src={spriteSrc('mine')} alt="" class="size-4" />
-				<span class="sr-only">{m.minefield_mines_left_label()}:</span>
-				{game.minesLeft}
-			</span>
-		</div>
+		<span class="-rotate-1 rounded-md border-2 border-ink bg-khaki px-2 py-0.5">
+			{m.minefield_current_difficulty({ level: DIFFICULTY_NAMES[game.difficultyId]() })}
+		</span>
+		<span
+			class="flex items-center gap-1 rounded-md border-2 border-ink bg-paper px-2 py-0.5 tabular-nums"
+		>
+			<IconTimer class="size-4" aria-hidden="true" />
+			<span class="sr-only">{m.minefield_time_label()}:</span>
+			{formatTime(game.result ? game.result.seconds : game.elapsedMs / 1000)}
+		</span>
+		<span
+			class="flex rotate-1 items-center gap-1 rounded-md border-2 border-ink bg-paper px-2 py-0.5 tabular-nums"
+		>
+			<img src={spriteSrc('mine')} alt="" class="size-4" />
+			<span class="sr-only">{m.minefield_mines_left_label()}:</span>
+			{game.minesLeft}
+		</span>
+	</div>
 
-		<div class="shrink-0">
-			<TankerQueue total={TANKER_COUNT} afloat={game.tankersLeft} />
-		</div>
+	<div class="shrink-0">
+		<TankerQueue total={TANKER_COUNT} afloat={game.tankersLeft} />
+	</div>
 
-		<!-- The strait takes all the height left over, as large as fits (1.75rem: the compass row) -->
-		<div class="flex min-h-[12rem] flex-1 items-center justify-center" style:container-type="size">
-			<div
-				class="flex w-full flex-col gap-1"
-				style:max-width="calc((100cqh - 1.75rem) * {game.board.columns / game.board.rows})"
-			>
-				<div data-playfield class="flex items-center justify-between px-1 text-sm font-bold">
-					<span class="flex items-center gap-1">
-						<IconArrowRight class="size-4" aria-hidden="true" />
-						{m.minefield_west_label()}
-					</span>
-					<span class="flex items-center gap-1">
-						{m.minefield_east_label()}
-						<IconArrowRight class="size-4" aria-hidden="true" />
-					</span>
-				</div>
-				<div data-playfield class="relative rounded-[10px_6px_12px_8px]">
-					<MineGrid
-						board={game.board}
-						phase={game.phase}
-						tool={game.tool}
-						channel={game.channel}
-						explosionId={game.event?.kind === 'explosion' ? game.event.id : null}
-						convoyTankers={game.tankersLeft}
-						onactivate={(index) => game.activate(index)}
-						onflag={(index) => game.flag(index)}
-					/>
-					{#if game.paused}
-						<PauseOverlay cover hint={m.minefield_paused_hint()} onResume={() => game.resume()} />
-					{/if}
-				</div>
+	<!-- The strait takes all the height left over, as large as fits (1.75rem: the compass row) -->
+	<div class="flex min-h-[12rem] flex-1 items-center justify-center" style:container-type="size">
+		<div
+			class="flex w-full flex-col gap-1"
+			style:max-width="calc((100cqh - 1.75rem) * {game.board.columns / game.board.rows})"
+		>
+			<div data-playfield class="flex items-center justify-between px-1 text-sm font-bold">
+				<span class="flex items-center gap-1">
+					<IconArrowRight class="size-4" aria-hidden="true" />
+					{m.minefield_west_label()}
+				</span>
+				<span class="flex items-center gap-1">
+					{m.minefield_east_label()}
+					<IconArrowRight class="size-4" aria-hidden="true" />
+				</span>
+			</div>
+			<div data-playfield class="relative rounded-[10px_6px_12px_8px]">
+				<MineGrid
+					board={game.board}
+					phase={game.phase}
+					tool={game.tool}
+					channel={game.channel}
+					explosionId={game.event?.kind === 'explosion' ? game.event.id : null}
+					convoyTankers={game.tankersLeft}
+					onactivate={(index) => game.activate(index)}
+					onflag={(index) => game.flag(index)}
+				/>
+				{#if game.paused}
+					<PauseOverlay cover hint={m.minefield_paused_hint()} onResume={() => game.resume()} />
+				{/if}
 			</div>
 		</div>
+	</div>
 
-		<div class="flex shrink-0 gap-3">
-			<FlagModeToggle
-				active={game.tool === 'flag'}
-				disabled={!game.canAct}
-				ontoggle={() => game.toggleFlagMode()}
-			/>
-			<SubmarineTool
-				armed={game.tool === 'submarine'}
-				left={game.submarinesLeft}
-				disabled={!game.canAct}
-				ontoggle={() => game.toggleSubmarine()}
-			/>
-		</div>
+	<div class="flex shrink-0 gap-3">
+		<FlagModeToggle
+			active={game.tool === 'flag'}
+			disabled={!game.canAct}
+			ontoggle={() => game.toggleFlagMode()}
+		/>
+		<SubmarineTool
+			armed={game.tool === 'submarine'}
+			left={game.submarinesLeft}
+			disabled={!game.canAct}
+			ontoggle={() => game.toggleSubmarine()}
+		/>
+	</div>
 
-		<p class="min-h-6 shrink-0 text-center font-semibold" role="status" aria-live="polite">
-			{status}
-		</p>
-		{#if showTutorial}
-			<p class="shrink-0 text-sm leading-snug opacity-80">{m.minefield_help()}</p>
-		{/if}
+	<p class="min-h-6 shrink-0 text-center font-semibold" role="status" aria-live="polite">
+		{status}
+	</p>
+	{#if showTutorial}
+		<p class="shrink-0 text-sm leading-snug opacity-80">{m.minefield_help()}</p>
+	{/if}
 </GameShell>
 
 <GameOverModal
