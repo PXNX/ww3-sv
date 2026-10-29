@@ -986,6 +986,12 @@ function drawPlayer(
 		context.lineWidth = 4;
 		context.stroke();
 	}
+
+	// Freeze progress circle above the player's head
+	if (player.iceMs > 0) {
+		const progress = Math.min(1, player.iceMs / ICE_FREEZE_MS);
+		drawFreezeIndicator(context, x, y, progress);
+	}
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -1015,6 +1021,11 @@ function drawEnemy(context: CanvasRenderingContext2D, enemy: Enemy, mapId: MapId
 	else drawCast(context, enemy, mapId, flash);
 	if (enemy.burnMs > 0) {
 		drawFlames(context, enemy.x, enemy.y - enemy.radius * 0.3, enemy.radius, time + enemy.id * 77);
+	}
+	// Freeze progress circle above the enemy's head
+	if (enemy.iceMs > 0) {
+		const progress = Math.min(1, enemy.iceMs / ICE_FREEZE_MS);
+		drawFreezeIndicator(context, enemy.x, enemy.y, progress);
 	}
 }
 
