@@ -424,8 +424,13 @@ const TIERS: readonly (readonly [number, number])[] = [
 	[25, 250],
 	[50, 2_500],
 	[100, 25_000],
+	[200, 25_000_000],
 	[250, 250_000],
-	[500, 2_500_000]
+	[400, 125_000_000],
+	[500, 2_500_000],
+	[600, 625_000_000],
+	[800, 3_125_000_000],
+	[1000, 15_625_000_000]
 ];
 
 const CLICK_UPGRADES: readonly UpgradeDef[] = [
@@ -614,5 +619,10 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
 		threshold: 5,
 		reward: { kind: 'producer', value: 0.15, producer: 'rig' }
 	},
-	{ id: 'monocle_king', kind: 'perks', threshold: 5, reward: { kind: 'tap', value: 0.2 } }
+	{ id: 'monocle_king', kind: 'perks', threshold: 5, reward: { kind: 'tap', value: 0.2 } },
+	{ id: 'max_200', kind: 'owned', threshold: 200, reward: { kind: 'discount', value: 0.05 } },
+	{ id: 'max_400', kind: 'owned', threshold: 400, reward: { kind: 'discount', value: 0.08 } },
+	{ id: 'max_600', kind: 'owned', threshold: 600, reward: { kind: 'discount', value: 0.1 } },
+	{ id: 'max_800', kind: 'owned', threshold: 800, reward: { kind: 'discount', value: 0.12 } },
+	{ id: 'max_1000', kind: 'owned', threshold: 1000, reward: { kind: 'discount', value: 0.15 } }
 ];
