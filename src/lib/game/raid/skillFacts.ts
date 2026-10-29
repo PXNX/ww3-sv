@@ -7,6 +7,12 @@ import {
 	BLAST_DAMAGE_FACTOR,
 	BLAST_RADIUS,
 	DASH_MS,
+	ECHO_RETURN_MS,
+	SMOKE_MS,
+	SPIN_BULLETS,
+	SMOKE_SIGHT,
+	TOWER_LIFETIME_MS,
+	TOWER_RADIUS,
 	FLASHPOINT_CRIT_MULTIPLIER,
 	FLASHPOINT_DAMAGE_FACTOR,
 	FLASHPOINT_RANGE,
@@ -58,5 +64,9 @@ export const SKILL_FACTS: Record<SkillId, SkillFacts> = {
 	swarm: { count: SWARM_DRONES },
 	overclock: { durationMs: OVERCLOCK_MS },
 	quake: { damage: QUAKE_DAMAGE_FACTOR, radius: QUAKE_RADIUS },
-	warcry: { durationMs: WARCRY_MS }
+	warcry: { durationMs: WARCRY_MS },
+	tower: { durationMs: TOWER_LIFETIME_MS, radius: TOWER_RADIUS },
+	echo: { damage: 0.8, durationMs: ECHO_RETURN_MS },
+	smoke: { durationMs: SMOKE_MS, radius: SMOKE_SIGHT },
+	spin: { damage: 0.7, count: SPIN_BULLETS }
 };

@@ -35,6 +35,8 @@ import {
 	HAMMER_ARC,
 	HAMMER_FALL_RADIUS,
 	QUAKE_RADIUS,
+	SMOKE_SIGHT,
+	TOWER_RADIUS,
 	SKILL_COOLDOWN_MS,
 	WEAPONS,
 	SPRINT_COOLDOWN_MS,
@@ -909,6 +911,12 @@ export class RaidGame {
 			case 'warcry':
 				this.#ring(player.x, player.y, 110, '#e5484d', 600);
 				break;
+			case 'tower':
+				this.#ring(event.x, event.y, TOWER_RADIUS, '#5bd16b', 600);
+				break;
+			case 'smoke':
+				this.#ring(event.x, event.y, SMOKE_SIGHT, '#9aa3ab', 700);
+				break;
 			case 'victory':
 				this.#text(event.x, event.y - 80, m.raid_popup_victory(), '#ffd23a', 34, 2200);
 				this.#ring(event.x, event.y, 220, '#ffd23a', 900);
@@ -993,7 +1001,11 @@ export class RaidGame {
 			swarm: 'drone-brzzz',
 			overclock: 'ability-split',
 			quake: 'impact-stone',
-			warcry: 'alarm'
+			warcry: 'alarm',
+			tower: 'chime',
+			echo: 'whoosh',
+			smoke: 'draft',
+			spin: 'ability-blast'
 		};
 		if (skill !== 'heal')
 			this.#text(player.x, player.y - 46, SKILL_NAMES[skill](), '#ffffff', 18, 900);

@@ -44,7 +44,10 @@ export const WEAPON_NAMES: Record<WeaponKind, () => string> = {
 	launcher: m.raid_weapon_launcher,
 	flamethrower: m.raid_weapon_flamethrower,
 	dronenest: m.raid_weapon_dronenest,
-	hammer: m.raid_weapon_hammer
+	hammer: m.raid_weapon_hammer,
+	minigun: m.raid_weapon_minigun,
+	boomerang: m.raid_weapon_boomerang,
+	daggers: m.raid_weapon_daggers
 };
 
 export const WEAPON_TRAITS: Record<WeaponKind, () => string> = {
@@ -55,7 +58,10 @@ export const WEAPON_TRAITS: Record<WeaponKind, () => string> = {
 	launcher: m.raid_weapon_launcher_trait,
 	flamethrower: m.raid_weapon_flamethrower_trait,
 	dronenest: m.raid_weapon_dronenest_trait,
-	hammer: m.raid_weapon_hammer_trait
+	hammer: m.raid_weapon_hammer_trait,
+	minigun: m.raid_weapon_minigun_trait,
+	boomerang: m.raid_weapon_boomerang_trait,
+	daggers: m.raid_weapon_daggers_trait
 };
 
 export const RARITY_NAMES: Record<Rarity, () => string> = {
@@ -94,7 +100,11 @@ export const SKILL_NAMES: Record<SkillId, () => string> = {
 	swarm: m.raid_skill_swarm,
 	overclock: m.raid_skill_overclock,
 	quake: m.raid_skill_quake,
-	warcry: m.raid_skill_warcry
+	warcry: m.raid_skill_warcry,
+	tower: m.raid_skill_tower,
+	echo: m.raid_skill_echo,
+	smoke: m.raid_skill_smoke,
+	spin: m.raid_skill_spin
 };
 
 export const SKILL_HINTS: Record<SkillId, () => string> = {
@@ -113,7 +123,11 @@ export const SKILL_HINTS: Record<SkillId, () => string> = {
 	swarm: m.raid_skill_swarm_hint,
 	overclock: m.raid_skill_overclock_hint,
 	quake: m.raid_skill_quake_hint,
-	warcry: m.raid_skill_warcry_hint
+	warcry: m.raid_skill_warcry_hint,
+	tower: m.raid_skill_tower_hint,
+	echo: m.raid_skill_echo_hint,
+	smoke: m.raid_skill_smoke_hint,
+	spin: m.raid_skill_spin_hint
 };
 
 export const ARMOR_NAMES: Record<ArmorSlot, () => string> = {
@@ -126,14 +140,22 @@ export const PERK_NAMES: Record<ArmorPerk, () => string> = {
 	jammer: m.raid_perk_jammer,
 	spikes: m.raid_perk_spikes,
 	trail: m.raid_perk_trail,
-	sprint: m.raid_perk_sprint
+	sprint: m.raid_perk_sprint,
+	shield: m.raid_perk_shield,
+	reflect: m.raid_perk_reflect,
+	boost: m.raid_perk_boost,
+	leech: m.raid_perk_leech
 };
 
 export const PERK_HINTS: Record<ArmorPerk, () => string> = {
 	jammer: m.raid_perk_jammer_hint,
 	spikes: m.raid_perk_spikes_hint,
 	trail: m.raid_perk_trail_hint,
-	sprint: m.raid_perk_sprint_hint
+	sprint: m.raid_perk_sprint_hint,
+	shield: m.raid_perk_shield_hint,
+	reflect: m.raid_perk_reflect_hint,
+	boost: m.raid_perk_boost_hint,
+	leech: m.raid_perk_leech_hint
 };
 
 /** What each weapon's base attack does, for the weapon details */
@@ -145,7 +167,10 @@ export const ATTACK_HINTS: Record<WeaponKind, () => string> = {
 	launcher: m.raid_attack_launcher,
 	flamethrower: m.raid_attack_flamethrower,
 	dronenest: m.raid_attack_dronenest,
-	hammer: m.raid_attack_hammer
+	hammer: m.raid_attack_hammer,
+	minigun: m.raid_attack_minigun,
+	boomerang: m.raid_attack_boomerang,
+	daggers: m.raid_attack_daggers
 };
 
 export const CRYSTAL_NAMES: Record<CrystalKind, () => string> = {

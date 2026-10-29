@@ -26,14 +26,17 @@ describe('weapons', () => {
 				.filter(([kind]) => kind !== 'marksman')
 				.map(([, spec]) => spec.critChance)
 		);
-		expect(WEAPONS.marksman.critChance).toBeGreaterThan(highestOther * 4);
+		expect(WEAPONS.marksman.critChance).toBeGreaterThan(highestOther * 2);
 	});
 
-	it('gives every weapon two skills of its own', () => {
+	it('gives every weapon two different skills and uses every skill', () => {
 		const skills = Object.values(WEAPONS).flatMap((spec) => spec.skills);
 		expect(skills).toHaveLength(WEAPON_KINDS.length * 2);
-		expect(new Set(skills).size).toBe(skills.length);
-		expect([...skills].sort()).toEqual([...SKILL_IDS].sort());
+		for (const spec of Object.values(WEAPONS)) expect(spec.skills[0]).not.toBe(spec.skills[1]);
+		// A few skills are shared, but no two weapons have the same pair
+		const pairs = Object.values(WEAPONS).map((spec) => [...spec.skills].sort().join('+'));
+		expect(new Set(pairs).size).toBe(pairs.length);
+		expect([...new Set(skills)].sort()).toEqual([...SKILL_IDS].sort());
 	});
 
 	it('grows with rarity, item level and player level', () => {

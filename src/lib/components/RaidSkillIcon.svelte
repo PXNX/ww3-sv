@@ -10,6 +10,10 @@
 	import IconFlameKindling from '~icons/lucide/flame-kindling';
 	import IconPlane from '~icons/lucide/plane';
 	import IconCircleDot from '~icons/lucide/circle-dot';
+	import IconCloudFog from '~icons/lucide/cloud-fog';
+	import IconRepeat from '~icons/lucide/repeat';
+	import IconRotateCw from '~icons/lucide/rotate-cw';
+	import IconTowerControl from '~icons/lucide/tower-control';
 	import IconCrosshair from '~icons/lucide/crosshair';
 	import IconFlame from '~icons/lucide/flame';
 	import IconGauge from '~icons/lucide/gauge';
@@ -38,7 +42,11 @@
 		swarm: { icon: IconPlane, color: 'text-flag-blue' },
 		overclock: { icon: IconFastForward, color: 'text-khaki' },
 		quake: { icon: IconWaves, color: 'text-mustard' },
-		warcry: { icon: IconMegaphone, color: 'text-tie-red' }
+		warcry: { icon: IconMegaphone, color: 'text-tie-red' },
+		tower: { icon: IconTowerControl, color: 'text-khaki' },
+		echo: { icon: IconRepeat, color: 'text-flag-blue' },
+		smoke: { icon: IconCloudFog, color: 'text-ink' },
+		spin: { icon: IconRotateCw, color: 'text-mustard' }
 	};
 
 	const Icon = $derived(ICONS[skill].icon);

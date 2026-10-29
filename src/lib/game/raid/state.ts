@@ -53,7 +53,15 @@ import {
 	BOSS_VOLLEY_BULLETS,
 	BOSS_VOLLEY_EVERY_MS,
 	BURN_TICK_MS,
+	DASH_DAMAGE_FACTOR,
 	DASH_MS,
+	DASH_RADIUS,
+	ECHO_RETURN_MS,
+	SMOKE_MS,
+	SMOKE_SIGHT,
+	SPIN_BULLETS,
+	TOWER_HEAL_MS,
+	TOWER_RADIUS,
 	DASH_SPEED,
 	DRONE_BLAST_RADIUS,
 	DRONE_LIFETIME_MS,
@@ -349,6 +357,17 @@ export interface Bullet {
 	burnDps: number;
 	/** Enemies this bullet already hit, so a piercing shot hits each one once */
 	hit: number[];
+	/** An echo shot: turns around after this long and flies back, able to hit everything again */
+	returnMs?: number;
+}
+
+/** A healing tower (minigun skill): heals the player standing close, for a while */
+export interface Tower {
+	x: number;
+	y: number;
+	ageMs: number;
+	/** Time until the next heal */
+	healMs: number;
 }
 
 export interface EnemyBullet {
@@ -535,7 +554,7 @@ export interface RaidState {
 	flung: Flung[];
 	tornadoRiseMs: number;
 	/** Placed healing towers */
-	towers?: { x: number; y: number; ageMs: number; hostile: boolean }[];
+	towers: Tower[];
 	/** The player's assault helpers and the wait for the next crate */
 	allies: Ally[];
 	allySpawnMs: number;
@@ -599,6 +618,8 @@ export type RaidEvent =
 	| { type: 'overheat'; damage: number }
 	| { type: 'quake'; x: number; y: number }
 	| { type: 'warcry' }
+	| { type: 'tower'; x: number; y: number }
+	| { type: 'smoke'; x: number; y: number }
 	| { type: 'tornado-catch'; x: number; y: number; player: boolean }
 	| { type: 'tornado-spit'; x: number; y: number; player: boolean }
 	| { type: 'over' };
@@ -704,7 +725,8 @@ export function createRaid(
 			heat: 0,
 			rage: 0,
 			stunMs: 0,
-			warcryMs: 0
+			warcryMs: 0,
+			smokeMs: 0
 		},
 		loadout: { ...structuredClone(loadout), boots: loadout.boots ?? null },
 		enemies: [],
@@ -714,6 +736,7 @@ export function createRaid(
 		grenades: [],
 		mines: [],
 		nests: [],
+		towers: [],
 		drones: [],
 		fires: [],
 		loot: [],
@@ -899,10 +922,11 @@ const SKILLS: Record<SkillId, (state: RaidState, events: RaidEvent[]) => void> =
 		player.dashMs = DASH_MS;
 		player.dashSpeed = SPRINT_SPEED;
 		player.invulnerableMs = Math.max(player.invulnerableMs, DASH_MS + 80);
-		// Critical damage on nearest enemy in dash path
-		const target = nearestEnemy(state, DASH_RADIUS ?? 140, false);
+		// The daggers' dash also cuts the nearest enemy on the way
+		const target =
+			heldWeapon(state).kind === 'daggers' ? nearestEnemy(state, DASH_RADIUS, false) : null;
 		if (target) {
-			const damage = heldDamage(state) * 3.0;
+			const damage = heldDamage(state) * DASH_DAMAGE_FACTOR;
 			damageEnemy(state, target, damage, true, events);
 		}
 	},
@@ -1061,18 +1085,12 @@ const SKILLS: Record<SkillId, (state: RaidState, events: RaidEvent[]) => void> =
 	},
 	tower(state, events) {
 		const { player } = state;
-		state.towers = state.towers ?? [];
-		state.towers.push({
-			x: player.x,
-			y: player.y,
-			ageMs: 0,
-			hostile: false
-		});
+		state.towers.push({ x: player.x, y: player.y, ageMs: 0, healMs: 0 });
 		events.push({ type: 'tower', x: player.x, y: player.y });
 	},
 	smoke(state, events) {
 		const { player } = state;
-		player.smokeMs = SMOKE_MS ?? 4000;
+		player.smokeMs = SMOKE_MS;
 		events.push({ type: 'smoke', x: player.x, y: player.y });
 	},
 	echo(state, events) {
@@ -1083,15 +1101,15 @@ const SKILLS: Record<SkillId, (state: RaidState, events: RaidEvent[]) => void> =
 		pushBullet(state, angle, 700, {
 			damage: stats.damage * 0.8,
 			rangeLeft: 280,
-			returnMs: 600,
-			echo: true
+			pierceLeft: 99,
+			returnMs: ECHO_RETURN_MS
 		});
 		events.push({ type: 'shot', kind: heldWeapon(state).kind });
 	},
 	spin(state, events) {
 		const stats = heldStats(state);
-		for (let i = 0; i < 8; i++) {
-			pushBullet(state, state.player.aim + (i / 8) * Math.PI * 2, 900, {
+		for (let i = 0; i < SPIN_BULLETS; i++) {
+			pushBullet(state, state.player.aim + (i / SPIN_BULLETS) * Math.PI * 2, 900, {
 				damage: stats.damage * 0.7,
 				rangeLeft: 200
 			});
@@ -1378,6 +1396,7 @@ function tickCooldowns(state: RaidState, dtMs: number) {
 	player.jammerMs = Math.max(0, player.jammerMs - dtMs);
 	player.stunMs = Math.max(0, player.stunMs - dtMs);
 	player.warcryMs = Math.max(0, player.warcryMs - dtMs);
+	player.smokeMs = Math.max(0, player.smokeMs - dtMs);
 	// The flamethrower cools down whenever it is not pouring out flames
 	const pouring = player.firing && heldWeapon(state).kind === 'flamethrower';
 	if (!pouring) player.heat = Math.max(0, player.heat - FLAME_COOL_PER_SECOND * (dtMs / 1000));
@@ -1603,17 +1622,19 @@ function updateNests(state: RaidState, dtMs: number, events: RaidEvent[]) {
 }
 
 function updateTowers(state: RaidState, dtMs: number, events: RaidEvent[]) {
-	const dt = dtMs / 1000;
-	const towers = state.towers ?? [];
-	const kept: typeof towers = [];
-	for (const tower of towers) {
+	const { player } = state;
+	const kept: Tower[] = [];
+	for (const tower of state.towers) {
 		tower.ageMs += dtMs;
 		if (tower.ageMs >= TOWER_LIFETIME_MS) continue;
-		const { player } = state;
-		const heal = Math.round(TOWER_HEAL_SHARE * player.maxHp * Math.max(1, dt));
-		player.hp = Math.min(player.maxHp, player.hp + heal);
-		events.push({ type: 'heal', amount: Math.round(heal), source: 'medkit' });
 		kept.push(tower);
+		tower.healMs = Math.max(0, tower.healMs - dtMs);
+		const near = Math.hypot(player.x - tower.x, player.y - tower.y) <= TOWER_RADIUS + PLAYER_RADIUS;
+		if (!near || tower.healMs > 0 || player.hp >= player.maxHp || !active(state)) continue;
+		tower.healMs = TOWER_HEAL_MS;
+		const amount = Math.round(TOWER_HEAL_SHARE * player.maxHp);
+		player.hp = Math.min(player.maxHp, player.hp + amount);
+		events.push({ type: 'heal', amount, source: 'ability' });
 	}
 	state.towers = kept;
 }
@@ -1665,6 +1686,19 @@ function moveBullets(state: RaidState, dt: number, events: RaidEvent[]) {
 		bullet.x += bullet.vx * dt;
 		bullet.y += bullet.vy * dt;
 		bullet.rangeLeft -= Math.hypot(bullet.vx, bullet.vy) * dt;
+		// An echo shot turns around once and flies back over the same ground
+		if (bullet.returnMs !== undefined) {
+			bullet.returnMs -= dt * 1000;
+			if (bullet.returnMs <= 0) {
+				bullet.returnMs = undefined;
+				bullet.vx = -bullet.vx;
+				bullet.vy = -bullet.vy;
+				bullet.hit = [];
+				bullet.rangeLeft =
+					Math.max(bullet.rangeLeft, 0) +
+					(ECHO_RETURN_MS * Math.hypot(bullet.vx, bullet.vy)) / 1000;
+			}
+		}
 		const spent = bullet.rangeLeft <= 0;
 		let alive = true;
 
@@ -2097,6 +2131,14 @@ function updateEnemies(state: RaidState, random: Random, dtMs: number, events: R
 		enemy.attackMs = Math.max(0, enemy.attackMs - dtMs);
 		enemy.flashMs = Math.max(0, enemy.flashMs - dtMs);
 		const goal = goalOf(state, enemy);
+		// Behind a smoke screen the player is out of sight unless an enemy is already close
+		if (
+			state.player.smokeMs > 0 &&
+			!goal.post &&
+			Math.hypot(state.player.x - enemy.x, state.player.y - enemy.y) > SMOKE_SIGHT
+		) {
+			continue;
+		}
 		const dx = goal.x - enemy.x;
 		const dy = goal.y - enemy.y;
 		const distance = Math.hypot(dx, dy) || 1;

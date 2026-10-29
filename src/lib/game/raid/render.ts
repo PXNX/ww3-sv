@@ -23,6 +23,8 @@ import {
 	MEDIC_HEAL_RADIUS,
 	NEST_LIFETIME_MS,
 	OBJECTIVE_RADIUS,
+	TOWER_LIFETIME_MS,
+	TOWER_RADIUS,
 	OVERHEAT_STUN_MS,
 	PLAYER_RADIUS,
 	RARITY_COLOR,
@@ -50,7 +52,8 @@ import type {
 	Mine,
 	Nest,
 	RaidState,
-	Shell
+	Shell,
+	Tower
 } from './state';
 import { TORNADO_LIFE_MS, type Tornado } from './sandstorm';
 
@@ -264,6 +267,7 @@ function drawWorld(
 	}
 	for (const mine of state.mines) drawMine(context, mine, time);
 	for (const nest of state.nests) drawNest(context, nest, time);
+	for (const tower of state.towers) drawTower(context, tower, time);
 	for (const loot of state.loot) {
 		if (visible(camera, loot.x, loot.y, 60)) drawLoot(context, loot, time);
 	}
@@ -288,6 +292,7 @@ function drawWorld(
 		if (visible(camera, ally.x, ally.y, ALLY_RADIUS + 30)) drawAlly(context, ally);
 	}
 	if (state.player.warcryMs > 0) drawWarcry(context, state, time);
+	if (state.player.smokeMs > 0) drawSmoke(context, state, time);
 	drawPlayer(context, state, time, extras.look);
 	for (const obstacle of map.obstacles) {
 		if (visible(camera, obstacle.x, obstacle.y, obstacle.r + 20)) drawObstacle(context, obstacle);
@@ -450,6 +455,26 @@ function drawPostBar(
 }
 
 /** Warcry: a red aura and shouting arcs around the player while it lasts */
+/** A smoke screen: drifting grey puffs around the player */
+function drawSmoke(context: CanvasRenderingContext2D, state: RaidState, time: number) {
+	const { player } = state;
+	context.save();
+	for (let i = 0; i < 7; i++) {
+		const turn = time / 900 + (i / 7) * Math.PI * 2;
+		const reach = 34 + Math.sin(time / 300 + i * 2) * 6;
+		context.globalAlpha = 0.35;
+		circle(
+			context,
+			player.x + Math.cos(turn) * reach,
+			player.y + Math.sin(turn) * reach,
+			20,
+			'#9aa3ab',
+			0
+		);
+	}
+	context.restore();
+}
+
 function drawWarcry(context: CanvasRenderingContext2D, state: RaidState, time: number) {
 	const { player } = state;
 	const pulse = 1 + Math.sin(time / 120) * 0.08;
@@ -836,7 +861,10 @@ const WEAPON_LOOK: Record<WeaponKind, { length: number; width: number; color: st
 	launcher: { length: 36, width: 12, color: '#55603a' },
 	flamethrower: { length: 30, width: 10, color: '#8a2f1f' },
 	dronenest: { length: 16, width: 14, color: '#4a5a6a' },
-	hammer: { length: 34, width: 6, color: '#6b4a2a' }
+	hammer: { length: 34, width: 6, color: '#6b4a2a' },
+	minigun: { length: 34, width: 11, color: '#4b4f55' },
+	boomerang: { length: 20, width: 8, color: '#a8742f' },
+	daggers: { length: 16, width: 4, color: '#aab4be' }
 };
 
 function drawPlayer(
@@ -1833,6 +1861,24 @@ function drawBullet(context: CanvasRenderingContext2D, bullet: Bullet, time: num
 			ellipse(context, -16, 0, 6, 3);
 			return;
 		}
+		if (kind === 'boomerang') {
+			// A spinning V of wood; an echo shot on its way back flies the other way round
+			context.rotate(time / 55);
+			context.lineCap = 'round';
+			context.lineJoin = 'round';
+			context.lineWidth = 8;
+			context.strokeStyle = INK;
+			context.beginPath();
+			context.moveTo(-9, -9);
+			context.lineTo(4, 0);
+			context.lineTo(-9, 9);
+			context.stroke();
+			context.lineWidth = 4.5;
+			context.strokeStyle = crit ? RED : '#c98a3a';
+			context.stroke();
+			context.lineCap = 'butt';
+			return;
+		}
 		const length = kind === 'marksman' ? 22 : 12;
 		context.lineCap = 'round';
 		context.lineWidth = crit ? 6 : 4;
@@ -1960,6 +2006,27 @@ function drawFirePool(context: CanvasRenderingContext2D, fire: FirePool, time: n
 }
 
 /** A drone nest: a camouflaged crate with a launch rail and an antenna that blinks while armed */
+/** A healing tower: a small post with a cross, and a ring where it heals */
+function drawTower(context: CanvasRenderingContext2D, tower: Tower, time: number) {
+	const { x, y } = tower;
+	const fading = tower.ageMs > TOWER_LIFETIME_MS - 2500 && Math.floor(time / 150) % 2 === 0;
+	if (fading) context.globalAlpha = 0.5;
+	context.globalAlpha *= 0.18;
+	circle(context, x, y, TOWER_RADIUS, '#5bd16b', 0);
+	context.globalAlpha = fading ? 0.5 : 1;
+	roundRect(context, x - 9, y - 4, 18, 14, 3, '#6a7c9b', 2.5);
+	roundRect(context, x - 5, y - 22, 10, 20, 3, '#d8dde2', 2.5);
+	context.strokeStyle = '#e5484d';
+	context.lineWidth = 3;
+	context.beginPath();
+	context.moveTo(x, y - 19);
+	context.lineTo(x, y - 7);
+	context.moveTo(x - 6, y - 13);
+	context.lineTo(x + 6, y - 13);
+	context.stroke();
+	context.globalAlpha = 1;
+}
+
 function drawNest(context: CanvasRenderingContext2D, nest: Nest, time: number) {
 	const { x, y } = nest;
 	const fading = nest.ageMs > NEST_LIFETIME_MS - 2500 && Math.floor(time / 150) % 2 === 0;

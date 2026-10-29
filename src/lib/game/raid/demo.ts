@@ -5,7 +5,15 @@
  * the same rings, cones and numbers the real raid shows.
  */
 import { createRandom, type Random } from '#lib/game/random.js';
-import { BLAST_ANGLE, BLAST_RADIUS, WEAPONS, type SkillId, type WeaponKind } from './config';
+import {
+	BLAST_ANGLE,
+	BLAST_RADIUS,
+	SMOKE_SIGHT,
+	TOWER_RADIUS,
+	WEAPONS,
+	type SkillId,
+	type WeaponKind
+} from './config';
 import { makeWeapon } from './items';
 import { newProfile } from './profile';
 import type { Effect } from './render';
@@ -57,10 +65,10 @@ export interface Demo {
 }
 
 /** Skills that heal the player; the demo leaves the player hurt for them */
-const HEALS: readonly (SkillId | null)[] = ['heal', 'warcry'];
+const HEALS: readonly (SkillId | null)[] = ['heal', 'warcry', 'tower'];
 
 /** Skills that only show something once the weapon has been used for a moment */
-const NEEDS_ATTACK: readonly SkillId[] = ['flashpoint', 'swarm', 'overclock'];
+const NEEDS_ATTACK: readonly SkillId[] = ['flashpoint', 'swarm', 'overclock', 'smoke'];
 
 export function createDemo(kind: WeaponKind, action: DemoAction): Demo {
 	const loadout = newProfile().loadout;
@@ -136,6 +144,12 @@ function handle(demo: Demo, events: readonly RaidEvent[]) {
 				break;
 			case 'splash':
 				ring(event.x, event.y, event.radius, '#f5c83a', 360);
+				break;
+			case 'tower':
+				ring(event.x, event.y, TOWER_RADIUS, '#5bd16b', 600);
+				break;
+			case 'smoke':
+				ring(event.x, event.y, SMOKE_SIGHT, '#9aa3ab', 700);
 				break;
 			case 'grenade-burst':
 			case 'mine-burst':

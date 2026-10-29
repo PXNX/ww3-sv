@@ -7,6 +7,7 @@
 import { pickWeighted, randomInt, type Random } from '#lib/game/random.js';
 import {
 	ARMOR_SLOTS,
+	BOOST_SPEED,
 	BOOTS_SPEED,
 	BURN_DPS_FACTOR,
 	CRYSTAL_BONUS,

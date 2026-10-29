@@ -75,6 +75,20 @@
 			<rect x="10" y="8" width="28" height="13" rx="2" fill="#5d6670" />
 			<rect x="10" y="8" width="7" height="13" rx="1.5" fill="#7d8790" />
 			<path d="M10 14.5 h28" fill="none" />
+		{:else if kind === 'minigun'}
+			<rect x="6" y="23" width="34" height="4" rx="1.5" fill="#7d8790" />
+			<rect x="6" y="28" width="34" height="4" rx="1.5" fill="#7d8790" />
+			<rect x="6" y="33" width="34" height="4" rx="1.5" fill="#7d8790" />
+			<rect x="36" y="19" width="8" height="22" rx="2" fill="#4b4f55" />
+			<rect x="12" y="36" width="6" height="8" rx="1" fill="#3b3b3b" />
+		{:else if kind === 'boomerang'}
+			<path d="M10 10 L32 24 L10 38 L18 24 Z" fill="#c98a3a" />
+			<path d="M18 24 L28 24" fill="none" />
+		{:else if kind === 'daggers'}
+			<path d="M8 40 L26 10 L30 14 Z" fill="#aab4be" />
+			<path d="M18 42 L38 14 L42 18 Z" fill="#d8dde2" />
+			<rect x="6" y="38" width="8" height="4" rx="1" fill="#5a4630" />
+			<rect x="16" y="40" width="8" height="4" rx="1" fill="#5a4630" />
 		{:else if kind === 'boots'}
 			<path d="M8 12 h10 v18 h8 v8 h-18z" fill="#5a4630" />
 			<path d="M24 12 h10 v18 h8 v8 h-18z" fill="#6b5338" />

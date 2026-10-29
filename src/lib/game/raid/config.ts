@@ -358,8 +358,9 @@ export const TOWER_HEAL_MS = 2000;
 export const TOWER_HEAL_SHARE = 0.15;
 export const TOWER_LIFETIME_MS = 15000;
 
-/** Smoke screen (daggers): makes the player invisible for a short time */
+/** Smoke screen (daggers): enemies further away than this lose sight of the player for a while */
 export const SMOKE_MS = 4000;
+export const SMOKE_SIGHT = 110;
 
 /** Echo (boomerang): the projectile returns after a delay */
 export const ECHO_RETURN_MS = 600;
@@ -383,6 +384,9 @@ export const RAILSHOT_RANGE = 760;
 /** Dash (shotgun): a quick, untouchable dodge */
 export const DASH_MS = 190;
 export const DASH_SPEED = 900;
+/** Dagger dash: the nearest enemy this close takes a critical hit as the player dashes through */
+export const DASH_RADIUS = 140;
+export const DASH_DAMAGE_FACTOR = 3;
 /** Point-blank blast (shotgun): a cone that hurts and shoves everything in front */
 export const BLAST_RADIUS = 175;
 export const BLAST_ANGLE = Math.PI / 2;
@@ -449,7 +453,16 @@ export const BOOTS_SPEED = 0.04;
  * course, a spiked vest that hurts whoever hits it up close, boots that leave a burning trail or
  * make you sprint.
  */
-export const ARMOR_PERKS = ['jammer', 'spikes', 'trail', 'sprint', 'shield', 'reflect', 'boost', 'leech'] as const;
+export const ARMOR_PERKS = [
+	'jammer',
+	'spikes',
+	'trail',
+	'sprint',
+	'shield',
+	'reflect',
+	'boost',
+	'leech'
+] as const;
 export type ArmorPerk = (typeof ARMOR_PERKS)[number];
 
 export const SLOT_PERKS: Record<ArmorSlot, readonly ArmorPerk[]> = {
