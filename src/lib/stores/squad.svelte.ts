@@ -379,8 +379,9 @@ class SquadStore {
 		}
 		this.#retries += 1;
 		this.#retryTimer = setTimeout(() => {
-			this.#retries = 0;
-			void telegram().start();
+			// The count is cleared once the account is confirmed, so the retries really are limited;
+			// start() only works once, so the account is asked for again with refresh()
+			if (generation === this.#generation) void telegram().refresh();
 		}, ACCOUNT_RETRY_MS);
 	}
 

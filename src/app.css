@@ -131,8 +131,8 @@
 	--shadow-hard-small: 2px 2px 0 #060b17;
 	/* The one warm accent: a faint amber rim and lift on raised surfaces */
 	--shadow-raised:
-		inset 0 1px 0 rgb(255 236 190 / 0.08), 0 0 0 1px rgb(230 165 39 / 0.14),
-		4px 4px 0 #060b17, 0 10px 28px rgb(230 165 39 / 0.08);
+		inset 0 1px 0 rgb(255 236 190 / 0.08), 0 0 0 1px rgb(230 165 39 / 0.14), 4px 4px 0 #060b17,
+		0 10px 28px rgb(230 165 39 / 0.08);
 }
 
 /* A soft lamp-lit glow high on the page and a little depth at the bottom, instead of a flat fill */

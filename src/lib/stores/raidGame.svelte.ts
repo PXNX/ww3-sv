@@ -262,7 +262,6 @@ export class RaidGame {
 	hurtCount = $state(0);
 	result = $state.raw<RaidResult | null>(null);
 	threatAnnouncement = $state<{ level: number } | null>(null);
-	#lastThreat = 1;
 	isNewBest = $state(false);
 	/** Season rewards just claimed in the lobby, shown until dismissed */
 	claimed = $state.raw<SeasonReward[] | null>(null);

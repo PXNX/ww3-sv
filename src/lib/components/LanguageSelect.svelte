@@ -59,7 +59,7 @@
 	</summary>
 
 	<ul
-		class="dropdown-content menu z-30 mt-2 w-full gap-1 rounded-[14px_8px_12px_9px] border-3 border-ink bg-paper p-2 shadow-[4px_4px_0_var(--color-ink)]"
+		class="menu dropdown-content z-30 mt-2 w-full gap-1 rounded-[14px_8px_12px_9px] border-3 border-ink bg-paper p-2 shadow-[4px_4px_0_var(--color-ink)]"
 		aria-label={m.language_label()}
 	>
 		{#each locales as locale (locale)}
@@ -67,7 +67,9 @@
 			<li>
 				<button
 					type="button"
-					class="flex w-full items-center justify-between gap-2 rounded-[10px_6px_9px_7px] px-3 py-2 text-start font-display text-base font-bold {selected ? 'bg-explosion-yellow' : ''}"
+					class="flex w-full items-center justify-between gap-2 rounded-[10px_6px_9px_7px] px-3 py-2 text-start font-display text-base font-bold {selected
+						? 'bg-explosion-yellow'
+						: ''}"
 					lang={locale}
 					aria-current={selected ? 'true' : undefined}
 					onclick={() => choose(locale)}

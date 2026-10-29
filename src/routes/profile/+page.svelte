@@ -95,10 +95,7 @@
 
 	<CareerBar />
 
-		<FriendsPanel />
-
-
-	
+	<FriendsPanel />
 
 	<section class="sticker flex flex-col gap-2 p-4" style:--tilt="-0.3deg">
 		<h2 class="flex items-center gap-2 font-display text-xl font-bold">

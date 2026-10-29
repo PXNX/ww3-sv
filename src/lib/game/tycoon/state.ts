@@ -6,8 +6,6 @@
 import type { Random } from '#lib/game/random.js';
 import {
 	ACHIEVEMENTS,
-	CRIT_CHANCE,
-	CRIT_MULT,
 	OFFLINE_CAP_MS,
 	EVENT_AFTER_RETURN_MS,
 	PERK_IDS,

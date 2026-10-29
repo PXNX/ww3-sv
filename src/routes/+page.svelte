@@ -6,13 +6,10 @@
 	import { rankLabel } from '#lib/game/career/rankText.js';
 	import { telegram } from '#lib/stores/telegram.svelte.js';
 	import type { LeaderId } from '#lib/theme/leaders.js';
-	import AgentCard from '#lib/components/AgentCard.svelte';
 	import Avatar from '#lib/components/Avatar.svelte';
 	import CameoLineup from '#lib/components/CameoLineup.svelte';
-	import CareerBar from '#lib/components/CareerBar.svelte';
 	import ClipPreloadLine from '#lib/components/ClipPreloadLine.svelte';
 	import DailyPanel from '#lib/components/DailyPanel.svelte';
-	import FriendsPanel from '#lib/components/FriendsPanel.svelte';
 	import InstallPwaHint from '#lib/components/InstallPwaHint.svelte';
 	import ModeSelect from '#lib/components/ModeSelect.svelte';
 	import UpdatePwaHint from '#lib/components/UpdatePwaHint.svelte';

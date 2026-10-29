@@ -5,15 +5,12 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { APP_NAME } from '#lib/config.js';
-	import { LOCALE_NAMES } from '#lib/i18n.js';
 	import { m } from '#lib/paraglide/messages.js';
-	import { getLocale, isLocale, locales, setLocale } from '#lib/paraglide/runtime.js';
 	import { clipPreload } from '#lib/sound/preload.svelte.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import { appearance, THEME_CHOICES, type ThemeChoice } from '#lib/stores/appearance.svelte.js';
 	import { haptic } from '#lib/haptic/haptic.svelte.js';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
-	import IconLanguages from '~icons/lucide/languages';
 	import IconMoon from '~icons/lucide/moon';
 	import IconSmartphone from '~icons/lucide/smartphone';
 	import IconSun from '~icons/lucide/sun';

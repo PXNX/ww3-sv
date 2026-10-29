@@ -4,9 +4,10 @@
  * `$app/paths`, which keeps `pages.ts` importable from plain unit tests.
  */
 import { resolve } from '$app/paths';
+import type { ResolvedPathname } from '$app/types';
 import type { LegalPageId } from './pages.js';
 
-export const LEGAL_HREFS: Record<LegalPageId, string> = {
+export const LEGAL_HREFS: Record<LegalPageId, ResolvedPathname> = {
 	imprint: resolve('/legal/imprint'),
 	privacy: resolve('/legal/privacy'),
 	terms: resolve('/legal/terms'),

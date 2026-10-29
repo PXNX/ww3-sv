@@ -61,7 +61,12 @@ const YELLOW = '#f5c83a';
 /** Elite enemies glow in this, on the field and on the map */
 const ELITE = '#ff8a1a';
 
-function drawFreezeIndicator(context: CanvasRenderingContext2D, x: number, y: number, progress: number) {
+function drawFreezeIndicator(
+	context: CanvasRenderingContext2D,
+	x: number,
+	y: number,
+	progress: number
+) {
 	const r = 10;
 	const cx = x;
 	const cy = y - 18;
@@ -318,9 +323,10 @@ function drawWorld(
 function drawTornado(context: CanvasRenderingContext2D, tornado: Tornado, time: number) {
 	const { x, y } = tornado;
 	const grow = Math.min(1, tornado.ageMs / 600);
-	const fade = tornado.captives.length > 0
-		? 1
-		: Math.min(grow, Math.max(0, (TORNADO_LIFE_MS - tornado.ageMs) / 1500));
+	const fade =
+		tornado.captives.length > 0
+			? 1
+			: Math.min(grow, Math.max(0, (TORNADO_LIFE_MS - tornado.ageMs) / 1500));
 	if (fade <= 0) return;
 	context.save();
 	// Dust whirling on the ground
@@ -1756,7 +1762,8 @@ function drawStar(
 	y: number,
 	r: number,
 	color: string
-) {	context.beginPath();
+) {
+	context.beginPath();
 	for (let i = 0; i < 10; i++) {
 		const angle = -Math.PI / 2 + (i * Math.PI) / 5;
 		const reach = i % 2 === 0 ? r : r * 0.45;
@@ -2387,15 +2394,7 @@ export function drawRaidPreview(
  * blue for squad mates, and green for allies (the player's drones and nests, the command post).
  */
 export type MinimapMark =
-	| 'fighter'
-	| 'shooter'
-	| 'drone'
-	| 'support'
-	| 'elite'
-	| 'boss'
-	| 'squad'
-	| 'ally'
-	| 'post';
+	'fighter' | 'shooter' | 'drone' | 'support' | 'elite' | 'boss' | 'squad' | 'ally' | 'post';
 export type MarkShape = 'circle' | 'diamond' | 'triangle' | 'square' | 'ring';
 
 const ENEMY_RED = '#ff4a4a';

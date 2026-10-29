@@ -31,7 +31,8 @@ class HapticManager {
 	 * - 0.7-1.0: strong feedback (longer vibration with pattern)
 	 */
 	play(intensity: number) {
-		if (!this.enabled || typeof window === 'undefined' || typeof navigator.vibrate !== 'function') return;
+		if (!this.enabled || typeof window === 'undefined' || typeof navigator.vibrate !== 'function')
+			return;
 		const duration = Math.round(intensity * 200); // Max 200ms at full intensity
 		// Use patterns for stronger feedback to add variation
 		if (intensity < 0.4) {

@@ -195,7 +195,7 @@ export function producerMultiplier(state: TycoonState, id: ProducerId): number {
 	return multiplier;
 }
 
-export function prestigeMultiplier(points: number, state?: any): number {
+export function prestigeMultiplier(points: number, state?: Pick<TycoonState, 'perks'>): number {
 	let bonus = PRESTIGE_BONUS * Math.max(0, points);
 	if (state) {
 		const invest = state.perks?.invest_boost ?? 0;
