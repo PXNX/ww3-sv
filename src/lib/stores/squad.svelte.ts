@@ -46,6 +46,12 @@ export type RelayHandler = (payload: unknown, from: string) => void;
 const POLL_MS = 5000;
 /** Stopping waits this long, so going from one page with a panel to the next keeps the line */
 const STOP_GRACE_MS = 3000;
+/**
+ * When Telegram could not confirm the account, the check is repeated a few times before the panel
+ * gives up: a Mini App often starts while the bot's function is still waking up.
+ */
+const ACCOUNT_RETRY_MS = 4000;
+const ACCOUNT_RETRIES = 3;
 
 /** Online and free first, then online in a raid, then offline; by name within each group */
 function friendOrder(a: Friend, b: Friend): number {
@@ -89,6 +95,9 @@ class SquadStore {
 	/** Bumped on every boot and teardown, so a slow boot does not outlive its stop */
 	#generation = 0;
 	#stopTimer: ReturnType<typeof setTimeout> | undefined;
+	/** Retry of the account check after Telegram could not confirm the player */
+	#retryTimer: ReturnType<typeof setTimeout> | undefined;
+	#retries = 0;
 	/** Heartbeat and polling of the current backend */
 	#timers: ReturnType<typeof setInterval>[] = [];
 	#clock: ReturnType<typeof setInterval> | undefined;
@@ -327,6 +336,7 @@ class SquadStore {
 		if (status !== 'verified') {
 			this.#disconnect();
 			this.availability = 'signed-out';
+			this.#retryAccount(generation);
 			return;
 		}
 		if (this.#api) return;
@@ -343,6 +353,9 @@ class SquadStore {
 		this.#ownsTransport = owned;
 		this.availability = 'ready';
 		this.loading = false;
+		this.#retries = 0;
+		clearTimeout(this.#retryTimer);
+		this.#retryTimer = undefined;
 		if (transport) {
 			this.connection = transport.status;
 			this.#unsubscribe = transport.subscribe((event) => this.#onEvent(event));
@@ -356,6 +369,19 @@ class SquadStore {
 			void api.presence(this.#inRaid).catch(() => undefined);
 			void this.#loadFriends();
 		});
+	}
+
+	#retryAccount(generation: number): void {
+		clearTimeout(this.#retryTimer);
+		if (this.#retries >= ACCOUNT_RETRIES) {
+			this.#retries = 0;
+			return;
+		}
+		this.#retries += 1;
+		this.#retryTimer = setTimeout(() => {
+			this.#retries = 0;
+			void telegram().start();
+		}, ACCOUNT_RETRY_MS);
 	}
 
 	#disconnect(): void {

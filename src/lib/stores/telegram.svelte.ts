@@ -40,6 +40,13 @@ export type PurchaseResult =
 const BOOKING_POLLS = 6;
 const BOOKING_POLL_MS = 1000;
 
+/**
+ * The account check is retried this often after a network failure: the bot's functions sleep on a
+ * cold start, and a single missed call must not leave the game without the player's account.
+ */
+const ME_RETRIES = 2;
+const ME_RETRY_MS = 700;
+
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** Set once Telegram's "allow messages" dialog was shown on this device, so it is asked only once */
@@ -55,8 +62,20 @@ export type TelegramStatus =
 	/** The endpoint failed or returned something unexpected */
 	| 'error';
 
+/**
+ * Why the account could not be confirmed. `unreachable` means this build has no way to call the bot
+ * at all (no Serverless bridge, no API URL), which no retry can fix; `failing` is a call that can
+ * still succeed on the next try.
+ */
+export type TelegramProblem = 'unreachable' | 'refused' | 'failing' | null;
+
 class TelegramStore {
 	status = $state<TelegramStatus>('browser');
+	/**
+	 * Why the account could not be confirmed, for the screens that offer a way out: the build cannot
+	 * reach the bot at all, Telegram refused the launch, or the call simply failed (then it retries).
+	 */
+	problem = $state<TelegramProblem>(null);
 	user = $state<TelegramUser | null>(null);
 	/** Revival tokens bought with Stars, as the server counts them */
 	wallet = $state({ revives: 0 });
@@ -222,24 +241,46 @@ class TelegramStore {
 	}
 
 	async #load(): Promise<void> {
-		try {
-			const me = parseMe(await call('me'));
-			if (!me) {
-				this.status = 'error';
+		for (let attempt = 0; ; attempt += 1) {
+			try {
+				const me = parseMe(await call('me'));
+				if (!me) {
+					this.status = 'error';
+					this.problem = 'failing';
+					return;
+				}
+				// The bot's answer confirms the account; the photo only comes with the launch
+				this.user = { ...me.user, photoUrl: me.user.photoUrl ?? this.user?.photoUrl ?? null };
+				this.wallet = { revives: me.revives };
+				this.pro = me.pro;
+				this.proUntil = me.proUntil;
+				this.consented = me.consented;
+				this.consent = me.consent;
+				this.catalogue = me.catalogue;
+				this.invite = me.invite;
+				this.status = 'verified';
+				this.problem = null;
 				return;
+			} catch (error) {
+				const type = toCallError(error).type;
+				if (type === 'UNAUTHORIZED') {
+					this.status = 'rejected';
+					this.problem = 'refused';
+					return;
+				}
+				if (type === 'UNAVAILABLE') {
+					this.status = 'error';
+					this.problem = 'unreachable';
+					return;
+				}
+				// A sleeping function or a flaky connection: try again before giving up
+				if (attempt >= ME_RETRIES) {
+					this.status = 'error';
+					this.problem = 'failing';
+					return;
+				}
+				await wait(ME_RETRY_MS * (attempt + 1));
 			}
-			// The bot's answer confirms the account; the photo only comes with the launch
-			this.user = { ...me.user, photoUrl: me.user.photoUrl ?? this.user?.photoUrl ?? null };
-			this.wallet = { revives: me.revives };
-			this.pro = me.pro;
-			this.proUntil = me.proUntil;
-			this.consented = me.consented;
-			this.consent = me.consent;
-			this.catalogue = me.catalogue;
-			this.invite = me.invite;
-			this.status = 'verified';
-		} catch (error) {
-			this.status = toCallError(error).type === 'UNAUTHORIZED' ? 'rejected' : 'error';
 		}
 	}
 }
