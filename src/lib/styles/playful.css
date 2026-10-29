@@ -19,7 +19,15 @@
 
 	[data-theme='dark'] .sticker,
 	[data-theme='dark'] .btn-chunky {
-		box-shadow: 4px 4px 0 rgba(230,165,39,.35), 0 0 0 1px rgba(230,165,39,.15);
+		box-shadow: var(--shadow-raised);
+	}
+
+	[data-theme='dark'] .btn-chunky:hover {
+		background: color-mix(in srgb, var(--color-paper) 82%, var(--color-ink));
+	}
+
+	[data-theme='dark'] .btn-chunky:active {
+		box-shadow: var(--shadow-hard-small);
 	}
 
 	.sticker-interactive:hover,

@@ -31,7 +31,7 @@
 		document.documentElement.dataset.theme = dark ? 'dark' : 'light';
 		document
 			.querySelector('meta[name="theme-color"]')
-			?.setAttribute('content', dark ? '#16213a' : '#e8e1bc');
+			?.setAttribute('content', dark ? '#0e1628' : '#e8e1bc');
 	});
 
 	// Inside Telegram the bot learns when the streak breaks, to remind the player two hours before;

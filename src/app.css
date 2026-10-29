@@ -108,19 +108,45 @@
 [data-theme='dark'] {
 	color-scheme: dark;
 	--color-ink: #ece6cf;
-	--color-paper: #1a2740;
-	--color-sand: #121c36;
+	/* Three steps of night sky: the page is deepest, cards sit a step above it */
+	--color-paper: #18243f;
+	--color-sand: #0e1628;
 	/* Still the muted chip it is by day, only deep enough for cream text to sit on */
-	--color-banner-slate: #374a6e;
-	--color-tie-red: #e85e65;
-	--color-khaki: #7e9260;
+	--color-banner-slate: #33456b;
+	--color-tie-red: #ee6a70;
+	--color-khaki: #86996a;
 	/* The daisyUI pieces (the Stars checkbox) follow the same tones */
-	--color-base-100: #121c36;
-	--color-base-200: #1a2740;
-	--color-base-300: #26355a;
+	--color-base-100: #0e1628;
+	--color-base-200: #18243f;
+	--color-base-300: #24345a;
 	--color-base-content: #ece6cf;
 	--color-neutral: #ece6cf;
-	--color-neutral-content: #121c36;
+	--color-neutral-content: #0e1628;
+
+	/* Outlines are cream turned down, so the thick strokes frame things without glaring */
+	--color-line: rgb(236 230 207 / 0.42);
+	--outline: 3px solid var(--color-line);
+	/* Hard offset shadows turn into deep shade on the dark page instead of a cream copy */
+	--shadow-hard: 4px 4px 0 #060b17;
+	--shadow-hard-small: 2px 2px 0 #060b17;
+	/* The one warm accent: a faint amber rim and lift on raised surfaces */
+	--shadow-raised:
+		inset 0 1px 0 rgb(255 236 190 / 0.08), 0 0 0 1px rgb(230 165 39 / 0.14),
+		4px 4px 0 #060b17, 0 10px 28px rgb(230 165 39 / 0.08);
+}
+
+/* A soft lamp-lit glow high on the page and a little depth at the bottom, instead of a flat fill */
+[data-theme='dark'] body {
+	background-color: var(--color-sand);
+	background-image:
+		radial-gradient(ellipse 80% 45% at 50% -8%, rgb(230 165 39 / 0.1), transparent 70%),
+		linear-gradient(180deg, transparent 55%, rgb(5 9 20 / 0.55));
+	background-attachment: fixed;
+}
+
+[data-theme='dark'] ::selection {
+	background: rgb(230 165 39 / 0.45);
+	color: #fff8e4;
 }
 
 /* Cream text on a dark ground (banners, filled chips, danger buttons) stays cream */
@@ -128,15 +154,24 @@
 	color: var(--color-ink);
 }
 
-/* Orange glow on dark cards/shadows, like words-sv */
-[data-theme='dark'] .bg-paper,
-[data-theme='dark'] .bg-banner-slate {
-	box-shadow: inset 0 0 60px rgba(230,165,39,.08), 0 4px 20px rgba(230,165,39,.10);
+/* Ink borders are the same cream as the text; by night they soften to the line tone */
+[data-theme='dark'] .border-ink {
+	border-color: var(--color-line);
+}
+
+/*
+ * Plain cards get the raised look. Anything that sets its own shadow (a Tailwind shadow-* utility,
+ * the sticker or chunky button below) keeps it, so this only touches the bare ones.
+ */
+[data-theme='dark'] .bg-paper:not([class*='shadow'], .sticker, .btn-chunky),
+[data-theme='dark'] .bg-banner-slate:not([class*='shadow'], .sticker, .btn-chunky) {
+	box-shadow: var(--shadow-raised);
 }
 
 /* Filled ink shapes stay the darkest thing on the page, so they still read as the strong button */
 [data-theme='dark'] .bg-ink {
-	background-color: #0d1729;
+	background-color: #070d1b;
+	box-shadow: 0 0 0 1px rgb(236 230 207 / 0.18);
 }
 
 /* The bright accent fields keep their colour, so their own text is the dark ink, not the cream */
