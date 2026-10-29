@@ -58,6 +58,8 @@ export interface TycoonState {
 	/** Quiet time until the next crisis, counted down only while nothing is going on */
 	nextEventMs: number;
 	lastEvent: EventKind | null;
+	/** Which buy button the player uses (1, 10 or max) */
+	buyMode: '1x' | '10x' | 'max';
 }
 
 export type TycoonEvent =

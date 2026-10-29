@@ -134,6 +134,7 @@ export class TycoonGame {
 	/** What selling at a price spike would pay */
 	sellValue = $state(0);
 	buyAmount = $state<BuyAmount>(1);
+	buyMode = $state<'1x' | '10x' | 'max'>('1x');
 	toast = $state.raw<Toast | null>(null);
 	/** The report shown when the player comes back after a while; null once dismissed */
 	welcome = $state.raw<OfflineReport | null>(null);
@@ -302,6 +303,12 @@ export class TycoonGame {
 		return true;
 	}
 
+	setBuyMode(mode: '1x' | '10x' | 'max') {
+		this.buyMode = mode;
+		this.state.buyMode = mode;
+		this.save();
+	}
+
 	dismissWelcome() {
 		this.welcome = null;
 	}
@@ -416,6 +423,7 @@ export class TycoonGame {
 		this.prestiges = state.prestiges;
 		this.pendingPoints = pendingPrestige(state);
 		this.multiplier = prestigeMultiplier(state.prestigePoints);
+		this.buyMode = state.buyMode;
 		this.event = state.event ? { ...state.event } : null;
 		this.effects = state.effects.map((effect) => ({ ...effect }));
 		this.eventCost = state.event ? choiceCost(state, state.event) : 0;

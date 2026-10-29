@@ -13,7 +13,28 @@ export const PRODUCER_IDS = [
 	'summit',
 	'offshore',
 	'cartel',
-	'arctic'
+	'arctic',
+	'driller',
+	'pipeline',
+	'wellhead',
+	'valve',
+	'drillbit',
+	'rig',
+	'platform',
+	'platform2',
+	'platform3',
+	'platform4',
+	'platform5',
+	'platform6',
+	'platform7',
+	'platform8',
+	'platform9',
+	'platform10',
+	'platform11',
+	'platform12',
+	'platform13',
+	'platform14',
+	'platform15'
 ] as const;
 
 export type ProducerId = (typeof PRODUCER_IDS)[number];
@@ -41,7 +62,28 @@ export const PRODUCERS: readonly ProducerDef[] = [
 	{ id: 'summit', baseCost: 20_000_000, baseCps: 7_800, cycleMs: 18_000 },
 	{ id: 'offshore', baseCost: 330_000_000, baseCps: 44_000, cycleMs: 25_000 },
 	{ id: 'cartel', baseCost: 5_100_000_000, baseCps: 260_000, cycleMs: 35_000 },
-	{ id: 'arctic', baseCost: 75_000_000_000, baseCps: 1_600_000, cycleMs: 50_000 }
+	{ id: 'arctic', baseCost: 75_000_000_000, baseCps: 1_600_000, cycleMs: 50_000 },
+	{ id: 'driller', baseCost: 1_100_000_000_000, baseCps: 9_000_000, cycleMs: 60_000 },
+	{ id: 'pipeline', baseCost: 16_000_000_000_000, baseCps: 50_000_000, cycleMs: 70_000 },
+	{ id: 'wellhead', baseCost: 230_000_000_000_000, baseCps: 280_000_000, cycleMs: 80_000 },
+	{ id: 'valve', baseCost: 3_300_000_000_000_000, baseCps: 1_500_000_000, cycleMs: 90_000 },
+	{ id: 'drillbit', baseCost: 47_000_000_000_000_000, baseCps: 8_000_000_000, cycleMs: 100_000 },
+	{ id: 'rig', baseCost: 670_000_000_000_000_000, baseCps: 45_000_000_000, cycleMs: 110_000 },
+	{ id: 'platform', baseCost: 9_500_000_000_000_000_000, baseCps: 250_000_000_000, cycleMs: 120_000 },
+	{ id: 'platform2', baseCost: 135_000_000_000_000_000_000, baseCps: 1_400_000_000_000, cycleMs: 130_000 },
+	{ id: 'platform3', baseCost: 1_900_000_000_000_000_000_000, baseCps: 7_800_000_000_000, cycleMs: 140_000 },
+	{ id: 'platform4', baseCost: 27_000_000_000_000_000_000_000, baseCps: 43_000_000_000_000, cycleMs: 150_000 },
+	{ id: 'platform5', baseCost: 380_000_000_000_000_000_000_000, baseCps: 240_000_000_000_000, cycleMs: 160_000 },
+	{ id: 'platform6', baseCost: 5_400_000_000_000_000_000_000_000, baseCps: 1_300_000_000_000_000, cycleMs: 170_000 },
+	{ id: 'platform7', baseCost: 76_000_000_000_000_000_000_000_000, baseCps: 7_200_000_000_000_000, cycleMs: 180_000 },
+	{ id: 'platform8', baseCost: 1_100_000_000_000_000_000_000_000_000, baseCps: 40_000_000_000_000_000, cycleMs: 190_000 },
+	{ id: 'platform9', baseCost: 15_000_000_000_000_000_000_000_000_000, baseCps: 220_000_000_000_000_000, cycleMs: 200_000 },
+	{ id: 'platform10', baseCost: 210_000_000_000_000_000_000_000_000_000, baseCps: 1_200_000_000_000_000_000, cycleMs: 210_000 },
+	{ id: 'platform11', baseCost: 3_000_000_000_000_000_000_000_000_000_000, baseCps: 6_800_000_000_000_000_000, cycleMs: 220_000 },
+	{ id: 'platform12', baseCost: 42_000_000_000_000_000_000_000_000_000_000, baseCps: 38_000_000_000_000_000_000, cycleMs: 230_000 },
+	{ id: 'platform13', baseCost: 600_000_000_000_000_000_000_000_000_000_000, baseCps: 210_000_000_000_000_000_000, cycleMs: 240_000 },
+	{ id: 'platform14', baseCost: 8_500_000_000_000_000_000_000_000_000_000_000, baseCps: 1_200_000_000_000_000_000_000, cycleMs: 250_000 },
+	{ id: 'platform15', baseCost: 120_000_000_000_000_000_000_000_000_000_000_000, baseCps: 6_500_000_000_000_000_000_000, cycleMs: 260_000 }
 ];
 
 /** No speed bonus makes a cycle shorter than this */
@@ -51,7 +93,7 @@ export const MIN_CYCLE_MS = 200;
 export const COST_GROWTH = 1.15;
 
 /** More than this of one producer is never accepted from a save file */
-export const MAX_OWNED = 100_000;
+export const MAX_OWNED = 1000;
 
 /** Barrels one tap pumps before any multiplier */
 export const BASE_TAP = 1;
@@ -69,7 +111,7 @@ export const PRESTIGE_BONUS = 0.05;
 export const MIN_PRICE_FACTOR = 0.5;
 
 // The nationalization shop: permanent investments bought with prestige points
-export const PERK_IDS = ['growth', 'output', 'speed', 'tap', 'seed', 'offline'] as const;
+export const PERK_IDS = ['growth', 'output', 'speed', 'tap', 'seed', 'offline', 'fake_news'] as const;
 
 export type PerkId = (typeof PERK_IDS)[number];
 
@@ -88,12 +130,13 @@ export interface PerkDef {
 }
 
 export const PERKS: readonly PerkDef[] = [
-	{ id: 'growth', maxLevel: 5, baseCost: 2, costGrowth: 2, value: 0.01 },
-	{ id: 'output', maxLevel: 25, baseCost: 1, costGrowth: 1.4, value: 0.1 },
-	{ id: 'speed', maxLevel: 10, baseCost: 2, costGrowth: 1.6, value: 0.1 },
-	{ id: 'tap', maxLevel: 10, baseCost: 1, costGrowth: 1.5, value: 0.5 },
-	{ id: 'seed', maxLevel: 6, baseCost: 1, costGrowth: 2.5, value: 100 },
-	{ id: 'offline', maxLevel: 5, baseCost: 2, costGrowth: 1.8, value: 0.1 }
+	{ id: 'growth', maxLevel: 5, baseCost: 3, costGrowth: 2.5, value: 0.008 },
+	{ id: 'output', maxLevel: 25, baseCost: 2, costGrowth: 1.6, value: 0.08 },
+	{ id: 'speed', maxLevel: 10, baseCost: 3, costGrowth: 1.8, value: 0.08 },
+	{ id: 'tap', maxLevel: 10, baseCost: 2, costGrowth: 1.7, value: 0.4 },
+	{ id: 'seed', maxLevel: 6, baseCost: 2, costGrowth: 2.8, value: 80 },
+	{ id: 'offline', maxLevel: 5, baseCost: 3, costGrowth: 2.0, value: 0.08 },
+	{ id: 'fake_news', maxLevel: 3, baseCost: 500, costGrowth: 5, value: 2.5 }
 ];
 
 // Offline progress
@@ -163,7 +206,10 @@ export interface UpgradeDef {
 const TIERS: readonly (readonly [number, number])[] = [
 	[5, 10],
 	[25, 250],
-	[50, 2_500]
+	[50, 2_500],
+	[100, 25_000],
+	[250, 250_000],
+	[500, 2_500_000]
 ];
 
 const CLICK_UPGRADES: readonly UpgradeDef[] = [

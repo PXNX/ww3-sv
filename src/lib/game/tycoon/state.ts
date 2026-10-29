@@ -68,7 +68,8 @@ export function createState(random: Random): TycoonState {
 		event: null,
 		effects: [],
 		nextEventMs: firstEventDelay(random),
-		lastEvent: null
+		lastEvent: null,
+		buyMode: '1x'
 	};
 }
 

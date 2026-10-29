@@ -18,6 +18,7 @@ export interface SaveData {
 	version: number;
 	/** When the game was last saved, in milliseconds since 1970 (decides the offline progress) */
 	savedAt: number;
+	buyMode?: string;
 	barrels: number;
 	runTotal: number;
 	lifetime: number;
@@ -52,7 +53,8 @@ export function serialize(state: TycoonState, now: number): SaveData {
 		prestiges: state.prestiges,
 		achievements: [...state.achievements],
 		eventsHandled: state.eventsHandled,
-		sanctionsEvaded: state.sanctionsEvaded
+		sanctionsEvaded: state.sanctionsEvaded,
+		buyMode: state.buyMode
 	};
 }
 
@@ -132,6 +134,8 @@ export function parseSave(
 		data.achievements,
 		ACHIEVEMENTS.map((achievement) => achievement.id)
 	);
+	const bm = typeof data.buyMode === 'string' ? data.buyMode : '1x';
+	state.buyMode = bm === '10x' || bm === 'max' ? bm : '1x';
 	return { state, savedAt };
 }
 
