@@ -9,7 +9,14 @@ import {
 	STEP_MS,
 	UPGRADES
 } from './config.js';
-import { critMultUpgrade, perkCost, producerCost, producerDef, productionPerSecond, tapValue } from './economy.js';
+import {
+	critMultUpgrade,
+	perkCost,
+	producerCost,
+	producerDef,
+	productionPerSecond,
+	tapValue
+} from './economy.js';
 import {
 	applyOffline,
 	buyPerk,

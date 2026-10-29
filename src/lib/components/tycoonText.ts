@@ -157,7 +157,9 @@ export function upgradeEffect(upgrade: UpgradeDef): string {
 	switch (upgrade.kind) {
 		case 'click':
 			if (upgrade.id === 'crit_chance') {
-				return m.tycoon_upgrade_effect_crit_chance({ mult: formatMultiplier(upgrade.value, locale) });
+				return m.tycoon_upgrade_effect_crit_chance({
+					mult: formatMultiplier(upgrade.value, locale)
+				});
 			}
 			if (upgrade.id === 'crit_mult') {
 				return m.tycoon_upgrade_effect_crit_mult({ mult: formatMultiplier(upgrade.value, locale) });

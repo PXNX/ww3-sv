@@ -40,7 +40,7 @@ const SD_NAMES: { min: number; suffix: string }[] = [
 	{ min: 1e90, suffix: 'NoVg' },
 	{ min: 1e93, suffix: 'Tg' },
 	{ min: 1e96, suffix: 'UTg' },
-	{ min: 1e99, suffix: 'DTg' },
+	{ min: 1e99, suffix: 'DTg' }
 ];
 
 /** Beyond the last named tier (1e99 to just below 1e102) numbers print as 1.23E300 */
@@ -52,7 +52,8 @@ function sdParts(value: number): { scaled: number; suffix: string } {
 		return { scaled: value / Math.pow(10, exp), suffix: 'E' + exp };
 	}
 	for (let i = SD_NAMES.length - 1; i >= 0; i--) {
-		if (value >= SD_NAMES[i].min) return { scaled: value / SD_NAMES[i].min, suffix: SD_NAMES[i].suffix };
+		if (value >= SD_NAMES[i].min)
+			return { scaled: value / SD_NAMES[i].min, suffix: SD_NAMES[i].suffix };
 	}
 	return { scaled: value, suffix: '' };
 }

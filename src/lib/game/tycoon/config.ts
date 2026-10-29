@@ -87,39 +87,204 @@ export const PRODUCERS: readonly ProducerDef[] = [
 	{ id: 'valve', baseCost: 3_300_000_000_000_000, baseCps: 1_500_000_000, cycleMs: 90_000 },
 	{ id: 'drillbit', baseCost: 47_000_000_000_000_000, baseCps: 8_000_000_000, cycleMs: 100_000 },
 	{ id: 'rig', baseCost: 670_000_000_000_000_000, baseCps: 45_000_000_000, cycleMs: 110_000 },
-	{ id: 'platform', baseCost: 9_500_000_000_000_000_000, baseCps: 250_000_000_000, cycleMs: 120_000 },
-	{ id: 'platform2', baseCost: 135_000_000_000_000_000_000, baseCps: 1_400_000_000_000, cycleMs: 130_000 },
-	{ id: 'platform3', baseCost: 1_900_000_000_000_000_000_000, baseCps: 7_800_000_000_000, cycleMs: 140_000 },
-	{ id: 'platform4', baseCost: 27_000_000_000_000_000_000_000, baseCps: 43_000_000_000_000, cycleMs: 150_000 },
-	{ id: 'platform5', baseCost: 380_000_000_000_000_000_000_000, baseCps: 240_000_000_000_000, cycleMs: 160_000 },
-	{ id: 'platform6', baseCost: 5_400_000_000_000_000_000_000_000, baseCps: 1_300_000_000_000_000, cycleMs: 170_000 },
-	{ id: 'platform7', baseCost: 76_000_000_000_000_000_000_000_000, baseCps: 7_200_000_000_000_000, cycleMs: 180_000 },
-	{ id: 'platform8', baseCost: 1_100_000_000_000_000_000_000_000_000, baseCps: 40_000_000_000_000_000, cycleMs: 190_000 },
-	{ id: 'platform9', baseCost: 15_000_000_000_000_000_000_000_000_000, baseCps: 220_000_000_000_000_000, cycleMs: 200_000 },
-	{ id: 'platform10', baseCost: 210_000_000_000_000_000_000_000_000_000, baseCps: 1_200_000_000_000_000_000, cycleMs: 210_000 },
-	{ id: 'platform11', baseCost: 3_000_000_000_000_000_000_000_000_000_000, baseCps: 6_800_000_000_000_000_000, cycleMs: 220_000 },
-	{ id: 'platform12', baseCost: 42_000_000_000_000_000_000_000_000_000_000, baseCps: 38_000_000_000_000_000_000, cycleMs: 230_000 },
-	{ id: 'platform13', baseCost: 600_000_000_000_000_000_000_000_000_000_000, baseCps: 210_000_000_000_000_000_000, cycleMs: 240_000 },
-	{ id: 'platform14', baseCost: 8_500_000_000_000_000_000_000_000_000_000_000, baseCps: 1_200_000_000_000_000_000_000, cycleMs: 250_000 },
-	{ id: 'platform15', baseCost: 120_000_000_000_000_000_000_000_000_000_000_000, baseCps: 6_500_000_000_000_000_000_000, cycleMs: 260_000 },
-	{ id: 'platform16', baseCost: 1_700_000_000_000_000_000_000_000_000_000_000, baseCps: 3_500_000_000_000_000_000, cycleMs: 270_000 },
-	{ id: 'platform17', baseCost: 2_700_000_000_000_000_000_000_000_000_000_000, baseCps: 19_000_000_000_000_000_000, cycleMs: 280_000 },
-	{ id: 'platform18', baseCost: 4_000_000_000_000_000_000_000_000_000_000_000, baseCps: 11_000_000_000_000_000_000, cycleMs: 290_000 },
-	{ id: 'platform19', baseCost: 5_800_000_000_000_000_000_000_000_000_000_000, baseCps: 6_000_000_000_000_000_000, cycleMs: 300_000 },
-	{ id: 'platform20', baseCost: 8_300_000_000_000_000_000_000_000_000_000_000, baseCps: 33_000_000_000_000_000_000, cycleMs: 310_000 },
-	{ id: 'platform21', baseCost: 12_000_000_000_000_000_000_000_000_000_000_000_000, baseCps: 1_700_000_000_000_000_000, cycleMs: 320_000 },
-	{ id: 'platform22', baseCost: 18_000_000_000_000_000_000_000_000_000_000_000_000, baseCps: 9_200_000_000_000_000_000, cycleMs: 330_000 },
-	{ id: 'platform23', baseCost: 27_000_000_000_000_000_000_000_000_000_000_000_000, baseCps: 5_100_000_000_000_000_000, cycleMs: 340_000 },
-	{ id: 'superplatform', baseCost: 40_000_000_000_000_000_000_000_000_000_000_000_000_000, baseCps: 28_000_000_000_000_000_000, cycleMs: 350_000 },
-	{ id: 'megaplatform', baseCost: 60_000_000_000_000_000_000_000_000_000_000_000_000_000_000, baseCps: 150_000_000_000_000_000_000, cycleMs: 360_000 },
-	{ id: 'gigaplatform', baseCost: 90_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000, baseCps: 820_000_000_000_000_000_000, cycleMs: 370_000 },
-	{ id: 'teraplatform', baseCost: 135_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000, baseCps: 4_500_000_000_000_000_000_000, cycleMs: 380_000 },
-	{ id: 'exaplatform', baseCost: 200_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000, baseCps: 25_000_000_000_000_000_000_000, cycleMs: 390_000 },
-	{ id: 'zetaplatform', baseCost: 300_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000, baseCps: 140_000_000_000_000_000_000_000, cycleMs: 400_000 },
-	{ id: 'yottaplatform', baseCost: 450_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000, baseCps: 770_000_000_000_000_000_000_000, cycleMs: 410_000 },
-	{ id: 'ultraplatform', baseCost: 675_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000, baseCps: 4_200_000_000_000_000_000_000_000, cycleMs: 420_000 },
-	{ id: 'infinityplatform', baseCost: 1_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000, baseCps: 23_000_000_000_000_000_000_000_000, cycleMs: 430_000 },
-	{ id: 'eternityplatform', baseCost: 1_500_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000, baseCps: 125_000_000_000_000_000_000_000_000, cycleMs: 440_000 }
+	{
+		id: 'platform',
+		baseCost: 9_500_000_000_000_000_000,
+		baseCps: 250_000_000_000,
+		cycleMs: 120_000
+	},
+	{
+		id: 'platform2',
+		baseCost: 135_000_000_000_000_000_000,
+		baseCps: 1_400_000_000_000,
+		cycleMs: 130_000
+	},
+	{
+		id: 'platform3',
+		baseCost: 1_900_000_000_000_000_000_000,
+		baseCps: 7_800_000_000_000,
+		cycleMs: 140_000
+	},
+	{
+		id: 'platform4',
+		baseCost: 27_000_000_000_000_000_000_000,
+		baseCps: 43_000_000_000_000,
+		cycleMs: 150_000
+	},
+	{
+		id: 'platform5',
+		baseCost: 380_000_000_000_000_000_000_000,
+		baseCps: 240_000_000_000_000,
+		cycleMs: 160_000
+	},
+	{
+		id: 'platform6',
+		baseCost: 5_400_000_000_000_000_000_000_000,
+		baseCps: 1_300_000_000_000_000,
+		cycleMs: 170_000
+	},
+	{
+		id: 'platform7',
+		baseCost: 76_000_000_000_000_000_000_000_000,
+		baseCps: 7_200_000_000_000_000,
+		cycleMs: 180_000
+	},
+	{
+		id: 'platform8',
+		baseCost: 1_100_000_000_000_000_000_000_000_000,
+		baseCps: 40_000_000_000_000_000,
+		cycleMs: 190_000
+	},
+	{
+		id: 'platform9',
+		baseCost: 15_000_000_000_000_000_000_000_000_000,
+		baseCps: 220_000_000_000_000_000,
+		cycleMs: 200_000
+	},
+	{
+		id: 'platform10',
+		baseCost: 210_000_000_000_000_000_000_000_000_000,
+		baseCps: 1_200_000_000_000_000_000,
+		cycleMs: 210_000
+	},
+	{
+		id: 'platform11',
+		baseCost: 3_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 6_800_000_000_000_000_000,
+		cycleMs: 220_000
+	},
+	{
+		id: 'platform12',
+		baseCost: 42_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 38_000_000_000_000_000_000,
+		cycleMs: 230_000
+	},
+	{
+		id: 'platform13',
+		baseCost: 600_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 210_000_000_000_000_000_000,
+		cycleMs: 240_000
+	},
+	{
+		id: 'platform14',
+		baseCost: 8_500_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 1_200_000_000_000_000_000_000,
+		cycleMs: 250_000
+	},
+	{
+		id: 'platform15',
+		baseCost: 120_000_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 6_500_000_000_000_000_000_000,
+		cycleMs: 260_000
+	},
+	{
+		id: 'platform16',
+		baseCost: 1_700_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 3_500_000_000_000_000_000,
+		cycleMs: 270_000
+	},
+	{
+		id: 'platform17',
+		baseCost: 2_700_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 19_000_000_000_000_000_000,
+		cycleMs: 280_000
+	},
+	{
+		id: 'platform18',
+		baseCost: 4_000_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 11_000_000_000_000_000_000,
+		cycleMs: 290_000
+	},
+	{
+		id: 'platform19',
+		baseCost: 5_800_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 6_000_000_000_000_000_000,
+		cycleMs: 300_000
+	},
+	{
+		id: 'platform20',
+		baseCost: 8_300_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 33_000_000_000_000_000_000,
+		cycleMs: 310_000
+	},
+	{
+		id: 'platform21',
+		baseCost: 12_000_000_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 1_700_000_000_000_000_000,
+		cycleMs: 320_000
+	},
+	{
+		id: 'platform22',
+		baseCost: 18_000_000_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 9_200_000_000_000_000_000,
+		cycleMs: 330_000
+	},
+	{
+		id: 'platform23',
+		baseCost: 27_000_000_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 5_100_000_000_000_000_000,
+		cycleMs: 340_000
+	},
+	{
+		id: 'superplatform',
+		baseCost: 40_000_000_000_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 28_000_000_000_000_000_000,
+		cycleMs: 350_000
+	},
+	{
+		id: 'megaplatform',
+		baseCost: 60_000_000_000_000_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 150_000_000_000_000_000_000,
+		cycleMs: 360_000
+	},
+	{
+		id: 'gigaplatform',
+		baseCost: 90_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 820_000_000_000_000_000_000,
+		cycleMs: 370_000
+	},
+	{
+		id: 'teraplatform',
+		baseCost: 135_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 4_500_000_000_000_000_000_000,
+		cycleMs: 380_000
+	},
+	{
+		id: 'exaplatform',
+		baseCost: 200_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 25_000_000_000_000_000_000_000,
+		cycleMs: 390_000
+	},
+	{
+		id: 'zetaplatform',
+		baseCost: 300_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 140_000_000_000_000_000_000_000,
+		cycleMs: 400_000
+	},
+	{
+		id: 'yottaplatform',
+		baseCost: 450_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 770_000_000_000_000_000_000_000,
+		cycleMs: 410_000
+	},
+	{
+		id: 'ultraplatform',
+		baseCost: 675_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 4_200_000_000_000_000_000_000_000,
+		cycleMs: 420_000
+	},
+	{
+		id: 'infinityplatform',
+		baseCost: 1_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 23_000_000_000_000_000_000_000_000,
+		cycleMs: 430_000
+	},
+	{
+		id: 'eternityplatform',
+		baseCost: 1_500_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000,
+		baseCps: 125_000_000_000_000_000_000_000_000,
+		cycleMs: 440_000
+	}
 ];
 
 /** No speed bonus makes a cycle shorter than this */
@@ -151,7 +316,16 @@ export const PRESTIGE_BONUS = 0.05;
 export const MIN_PRICE_FACTOR = 0.5;
 
 // The nationalization shop: permanent investments bought with prestige points
-export const PERK_IDS = ['growth', 'output', 'speed', 'tap', 'seed', 'offline', 'fake_news', 'invest_boost'] as const;
+export const PERK_IDS = [
+	'growth',
+	'output',
+	'speed',
+	'tap',
+	'seed',
+	'offline',
+	'fake_news',
+	'invest_boost'
+] as const;
 
 export type PerkId = (typeof PERK_IDS)[number];
 
@@ -408,12 +582,37 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
 	{ id: 'tycoon_king', kind: 'prestige', threshold: 25, reward: { kind: 'speed', value: 0.15 } },
 	{ id: 'oil_barbarian', kind: 'taps', threshold: 100_000, reward: { kind: 'tap', value: 0.3 } },
 	{ id: 'drill_master', kind: 'owned', threshold: 500, reward: { kind: 'discount', value: 0.08 } },
-	{ id: 'global_dominator', kind: 'upgrades', threshold: 50, reward: { kind: 'output', value: 0.2 } },
+	{
+		id: 'global_dominator',
+		kind: 'upgrades',
+		threshold: 50,
+		reward: { kind: 'output', value: 0.2 }
+	},
 	{ id: 'crisis_legend', kind: 'events', threshold: 50, reward: { kind: 'speed', value: 0.1 } },
 	{ id: 'fake_warrior', kind: 'perks', threshold: 5, reward: { kind: 'tap', value: 0.15 } },
-	{ id: 'platform_king', kind: 'producers', threshold: 15, reward: { kind: 'producer', value: 0.2, producer: 'platform' } },
-	{ id: 'pipeline_king', kind: 'producers', threshold: 5, reward: { kind: 'producer', value: 0.15, producer: 'pipeline' } },
-	{ id: 'well_king', kind: 'producers', threshold: 5, reward: { kind: 'producer', value: 0.15, producer: 'wellhead' } },
-	{ id: 'rig_king', kind: 'producers', threshold: 5, reward: { kind: 'producer', value: 0.15, producer: 'rig' } },
+	{
+		id: 'platform_king',
+		kind: 'producers',
+		threshold: 15,
+		reward: { kind: 'producer', value: 0.2, producer: 'platform' }
+	},
+	{
+		id: 'pipeline_king',
+		kind: 'producers',
+		threshold: 5,
+		reward: { kind: 'producer', value: 0.15, producer: 'pipeline' }
+	},
+	{
+		id: 'well_king',
+		kind: 'producers',
+		threshold: 5,
+		reward: { kind: 'producer', value: 0.15, producer: 'wellhead' }
+	},
+	{
+		id: 'rig_king',
+		kind: 'producers',
+		threshold: 5,
+		reward: { kind: 'producer', value: 0.15, producer: 'rig' }
+	},
 	{ id: 'monocle_king', kind: 'perks', threshold: 5, reward: { kind: 'tap', value: 0.2 } }
 ];
