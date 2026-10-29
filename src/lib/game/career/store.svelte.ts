@@ -10,6 +10,7 @@ import {
 	adsLeft as adsLeftFor,
 	awardRun as claimRun,
 	buyRevives as buyRevivesIn,
+	buyUnlock as buyUnlockIn,
 	canClaimDaily,
 	careerLevel,
 	careerRank,
@@ -73,6 +74,14 @@ class CareerStore {
 
 	buyRevives(count: number, now: Date = new Date()): boolean {
 		const next = buyRevivesIn(this.profile, count, now);
+		if (!next) return false;
+		this.#commit(next);
+		return true;
+	}
+
+	/** Buys a profile item with Fake News; false when it is already owned or too expensive */
+	buyUnlock(id: string, price: number, now: Date = new Date()): boolean {
+		const next = buyUnlockIn(this.profile, id, price, now);
 		if (!next) return false;
 		this.#commit(next);
 		return true;

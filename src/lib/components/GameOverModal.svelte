@@ -42,6 +42,7 @@
 	import ShareButton from './ShareButton.svelte';
 	import IconGift from '~icons/lucide/gift';
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
+	import IconMedal from '~icons/lucide/medal';
 	import IconNewspaper from '~icons/lucide/newspaper';
 	import IconRotate from '~icons/lucide/rotate-ccw';
 	import IconTv from '~icons/lucide/tv';
@@ -355,6 +356,21 @@
 						>
 							<IconGift class="size-4" aria-hidden="true" />
 							{m.gameover_challenge_done()}
+						</span>
+					{/if}
+					{#if reward.contest?.improved}
+						<span
+							class="inline-flex -rotate-1 items-center gap-1 rounded-md border-2 border-ink bg-explosion-yellow px-2 py-0.5"
+						>
+							<IconMedal class="size-4" aria-hidden="true" />
+							{m.contest_medal_won({
+								tier:
+									reward.contest.tier === 'gold'
+										? m.contest_tier_gold()
+										: reward.contest.tier === 'silver'
+											? m.contest_tier_silver()
+											: m.contest_tier_bronze()
+							})}
 						</span>
 					{/if}
 					{#if reward.capped}

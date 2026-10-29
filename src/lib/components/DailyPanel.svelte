@@ -25,6 +25,7 @@
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
 	import IconNewspaper from '~icons/lucide/newspaper';
 	import IconPlay from '~icons/lucide/play';
+	import ContestPanel from './ContestPanel.svelte';
 
 	// resolve() has one overload per route, and TypeScript gives up on matching a union of more
 	// than 25 routes against them. The mode registry already type-checks every href.
@@ -196,3 +197,7 @@
 		{/if}
 	</div>
 </section>
+
+<!-- The contest is the other half of the day: the dispatch pays the streak, the contest pays a
+     medal for the best run in one featured game. Both cards belong to the same daily block. -->
+<ContestPanel />

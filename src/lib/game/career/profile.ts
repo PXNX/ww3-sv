@@ -6,6 +6,14 @@
  */
 import { createRandom, dayKey, randomInt, seedFromString } from '#lib/game/random.js';
 import {
+	newContest,
+	enterContest,
+	type ContestEntry,
+	type ContestMedal,
+	type ContestOutcome
+} from '#lib/game/contest/contest.js';
+import type { ContestTier } from '#lib/game/contest/config.js';
+import {
 	ADS_PER_DAY,
 	CAREER_MODES,
 	CHALLENGE_RUN_MULTIPLIER,
@@ -78,6 +86,12 @@ export interface CareerProfile {
 	/** The last day the daily reward was collected, or null */
 	lastBonusDay: string | null;
 	challenge: DailyChallenge;
+	/** Today's contest: the featured game, the best score entered and the medal already paid */
+	contest: ContestEntry;
+	/** Medals won in past contests, oldest first, capped by the contest config */
+	medals: ContestMedal[];
+	/** Profile items bought with Fake News, by unlock id */
+	unlocked: string[];
 	/** What was earned today, against the daily soft cap */
 	earned: DailyEarned;
 	ads: AdCounter;
@@ -141,6 +155,9 @@ export function newCareer(now: Date = new Date()): CareerProfile {
 		bestStreak: 0,
 		lastBonusDay: null,
 		challenge: newChallenge(now),
+		contest: newContest(day),
+		medals: [],
+		unlocked: [],
 		earned: { day, coins: 0, xp: 0 },
 		ads: { day, watched: 0 },
 		modes: {},
@@ -153,6 +170,7 @@ export function withToday(profile: CareerProfile, now: Date = new Date()): Caree
 	const day = dayKey(now);
 	let next = profile;
 	if (next.challenge.day !== day) next = { ...next, challenge: newChallenge(now) };
+	if (next.contest.day !== day) next = { ...next, contest: newContest(day) };
 	if (next.earned.day !== day) next = { ...next, earned: { day, coins: 0, xp: 0 } };
 	if (next.ads.day !== day) next = { ...next, ads: { day, watched: 0 } };
 	return next;
@@ -199,6 +217,8 @@ export interface RunReward {
 	levelCoins: number;
 	/** True when this run was the featured game's and opened today's daily reward */
 	challengeCompleted: boolean;
+	/** The contest medal this run earned or raised, or null when it was not today's contest game */
+	contest: ContestOutcome | null;
 	/** True when the daily cap trimmed the payout */
 	capped: boolean;
 }
@@ -252,12 +272,25 @@ export function awardRun(profile: CareerProfile, run: RunInput, now: Date = new 
 		}
 	};
 
+	// The contest runs alongside the ordinary payout. Its prize is a bonus outside the daily cap,
+	// and the medal for a day only ever goes up, so a worse run later pays nothing.
+	const contest = enterContest(
+		today.contest,
+		today.medals,
+		{ mode: run.mode, score },
+		previous?.best ?? null
+	);
+	const contestCoins = contest?.coins ?? 0;
+	const contestRevives = contest?.revives ?? 0;
+
 	const next: CareerProfile = {
 		...today,
 		xp: today.xp + runXp,
-		coins: today.coins + runCoins + levels.coins,
-		revives: today.revives + levels.revives,
+		coins: today.coins + runCoins + levels.coins + contestCoins,
+		revives: today.revives + levels.revives + contestRevives,
 		challenge: challengeMatch ? { ...today.challenge, done: true } : today.challenge,
+		contest: contest?.contest ?? today.contest,
+		medals: contest?.medals ?? today.medals,
 		earned: { ...today.earned, coins: today.earned.coins + runCoins, xp: today.earned.xp + runXp },
 		modes,
 		runs: today.runs + 1
@@ -265,7 +298,7 @@ export function awardRun(profile: CareerProfile, run: RunInput, now: Date = new 
 
 	return {
 		profile: next,
-		coins: runCoins + levels.coins,
+		coins: runCoins + levels.coins + contestCoins,
 		xp: runXp,
 		runCoins,
 		runXp,
@@ -273,6 +306,7 @@ export function awardRun(profile: CareerProfile, run: RunInput, now: Date = new 
 		level: levels.level,
 		levelCoins: levels.coins,
 		challengeCompleted: challengeMatch,
+		contest,
 		capped
 	};
 }
@@ -387,6 +421,23 @@ export function useRevive(profile: CareerProfile): CareerProfile | null {
 	return { ...profile, revives: profile.revives - 1 };
 }
 
+/**
+ * Buys a profile item with Fake News. Null when it is already owned, the price is not a positive
+ * whole number, or the wallet cannot cover it, so the shop can show one honest answer per tap.
+ */
+export function buyUnlock(
+	profile: CareerProfile,
+	id: string,
+	price: number,
+	now: Date = new Date()
+): CareerProfile | null {
+	const today = withToday(profile, now);
+	if (!Number.isInteger(price) || price <= 0) return null;
+	if (today.unlocked.includes(id)) return null;
+	if (today.coins < price) return null;
+	return { ...today, coins: today.coins - price, unlocked: [...today.unlocked, id] };
+}
+
 export interface AdResult {
 	profile: CareerProfile;
 	watched: boolean;
@@ -457,9 +508,36 @@ function isModeProgress(value: unknown): value is ModeProgress {
 	);
 }
 
+const isTier = (value: unknown): value is ContestTier =>
+	value === 'bronze' || value === 'silver' || value === 'gold';
+
+function isContestEntry(value: unknown): value is ContestEntry {
+	return (
+		isRecord(value) &&
+		typeof value.day === 'string' &&
+		DAY.test(value.day) &&
+		typeof value.mode === 'string' &&
+		isCareerMode(value.mode) &&
+		isCount(value.best) &&
+		(value.tier === null || isTier(value.tier))
+	);
+}
+
+function isContestMedal(value: unknown): value is ContestMedal {
+	return (
+		isRecord(value) &&
+		typeof value.day === 'string' &&
+		DAY.test(value.day) &&
+		typeof value.mode === 'string' &&
+		isCareerMode(value.mode) &&
+		isTier(value.tier) &&
+		isCount(value.score)
+	);
+}
+
 export function isCareerProfile(value: unknown): value is CareerProfile {
 	if (!isRecord(value) || value.version !== 1) return false;
-	const { challenge, earned, ads, modes } = value;
+	const { challenge, contest, medals, unlocked, earned, ads, modes } = value;
 	return (
 		isWholeCount(value.xp) &&
 		isWholeCount(value.coins) &&
@@ -475,6 +553,11 @@ export function isCareerProfile(value: unknown): value is CareerProfile {
 		typeof challenge.mode === 'string' &&
 		isCareerMode(challenge.mode) &&
 		typeof challenge.done === 'boolean' &&
+		isContestEntry(contest) &&
+		Array.isArray(medals) &&
+		medals.every(isContestMedal) &&
+		Array.isArray(unlocked) &&
+		unlocked.every((id) => typeof id === 'string') &&
 		isRecord(earned) &&
 		typeof earned.day === 'string' &&
 		DAY.test(earned.day) &&
@@ -491,13 +574,22 @@ export function isCareerProfile(value: unknown): value is CareerProfile {
 	);
 }
 
+/** Fills in what a save from before the contest and the wardrobe does not have yet */
+function withMissingFields(value: unknown, now: Date): unknown {
+	if (!isRecord(value)) return value;
+	const day = dayKey(now);
+	let next = value;
+	// Older saves predate the best streak; their current streak is the best we can prove
+	if (next.bestStreak === undefined) next = { ...next, bestStreak: next.streak };
+	if (next.contest === undefined) next = { ...next, contest: newContest(day) };
+	if (next.medals === undefined) next = { ...next, medals: [] };
+	if (next.unlocked === undefined) next = { ...next, unlocked: [] };
+	return next;
+}
+
 /** A saved profile, or null if it is not one; an old profile moves on to today's challenge */
 export function parseCareer(value: unknown, now: Date = new Date()): CareerProfile | null {
-	// Older saves predate the best streak; their current streak is the best we can prove
-	const candidate =
-		isRecord(value) && value.bestStreak === undefined
-			? { ...value, bestStreak: value.streak }
-			: value;
+	const candidate = withMissingFields(value, now);
 	if (!isCareerProfile(candidate)) return null;
 	return withToday(candidate, now);
 }
