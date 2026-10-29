@@ -71,6 +71,8 @@ export const BEST_KEY = ['tycoon', 'lifetime'] as const;
 
 /** The game saves itself this often */
 export const AUTOSAVE_MS = 5000;
+/** How often everything the page shows is worked out again; in between only the bank and cycles move */
+const SYNC_MS = 250;
 const TOAST_MS = 2600;
 
 export interface Toast {
@@ -163,6 +165,7 @@ export class TycoonGame {
 	#toastMs = 0;
 	#toastId = 0;
 	#saveMs = 0;
+	#syncMs = 0;
 	#awayAt: number | null = null;
 	#lastSound: Partial<Record<SoundId, number>> = {};
 
@@ -337,7 +340,14 @@ export class TycoonGame {
 		if (this.status !== 'playing') return;
 		if (this.toast && (this.#toastMs -= dtMs) <= 0) this.toast = null;
 		this.#handleAll(stepGame(this.state, dtMs, this.#random));
-		this.#sync();
+		// Between the full syncs only what moves every step is copied out: the bank and the cycles
+		this.#syncMs += dtMs;
+		if (dtMs <= 0 || this.#syncMs >= SYNC_MS) {
+			this.#syncMs = 0;
+			this.#sync();
+		} else {
+			this.#syncBank();
+		}
 		if ((this.#saveMs += dtMs) >= AUTOSAVE_MS) {
 			this.#saveMs = 0;
 			this.save();
@@ -404,6 +414,15 @@ export class TycoonGame {
 		soundManager().play(id);
 	}
 
+	/** The few things that change on every step: the bank and how far each cycle has come */
+	#syncBank() {
+		const state = this.state;
+		this.barrels = state.barrels;
+		this.runTotal = state.runTotal;
+		this.lifetime = state.lifetime;
+		this.progress = byProducer((id) => Math.min(1, state.progress[id] / this.cycles[id]));
+	}
+
 	#sync() {
 		const state = this.state;
 		this.barrels = state.barrels;
@@ -414,33 +433,51 @@ export class TycoonGame {
 		this.taps = state.taps;
 		this.crisesAnswered = state.eventsHandled;
 		this.sanctionsEvaded = state.sanctionsEvaded;
-		this.owned = { ...state.owned };
+		this.owned = keep(this.owned, { ...state.owned });
 		this.totalMultiplier = globalMultiplier(state);
-		this.eachOutput = byProducer((id) => unitOutput(state, id));
-		this.cycles = byProducer((id) => cycleMs(state, id));
+		this.eachOutput = keep(
+			this.eachOutput,
+			byProducer((id) => unitOutput(state, id))
+		);
+		this.cycles = keep(
+			this.cycles,
+			byProducer((id) => cycleMs(state, id))
+		);
 		this.progress = byProducer((id) => Math.min(1, state.progress[id] / this.cycles[id]));
-		this.pricing = pricing(state);
+		this.pricing = keep(this.pricing, pricing(state));
 		this.speed = speedMultiplier(state);
-		this.cut = state.effects.flatMap((effect) => (effect.producer ? [effect.producer] : []));
-		this.upgradeIds = [...state.upgrades];
+		this.cut = keep(
+			this.cut,
+			state.effects.flatMap((effect) => (effect.producer ? [effect.producer] : []))
+		);
+		this.upgradeIds = keep(this.upgradeIds, [...state.upgrades]);
 		const priced = availableUpgrades(state)
 			.map((upgrade) => ({ id: upgrade.id, cost: upgradeCost(state, upgrade) }))
 			.sort((a, b) => a.cost - b.cost);
-		this.availableIds = priced.map((entry) => entry.id);
-		this.upgradePrices = Object.fromEntries(priced.map((entry) => [entry.id, entry.cost]));
-		this.achievementIds = [...state.achievements];
-		this.achievementBoosts = {
+		this.availableIds = keep(
+			this.availableIds,
+			priced.map((entry) => entry.id)
+		);
+		this.upgradePrices = keep(
+			this.upgradePrices,
+			Object.fromEntries(priced.map((entry) => [entry.id, entry.cost]))
+		);
+		this.achievementIds = keep(this.achievementIds, [...state.achievements]);
+		this.achievementBoosts = keep(this.achievementBoosts, {
 			tap: achievementBonus(state, 'tap'),
 			output: achievementBonus(state, 'output'),
 			speed: achievementBonus(state, 'speed'),
 			discount: achievementBonus(state, 'discount')
-		};
+		});
 		this.prestigePoints = state.prestigePoints;
 		this.spendablePoints = availablePoints(state);
-		this.perks = { ...state.perks };
-		this.perkPrices = Object.fromEntries(
-			PERKS.map((def) => [def.id, perkCost(def, state.perks[def.id], state)])
-		) as Record<PerkId, number>;
+		this.perks = keep(this.perks, { ...state.perks });
+		this.perkPrices = keep(
+			this.perkPrices,
+			Object.fromEntries(
+				PERKS.map((def) => [def.id, perkCost(def, state.perks[def.id], state)])
+			) as Record<PerkId, number>
+		);
 		this.canInvest = PERKS.some(
 			(def) => state.perks[def.id] < def.maxLevel && this.perkPrices[def.id] <= this.spendablePoints
 		);
@@ -454,6 +491,15 @@ export class TycoonGame {
 		this.canPayEvent = state.event ? canChoose(state, 'a') : true;
 		this.sellValue = spikeSellValue(state);
 	}
+}
+
+/** The previous object when the new one holds the same values, so nothing downstream reruns */
+function keep<T extends object>(previous: T, next: T): T {
+	const a = previous as Record<string, unknown>;
+	const b = next as Record<string, unknown>;
+	const keys = Object.keys(b);
+	if (Object.keys(a).length !== keys.length) return next;
+	return keys.every((key) => a[key] === b[key]) ? previous : next;
 }
 
 function byProducer(value: (id: ProducerId) => number): Record<ProducerId, number> {

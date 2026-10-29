@@ -118,6 +118,14 @@
 			return def ? [def] : [];
 		})
 	);
+	// Only the producers within reach are drawn: the ones owned and the next few, so the list stays
+	// short and light however far the game has come
+	const REACH = 3;
+	const lastOwnedIndex = $derived(
+		PRODUCERS.reduce((last, producer, index) => (game.owned[producer.id] > 0 ? index : last), -1)
+	);
+	const shownProducers = $derived(PRODUCERS.slice(0, lastOwnedIndex + 1 + REACH));
+	const hiddenProducers = $derived(PRODUCERS.length - shownProducers.length);
 	const secondsLeft = (ms: number) => Math.max(1, Math.ceil(ms / 1000));
 	// The boosts the unlocked achievements add up to, as whole percents
 	const boosts = $derived(
@@ -173,29 +181,40 @@
 
 		<!-- The bank: barrels, output per second, per tap and the multiplier -->
 		<div
-			class="flex flex-col gap-1 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
+			class="flex flex-col gap-2 rounded-2xl border-3 border-ink bg-paper px-4 py-3 shadow-[3px_3px_0_var(--color-ink)]"
 		>
-			<p class="font-display text-xs font-bold tracking-wide uppercase">{m.tycoon_hud_barrels()}</p>
-			<p class="font-display text-4xl leading-none font-bold tabular-nums" dir="ltr">
-				{formatBig(game.barrels, locale)}
-			</p>
-			<div class="flex flex-wrap gap-x-4 gap-y-0.5 font-display text-sm font-bold tabular-nums">
-				<span dir="auto"
-					>{m.tycoon_hud_per_second({ amount: formatBig(game.perSecond, locale, 1) })}</span
+			<div class="flex items-end justify-between gap-3">
+				<div class="flex min-w-0 flex-col">
+					<p class="font-display text-xs font-bold tracking-wide uppercase">
+						{m.tycoon_hud_barrels()}
+					</p>
+					<p class="truncate font-display text-4xl leading-none font-bold tabular-nums" dir="ltr">
+						{formatBig(game.barrels, locale)}
+					</p>
+				</div>
+				<p
+					class="shrink-0 rounded-xl border-3 border-ink bg-explosion-yellow px-2.5 py-1 text-end font-display text-sm leading-tight font-bold tabular-nums"
+					dir="auto"
 				>
-				<span dir="auto"
-					>{m.tycoon_hud_per_tap({ amount: formatBig(game.tapGain, locale, 1) })}</span
-				>
-				<span dir="auto">
+					{m.tycoon_hud_per_second({ amount: formatBig(game.perSecond, locale, 1) })}
+				</p>
+			</div>
+			<div class="flex flex-wrap gap-1.5 font-display text-xs font-bold tabular-nums">
+				<span class="rounded-full border-2 border-ink bg-sand px-2 py-0.5" dir="auto">
+					{m.tycoon_hud_per_tap({ amount: formatBig(game.tapGain, locale, 1) })}
+				</span>
+				<span class="rounded-full border-2 border-ink bg-sand px-2 py-0.5" dir="auto">
 					{m.tycoon_hud_multiplier({ value: formatMultiplier(game.totalMultiplier, locale) })}
 				</span>
-			</div>
-			<p dir="auto" class="text-xs font-semibold tabular-nums">
-				{m.tycoon_hud_lifetime({ amount: formatBig(game.lifetime, locale) })}
+				<span class="rounded-full border-2 border-ink bg-sand px-2 py-0.5" dir="auto">
+					{m.tycoon_hud_lifetime({ amount: formatBig(game.lifetime, locale) })}
+				</span>
 				{#if game.best !== null}
-					· {m.tycoon_hud_best({ amount: formatBig(game.best, locale) })}
+					<span class="rounded-full border-2 border-ink bg-sand px-2 py-0.5" dir="auto">
+						{m.tycoon_hud_best({ amount: formatBig(game.best, locale) })}
+					</span>
 				{/if}
-			</p>
+			</div>
 		</div>
 
 		<!-- The playfield: the derrick, active crisis effects and the crisis card -->
@@ -286,10 +305,15 @@
 					</div>
 				</div>
 				<ul class="flex flex-col gap-2">
-					{#each PRODUCERS as producer (producer.id)}
+					{#each shownProducers as producer (producer.id)}
 						<TycoonProducerRow {game} id={producer.id} />
 					{/each}
 				</ul>
+				{#if hiddenProducers > 0}
+					<p dir="auto" class="text-center text-xs font-semibold opacity-70">
+						{m.tycoon_producers_locked({ count: formatCount(hiddenProducers, locale) })}
+					</p>
+				{/if}
 			{:else if tab === 'upgrades'}
 				{#if availableUpgrades.length === 0}
 					<p dir="auto" class="sticker bg-paper p-3 text-sm leading-snug">
@@ -300,10 +324,10 @@
 						{#each availableUpgrades as upgrade (upgrade.id)}
 							{@const price = game.upgradePrices[upgrade.id] ?? upgrade.cost}
 							{@const affordable = game.barrels >= price}
-							<li>
+							<li class="tycoon-upgrade">
 								<button
 									type="button"
-									class="btn-chunky flex w-full items-center gap-3 bg-paper px-3 py-2 text-start"
+									class="btn-chunky flex w-full items-center gap-3 rounded-2xl bg-paper px-3 py-2 text-start"
 									class:opacity-60={!affordable}
 									disabled={!affordable}
 									aria-label={m.tycoon_upgrade_buy_label({
@@ -395,6 +419,12 @@
 </GameShell>
 
 <style>
+	/* Upgrades far off screen are not laid out or painted, which keeps a long list light */
+	.tycoon-upgrade {
+		content-visibility: auto;
+		contain-intrinsic-size: auto 60px;
+	}
+
 	.tycoon-toast {
 		animation: tycoon-toast 2600ms ease-out forwards;
 	}

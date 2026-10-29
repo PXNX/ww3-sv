@@ -153,7 +153,9 @@ describe('save and load', () => {
 			seed: 0,
 			offline: 0,
 			fake_news: 0,
-			invest_boost: 0
+			invest_boost: 0,
+			crit_chance: 0,
+			crit_mult: 0
 		});
 		// No cycle runs past its end, and a producer that is not owned has no cycle going
 		expect(state.progress.pumpjack).toBe(1000);

@@ -31,7 +31,9 @@ import {
 	seedBarrels,
 	speedMultiplier,
 	tapValue,
-	unitOutput
+	unitOutput,
+	critChanceUpgrade,
+	critMultUpgrade
 } from './economy.js';
 import { createState } from './state.js';
 
@@ -261,6 +263,25 @@ describe('achievement boosts', () => {
 
 	it('all grant a boost', () => {
 		for (const achievement of ACHIEVEMENTS) expect(achievement.reward.value).toBeGreaterThan(0);
+	});
+});
+
+describe('critical taps and the shop', () => {
+	it('raises the chance and the bonus of a critical tap with the investments', () => {
+		const state = fresh();
+		const chance = critChanceUpgrade(state);
+		const bonus = critMultUpgrade(state);
+		state.perks.crit_chance = 3;
+		state.perks.crit_mult = 4;
+		expect(critChanceUpgrade(state)).toBeCloseTo(chance + 3 * perkValue('crit_chance'), 9);
+		expect(critMultUpgrade(state)).toBeCloseTo(bonus + 4 * perkValue('crit_mult'), 9);
+	});
+
+	it('never lets the chance pass 95 percent', () => {
+		const state = fresh();
+		state.perks.crit_chance = 10;
+		state.upgrades.push('crit_chance');
+		expect(critChanceUpgrade(state)).toBeLessThanOrEqual(0.95);
 	});
 });
 

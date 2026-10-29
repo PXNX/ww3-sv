@@ -283,7 +283,9 @@ const PERK_NAMES: Record<PerkId, () => string> = {
 	seed: m.tycoon_perk_seed_name,
 	offline: m.tycoon_perk_offline_name,
 	fake_news: m.tycoon_perk_fake_news_name,
-	invest_boost: m.tycoon_perk_invest_boost_name
+	invest_boost: m.tycoon_perk_invest_boost_name,
+	crit_chance: m.tycoon_perk_crit_chance_name,
+	crit_mult: m.tycoon_perk_crit_mult_name
 };
 
 export function perkName(id: PerkId): string {
@@ -301,6 +303,8 @@ function perkValue(id: PerkId, level: number): string {
 			return formatBig(effect, locale);
 		case 'offline':
 			return `${formatCount(Math.min(1, OFFLINE_EFFICIENCY + effect) * 100, locale)}%`;
+		case 'crit_mult':
+			return `+${formatMultiplier(effect, locale)}×`;
 		default:
 			return `+${formatCount(effect * 100, locale)}%`;
 	}
@@ -328,6 +332,10 @@ export function perkEffectText(id: PerkId, level: number, maxed: boolean): strin
 			return m.tycoon_perk_fake_news_effect({ value: formatCount(perkEffect(id, 1), getLocale()) });
 		case 'invest_boost':
 			return m.tycoon_perk_invest_boost_effect({ value });
+		case 'crit_chance':
+			return m.tycoon_perk_crit_chance_effect({ value });
+		case 'crit_mult':
+			return m.tycoon_perk_crit_mult_effect({ value });
 	}
 }
 

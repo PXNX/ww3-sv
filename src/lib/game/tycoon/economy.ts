@@ -18,6 +18,7 @@ import {
 	PRESTIGE_UNIT,
 	PRODUCERS,
 	UPGRADES,
+	type AchievementDef,
 	type AchievementReward,
 	type PerkDef,
 	type PerkId,
@@ -27,14 +28,47 @@ import {
 } from './config.js';
 import type { TycoonState } from './types.js';
 
+// The game asks about producers, upgrades and achievements many times every step, so the lists are
+// indexed once instead of being searched each time
+const PRODUCER_BY_ID = new Map<ProducerId, ProducerDef>(
+	PRODUCERS.map((producer) => [producer.id, producer])
+);
+const UPGRADE_BY_ID = new Map<string, UpgradeDef>(UPGRADES.map((upgrade) => [upgrade.id, upgrade]));
+const UPGRADES_OF_PRODUCER = new Map<ProducerId, UpgradeDef[]>(
+	PRODUCERS.map((producer) => [
+		producer.id,
+		UPGRADES.filter((upgrade) => upgrade.kind === 'producer' && upgrade.producer === producer.id)
+	])
+);
+const GLOBAL_UPGRADES = UPGRADES.filter((upgrade) => upgrade.kind === 'global');
+const TAP_UPGRADES = UPGRADES.filter(
+	(upgrade) => upgrade.kind === 'click' || upgrade.kind === 'clickCps'
+);
+const ACHIEVEMENTS_BY_REWARD = new Map<AchievementReward['kind'], AchievementDef[]>();
+for (const def of ACHIEVEMENTS) {
+	const list = ACHIEVEMENTS_BY_REWARD.get(def.reward.kind) ?? [];
+	list.push(def);
+	ACHIEVEMENTS_BY_REWARD.set(def.reward.kind, list);
+}
+
+/** A set view of a list of ids, rebuilt only when the list grew or was replaced */
+const idSets = new WeakMap<readonly string[], { size: number; ids: Set<string> }>();
+function idSet(list: readonly string[]): Set<string> {
+	const cached = idSets.get(list);
+	if (cached && cached.size === list.length) return cached.ids;
+	const ids = new Set(list);
+	idSets.set(list, { size: list.length, ids });
+	return ids;
+}
+
 export function producerDef(id: ProducerId): ProducerDef {
-	const def = PRODUCERS.find((producer) => producer.id === id);
+	const def = PRODUCER_BY_ID.get(id);
 	if (!def) throw new Error(`Unknown producer: ${id}`);
 	return def;
 }
 
 export function upgradeDef(id: string): UpgradeDef | undefined {
-	return UPGRADES.find((upgrade) => upgrade.id === id);
+	return UPGRADE_BY_ID.get(id);
 }
 
 export function perkDef(id: PerkId): PerkDef {
@@ -90,7 +124,7 @@ export function maxAffordable(
 }
 
 export function hasUpgrade(state: TycoonState, id: string): boolean {
-	return state.upgrades.includes(id);
+	return idSet(state.upgrades).has(id);
 }
 
 export function totalOwned(state: Pick<TycoonState, 'owned'>): number {
@@ -133,9 +167,10 @@ export function achievementBonus(
 	producer?: ProducerId
 ): number {
 	let bonus = 0;
-	for (const def of ACHIEVEMENTS) {
+	const earned = idSet(state.achievements);
+	for (const def of ACHIEVEMENTS_BY_REWARD.get(kind) ?? []) {
 		const reward = def.reward;
-		if (reward.kind !== kind || !state.achievements.includes(def.id)) continue;
+		if (!earned.has(def.id)) continue;
 		if (reward.kind === 'producer' && reward.producer !== producer) continue;
 		bonus += reward.value;
 	}
@@ -208,10 +243,8 @@ export function pricing(state: TycoonState): Pricing {
 /** Multiplier of one producer from its own upgrades (each tier doubles it) and achievements */
 export function producerMultiplier(state: TycoonState, id: ProducerId): number {
 	let multiplier = 1 + achievementBonus(state, 'producer', id);
-	for (const upgrade of UPGRADES) {
-		if (upgrade.kind === 'producer' && upgrade.producer === id && hasUpgrade(state, upgrade.id)) {
-			multiplier *= upgrade.value;
-		}
+	for (const upgrade of UPGRADES_OF_PRODUCER.get(id) ?? []) {
+		if (hasUpgrade(state, upgrade.id)) multiplier *= upgrade.value;
 	}
 	return multiplier;
 }
@@ -234,8 +267,8 @@ export function globalMultiplier(state: TycoonState): number {
 		prestigeMultiplier(state.prestigePoints, state) *
 		(1 + achievementBonus(state, 'output')) *
 		(1 + perkEffect('output', state.perks.output));
-	for (const upgrade of UPGRADES) {
-		if (upgrade.kind === 'global' && hasUpgrade(state, upgrade.id)) multiplier *= upgrade.value;
+	for (const upgrade of GLOBAL_UPGRADES) {
+		if (hasUpgrade(state, upgrade.id)) multiplier *= upgrade.value;
 	}
 	return multiplier;
 }
@@ -301,17 +334,19 @@ export function tapMultiplier(state: TycoonState): number {
 	return (1 + achievementBonus(state, 'tap')) * (1 + perkEffect('tap', state.perks.tap));
 }
 
-/** Upgraded critical-tap chance from click upgrades; capped at 0.95 */
+/** Critical-tap chance with the click upgrade and the shop investment; capped at 0.95 */
 export function critChanceUpgrade(state: TycoonState): number {
-	const base = UPGRADES.find((upgrade) => upgrade.id === 'crit_chance');
-	if (!base || !hasUpgrade(state, 'crit_chance')) return CRIT_CHANCE;
-	return Math.min(0.95, CRIT_CHANCE * base.value);
+	const base = UPGRADE_BY_ID.get('crit_chance');
+	const upgraded =
+		base && hasUpgrade(state, 'crit_chance') ? CRIT_CHANCE * base.value : CRIT_CHANCE;
+	return Math.min(0.95, upgraded + perkEffect('crit_chance', state.perks.crit_chance));
 }
 
-/** Upgraded critical-tap multiplier from click upgrades */
+/** Critical-tap multiplier with the click upgrade and the shop investment */
 export function critMultUpgrade(state: TycoonState): number {
-	const base = UPGRADES.find((upgrade) => upgrade.id === 'crit_mult');
-	let mult = 1 + CRIT_MULT + achievementBonus(state, 'tap');
+	const base = UPGRADE_BY_ID.get('crit_mult');
+	let mult =
+		1 + CRIT_MULT + achievementBonus(state, 'tap') + perkEffect('crit_mult', state.perks.crit_mult);
 	if (base && hasUpgrade(state, 'crit_mult')) mult *= base.value;
 	return mult;
 }
@@ -320,7 +355,7 @@ export function critMultUpgrade(state: TycoonState): number {
 export function tapValue(state: TycoonState): number {
 	let click = BASE_TAP;
 	let share = 0;
-	for (const upgrade of UPGRADES) {
+	for (const upgrade of TAP_UPGRADES) {
 		if (!hasUpgrade(state, upgrade.id)) continue;
 		if (upgrade.kind === 'click') click *= upgrade.value;
 		else if (upgrade.kind === 'clickCps') share += upgrade.value;
