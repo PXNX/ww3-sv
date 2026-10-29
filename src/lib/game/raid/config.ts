@@ -290,14 +290,14 @@ export const WEAPONS: Record<WeaponKind, WeaponSpec> = {
 	daggers: {
 		damage: 9,
 		fireMs: 130,
-		range: 180,
-		projectileSpeed: 1200,
+		range: 95,
+		projectileSpeed: 0,
 		pellets: 1,
-		spread: 0.06,
+		spread: 0,
 		critChance: 0.15,
 		critMultiplier: 2.2,
 		splash: 0,
-		pierce: 1,
+		pierce: 0,
 		burnMs: 0,
 		skills: ['smoke', 'dash']
 	}
@@ -348,6 +348,9 @@ export const HAMMER_CHARGE_PER_HIT = 0.14;
 export const HAMMER_FALL_RADIUS = 170;
 export const HAMMER_FALL_DAMAGE_FACTOR = 4;
 export const HAMMER_FALL_HEAL_SHARE = 0.25;
+/** Daggers melee swing arc and charge (reused for melee) */
+export const DAGGER_ARC = 1.4;
+
 /** Quake (hammer): a slam that hurts and shoves everything around */
 export const QUAKE_RADIUS = 150;
 export const QUAKE_DAMAGE_FACTOR = 1.8;

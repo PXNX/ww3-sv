@@ -88,6 +88,7 @@ import {
 	MINIGUN_MIN_FIRE_FACTOR,
 	HAMMER_ARC,
 	HAMMER_CHARGE_PER_HIT,
+	DAGGER_ARC,
 	HAMMER_FALL_DAMAGE_FACTOR,
 	HAMMER_FALL_HEAL_SHARE,
 	HAMMER_FALL_RADIUS,
@@ -1457,6 +1458,17 @@ function firePlayer(state: RaidState, random: Random, events: RaidEvent[]) {
 	}
 	if (weapon.kind === 'hammer') {
 		swingHammer(state, stats, random, events);
+		return;
+	}
+	if (weapon.kind === 'daggers') {
+		const hit = enemiesAround(state, WEAPONS.daggers.range, player.aim, DAGGER_ARC);
+		for (const enemy of hit) {
+			const crit = random() < stats.critChance;
+			const damage = crit ? stats.damage * stats.critMultiplier : stats.damage;
+			damageEnemy(state, enemy, damage, crit, events);
+		}
+		state.enemies = state.enemies.filter((enemy) => enemy.hp > 0);
+		events.push({ type: 'swing', x: player.x, y: player.y, angle: player.aim, hits: hit.length });
 		return;
 	}
 	const focused = player.focusShots > 0;
