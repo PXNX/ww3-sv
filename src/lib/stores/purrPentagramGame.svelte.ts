@@ -6,7 +6,12 @@
  * The ritual state is reactive on purpose: the board is a small SVG that redraws from it, and only
  * a handful of values change per frame.
  */
-import { CAT_RADIUS, FIELD, STARTING_LIVES } from '#lib/game/purrpentagram/config.js';
+import {
+	CAT_RADIUS,
+	FIELD,
+	PURR_SOLVED_KEY,
+	STARTING_LIVES
+} from '#lib/game/purrpentagram/config.js';
 import { finaleStage } from '#lib/game/purrpentagram/finale.js';
 import {
 	circleAt,
@@ -25,6 +30,7 @@ import { beginPet, connect, endPet, nudgePet, stepRitual } from '#lib/game/purrp
 import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
 import { prefersReducedMotion } from '#lib/game/loop.js';
 import { highscores, type Highscores } from '#lib/services/highscore.js';
+import { localStore } from '#lib/services/storage.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
 import type { SoundId } from '#lib/sound/sounds.js';
 import { PurrMixer } from '#lib/sound/purrMixer.js';
@@ -391,6 +397,8 @@ export class PurrPentagramGame {
 		const result = this.#scores().submit(SCORE_KEY, this.score);
 		this.isNewBest = result.isNewBest;
 		this.best = result.best;
+		// Remembered for the cat ears of the agent
+		localStore().write(PURR_SOLVED_KEY, true);
 		this.#linesHeard = 0;
 		this.#burstHeard = false;
 		this.status = 'won';

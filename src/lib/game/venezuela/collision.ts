@@ -1,7 +1,7 @@
 /*
  * Axis-separated AABB movement against the tile grid, shared by the player and the walking goons.
  * Solid tiles block from every side; catwalks ("one-way" tiles) only block a body that comes down
- * onto them from above.
+ * onto them from above, and so do the moving floors (hover barges) passed in separately.
  */
 import { tileAt, type LevelData } from './level';
 
@@ -31,9 +31,16 @@ export interface MoveResult {
 const SKIN = 1e-4;
 /** How far below a catwalk's top the feet may start for it to still catch a falling body */
 const ONE_WAY_TOLERANCE = 0.06;
+/** The same for a moving floor (a hover barge), which may rise into the falling body a little */
+const FLOOR_TOLERANCE = 0.15;
 
 /** Moves a body by its own velocity for dt seconds, resolving collisions, X first and then Y */
-export function moveBody(level: LevelData, body: Body, dt: number): MoveResult {
+export function moveBody(
+	level: LevelData,
+	body: Body,
+	dt: number,
+	floors: readonly Box[] = []
+): MoveResult {
 	const result: MoveResult = { hitWall: false, landed: false, bumped: false };
 
 	// Sideways
@@ -66,6 +73,16 @@ export function moveBody(level: LevelData, body: Body, dt: number): MoveResult {
 				const kind = tileAt(level, column, row);
 				if (kind === 'solid' || (kind === 'oneway' && previousBottom <= row + ONE_WAY_TOLERANCE)) {
 					body.y = row - body.h - SKIN;
+					body.vy = 0;
+					result.landed = true;
+					break;
+				}
+			}
+			if (!result.landed) {
+				for (const floor of floors) {
+					if (body.x + body.w <= floor.x + SKIN || body.x >= floor.x + floor.w - SKIN) continue;
+					if (previousBottom > floor.y + FLOOR_TOLERANCE || body.y + body.h < floor.y) continue;
+					body.y = floor.y - body.h - SKIN;
 					body.vy = 0;
 					result.landed = true;
 					break;

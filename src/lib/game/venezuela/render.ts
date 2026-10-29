@@ -1,8 +1,9 @@
 /*
  * Canvas drawing for El Presidente: a parallax backdrop of derricks and dunes, the tile map
- * (earth, crates, catwalks, barricades, pits of oil), then barrels, goons, helicopters, the hero
- * and short cartoon effects. The context is expected to be scaled so one unit is one tile; camX is
- * the tile at the left edge of the view.
+ * (earth, crates, catwalks, barricades, mystery blocks, spring pads, pits of oil), then hover barges,
+ * barrels, goons, helicopters, the hero and short cartoon effects. The context is expected to be
+ * scaled so one unit is one tile; camX is the tile at the left edge of the view, and the view is
+ * always ten tiles tall and `viewW` wide (a wide landscape screen shows more of the level).
  */
 import {
 	CRATE,
@@ -11,15 +12,21 @@ import {
 	INK,
 	KHAKI,
 	SLATE,
+	drawAura,
+	drawBarge,
 	drawBarrel,
+	drawBlock,
+	drawBooster,
 	drawFlag,
 	drawGoon,
 	drawHelicopter,
 	drawHero,
 	drawLamp,
 	drawSpikes,
+	drawSpring,
 	drawStars
 } from './art';
+import type { BoosterKind } from './boosters';
 import { SLAM_RADIUS, SQUASH_S, TWIRL_S, VIEW_H, VIEW_W } from './config';
 import { tileAt } from './level';
 import { isSprinting } from './player';
@@ -83,6 +90,24 @@ export const THEMES: readonly Theme[] = [
 		near: '#7a6a80',
 		pit: '#14141c',
 		pitGlint: '#5a5a78'
+	},
+	{
+		skyTop: '#5fb0a8',
+		skyBottom: '#f0e2a8',
+		sun: '#fff3b0',
+		far: '#6f9a78',
+		near: '#86ad7e',
+		pit: '#1d3b44',
+		pitGlint: '#6fc7c0'
+	},
+	{
+		skyTop: '#a45a8c',
+		skyBottom: '#f5b27a',
+		sun: '#ffe08a',
+		far: '#8a5f7a',
+		near: '#a8788a',
+		pit: '#241528',
+		pitGlint: '#8a6aa8'
 	}
 ];
 
@@ -98,6 +123,8 @@ export type Effect =
 	  }
 	| { kind: 'puff'; x: number; y: number; ageMs: number; durationMs: number }
 	| { kind: 'ring'; x: number; y: number; ageMs: number; durationMs: number }
+	/** A booster hopping out of the block it came from */
+	| { kind: 'item'; booster: BoosterKind; x: number; y: number; ageMs: number; durationMs: number }
 	/** The slam's shockwave, spreading along the floor */
 	| { kind: 'shock'; x: number; y: number; ageMs: number; durationMs: number }
 	/** A little cloud of dust kicked up behind a sprint or a landing */
@@ -110,6 +137,8 @@ export interface SceneExtras {
 	reducedMotion: boolean;
 	/** Tiles the whole view is shaken by right now, 0 for still */
 	shake?: number;
+	/** Tiles shown across the view; defaults to the narrowest view */
+	viewW?: number;
 }
 
 function mix(from: string, to: string, amount: number): string {
@@ -150,16 +179,22 @@ function drawDerrick(
 	ctx.stroke();
 }
 
-function drawBackdrop(ctx: CanvasRenderingContext2D, theme: Theme, camX: number, time: number) {
+function drawBackdrop(
+	ctx: CanvasRenderingContext2D,
+	theme: Theme,
+	camX: number,
+	time: number,
+	viewW: number
+) {
 	const sky = ctx.createLinearGradient(0, 0, 0, VIEW_H);
 	sky.addColorStop(0, theme.skyTop);
 	sky.addColorStop(0.75, theme.skyBottom);
 	ctx.fillStyle = sky;
-	ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+	ctx.fillRect(0, 0, viewW, VIEW_H);
 
 	// Sun
 	ctx.beginPath();
-	ctx.arc(VIEW_W - 3 - camX * 0.02, 2, 0.9, 0, Math.PI * 2);
+	ctx.arc(viewW - 3 - camX * 0.02, 2, 0.9, 0, Math.PI * 2);
 	ctx.fillStyle = theme.sun;
 	ctx.fill();
 
@@ -168,14 +203,14 @@ function drawBackdrop(ctx: CanvasRenderingContext2D, theme: Theme, camX: number,
 	ctx.fillStyle = theme.far;
 	ctx.beginPath();
 	ctx.moveTo(0, VIEW_H);
-	for (let x = 0; x <= VIEW_W + 1; x += 1) {
+	for (let x = 0; x <= viewW + 1; x += 1) {
 		const wx = x + farShift;
 		ctx.lineTo(x, 6.2 + Math.sin(wx * 0.45) * 0.45 + Math.sin(wx * 0.17) * 0.5);
 	}
-	ctx.lineTo(VIEW_W + 1, VIEW_H);
+	ctx.lineTo(viewW + 1, VIEW_H);
 	ctx.closePath();
 	ctx.fill();
-	for (let k = Math.floor(farShift / 7) - 1; k < Math.floor(farShift / 7) + 4; k++) {
+	for (let k = Math.floor(farShift / 7) - 1; k < Math.floor((farShift + viewW) / 7) + 2; k++) {
 		const x = k * 7 + 2 - farShift;
 		drawDerrick(ctx, x, 6.5, 0.9, mix(theme.far, '#000000', 0.25));
 	}
@@ -185,14 +220,14 @@ function drawBackdrop(ctx: CanvasRenderingContext2D, theme: Theme, camX: number,
 	ctx.fillStyle = theme.near;
 	ctx.beginPath();
 	ctx.moveTo(0, VIEW_H);
-	for (let x = 0; x <= VIEW_W + 1; x += 1) {
+	for (let x = 0; x <= viewW + 1; x += 1) {
 		const wx = x + nearShift;
 		ctx.lineTo(x, 7.1 + Math.sin(wx * 0.6 + 1) * 0.3);
 	}
-	ctx.lineTo(VIEW_W + 1, VIEW_H);
+	ctx.lineTo(viewW + 1, VIEW_H);
 	ctx.closePath();
 	ctx.fill();
-	for (let k = Math.floor(nearShift / 13) - 1; k < Math.floor(nearShift / 13) + 3; k++) {
+	for (let k = Math.floor(nearShift / 13) - 1; k < Math.floor((nearShift + viewW) / 13) + 2; k++) {
 		const x = k * 13 + 5 - nearShift;
 		ctx.fillStyle = mix(theme.near, '#000000', 0.3);
 		ctx.fillRect(x - 0.12, 4.9, 0.24, 2.3);
@@ -209,11 +244,13 @@ function drawTiles(
 	world: World,
 	theme: Theme,
 	camX: number,
-	time: number
+	time: number,
+	viewW: number,
+	reducedMotion: boolean
 ) {
 	const { level } = world;
 	const first = Math.max(0, Math.floor(camX) - 1);
-	const last = Math.min(level.width - 1, Math.ceil(camX + VIEW_W) + 1);
+	const last = Math.min(level.width - 1, Math.ceil(camX + viewW) + 1);
 	for (let ty = 0; ty < level.height; ty++) {
 		for (let tx = first; tx <= last; tx++) {
 			const char = level.rows[ty][tx];
@@ -271,6 +308,14 @@ function drawTiles(
 		}
 	}
 
+	for (const spring of level.springs) {
+		if (spring.x >= first && spring.x <= last) drawSpring(ctx, spring.x, spring.y);
+	}
+	for (const block of world.blocks) {
+		if (block.x < first || block.x > last) continue;
+		drawBlock(ctx, block.x, block.y, block.used, reducedMotion ? Infinity : block.bump);
+	}
+
 	// Pits are pools: wherever the bottom row is open
 	const bottom = level.height - 1;
 	for (let tx = first; tx <= last; tx++) {
@@ -323,6 +368,12 @@ function drawEffects(ctx: CanvasRenderingContext2D, effects: readonly Effect[], 
 			ctx.arc(x, effect.y - 0.12 - t * 0.25, 0.1 + t * 0.18, 0, Math.PI * 2);
 			ctx.fill();
 			ctx.restore();
+		} else if (effect.kind === 'item') {
+			ctx.save();
+			ctx.globalAlpha = t < 0.7 ? 1 : 1 - (t - 0.7) / 0.3;
+			const rise = 1 - (1 - Math.min(1, t / 0.6)) ** 2;
+			drawBooster(ctx, effect.booster, x, effect.y - 0.4 - rise * 1.1, effect.ageMs / 1000);
+			ctx.restore();
 		} else if (effect.kind === 'ring') {
 			ctx.save();
 			ctx.globalAlpha = 1 - t;
@@ -345,13 +396,14 @@ function drawEffects(ctx: CanvasRenderingContext2D, effects: readonly Effect[], 
 export function drawScene(ctx: CanvasRenderingContext2D, world: World, extras: SceneExtras) {
 	const theme = THEMES[extras.theme % THEMES.length];
 	const { camX } = extras;
+	const viewW = extras.viewW ?? VIEW_W;
 	const time = extras.reducedMotion ? 0 : world.time;
 	ctx.save();
 	ctx.beginPath();
-	ctx.rect(0, 0, VIEW_W, VIEW_H);
+	ctx.rect(0, 0, viewW, VIEW_H);
 	ctx.clip();
 
-	drawBackdrop(ctx, theme, camX, time);
+	drawBackdrop(ctx, theme, camX, time, viewW);
 
 	ctx.save();
 	if (extras.shake && !extras.reducedMotion) {
@@ -362,8 +414,13 @@ export function drawScene(ctx: CanvasRenderingContext2D, world: World, extras: S
 	}
 	ctx.save();
 	ctx.translate(-camX, 0);
-	drawTiles(ctx, world, theme, camX, time);
+	drawTiles(ctx, world, theme, camX, time, viewW, extras.reducedMotion);
 	const { level } = world;
+
+	for (const barge of world.platforms) {
+		if (barge.x + barge.w < camX - 1 || barge.x > camX + viewW + 1) continue;
+		drawBarge(ctx, barge.x, barge.y, barge.w, time);
+	}
 
 	drawFlag(ctx, level.goal.x + 0.5, level.goal.y + 1, time, world.status === 'won');
 	level.checkpoints.forEach((spot, index) => {
@@ -400,7 +457,16 @@ export function drawScene(ctx: CanvasRenderingContext2D, world: World, extras: S
 	const { player } = world;
 	const blinking = world.invuln > 0 && Math.floor(world.invuln * 12) % 2 === 0;
 	if (!blinking && world.status !== 'dead') {
+		const { boosts } = world;
+		drawAura(ctx, player.x + player.w / 2, player.y + player.h, {
+			facing: player.facing,
+			time,
+			star: boosts.star > 0,
+			ending: boosts.star < 1.5,
+			speed: boosts.turbo > 0 && Math.abs(player.vx) > 2
+		});
 		drawHero(ctx, player.x + player.w / 2, player.y + player.h, {
+			boots: boosts.boots > 0,
 			facing: player.facing,
 			run: time,
 			speed: Math.min(1, Math.abs(player.vx) / 4),

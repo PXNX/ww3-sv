@@ -1,17 +1,28 @@
 /*
  * One level being played: the player, the goons, the helicopters, the barrels, hearts and score.
  * Goons squashed one after another without touching the ground count as a combo and are worth more
- * each, and a slam landing sends out a shockwave that squashes the grounded goons nearby.
+ * each, and a slam landing sends out a shockwave that squashes the grounded goons nearby. Mystery
+ * blocks give a booster when bumped from below, spring pads fling the player up, and hover barges
+ * carry whoever stands on them.
  * stepWorld advances everything by one fixed step and returns what happened, so the store can
  * turn events into sounds and effects and the tests can check the rules without a browser.
  */
+import {
+	BOOST_SECONDS,
+	noBoosts,
+	physicsFor,
+	type BoosterKind,
+	type Boosts,
+	type TimedBoost
+} from './boosters';
 import { overlaps, type Box } from './collision';
 import {
 	INVULNERABLE_S,
-	PHYSICS,
 	PLAYER_W,
 	SCORE_BARREL,
+	SCORE_BOOSTER,
 	SCORE_FLAG,
+	SCORE_FULL_AREPA,
 	SCORE_PER_HEART,
 	SCORE_STOMP,
 	SLAM_RADIUS,
@@ -29,6 +40,8 @@ import {
 } from './enemies';
 import { tileAt, type LevelData } from './level';
 import { createPlayer, stepPlayer, type Input, type Player } from './player';
+import { createPlatform, createPlatformState, stepPlatform, type PlatformState } from './platforms';
+import { launchFromSpring } from './springs';
 
 export type HurtCause = 'goon' | 'heli' | 'hazard' | 'fall';
 
@@ -40,6 +53,9 @@ export type WorldEvent =
 	| { type: 'sprint' }
 	| { type: 'slam' }
 	| { type: 'slamLand'; x: number; y: number }
+	| { type: 'spring' }
+	/** A mystery block was bumped open; x and y are the middle of its top edge */
+	| { type: 'booster'; kind: BoosterKind; x: number; y: number; points: number }
 	| { type: 'barrel'; x: number; y: number; points: number }
 	| { type: 'stomp'; x: number; y: number; points: number; combo: number }
 	| { type: 'hurt'; cause: HurtCause; x: number; y: number }
@@ -54,6 +70,17 @@ export interface HeliState {
 	x: number;
 	y: number;
 	mode: ReturnType<typeof helicopterAt>['mode'];
+}
+
+/** A mystery block in a running world */
+export interface BlockState {
+	x: number;
+	y: number;
+	kind: BoosterKind;
+	/** Bumped open already: an empty block */
+	used: boolean;
+	/** Seconds since it was last bumped, for its little hop */
+	bump: number;
 }
 
 export interface World {
@@ -78,6 +105,12 @@ export interface World {
 	combo: number;
 	/** The checkpoint lamps already lit, by index */
 	lit: boolean[];
+	blocks: BlockState[];
+	platforms: PlatformState[];
+	/** Index of the hover barge the player stands on, if any */
+	riding: number | null;
+	/** Seconds left of each timed booster */
+	boosts: Boosts;
 }
 
 const BARREL_SIZE = 0.6;
@@ -126,7 +159,13 @@ export function createWorld(level: LevelData): World {
 		goonsStomped: 0,
 		heartsLost: 0,
 		combo: 0,
-		lit: level.checkpoints.map(() => false)
+		lit: level.checkpoints.map(() => false),
+		blocks: level.blocks.map((spot) => ({ ...spot, used: false, bump: Infinity })),
+		platforms: level.platforms.map((spot, index) =>
+			createPlatformState(createPlatform(index, spot))
+		),
+		riding: null,
+		boosts: noBoosts()
 	};
 }
 
@@ -150,6 +189,8 @@ export function touchesHazard(level: LevelData, player: Player): boolean {
 /** Loses a heart (unless still invulnerable) and bounces the player away; reports the hit */
 function hurt(world: World, cause: HurtCause, events: WorldEvent[]) {
 	if (world.invuln > 0 || world.status !== 'playing') return;
+	// The golden mustache shrugs off everything but a fall
+	if (world.boosts.star > 0 && cause !== 'fall') return;
 	world.hearts -= 1;
 	world.heartsLost += 1;
 	world.invuln = INVULNERABLE_S;
@@ -200,7 +241,38 @@ function fall(world: World, events: WorldEvent[]) {
 		return;
 	}
 	world.player = placePlayer(world.respawn);
+	world.riding = null;
 	world.invuln = INVULNERABLE_S;
+}
+
+/** Gives the player the booster out of a block */
+function giveBooster(world: World, block: BlockState, events: WorldEvent[]) {
+	let points = SCORE_BOOSTER;
+	if (block.kind === 'arepa') {
+		if (world.hearts < STARTING_HEARTS) world.hearts += 1;
+		else points = SCORE_FULL_AREPA;
+	} else {
+		world.boosts[block.kind as TimedBoost] = BOOST_SECONDS[block.kind as TimedBoost];
+	}
+	world.score += points;
+	events.push({ type: 'booster', kind: block.kind, x: block.x + 0.5, y: block.y, points });
+}
+
+/** The head hit something: if it was a mystery block, open it (the one most above the head) */
+function bumpBlock(world: World, events: WorldEvent[]) {
+	const { player } = world;
+	const row = Math.floor(player.y - 0.05);
+	const centre = player.x + player.w / 2;
+	let hit: BlockState | undefined;
+	for (const block of world.blocks) {
+		if (block.y !== row || block.x + 1 <= player.x || block.x >= player.x + player.w) continue;
+		if (!hit || Math.abs(block.x + 0.5 - centre) < Math.abs(hit.x + 0.5 - centre)) hit = block;
+	}
+	if (!hit) return;
+	hit.bump = 0;
+	if (hit.used) return;
+	hit.used = true;
+	giveBooster(world, hit, events);
 }
 
 /** Advances the level by one step */
@@ -210,10 +282,29 @@ export function stepWorld(world: World, input: Input, dt: number = STEP): WorldE
 
 	world.time += dt;
 	world.invuln = Math.max(0, world.invuln - dt);
+	for (const kind of Object.keys(world.boosts) as TimedBoost[]) {
+		world.boosts[kind] = Math.max(0, world.boosts[kind] - dt);
+	}
+	for (const block of world.blocks) block.bump += dt;
 
 	const { player, level } = world;
+
+	// The barges glide, and whoever stands on one goes along
+	for (const state of world.platforms) stepPlatform(state, world.time);
+	const ridden = world.riding === null ? undefined : world.platforms[world.riding];
+	if (ridden) {
+		player.x = Math.min(Math.max(0, player.x + ridden.dx), level.width - player.w);
+		player.y += ridden.dy;
+	}
+
+	const physics = physicsFor(world.boosts);
 	const previousBottom = player.y + player.h;
-	for (const event of stepPlayer(player, input, level, PHYSICS, dt)) {
+	for (const event of stepPlayer(player, input, level, physics, dt, world.platforms)) {
+		if (event === 'bump') {
+			events.push({ type: 'bump' });
+			bumpBlock(world, events);
+			continue;
+		}
 		if (event !== 'slamLand') {
 			events.push({ type: event });
 			continue;
@@ -229,6 +320,18 @@ export function stepWorld(world: World, input: Input, dt: number = STEP): WorldE
 				squash(world, walker, events);
 			}
 		}
+	}
+
+	if (launchFromSpring(level, player, input.jumpHeld)) events.push({ type: 'spring' });
+
+	// Which barge, if any, the player ends the step standing on
+	world.riding = null;
+	if (player.onGround) {
+		const feet = player.y + player.h;
+		world.platforms.forEach((state, index) => {
+			if (Math.abs(feet - state.y) > 0.03) return;
+			if (player.x + player.w > state.x && player.x < state.x + state.w) world.riding = index;
+		});
 	}
 
 	for (const walker of world.walkers) stepWalker(walker, level, dt);
@@ -259,9 +362,12 @@ export function stepWorld(world: World, input: Input, dt: number = STEP): WorldE
 	// Goons: land on their heads to squash them, touch them from the side and lose a heart
 	for (const walker of world.walkers) {
 		if (!walker.alive || !overlaps(player, walker)) continue;
-		if (player.vy > 0 && previousBottom <= walker.y + walker.h * 0.55) {
+		if (world.boosts.star > 0) {
+			// Nothing stops the golden mustache: touch a goon from any side and it is squashed
 			squash(world, walker, events);
-			player.vy = -(input.jumpHeld ? PHYSICS.stompBounceHeld : PHYSICS.stompBounce);
+		} else if (player.vy > 0 && previousBottom <= walker.y + walker.h * 0.55) {
+			squash(world, walker, events);
+			player.vy = -(input.jumpHeld ? physics.stompBounceHeld : physics.stompBounce);
 			player.canCut = false;
 			player.onGround = false;
 			player.slam = 'none';

@@ -1,14 +1,28 @@
 <!--
 	Small pictures for El Presidente's how-to-play legend and level cards: the hero, an oil barrel,
-	a rig-guard goon, a helicopter, the flag and a barbed barricade, in the same chunky cartoon
-	style as the playfield. All original and generic.
+	a rig-guard goon, a helicopter, the flag and a barbed barricade, plus the mystery block, the four
+	boosters, the spring pad and the hover barge, in the same chunky cartoon style as the playfield.
+	All original and generic.
 -->
 <script lang="ts">
 	let {
 		kind,
 		class: className = 'size-10'
 	}: {
-		kind: 'hero' | 'barrel' | 'goon' | 'heli' | 'flag' | 'spikes';
+		kind:
+			| 'hero'
+			| 'barrel'
+			| 'goon'
+			| 'heli'
+			| 'flag'
+			| 'spikes'
+			| 'block'
+			| 'arepa'
+			| 'turbo'
+			| 'boots'
+			| 'star'
+			| 'spring'
+			| 'barge';
 		class?: string;
 	} = $props();
 </script>
@@ -59,6 +73,52 @@
 			<circle cx="16" cy="3.5" r="2.5" fill="#f5c83a" stroke-width="1.6" />
 			<path d="M17 6 Q24 3 33 6 L33 22 Q24 19 17 22 Z" fill="#e5484d" />
 			<path d="M25 9 Q29 14 25 17 Q21 14 25 9 Z" fill="#f5c83a" stroke-width="1.4" />
+		{:else if kind === 'block'}
+			<rect x="5" y="5" width="30" height="30" rx="4" fill="#f5c83a" />
+			<circle cx="9.5" cy="9.5" r="1.4" fill="#111111" stroke="none" />
+			<circle cx="30.5" cy="9.5" r="1.4" fill="#111111" stroke="none" />
+			<circle cx="9.5" cy="30.5" r="1.4" fill="#111111" stroke="none" />
+			<circle cx="30.5" cy="30.5" r="1.4" fill="#111111" stroke="none" />
+			<path d="M14 15 A6 6 0 1 1 22 20.5 Q20 22 20 25" fill="none" stroke-width="5.5" />
+			<path d="M14 15 A6 6 0 1 1 22 20.5 Q20 22 20 25" fill="none" stroke="#ffffff" stroke-width="2.6" />
+			<circle cx="20" cy="30" r="2.2" fill="#ffffff" stroke-width="1.6" />
+		{:else if kind === 'arepa'}
+			<ellipse cx="20" cy="21" rx="16" ry="14" fill="#e6b866" />
+			<path
+				d="M20 29 C8 20 12 11 20 16 C28 11 32 20 20 29 Z"
+				fill="#e5484d"
+				stroke-width="1.8"
+			/>
+		{:else if kind === 'turbo'}
+			<path d="M13 9 Q9 5 14 2 M22 9 Q18 5 23 2" fill="none" stroke-width="1.8" />
+			<path d="M31 20 A6 6 0 0 1 31 31" fill="none" stroke-width="3" />
+			<rect x="7" y="10" width="24" height="25" rx="5" fill="#ffffff" />
+			<ellipse cx="19" cy="10.5" rx="12" ry="3" fill="#6b3b1e" stroke-width="1.6" />
+			<path d="M21 17 L14 27 L19.5 27 L16 34 L26 23 L20.5 23 Z" fill="#f5c83a" stroke-width="1.6" />
+		{:else if kind === 'boots'}
+			<path d="M9 4 H23 V22 L34 25 V31 H9 Z" fill="#e5484d" />
+			<path d="M11 31 L29 33 L11 35 L29 37 L11 39" fill="none" stroke-width="3.6" />
+			<path d="M11 31 L29 33 L11 35 L29 37 L11 39" fill="none" stroke="#d5dbe3" stroke-width="1.4" />
+			<path d="M9 12 H23" fill="none" stroke="#f5c83a" stroke-width="2" />
+		{:else if kind === 'star'}
+			<path
+				d="M4 16 Q11 6 20 14 Q29 6 36 16 Q34 30 24 25 Q20 23 16 25 Q6 30 4 16 Z"
+				fill="#ffd23f"
+				stroke-width="2"
+			/>
+			<path d="M32 4 L33.2 7.6 L37 8.5 L33.2 9.6 L32 13 L30.8 9.6 L27 8.5 L30.8 7.6 Z" fill="#ffffff" stroke-width="1.2" />
+		{:else if kind === 'spring'}
+			<rect x="7" y="31" width="26" height="5" rx="2" fill="#6a7c9b" />
+			<path d="M13 31 L27 27 L13 23 L27 19 L13 15 L20 13" fill="none" stroke-width="5" />
+			<path d="M13 31 L27 27 L13 23 L27 19 L13 15 L20 13" fill="none" stroke="#d5dbe3" stroke-width="2" />
+			<rect x="8" y="7" width="24" height="6" rx="2.5" fill="#e5484d" />
+		{:else if kind === 'barge'}
+			<path d="M10 24 Q12 31 14 36 Q16 31 18 24 Z" fill="#ffb347" stroke-width="1.8" />
+			<path d="M24 24 Q26 31 28 36 Q30 31 32 24 Z" fill="#ffb347" stroke-width="1.8" />
+			<rect x="8" y="20" width="10" height="5" rx="1.5" fill="#34455e" stroke-width="1.6" />
+			<rect x="24" y="20" width="10" height="5" rx="1.5" fill="#34455e" stroke-width="1.6" />
+			<rect x="3" y="12" width="34" height="10" rx="4" fill="#6a7c9b" />
+			<path d="M9 17 H13 M17 17 H21 M25 17 H29" fill="none" stroke="#f5c83a" stroke-width="2.4" />
 		{:else}
 			<path d="M3 35 L10 17 L17 35 Z" fill="#8d949c" />
 			<path d="M15 35 L22 17 L29 35 Z" fill="#8d949c" />

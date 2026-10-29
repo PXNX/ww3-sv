@@ -4,16 +4,13 @@
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import MineGrid, { convoyDurationMs } from '#lib/components/MineGrid.svelte';
-	import MinefieldDifficultyPicker, {
-		DIFFICULTY_NAMES
-	} from '#lib/components/MinefieldDifficultyPicker.svelte';
 	import MinefieldScoreBreakdown from '#lib/components/MinefieldScoreBreakdown.svelte';
 	import MinefieldVictory from '#lib/components/MinefieldVictory.svelte';
 	import PauseOverlay from '#lib/components/PauseOverlay.svelte';
 	import SubmarineTool from '#lib/components/SubmarineTool.svelte';
 	import TankerQueue from '#lib/components/TankerQueue.svelte';
 	import { onAppHidden, prefersReducedMotion } from '#lib/game/loop.js';
-	import { TANKER_COUNT, type DifficultyId } from '#lib/game/minefield/difficulty.js';
+	import { TANKER_COUNT, DIFFICULTY_NAMES, type DifficultyId } from '#lib/game/minefield/difficulty.js';
 	import { drawMinefieldBoard } from '#lib/game/minefield/drawBoard.js';
 	import { formatTime } from '#lib/game/minefield/scoring.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -24,13 +21,11 @@
 	import IconArrowRight from '~icons/lucide/arrow-right';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
-	import IconSliders from '~icons/lucide/sliders-horizontal';
 	import IconTimer from '~icons/lucide/timer';
 
 	const game = new MinefieldGame();
 	const reducedMotion = prefersReducedMotion();
 
-	let picking = $state(true);
 	let victoryOpen = $state(false);
 	let gameOverOpen = $state(false);
 	let showTutorial = $state(false);
@@ -88,59 +83,40 @@
 		return () => clearTimeout(timer);
 	});
 
-	function pick(id: DifficultyId) {
-		game.newGame(id);
-		picking = false;
-	}
-
 	function playAgain() {
 		victoryOpen = false;
 		gameOverOpen = false;
 		game.newGame();
 	}
 
-	function changeDifficulty() {
-		victoryOpen = false;
-		gameOverOpen = false;
-		game.pause();
-		picking = true;
-	}
 </script>
 
 <GameShell
 	title={m.mode_minefield_name()}
-	score={picking ? undefined : game.score}
-	best={picking ? undefined : game.bestScore}
-	confirmLeave={!picking && game.phase === 'playing'}
+	score={game.score}
+	best={game.bestScore}
+	confirmLeave={game.phase === 'playing'}
+	backHref="/play/minefield/lobby"
 >
 	{#snippet actions()}
-		{#if !picking}
-			{#if game.phase === 'playing'}
-				<button
-					type="button"
-					class="btn-chunky px-3 py-1 text-sm"
-					onclick={() => (game.paused ? game.resume() : game.pause())}
-				>
-					{#if game.paused}
-						<IconPlay class="size-4" aria-hidden="true" />
-						{m.game_resume()}
-					{:else}
-						<IconPause class="size-4" aria-hidden="true" />
-						{m.game_pause()}
-					{/if}
-				</button>
-			{/if}
-			<button type="button" class="btn-chunky px-3 py-1 text-sm" onclick={changeDifficulty}>
-				<IconSliders class="size-4" aria-hidden="true" />
-				{m.minefield_change_difficulty()}
+		{#if game.phase === 'playing'}
+			<button
+				type="button"
+				class="btn-chunky px-3 py-1 text-sm"
+				onclick={() => (game.paused ? game.resume() : game.pause())}
+			>
+				{#if game.paused}
+					<IconPlay class="size-4" aria-hidden="true" />
+					{m.game_resume()}
+				{:else}
+					<IconPause class="size-4" aria-hidden="true" />
+					{m.game_pause()}
+				{/if}
 			</button>
 		{/if}
 	{/snippet}
 
-	{#if picking}
-		<MinefieldDifficultyPicker selected={game.difficultyId} onpick={pick} />
-	{:else}
-		<div class="flex shrink-0 flex-wrap items-center gap-2 font-display font-bold">
+	<div class="flex shrink-0 flex-wrap items-center gap-2 font-display font-bold">
 			<span class="-rotate-1 rounded-md border-2 border-ink bg-khaki px-2 py-0.5">
 				{m.minefield_current_difficulty({ level: DIFFICULTY_NAMES[game.difficultyId]() })}
 			</span>
@@ -218,7 +194,6 @@
 		{#if showTutorial}
 			<p class="shrink-0 text-sm leading-snug opacity-80">{m.minefield_help()}</p>
 		{/if}
-	{/if}
 </GameShell>
 
 <GameOverModal
@@ -243,5 +218,5 @@
 	{modeName}
 	{drawBoard}
 	onPlayAgain={playAgain}
-	onChangeDifficulty={changeDifficulty}
+	onChangeDifficulty={() => {}}
 />

@@ -2,14 +2,13 @@
 	import { onMount } from 'svelte';
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
-	import LivesBar from '#lib/components/LivesBar.svelte';
+	import RotateHint from '#lib/components/RotateHint.svelte';
 	import TutorialModal from '#lib/components/TutorialModal.svelte';
 	import VenezuelaCanvas from '#lib/components/VenezuelaCanvas.svelte';
 	import VenezuelaIcon from '#lib/components/VenezuelaIcon.svelte';
 	import VenezuelaLevelSelect from '#lib/components/VenezuelaLevelSelect.svelte';
 	import VenezuelaWinPanel from '#lib/components/VenezuelaWinPanel.svelte';
 	import { levelName } from '#lib/components/venezuelaText.js';
-	import { STARTING_HEARTS } from '#lib/game/venezuela/config.js';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
@@ -54,6 +53,8 @@
 	score={playing ? game.score : undefined}
 	best={playing ? game.best : undefined}
 	confirmLeave={running}
+	immersive={playing}
+	landscape
 >
 	{#snippet actions()}
 		<button
@@ -89,31 +90,11 @@
 	{/snippet}
 
 	{#if playing}
-		<!-- The HUD and the playfield share one width, as wide as the height allows -->
-		<section
-			class="mx-auto flex w-full flex-col items-center gap-2"
-			style:max-width="max(18rem, min(100%, calc((100dvh - 17rem) * 1.4)))"
-		>
-			<div
-				class="flex w-full items-center justify-between gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1 shadow-[3px_3px_0_var(--color-ink)]"
-			>
-				<div class="flex min-w-0 items-center gap-2">
-					<VenezuelaIcon kind="barrel" class="size-7 shrink-0" />
-					<span
-						class="font-display text-lg font-bold tabular-nums"
-						aria-label={m.venezuela_hud_barrels({ count: game.barrels, total: game.barrelsTotal })}
-					>
-						{game.barrels}/{game.barrelsTotal}
-					</span>
-					<span dir="auto" class="hidden truncate text-sm font-semibold sm:inline">
-						{levelName(game.levelIndex)}
-					</span>
-				</div>
-				<LivesBar lives={game.hearts} max={STARTING_HEARTS} class="shrink-0 text-xl" />
-			</div>
-
+		<!-- Played sideways: the field fills the screen, the HUD and the controls float over it -->
+		<div class="relative flex min-h-0 flex-1 flex-col">
 			<VenezuelaCanvas {game} levelName={levelName(game.levelIndex)} />
-		</section>
+			<RotateHint />
+		</div>
 	{:else}
 		<VenezuelaLevelSelect {game} />
 	{/if}
@@ -128,6 +109,7 @@
 		<p>{m.venezuela_tutorial_controls()}</p>
 		<p>{m.venezuela_tutorial_jump()}</p>
 		<p>{m.venezuela_tutorial_slam()}</p>
+		<p>{m.venezuela_tutorial_boosters()}</p>
 		<p>{m.venezuela_tutorial_legend()}</p>
 		<ul class="flex flex-col gap-2">
 			<li class="flex items-center gap-2">
@@ -145,6 +127,34 @@
 			<li class="flex items-center gap-2">
 				<VenezuelaIcon kind="spikes" class="size-10 shrink-0" />
 				<span><strong>{m.venezuela_spikes_name()}</strong> {m.venezuela_spikes_hint()}</span>
+			</li>
+			<li class="flex items-center gap-2">
+				<VenezuelaIcon kind="block" class="size-10 shrink-0" />
+				<span><strong>{m.venezuela_block_name()}</strong> {m.venezuela_block_hint()}</span>
+			</li>
+			<li class="flex items-center gap-2">
+				<VenezuelaIcon kind="arepa" class="size-10 shrink-0" />
+				<span><strong>{m.venezuela_arepa_name()}</strong> {m.venezuela_arepa_hint()}</span>
+			</li>
+			<li class="flex items-center gap-2">
+				<VenezuelaIcon kind="turbo" class="size-10 shrink-0" />
+				<span><strong>{m.venezuela_turbo_name()}</strong> {m.venezuela_turbo_hint()}</span>
+			</li>
+			<li class="flex items-center gap-2">
+				<VenezuelaIcon kind="boots" class="size-10 shrink-0" />
+				<span><strong>{m.venezuela_boots_name()}</strong> {m.venezuela_boots_hint()}</span>
+			</li>
+			<li class="flex items-center gap-2">
+				<VenezuelaIcon kind="star" class="size-10 shrink-0" />
+				<span><strong>{m.venezuela_star_name()}</strong> {m.venezuela_star_hint()}</span>
+			</li>
+			<li class="flex items-center gap-2">
+				<VenezuelaIcon kind="spring" class="size-10 shrink-0" />
+				<span><strong>{m.venezuela_spring_name()}</strong> {m.venezuela_spring_hint()}</span>
+			</li>
+			<li class="flex items-center gap-2">
+				<VenezuelaIcon kind="barge" class="size-10 shrink-0" />
+				<span><strong>{m.venezuela_barge_name()}</strong> {m.venezuela_barge_hint()}</span>
 			</li>
 			<li class="flex items-center gap-2">
 				<VenezuelaIcon kind="flag" class="size-10 shrink-0" />

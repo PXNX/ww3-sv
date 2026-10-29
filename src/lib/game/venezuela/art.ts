@@ -6,6 +6,7 @@
  * mustache and a sash, not anyone's likeness; the goons wear plain hard hats; the helicopters carry
  * a round cartoon patch.
  */
+import type { BoosterKind } from './boosters';
 
 type Ctx = CanvasRenderingContext2D;
 
@@ -74,6 +75,8 @@ export interface HeroPose {
 	slam?: 'none' | 'hang' | 'dive';
 	/** Leaning into a sprint */
 	sprint?: boolean;
+	/** Wearing the spring boots */
+	boots?: boolean;
 }
 
 /** The mustachioed hero, about 0.95 tiles tall, feet at (x, y) */
@@ -97,10 +100,24 @@ export function drawHero(ctx: Ctx, x: number, y: number, pose: HeroPose) {
 	const bob = pose.airborne ? 0 : Math.abs(Math.sin(pose.run * 16)) * 0.04 * pose.speed;
 	ctx.translate(0, -bob);
 
-	// Legs
+	// Legs (red boots with a yellow coil band while the spring boots are on)
 	const tuck = pose.airborne ? (pose.rising ? 0.1 : -0.04) : 0;
-	ellipse(ctx, -0.1 - swing, -0.08 - tuck, 0.1, 0.075, '#3b2a20');
-	ellipse(ctx, 0.12 + swing, -0.08 + (pose.airborne ? -0.08 : 0), 0.1, 0.075, '#3b2a20');
+	const shoe = pose.boots ? RED : '#3b2a20';
+	const feet = [
+		[-0.1 - swing, -0.08 - tuck],
+		[0.12 + swing, -0.08 + (pose.airborne ? -0.08 : 0)]
+	];
+	for (const [fx, fy] of feet) ellipse(ctx, fx, fy, 0.1, 0.075, shoe);
+	if (pose.boots) {
+		for (const [fx, fy] of feet) {
+			ctx.beginPath();
+			ctx.moveTo(fx - 0.07, fy);
+			ctx.lineTo(fx + 0.07, fy);
+			ctx.lineWidth = 0.035;
+			ctx.strokeStyle = YELLOW;
+			ctx.stroke();
+		}
+	}
 
 	// Jacket
 	roundRect(ctx, -0.22, -0.52, 0.44, 0.4, 0.14, MUSTARD);
@@ -402,5 +419,223 @@ export function drawSpikes(ctx: Ctx, x: number, y: number) {
 	ctx.lineWidth = 0.04;
 	ctx.strokeStyle = INK;
 	ctx.stroke();
+	ctx.restore();
+}
+
+/** A mystery block filling one tile; `hop` is the seconds since it was bumped */
+export function drawBlock(ctx: Ctx, x: number, y: number, used: boolean, hop: number) {
+	ctx.save();
+	const lift = hop < 0.18 ? Math.sin((hop / 0.18) * Math.PI) * 0.28 : 0;
+	ctx.translate(x, y - lift);
+	roundRect(ctx, 0.03, 0.03, 0.94, 0.94, 0.1, used ? '#a98b62' : YELLOW);
+	ctx.fillStyle = INK;
+	for (const [cx, cy] of [
+		[0.16, 0.16],
+		[0.84, 0.16],
+		[0.16, 0.84],
+		[0.84, 0.84]
+	]) {
+		ctx.beginPath();
+		ctx.arc(cx, cy, 0.04, 0, Math.PI * 2);
+		ctx.fill();
+	}
+	if (!used) {
+		// A question mark, white with an ink outline
+		const mark = () => {
+			ctx.beginPath();
+			ctx.arc(0.5, 0.38, 0.15, Math.PI, Math.PI * 2.35);
+			ctx.quadraticCurveTo(0.5, 0.56, 0.5, 0.64);
+		};
+		ctx.lineCap = 'round';
+		mark();
+		ctx.lineWidth = 0.19;
+		ctx.strokeStyle = INK;
+		ctx.stroke();
+		mark();
+		ctx.lineWidth = 0.09;
+		ctx.strokeStyle = PAPER;
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.arc(0.5, 0.8, 0.075, 0, Math.PI * 2);
+		stroke(ctx, PAPER, 0.04);
+	}
+	ctx.restore();
+}
+
+/** A spring pad on the floor of the tile at (x, y) */
+export function drawSpring(ctx: Ctx, x: number, y: number) {
+	ctx.save();
+	ctx.translate(x, y);
+	roundRect(ctx, 0.1, 0.86, 0.8, 0.14, 0.05, SLATE);
+	const coil = () => {
+		ctx.beginPath();
+		ctx.moveTo(0.28, 0.86);
+		ctx.lineTo(0.72, 0.79);
+		ctx.lineTo(0.28, 0.72);
+		ctx.lineTo(0.72, 0.65);
+		ctx.lineTo(0.28, 0.58);
+		ctx.lineTo(0.5, 0.54);
+	};
+	ctx.lineJoin = 'round';
+	ctx.lineCap = 'round';
+	coil();
+	ctx.lineWidth = 0.13;
+	ctx.strokeStyle = INK;
+	ctx.stroke();
+	coil();
+	ctx.lineWidth = 0.065;
+	ctx.strokeStyle = '#d5dbe3';
+	ctx.stroke();
+	roundRect(ctx, 0.12, 0.4, 0.76, 0.15, 0.06, RED);
+	ctx.restore();
+}
+
+/** A hover barge, its left edge at x and the top of the plank at y, with jets of flame below */
+export function drawBarge(ctx: Ctx, x: number, y: number, width: number, time: number) {
+	ctx.save();
+	ctx.translate(x, y);
+	for (const jet of [0.5, width - 0.5]) {
+		const flick = 0.34 + 0.08 * Math.sin(time * 34 + jet * 3);
+		ctx.beginPath();
+		ctx.moveTo(jet - 0.13, 0.3);
+		ctx.quadraticCurveTo(jet - 0.09, 0.3 + flick * 0.6, jet, 0.3 + flick);
+		ctx.quadraticCurveTo(jet + 0.09, 0.3 + flick * 0.6, jet + 0.13, 0.3);
+		ctx.closePath();
+		stroke(ctx, '#ffb347', 0.04);
+		ctx.beginPath();
+		ctx.ellipse(jet, 0.34, 0.04, 0.09, 0, 0, Math.PI * 2);
+		ctx.fillStyle = YELLOW;
+		ctx.fill();
+		roundRect(ctx, jet - 0.15, 0.24, 0.3, 0.12, 0.04, NAVY);
+	}
+	roundRect(ctx, 0, 0, width, 0.3, 0.09, SLATE);
+	ctx.fillStyle = YELLOW;
+	for (let i = 0; i < Math.floor((width - 0.2) / 0.4); i++) {
+		ctx.fillRect(0.14 + i * 0.4, 0.07, 0.2, 0.09);
+	}
+	ctx.restore();
+}
+
+/** A booster, centered on (x, y) and about 0.6 tiles across; `time` makes the sparkle twinkle */
+export function drawBooster(ctx: Ctx, kind: BoosterKind, x: number, y: number, time = 0) {
+	ctx.save();
+	ctx.translate(x, y);
+	ctx.lineJoin = 'round';
+	ctx.lineCap = 'round';
+	if (kind === 'arepa') {
+		ellipse(ctx, 0, 0, 0.3, 0.26, '#e6b866');
+		ctx.beginPath();
+		ctx.moveTo(0, 0.13);
+		ctx.bezierCurveTo(-0.22, -0.02, -0.12, -0.2, 0, -0.08);
+		ctx.bezierCurveTo(0.12, -0.2, 0.22, -0.02, 0, 0.13);
+		stroke(ctx, RED, 0.04);
+	} else if (kind === 'turbo') {
+		ctx.beginPath();
+		ctx.moveTo(-0.1, -0.2);
+		ctx.quadraticCurveTo(-0.16, -0.28, -0.08, -0.34);
+		ctx.moveTo(0.04, -0.2);
+		ctx.quadraticCurveTo(-0.02, -0.28, 0.06, -0.34);
+		ctx.lineWidth = 0.04;
+		ctx.strokeStyle = INK;
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.arc(0.18, 0.04, 0.1, -Math.PI / 2, Math.PI / 2);
+		stroke(ctx, null, 0.06);
+		roundRect(ctx, -0.22, -0.14, 0.4, 0.38, 0.08, PAPER);
+		ellipse(ctx, -0.02, -0.14, 0.2, 0.05, '#6b3b1e');
+		ctx.beginPath();
+		ctx.moveTo(0.02, -0.04);
+		ctx.lineTo(-0.1, 0.1);
+		ctx.lineTo(-0.01, 0.1);
+		ctx.lineTo(-0.07, 0.2);
+		ctx.lineTo(0.08, 0.04);
+		ctx.lineTo(-0.01, 0.04);
+		ctx.closePath();
+		stroke(ctx, YELLOW, 0.03);
+	} else if (kind === 'boots') {
+		ctx.beginPath();
+		ctx.moveTo(-0.18, -0.26);
+		ctx.lineTo(0.06, -0.26);
+		ctx.lineTo(0.06, -0.04);
+		ctx.lineTo(0.28, 0.02);
+		ctx.lineTo(0.28, 0.1);
+		ctx.lineTo(-0.18, 0.1);
+		ctx.closePath();
+		stroke(ctx, RED, 0.05);
+		ctx.beginPath();
+		ctx.moveTo(-0.14, 0.1);
+		ctx.lineTo(0.14, 0.15);
+		ctx.lineTo(-0.14, 0.2);
+		ctx.lineTo(0.14, 0.25);
+		ctx.lineTo(-0.14, 0.3);
+		ctx.lineWidth = 0.1;
+		ctx.strokeStyle = INK;
+		ctx.stroke();
+		ctx.lineWidth = 0.04;
+		ctx.strokeStyle = '#d5dbe3';
+		ctx.stroke();
+	} else {
+		// The golden mustache
+		ctx.beginPath();
+		ctx.moveTo(-0.32, -0.04);
+		ctx.quadraticCurveTo(-0.2, -0.2, 0, -0.08);
+		ctx.quadraticCurveTo(0.2, -0.2, 0.32, -0.04);
+		ctx.quadraticCurveTo(0.28, 0.16, 0.1, 0.06);
+		ctx.quadraticCurveTo(0, 0.02, -0.1, 0.06);
+		ctx.quadraticCurveTo(-0.28, 0.16, -0.32, -0.04);
+		ctx.closePath();
+		stroke(ctx, '#ffd23f', 0.05);
+		const glint = 0.05 + 0.04 * Math.abs(Math.sin(time * 6));
+		ctx.beginPath();
+		ctx.moveTo(0.3, -0.3 - glint);
+		ctx.lineTo(0.3 + glint * 0.35, -0.3 - glint * 0.35);
+		ctx.lineTo(0.3 + glint, -0.3);
+		ctx.lineTo(0.3 + glint * 0.35, -0.3 + glint * 0.35);
+		ctx.lineTo(0.3, -0.3 + glint);
+		ctx.lineTo(0.3 - glint * 0.35, -0.3 + glint * 0.35);
+		ctx.lineTo(0.3 - glint, -0.3);
+		ctx.lineTo(0.3 - glint * 0.35, -0.3 - glint * 0.35);
+		ctx.closePath();
+		stroke(ctx, PAPER, 0.025);
+	}
+	ctx.restore();
+}
+
+export interface AuraPose {
+	facing: 1 | -1;
+	time: number;
+	/** The golden mustache is on: a shifting rainbow glow */
+	star: boolean;
+	/** Fading out, so the glow blinks */
+	ending: boolean;
+	/** Turbo is on and the hero is moving: speed lines behind */
+	speed: boolean;
+}
+
+/** The glow and the speed lines behind the hero, drawn before him */
+export function drawAura(ctx: Ctx, x: number, y: number, pose: AuraPose) {
+	ctx.save();
+	if (pose.star && !(pose.ending && Math.floor(pose.time * 10) % 2 === 0)) {
+		const hue = (pose.time * 540) % 360;
+		const glow = ctx.createRadialGradient(x, y - 0.5, 0.1, x, y - 0.5, 0.95);
+		glow.addColorStop(0, `hsla(${hue}, 100%, 65%, 0.8)`);
+		glow.addColorStop(0.6, `hsla(${(hue + 70) % 360}, 100%, 60%, 0.35)`);
+		glow.addColorStop(1, `hsla(${(hue + 140) % 360}, 100%, 60%, 0)`);
+		ctx.fillStyle = glow;
+		ctx.fillRect(x - 1, y - 1.5, 2, 2);
+	}
+	if (pose.speed) {
+		ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+		ctx.lineWidth = 0.05;
+		ctx.lineCap = 'round';
+		for (let i = 0; i < 3; i++) {
+			const length = 0.45 + 0.25 * Math.abs(Math.sin(pose.time * 14 + i * 2));
+			const ly = y - 0.25 - i * 0.22;
+			ctx.beginPath();
+			ctx.moveTo(x - pose.facing * 0.4, ly);
+			ctx.lineTo(x - pose.facing * (0.4 + length), ly);
+			ctx.stroke();
+		}
+	}
 	ctx.restore();
 }

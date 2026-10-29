@@ -4,7 +4,8 @@
  * page chrome shows (hearts, score, barrels, status) is reactive and copied after each step.
  */
 import { followCamera, cameraTarget } from '#lib/game/venezuela/camera.js';
-import { STARTING_HEARTS } from '#lib/game/venezuela/config.js';
+import { noBoosts, type BoosterKind, type Boosts } from '#lib/game/venezuela/boosters.js';
+import { STARTING_HEARTS, VIEW_W } from '#lib/game/venezuela/config.js';
 import { HeldInput, type Action } from '#lib/game/venezuela/input.js';
 import { isSprinting } from '#lib/game/venezuela/player.js';
 import { LEVEL_IDS, levelAt } from '#lib/game/venezuela/levels.js';
@@ -24,6 +25,7 @@ import {
 	type World,
 	type WorldEvent
 } from '#lib/game/venezuela/world.js';
+import { m } from '#lib/paraglide/messages.js';
 import { highscores, type Highscores } from '#lib/services/highscore.js';
 import { localStore, type Store } from '#lib/services/storage.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
@@ -33,6 +35,19 @@ export type VenezuelaScreen = 'select' | 'play';
 export type VenezuelaStatus = 'ready' | 'playing' | 'paused' | 'won' | 'over';
 
 export { LEVEL_IDS };
+
+function boosterName(kind: BoosterKind): string {
+	switch (kind) {
+		case 'arepa':
+			return m.venezuela_arepa_name();
+		case 'turbo':
+			return m.venezuela_turbo_name();
+		case 'boots':
+			return m.venezuela_boots_name();
+		case 'star':
+			return m.venezuela_star_name();
+	}
+}
 
 export function highscoreParts(levelId: string): string[] {
 	return ['venezuela', levelId, 'score'];
@@ -70,10 +85,14 @@ export class VenezuelaGame {
 	isNewBest = $state(false);
 	best = $state<number | null>(null);
 	progress = $state<VenezuelaProgress>(EMPTY_PROGRESS);
+	/** Seconds left of each timed booster, for the HUD (updated a few times a second) */
+	boosts = $state<Boosts>(noBoosts());
 
 	/** Simulation state, deliberately not reactive */
 	world: World;
 	camX = 0;
+	/** Tiles shown across the view; the canvas sets it from the shape of the screen */
+	viewW = VIEW_W;
 	effects: Effect[] = [];
 	readonly input = new HeldInput();
 	readonly reducedMotion: boolean;
@@ -93,6 +112,11 @@ export class VenezuelaGame {
 		this.#scores = scores;
 		this.#store = store;
 		this.world = createWorld(levelAt(0));
+	}
+
+	/** The canvas tells how many tiles fit across the screen (more on a wide landscape one) */
+	setView(viewW: number) {
+		this.viewW = viewW;
 	}
 
 	get levelCount(): number {
@@ -126,7 +150,7 @@ export class VenezuelaGame {
 		const level = levelAt(index);
 		this.levelIndex = index;
 		this.world = createWorld(level);
-		this.camX = cameraTarget(level.start.x + 0.5, 1, level.width);
+		this.camX = cameraTarget(level.start.x + 0.5, 1, level.width, this.viewW);
 		this.effects = [];
 		this.input.clear();
 		this.isNewBest = false;
@@ -192,8 +216,9 @@ export class VenezuelaGame {
 		const { player, level } = this.world;
 		this.camX = followCamera(
 			this.camX,
-			cameraTarget(player.x + player.w / 2, player.facing, level.width),
-			dt
+			cameraTarget(player.x + player.w / 2, player.facing, level.width, this.viewW),
+			dt,
+			this.viewW
 		);
 		for (const event of events) this.#handle(event);
 		this.#trail(dt);
@@ -209,6 +234,7 @@ export class VenezuelaGame {
 		return {
 			theme: this.levelIndex,
 			camX: this.camX,
+			viewW: this.viewW,
 			effects: this.effects,
 			reducedMotion: this.reducedMotion,
 			shake: (this.#shakeMs / SLAM_SHAKE_MS) * SLAM_SHAKE_TILES
@@ -257,6 +283,31 @@ export class VenezuelaGame {
 				break;
 			case 'bump':
 				this.#play('click');
+				break;
+			case 'spring':
+				this.#play('run-jump', 0.9);
+				this.#play('whoosh', 0.6);
+				break;
+			case 'booster':
+				this.#effect({
+					kind: 'item',
+					booster: event.kind,
+					x: event.x,
+					y: event.y,
+					ageMs: 0,
+					durationMs: 900 * short + 100
+				});
+				this.#effect({
+					kind: 'popup',
+					x: event.x,
+					y: event.y - 1.6,
+					text: boosterName(event.kind),
+					big: true,
+					ageMs: 0,
+					durationMs: 1100 * short + 100
+				});
+				this.#play('pop');
+				this.#play('sparkle');
 				break;
 			case 'barrel':
 				this.#effect({
@@ -384,6 +435,10 @@ export class VenezuelaGame {
 
 	#sync() {
 		const world = this.world;
+		// Tenths of a second, so the HUD only updates a few times a second
+		for (const kind of ['turbo', 'boots', 'star'] as const) {
+			this.boosts[kind] = Math.ceil(world.boosts[kind] * 10) / 10;
+		}
 		this.hearts = world.hearts;
 		this.score = world.score;
 		this.barrels = world.barrelsCollected;

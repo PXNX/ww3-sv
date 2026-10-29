@@ -5,7 +5,7 @@
  * down. Pure and deterministic, so the physics can be unit tested and the level validator can
  * replay it.
  */
-import { moveBody, type Body } from './collision';
+import { moveBody, type Body, type Box } from './collision';
 import { PHYSICS, PLAYER_H, PLAYER_W, STEP, TWIRL_S, type Physics } from './config';
 import { tileAt, type LevelData } from './level';
 
@@ -76,12 +76,21 @@ function approach(value: number, target: number, amount: number): number {
  * Whether the player, falling, will touch down within the given seconds. A jump pressed that close
  * to the floor is kept for the landing (the jump buffer) instead of spending the twirl.
  */
-function landingSoon(player: Player, level: LevelData, seconds: number): boolean {
+function landingSoon(
+	player: Player,
+	level: LevelData,
+	seconds: number,
+	floors: readonly Box[]
+): boolean {
 	if (player.vy <= 0) return false;
 	const feet = player.y + player.h;
 	const below = feet + player.vy * seconds + 0.05;
 	const left = Math.floor(player.x + 0.01);
 	const right = Math.floor(player.x + player.w - 0.01);
+	for (const floor of floors) {
+		if (player.x + player.w <= floor.x || player.x >= floor.x + floor.w) continue;
+		if (floor.y >= feet - 0.01 && floor.y <= below) return true;
+	}
 	for (let row = Math.floor(feet); row <= Math.floor(below); row++) {
 		if (row < feet - 0.01) continue;
 		for (let column = left; column <= right; column++) {
@@ -103,7 +112,8 @@ export function stepPlayer(
 	input: Input,
 	level: LevelData,
 	physics: Physics = PHYSICS,
-	dt: number = STEP
+	dt: number = STEP,
+	floors: readonly Box[] = []
 ): PlayerEvent[] {
 	const events: PlayerEvent[] = [];
 	player.twirl = Math.max(0, player.twirl - dt);
@@ -163,7 +173,7 @@ export function stepPlayer(
 		input.jumpPressed &&
 		!player.onGround &&
 		player.airJumps > 0 &&
-		!landingSoon(player, level, physics.jumpBuffer)
+		!landingSoon(player, level, physics.jumpBuffer, floors)
 	) {
 		// The mustache twirl: one more, slightly smaller jump in the air
 		player.airJumps -= 1;
@@ -184,7 +194,7 @@ export function stepPlayer(
 		: Math.min(physics.maxFall, player.vy + physics.gravity * dt);
 
 	const wasOnGround = player.onGround;
-	const result = moveBody(level, player, dt);
+	const result = moveBody(level, player, dt, floors);
 	player.onGround = result.landed;
 	if (result.hitWall) player.runTime = 0;
 	if (result.landed) {

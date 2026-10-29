@@ -9,7 +9,9 @@ export const LEVEL_NAMES: readonly (() => string)[] = [
 	m.venezuela_level_2_name,
 	m.venezuela_level_3_name,
 	m.venezuela_level_4_name,
-	m.venezuela_level_5_name
+	m.venezuela_level_5_name,
+	m.venezuela_level_6_name,
+	m.venezuela_level_7_name
 ];
 
 /** The name of the level at an index, empty when there is none */

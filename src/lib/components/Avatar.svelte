@@ -111,7 +111,10 @@
 			fill={current.shirtColor}
 		/>
 	{:else}
-		<path d="M12 141 C12 116 32 103 60 103 C88 103 108 116 108 141 Z" fill={current.shirtColor} />
+		<path
+			d="M12 141 C12 116 32 103 60 103 C88 103 108 116 108 141 Z"
+			fill={current.shirt === 'trump-suit' ? '#1c2a4a' : current.shirtColor}
+		/>
 	{/if}
 	{#if current.shirt === 'camo'}
 		<g clip-path="url(#{uid}-shirt)" stroke="none" fill={INK} opacity="0.28">
@@ -126,6 +129,12 @@
 		<path d="M48 104 L60 128 L72 104 Z" fill="#ffffff" />
 		<path d="M57 108 L63 108 L65 130 L60 136 L55 130 Z" fill="#e5484d" stroke-width="2" />
 		<path d="M48 104 L58 124 M72 104 L62 124" fill="none" stroke-width="2.5" />
+	{:else if current.shirt === 'trump-suit'}
+		<!-- A navy suit, a white shirt and a tie that is much too long, with a flag pin -->
+		<path d="M47 104 L60 132 L73 104 Z" fill="#ffffff" />
+		<path d="M56 108 L64 108 L67 138 L60 141 L53 138 Z" fill="#e5484d" stroke-width="2" />
+		<path d="M47 104 L57 128 M73 104 L63 128" fill="none" stroke-width="2.5" />
+		<rect x="84" y="116" width="8" height="5" fill="#e5484d" stroke-width="1.5" />
 	{:else if current.shirt === 'hoodie'}
 		<path d="M52 108 L50 126 M68 108 L70 126" fill="none" stroke-width="2.5" />
 		<circle cx="50" cy="128" r="2" fill={darkShirt ? '#ffffff' : INK} stroke-width="1.5" />
@@ -178,6 +187,15 @@
 		<path d="M60 62 L67 76 L58 76" fill={current.skin} stroke-width="2.5" />
 	{:else if current.nose === 'potato'}
 		<ellipse cx="60" cy="73" rx="8.5" ry="6.5" fill={current.skin} stroke-width="2.5" />
+	{:else if current.nose === 'beak'}
+		<!-- A pelican's beak: long, flat, with a pouch under it and a little hook at the tip -->
+		<path
+			d="M50 64 C50 59 70 59 70 64 L67 88 C65 97 55 97 53 88 Z"
+			fill="#f5a623"
+			stroke-width="2.5"
+		/>
+		<path d="M60 62 L60 92" fill="none" stroke-width="2" opacity="0.5" />
+		<path d="M54 91 Q60 102 66 91" fill="#f7c96a" stroke-width="2" />
 	{:else}
 		<path d="M58 60 C70 64 72 76 62 78 C60 78 58 76 59 74" fill={current.skin} stroke-width="2.5" />
 	{/if}
@@ -191,6 +209,10 @@
 			stroke-width="4.5"
 		/>
 		<circle cx="60" cy="93" r="3" fill="#ffffff" stroke="none" />
+	{:else if current.nose === 'beak'}
+		<!-- The beak is the mouth; only the cheeks are left -->
+		<circle cx="40" cy="76" r="4" fill="#e5484d" stroke="none" opacity="0.25" />
+		<circle cx="80" cy="76" r="4" fill="#e5484d" stroke="none" opacity="0.25" />
 	{:else if expression === 'happy'}
 		<path d="M49 84 Q60 93 71 84" fill="none" stroke-width="3" />
 		<circle cx="40" cy="76" r="4" fill="#e5484d" stroke="none" opacity="0.25" />
@@ -199,6 +221,15 @@
 		<ellipse cx="60" cy="87" rx="5" ry="6" fill={INK} stroke="none" />
 	{:else}
 		<path d="M51 86 L69 86" fill="none" stroke-width="3" />
+	{/if}
+
+	<!-- A handlebar mustache, in the hair colour -->
+	{#if current.facial === 'mustache' && !anonymous}
+		<path
+			d="M60 79 C54 74 44 76 40 83 C45 80 52 83 60 82 C68 83 75 80 80 83 C76 76 66 74 60 79 Z"
+			fill={current.hairColor}
+			stroke-width="2.5"
+		/>
 	{/if}
 
 	<!-- Front hair, or the rim of the hood -->
@@ -344,6 +375,26 @@
 			fill="#f5c83a"
 		/>
 		<circle cx="60" cy={head.top - 2} r="3" fill="#e5484d" stroke-width="2" />
+	{:else if current.hat === 'cat-ears'}
+		<!-- Two pointed cat ears with pink insides -->
+		<path
+			d="M{left - 1} {head.top + 14} L{left - 4} {head.top - 14} L{left + 22} {head.top + 2} Z"
+			fill="#7d7d7d"
+		/>
+		<path
+			d="M{right + 1} {head.top + 14} L{right + 4} {head.top - 14} L{right - 22} {head.top + 2} Z"
+			fill="#7d7d7d"
+		/>
+		<path
+			d="M{left + 2} {head.top + 6} L{left} {head.top - 7} L{left + 13} {head.top + 1} Z"
+			fill="#f4a6c0"
+			stroke="none"
+		/>
+		<path
+			d="M{right - 2} {head.top + 6} L{right} {head.top - 7} L{right - 13} {head.top + 1} Z"
+			fill="#f4a6c0"
+			stroke="none"
+		/>
 	{:else if current.hat === 'lula'}
 		<!-- A small green cap perched on top, with a yellow badge -->
 		<path

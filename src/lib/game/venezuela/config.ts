@@ -5,8 +5,10 @@
 
 /** Every level is exactly this many rows tall; the camera only scrolls sideways */
 export const LEVEL_ROWS = 10;
-/** Tiles visible across the playfield */
+/** Tiles visible across the playfield on a squarish screen: the least the view ever shows */
 export const VIEW_W = 14;
+/** A wide landscape screen shows more of the level, up to this many tiles across */
+export const VIEW_W_MAX = 20;
 export const VIEW_H = LEVEL_ROWS;
 
 /** One fixed logic step (the loop runs at 60 steps per second) */
@@ -92,7 +94,14 @@ export const INVULNERABLE_S = 1.6;
 /** Seconds a stomped goon stays visible, squashed */
 export const SQUASH_S = 0.45;
 
+/** Upward speed of a spring pad, and of one with jump held (about 4.8 and 6.1 tiles high) */
+export const SPRING_SPEED = 23;
+export const SPRING_SPEED_HELD = 26;
+
 export const SCORE_BARREL = 100;
+/** A booster out of a mystery block; an arepa for someone with full hearts is worth more */
+export const SCORE_BOOSTER = 150;
+export const SCORE_FULL_AREPA = 300;
 /** Points for a squashed goon, multiplied by the combo (goons squashed without touching ground) */
 export const SCORE_STOMP = 200;
 export const SCORE_FLAG = 500;

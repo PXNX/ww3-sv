@@ -16,7 +16,13 @@ export function cameraTarget(
 }
 
 /** Eases the camera toward its target; a snap when the gap is huge (after a respawn) */
-export function followCamera(current: number, target: number, dt: number, speed = 7): number {
-	if (Math.abs(target - current) > VIEW_W) return target;
+export function followCamera(
+	current: number,
+	target: number,
+	dt: number,
+	viewWidth: number = VIEW_W,
+	speed = 7
+): number {
+	if (Math.abs(target - current) > viewWidth) return target;
 	return current + (target - current) * Math.min(1, speed * dt);
 }

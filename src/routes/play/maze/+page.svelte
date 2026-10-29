@@ -11,7 +11,6 @@
 	import MazeDpad from '#lib/components/MazeDpad.svelte';
 	import MazeItemIcon from '#lib/components/MazeItemIcon.svelte';
 	import { ITEM_NAMES } from '#lib/components/mazeItems.js';
-	import MazeSizePicker from '#lib/components/MazeSizePicker.svelte';
 	import MazeWinPanel from '#lib/components/MazeWinPanel.svelte';
 	import TutorialModal from '#lib/components/TutorialModal.svelte';
 	import type { SizeId } from '#lib/game/maze/difficulty.js';
@@ -22,7 +21,6 @@
 	import { firstPlay } from '#lib/services/tutorial.js';
 	import { MazeGame } from '#lib/stores/mazeGame.svelte.js';
 	import IconHelp from '~icons/lucide/circle-help';
-	import IconList from '~icons/lucide/list';
 	import IconRotate from '~icons/lucide/rotate-ccw';
 
 	const game = new MazeGame();
@@ -33,6 +31,7 @@
 	let showTutorial = $state(false);
 	onMount(() => {
 		showTutorial = firstPlay('maze');
+		game.start(game.size);
 	});
 
 	// The win panel waits a moment so the last step can be seen
@@ -76,7 +75,7 @@
 	});
 </script>
 
-<GameShell {title}>
+<GameShell {title} backHref="/play/maze/lobby">
 	{#snippet actions()}
 		<button
 			type="button"
@@ -152,18 +151,9 @@
 					<IconRotate class="size-4" aria-hidden="true" />
 					{m.maze_restart()}
 				</button>
-				<button
-					type="button"
-					class="btn-chunky px-3 py-1 text-sm"
-					onclick={() => game.backToSelect()}
-				>
-					<IconList class="size-4" aria-hidden="true" />
-					{m.maze_back_to_sizes()}
-				</button>
+
 			</div>
 		</section>
-	{:else}
-		<MazeSizePicker {game} />
 	{/if}
 
 	<TutorialModal

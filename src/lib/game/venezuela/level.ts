@@ -5,9 +5,17 @@
  *   =  catwalk (solid only from above)       ^  barbed barricade (hurts)
  *   P  start        G  flag (pole base)      C  checkpoint lamp
  *   o  oil barrel   e  rig-guard goon        j  hopping goon        h  helicopter
+ *   s  spring pad (stands on the floor)
+ *   ~  hover barge gliding sideways          :  hover lift gliding up and down
+ *   A  T  B  M  mystery blocks (solid) with an arepa, turbo coffee, spring boots or the golden
+ *               mustache inside; bump one from below to get it
+ *
+ * A barge or lift is placed on the tile its travel is centered on, with the top of the plank at
+ * the top of that tile. Keep its whole travel free of solid tiles (a test checks).
  *
  * Rows are LEVEL_ROWS tall and all the same length. Falling off the bottom costs a heart.
  */
+import { BLOCK_BOOSTERS, type BoosterKind } from './boosters';
 import { LEVEL_ROWS, VIEW_W } from './config';
 
 export interface RawLevel {
@@ -23,6 +31,14 @@ export interface Spot {
 	y: number;
 }
 
+export interface BlockSpot extends Spot {
+	kind: BoosterKind;
+}
+
+export interface PlatformSpot extends Spot {
+	axis: 'x' | 'y';
+}
+
 export interface LevelData {
 	id: string;
 	rows: readonly string[];
@@ -35,10 +51,30 @@ export interface LevelData {
 	goons: Spot[];
 	jumpers: Spot[];
 	helicopters: Spot[];
+	springs: Spot[];
+	blocks: BlockSpot[];
+	platforms: PlatformSpot[];
 }
 
-const SOLID = new Set(['#', 'W']);
-const KNOWN = new Set(['.', '#', 'W', '=', '^', 'P', 'G', 'C', 'o', 'e', 'j', 'h']);
+const SOLID = new Set(['#', 'W', ...Object.keys(BLOCK_BOOSTERS)]);
+const KNOWN = new Set([
+	'.',
+	'#',
+	'W',
+	'=',
+	'^',
+	'P',
+	'G',
+	'C',
+	'o',
+	'e',
+	'j',
+	'h',
+	's',
+	'~',
+	':',
+	...Object.keys(BLOCK_BOOSTERS)
+]);
 
 export function kindOfChar(char: string): TileKind {
 	if (SOLID.has(char)) return 'solid';
@@ -104,6 +140,14 @@ export function parseLevel(raw: RawLevel): LevelData {
 		barrels: collect(rows, 'o'),
 		goons: collect(rows, 'e'),
 		jumpers: collect(rows, 'j'),
-		helicopters: collect(rows, 'h')
+		helicopters: collect(rows, 'h'),
+		springs: collect(rows, 's'),
+		blocks: Object.entries(BLOCK_BOOSTERS)
+			.flatMap(([char, kind]) => collect(rows, char).map((spot) => ({ ...spot, kind })))
+			.sort((a, b) => a.y - b.y || a.x - b.x),
+		platforms: [
+			...collect(rows, '~').map((spot) => ({ ...spot, axis: 'x' as const })),
+			...collect(rows, ':').map((spot) => ({ ...spot, axis: 'y' as const }))
+		]
 	};
 }

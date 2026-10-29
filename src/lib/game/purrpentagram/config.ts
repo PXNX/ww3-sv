@@ -47,3 +47,6 @@ export const SCORE_PER_HEART = 100;
 export const SCORE_PER_MISTAKE = 120;
 export const SCORE_TIME_MAX = 600;
 export const SCORE_TIME_PER_S = 3;
+
+/** Set once the ritual has been completed, which unlocks the cat ears for the agent */
+export const PURR_SOLVED_KEY = 'purrpentagram:solved';

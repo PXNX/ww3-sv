@@ -6,12 +6,16 @@
  * jump-button hold times, each in every direction), and every place a try lands becomes a new spot
  * to start from. Enemies are ignored (they can be stomped or dodged); barbed barricades kill a try.
  * The search runs with slightly weakened physics, so a level that passes has some slack and does
- * not depend on pixel-perfect play.
+ * not depend on pixel-perfect play. Spring pads launch the replayed player just like the real
+ * thing; a hover barge counts as a catwalk along its whole travel (a rider can wait for it to come
+ * by), and mystery blocks are solid. Boosters are ignored: no level may need one.
  */
 import { overlaps } from './collision';
 import { PHYSICS, STEP, type Physics } from './config';
 import { type LevelData } from './level';
 import { createPlayer, stepPlayer, type Input, type Player } from './player';
+import { createPlatform, platformSweepBox } from './platforms';
+import { launchFromSpring } from './springs';
 import { barrelBox, flagBox, touchesHazard } from './world';
 
 /** The physics the validator assumes: a little slower and a little weaker than the real thing */
@@ -46,7 +50,24 @@ function copy(player: Player): Player {
 	return { ...player };
 }
 
-export function analyzeReach(level: LevelData, physics: Physics = SLACK_PHYSICS): Reachability {
+/** The level with every hover barge's travel drawn in as catwalk tiles */
+function withBargeStrips(level: LevelData): LevelData {
+	if (level.platforms.length === 0) return level;
+	const rows = level.rows.map((row) => row.split(''));
+	level.platforms.forEach((spot, index) => {
+		const sweep = platformSweepBox(createPlatform(index, spot));
+		const lastRow = Math.ceil(sweep.y + sweep.h - 0.05) - 1;
+		for (let y = Math.floor(sweep.y); y <= lastRow; y++) {
+			for (let x = Math.floor(sweep.x); x < Math.ceil(sweep.x + sweep.w); x++) {
+				if (rows[y]?.[x] === '.') rows[y][x] = '=';
+			}
+		}
+	});
+	return { ...level, rows: rows.map((row) => row.join('')) };
+}
+
+export function analyzeReach(source: LevelData, physics: Physics = SLACK_PHYSICS): Reachability {
+	const level = withBargeStrips(source);
 	const result: Reachability = {
 		goal: false,
 		barrels: level.barrels.map(() => false),
@@ -95,6 +116,7 @@ export function analyzeReach(level: LevelData, physics: Physics = SLACK_PHYSICS)
 					};
 			const events = stepPlayer(player, input, level, physics, STEP);
 			if (events.includes('jump')) jumped = true;
+			if (launchFromSpring(level, player, input.jumpHeld)) jumped = true;
 			if (player.y > level.height + 1 || touchesHazard(level, player)) return;
 			touch(player);
 			const settled = walk ? frame >= 9 : jumped && frame > delay + 1;

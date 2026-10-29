@@ -4,9 +4,6 @@
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import PauseOverlay from '#lib/components/PauseOverlay.svelte';
-	import PipelineDifficultyPicker, {
-		LEVEL_NAMES
-	} from '#lib/components/PipelineDifficultyPicker.svelte';
 	import PipelineGrid from '#lib/components/PipelineGrid.svelte';
 	import PipelineWrench from '#lib/components/PipelineWrench.svelte';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
@@ -15,7 +12,8 @@
 		finalScore,
 		shutdownSecondsLeft,
 		streakMultiplier,
-		type Difficulty
+		type Difficulty,
+		LEVEL_NAMES
 	} from '#lib/game/pipeline/pipelineStep.js';
 	import { boardDrawer } from '#lib/game/pipeline/shareBoard.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
@@ -24,13 +22,11 @@
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
 	import IconRefresh from '~icons/lucide/refresh-cw';
-	import IconSliders from '~icons/lucide/sliders-horizontal';
 	import IconTimer from '~icons/lucide/timer';
 
 	const game = new PipelineGame();
 	let reducedMotion = $state(false);
 	let showTutorial = $state(false);
-	let picking = $state(true);
 
 	onMount(() => {
 		reducedMotion = prefersReducedMotion();
@@ -54,84 +50,62 @@
 	// Only needed for the share card; the board stops changing once the game is over
 	const drawBoard = $derived(game.result ? boardDrawer(view.grid, view.flow) : undefined);
 
-	function pick(level: Difficulty) {
-		game.setDifficulty(level);
-		picking = false;
-	}
-
-	function changeDifficulty() {
-		game.pause();
-		picking = true;
-	}
 </script>
 
 <GameShell
 	title={m.mode_pipeline_name()}
-	score={picking ? undefined : shownScore}
-	best={picking ? undefined : game.best}
-	confirmLeave={!picking && running}
+	score={shownScore}
+	best={game.best}
+	confirmLeave={running}
+	backHref="/play/pipeline/lobby"
 >
 	{#snippet actions()}
-		{#if !picking}
-			<button
-				type="button"
-				class="btn-chunky px-3 py-1 text-sm {game.handsFree ? 'bg-mustard' : ''}"
-				aria-pressed={game.handsFree}
-				aria-label={m.pipeline_repair_toggle()}
-				onclick={() => (game.handsFree = !game.handsFree)}
+		<button
+			type="button"
+			class="btn-chunky px-3 py-1 text-sm {game.handsFree ? 'bg-mustard' : ''}"
+			aria-pressed={game.handsFree}
+			aria-label={m.pipeline_repair_toggle()}
+			onclick={() => (game.handsFree = !game.handsFree)}
+		>
+			<PipelineWrench standalone class="size-4" />
+			<span class="hidden sm:inline">{m.pipeline_repair_toggle()}</span>
+			<span
+				class="rounded border-2 border-ink px-1 text-xs {game.handsFree
+					? 'bg-ink text-paper'
+					: ''}"
+				aria-hidden="true"
 			>
-				<PipelineWrench standalone class="size-4" />
-				<span class="hidden sm:inline">{m.pipeline_repair_toggle()}</span>
-				<span
-					class="rounded border-2 border-ink px-1 text-xs {game.handsFree
-						? 'bg-ink text-paper'
-						: ''}"
-					aria-hidden="true"
-				>
-					{game.handsFree ? '✓' : '–'}
-				</span>
+				{game.handsFree ? '✓' : '–'}
+			</span>
+		</button>
+		{#if game.paused}
+			<button type="button" class="btn-chunky px-3 py-1 text-sm" onclick={() => game.resume()}>
+				<IconPlay class="size-4" aria-hidden="true" />
+				{m.game_resume()}
 			</button>
-			{#if game.paused}
-				<button type="button" class="btn-chunky px-3 py-1 text-sm" onclick={() => game.resume()}>
-					<IconPlay class="size-4" aria-hidden="true" />
-					{m.game_resume()}
-				</button>
-			{:else}
-				<button
-					type="button"
-					class="btn-chunky px-3 py-1 text-sm"
-					disabled={game.result !== null}
-					onclick={() => game.pause()}
-				>
-					<IconPause class="size-4" aria-hidden="true" />
-					{m.game_pause()}
-				</button>
-			{/if}
+		{:else}
 			<button
 				type="button"
-				class="btn-chunky px-2.5 py-1 text-sm"
-				aria-label={m.pipeline_new_board()}
-				onclick={() => game.newGame()}
+				class="btn-chunky px-3 py-1 text-sm"
+				disabled={game.result !== null}
+				onclick={() => game.pause()}
 			>
-				<IconRefresh class="size-4" aria-hidden="true" />
-				<span class="hidden md:inline">{m.pipeline_new_board()}</span>
-			</button>
-			<button
-				type="button"
-				class="btn-chunky px-2.5 py-1 text-sm"
-				aria-label={m.pipeline_difficulty_label()}
-				onclick={changeDifficulty}
-			>
-				<IconSliders class="size-4" aria-hidden="true" />
-				<span class="hidden md:inline">{m.pipeline_difficulty_label()}</span>
+				<IconPause class="size-4" aria-hidden="true" />
+				{m.game_pause()}
 			</button>
 		{/if}
+		<button
+			type="button"
+			class="btn-chunky px-2.5 py-1 text-sm"
+			aria-label={m.pipeline_new_board()}
+			onclick={() => game.newGame()}
+		>
+			<IconRefresh class="size-4" aria-hidden="true" />
+			<span class="hidden md:inline">{m.pipeline_new_board()}</span>
+		</button>
 	{/snippet}
 
-	{#if picking}
-		<PipelineDifficultyPicker selected={game.difficulty} onpick={pick} />
-	{:else}
-		<!-- One slim status bar: interceptor charges, the tanker filling up, and the streak bonus -->
+	<!-- One slim status bar: interceptor charges, the tanker filling up, and the streak bonus -->
 		<div
 			class="flex items-center gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1 shadow-[3px_3px_0_var(--color-ink)]"
 		>
@@ -250,7 +224,6 @@
 				{/if}
 			</div>
 		{/if}
-	{/if}
 </GameShell>
 
 <GameOverModal

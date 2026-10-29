@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { LEVEL_NAMES } from '#lib/components/venezuelaText.js';
-import { STARTING_HEARTS, STEP } from '#lib/game/venezuela/config.js';
+import { STARTING_HEARTS, STEP, VIEW_W } from '#lib/game/venezuela/config.js';
 import { LEVEL_IDS } from '#lib/game/venezuela/levels.js';
 import { flagBox } from '#lib/game/venezuela/world.js';
 import { createHighscores } from '#lib/services/highscore.js';
@@ -172,6 +172,43 @@ describe('VenezuelaGame', () => {
 		expect(game.effects.length).toBeGreaterThan(0);
 		run(game, 120);
 		expect(game.effects).toHaveLength(0);
+	});
+
+	it('shows more of the level on a wide screen', () => {
+		const narrow = newGame().game;
+		narrow.openLevel(0);
+		const wide = newGame().game;
+		wide.setView(20);
+		wide.openLevel(0);
+		expect(wide.sceneExtras().viewW).toBe(20);
+		expect(narrow.sceneExtras().viewW).toBe(VIEW_W);
+		// Following the player, the wide view starts further left, to keep them in the middle
+		for (const game of [narrow, wide]) {
+			game.start();
+			game.world.player.x = 40;
+			game.camX = 0;
+			run(game, 240);
+		}
+		expect(wide.camX).toBeLessThan(narrow.camX);
+	});
+
+	it('pops a booster out of a bumped block and shows its timer', () => {
+		const { game } = newGame();
+		game.openLevel(0);
+		game.start();
+		run(game, 3);
+		const block = game.world.blocks[0];
+		expect(game.boosts.turbo).toBe(0);
+		game.world.player.x = block.x + 0.5 - game.world.player.w / 2;
+		game.world.player.y = block.y + 1.05;
+		game.world.player.vy = -4;
+		game.world.player.onGround = false;
+		run(game, 6);
+		expect(block).toMatchObject({ used: true });
+		expect(game.boosts.turbo).toBeGreaterThan(0);
+		expect(game.effects.some((effect) => effect.kind === 'item')).toBe(true);
+		run(game, 60 * 9);
+		expect(game.boosts.turbo).toBe(0);
 	});
 
 	it('goes back to the select screen', () => {

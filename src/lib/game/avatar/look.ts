@@ -6,9 +6,11 @@
  */
 import { createRandom, pickOne, randomSeed, type Random } from '#lib/game/random.js';
 
-export const SHIRT_TYPES = ['tee', 'hoodie', 'suit', 'camo', 'tank'] as const;
+export const SHIRT_TYPES = ['tee', 'hoodie', 'suit', 'camo', 'tank', 'trump-suit'] as const;
 export const FACE_SHAPES = ['round', 'oval', 'square', 'long'] as const;
-export const NOSES = ['button', 'pointy', 'potato', 'hook'] as const;
+export const NOSES = ['button', 'pointy', 'potato', 'hook', 'beak'] as const;
+/** Hair on the face; the mustache is an extra look */
+export const FACIAL_HAIR = ['none', 'mustache'] as const;
 export const EYE_TYPES = ['dots', 'wide', 'sleepy', 'angry', 'shades'] as const;
 export const HAIRSTYLES = ['bald', 'buzz', 'mohawk', 'bun', 'curly', 'long', 'combover'] as const;
 export const HATS = [
@@ -21,7 +23,8 @@ export const HATS = [
 	'ogre-ears',
 	'lula',
 	'monocle',
-	'cylinder'
+	'cylinder',
+	'cat-ears'
 ] as const;
 
 /** Skin tones from light to deep; the first matches the game's caricature skin token */
@@ -61,6 +64,7 @@ export type Nose = (typeof NOSES)[number];
 export type EyeType = (typeof EYE_TYPES)[number];
 export type Hairstyle = (typeof HAIRSTYLES)[number];
 export type Hat = (typeof HATS)[number];
+export type FacialHair = (typeof FACIAL_HAIR)[number];
 
 export interface AvatarLook {
 	version: 1;
@@ -73,6 +77,7 @@ export interface AvatarLook {
 	hair: Hairstyle;
 	hairColor: string;
 	hat: Hat;
+	facial: FacialHair;
 }
 
 /** The parts the editor offers, each with its list of choices, in the order they are shown */
@@ -85,7 +90,8 @@ export const LOOK_PARTS = {
 	nose: NOSES,
 	hair: HAIRSTYLES,
 	hairColor: HAIR_COLORS,
-	hat: HATS
+	hat: HATS,
+	facial: FACIAL_HAIR
 } as const satisfies Record<Exclude<keyof AvatarLook, 'version'>, readonly string[]>;
 
 export type LookPart = keyof typeof LOOK_PARTS;
@@ -100,7 +106,8 @@ export const DEFAULT_LOOK: AvatarLook = {
 	eyes: 'dots',
 	hair: 'buzz',
 	hairColor: HAIR_COLORS[1],
-	hat: 'none'
+	hat: 'none',
+	facial: 'none'
 };
 
 /** A ready-made agent that sets every part at once; the editor shows these as shortcuts */
@@ -130,7 +137,8 @@ export const LOOK_PRESETS: readonly LookPreset[] = [
 			eyes: 'angry',
 			hair: 'bald',
 			hairColor: '#111111',
-			hat: 'none'
+			hat: 'none',
+			facial: 'none'
 		}
 	},
 	{
@@ -146,7 +154,8 @@ export const LOOK_PRESETS: readonly LookPreset[] = [
 			eyes: 'dots',
 			hair: 'bald',
 			hairColor: '#111111',
-			hat: 'ogre-ears'
+			hat: 'ogre-ears',
+			facial: 'none'
 		}
 	}
 ];
@@ -165,7 +174,8 @@ export const ANONYMOUS_LOOK: AvatarLook = {
 	eyes: 'shades',
 	hair: 'bald',
 	hairColor: '#111111',
-	hat: 'none'
+	hat: 'none',
+	facial: 'none'
 };
 
 /** A random look; the same seed always gives the same look */
@@ -188,7 +198,10 @@ export function randomLook(seed: number = randomSeed(), allowed?: LookAllowed): 
 		hat:
 			random() < 0.6
 				? 'none'
-				: pickAllowed(random, 'hat', randomHats.slice(1), DEFAULT_LOOK.hat, allowed)
+				: pickAllowed(random, 'hat', randomHats.slice(1), DEFAULT_LOOK.hat, allowed),
+		// Few agents wear a mustache, and only one that is open to them
+		facial:
+			random() < 0.85 ? 'none' : pickAllowed(random, 'facial', FACIAL_HAIR, DEFAULT_LOOK.facial, allowed)
 	};
 }
 
@@ -235,5 +248,10 @@ export function isAvatarLook(value: unknown): value is AvatarLook {
 
 /** A saved look, or null if what came back from storage is not one */
 export function parseLook(value: unknown): AvatarLook | null {
-	return isAvatarLook(value) ? value : null;
+	// Looks saved before the mustache existed have no such part: they get the default one
+	const upgraded =
+		isRecord(value) && value.version === 1 && value.facial === undefined
+			? { ...value, facial: DEFAULT_LOOK.facial }
+			: value;
+	return isAvatarLook(upgraded) ? upgraded : null;
 }
