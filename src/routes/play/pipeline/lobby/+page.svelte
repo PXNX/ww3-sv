@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
@@ -18,7 +19,9 @@
 	}
 
 	let showedTutorial = $state(false);
-	onMount(() => { showedTutorial = firstPlay('pipeline'); });
+	onMount(() => {
+		showedTutorial = firstPlay('pipeline');
+	});
 </script>
 
 <GameShell title={m.mode_pipeline_name()} back={false}>

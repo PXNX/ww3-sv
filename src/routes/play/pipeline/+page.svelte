@@ -5,6 +5,7 @@
 	import GameShell from '#lib/components/GameShell.svelte';
 	import PauseOverlay from '#lib/components/PauseOverlay.svelte';
 	import PipelineGrid from '#lib/components/PipelineGrid.svelte';
+	import { LEVEL_NAMES } from '#lib/components/PipelineDifficultyPicker.svelte';
 	import PipelineWrench from '#lib/components/PipelineWrench.svelte';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
 	import {
@@ -12,8 +13,7 @@
 		finalScore,
 		shutdownSecondsLeft,
 		streakMultiplier,
-		type Difficulty,
-		LEVEL_NAMES
+		type Difficulty
 	} from '#lib/game/pipeline/pipelineStep.js';
 	import { boardDrawer } from '#lib/game/pipeline/shareBoard.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
@@ -49,7 +49,6 @@
 	const departProgress = $derived(1 - view.tankerDepartMs / TANKER_DEPART_MS);
 	// Only needed for the share card; the board stops changing once the game is over
 	const drawBoard = $derived(game.result ? boardDrawer(view.grid, view.flow) : undefined);
-
 </script>
 
 <GameShell
@@ -70,9 +69,7 @@
 			<PipelineWrench standalone class="size-4" />
 			<span class="hidden sm:inline">{m.pipeline_repair_toggle()}</span>
 			<span
-				class="rounded border-2 border-ink px-1 text-xs {game.handsFree
-					? 'bg-ink text-paper'
-					: ''}"
+				class="rounded border-2 border-ink px-1 text-xs {game.handsFree ? 'bg-ink text-paper' : ''}"
 				aria-hidden="true"
 			>
 				{game.handsFree ? '✓' : '–'}
@@ -106,124 +103,123 @@
 	{/snippet}
 
 	<!-- One slim status bar: interceptor charges, the tanker filling up, and the streak bonus -->
+	<div
+		class="flex items-center gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1 shadow-[3px_3px_0_var(--color-ink)]"
+	>
 		<div
-			class="flex items-center gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1 shadow-[3px_3px_0_var(--color-ink)]"
+			class="flex shrink-0 items-center gap-1"
+			role="img"
+			aria-label="{m.pipeline_charges_label()}: {view.charges}/{config.maxCharges}"
 		>
+			{#each { length: config.maxCharges }, slot (slot)}
+				<img
+					src={spriteSrc('patriotLauncher')}
+					alt=""
+					class="w-6 {slot < view.charges ? '' : 'opacity-25 grayscale'}"
+					draggable="false"
+				/>
+			{/each}
+		</div>
+
+		<div class="flex min-w-0 flex-1 items-center gap-2" aria-label={m.pipeline_tanker_label()}>
+			<div class="relative h-8 w-12 shrink-0">
+				<img
+					src={spriteSrc('tanker')}
+					alt={m.pipeline_tanker_alt()}
+					class="absolute inset-0 size-full object-contain"
+					style:translate={departing && !reducedMotion ? `${departProgress * 200}% 0` : undefined}
+					style:opacity={departing && !reducedMotion ? 1 - departProgress : undefined}
+					draggable="false"
+				/>
+			</div>
 			<div
-				class="flex shrink-0 items-center gap-1"
-				role="img"
-				aria-label="{m.pipeline_charges_label()}: {view.charges}/{config.maxCharges}"
+				class="h-3.5 min-w-0 flex-1 overflow-hidden rounded-full border-2 border-ink bg-paper"
+				role="progressbar"
+				aria-label={m.pipeline_tanker_label()}
+				aria-valuemin={0}
+				aria-valuemax={100}
+				aria-valuenow={tankerPercent}
 			>
-				{#each { length: config.maxCharges }, slot (slot)}
-					<img
-						src={spriteSrc('patriotLauncher')}
-						alt=""
-						class="w-6 {slot < view.charges ? '' : 'opacity-25 grayscale'}"
-						draggable="false"
-					/>
-				{/each}
+				<div class="h-full bg-flag-blue" style:width="{tankerPercent}%"></div>
 			</div>
-
-			<div class="flex min-w-0 flex-1 items-center gap-2" aria-label={m.pipeline_tanker_label()}>
-				<div class="relative h-8 w-12 shrink-0">
-					<img
-						src={spriteSrc('tanker')}
-						alt={m.pipeline_tanker_alt()}
-						class="absolute inset-0 size-full object-contain"
-						style:translate={departing && !reducedMotion ? `${departProgress * 200}% 0` : undefined}
-						style:opacity={departing && !reducedMotion ? 1 - departProgress : undefined}
-						draggable="false"
-					/>
-				</div>
-				<div
-					class="h-3.5 min-w-0 flex-1 overflow-hidden rounded-full border-2 border-ink bg-paper"
-					role="progressbar"
-					aria-label={m.pipeline_tanker_label()}
-					aria-valuemin={0}
-					aria-valuemax={100}
-					aria-valuenow={tankerPercent}
-				>
-					<div class="h-full bg-flag-blue" style:width="{tankerPercent}%"></div>
-				</div>
-				<span class="font-display text-base font-bold tabular-nums" dir="ltr">{tankerPercent}%</span
-				>
-			</div>
-
-			{#if multiplier > 1}
-				{#key multiplier}
-					<span
-						class="pop-in shrink-0 rounded-md border-2 border-ink bg-explosion-yellow px-2 py-0.5 text-sm font-bold text-tie-red"
-						dir="ltr"
-						aria-label="{m.pipeline_multiplier_label()} ×{multiplier}"
-					>
-						×{multiplier}
-					</span>
-				{/key}
-			{/if}
+			<span class="font-display text-base font-bold tabular-nums" dir="ltr">{tankerPercent}%</span>
 		</div>
 
-		<div class="relative rounded-2xl">
-			<PipelineGrid
-				{view}
-				gameId={game.gameId}
-				{reducedMotion}
-				disabled={locked}
-				tankerLevel={Math.min(tankerPercent, 100) / 100}
-				onRotate={(cell) => game.rotate(cell)}
-				onRepairStart={(cell) => game.pressRepair(cell)}
-				onRepairEnd={() => game.releaseRepair()}
-				onIntercept={(id) => game.intercept(id)}
-			>
-				{#snippet overlay()}
-					<!-- Notices float over the board's top edge so the board keeps the whole height -->
-					<div
-						aria-live="polite"
-						class="pointer-events-none absolute inset-x-2 top-1 z-20 flex flex-col gap-1"
-					>
-						{#if cut}
-							<div
-								class="flex items-center gap-2 rounded-lg border-3 border-ink bg-tie-red px-3 py-1 text-sm font-bold shadow-[2px_2px_0_var(--color-ink)]"
-							>
-								<IconTimer class="size-5 shrink-0" aria-hidden="true" />
-								<span>{m.pipeline_shutdown_warning({ seconds: shutdownSecondsLeft(view) })}</span>
-								<span
-									class="ms-auto h-3 w-16 shrink-0 overflow-hidden rounded-full border-2 border-ink bg-paper"
-									aria-hidden="true"
-								>
-									<span
-										class="block h-full bg-ink"
-										style:width="{(1 - view.cutMs / config.shutdownMs) * 100}%"
-									></span>
-								</span>
-							</div>
-						{:else if departing}
-							<p
-								class="rounded-lg border-3 border-ink bg-flag-blue px-3 py-1 text-sm font-bold shadow-[2px_2px_0_var(--color-ink)]"
-							>
-								{m.pipeline_tanker_departing({
-									bonus: Math.round(config.tankerBonus * multiplier)
-								})}
-							</p>
-						{/if}
-					</div>
-				{/snippet}
-			</PipelineGrid>
-
-			{#if game.paused}
-				<PauseOverlay cover hint="" onResume={() => game.resume()} />
-			{/if}
-		</div>
-
-		{#if view.phase === 'setup'}
-			<div class="rounded-lg border-3 border-ink bg-paper px-3 py-2 text-sm">
-				<p class="font-semibold">{m.pipeline_setup_hint()}</p>
-				{#if showTutorial}
-					<p class="mt-1">{m.pipeline_controls_hint()}</p>
-					<p class="mt-1 opacity-80">{m.pipeline_repair_toggle_hint()}</p>
-					<p class="mt-1 hidden opacity-80 sm:block">{m.pipeline_keyboard_hint()}</p>
-				{/if}
-			</div>
+		{#if multiplier > 1}
+			{#key multiplier}
+				<span
+					class="pop-in shrink-0 rounded-md border-2 border-ink bg-explosion-yellow px-2 py-0.5 text-sm font-bold text-tie-red"
+					dir="ltr"
+					aria-label="{m.pipeline_multiplier_label()} ×{multiplier}"
+				>
+					×{multiplier}
+				</span>
+			{/key}
 		{/if}
+	</div>
+
+	<div class="relative rounded-2xl">
+		<PipelineGrid
+			{view}
+			gameId={game.gameId}
+			{reducedMotion}
+			disabled={locked}
+			tankerLevel={Math.min(tankerPercent, 100) / 100}
+			onRotate={(cell) => game.rotate(cell)}
+			onRepairStart={(cell) => game.pressRepair(cell)}
+			onRepairEnd={() => game.releaseRepair()}
+			onIntercept={(id) => game.intercept(id)}
+		>
+			{#snippet overlay()}
+				<!-- Notices float over the board's top edge so the board keeps the whole height -->
+				<div
+					aria-live="polite"
+					class="pointer-events-none absolute inset-x-2 top-1 z-20 flex flex-col gap-1"
+				>
+					{#if cut}
+						<div
+							class="flex items-center gap-2 rounded-lg border-3 border-ink bg-tie-red px-3 py-1 text-sm font-bold shadow-[2px_2px_0_var(--color-ink)]"
+						>
+							<IconTimer class="size-5 shrink-0" aria-hidden="true" />
+							<span>{m.pipeline_shutdown_warning({ seconds: shutdownSecondsLeft(view) })}</span>
+							<span
+								class="ms-auto h-3 w-16 shrink-0 overflow-hidden rounded-full border-2 border-ink bg-paper"
+								aria-hidden="true"
+							>
+								<span
+									class="block h-full bg-ink"
+									style:width="{(1 - view.cutMs / config.shutdownMs) * 100}%"
+								></span>
+							</span>
+						</div>
+					{:else if departing}
+						<p
+							class="rounded-lg border-3 border-ink bg-flag-blue px-3 py-1 text-sm font-bold shadow-[2px_2px_0_var(--color-ink)]"
+						>
+							{m.pipeline_tanker_departing({
+								bonus: Math.round(config.tankerBonus * multiplier)
+							})}
+						</p>
+					{/if}
+				</div>
+			{/snippet}
+		</PipelineGrid>
+
+		{#if game.paused}
+			<PauseOverlay cover hint="" onResume={() => game.resume()} />
+		{/if}
+	</div>
+
+	{#if view.phase === 'setup'}
+		<div class="rounded-lg border-3 border-ink bg-paper px-3 py-2 text-sm">
+			<p class="font-semibold">{m.pipeline_setup_hint()}</p>
+			{#if showTutorial}
+				<p class="mt-1">{m.pipeline_controls_hint()}</p>
+				<p class="mt-1 opacity-80">{m.pipeline_repair_toggle_hint()}</p>
+				<p class="mt-1 hidden opacity-80 sm:block">{m.pipeline_keyboard_hint()}</p>
+			{/if}
+		</div>
+	{/if}
 </GameShell>
 
 <GameOverModal
