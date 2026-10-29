@@ -1,5 +1,6 @@
 <!--
-	The squad section of the raid lobby: the squad's slots (with invites received and a shared link
+	The squad section of the raid lobby, the only place squads are managed: a short note on how a
+	squad differs from friends and the referral link, the squad's slots (with invites received and a shared link
 	the app was opened with), every online friend with a button to invite them, and a button to
 	share a join link in any Telegram chat, for raiders who are not friends yet.
 -->
@@ -11,6 +12,7 @@
 	import { telegram } from '#lib/stores/telegram.svelte.js';
 	import RaidSquadPanel from './RaidSquadPanel.svelte';
 	import SquadAvatar from './SquadAvatar.svelte';
+	import SquadHowTo from './SquadHowTo.svelte';
 	import SquadLinkCard from './SquadLinkCard.svelte';
 	import SquadShareButton from './SquadShareButton.svelte';
 	import { squadResultText } from './squadText';
@@ -47,6 +49,8 @@
 <div
 	class="flex flex-col gap-2.5 rounded-2xl bg-linear-to-br from-[#3b2470]/90 to-[#24164a]/90 p-2.5 shadow-[0_4px_0_rgb(0_0_0/0.3)]"
 >
+	<SquadHowTo />
+
 	<div class="flex flex-wrap items-start gap-2.5">
 		<RaidSquadPanel class="min-w-0 flex-1" />
 		{#if store.availability === 'ready'}

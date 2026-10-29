@@ -1,7 +1,7 @@
 <!--
 	A squad invite that pops up wherever the player is, so a friend's call is not missed during
-	another game. It stays quiet while a panel that lists invites itself is on screen (the start
-	screen's friends panel, the raid lobby's squad strip). Meant to be mounted once in the root
+	another game. It stays quiet while a panel that lists invites itself is on screen (the raid lobby's
+	squad strip), since squads only exist in the raid. Meant to be mounted once in the root
 	layout; it keeps the squad line open, and with it the player's presence, for the whole app.
 -->
 <script lang="ts">

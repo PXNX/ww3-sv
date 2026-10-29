@@ -9,6 +9,14 @@ The Mini App lets a player see their friends, who of them is online, and team up
 - All ids are strings on the wire (Telegram user ids are sent as decimal strings, so the client never has to care about 53-bit limits). Field names are `snake_case`. Times are Unix timestamps in **milliseconds** (`expires_at`).
 - The client validates every reply and treats anything malformed as a failed call, so extra fields are fine but missing or mistyped ones are not.
 
+## Referral link, friend, squad
+
+Three different things the game keeps apart, in its texts and in where they live:
+
+- **Referral link** (`me.invite`, profile): a `t.me/<bot>?start=r<id>` link for people who have never used the bot. The inviter earns a revival token per new player, up to a cap. It is a growth reward; it does not join a squad. Someone who starts the bot through it also becomes the inviter's friend.
+- **Friend** (`friends`, profile): a symmetric relation the bot keeps. It only decides who can see whose presence and who can be invited to a squad. Friends are made by the referral link, by joining a squad through a squad link, or by whatever else the bot decides (see below). The profile lists them with online and in-a-raid status and nothing more.
+- **Squad** (`squad_*`, raid lobby only): up to 3 players going into one raid together. A squad exists in the raid alone: it is formed, invited to, joined by link and left in the raid lobby. Invites reach a player wherever they are as a toast, which leads to the raid lobby.
+
 ## What a friend is
 
 Telegram gives Mini Apps no access to contacts. A friend is a relation the bot keeps itself, for example:

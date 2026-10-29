@@ -9,13 +9,13 @@
 	import { APP_NAME } from '#lib/config.js';
 	import { career } from '#lib/game/career/store.svelte.js';
 	import { m } from '#lib/paraglide/messages.js';
-	import { inviteShareUrl, openTelegramLink } from '#lib/services/telegram.js';
 	import { avatar } from '#lib/game/avatar/store.svelte.js';
 	import { telegram } from '#lib/stores/telegram.svelte.js';
 	import Avatar from '#lib/components/Avatar.svelte';
 	import AvatarEditor from '#lib/components/AvatarEditor.svelte';
 	import CareerBar from '#lib/components/CareerBar.svelte';
 	import FriendsPanel from '#lib/components/FriendsPanel.svelte';
+	import ReferralCard from '#lib/components/ReferralCard.svelte';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
 	import IconBadgeCheck from '~icons/lucide/badge-check';
 	import IconSettings from '~icons/lucide/settings';
@@ -25,7 +25,6 @@
 	import IconNewspaper from '~icons/lucide/newspaper';
 	import IconRefresh from '~icons/lucide/refresh-cw';
 	import IconSend from '~icons/lucide/send';
-	import IconUserPlus from '~icons/lucide/user-plus';
 
 	const careerState = career();
 	const session = telegram();
@@ -97,6 +96,8 @@
 
 	<FriendsPanel />
 
+	<ReferralCard />
+
 	<section class="sticker flex flex-col gap-2 p-4" style:--tilt="-0.3deg">
 		<h2 class="flex items-center gap-2 font-display text-xl font-bold">
 			<IconSend class="size-5 text-flag-blue" aria-hidden="true" />
@@ -133,31 +134,6 @@
 				<p class="text-sm font-bold">
 					{proUntil ? m.profile_telegram_pro_until({ date: proUntil }) : m.profile_telegram_pro()}
 				</p>
-			{/if}
-			{#if session.invite}
-				{@const invite = session.invite}
-				<div
-					class="mt-1 flex flex-col gap-2 rounded-[10px_5px_9px_6px] border-2 border-ink bg-sand p-3"
-				>
-					<h3 class="flex items-center gap-2 font-display text-lg font-bold">
-						<IconUserPlus class="size-5" aria-hidden="true" />
-						{m.profile_invite_title()}
-					</h3>
-					<p class="text-sm leading-relaxed">
-						{m.profile_invite_body({ revives: invite.revivesPerFriend, cap: invite.cap })}
-					</p>
-					<p class="text-sm font-bold tabular-nums">
-						{m.profile_invite_count({ friends: invite.friends, cap: invite.cap })}
-					</p>
-					<button
-						type="button"
-						class="btn-chunky self-start bg-flag-blue px-3 py-1 text-sm"
-						onclick={() => openTelegramLink(inviteShareUrl(invite, m.profile_invite_text()))}
-					>
-						<IconSend class="size-4" aria-hidden="true" />
-						{m.profile_invite_share()}
-					</button>
-				</div>
 			{/if}
 		{:else if session.status === 'checking'}
 			<p class="text-sm opacity-80">{m.profile_telegram_checking()}</p>
