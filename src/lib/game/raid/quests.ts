@@ -145,6 +145,32 @@ export function addRaidToQuests(daily: DailyQuests, stats: QuestStats): DailyQue
 
 export const questDone = (quest: Quest) => quest.progress >= quest.target;
 
+/**
+ * The enemy types the open quests still ask to be killed, for the minimap. A quest that names no
+ * type (all the kills of a hunt, crystals, damage, skills, a map) marks nothing in particular, so
+ * the map keeps its filter instead of showing every enemy.
+ */
+export function questKillTargets(quests: readonly Quest[]): Archetype[] {
+	const targets = new Set<Archetype>();
+	for (const quest of quests) {
+		if (questDone(quest)) continue;
+		switch (quest.kind) {
+			case 'drones':
+				targets.add('drone');
+				break;
+			case 'support':
+				targets.add('medic');
+				targets.add('mortar');
+				targets.add('artillery');
+				break;
+			case 'boss':
+				targets.add('boss');
+				break;
+		}
+	}
+	return [...targets];
+}
+
 export function isDailyQuests(value: unknown): value is DailyQuests {
 	if (typeof value !== 'object' || value === null) return false;
 	const { day, quests } = value as Record<string, unknown>;

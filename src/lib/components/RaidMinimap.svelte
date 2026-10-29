@@ -1,10 +1,12 @@
 <!--
-	The raid's minimap: the battlefield with every enemy marked by its kind, the player's own drones,
-	the loot and the player. Live, it redraws a few times a second (the small one in the HUD);
-	otherwise it draws once (the big one on the leave screen, while the raid stands still).
+	The raid's minimap: the battlefield with the markers that matter (bosses, super and mega enemies,
+	enemy support, the enemies an open quest asks for, the player's own drones and nests) and the
+	player. Live, it redraws a few times a second (the small one in the HUD); otherwise it draws once
+	(the big one in the map overlay, while the raid stands still).
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import type { Archetype } from '#lib/game/raid/config.js';
 	import { drawMinimap } from '#lib/game/raid/render.js';
 	import type { RaidState } from '#lib/game/raid/state.js';
 
@@ -14,6 +16,7 @@
 		height,
 		markScale = 1,
 		live = false,
+		questTargets,
 		label,
 		class: className = ''
 	}: {
@@ -23,6 +26,8 @@
 		height: number;
 		markScale?: number;
 		live?: boolean;
+		/** The enemy types an open daily quest still asks to be killed, read on every redraw */
+		questTargets?: () => readonly Archetype[];
 		label: string;
 		class?: string;
 	} = $props();
@@ -36,7 +41,7 @@
 		canvas.width = Math.round(width * ratio);
 		canvas.height = Math.round(height * ratio);
 		context.setTransform(ratio, 0, 0, ratio, 0, 0);
-		drawMinimap(context, raid(), width, height, markScale);
+		drawMinimap(context, raid(), width, height, markScale, questTargets?.() ?? []);
 	}
 
 	onMount(() => {

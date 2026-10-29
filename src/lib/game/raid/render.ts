@@ -9,6 +9,8 @@
  * them. In a defense the command post stands in the middle with its own health bar.
  */
 import {
+	ALLY_CRATE_MS,
+	ALLY_RADIUS,
 	ARTILLERY_RADIUS,
 	BOSS_SLAM_RADIUS,
 	CRYSTAL_COLOR,
@@ -28,6 +30,7 @@ import {
 	isElite,
 	VIEW_HEIGHT,
 	VIEW_MAX_WIDTH,
+	type Archetype,
 	type CrystalKind,
 	type MapId,
 	type Rarity,
@@ -37,6 +40,7 @@ import type { AvatarLook } from '#lib/game/avatar/look.js';
 import { perkOf, type GearItem } from './items';
 import type { Decor, Obstacle, Terrain } from './maps';
 import type {
+	Ally,
 	Bullet,
 	Enemy,
 	FirePool,
@@ -234,11 +238,16 @@ function drawWorld(
 			ellipse(context, enemy.x + 4, enemy.y + enemy.radius * 0.7, enemy.radius, enemy.radius * 0.4);
 	}
 	for (const drone of state.drones) ellipse(context, drone.x + 8, drone.y + 28, 9, 4);
+	for (const ally of state.allies)
+		ellipse(context, ally.x + 3, ally.y + ALLY_RADIUS * 0.7, ALLY_RADIUS, ALLY_RADIUS * 0.4);
 	ellipse(context, state.player.x + 3, state.player.y + 15, 20, 8);
 
 	for (const enemy of state.enemies) {
 		if (!enemy.flying && visible(camera, enemy.x, enemy.y, enemy.radius + 30))
 			drawEnemy(context, enemy, state.mapId, time);
+	}
+	for (const ally of state.allies) {
+		if (visible(camera, ally.x, ally.y, ALLY_RADIUS + 30)) drawAlly(context, ally);
 	}
 	if (state.player.warcryMs > 0) drawWarcry(context, state, time);
 	drawPlayer(context, state, time, extras.look);
@@ -276,7 +285,7 @@ function drawWorld(
 function drawTornado(context: CanvasRenderingContext2D, tornado: Tornado, time: number) {
 	const { x, y } = tornado;
 	const grow = Math.min(1, tornado.ageMs / 600);
-	const fade = tornado.captive
+	const fade = tornado.captives.length > 0
 		? 1
 		: Math.min(grow, Math.max(0, (TORNADO_LIFE_MS - tornado.ageMs) / 1500));
 	if (fade <= 0) return;
@@ -1630,14 +1639,80 @@ function drawEnemyBar(context: CanvasRenderingContext2D, enemy: Enemy) {
 	);
 }
 
+/**
+ * One of the player's helpers: a small khaki soldier with a green ring on the ground, still half
+ * inside the little wooden crate it climbed out of for the first moment
+ */
+function drawAlly(context: CanvasRenderingContext2D, ally: Ally) {
+	const { x, y, facing } = ally;
+	const r = ALLY_RADIUS;
+	const flash = ally.flashMs > 0;
+	const bob = Math.sin(ally.phase) * 1.5;
+	if (ally.ageMs < ALLY_CRATE_MS) {
+		const left = 1 - ally.ageMs / ALLY_CRATE_MS;
+		context.save();
+		context.globalAlpha = left;
+		roundRect(context, x - r * 1.5, y - r * 1.2, r * 3, r * 2.3, 3, '#b07a43', 2.5);
+		context.beginPath();
+		context.moveTo(x - r * 1.5, y - r * 0.3);
+		context.lineTo(x + r * 1.5, y - r * 0.3);
+		context.moveTo(x - r * 1.5, y + r * 0.55);
+		context.lineTo(x + r * 1.5, y + r * 0.55);
+		context.lineWidth = 2;
+		context.strokeStyle = '#7d5227';
+		context.stroke();
+		// A lid flipped open behind them
+		context.fillStyle = '#8a5c2f';
+		context.beginPath();
+		context.rect(x - r * 1.5, y - r * 1.9, r * 3, r * 0.7);
+		context.fill();
+		context.stroke();
+		context.restore();
+	}
+	// The green ring marks the squad as friendly, on the field and against the enemies' red
+	context.beginPath();
+	context.arc(x, y + r * 0.6, r * 1.6, 0, Math.PI * 2);
+	context.strokeStyle = 'rgba(126, 217, 87, 0.55)';
+	context.lineWidth = 2;
+	context.stroke();
+	circle(context, x, y - bob, r, tint(flash, '#c9b98c'), 2.5);
+	context.beginPath();
+	context.arc(x, y - bob - r * 0.1, r * 0.95, Math.PI, Math.PI * 2);
+	context.fillStyle = tint(flash, '#6d7c45');
+	context.fill();
+	context.lineWidth = 2;
+	context.strokeStyle = INK;
+	context.stroke();
+	eyes(context, x, y - bob + r * 0.1, facing, r * 0.34, r * 0.2, true);
+	// The rifle, held out front
+	context.beginPath();
+	context.moveTo(x + Math.cos(facing) * r * 0.4, y - bob + Math.sin(facing) * r * 0.4);
+	context.lineTo(x + Math.cos(facing) * r * 1.7, y - bob + Math.sin(facing) * r * 1.7);
+	context.lineWidth = 2.5;
+	context.strokeStyle = INK;
+	context.stroke();
+	// Only once hurt, a bar over their head
+	if (ally.hp < ally.maxHp) {
+		const width = 24;
+		const top = y - r * 2.6;
+		roundRect(context, x - width / 2, top, width, 5, 2.5, PAPER, 1.5);
+		context.fillStyle = '#6fd05e';
+		context.fillRect(
+			x - width / 2 + 1,
+			top + 1,
+			(width - 2) * Math.max(0, ally.hp / ally.maxHp),
+			3
+		);
+	}
+}
+
 function drawStar(
 	context: CanvasRenderingContext2D,
 	x: number,
 	y: number,
 	r: number,
 	color: string
-) {
-	context.beginPath();
+) {	context.beginPath();
 	for (let i = 0; i < 10; i++) {
 		const angle = -Math.PI / 2 + (i * Math.PI) / 5;
 		const reach = i % 2 === 0 ? r : r * 0.45;
@@ -2265,8 +2340,7 @@ export function drawRaidPreview(
 /**
  * What a marker on the minimap stands for; the legend on the map overlay explains them. Colours
  * are reserved: red for enemies (shaped by what they do), orange for elites, violet for bosses,
- * blue for squad mates, green for allies (the player's drones and nests, the command post),
- * yellow for loot, and sand for the dust devils of the desert.
+ * blue for squad mates, and green for allies (the player's drones and nests, the command post).
  */
 export type MinimapMark =
 	| 'fighter'
@@ -2277,9 +2351,7 @@ export type MinimapMark =
 	| 'boss'
 	| 'squad'
 	| 'ally'
-	| 'post'
-	| 'tornado'
-	| 'loot';
+	| 'post';
 export type MarkShape = 'circle' | 'diamond' | 'triangle' | 'square' | 'ring';
 
 const ENEMY_RED = '#ff4a4a';
@@ -2294,12 +2366,11 @@ export const MINIMAP_MARKS: Record<MinimapMark, { color: string; shape: MarkShap
 		boss: { color: '#b45cff', shape: 'ring', size: 5 },
 		squad: { color: '#3d8bff', shape: 'circle', size: 2.8 },
 		ally: { color: '#3ddc5a', shape: 'circle', size: 2.2 },
-		post: { color: '#3ddc5a', shape: 'square', size: 4.2 },
-		tornado: { color: '#e8c27a', shape: 'ring', size: 3.2 },
-		loot: { color: '#ffe066', shape: 'ring', size: 2.6 }
+		post: { color: '#3ddc5a', shape: 'square', size: 4.2 }
 	};
 
-const ENEMY_MARK: Record<Enemy['archetype'], MinimapMark> = {
+/** The marker an enemy of this type gets on the map, whatever is drawn of it */
+export const ENEMY_MARK: Record<Enemy['archetype'], MinimapMark> = {
 	grunt: 'fighter',
 	fast: 'fighter',
 	heavy: 'fighter',
@@ -2358,18 +2429,22 @@ export function drawMark(
 }
 
 /**
- * The minimap: the battlefield with its cover, every enemy marked by its kind (fighters,
- * shooters, drones, support units and bosses), the player's own drones and nests, the loot worth
- * walking to, and the player as an arrow pointing where the weapon aims. Draws into a width ×
- * height box at the origin; the context must already be scaled to CSS pixels. Markers grow with
- * markScale, for the big map on the leave screen.
+ * The minimap: the battlefield with its cover and only what is worth walking to, the player's own
+ * drones and nests, the command post, and the player as an arrow pointing where the weapon aims.
+ * Enemies are marked only when they matter: bosses, super and mega enemies (one and two rings),
+ * enemy support units, and whatever an open daily quest still asks to be killed (questTargets).
+ * Regular fighters, shooters and enemy drones stay off it unless a quest wants them, and so do
+ * elites, dust devils and loot, so the crowd never buries the few markers that count. Draws into a
+ * width × height box at the origin; the context must already be scaled to CSS pixels. Markers grow
+ * with markScale, for the big map of the overlay.
  */
 export function drawMinimap(
 	context: CanvasRenderingContext2D,
 	state: RaidState,
 	width: number,
 	height: number,
-	markScale = 1
+	markScale = 1,
+	questTargets: readonly Archetype[] = []
 ) {
 	const { map, player } = state;
 	const scale = Math.min(width / map.width, height / map.height);
@@ -2400,11 +2475,13 @@ export function drawMinimap(
 			context.stroke();
 		}
 	};
+	const quest = new Set(questTargets);
+	const worthMarking = (enemy: Enemy) =>
+		enemy.archetype === 'boss' ||
+		enemy.variant !== 'normal' ||
+		ENEMY_MARK[enemy.archetype] === 'support' ||
+		quest.has(enemy.archetype);
 	if (state.defense) mark('post', state.defense.objective.x, state.defense.objective.y);
-	for (const tornado of state.tornadoes) mark('tornado', tornado.x, tornado.y);
-	for (const loot of state.loot) {
-		if (loot.drop.type === 'gear' || loot.drop.type === 'crystal') mark('loot', loot.x, loot.y);
-	}
 	for (const nest of state.nests) mark('ally', nest.x, nest.y);
 	for (const drone of state.drones) mark('ally', drone.x, drone.y);
 	// Regular enemies first, then elites, then bosses, so the crowd never hides them
@@ -2412,7 +2489,7 @@ export function drawMinimap(
 		enemy.archetype === 'boss' ? 2 : ENEMY_MARK[enemy.archetype] === 'elite' ? 1 : 0;
 	for (const level of [0, 1, 2]) {
 		for (const enemy of state.enemies) {
-			if (rank(enemy) !== level) continue;
+			if (rank(enemy) !== level || !worthMarking(enemy)) continue;
 			mark(ENEMY_MARK[enemy.archetype], enemy.x, enemy.y, VARIANT_RINGS[enemy.variant]);
 		}
 	}

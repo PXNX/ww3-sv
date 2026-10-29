@@ -1,7 +1,8 @@
 <!--
 	Map overlay: just the big battlefield with legend, opened from the minimap. Has a nice view
 	transition and a back button that returns to the fight. The legend follows the map's reserved
-	colours: red enemies, orange elites, a violet boss, blue squad mates and green allies.
+	colours: a violet boss, red enemy support units and quest targets, blue squad mates and green
+	allies; super and mega enemies wear one or two rings.
 -->
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
@@ -15,6 +16,8 @@
 	let { game, onResume }: { game: RaidGame; onResume: () => void } = $props();
 
 	const raid = untrack(() => game.state);
+	/** The enemy types an open daily quest still asks for, which the map marks on top of its own */
+	const questKinds = untrack(() => game.questTargets());
 
 	let size = $state<{ width: number; height: number } | null>(null);
 	onMount(() => {
@@ -39,16 +42,12 @@
 
 	const LEGEND: { mark: MinimapMark; label: () => string }[] = [
 		{ mark: 'boss', label: m.raid_map_boss },
-		{ mark: 'elite', label: m.raid_map_elite },
-		{ mark: 'fighter', label: m.raid_map_fighters },
-		{ mark: 'shooter', label: m.raid_map_shooters },
-		{ mark: 'drone', label: m.raid_map_drones },
 		{ mark: 'support', label: m.raid_map_support },
+		// Drones only show up while a quest asks for them; support and bosses are always marked
+		...(questKinds.includes('drone') ? [{ mark: 'drone' as const, label: m.raid_map_drones }] : []),
 		{ mark: 'squad', label: m.raid_map_squad },
 		{ mark: 'ally', label: m.raid_map_allies },
-		...(raid.defense ? [{ mark: 'post' as const, label: m.raid_map_post }] : []),
-		...(raid.mapId === 'strait' ? [{ mark: 'tornado' as const, label: m.raid_map_tornado }] : []),
-		{ mark: 'loot', label: m.raid_map_loot }
+		...(raid.defense ? [{ mark: 'post' as const, label: m.raid_map_post }] : [])
 	];
 	/** Super and mega enemies: one and two rings around their marker */
 	const RINGS = [
@@ -92,6 +91,7 @@
 						width={size.width}
 						height={size.height}
 						markScale={1.6}
+						questTargets={() => questKinds}
 						label={m.raid_hud_minimap()}
 						class="rounded-lg"
 					/>

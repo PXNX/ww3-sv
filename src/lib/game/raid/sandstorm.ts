@@ -1,8 +1,8 @@
 /*
- * Dust devils on the desert map (the strait): a few small tornadoes wander the dunes. Whoever
- * walks into one (the player or an enemy on foot) is caught, spun around inside it for a moment,
- * unable to walk or shoot, and then spat out in a random direction. A dust devil rests briefly
- * after spitting someone out, and dies down after a while; new ones rise elsewhere.
+ * Sandstorms on the desert map (the strait): a few dust devils wander the dunes. Whoever is inside
+ * one (the player and any enemy on foot) is caught, dragged round and round for six seconds,
+ * unable to walk or shoot, and then thrown clear in the direction it was spun. A dust devil rests
+ * briefly after the throw, and dies down after a while; new ones rise elsewhere.
  */
 import type { Random } from '#lib/game/random.js';
 import { PLAYER_RADIUS, isElite } from './config';
@@ -19,8 +19,8 @@ export const TORNADO_LIFE_MS = 30_000;
 /** It catches whoever comes this close to its middle */
 export const TORNADO_RADIUS = 30;
 export const TORNADO_SPEED = 55;
-/** Spinning inside, then the throw */
-export const TORNADO_TRAP_MS = 1300;
+/** Dragged round inside for six seconds, then the throw */
+export const TORNADO_TRAP_MS = 6000;
 export const TORNADO_SPIT_SPEED = 720;
 export const TORNADO_SPIT_MS = 380;
 /** After spitting someone out it cannot catch again for this long */
@@ -41,8 +41,8 @@ export interface Tornado {
 	vy: number;
 	ageMs: number;
 	restMs: number;
-	/** Spinning inside it right now */
-	captive: { target: TornadoTarget; ms: number; angle: number } | null;
+	/** Everyone dragged around inside it right now */
+	captives: { target: TornadoTarget; ms: number; angle: number; orbit: number }[];
 }
 
 /** Someone just spat out, still flying */
@@ -69,11 +69,11 @@ export function updateSandstorms(
 		tornado.ageMs += dtMs;
 		tornado.restMs = Math.max(0, tornado.restMs - dtMs);
 		wander(state, tornado, random, dt);
-		if (tornado.captive) spin(state, tornado, random, dtMs, events);
+		if (tornado.captives.length > 0) spin(state, tornado, random, dtMs, events);
 		else if (tornado.restMs <= 0 && tornado.ageMs < TORNADO_LIFE_MS)
-			catchOne(state, tornado, events);
+			catchAll(state, tornado, random, events);
 		// Dies down once it is old and holds nobody
-		if (tornado.ageMs < TORNADO_LIFE_MS || tornado.captive) kept.push(tornado);
+		if (tornado.ageMs < TORNADO_LIFE_MS || tornado.captives.length > 0) kept.push(tornado);
 	}
 	state.tornadoes = kept;
 }
@@ -98,7 +98,7 @@ function rise(state: RaidState, random: Random, dtMs: number) {
 			vy: Math.sin(heading) * TORNADO_SPEED,
 			ageMs: 0,
 			restMs: 0,
-			captive: null
+			captives: []
 		});
 		return;
 	}
@@ -114,7 +114,7 @@ function wander(state: RaidState, tornado: Tornado, random: Random, dt: number) 
 		tornado.vx * cos - tornado.vy * sin,
 		tornado.vx * sin + tornado.vy * cos
 	];
-	const pace = tornado.captive ? 0.35 : 1;
+	const pace = tornado.captives.length > 0 ? 0.35 : 1;
 	tornado.x += tornado.vx * pace * dt;
 	tornado.y += tornado.vy * pace * dt;
 	const margin = 40;
@@ -127,37 +127,37 @@ function wander(state: RaidState, tornado: Tornado, random: Random, dt: number) 
 /** Whether someone is already caught in or flying out of a dust devil */
 function busy(state: RaidState, target: TornadoTarget): boolean {
 	return (
-		state.tornadoes.some((tornado) => tornado.captive?.target === target) ||
-		state.flung.some((flung) => flung.target === target)
+		state.tornadoes.some((tornado) =>
+			tornado.captives.some((captive) => captive.target === target)
+		) || state.flung.some((flung) => flung.target === target)
 	);
 }
 
-/** The player first, else the closest enemy on foot that is light enough */
-function catchOne(state: RaidState, tornado: Tornado, events: RaidEvent[]) {
-	const { player } = state;
+/** Catches everyone inside at once: the player, and any enemy on foot that is light enough */
+function catchAll(state: RaidState, tornado: Tornado, random: Random, events: RaidEvent[]) {
 	const reach = (radius: number) => TORNADO_RADIUS + radius * 0.5;
-	if (
-		!state.over &&
-		!state.down &&
-		player.dashMs <= 0 &&
-		!busy(state, 'player') &&
-		Math.hypot(player.x - tornado.x, player.y - tornado.y) < reach(PLAYER_RADIUS)
-	) {
-		tornado.captive = { target: 'player', ms: TORNADO_TRAP_MS, angle: 0 };
-		events.push({ type: 'tornado-catch', x: tornado.x, y: tornado.y, player: true });
-		return;
-	}
+	const catchTarget = (target: TornadoTarget, x: number, y: number, radius: number) => {
+		if (busy(state, target)) return;
+		if (Math.hypot(x - tornado.x, y - tornado.y) > reach(radius)) return;
+		tornado.captives.push({
+			target,
+			ms: TORNADO_TRAP_MS,
+			angle: random() * Math.PI * 2,
+			orbit: 8 + random() * 14
+		});
+		events.push({ type: 'tornado-catch', x: tornado.x, y: tornado.y, player: target === 'player' });
+	};
+	const { player } = state;
+	if (!state.over && !state.down && player.dashMs <= 0)
+		catchTarget('player', player.x, player.y, PLAYER_RADIUS);
 	for (const enemy of state.enemies) {
 		if (enemy.flying || enemy.archetype === 'boss' || isElite(enemy.archetype)) continue;
-		if (enemy.radius > HEAVIEST || busy(state, enemy.id)) continue;
-		if (Math.hypot(enemy.x - tornado.x, enemy.y - tornado.y) > reach(enemy.radius)) continue;
-		tornado.captive = { target: enemy.id, ms: TORNADO_TRAP_MS, angle: 0 };
-		events.push({ type: 'tornado-catch', x: tornado.x, y: tornado.y, player: false });
-		return;
+		if (enemy.radius > HEAVIEST) continue;
+		catchTarget(enemy.id, enemy.x, enemy.y, enemy.radius);
 	}
 }
 
-/** Spins the captive round the middle, then throws it out */
+/** Drags everyone it holds round the middle, then throws them clear when their six seconds are up */
 function spin(
 	state: RaidState,
 	tornado: Tornado,
@@ -165,38 +165,41 @@ function spin(
 	dtMs: number,
 	events: RaidEvent[]
 ) {
-	const captive = tornado.captive!;
-	const body = bodyOf(state, captive.target);
-	if (!body) {
-		// The enemy inside was killed
-		tornado.captive = null;
-		return;
+	const kept: Tornado['captives'] = [];
+	let released = false;
+	for (const captive of tornado.captives) {
+		const body = bodyOf(state, captive.target);
+		// The enemy inside was killed while it spun
+		if (!body) continue;
+		captive.ms -= dtMs;
+		captive.angle += (dtMs / 1000) * 6;
+		body.x = tornado.x + Math.cos(captive.angle) * captive.orbit;
+		body.y = tornado.y + Math.sin(captive.angle) * captive.orbit;
+		body.vx = 0;
+		body.vy = 0;
+		hold(state, captive.target, captive.ms + TORNADO_SPIT_MS);
+		if (captive.ms > 0) {
+			kept.push(captive);
+			continue;
+		}
+		// Out of the funnel they go, pushed on in the direction they were spun
+		const heading = captive.angle + (random() - 0.5) * 0.5;
+		state.flung.push({
+			target: captive.target,
+			vx: Math.cos(heading) * TORNADO_SPIT_SPEED,
+			vy: Math.sin(heading) * TORNADO_SPIT_SPEED,
+			ms: TORNADO_SPIT_MS
+		});
+		released = true;
+		events.push({
+			type: 'tornado-spit',
+			x: tornado.x,
+			y: tornado.y,
+			player: captive.target === 'player'
+		});
 	}
-	captive.ms -= dtMs;
-	captive.angle += (dtMs / 1000) * 14;
-	const orbit = 12;
-	body.x = tornado.x + Math.cos(captive.angle) * orbit;
-	body.y = tornado.y + Math.sin(captive.angle) * orbit;
-	body.vx = 0;
-	body.vy = 0;
-	hold(state, captive.target, captive.ms + TORNADO_SPIT_MS);
-	if (captive.ms > 0) return;
-
-	const heading = random() * Math.PI * 2;
-	state.flung.push({
-		target: captive.target,
-		vx: Math.cos(heading) * TORNADO_SPIT_SPEED,
-		vy: Math.sin(heading) * TORNADO_SPIT_SPEED,
-		ms: TORNADO_SPIT_MS
-	});
-	tornado.captive = null;
-	tornado.restMs = TORNADO_REST_MS;
-	events.push({
-		type: 'tornado-spit',
-		x: tornado.x,
-		y: tornado.y,
-		player: captive.target === 'player'
-	});
+	tornado.captives = kept;
+	if (released) tornado.restMs = TORNADO_REST_MS;
 }
 
 /** Thrown ones fly out, slowing down, and stop at cover and the edge of the map */

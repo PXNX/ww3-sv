@@ -68,7 +68,12 @@ import {
 	type WeaponSlot
 } from '#lib/game/raid/profile.js';
 import { liveEventAt, type ActiveEvent } from '#lib/game/raid/events.js';
-import { addRaidToQuests, type Quest, type QuestStats } from '#lib/game/raid/quests.js';
+import {
+	addRaidToQuests,
+	questKillTargets,
+	type Quest,
+	type QuestStats
+} from '#lib/game/raid/quests.js';
 import { dateAt, type SeasonReward } from '#lib/game/raid/season.js';
 import { drawRaidPreview, type Effect, type SceneExtras } from '#lib/game/raid/render.js';
 import {
@@ -475,6 +480,11 @@ export class RaidGame {
 	liveQuests(): { before: Quest[]; after: Quest[] } {
 		const today = withToday(this.profile, dateAt(this.#now())).quests;
 		return { before: today.quests, after: addRaidToQuests(today, this.#questStats()).quests };
+	}
+
+	/** The enemy types an open daily quest still asks to be killed, for the minimap */
+	questTargets(): Archetype[] {
+		return questKillTargets(this.liveQuests().after);
 	}
 
 	#questStats(): QuestStats {

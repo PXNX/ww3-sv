@@ -14,6 +14,19 @@ import { pickWeighted, randomInt, type Random } from '#lib/game/random.js';
 import { updateSandstorms, type Flung, type Tornado } from './sandstorm';
 import {
 	ARCHETYPE_CAP,
+	ALLY_ATTACK_MS,
+	ALLY_CRATE_MS,
+	ALLY_DAMAGE,
+	ALLY_FIRST_MS,
+	ALLY_HP,
+	ALLY_HUNT_RANGE,
+	ALLY_HURT_MS,
+	ALLY_HURT_SHARE,
+	ALLY_LIFETIME_MS,
+	ALLY_MAX,
+	ALLY_RADIUS,
+	ALLY_SPAWN_MS,
+	ALLY_SPEED,
 	VOTE_SETTLE_MS,
 	isElite,
 	PION_FIRE_DAMAGE_SHARE,
@@ -279,6 +292,28 @@ export interface Enemy {
 	burnTickMs: number;
 }
 
+/** One of the player's assault helpers, out of a small wooden crate: frail, quick and short-lived */
+export interface Ally {
+	id: number;
+	x: number;
+	y: number;
+	vx: number;
+	vy: number;
+	hp: number;
+	maxHp: number;
+	/** Time since it climbed out of its crate, for the spawn animation */
+	ageMs: number;
+	/** Time to its next melee hit */
+	attackMs: number;
+	/** Time until an enemy can hurt it again */
+	hurtMs: number;
+	/** Counts down after a hit, for the white flash */
+	flashMs: number;
+	facing: number;
+	/** Walk cycle */
+	phase: number;
+}
+
 export interface Bullet {
 	x: number;
 	y: number;
@@ -484,6 +519,9 @@ export interface RaidState {
 	tornadoes: Tornado[];
 	flung: Flung[];
 	tornadoRiseMs: number;
+	/** The player's assault helpers and the wait for the next crate */
+	allies: Ally[];
+	allySpawnMs: number;
 	nextId: number;
 }
 
@@ -686,6 +724,8 @@ export function createRaid(
 		tornadoes: [],
 		flung: [],
 		tornadoRiseMs: 0,
+		allies: [],
+		allySpawnMs: ALLY_FIRST_MS,
 		nextId: 1
 	};
 }
@@ -1151,6 +1191,7 @@ export function stepRaid(state: RaidState, random: Random, dtMs: number): RaidEv
 	updateJammer(state, random, events);
 	updateEnemies(state, random, dtMs, events);
 	updateSandstorms(state, random, dtMs, events);
+	updateAllies(state, random, dtMs, events);
 	moveEnemyBullets(state, dtMs, events);
 	updateShells(state, dtMs, events);
 	updateLoot(state, dtMs, events);
@@ -2034,6 +2075,99 @@ function updateEnemies(state: RaidState, random: Random, dtMs: number, events: R
 	}
 	state.enemies = state.enemies.filter((enemy) => enemy.hp > 0);
 	separate(state);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Assault squad
+
+/**
+ * The player's helpers: a crate thumps down now and then and a frail soldier climbs out, runs at
+ * the closest enemy and hacks at it. Enemies hit back, and after a while the helper falls apart.
+ */
+function updateAllies(state: RaidState, random: Random, dtMs: number, events: RaidEvent[]) {
+	const { map, player } = state;
+	const dt = dtMs / 1000;
+	spawnAlly(state, random, dtMs);
+	const kept: Ally[] = [];
+	for (const ally of state.allies) {
+		ally.ageMs += dtMs;
+		ally.attackMs = Math.max(0, ally.attackMs - dtMs);
+		ally.hurtMs = Math.max(0, ally.hurtMs - dtMs);
+		ally.flashMs = Math.max(0, ally.flashMs - dtMs);
+		const [target] = enemiesByDistance(state, ally.x, ally.y, ALLY_HUNT_RANGE);
+		const goal = target ?? player;
+		const dx = goal.x - ally.x;
+		const dy = goal.y - ally.y;
+		const distance = Math.hypot(dx, dy) || 1;
+		// It climbs out of the crate first; with nothing to hunt it tags along behind the player
+		const speed = ally.ageMs < ALLY_CRATE_MS ? 0 : ALLY_SPEED;
+		const stop = target ? target.radius + ALLY_RADIUS + 2 : 46;
+		const walking = speed > 0 && distance > stop;
+		ally.vx = walking ? (dx / distance) * speed : 0;
+		ally.vy = walking ? (dy / distance) * speed : 0;
+		ally.x += ally.vx * dt;
+		ally.y += ally.vy * dt;
+		if (walking) {
+			ally.facing = Math.atan2(ally.vy, ally.vx);
+			ally.phase += dt * 11;
+		}
+		resolveCircle(ally, ALLY_RADIUS, map.obstacles, map.width, map.height);
+		if (!target) {
+			kept.push(ally);
+			continue;
+		}
+
+		const apart = Math.hypot(target.x - ally.x, target.y - ally.y);
+		if (apart < target.radius + ALLY_RADIUS + 4) {
+			ally.facing = Math.atan2(target.y - ally.y, target.x - ally.x);
+			if (ally.attackMs <= 0) {
+				ally.attackMs = ALLY_ATTACK_MS;
+				damageEnemy(state, target, ALLY_DAMAGE * state.map.difficulty, false, events);
+			}
+			// The enemy hits back, and the squad is frail
+			if (target.hp > 0 && ally.hurtMs <= 0) {
+				ally.hurtMs = ALLY_HURT_MS;
+				ally.hp -= Math.max(1, Math.round(target.damage * ALLY_HURT_SHARE));
+				ally.flashMs = 90;
+			}
+		}
+		if (ally.hp > 0 && ally.ageMs < ALLY_LIFETIME_MS) kept.push(ally);
+	}
+	state.allies = kept;
+}
+
+/** A little wooden crate lands near the player and one helper climbs out of it */
+function spawnAlly(state: RaidState, random: Random, dtMs: number) {
+	if (state.allies.length >= ALLY_MAX || state.timeMs < ALLY_FIRST_MS) return;
+	state.allySpawnMs -= dtMs;
+	if (state.allySpawnMs > 0) return;
+	state.allySpawnMs = ALLY_SPAWN_MS * (0.75 + random() * 0.5);
+	const { map, player } = state;
+	for (let attempt = 0; attempt < 10; attempt++) {
+		const angle = random() * Math.PI * 2;
+		const reach = 70 + random() * 80;
+		const spot = { x: player.x + Math.cos(angle) * reach, y: player.y + Math.sin(angle) * reach };
+		if (spot.x < ALLY_RADIUS || spot.y < ALLY_RADIUS) continue;
+		if (spot.x > map.width - ALLY_RADIUS || spot.y > map.height - ALLY_RADIUS) continue;
+		if (blocked(map.obstacles, spot.x, spot.y, ALLY_RADIUS + 4)) continue;
+		resolveCircle(spot, ALLY_RADIUS, map.obstacles, map.width, map.height);
+		state.allies.push({
+			id: state.nextId++,
+			x: spot.x,
+			y: spot.y,
+			vx: 0,
+			vy: 0,
+			hp: ALLY_HP,
+			maxHp: ALLY_HP,
+			ageMs: 0,
+			attackMs: ALLY_ATTACK_MS,
+			hurtMs: 0,
+			flashMs: 0,
+			facing: random() * Math.PI * 2,
+			phase: 0
+		});
+		return;
+	}
 }
 
 /** The attacks of the enemies that keep their distance: shots, heals and shells */

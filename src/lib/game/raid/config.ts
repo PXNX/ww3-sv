@@ -796,6 +796,33 @@ export const ARCHETYPE_CAP: Partial<Record<Archetype, number>> = {
 	pion: 1
 };
 
+// ---------------------------------------------------------------------------------------------
+// Assault squad
+
+/**
+ * Helpers of the player's own: every so often a little wooden crate drops nearby and a frail
+ * soldier climbs out. They hunt the closest enemy, hit it in melee, and die quickly once the
+ * enemies turn on them, so they are a hand now and then rather than a second army.
+ */
+export const ALLY_MAX = 3;
+/** The first crate lands after this long, then one every ALLY_SPAWN_MS or so */
+export const ALLY_FIRST_MS = 20_000;
+export const ALLY_SPAWN_MS = 18_000;
+export const ALLY_HP = 14;
+export const ALLY_SPEED = 175;
+export const ALLY_DAMAGE = 9;
+export const ALLY_ATTACK_MS = 700;
+export const ALLY_RADIUS = 9;
+/** They fall apart after this long, even if nothing touched them */
+export const ALLY_LIFETIME_MS = 45_000;
+/** The furthest they run from the player to chase an enemy */
+export const ALLY_HUNT_RANGE = 420;
+/** How long the crate stays visible while they climb out */
+export const ALLY_CRATE_MS = 900;
+/** A hit from an enemy: share of its damage, and the wait until the next one can land */
+export const ALLY_HURT_SHARE = 0.5;
+export const ALLY_HURT_MS = 900;
+
 /** Spawns appear just outside the camera, at this distance from the player */
 export const SPAWN_DISTANCE_MIN = 620;
 export const SPAWN_DISTANCE_MAX = 820;

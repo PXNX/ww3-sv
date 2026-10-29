@@ -503,6 +503,7 @@
 					width={minimap.width}
 					height={minimap.height}
 					live
+					questTargets={() => game.questTargets()}
 					label={m.raid_hud_minimap()}
 					class="rounded-lg"
 				/>
