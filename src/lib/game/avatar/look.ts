@@ -11,7 +11,7 @@ export const FACE_SHAPES = ['round', 'oval', 'square', 'long'] as const;
 export const NOSES = ['button', 'pointy', 'potato', 'hook'] as const;
 export const EYE_TYPES = ['dots', 'wide', 'sleepy', 'angry', 'shades'] as const;
 export const HAIRSTYLES = ['bald', 'buzz', 'mohawk', 'bun', 'curly', 'long', 'combover'] as const;
-export const HATS = ['none', 'beret', 'cap', 'helmet', 'ushanka', 'crown'] as const;
+export const HATS = ['none', 'beret', 'cap', 'helmet', 'ushanka', 'crown', 'ogre-ears'] as const;
 
 /** Skin tones from light to deep; the first matches the game's caricature skin token */
 export const SKIN_COLORS = [
@@ -31,7 +31,8 @@ export const SHIRT_COLORS = [
 	'#6a7c9b',
 	'#111111',
 	'#ffffff',
-	'#b45cd6'
+	'#b45cd6',
+	'#8a5a33'
 ] as const;
 export const HAIR_COLORS = [
 	'#111111',
@@ -91,6 +92,54 @@ export const DEFAULT_LOOK: AvatarLook = {
 	hat: 'none'
 };
 
+/** A ready-made agent that sets every part at once; the editor shows these as shortcuts */
+export interface LookPreset {
+	id: string;
+	/** A name of its own, the same in every language: both are well-known characters */
+	name: string;
+	look: AvatarLook;
+}
+
+/**
+ * Two familiar faces built from the same parts as any other agent. They are shortcuts, not a
+ * separate unlock: each still needs every part it uses to be open, so the suit still asks for the
+ * career level and the green skin still asks for the top one.
+ */
+export const LOOK_PRESETS: readonly LookPreset[] = [
+	{
+		id: 'agent-47',
+		name: 'Agent 47',
+		look: {
+			version: 1,
+			shirt: 'suit',
+			shirtColor: '#111111',
+			face: 'square',
+			skin: '#f1d3b8',
+			nose: 'button',
+			eyes: 'angry',
+			hair: 'bald',
+			hairColor: '#111111',
+			hat: 'none'
+		}
+	},
+	{
+		id: 'ogre',
+		name: 'Shrek',
+		look: {
+			version: 1,
+			shirt: 'tee',
+			shirtColor: '#8a5a33',
+			face: 'square',
+			skin: '#9fd36a',
+			nose: 'potato',
+			eyes: 'dots',
+			hair: 'bald',
+			hairColor: '#111111',
+			hat: 'ogre-ears'
+		}
+	}
+];
+
 /**
  * The agent shown to a player who is not signed in with Telegram: a hooded figure in shadow. Its
  * colours are outside the editor's lists on purpose, so it can never be saved or picked.
@@ -111,6 +160,8 @@ export const ANONYMOUS_LOOK: AvatarLook = {
 /** A random look; the same seed always gives the same look */
 export function randomLook(seed: number = randomSeed(), allowed?: LookAllowed): AvatarLook {
 	const random = createRandom(seed);
+	// The ogre ears belong to the ready-made green agent, not to a random passer-by
+	const randomHats = HATS.filter((hat) => hat !== 'ogre-ears');
 	return {
 		version: 1,
 		shirt: pickAllowed(random, 'shirt', SHIRT_TYPES, DEFAULT_LOOK.shirt, allowed),
@@ -124,7 +175,9 @@ export function randomLook(seed: number = randomSeed(), allowed?: LookAllowed): 
 		hairColor: pickAllowed(random, 'hairColor', HAIR_COLORS, DEFAULT_LOOK.hairColor, allowed),
 		// Most agents go bareheaded, so a hat stays a little special
 		hat:
-			random() < 0.6 ? 'none' : pickAllowed(random, 'hat', HATS.slice(1), DEFAULT_LOOK.hat, allowed)
+			random() < 0.6
+				? 'none'
+				: pickAllowed(random, 'hat', randomHats.slice(1), DEFAULT_LOOK.hat, allowed)
 	};
 }
 
