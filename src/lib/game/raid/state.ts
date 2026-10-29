@@ -643,8 +643,8 @@ export function heldWeapon(state: RaidState) {
 }
 
 /** The two skills of the held weapon */
-export function heldSkills(state: RaidState): readonly [SkillId, SkillId] {
-	return WEAPONS[heldWeapon(state).kind].skills;
+export function heldSkills(state: RaidState): readonly SkillId[] {
+	return WEAPONS[heldWeapon(state).kind].skills ?? [];
 }
 
 const readySkills = () =>

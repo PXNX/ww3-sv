@@ -1646,6 +1646,9 @@ function drawPlayerTag(context: CanvasRenderingContext2D, state: RaidState) {
 		charge = player.heat;
 		color =
 			player.heat > 0.8 ? (blink ? RED : '#ff9a3c') : player.heat > 0.5 ? '#ff9a3c' : '#4fc8ff';
+	} else if (kind === 'nuke') {
+		charge = 1 - Math.max(0, player.fireMs) / WEAPONS.nuke.fireMs;
+		color = '#3d8bfd';
 	} else if (kind === 'hammer') {
 		charge = player.rage;
 		color = player.rage >= 1 ? (blink ? YELLOW : PAPER) : '#4fc8ff';

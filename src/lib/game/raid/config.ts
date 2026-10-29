@@ -88,7 +88,8 @@ export const WEAPON_KINDS = [
 	'minigun',
 	'boomerang',
 	'daggers',
-	'energy'
+	'energy',
+	'nuke'
 ] as const;
 export type WeaponKind = (typeof WEAPON_KINDS)[number];
 
@@ -138,7 +139,7 @@ export interface WeaponSpec {
 	/** How long a hit sets the enemy on fire, 0 for weapons that do not burn */
 	burnMs: number;
 	/** The two skills on the buttons around the attack button while this weapon is held */
-	skills: readonly [SkillId, SkillId];
+	skills?: readonly [SkillId, SkillId];
 }
 
 export const WEAPONS: Record<WeaponKind, WeaponSpec> = {
@@ -317,6 +318,22 @@ export const WEAPONS: Record<WeaponKind, WeaponSpec> = {
 		pierce: 0,
 		burnMs: 0,
 		skills: ['flip', 'nova']
+	},
+	// Tactical nuke: very long reload (blue bar), huge splash, radioactive burn for 10s, no skills
+	nuke: {
+		damage: 45,
+		fireMs: 2500,
+		range: 480,
+		projectileSpeed: 500,
+		pellets: 1,
+		spread: 0,
+		critChance: 0,
+		critMultiplier: 1,
+		splash: 180,
+		pierce: 0,
+		burnMs: 10000,
+		burnDps: 8,
+		skills: []
 	}
 };
 
