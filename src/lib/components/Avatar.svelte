@@ -344,5 +344,45 @@
 			fill="#f5c83a"
 		/>
 		<circle cx="60" cy={head.top - 2} r="3" fill="#e5484d" stroke-width="2" />
+	{:else if current.hat === 'lula'}
+		<!-- A small green cap perched on top, with a yellow badge -->
+		<path
+			d="M{left + 6} {head.top + 14} C{left + 6} {head.top - 8} {right - 6} {head.top - 8} {right -
+				6} {head.top + 14} Z"
+			fill="#1f8a4c"
+		/>
+		<path
+			d="M{right - 10} {head.top + 14} L{right + 12} {head.top + 16} Q{right + 8} {head.top +
+				9} {right - 8} {head.top + 8}"
+			fill="#1f8a4c"
+		/>
+		<circle cx="60" cy={head.top + 2} r="4" fill="#f5c83a" stroke-width="2" />
+	{:else if current.hat === 'cylinder'}
+		<!-- A top hat: tall crown, a red band and a flat brim -->
+		<path
+			d="M{60 - 20} {head.top + 14} L{60 - 20} {head.top - 22} L{60 + 20} {head.top - 22} L{60 +
+				20} {head.top + 14} Z"
+			fill="#2b2b2b"
+		/>
+		<path
+			d="M{60 - 20} {head.top + 2} L{60 + 20} {head.top + 2} L{60 + 20} {head.top + 9} L{60 -
+				20} {head.top + 9} Z"
+			fill="#e5484d"
+			stroke-width="2.5"
+		/>
+		<ellipse cx="60" cy={head.top + 14} rx="34" ry="6" fill="#2b2b2b" />
+		<path
+			d="M{60 - 12} {head.top - 17} L{60 - 12} {head.top - 4}"
+			fill="none"
+			stroke="#ffffff"
+			stroke-width="2.5"
+			opacity="0.35"
+		/>
+	{:else if current.hat === 'monocle'}
+		<!-- A gold-rimmed monocle over the right eye, with its chain hanging down -->
+		<circle cx="73" cy="60" r="11" fill="#bfe8ff" fill-opacity="0.35" stroke-width="5" />
+		<circle cx="73" cy="60" r="11" fill="none" stroke="#f5c83a" stroke-width="2.5" />
+		<path d="M82 68 C94 80 90 96 80 106" fill="none" stroke-width="3.5" />
+		<path d="M82 68 C94 80 90 96 80 106" fill="none" stroke="#f5c83a" stroke-width="1.5" />
 	{/if}
 </svg>

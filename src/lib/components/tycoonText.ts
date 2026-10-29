@@ -13,6 +13,7 @@ import { COST_GROWTH, OFFLINE_EFFICIENCY } from '#lib/game/tycoon/config.js';
 import { perkEffect } from '#lib/game/tycoon/economy.js';
 import { formatBig, formatCount, formatMultiplier } from '#lib/game/tycoon/format.js';
 import type { EffectId, EventKind, EventOutcome } from '#lib/game/tycoon/types.js';
+import { LOOK_UNLOCKS } from '#lib/game/avatar/unlocks.js';
 import { m } from '#lib/paraglide/messages.js';
 import { getLocale } from '#lib/paraglide/runtime.js';
 
@@ -226,6 +227,22 @@ const ACHIEVEMENT_NAMES: Record<string, () => string> = {
 
 export function achievementName(id: string): string {
 	return ACHIEVEMENT_NAMES[id]?.() ?? id;
+}
+
+const HAT_NAMES: Record<string, () => string> = {
+	monocle: m.tycoon_hat_monocle,
+	cylinder: m.tycoon_hat_cylinder
+};
+
+/** The name of the hat an achievement unlocks for the player's agent, or null for most of them */
+export function achievementHat(id: string): string | null {
+	const unlock = LOOK_UNLOCKS.find(
+		(entry) =>
+			entry.part === 'hat' &&
+			entry.requirement.kind === 'tycoon' &&
+			entry.requirement.achievement === id
+	);
+	return unlock ? (HAT_NAMES[unlock.value]?.() ?? null) : null;
 }
 
 export function achievementDescription(def: AchievementDef): string {

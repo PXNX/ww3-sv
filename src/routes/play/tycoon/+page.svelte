@@ -15,6 +15,7 @@
 	import TycoonProducerRow from '#lib/components/TycoonProducerRow.svelte';
 	import {
 		achievementDescription,
+		achievementHat,
 		achievementName,
 		achievementReward,
 		effectIsGood,
@@ -387,6 +388,11 @@
 								<span dir="auto" class="text-xs leading-tight font-bold">
 									{achievementReward(achievement.reward)}
 								</span>
+								{#if achievementHat(achievement.id)}
+									<span dir="auto" class="text-xs leading-tight font-bold text-tie-red">
+										{m.tycoon_ach_hat({ hat: achievementHat(achievement.id)! })}
+									</span>
+								{/if}
 							</span>
 						</li>
 					{/each}

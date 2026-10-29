@@ -1,14 +1,15 @@
 <!--
 	Friends on the profile: who the player's friends are and who of them is online or in a raid.
-	Only that. Squads exist in the raid alone, so inviting someone to one is done in the raid lobby
-	(a button leads there), and the referral link that earns revival tokens has a card of its own.
+	Only that, plus a button to share the invite link, which is how a friend is added. Squads exist in
+	the raid alone, so inviting someone to one is done in the raid lobby, and the referral card on the
+	profile explains what the same link earns.
 	Friends are the bot's own (people who joined through the player's referral link or through a
 	squad link), so outside Telegram the panel only points the way there.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
+	import { inviteShareUrl, openTelegramLink } from '#lib/services/telegram.js';
 	import { squad } from '#lib/stores/squad.svelte.js';
 	import { telegram } from '#lib/stores/telegram.svelte.js';
 	import SquadAvatar from './SquadAvatar.svelte';
@@ -126,18 +127,22 @@
 			</ul>
 		{/if}
 
-		<!-- Squads are formed in the raid lobby, not here -->
-		<div class="flex flex-wrap items-center gap-2 rounded-xl bg-black/20 p-2.5">
-			<IconSwords class="size-5 shrink-0 opacity-80" aria-hidden="true" />
-			<p dir="auto" class="min-w-0 flex-1 text-xs leading-snug font-semibold opacity-90">
-				{m.friends_raid_hint()}
-			</p>
-			<a
-				href={resolve('/play/raid')}
-				class="flex shrink-0 -skew-x-6 items-center gap-1.5 rounded-lg border-b-4 border-[#0f7f73] bg-[#22c3b0] px-3 py-1 font-display text-xs font-black uppercase italic shadow-[0_2px_0_rgb(0_0_0/0.25)] active:translate-y-0.5"
-			>
-				{m.friends_raid_open()}
-			</a>
-		</div>
+		<!-- Adding a friend: share the invite link, whoever joins through it becomes a friend -->
+		{#if account.invite}
+			{@const link = account.invite}
+			<div class="flex flex-wrap items-center gap-2 rounded-xl bg-black/20 p-2.5">
+				<p dir="auto" class="min-w-0 flex-1 text-xs leading-snug font-semibold opacity-90">
+					{m.friends_invite_hint()}
+				</p>
+				<button
+					type="button"
+					class="flex shrink-0 -skew-x-6 items-center gap-1.5 rounded-lg border-b-4 border-[#b84300] bg-linear-to-b from-[#ff9a3c] to-[#ff6a10] px-3 py-1.5 font-display text-sm font-black uppercase italic shadow-[0_3px_0_rgb(0_0_0/0.25)] active:translate-y-0.5"
+					onclick={() => openTelegramLink(inviteShareUrl(link, m.profile_invite_text()))}
+				>
+					<IconSend class="size-4" aria-hidden="true" />
+					{m.friends_invite_button()}
+				</button>
+			</div>
+		{/if}
 	{/if}
 </section>

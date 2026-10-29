@@ -62,7 +62,7 @@ import { localStore, type Store } from '#lib/services/storage.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
 import type { SoundId } from '#lib/sound/sounds.js';
 import { formatBig } from '#lib/game/tycoon/format.js';
-import { achievementName, outcomeText } from '#lib/components/tycoonText.js';
+import { achievementHat, achievementName, outcomeText } from '#lib/components/tycoonText.js';
 
 export type TycoonStatus = 'playing' | 'paused';
 export type BuyAmount = 1 | 10 | 'max';
@@ -369,7 +369,14 @@ export class TycoonGame {
 		const locale = getLocale();
 		switch (event.type) {
 			case 'achievement':
-				this.#showToast(m.tycoon_toast_achievement({ name: achievementName(event.id) }));
+				this.#showToast(
+					achievementHat(event.id)
+						? m.tycoon_toast_achievement_hat({
+								name: achievementName(event.id),
+								hat: achievementHat(event.id)!
+							})
+						: m.tycoon_toast_achievement({ name: achievementName(event.id) })
+				);
 				this.#play('sparkle', 0);
 				break;
 			case 'event-start':

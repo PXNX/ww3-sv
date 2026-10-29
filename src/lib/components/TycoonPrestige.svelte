@@ -11,10 +11,13 @@
 	import { formatBig, formatCount, formatMultiplier } from '#lib/game/tycoon/format.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { m } from '#lib/paraglide/messages.js';
+	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import type { TycoonGame } from '#lib/stores/tycoonGame.svelte.js';
 	import { cameoAsset } from '#lib/theme/cameos.js';
 	import IconCrown from '~icons/lucide/crown';
 	import IconRotate from '~icons/lucide/rotate-ccw';
+	import Avatar from './Avatar.svelte';
+	import TycoonNationalize from './TycoonNationalize.svelte';
 	import { perkEffectText, perkName } from './tycoonText.js';
 
 	let { game }: { game: TycoonGame } = $props();
@@ -23,6 +26,8 @@
 	const CONFIRM_MS = 3000;
 
 	let dialog: HTMLDialogElement | undefined = $state();
+	/** Set while the celebration after a nationalization is on screen */
+	let celebrating = $state<{ points: number } | null>(null);
 	let confirmingReset = $state(false);
 	let resetTimer: ReturnType<typeof setTimeout> | undefined;
 	onDestroy(() => clearTimeout(resetTimer));
@@ -35,8 +40,12 @@
 	]);
 
 	function confirmNationalize() {
+		const earned = game.pendingPoints;
 		dialog?.close();
-		game.nationalize();
+		if (game.nationalize()) {
+			celebrating = { points: earned };
+			soundManager().play('new-best');
+		}
 	}
 
 	function onReset() {
@@ -176,12 +185,15 @@
 			{m.tycoon_prestige_confirm_title()}
 		</h2>
 		<div class="flex items-center gap-3">
+			<span class="shrink-0 rounded-lg border-3 border-ink bg-sand px-1 pt-1">
+				<Avatar size={64} label={m.avatar_title()} />
+			</span>
 			<img
 				src={cameoAsset('tycoon-baron.svg')}
 				alt={m.tycoon_cameo_alt()}
-				class="size-24 shrink-0 rounded-lg border-3 border-ink bg-sand"
+				class="size-20 shrink-0 rounded-lg border-3 border-ink bg-sand"
 			/>
-			<div class="flex flex-col gap-1">
+			<div class="flex min-w-0 flex-1 flex-col gap-1">
 				<p dir="auto" class="font-display text-xs font-bold uppercase">{m.tycoon_cameo_label()}</p>
 				<p dir="auto" class="text-sm leading-snug italic">{m.tycoon_cameo_message()}</p>
 			</div>
@@ -205,3 +217,9 @@
 		<button type="submit" aria-label={m.tycoon_prestige_confirm_no()}></button>
 	</form>
 </dialog>
+
+<TycoonNationalize
+	open={celebrating !== null}
+	points={celebrating?.points ?? 0}
+	onclose={() => (celebrating = null)}
+/>
