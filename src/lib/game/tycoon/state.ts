@@ -36,6 +36,8 @@ import {
 	requirementMet,
 	seedBarrels,
 	tapValue,
+	critChanceUpgrade,
+	critMultUpgrade,
 	totalPerkLevels,
 	upgradeDef
 } from './economy.js';
@@ -78,8 +80,8 @@ export function createState(random: Random): TycoonState {
 /** Pumps barrels by hand; returns the barrels it made (0 while protesters block the derrick) */
 export function tap(state: TycoonState): { gained: number; events: TycoonEvent[] } {
 	let gained = tapValue(state);
-	const isCrit = Math.random() < CRIT_CHANCE;
-	if (isCrit) gained *= CRIT_MULT;
+	const isCrit = Math.random() < critChanceUpgrade(state);
+	if (isCrit) gained *= critMultUpgrade(state);
 	state.barrels += gained;
 	state.runTotal += gained;
 	state.lifetime += gained;
