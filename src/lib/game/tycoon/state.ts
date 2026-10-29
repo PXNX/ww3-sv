@@ -6,6 +6,8 @@
 import type { Random } from '#lib/game/random.js';
 import {
 	ACHIEVEMENTS,
+	CRIT_CHANCE,
+	CRIT_MULT,
 	OFFLINE_CAP_MS,
 	EVENT_AFTER_RETURN_MS,
 	PERK_IDS,
@@ -75,7 +77,9 @@ export function createState(random: Random): TycoonState {
 
 /** Pumps barrels by hand; returns the barrels it made (0 while protesters block the derrick) */
 export function tap(state: TycoonState): { gained: number; events: TycoonEvent[] } {
-	const gained = tapValue(state);
+	let gained = tapValue(state);
+	const isCrit = Math.random() < CRIT_CHANCE;
+	if (isCrit) gained *= CRIT_MULT;
 	state.barrels += gained;
 	state.runTotal += gained;
 	state.lifetime += gained;

@@ -97,6 +97,10 @@ export const MAX_OWNED = 1000;
 
 /** Barrels one tap pumps before any multiplier */
 export const BASE_TAP = 1;
+/** Chance for a critical tap */
+export const CRIT_CHANCE = 0.1;
+/** Critical tap multiplier */
+export const CRIT_MULT = 5;
 
 /** The game logic advances in steps of this many milliseconds */
 export const STEP_MS = 100;
