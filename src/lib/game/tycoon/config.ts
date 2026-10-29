@@ -353,5 +353,15 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
 	},
 	{ id: 'state_owned', kind: 'prestige', threshold: 10, reward: { kind: 'speed', value: 0.1 } },
 	{ id: 'investor', kind: 'perks', threshold: 10, reward: { kind: 'tap', value: 0.25 } },
-	{ id: 'magnate', kind: 'perks', threshold: 30, reward: { kind: 'output', value: 0.1 } }
+	{ id: 'magnate', kind: 'perks', threshold: 30, reward: { kind: 'output', value: 0.1 } },
+	{ id: 'tycoon_king', kind: 'prestige', threshold: 25, reward: { kind: 'speed', value: 0.15 } },
+	{ id: 'oil_barbarian', kind: 'taps', threshold: 100_000, reward: { kind: 'tap', value: 0.3 } },
+	{ id: 'drill_master', kind: 'owned', threshold: 500, reward: { kind: 'discount', value: 0.08 } },
+	{ id: 'global_dominator', kind: 'upgrades', threshold: 50, reward: { kind: 'output', value: 0.2 } },
+	{ id: 'crisis_legend', kind: 'events', threshold: 50, reward: { kind: 'speed', value: 0.1 } },
+	{ id: 'fake_warrior', kind: 'perks', threshold: 5, reward: { kind: 'tap', value: 0.15 } },
+	{ id: 'platform_king', kind: 'producers', threshold: 15, reward: { kind: 'producer', value: 0.2, producer: 'platform' } },
+	{ id: 'pipeline_king', kind: 'producers', threshold: 5, reward: { kind: 'producer', value: 0.15, producer: 'pipeline' } },
+	{ id: 'well_king', kind: 'producers', threshold: 5, reward: { kind: 'producer', value: 0.15, producer: 'wellhead' } },
+	{ id: 'rig_king', kind: 'producers', threshold: 5, reward: { kind: 'producer', value: 0.15, producer: 'rig' } }
 ];
