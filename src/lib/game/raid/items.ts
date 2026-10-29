@@ -221,7 +221,9 @@ export function vestArmor(item: ArmorItem | null): number {
 export function bootsSpeed(item: ArmorItem | null): number {
 	if (!item || item.slot !== 'boots') return 0;
 	const base = BOOTS_SPEED * RARITY_POWER[item.rarity] * Math.sqrt(levelFactor(item.level));
-	return base + (item.perk === 'sprint' ? SPRINT_BOOTS_SPEED : 0);
+	let extra = item.perk === 'sprint' ? SPRINT_BOOTS_SPEED : 0;
+	extra += item.perk === 'boost' ? BOOST_SPEED : 0;
+	return base + extra;
 }
 
 /** Share of incoming damage that gets through an armour value */

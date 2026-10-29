@@ -449,13 +449,13 @@ export const BOOTS_SPEED = 0.04;
  * course, a spiked vest that hurts whoever hits it up close, boots that leave a burning trail or
  * make you sprint.
  */
-export const ARMOR_PERKS = ['jammer', 'spikes', 'trail', 'sprint'] as const;
+export const ARMOR_PERKS = ['jammer', 'spikes', 'trail', 'sprint', 'shield', 'reflect', 'boost', 'leech'] as const;
 export type ArmorPerk = (typeof ARMOR_PERKS)[number];
 
 export const SLOT_PERKS: Record<ArmorSlot, readonly ArmorPerk[]> = {
-	helmet: ['jammer'],
-	vest: ['spikes'],
-	boots: ['trail', 'sprint']
+	helmet: ['jammer', 'shield'],
+	vest: ['spikes', 'reflect'],
+	boots: ['trail', 'sprint', 'boost', 'leech']
 };
 
 /** Chance that a dropped piece of armour has its slot's perk; the rarer, the likelier */
@@ -482,6 +482,14 @@ export const TRAIL_DPS = 6;
 export const TRAIL_DPS_PER_LEVEL = 0.6;
 /** Sprint boots: extra walking speed */
 export const SPRINT_BOOTS_SPEED = 0.22;
+/** Shield helmet: extra armor */
+export const SHIELD_ARMOR = 10;
+/** Reflect vest: reflects melee damage */
+export const REFLECT_FACTOR = 2.0;
+/** Boost boots: extra speed */
+export const BOOST_SPEED = 0.12;
+/** Leech boots: heal on hit */
+export const LEECH_HEAL_SHARE = 0.05;
 
 // ---------------------------------------------------------------------------------------------
 // Terrain: ice and oil slicks make everything that walks slide, mud slows it down

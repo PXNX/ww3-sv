@@ -161,6 +161,8 @@ import {
 	TRAIL_EVERY_MS,
 	TRAIL_MS,
 	TRAIL_RADIUS,
+	REFLECT_FACTOR,
+	LEECH_HEAL_SHARE,
 	VARIANT_SPECS,
 	WEAPONS,
 	archetypeWeights,
@@ -671,7 +673,7 @@ export function createRaid(
 			vy: 0,
 			hp: maxHp,
 			maxHp,
-			armor: armorFor(loadout.vest),
+			armor: armorFor(loadout.vest, loadout.helmet),
 			aim: 0,
 			moving: false,
 			held: 'primary',
@@ -1207,7 +1209,7 @@ function refreshStats(state: RaidState) {
 	const share = player.maxHp > 0 ? player.hp / player.maxHp : 1;
 	player.maxHp = maxHpFor(state.playerLevel, loadout.helmet);
 	player.hp = Math.max(1, Math.round(player.maxHp * share));
-	player.armor = armorFor(loadout.vest);
+	player.armor = armorFor(loadout.vest, loadout.helmet);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -1917,6 +1919,11 @@ function hurtPlayer(state: RaidState, raw: number, events: RaidEvent[]): number 
 	player.hp = Math.max(0, player.hp - damage);
 	player.graceMs = HIT_GRACE_MS;
 	events.push({ type: 'player-hit', damage });
+	if (perkOf(state.loadout.boots) === 'leech' && damage > 0) {
+		const heal = Math.round(Math.max(1, player.maxHp * LEECH_HEAL_SHARE));
+		player.hp = Math.min(player.maxHp, player.hp + heal);
+		events.push({ type: 'heal', amount: heal, source: 'ability' });
+	}
 	if (player.hp > 0) return damage;
 	if (state.revivesLeft > 0) {
 		state.down = true;
@@ -2149,6 +2156,12 @@ function updateEnemies(state: RaidState, random: Random, dtMs: number, events: R
 				events.push({ type: 'spikes', x: enemy.x, y: enemy.y });
 				const reflect =
 					enemy.damage * SPIKES_REFLECT * threatDamage(minutesOf(state)) * state.map.difficulty;
+				damageEnemy(state, enemy, reflect, false, events);
+			}
+			if (dealt > 0 && perkOf(state.loadout.vest) === 'reflect') {
+				events.push({ type: 'spikes', x: enemy.x, y: enemy.y });
+				const reflect =
+					enemy.damage * REFLECT_FACTOR * threatDamage(minutesOf(state)) * state.map.difficulty;
 				damageEnemy(state, enemy, reflect, false, events);
 			}
 		}

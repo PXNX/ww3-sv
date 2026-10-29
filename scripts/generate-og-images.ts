@@ -4,16 +4,26 @@
  * here (it pulls in bundler-only icon imports), so its ids, icons and tile colours are read as
  * text. Uses a headless Chromium browser: set EDGE_PATH or CHROME_PATH if it is not found.
  *
- * Run with: bun scripts/generate-og-images.ts
+ * Run with: bun scripts/generate-og-images.ts [game id]
+ * With a game id only that game's image is rendered.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+	copyFileSync,
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	writeFileSync
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const root = resolve(import.meta.dirname, '..');
 const outDir = join(root, 'static', 'og');
+const only = process.argv[2];
 
 const BROWSERS = [
 	process.env.EDGE_PATH,
@@ -85,6 +95,7 @@ mkdirSync(outDir, { recursive: true });
 const work = mkdtempSync(join(tmpdir(), 'og-'));
 try {
 	for (const { id, icon, tile } of games) {
+		if (only && id !== only) continue;
 		const name = names[`mode_${id}_name`];
 		const body = icon && lucide.icons[icon]?.body;
 		if (!name || !body || !tile) throw new Error(`Incomplete data for ${id}`);
@@ -92,14 +103,23 @@ try {
 		const plain = body.replace(/<g [^>]*>/, '<g>');
 		const file = join(work, `${id}.html`);
 		writeFileSync(file, page(name, plain, tile));
+		const shot = join(work, `${id}.png`);
 		execFileSync(browser, [
 			'--headless',
 			'--disable-gpu',
 			'--hide-scrollbars',
-			`--screenshot=${join(outDir, `${id}.png`)}`,
+			// A profile of its own, so a browser that is already open does not swallow the screenshot
+			`--user-data-dir=${join(work, 'profile')}`,
+			`--screenshot=${shot}`,
 			'--window-size=1200,630',
 			pathToFileURL(file).href
 		]);
+		// The browser may hand the screenshot to a background process, so wait for the file
+		for (let wait = 0; wait < 100 && !existsSync(shot); wait += 1) {
+			await new Promise((done) => setTimeout(done, 200));
+		}
+		if (!existsSync(shot)) throw new Error(`The browser wrote no image for ${id}`);
+		copyFileSync(shot, join(outDir, `${id}.png`));
 		console.log(`${id}.png`);
 	}
 } finally {

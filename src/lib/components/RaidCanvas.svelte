@@ -711,10 +711,6 @@
 		animation: live-event 900ms ease-in-out infinite alternate;
 	}
 
-	.timer-low {
-		animation: live-event 500ms ease-in-out infinite alternate;
-	}
-
 	@keyframes live-event {
 		to {
 			scale: 1.06;
@@ -745,8 +741,7 @@
 			animation-duration: 1ms;
 		}
 
-		.live-event,
-		.timer-low {
+		.live-event {
 			animation: none;
 		}
 	}

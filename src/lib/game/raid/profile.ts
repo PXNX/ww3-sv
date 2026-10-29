@@ -19,6 +19,7 @@ import {
 	MAP_IDS,
 	MAX_ITEM_LEVEL,
 	PLAYER_BASE_HP,
+	SHIELD_ARMOR,
 	RARITIES,
 	STASH_SIZE,
 	WEAPON_KINDS,
@@ -135,8 +136,10 @@ export function maxHpFor(level: number, helmet: ArmorItem | null): number {
 	return PLAYER_BASE_HP + HP_PER_LEVEL * (Math.max(1, level) - 1) + helmetHp(helmet);
 }
 
-export function armorFor(vest: ArmorItem | null): number {
-	return vestArmor(vest);
+export function armorFor(vest: ArmorItem | null, helmet?: ArmorItem | null): number {
+	let armor = vestArmor(vest);
+	if (helmet?.perk === 'shield') armor += SHIELD_ARMOR;
+	return armor;
 }
 
 // ---------------------------------------------------------------------------------------------
