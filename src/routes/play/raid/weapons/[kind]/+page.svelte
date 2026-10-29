@@ -16,6 +16,7 @@
 	import RaidItemIcon from '#lib/components/RaidItemIcon.svelte';
 	import RaidSkillIcon from '#lib/components/RaidSkillIcon.svelte';
 	import RaidWeaponDemo from '#lib/components/RaidWeaponDemo.svelte';
+	import RotateHint from '#lib/components/RotateHint.svelte';
 	import {
 		ATTACK_HINTS,
 		crystalEffect,
@@ -409,3 +410,6 @@
 		</div>
 	</div>
 </main>
+
+<!-- Laid out for landscape: upright, a card asks for the phone to be turned -->
+<RotateHint />

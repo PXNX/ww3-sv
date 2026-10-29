@@ -99,7 +99,7 @@
 	{#if playing}
 		<div class="relative flex min-h-0 flex-1 flex-col">
 			<FuryCanvas {game} />
-			<RotateHint />
+			<RotateHint onportrait={(upright) => upright && game.setPaused(true)} />
 			{#if game.paused}
 				<PauseOverlay hint="" onResume={() => game.setPaused(false)}>
 					<button type="button" class="btn-chunky min-w-44" onclick={() => game.retry()}>

@@ -8,6 +8,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { MODES, modeById } from '#lib/modes/registry.js';
+	import { PLAY_STYLES, STYLE_OF_MODE, type PlayStyle } from '#lib/modes/styles.js';
 	import { leaderById, type LeaderId } from '#lib/theme/leaders.js';
 	import IconHourglass from '~icons/lucide/hourglass';
 	import IconShuffle from '~icons/lucide/shuffle';
@@ -42,59 +43,26 @@
 	const progressFor = (id: (typeof MODES)[number]['id']) =>
 		isCareerMode(id) ? careerState.profile.modes[id] : undefined;
 
-	const contestModeId = $derived(careerState.profile.contest?.mode ?? null);
+	/** How each style is named and described in its heading */
+	const STYLE_TEXT: Record<PlayStyle, { name: () => string; hint: () => string }> = {
+		reaction: { name: m.home_style_reaction, hint: m.home_style_reaction_hint },
+		platformer: { name: m.home_style_platformer, hint: m.home_style_platformer_hint },
+		shooter: { name: m.home_style_shooter, hint: m.home_style_shooter_hint },
+		tactics: { name: m.home_style_tactics, hint: m.home_style_tactics_hint },
+		puzzle: { name: m.home_style_puzzle, hint: m.home_style_puzzle_hint },
+		riddle: { name: m.home_style_riddle, hint: m.home_style_riddle_hint },
+		management: { name: m.home_style_management, hint: m.home_style_management_hint }
+	};
 
-	function getCategory(id: string): string {
-		switch (id) {
-			case 'minefield':
-			case 'shootdown':
-			case 'dronewall':
-			case 'raid':
-			case 'warroom':
-			case 'falklands':
-			case 'convoy':
-			case 'fleethunt':
-			case 'slice':
-			case 'whack':
-			case 'runcomrade':
-			case 'leakpatrol':
-			case 'gpsliar':
-			case 'balloon':
-			case 'dome':
-			case 'bordershift':
-			case 'droneworks':
-			case 'redsquare':
-				return 'Tactics & Action';
-			case 'blocks':
-			case 'merge':
-			case 'chess':
-			case 'maze':
-			case 'beltroad':
-			case 'parking':
-			case 'wordle':
-			case 'maple':
-			case 'centrifuge':
-			case 'purrpentagram':
-				return 'Puzzle & Strategy';
-			case 'pipeline':
-			case 'tycoon':
-			case 'chipfab':
-			case 'vault':
-			case 'rareearth':
-			case 'petrobras':
-			case 'suez':
-			case 'venezuela':
-				return 'Economy & Trade';
-			case 'flamingo':
-			case 'fury':
-			case 'energiewende':
-			case 'sondage':
-			case 'veto':
-				return 'Politics & Diplomacy';
-			default:
-				return 'More Games';
-		}
-	}
+	/** The visible games by play style, in the order of the styles; styles with none are left out */
+	const groups = $derived(
+		PLAY_STYLES.map((style) => ({
+			style,
+			cards: cards.filter(({ mode }) => STYLE_OF_MODE[mode.id] === style)
+		})).filter((group) => group.cards.length > 0)
+	);
+
+	const contestModeId = $derived(careerState.profile.contest?.mode ?? null);
 
 	function surprise() {
 		const playable = MODES.filter((mode) => mode.status === 'playable');
@@ -143,79 +111,104 @@
 	{/if}
 </div>
 
-{#if leader === null}
-	{@const categories = ['Tactics & Action','Puzzle & Strategy','Economy & Trade','Politics & Diplomacy','More Games']}
-	{#each categories as category (category)}
-		{@const groupCards = cards.filter(({mode}) => getCategory(mode.id) === category)}
-		{#if groupCards.length > 0}
-			<h3 class="text-xl font-bold mt-4 mb-2">{category}</h3>
-			<ul class="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
-				{#each groupCards as { mode, tilt } (mode.id)}
-					{@const Icon = mode.icon}
-					{@const progress = progressFor(mode.id)}
-					<li class="flex">
-						{#snippet card()}
-							<img src="/cards/{mode.id}.webp" alt="" class="pointer-events-none absolute inset-0 -z-10 size-full object-cover object-top opacity-45" decoding="async" loading="lazy" draggable="false" />
-							<span class="pointer-events-none absolute inset-0 -z-10 bg-linear-to-r from-ink/80 via-ink/40 to-transparent" aria-hidden="true"></span>
-							{#if mode.leaders.length > 0}
-								<span class="absolute top-2 right-2 flex flex-wrap justify-end gap-1" aria-hidden="true">
-									{#each mode.leaders as id (id)}
-										<img src={leaderById(id).flag} alt="" class="h-4 w-6 rounded-sm border-2 border-ink object-cover" draggable="false" />
-									{/each}
-								</span>
-								<span class="sr-only">{m.mode_features({ names: featured(mode.leaders) })}</span>
-							{/if}
-							{#if progress && progress.best > 0}
-								<span class="absolute start-2 top-2 inline-flex items-center gap-1 rounded-md border-2 border-ink bg-explosion-yellow px-1.5 py-0.5 text-xs font-bold tabular-nums" aria-label={m.career_best({ score: progress.best })}>
-									<IconTrophy class="size-3.5" aria-hidden="true" />
-									{progress.best}
-								</span>
-							{/if}
-							<span class="mt-auto rounded-xl border-3 border-ink p-3 {mode.tileClass}" aria-hidden="true"><Icon class="size-12" stroke-width="2.5" /></span>
-							<h3 class="text-lg leading-tight font-bold text-paper [text-shadow:0_2px_0_var(--color-ink)]">{mode.name()}</h3>
-						{/snippet}
-						{#if mode.status === 'playable'}
-							<a href={resolveRoute(mode.href)} class="sticker sticker-interactive relative isolate flex min-h-40 w-full flex-col items-start gap-2 overflow-hidden bg-ink p-3 active:scale-95{mode.id === contestModeId ? ' ring-4 ring-explosion-yellow ring-offset-2' : ''}" style:--tilt="{tilt}deg">{@render card()}</a>
-						{:else}
-							<div class="sticker relative isolate flex min-h-40 w-full flex-col items-start gap-2 overflow-hidden bg-ink p-3 opacity-80{mode.id === contestModeId ? ' ring-4 ring-explosion-yellow ring-offset-2' : ''}" style:--tilt="{tilt}deg">{@render card()}<span class="mt-auto inline-flex items-center gap-1 rounded-md border-2 border-ink bg-sand px-2 py-0.5 text-xs font-bold"><IconHourglass class="size-3.5" aria-hidden="true" />{m.mode_coming_soon()}</span></div>
-						{/if}
-					</li>
-				{/each}
-			</ul>
+{#snippet item(mode: (typeof MODES)[number], tilt: number)}
+	{@const Icon = mode.icon}
+	{@const progress = progressFor(mode.id)}
+	<li class="flex">
+		{#snippet card()}
+			<img
+				src="/cards/{mode.id}.webp"
+				alt=""
+				class="pointer-events-none absolute inset-0 -z-10 size-full object-cover object-top opacity-45"
+				decoding="async"
+				loading="lazy"
+				draggable="false"
+			/>
+			<span
+				class="pointer-events-none absolute inset-0 -z-10 bg-linear-to-r from-ink/80 via-ink/40 to-transparent"
+				aria-hidden="true"
+			></span>
+			{#if mode.leaders.length > 0}
+				<span class="absolute top-2 right-2 flex flex-wrap justify-end gap-1" aria-hidden="true">
+					{#each mode.leaders as id (id)}
+						<img
+							src={leaderById(id).flag}
+							alt=""
+							class="h-4 w-6 rounded-sm border-2 border-ink object-cover"
+							draggable="false"
+						/>
+					{/each}
+				</span>
+				<span class="sr-only">{m.mode_features({ names: featured(mode.leaders) })}</span>
+			{/if}
+			{#if progress && progress.best > 0}
+				<span
+					class="absolute start-2 top-2 inline-flex items-center gap-1 rounded-md border-2 border-ink bg-explosion-yellow px-1.5 py-0.5 text-xs font-bold tabular-nums"
+					aria-label={m.career_best({ score: progress.best })}
+				>
+					<IconTrophy class="size-3.5" aria-hidden="true" />
+					{progress.best}
+				</span>
+			{/if}
+			<span class="mt-auto rounded-xl border-3 border-ink p-3 {mode.tileClass}" aria-hidden="true">
+				<Icon class="size-12" stroke-width="2.5" />
+			</span>
+			<h4 class="text-lg leading-tight font-bold text-paper [text-shadow:0_2px_0_var(--color-ink)]">
+				{mode.name()}
+			</h4>
+		{/snippet}
+		{#if mode.status === 'playable'}
+			<a
+				href={resolveRoute(mode.href)}
+				class="sticker sticker-interactive relative isolate flex min-h-40 w-full flex-col items-start gap-2 overflow-hidden bg-ink p-3 active:scale-95{mode.id ===
+				contestModeId
+					? ' ring-4 ring-explosion-yellow ring-offset-2'
+					: ''}"
+				style:--tilt="{tilt}deg">{@render card()}</a
+			>
+		{:else}
+			<div
+				class="sticker relative isolate flex min-h-40 w-full flex-col items-start gap-2 overflow-hidden bg-ink p-3 opacity-80{mode.id ===
+				contestModeId
+					? ' ring-4 ring-explosion-yellow ring-offset-2'
+					: ''}"
+				style:--tilt="{tilt}deg"
+			>
+				{@render card()}
+				<span
+					class="mt-auto inline-flex items-center gap-1 rounded-md border-2 border-ink bg-sand px-2 py-0.5 text-xs font-bold"
+				>
+					<IconHourglass class="size-3.5" aria-hidden="true" />
+					{m.mode_coming_soon()}
+				</span>
+			</div>
 		{/if}
-	{/each}
+	</li>
+{/snippet}
+
+{#if leader === null}
+	<!-- Grouped by how the games are played -->
+	<div class="flex flex-col gap-8">
+		{#each groups as group (group.style)}
+			<section class="flex flex-col gap-3" aria-labelledby="style-{group.style}">
+				<div class="flex flex-col gap-0.5">
+					<h3 id="style-{group.style}" class="font-display text-xl leading-tight font-bold">
+						{STYLE_TEXT[group.style].name()}
+					</h3>
+					<p class="text-sm leading-snug opacity-75">{STYLE_TEXT[group.style].hint()}</p>
+				</div>
+				<ul class="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+					{#each group.cards as { mode, tilt } (mode.id)}
+						{@render item(mode, tilt)}
+					{/each}
+				</ul>
+			</section>
+		{/each}
+	</div>
 {:else}
 	<ul class="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
 		{#each cards as { mode, tilt } (mode.id)}
-			{@const Icon = mode.icon}
-			{@const progress = progressFor(mode.id)}
-			<li class="flex">
-				{#snippet card()}
-					<img src="/cards/{mode.id}.webp" alt="" class="pointer-events-none absolute inset-0 -z-10 size-full object-cover object-top opacity-45" decoding="async" loading="lazy" draggable="false" />
-					<span class="pointer-events-none absolute inset-0 -z-10 bg-linear-to-r from-ink/80 via-ink/40 to-transparent" aria-hidden="true"></span>
-					{#if mode.leaders.length > 0}
-						<span class="absolute top-2 right-2 flex flex-wrap justify-end gap-1" aria-hidden="true">
-							{#each mode.leaders as id (id)}
-								<img src={leaderById(id).flag} alt="" class="h-4 w-6 rounded-sm border-2 border-ink object-cover" draggable="false" />
-							{/each}
-						</span>
-						<span class="sr-only">{m.mode_features({ names: featured(mode.leaders) })}</span>
-					{/if}
-					{#if progress && progress.best > 0}
-						<span class="absolute start-2 top-2 inline-flex items-center gap-1 rounded-md border-2 border-ink bg-explosion-yellow px-1.5 py-0.5 text-xs font-bold tabular-nums" aria-label={m.career_best({ score: progress.best })}>
-							<IconTrophy class="size-3.5" aria-hidden="true" />
-							{progress.best}
-						</span>
-					{/if}
-					<span class="mt-auto rounded-xl border-3 border-ink p-3 {mode.tileClass}" aria-hidden="true"><Icon class="size-12" stroke-width="2.5" /></span>
-					<h3 class="text-lg leading-tight font-bold text-paper [text-shadow:0_2px_0_var(--color-ink)]">{mode.name()}</h3>
-				{/snippet}
-				{#if mode.status === 'playable'}
-					<a href={resolveRoute(mode.href)} class="sticker sticker-interactive relative isolate flex min-h-40 w-full flex-col items-start gap-2 overflow-hidden bg-ink p-3 active:scale-95{mode.id === contestModeId ? ' ring-4 ring-explosion-yellow ring-offset-2' : ''}" style:--tilt="{tilt}deg">{@render card()}</a>
-				{:else}
-					<div class="sticker relative isolate flex min-h-40 w-full flex-col items-start gap-2 overflow-hidden bg-ink p-3 opacity-80{mode.id === contestModeId ? ' ring-4 ring-explosion-yellow ring-offset-2' : ''}" style:--tilt="{tilt}deg">{@render card()}<span class="mt-auto inline-flex items-center gap-1 rounded-md border-2 border-ink bg-sand px-2 py-0.5 text-xs font-bold"><IconHourglass class="size-3.5" aria-hidden="true" />{m.mode_coming_soon()}</span></div>
-				{/if}
-			</li>
+			{@render item(mode, tilt)}
 		{/each}
 	</ul>
 {/if}

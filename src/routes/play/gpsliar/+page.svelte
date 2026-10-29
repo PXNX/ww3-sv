@@ -120,7 +120,7 @@
 			</div>
 
 			<GpsLiarCanvas {game} levelName={levelName(game.levelIndex)} {hudHeight} />
-			<RotateHint />
+			<RotateHint onportrait={(upright) => upright && game.pause()} />
 		</section>
 	{:else}
 		<GpsLiarLevelSelect {game} />

@@ -1,27 +1,50 @@
 <!--
-	Landscape games: asks the browser to keep the screen sideways while mounted (only granted where
-	the page may lock the orientation, such as an installed app) and, whenever the screen is upright
-	anyway, covers the nearest `relative` wrapper with a "turn your phone" card that can be dismissed.
+	Landscape games: on a phone or tablet held upright the game is covered by a full-screen "turn your
+	phone" card that cannot be dismissed, so the game is only ever seen sideways. While it is up, the
+	game is told to pause (`onportrait`), and the only other way out is the link back to the menu.
+	The page also asks the browser to lock the screen sideways, which is only granted where the page
+	may do that (an installed app, or full screen); the card covers everything else. Desktop windows,
+	where a tall window is a choice and not a held phone, are left alone.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
+	import IconArrowLeft from '~icons/lucide/arrow-left';
 	import IconRotate from '~icons/lucide/smartphone';
 
+	let {
+		title = m.game_rotate_title(),
+		body = m.game_rotate_body(),
+		onportrait
+	}: {
+		title?: string;
+		body?: string;
+		/** Called with true when the screen is upright and with false when it turns sideways */
+		onportrait?: (portrait: boolean) => void;
+	} = $props();
+
 	let portrait = $state(false);
-	let dismissed = $state(false);
 
 	onMount(() => {
 		const orientation = screen.orientation as
 			(ScreenOrientation & { lock?: (orientation: string) => Promise<void> }) | undefined;
 		// Refused outside full screen on most browsers: the card below covers that
 		orientation?.lock?.('landscape').catch(() => {});
-		const query = matchMedia('(orientation: portrait)');
-		const update = () => (portrait = query.matches);
+		const touch = matchMedia('(pointer: coarse)');
+		const upright = matchMedia('(orientation: portrait)');
+		const update = () => {
+			const now = touch.matches && upright.matches;
+			if (now === portrait) return;
+			portrait = now;
+			onportrait?.(now);
+		};
 		update();
-		query.addEventListener('change', update);
+		upright.addEventListener('change', update);
+		touch.addEventListener('change', update);
 		return () => {
-			query.removeEventListener('change', update);
+			upright.removeEventListener('change', update);
+			touch.removeEventListener('change', update);
 			try {
 				orientation?.unlock();
 			} catch {
@@ -31,23 +54,24 @@
 	});
 </script>
 
-{#if portrait && !dismissed}
+{#if portrait}
 	<div
-		class="absolute inset-0 z-30 flex items-center justify-center bg-banner-slate p-4"
-		role="dialog"
+		class="fixed inset-0 z-100 flex flex-col items-center justify-center gap-4 bg-banner-slate p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))]"
+		style:touch-action="none"
+		role="alertdialog"
 		aria-modal="true"
 		aria-labelledby="rotate-hint-title"
+		aria-describedby="rotate-hint-body"
 	>
 		<div class="sticker flex max-w-xs flex-col items-center gap-3 p-5 text-center">
 			<IconRotate class="rotate-hint size-14" aria-hidden="true" />
-			<h2 id="rotate-hint-title" dir="auto" class="font-display text-2xl font-bold">
-				{m.game_rotate_title()}
-			</h2>
-			<p dir="auto" class="text-sm">{m.game_rotate_body()}</p>
-			<button type="button" class="btn-chunky text-sm" onclick={() => (dismissed = true)}>
-				{m.game_rotate_dismiss()}
-			</button>
+			<h2 id="rotate-hint-title" dir="auto" class="font-display text-2xl font-bold">{title}</h2>
+			<p id="rotate-hint-body" dir="auto" class="text-sm">{body}</p>
 		</div>
+		<a href={resolve('/')} class="btn-chunky bg-paper px-3 py-1 text-sm">
+			<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
+			{m.game_back()}
+		</a>
 	</div>
 {/if}
 

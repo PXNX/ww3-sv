@@ -24,30 +24,23 @@
 		type MapId,
 		type RaidMode
 	} from '#lib/game/raid/config.js';
+	import RotateHint from '#lib/components/RotateHint.svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
 	import { RaidGame } from '#lib/stores/raidGame.svelte.js';
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconZap from '~icons/lucide/zap';
-	import IconRotate from '~icons/lucide/smartphone';
 
 	const game = new RaidGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_raid_name();
 
 	let showTutorial = $state(false);
-	let portrait = $state(false);
-	let rotateDismissed = $state(false);
 
 	onMount(() => {
 		game.load();
 		// Development only: lets a browser console (or a screenshot script) poke at the raid
 		if (import.meta.env.DEV) Object.assign(window, { raidGame: game });
 		showTutorial = firstPlay('raid');
-		const query = matchMedia('(orientation: portrait)');
-		const update = () => (portrait = query.matches);
-		update();
-		query.addEventListener('change', update);
-		return () => query.removeEventListener('change', update);
 	});
 
 	/** A battlefield was tapped: the tap also lets the phone go full screen and sideways */
@@ -123,25 +116,12 @@
 			<RaidLobby {game} onStart={start} />
 		</div>
 	{/if}
-	{#if portrait && !rotateDismissed && game.status !== 'over'}
-		<div
-			class="fixed inset-0 z-30 flex items-center justify-center bg-banner-slate p-4"
-			role="dialog"
-			aria-modal="true"
-			aria-labelledby="raid-rotate-title"
-		>
-			<div class="sticker flex max-w-xs flex-col items-center gap-3 p-5 text-center">
-				<IconRotate class="rotate-hint size-14" aria-hidden="true" />
-				<h2 id="raid-rotate-title" dir="auto" class="font-display text-2xl font-bold">
-					{m.raid_rotate_title()}
-				</h2>
-				<p dir="auto" class="text-sm">{m.raid_rotate_body()}</p>
-				<button type="button" class="btn-chunky text-sm" onclick={() => (rotateDismissed = true)}>
-					{m.raid_rotate_dismiss()}
-				</button>
-			</div>
-		</div>
-	{/if}
+	<!-- The raid, its lobby and its results are only shown sideways; upright, the game is paused -->
+	<RotateHint
+		title={m.raid_rotate_title()}
+		body={m.raid_rotate_body()}
+		onportrait={(upright) => upright && game.status === 'playing' && game.pause()}
+	/>
 
 	<TutorialModal
 		open={showTutorial}
