@@ -32,7 +32,7 @@
 		)
 	);
 
-	const recent = $derived(careerState.recent(4).map((id) => modeById(id)));
+	const recent = $derived(careerState.recent(1).map((id) => modeById(id)));
 
 	const featured = (ids: readonly LeaderId[]) =>
 		new Intl.ListFormat(getLocale(), { type: 'conjunction' }).format(

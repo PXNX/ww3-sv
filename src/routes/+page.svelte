@@ -34,17 +34,6 @@
 <main
 	class="mx-auto flex max-w-5xl flex-col gap-8 px-4 pt-[calc(1rem+var(--top-inset))] pb-[calc(3rem+env(safe-area-inset-bottom))]"
 >
-	<div class="flex items-center justify-end gap-2 pr-(--top-right-inset) pl-(--top-left-inset)">
-		<a
-			href={resolve('/settings')}
-			class="btn-chunky size-9 rounded-full p-0"
-			aria-label={m.settings_title()}
-			title={m.settings_title()}
-		>
-			<IconSettings class="size-4" aria-hidden="true" />
-		</a>
-	</div>
-
 	<ClipPreloadLine class="mx-auto w-full max-w-xs" />
 
 	<header class="flex flex-col items-center gap-3 text-center">
@@ -81,14 +70,7 @@
 		</div>
 	</header>
 
-	<AgentCard />
-
-	<div class="grid items-start gap-5 lg:grid-cols-2">
-		<CareerBar />
-		<DailyPanel />
-	</div>
-
-	<FriendsPanel />
+	<DailyPanel />
 
 	<section class="flex flex-col gap-4" aria-labelledby="choose-mode">
 		<h2 id="choose-mode" class="text-2xl font-bold">{m.home_choose_mode()}</h2>
@@ -99,12 +81,18 @@
 		<a href={resolve('/shop')} class="btn-chunky rounded-full px-3 py-1 text-sm font-bold"
 			>{m.career_shop()}</a
 		>
-		<a href={resolve('/settings')} class="btn-chunky rounded-full px-3 py-1 text-sm font-bold"
-			>{m.settings_title()}</a
-		>
+
 		<a href={resolve('about')} class="btn-chunky rounded-full px-3 py-1 text-sm font-bold"
 			>{m.about_link()}</a
 		>
+		<a
+			href={resolve('/settings')}
+			class="btn-chunky rounded-full px-3 py-1 text-sm font-bold"
+			aria-label={m.settings_title()}
+		>
+			<IconSettings class="size-4" aria-hidden="true" />
+			{m.settings_title()}
+		</a>
 	</footer>
 
 	<div

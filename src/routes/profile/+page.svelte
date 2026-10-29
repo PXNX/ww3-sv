@@ -15,6 +15,7 @@
 	import Avatar from '#lib/components/Avatar.svelte';
 	import AvatarEditor from '#lib/components/AvatarEditor.svelte';
 	import CareerBar from '#lib/components/CareerBar.svelte';
+	import FriendsPanel from '#lib/components/FriendsPanel.svelte';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
 	import IconBadgeCheck from '~icons/lucide/badge-check';
 	import IconSettings from '~icons/lucide/settings';
@@ -94,19 +95,10 @@
 
 	<CareerBar />
 
-	<section class="sticker grid grid-cols-2 gap-2 bg-sand p-4 sm:grid-cols-4" style:--tilt="0.5deg">
-		<h2 class="col-span-full font-display text-xl font-bold">{m.profile_stats()}</h2>
-		{#each [{ icon: IconGamepad, label: m.profile_runs(), value: careerState.profile.runs }, { icon: IconFlame, label: m.profile_streak(), value: careerState.profile.streak }, { icon: IconNewspaper, label: m.profile_coins(), value: careerState.profile.coins }, { icon: IconHeartPulse, label: m.profile_revives(), value: careerState.profile.revives }] as stat (stat.label)}
-			{@const Icon = stat.icon}
-			<div
-				class="flex flex-col items-center gap-0.5 rounded-[10px_5px_9px_6px] border-2 border-ink bg-paper px-2 py-2 text-center"
-			>
-				<Icon class="size-5" aria-hidden="true" />
-				<span class="font-display text-2xl leading-none font-bold tabular-nums">{stat.value}</span>
-				<span class="text-xs font-semibold opacity-70">{stat.label}</span>
-			</div>
-		{/each}
-	</section>
+		<FriendsPanel />
+
+
+	
 
 	<section class="sticker flex flex-col gap-2 p-4" style:--tilt="-0.3deg">
 		<h2 class="flex items-center gap-2 font-display text-xl font-bold">
@@ -199,5 +191,19 @@
 			</a>
 		{/if}
 		<p class="text-xs opacity-70">{m.profile_local_note()}</p>
+	</section>
+
+	<section class="sticker grid grid-cols-2 gap-2 bg-sand p-4 sm:grid-cols-4" style:--tilt="0.5deg">
+		<h2 class="col-span-full font-display text-xl font-bold">{m.profile_stats()}</h2>
+		{#each [{ icon: IconGamepad, label: m.profile_runs(), value: careerState.profile.runs }, { icon: IconFlame, label: m.profile_streak(), value: careerState.profile.streak }, { icon: IconNewspaper, label: m.profile_coins(), value: careerState.profile.coins }, { icon: IconHeartPulse, label: m.profile_revives(), value: careerState.profile.revives }] as stat (stat.label)}
+			{@const Icon = stat.icon}
+			<div
+				class="flex flex-col items-center gap-0.5 rounded-[10px_5px_9px_6px] border-2 border-ink bg-paper px-2 py-2 text-center"
+			>
+				<Icon class="size-5" aria-hidden="true" />
+				<span class="font-display text-2xl leading-none font-bold tabular-nums">{stat.value}</span>
+				<span class="text-xs font-semibold opacity-70">{stat.label}</span>
+			</div>
+		{/each}
 	</section>
 </main>
