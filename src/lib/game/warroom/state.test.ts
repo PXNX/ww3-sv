@@ -6,6 +6,9 @@ import {
 	SCORE_WIN_BONUS,
 	SCORE_PER_REGION,
 	SCORE_DAY_BONUS,
+	EXERCISE_MORALE_LOSS,
+	EXERCISE_SUPPLY_COST,
+	templateDef,
 	type RegionId
 } from './config.js';
 import {
@@ -13,11 +16,13 @@ import {
 	battlePreview,
 	buildFactory,
 	canBuild,
+	canExercise,
 	canOrder,
 	canTrain,
 	createWarRoom,
 	demandIn,
 	endTurn,
+	exerciseDivision,
 	finalScore,
 	heldRegions,
 	orderStack,
@@ -198,6 +203,44 @@ describe('War Room industry and training', () => {
 		expect(canTrain(state, 'infantry')).toBe(false);
 		expect(train(state, 'infantry')).toBe(false);
 		expect(state.training).toHaveLength(0);
+	});
+});
+
+describe('War Room experience', () => {
+	it('starts every division at level one and grows experienced units over time', () => {
+		const state = game();
+		expect(state.divisions.capital[0].experience).toBe(1);
+		state.resources = { steel: 100, oil: 100, rare: 100, grain: 100 };
+		endTurn(state, steady);
+		expect(state.divisions.capital[0].experience).toBe(2);
+	});
+
+	it('exercises a stack: spends grain, drains morale and raises experience', () => {
+		const state = game();
+		const division = state.divisions.capital[0];
+		const grain = state.resources.grain;
+		expect(canExercise(state, 'capital')).toBe(true);
+		expect(exerciseDivision(state, 'capital')).toBe(true);
+		expect(state.resources.grain).toBe(grain - EXERCISE_SUPPLY_COST);
+		expect(division.morale).toBe(templateDef('infantry').morale - EXERCISE_MORALE_LOSS);
+		expect(division.experience).toBe(2);
+	});
+
+	it('refuses exercise without supplies or on an enemy region', () => {
+		const state = game();
+		state.resources.grain = EXERCISE_SUPPLY_COST - 1;
+		expect(canExercise(state, 'capital')).toBe(false);
+		expect(exerciseDivision(state, 'capital')).toBe(false);
+		expect(canExercise(state, 'plains')).toBe(false);
+	});
+
+	it('makes experienced divisions stronger in combat', () => {
+		const state = game();
+		state.divisions.ridge.push({ id: 911, template: 'armour', morale: 100, experience: 1 });
+		const green = stackStrength(state, 'ridge', 'defence', 100);
+		state.divisions.ridge[state.divisions.ridge.length - 1].experience = 5;
+		const veteran = stackStrength(state, 'ridge', 'defence', 100);
+		expect(veteran).toBeGreaterThan(green);
 	});
 });
 

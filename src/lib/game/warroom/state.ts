@@ -12,6 +12,7 @@ import {
 	MAX_DAYS,
 	EXP_COMBAT_BONUS,
 	EXP_GAIN_PER_DAY,
+	EXP_MAX,
 	EXERCISE_EXP_GAIN,
 	EXERCISE_MORALE_LOSS,
 	EXERCISE_SUPPLY_COST,
@@ -435,7 +436,8 @@ function regenMorale(state: WarRoomState) {
 		const gain = supplies[region] >= 60 ? MORALE_REGEN : MORALE_REGEN_LOW;
 		for (const division of state.divisions[region]) {
 			division.morale = Math.min(100, division.morale + gain);
-			if (supplies[region] >= 60) division.experience += EXP_GAIN_PER_DAY;
+			if (supplies[region] >= 60)
+				division.experience = Math.min(EXP_MAX, division.experience + EXP_GAIN_PER_DAY);
 		}
 	}
 }
@@ -568,17 +570,13 @@ export function finalScore(state: WarRoomState, outcome: Outcome | null = state.
 	return Math.max(0, Math.round(score));
 }
 
-/** Exercising lowers morale (organization) and costs supplies, but raises experience */
+/** Exercising lowers morale (organization) and spends grain on supplies, but raises experience */
 export function exerciseDivision(state: WarRoomState, region: RegionId): boolean {
-	if (state.outcome !== null) return false;
-	if (state.owner[region] !== 'player') return false;
-	const supply = supplyAt(state, region);
-	if (supply < EXERCISE_SUPPLY_COST) return false;
-	if (state.divisions[region].length === 0) return false;
-	// Apply cost as supply cut by reducing region's effective supply (simplified: just require supply present)
+	if (!canExercise(state, region)) return false;
+	state.resources.grain -= EXERCISE_SUPPLY_COST;
 	for (const division of state.divisions[region]) {
 		division.morale = Math.max(10, division.morale - EXERCISE_MORALE_LOSS);
-		division.experience += EXERCISE_EXP_GAIN;
+		division.experience = Math.min(EXP_MAX, division.experience + EXERCISE_EXP_GAIN);
 	}
 	return true;
 }
@@ -588,7 +586,7 @@ export function canExercise(state: WarRoomState, region: RegionId): boolean {
 		state.outcome === null &&
 		state.owner[region] === 'player' &&
 		state.divisions[region].length > 0 &&
-		supplyAt(state, region) >= EXERCISE_SUPPLY_COST
+		state.resources.grain >= EXERCISE_SUPPLY_COST
 	);
 }
 

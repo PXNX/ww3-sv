@@ -4,12 +4,13 @@
 	for every neighbouring region, with the attack odds before the dice are rolled.
 -->
 <script lang="ts">
-	import { regionDef, type RegionId } from '#lib/game/warroom/config.js';
+	import { regionDef, EXERCISE_SUPPLY_COST, type RegionId } from '#lib/game/warroom/config.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import type { WarRoomGame } from '#lib/stores/warroomGame.svelte.js';
 	import WarRoomDivisionRow from './WarRoomDivisionRow.svelte';
 	import { oddsLabel, regionName, resourceName, terrainBonus, terrainName } from './warroomText.js';
 	import IconCrosshair from '~icons/lucide/crosshair';
+	import IconDumbbell from '~icons/lucide/dumbbell';
 	import IconFlag from '~icons/lucide/flag-triangle-right';
 	import IconFootprints from '~icons/lucide/footprints';
 	import IconX from '~icons/lucide/x';
@@ -24,6 +25,9 @@
 	const selected = $derived(game.selected === game.focused);
 	const playing = $derived(game.status === 'playing');
 	const canTakeCommand = $derived(ours && stack.length > 0 && !moved && playing);
+	const canExercise = $derived(
+		ours && stack.length > 0 && playing && game.resources.grain >= EXERCISE_SUPPLY_COST
+	);
 	const orders = $derived(
 		def.neighbors.map((neighbor) => ({
 			id: neighbor,
@@ -34,6 +38,10 @@
 
 	function takeCommand() {
 		game.selectRegion(game.focused);
+	}
+
+	function exercise() {
+		game.exercise(game.focused);
 	}
 
 	function order(to: RegionId) {
@@ -152,6 +160,23 @@
 			</ul>
 		{/if}
 	</div>
+
+	{#if ours && stack.length > 0}
+		<button
+			type="button"
+			class="btn-chunky justify-between gap-2 bg-khaki px-2 py-1.5 text-xs"
+			disabled={!canExercise}
+			onclick={exercise}
+		>
+			<span class="inline-flex items-center gap-1">
+				<IconDumbbell class="size-3.5" aria-hidden="true" />
+				<span dir="auto" class="font-bold">{m.warroom_exercise()}</span>
+			</span>
+			<span class="shrink-0 text-[0.6rem] font-semibold tabular-nums" dir="ltr">
+				{m.warroom_exercise_cost({ amount: EXERCISE_SUPPLY_COST })}
+			</span>
+		</button>
+	{/if}
 
 	{#if !ours}
 		<p dir="auto" class="text-xs leading-snug font-semibold">
