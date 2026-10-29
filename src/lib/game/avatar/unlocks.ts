@@ -4,14 +4,14 @@
  * editor only has to ask "is this option open yet?". Conditions are all monotonic (career level,
  * best daily streak, a game played at least once), so an unlocked look never locks again.
  */
-import type { CareerMode } from '#lib/game/career/config.js';
 import type { CareerProfile } from '#lib/game/career/profile.js';
+import type { ModeId } from '#lib/modes/registry.js';
 import { LOOK_PARTS, type AvatarLook, type LookPart } from './look.js';
 
 export type UnlockRequirement =
 	| { kind: 'level'; level: number }
 	| { kind: 'streak'; days: number }
-	| { kind: 'mode'; mode: CareerMode }
+	| { kind: 'mode'; mode: ModeId }
 	| { kind: 'fakeNews'; coins: number };
 
 export interface LookUnlock {
@@ -112,11 +112,23 @@ export interface UnlockProgress {
 	level: number;
 	bestStreak: number;
 	/** Modes played at least once; only the keys matter */
-	modes: Partial<Record<CareerMode, unknown>>;
+	modes: Partial<Record<ModeId, unknown>>;
+	/** Fake News the player holds; zero when not given */
+	coins?: number;
 }
 
-export function unlockProgress(profile: CareerProfile, level: number): UnlockProgress {
-	return { level, bestStreak: profile.bestStreak, modes: profile.modes };
+/**
+ * What the player has reached, from the career profile. `played` names modes the career does not
+ * track, such as the Oil Tycoon, that were played at least once.
+ */
+export function unlockProgress(
+	profile: CareerProfile,
+	level: number,
+	played: readonly ModeId[] = []
+): UnlockProgress {
+	const modes: UnlockProgress['modes'] = { ...profile.modes };
+	for (const mode of played) modes[mode] ??= true;
+	return { level, bestStreak: profile.bestStreak, modes, coins: profile.coins };
 }
 
 /** The unlock that guards a part value, or undefined when the option is free */
@@ -133,7 +145,7 @@ export function requirementMet(requirement: UnlockRequirement, progress: UnlockP
 		case 'mode':
 			return progress.modes[requirement.mode] !== undefined;
 		case 'fakeNews':
-			return (progress as unknown as { fakeNews?: number }).fakeNews ?? 0 >= requirement.coins;
+			return (progress.coins ?? 0) >= requirement.coins;
 	}
 }
 
@@ -191,6 +203,8 @@ export function requirementShare(requirement: UnlockRequirement, progress: Unloc
 			return Math.min(1, progress.bestStreak / requirement.days);
 		case 'mode':
 			return progress.modes[requirement.mode] === undefined ? 0 : 1;
+		case 'fakeNews':
+			return Math.min(1, (progress.coins ?? 0) / requirement.coins);
 	}
 }
 

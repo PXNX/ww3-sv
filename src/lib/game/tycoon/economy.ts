@@ -148,9 +148,9 @@ export function pointsSpent(perks: Record<PerkId, number>): number {
 	return spent;
 }
 
-/** Points left to spend in the shop */
+/** Points left to spend in the shop; points spent on an investment are gone from the balance */
 export function availablePoints(state: TycoonState): number {
-	return Math.max(0, state.prestigePoints - pointsSpent(state.perks));
+	return Math.max(0, state.prestigePoints);
 }
 
 export function totalPerkLevels(state: TycoonState): number {

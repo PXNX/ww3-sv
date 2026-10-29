@@ -11,6 +11,8 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { career } from '#lib/game/career/store.svelte.js';
+	import { SAVE_KEY as TYCOON_SAVE_KEY } from '#lib/game/tycoon/save.js';
+	import { localStore } from '#lib/services/storage.js';
 	import {
 		LOOK_PARTS,
 		LOOK_PRESETS,
@@ -28,6 +30,7 @@
 		unlockedCount,
 		type LookUnlock
 	} from '#lib/game/avatar/unlocks.js';
+	import type { ModeId } from '#lib/modes/registry.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import { requirementText } from './unlockText.js';
@@ -75,7 +78,9 @@
 
 	onDestroy(() => clearTimeout(lockTimer));
 
-	const progress = $derived(unlockProgress(careerState.profile, careerState.level));
+	// The Oil Tycoon is not part of the career, so a saved game there counts as having played it
+	const played: ModeId[] = localStore().read(TYCOON_SAVE_KEY, null) === null ? [] : ['tycoon'];
+	const progress = $derived(unlockProgress(careerState.profile, careerState.level, played));
 	const collected = $derived(unlockedCount(progress));
 
 	const options = $derived(

@@ -4,11 +4,12 @@ import {
 	ACHIEVEMENTS,
 	OFFLINE_CAP_MS,
 	OFFLINE_EFFICIENCY,
+	PERKS,
 	PRESTIGE_UNIT,
 	STEP_MS,
 	UPGRADES
 } from './config.js';
-import { producerCost, producerDef, productionPerSecond, tapValue } from './economy.js';
+import { critMultUpgrade, perkCost, producerCost, producerDef, productionPerSecond, tapValue } from './economy.js';
 import {
 	applyOffline,
 	buyPerk,
@@ -27,21 +28,32 @@ import type { TycoonEvent } from './types.js';
 
 const random = () => createRandom(5);
 const fresh = () => createState(random());
+const perkDef = (id: string) => PERKS.find((perk) => perk.id === id)!;
+/** A random source that never rolls a critical tap */
+const noCrit = () => 0.999;
 const achievementIds = (events: TycoonEvent[]) =>
 	events.flatMap((event) => (event.type === 'achievement' ? [event.id] : []));
 
 describe('tapping', () => {
 	it('pumps barrels into the bank and the totals and counts the tap', () => {
 		const state = fresh();
-		const { gained } = tap(state);
+		const { gained } = tap(state, noCrit);
 		expect(gained).toBe(1);
 		expect(state).toMatchObject({ barrels: 1, runTotal: 1, lifetime: 1, taps: 1 });
 	});
 
 	it('unlocks the first achievement once', () => {
 		const state = fresh();
-		expect(tap(state).events).toEqual([{ type: 'achievement', id: 'first_tap' }]);
-		expect(tap(state).events).toEqual([]);
+		expect(tap(state, noCrit).events).toEqual([{ type: 'achievement', id: 'first_tap' }]);
+		expect(tap(state, noCrit).events).toEqual([]);
+	});
+
+	it('pays a critical tap several times over, decided by the random source', () => {
+		const state = fresh();
+		const expected = tapValue(state) * critMultUpgrade(state);
+		const crit = tap(state, () => 0).gained;
+		expect(crit).toBeCloseTo(expected, 9);
+		expect(crit).toBeGreaterThan(tap(state, noCrit).gained);
 	});
 });
 
@@ -160,7 +172,8 @@ describe('nationalization shop', () => {
 		state.prestigePoints = 100;
 		expect(buyPerk(state, 'tap').bought).toBe(true);
 		expect(state.perks.tap).toBe(1);
-		expect(state.prestigePoints).toBe(100);
+		// The points the level cost are gone from the balance
+		expect(state.prestigePoints).toBe(100 - perkCost(perkDef('tap'), 0));
 		state.perks.growth = 5;
 		expect(buyPerk(state, 'growth').bought).toBe(false);
 	});
@@ -170,7 +183,9 @@ describe('nationalization shop', () => {
 		state.prestigePoints = 1000;
 		const ids: string[] = [];
 		for (let i = 0; i < 10; i++) ids.push(...achievementIds(buyPerk(state, 'output').events));
-		expect(ids).toEqual(['investor']);
+		// Other achievements for fewer levels unlock on the way, each exactly once
+		expect(ids).toContain('investor');
+		expect(new Set(ids).size).toBe(ids.length);
 	});
 });
 
@@ -292,7 +307,7 @@ describe('prestige', () => {
 		state.runTotal = PRESTIGE_UNIT;
 		prestige(state, random());
 		expect(state.perks.seed).toBe(2);
-		expect(state.barrels).toBe(1000);
+		expect(state.barrels).toBe(perkDef('seed').value * 10);
 		expect(state.runTotal).toBe(0);
 		expect(state.progress.tanker).toBe(0);
 		expect(state.pending.tanker).toBe(0);

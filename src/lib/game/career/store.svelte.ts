@@ -16,6 +16,7 @@ import {
 	careerRank,
 	claimDaily as claimDailyIn,
 	coinsLeftToday,
+	grantCoins as grantCoinsIn,
 	levelInfo,
 	newCareer,
 	parseCareer,
@@ -85,6 +86,13 @@ class CareerStore {
 		if (!next) return false;
 		this.#commit(next);
 		return true;
+	}
+
+	/** Pays Fake News within today's cap; returns how many coins were paid */
+	grantCoins(coins: number, now: Date = new Date()): number {
+		const result = grantCoinsIn(this.profile, coins, now);
+		if (result.granted > 0) this.#commit(result.profile);
+		return result.granted;
 	}
 
 	useRevive(): boolean {

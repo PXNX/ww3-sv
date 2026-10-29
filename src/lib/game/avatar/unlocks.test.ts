@@ -67,7 +67,8 @@ describe('the extra looks', () => {
 				progress({
 					level: 30,
 					bestStreak: 7,
-					modes: { redsquare: {}, petrobras: {}, runcomrade: {} }
+					modes: { redsquare: {}, petrobras: {}, runcomrade: {}, tycoon: {} },
+					coins: 120
 				})
 			)
 		).toBe(LOOK_UNLOCKS.length);
@@ -116,7 +117,8 @@ describe('the extra looks', () => {
 				progress({
 					level: 30,
 					bestStreak: 7,
-					modes: { redsquare: {}, petrobras: {}, runcomrade: {} }
+					modes: { redsquare: {}, petrobras: {}, runcomrade: {}, tycoon: {} },
+					coins: 120
 				})
 			)
 		).toBeNull();
@@ -135,7 +137,30 @@ describe('the extra looks', () => {
 
 	it('reads the progress out of a career profile', () => {
 		const profile = { ...newCareer(new Date(2026, 9, 27, 12)), bestStreak: 4 };
-		expect(unlockProgress(profile, 7)).toEqual({ level: 7, bestStreak: 4, modes: profile.modes });
+		expect(unlockProgress(profile, 7)).toEqual({
+			level: 7,
+			bestStreak: 4,
+			modes: profile.modes,
+			coins: profile.coins
+		});
+	});
+
+	it('counts modes the career does not track as played when told so', () => {
+		const profile = newCareer(new Date(2026, 9, 27, 12));
+		expect(unlockProgress(profile, 1).modes.tycoon).toBeUndefined();
+		expect(unlockProgress(profile, 1, ['tycoon']).modes.tycoon).toBeDefined();
+		const monocle = unlockFor('hat', 'monocle')!;
+		expect(requirementMet(monocle.requirement, progress())).toBe(false);
+		expect(requirementMet(monocle.requirement, unlockProgress(profile, 1, ['tycoon']))).toBe(true);
+	});
+
+	it('opens the Fake News look once enough Fake News is held', () => {
+		const lula = unlockFor('hat', 'lula')!;
+		expect(lula.requirement.kind).toBe('fakeNews');
+		expect(requirementMet(lula.requirement, progress())).toBe(false);
+		expect(requirementMet(lula.requirement, progress({ coins: 119 }))).toBe(false);
+		expect(requirementMet(lula.requirement, progress({ coins: 120 }))).toBe(true);
+		expect(requirementShare(lula.requirement, progress({ coins: 60 }))).toBe(0.5);
 	});
 
 	it('leaves locked options out of a surprise look', () => {

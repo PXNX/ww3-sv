@@ -145,7 +145,16 @@ describe('save and load', () => {
 		expect(state.owned.lobbyist).toBe(0);
 		expect(state.upgrades).toEqual(['click_bucket']);
 		expect(state.achievements).toEqual([]);
-		expect(state.perks).toEqual({ growth: 0, output: 25, speed: 1, tap: 0, seed: 0, offline: 0 });
+		expect(state.perks).toEqual({
+			growth: 0,
+			output: 25,
+			speed: 1,
+			tap: 0,
+			seed: 0,
+			offline: 0,
+			fake_news: 0,
+			invest_boost: 0
+		});
 		// No cycle runs past its end, and a producer that is not owned has no cycle going
 		expect(state.progress.pumpjack).toBe(1000);
 		expect(state.progress.tanker).toBe(0);

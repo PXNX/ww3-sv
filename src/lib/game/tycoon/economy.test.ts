@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { createRandom } from '#lib/game/random.js';
-import { ACHIEVEMENTS, COST_GROWTH, MAX_OWNED, PERKS, PRODUCERS, UPGRADES } from './config.js';
+import {
+	ACHIEVEMENTS,
+	COST_GROWTH,
+	MAX_OWNED,
+	OFFLINE_EFFICIENCY,
+	PERKS,
+	PRODUCERS,
+	UPGRADES,
+	type PerkId
+} from './config.js';
 import {
 	achievementBonus,
 	availablePoints,
@@ -29,6 +38,8 @@ import { createState } from './state.js';
 const pumpjack = producerDef('pumpjack');
 const tanker = producerDef('tanker');
 const fresh = () => createState(createRandom(1));
+/** What one level of a shop investment is worth, so the tests follow the balancing */
+const perkValue = (id: PerkId) => PERKS.find((perk) => perk.id === id)!.value;
 
 describe('cost curve', () => {
 	it('starts at the base price and grows 15 percent per unit owned', () => {
@@ -102,7 +113,7 @@ describe('production', () => {
 		state.achievements = ['kilo', 'mega', 'first_tap'];
 		state.perks.output = 2;
 		state.upgrades.push('global_regulator');
-		const expected = 1.5 * 1.05 * 1.2 * 1.25;
+		const expected = 1.5 * 1.05 * (1 + 2 * perkValue('output')) * 1.25;
 		expect(globalMultiplier(state)).toBeCloseTo(expected, 9);
 		expect(productionPerSecond(state)).toBeCloseTo(1 * expected, 9);
 	});
@@ -208,7 +219,7 @@ describe('production cycles and speed', () => {
 		const before = productionPerSecond(state);
 		state.perks.speed = 5;
 		state.achievements.push('flow');
-		const speed = 1.5 * 1.05;
+		const speed = (1 + 5 * perkValue('speed')) * 1.05;
 		expect(speedMultiplier(state)).toBeCloseTo(speed, 9);
 		expect(cycleMs(state, 'tanker')).toBeCloseTo(tanker.cycleMs / speed, 9);
 		expect(productionPerSecond(state)).toBeCloseTo(before * speed, 9);
@@ -262,15 +273,19 @@ describe('nationalization shop', () => {
 		}
 	});
 
-	it('counts what was spent against the points, never below zero', () => {
+	it('adds up what the bought levels cost, and offers the balance as it stands', () => {
 		const state = fresh();
 		state.prestigePoints = 10;
 		state.perks.output = 2;
 		state.perks.growth = 1;
-		// Output: 1 + ceil(1.4) = 3, growth: 2
-		expect(pointsSpent(state.perks)).toBe(5);
-		expect(availablePoints(state)).toBe(5);
-		state.prestigePoints = 1;
+		const output = PERKS.find((perk) => perk.id === 'output')!;
+		const growth = PERKS.find((perk) => perk.id === 'growth')!;
+		expect(pointsSpent(state.perks)).toBe(
+			perkCost(output, 0) + perkCost(output, 1) + perkCost(growth, 0)
+		);
+		// Spent points leave the balance when a level is bought, so nothing more is taken off here
+		expect(availablePoints(state)).toBe(10);
+		state.prestigePoints = -3;
 		expect(availablePoints(state)).toBe(0);
 	});
 
@@ -278,7 +293,7 @@ describe('nationalization shop', () => {
 		const state = fresh();
 		state.perks.growth = 3;
 		const flat = pricing(state);
-		expect(flat.growth).toBeCloseTo(COST_GROWTH - 0.03, 9);
+		expect(flat.growth).toBeCloseTo(COST_GROWTH - 3 * perkValue('growth'), 9);
 		expect(producerCost(tanker, 10, 1, flat)).toBeLessThan(producerCost(tanker, 10));
 		const count = maxAffordable(tanker, 10, 1e6, flat);
 		expect(producerCost(tanker, 10, count, flat)).toBeLessThanOrEqual(1e6);
@@ -288,11 +303,14 @@ describe('nationalization shop', () => {
 	it('boosts taps, the start money and the offline rate', () => {
 		const state = fresh();
 		state.perks.tap = 2;
-		expect(tapValue(state)).toBeCloseTo(2, 9);
+		expect(tapValue(state)).toBeCloseTo(1 + 2 * perkValue('tap'), 9);
 		expect(seedBarrels(state)).toBe(0);
 		state.perks.seed = 3;
-		expect(seedBarrels(state)).toBe(10_000);
+		expect(seedBarrels(state)).toBe(perkValue('seed') * 100);
 		state.perks.offline = 5;
-		expect(offlineEfficiency(state)).toBe(1);
+		expect(offlineEfficiency(state)).toBeCloseTo(
+			Math.min(1, OFFLINE_EFFICIENCY + 5 * perkValue('offline')),
+			9
+		);
 	});
 });

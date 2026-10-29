@@ -39,11 +39,17 @@ describe('formatBig', () => {
 		expect(formatBig(42, 'fa')).toBe('۴۲');
 	});
 
-	it('switches to scientific notation beyond trillions', () => {
-		expect(formatBig(1.234e17, 'en')).toBe('1.23E17');
-		expect(formatBig(1e15, 'en')).toBe('1E15');
-		expect(formatBig(1.234e17, 'de')).toBe('1,23E17');
+	it('switches to short-scale names beyond trillions', () => {
+		expect(formatBig(1.234e17, 'en')).toBe('123.4Qa');
+		expect(formatBig(1e15, 'en')).toBe('1Qa');
+		expect(formatBig(1.234e17, 'de')).toBe('123,4Qa');
+		expect(formatBig(2.5e21, 'en')).toBe('2.5Sx');
 		expect(formatBig(9.99e14, 'en')).toBe('999T');
+	});
+
+	it('falls back to scientific notation past the last named tier', () => {
+		expect(formatBig(1.5e102, 'en')).toBe('1.5E102');
+		expect(formatBig(1.234e150, 'de')).toBe('1,23E150');
 	});
 
 	it('copes with odd values', () => {

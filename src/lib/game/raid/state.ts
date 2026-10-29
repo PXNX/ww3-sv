@@ -236,6 +236,8 @@ export interface Player {
 	dashSpeed: number;
 	/** Sprint button: time until it can be used again */
 	sprintMs: number;
+	/** Smoke screen time left; invisible to enemies */
+	smokeMs: number;
 	/** Walks slower while above 0, set by every shot */
 	shootSlowMs: number;
 	graceMs: number;
@@ -882,15 +884,21 @@ const SKILLS: Record<SkillId, (state: RaidState, events: RaidEvent[]) => void> =
 		events.push({ type: 'shot', kind: heldWeapon(state).kind });
 	},
 	// Shotgun: an untouchable dodge, and a cone that hurts and shoves
-	dash(state) {
+	dash(state, events) {
 		const { player, input } = state;
 		const moving = Math.hypot(input.x, input.y) > 0.05;
 		const angle = moving ? Math.atan2(input.y, input.x) : player.aim;
 		player.dashX = Math.cos(angle);
 		player.dashY = Math.sin(angle);
 		player.dashMs = DASH_MS;
-		player.dashSpeed = DASH_SPEED;
+		player.dashSpeed = SPRINT_SPEED;
 		player.invulnerableMs = Math.max(player.invulnerableMs, DASH_MS + 80);
+		// Critical damage on nearest enemy in dash path
+		const target = nearestEnemy(state, DASH_RADIUS ?? 140, false);
+		if (target) {
+			const damage = heldDamage(state) * 3.0;
+			damageEnemy(state, target, damage, true, events);
+		}
 	},
 	blast(state, events) {
 		const { player } = state;
@@ -1044,6 +1052,45 @@ const SKILLS: Record<SkillId, (state: RaidState, events: RaidEvent[]) => void> =
 		player.hp += amount;
 		events.push({ type: 'warcry' });
 		if (amount > 0) events.push({ type: 'heal', amount, source: 'ability' });
+	},
+	tower(state, events) {
+		const { player } = state;
+		state.towers = state.towers ?? [];
+		state.towers.push({
+			x: player.x,
+			y: player.y,
+			ageMs: 0,
+			hostile: false
+		});
+		events.push({ type: 'tower', x: player.x, y: player.y });
+	},
+	smoke(state, events) {
+		const { player } = state;
+		player.smokeMs = SMOKE_MS ?? 4000;
+		events.push({ type: 'smoke', x: player.x, y: player.y });
+	},
+	echo(state, events) {
+		const { player } = state;
+		const stats = heldStats(state);
+		const angle = aimAngle(state, 280);
+		player.aim = angle;
+		pushBullet(state, angle, 700, {
+			damage: stats.damage * 0.8,
+			rangeLeft: 280,
+			returnMs: 600,
+			echo: true
+		});
+		events.push({ type: 'shot', kind: heldWeapon(state).kind });
+	},
+	spin(state, events) {
+		const stats = heldStats(state);
+		for (let i = 0; i < 8; i++) {
+			pushBullet(state, state.player.aim + (i / 8) * Math.PI * 2, 900, {
+				damage: stats.damage * 0.7,
+				rangeLeft: 200
+			});
+		}
+		events.push({ type: 'shot', kind: heldWeapon(state).kind });
 	}
 };
 

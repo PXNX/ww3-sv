@@ -6,6 +6,7 @@
  * An idle game has no lives and no game over, so there is no end screen: the game saves itself,
  * keeps running until the tab is left, and credits the time away when the player returns.
  */
+import { career } from '#lib/game/career/store.svelte.js';
 import {
 	PERKS,
 	PRODUCERS,
@@ -85,6 +86,8 @@ export interface TycoonOptions {
 	seed?: () => number;
 	/** The clock, injected for tests */
 	now?: () => number;
+	/** The Fake News wallet the shop's Fake News investment pays into; injected for tests */
+	coins?: () => Pick<ReturnType<typeof career>, 'coinsLeftToday' | 'grantCoins'>;
 }
 
 export class TycoonGame {
@@ -151,6 +154,7 @@ export class TycoonGame {
 	#store: () => Store;
 	#scores: () => Highscores;
 	#now: () => number;
+	#coins: NonNullable<TycoonOptions['coins']>;
 	#toastMs = 0;
 	#toastId = 0;
 	#saveMs = 0;
@@ -162,12 +166,14 @@ export class TycoonGame {
 		store = localStore,
 		scores = highscores,
 		seed = randomSeed,
-		now = Date.now
+		now = Date.now,
+		coins = career
 	}: TycoonOptions = {}) {
 		this.reducedMotion = reducedMotion;
 		this.#store = store;
 		this.#scores = scores;
 		this.#now = now;
+		this.#coins = coins;
 		this.#random = createRandom(seed());
 		this.state = createState(this.#random);
 		this.#sync();
@@ -230,7 +236,7 @@ export class TycoonGame {
 	/** The player taps the derrick; returns the barrels it pumped (0 while protesters block it) */
 	tap(): number {
 		if (this.status !== 'playing') return 0;
-		const { gained, events } = tap(this.state);
+		const { gained, events } = tap(this.state, this.#random);
 		this.tapCount += 1;
 		if (gained > 0) this.#play('click', 70);
 		else this.#play('ui-error', 400);
@@ -270,8 +276,16 @@ export class TycoonGame {
 	/** Buys the next level of a perk in the nationalization shop */
 	buyPerk(id: PerkId): boolean {
 		if (this.status !== 'playing') return false;
+		// Fake News pays coins, so with today's coin cap used up the points are not spent on it
+		if (id === 'fake_news' && this.#coins().coinsLeftToday <= 0) {
+			this.#play('ui-error', 200);
+			return false;
+		}
 		const { bought, events } = buyPerk(this.state, id);
 		if (bought) {
+			if (id === 'fake_news') {
+				this.#coins().grantCoins(PERKS.find((def) => def.id === id)?.value ?? 0);
+			}
 			this.#play('chime-big', 60);
 			this.#handleAll(events);
 			this.#sync();

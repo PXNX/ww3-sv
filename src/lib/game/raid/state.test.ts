@@ -362,7 +362,8 @@ describe('the longer the raid', () => {
 		const state = createRaid('sunflower', newProfile().loadout, 1);
 		state.player.invulnerableMs = Infinity;
 		state.nextBossMs = Infinity;
-		const events = run(state, 60_000);
+		// The threat level rises every five minutes
+		const events = run(state, 5 * 60_000 + 1000);
 		expect(state.enemies.length).toBeGreaterThan(5);
 		expect(count(events, 'threat')).toBeGreaterThan(0);
 		expect(scoreOf(state)).toBeGreaterThanOrEqual(600);

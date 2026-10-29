@@ -84,7 +84,10 @@ export const WEAPON_KINDS = [
 	'launcher',
 	'flamethrower',
 	'dronenest',
-	'hammer'
+	'hammer',
+	'minigun',
+	'boomerang',
+	'daggers'
 ] as const;
 export type WeaponKind = (typeof WEAPON_KINDS)[number];
 
@@ -105,7 +108,11 @@ export const SKILL_IDS = [
 	'swarm',
 	'overclock',
 	'quake',
-	'warcry'
+	'warcry',
+	'tower',
+	'echo',
+	'smoke',
+	'spin'
 ] as const;
 export type SkillId = (typeof SKILL_IDS)[number];
 
@@ -251,6 +258,48 @@ export const WEAPONS: Record<WeaponKind, WeaponSpec> = {
 		pierce: 0,
 		burnMs: 0,
 		skills: ['quake', 'warcry']
+	},
+	minigun: {
+		damage: 5,
+		fireMs: 60,
+		range: 250,
+		projectileSpeed: 1000,
+		pellets: 1,
+		spread: 0.12,
+		critChance: 0.05,
+		critMultiplier: 1.5,
+		splash: 0,
+		pierce: 0,
+		burnMs: 0,
+		skills: ['tower', 'heal']
+	},
+	boomerang: {
+		damage: 14,
+		fireMs: 380,
+		range: 280,
+		projectileSpeed: 700,
+		pellets: 1,
+		spread: 0.08,
+		critChance: 0.12,
+		critMultiplier: 1.8,
+		splash: 20,
+		pierce: 1,
+		burnMs: 0,
+		skills: ['echo', 'spin']
+	},
+	daggers: {
+		damage: 9,
+		fireMs: 130,
+		range: 180,
+		projectileSpeed: 1200,
+		pellets: 1,
+		spread: 0.06,
+		critChance: 0.15,
+		critMultiplier: 2.2,
+		splash: 0,
+		pierce: 1,
+		burnMs: 0,
+		skills: ['smoke', 'dash']
 	}
 };
 
@@ -270,7 +319,11 @@ export const SKILL_COOLDOWN_MS: Record<SkillId, number> = {
 	swarm: 10000,
 	overclock: 14000,
 	quake: 8000,
-	warcry: 15000
+	warcry: 15000,
+	tower: 12000,
+	echo: 8000,
+	smoke: 10000,
+	spin: 6000
 };
 
 // ---------------------------------------------------------------------------------------------
@@ -298,6 +351,21 @@ export const QUAKE_PUSH = 110;
 export const WARCRY_MS = 5000;
 export const WARCRY_DAMAGE_TAKEN = 0.5;
 export const WARCRY_HEAL_SHARE = 0.1;
+
+/** Healing tower (minigun): a small tower that heals the player periodically */
+export const TOWER_RADIUS = 60;
+export const TOWER_HEAL_MS = 2000;
+export const TOWER_HEAL_SHARE = 0.15;
+export const TOWER_LIFETIME_MS = 15000;
+
+/** Smoke screen (daggers): makes the player invisible for a short time */
+export const SMOKE_MS = 4000;
+
+/** Echo (boomerang): the projectile returns after a delay */
+export const ECHO_RETURN_MS = 600;
+
+/** Spin (boomerang): a circular burst of fast shots */
+export const SPIN_BULLETS = 8;
 
 /** Field medkit (rifle): heals a share of maximum health */
 export const HEAL_SHARE = 0.35;

@@ -6,6 +6,7 @@
 -->
 <script lang="ts">
 	import { onDestroy } from 'svelte';
+	import { career } from '#lib/game/career/store.svelte.js';
 	import { PERKS, PRESTIGE_BONUS, PRESTIGE_UNIT } from '#lib/game/tycoon/config.js';
 	import { perkCost } from '#lib/game/tycoon/economy.js';
 	import { formatBig, formatCount, formatMultiplier } from '#lib/game/tycoon/format.js';
@@ -99,7 +100,8 @@
 				{@const level = game.perks[perk.id]}
 				{@const maxed = level >= perk.maxLevel}
 				{@const cost = perkCost(perk, level)}
-				{@const affordable = !maxed && game.spendablePoints >= cost}
+				{@const capped = perk.id === 'fake_news' && !maxed && career().coinsLeftToday <= 0}
+				{@const affordable = !maxed && !capped && game.spendablePoints >= cost}
 				<li>
 					<button
 						type="button"
@@ -122,7 +124,7 @@
 								{perkName(perk.id)}
 							</span>
 							<span dir="auto" class="text-xs leading-tight tabular-nums">
-								{perkEffectText(perk.id, level, maxed)}
+								{capped ? m.gameover_daily_cap() : perkEffectText(perk.id, level, maxed)}
 							</span>
 							<span dir="auto" class="text-xs leading-tight font-semibold tabular-nums">
 								{m.tycoon_perk_level({

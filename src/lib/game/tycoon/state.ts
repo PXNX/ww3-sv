@@ -77,10 +77,16 @@ export function createState(random: Random): TycoonState {
 	};
 }
 
-/** Pumps barrels by hand; returns the barrels it made (0 while protesters block the derrick) */
-export function tap(state: TycoonState): { gained: number; events: TycoonEvent[] } {
+/**
+ * Pumps barrels by hand; returns the barrels it made (0 while protesters block the derrick). The
+ * random source decides whether the tap is a critical one.
+ */
+export function tap(
+	state: TycoonState,
+	random: Random
+): { gained: number; events: TycoonEvent[] } {
 	let gained = tapValue(state);
-	const isCrit = Math.random() < critChanceUpgrade(state);
+	const isCrit = random() < critChanceUpgrade(state);
 	if (isCrit) gained *= critMultUpgrade(state);
 	state.barrels += gained;
 	state.runTotal += gained;

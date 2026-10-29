@@ -42,7 +42,17 @@ export const PRODUCER_IDS = [
 	'platform20',
 	'platform21',
 	'platform22',
-	'platform23'
+	'platform23',
+	'superplatform',
+	'megaplatform',
+	'gigaplatform',
+	'teraplatform',
+	'exaplatform',
+	'zetaplatform',
+	'yottaplatform',
+	'ultraplatform',
+	'infinityplatform',
+	'eternityplatform'
 ] as const;
 
 export type ProducerId = (typeof PRODUCER_IDS)[number];
@@ -154,7 +164,8 @@ export interface PerkDef {
 	/**
 	 * What one level does. growth: taken off the price rise per unit; output, speed and tap: a
 	 * bonus share; offline: added to the offline rate; seed: the barrels a run starts with at the
-	 * first level, ten times as many per further level
+	 * first level, ten times as many per further level; fake_news: the Fake News coins one level
+	 * pays when it is bought, within the daily coin cap
 	 */
 	value: number;
 }
@@ -166,7 +177,7 @@ export const PERKS: readonly PerkDef[] = [
 	{ id: 'tap', maxLevel: 10, baseCost: 2, costGrowth: 1.7, value: 0.4 },
 	{ id: 'seed', maxLevel: 6, baseCost: 2, costGrowth: 2.8, value: 80 },
 	{ id: 'offline', maxLevel: 5, baseCost: 3, costGrowth: 2.0, value: 0.08 },
-	{ id: 'fake_news', maxLevel: 3, baseCost: 2000, costGrowth: 20, value: 2.5 },
+	{ id: 'fake_news', maxLevel: 3, baseCost: 2000, costGrowth: 20, value: 50 },
 	{ id: 'invest_boost', maxLevel: 10, baseCost: 50, costGrowth: 3, value: 0.01 }
 ];
 

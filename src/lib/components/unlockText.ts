@@ -15,5 +15,7 @@ export function requirementText(requirement: UnlockRequirement): string {
 			return m.avatar_unlock_streak({ days: requirement.days });
 		case 'mode':
 			return m.avatar_unlock_mode({ mode: modeById(requirement.mode).name() });
+		case 'fakeNews':
+			return m.avatar_unlock_fakenews({ coins: requirement.coins });
 	}
 }

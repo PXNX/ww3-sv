@@ -22,6 +22,7 @@ import {
 	challengeMode,
 	claimDaily,
 	coinsLeftToday,
+	grantCoins,
 	isCareerProfile,
 	levelInfo,
 	newCareer,
@@ -285,6 +286,32 @@ describe('the shop', () => {
 		const profile = quiet();
 		expect(useRevive(profile)?.revives).toBe(STARTING_REVIVES - 1);
 		expect(useRevive({ ...profile, revives: 0 })).toBeNull();
+	});
+});
+
+describe('granting Fake News', () => {
+	it('pays the coins and counts them against the daily cap', () => {
+		const result = grantCoins(quiet(), 50, DAY1);
+		expect(result.granted).toBe(50);
+		expect(result.profile.coins).toBe(quiet().coins + 50);
+		expect(coinsLeftToday(result.profile, DAY1)).toBe(DAILY_COIN_CAP - 50);
+	});
+
+	it('pays only what is left of the cap and nothing once it is reached', () => {
+		const first = grantCoins(quiet(), DAILY_COIN_CAP - 10, DAY1);
+		const second = grantCoins(first.profile, 50, DAY1);
+		expect(second.granted).toBe(10);
+		expect(coinsLeftToday(second.profile, DAY1)).toBe(0);
+		const third = grantCoins(second.profile, 50, DAY1);
+		expect(third.granted).toBe(0);
+		expect(third.profile.coins).toBe(second.profile.coins);
+	});
+
+	it('starts a fresh cap on the next day and ignores nonsense amounts', () => {
+		const capped = grantCoins(quiet(), DAILY_COIN_CAP, DAY1).profile;
+		expect(grantCoins(capped, 20, DAY2).granted).toBe(20);
+		expect(grantCoins(quiet(), -5, DAY1).granted).toBe(0);
+		expect(grantCoins(quiet(), Number.NaN, DAY1).granted).toBe(0);
 	});
 });
 

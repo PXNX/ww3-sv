@@ -3,11 +3,13 @@ import {
 	ACHIEVEMENTS,
 	OFFLINE_CAP_MS,
 	OFFLINE_EFFICIENCY,
+	PERKS,
 	PRESTIGE_BONUS,
 	PRESTIGE_UNIT,
 	PRODUCERS,
 	UPGRADES
 } from '#lib/game/tycoon/config.js';
+import { perkCost } from '#lib/game/tycoon/economy.js';
 import { SAVE_KEY } from '#lib/game/tycoon/save.js';
 import { createHighscores } from '#lib/services/highscore.js';
 import { createStore, type KeyValueStorage } from '#lib/services/storage.js';
@@ -23,7 +25,22 @@ function memoryStorage(initial: Record<string, string> = {}): KeyValueStorage {
 	};
 }
 
-function setup(storage = memoryStorage(), start = 1_000_000) {
+/** A Fake News wallet with a daily cap, like the career store's */
+function wallet(left: number) {
+	const coins = {
+		coinsLeftToday: left,
+		paid: 0,
+		grantCoins(amount: number) {
+			const granted = Math.min(amount, coins.coinsLeftToday);
+			coins.coinsLeftToday -= granted;
+			coins.paid += granted;
+			return granted;
+		}
+	};
+	return coins;
+}
+
+function setup(storage = memoryStorage(), start = 1_000_000, coins = wallet(150)) {
 	const store = createStore(storage);
 	const scores = createHighscores(store);
 	const clock = { now: start };
@@ -31,9 +48,10 @@ function setup(storage = memoryStorage(), start = 1_000_000) {
 		store: () => store,
 		scores: () => scores,
 		seed: () => 7,
-		now: () => clock.now
+		now: () => clock.now,
+		coins: () => coins
 	});
-	return { game, store, scores, clock, storage };
+	return { game, store, scores, clock, storage, coins };
 }
 
 describe('TycoonGame', () => {
@@ -126,13 +144,47 @@ describe('TycoonGame', () => {
 		expect(game.spendablePoints).toBe(3);
 		expect(game.buyPerk('seed')).toBe(true);
 		expect(game.buyPerk('seed')).toBe(false);
-		expect(game.spendablePoints).toBe(2);
-		expect(game.prestigePoints).toBe(3);
+		// The points the level cost are gone
+		const seed = PERKS.find((perk) => perk.id === 'seed')!;
+		expect(game.spendablePoints).toBe(3 - perkCost(seed, 0));
+		expect(game.prestigePoints).toBe(3 - perkCost(seed, 0));
 		game.state.runTotal = PRESTIGE_UNIT;
 		expect(game.nationalize()).toBe(true);
 		expect(game.perks.seed).toBe(1);
-		expect(game.barrels).toBe(100);
+		expect(game.barrels).toBe(seed.value);
 		expect(game.runTotal).toBe(0);
+	});
+});
+
+describe('the Fake News investment', () => {
+	const fakeNews = PERKS.find((perk) => perk.id === 'fake_news')!;
+
+	it('pays Fake News for every level bought', () => {
+		const { game, coins } = setup();
+		game.state.prestigePoints = 10_000;
+		game.update(0);
+		expect(game.buyPerk('fake_news')).toBe(true);
+		expect(coins.paid).toBe(fakeNews.value);
+		expect(game.perks.fake_news).toBe(1);
+		expect(game.prestigePoints).toBe(10_000 - perkCost(fakeNews, 0));
+	});
+
+	it('pays only what is left of the daily cap', () => {
+		const { game, coins } = setup(memoryStorage(), 1_000_000, wallet(10));
+		game.state.prestigePoints = 10_000;
+		game.update(0);
+		expect(game.buyPerk('fake_news')).toBe(true);
+		expect(coins.paid).toBe(10);
+	});
+
+	it('keeps the points when the daily cap is used up', () => {
+		const { game, coins } = setup(memoryStorage(), 1_000_000, wallet(0));
+		game.state.prestigePoints = 10_000;
+		game.update(0);
+		expect(game.buyPerk('fake_news')).toBe(false);
+		expect(game.perks.fake_news).toBe(0);
+		expect(game.prestigePoints).toBe(10_000);
+		expect(coins.paid).toBe(0);
 	});
 });
 
@@ -241,7 +293,8 @@ describe('TycoonGame persistence', () => {
 		game.load();
 		game.tap();
 		expect(() => game.save()).not.toThrow();
-		expect(game.barrels).toBe(1);
+		// A critical tap may pay more than one barrel
+		expect(game.barrels).toBeGreaterThanOrEqual(1);
 	});
 });
 

@@ -473,6 +473,29 @@ export function coinsLeftToday(profile: CareerProfile, now: Date = new Date()): 
 	return Math.max(0, DAILY_COIN_CAP - profile.earned.coins);
 }
 
+/**
+ * Pays Fake News from a source outside the run rewards, such as the Oil Tycoon shop. It counts
+ * against the daily ceiling like a run does, so only what is still left of today's cap is paid.
+ */
+export function grantCoins(
+	profile: CareerProfile,
+	coins: number,
+	now: Date = new Date()
+): { profile: CareerProfile; granted: number } {
+	const today = withToday(profile, now);
+	const wanted = Number.isFinite(coins) ? Math.max(0, Math.floor(coins)) : 0;
+	const granted = Math.min(wanted, coinsLeftToday(today, now));
+	if (granted <= 0) return { profile: today, granted: 0 };
+	return {
+		profile: {
+			...today,
+			coins: today.coins + granted,
+			earned: { ...today.earned, coins: today.earned.coins + granted }
+		},
+		granted
+	};
+}
+
 // ---------------------------------------------------------------------------------------------
 // Collection
 

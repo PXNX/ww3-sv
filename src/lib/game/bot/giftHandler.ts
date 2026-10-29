@@ -28,5 +28,6 @@ export function giftcodeStep(state: BotState, input?: string): { reply: string; 
 				const up = input.toUpperCase();
 				if (up === 'WW3GIFT' || up === 'OILBOOM') return { reply: `Redeemed ${up}!`, state: { step: 'idle' }, webAppUrl: 'https://example.com/redeem?code=' + up };
 			}
+			return { reply: 'Unknown code. Send /stats or /giftcode.', state: { step: 'idle' } };
 	}
 }

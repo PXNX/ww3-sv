@@ -1,15 +1,9 @@
-﻿<!--
-</style>
-	}
-\t\t\t</div>
-</style>
 <!--
 	Raid playfield: a crisp high-DPI canvas that fills the space it gets (landscape), driven by the
 	fixed-step loop, with the HUD and the touch controls laid over it, laid out like a mobile
 	brawler. The player's health and level float over their head on the canvas. The top left holds
 	the shared goal: the boss's health while one is out, else the wait for the next one (in a
-	defense the command post, the wave and the pot instead), with the time (the clock running down
-	in a boss fight), threat and a live event under it. A picked-up crystal drops in as a banner at
+	defense the command post, the wave and the pot instead), with a live event under it. A new threat level is announced in the middle of the field. A picked-up crystal drops in as a banner at
 	the top, and at every fifth wave of a defense the vote on cashing out covers the field. The minimap sits in the top right; tapping it opens the
 	leave screen, as does the exit button and every pause. A resting stick waits at the bottom left
 	and jumps to wherever the field is dragged. The big weapon button at the bottom right attacks
@@ -46,7 +40,6 @@
 	import IconGem from '~icons/lucide/gem';
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
 	import IconShield from '~icons/lucide/shield';
-	import IconTimer from '~icons/lucide/timer';
 	import IconWind from '~icons/lucide/wind';
 	import IconZap from '~icons/lucide/zap';
 	import IconRepeat from '~icons/lucide/repeat';
@@ -335,7 +328,7 @@
 						{:else}
 							{m.raid_hud_wave({ wave: defense.wave })}
 							<span class="opacity-80"
-								>Â· {defense.breakSeconds > 0
+								>· {defense.breakSeconds > 0
 									? m.raid_hud_next_wave({ seconds: defense.breakSeconds })
 									: m.raid_hud_wave_left({ count: defense.left })}</span
 							>
@@ -391,7 +384,7 @@
 					<span dir="auto" class="block text-sm leading-tight font-bold">
 						{#if game.boss && game.boss.variant !== 'normal'}
 							<span class={game.boss.variant === 'mega' ? 'text-[#ff6b6b]' : 'text-[#ffd23a]'}
-								>{game.boss.variant === 'mega' ? 'â˜…â˜…' : 'â˜…'}</span
+								>{game.boss.variant === 'mega' ? '★★' : '★'}</span
 							>
 						{/if}
 						{game.boss
@@ -426,14 +419,14 @@
 			<div
 				class="flex items-center gap-2 rounded-md bg-[#1b1036]/60 px-2 py-0.5 font-display text-xs font-bold text-white"
 			>
+				<span title={game.revivesLeft > 0 ? m.raid_hud_revive_ready() : m.raid_hud_revive_used()}>
+					<LivesBar lives={game.revivesLeft} max={1} class="text-sm" />
+					<span class="sr-only"
+						>{game.revivesLeft > 0 ? m.raid_hud_revive_ready() : m.raid_hud_revive_used()}</span
+					>
+				</span>
+			</div>
 
-\t\t\t\t<span title={game.revivesLeft > 0 ? m.raid_hud_revive_ready() : m.raid_hud_revive_used()}>
-\t\t\t\t\t<LivesBar lives={game.revivesLeft} max={1} class="text-sm" />
-\t\t\t\t\t<span class="sr-only"
-\t\t\t\t\t\t>{game.revivesLeft > 0 ? m.raid_hud_revive_ready() : m.raid_hud_revive_used()}</span
-\t\t\t\t\t>
-\t\t\t\t</span>
-\t\t\t</div>
 			{#if game.liveEvent}
 				<div
 					class="live-event flex w-fit origin-left items-center gap-1 rounded-md bg-explosion-yellow px-2 py-0.5 font-display text-xs font-bold text-[#111]"
@@ -461,10 +454,10 @@
 						<span class="text-[0.65rem] font-bold uppercase opacity-70">{m.raid_found()}</span>
 						<span dir="auto" class="truncate text-sm font-bold">{itemName(item)}</span>
 						<span class="text-xs font-bold" style:color={RARITY_COLOR[item.rarity]}
-							>{RARITY_NAMES[item.rarity]()} Â· {m.raid_item_level({ level: item.level })}</span
+							>{RARITY_NAMES[item.rarity]()} · {m.raid_item_level({ level: item.level })}</span
 						>
 						{#if game.found.better}
-							<span class="text-[0.65rem] font-bold text-khaki">â–² {m.raid_found_better()}</span>
+							<span class="text-[0.65rem] font-bold text-khaki">▲ {m.raid_found_better()}</span>
 						{/if}
 					</div>
 					<button
@@ -648,7 +641,7 @@
 			style="animation: threat-banner 2s ease-in-out forwards"
 		>
 			<span
-				class="banner-title font-display text-6xl font-black tracking-tight uppercase italic text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)]"
+				class="font-display text-6xl font-black tracking-tight text-white uppercase italic drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)]"
 			>
 				{m.raid_hud_threat({ level: game.threatAnnouncement.level })}
 			</span>

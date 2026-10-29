@@ -43,25 +43,25 @@ const SD_NAMES: { min: number; suffix: string }[] = [
 	{ min: 1e99, suffix: 'DTg' },
 ];
 
-function sdSuffix(value: number): string {
-	for (let i = SD_NAMES.length - 1; i >= 0; i--) {
-		if (value >= SD_NAMES[i].min) return SD_NAMES[i].suffix;
+/** Beyond the last named tier (1e99 to just below 1e102) numbers print as 1.23E300 */
+const SD_LIMIT = 1e102;
+
+function sdParts(value: number): { scaled: number; suffix: string } {
+	if (value >= SD_LIMIT) {
+		const exp = Math.floor(Math.log10(value));
+		return { scaled: value / Math.pow(10, exp), suffix: 'E' + exp };
 	}
-	return 'E' + Math.floor(Math.log10(value));
+	for (let i = SD_NAMES.length - 1; i >= 0; i--) {
+		if (value >= SD_NAMES[i].min) return { scaled: value / SD_NAMES[i].min, suffix: SD_NAMES[i].suffix };
+	}
+	return { scaled: value, suffix: '' };
 }
 
-function sdFormat(value: number, locale: string, smallDecimals = 0): string {
-	const suffix = sdSuffix(value);
-	// Scale back to the base unit (e.g. 1.23e54 -> 1.23 SD)
-	const tier = SD_NAMES.findIndex((n) => n.suffix === suffix);
-	const exp = tier >= 0 ? Math.log10(SD_NAMES[tier].min) : Math.floor(Math.log10(value));
-	const scaled = value / Math.pow(10, exp);
-	// Build string with up to 2 decimals, stripping trailing zeros
-	let s = scaled.toFixed(2);
-	s = s.replace(/\.?0+$/, '');
-	// If it ended as "1." keep "1"
-	if (s.endsWith('.')) s = s.slice(0, -1);
-	return s + suffix;
+function sdFormat(value: number, locale: string): string {
+	const { scaled, suffix } = sdParts(value);
+	// Up to two decimals in the locale's own digits and separator, trailing zeros dropped
+	const number = formatter(locale, { maximumFractionDigits: 2, useGrouping: false }).format(scaled);
+	return number + suffix;
 }
 
 const cache = new Map<string, Intl.NumberFormat>();
@@ -101,7 +101,7 @@ export function formatBig(value: number, locale: string, smallDecimals = 0): str
 			maximumFractionDigits: 2
 		}).format(value);
 	}
-	return sdFormat(value, locale, smallDecimals);
+	return sdFormat(value, locale);
 }
 
 /** A whole number in the locale's digits, with thousands separators */

@@ -26,7 +26,46 @@ const PRODUCER_NAMES: Record<ProducerId, () => string> = {
 	summit: m.tycoon_producer_summit_name,
 	offshore: m.tycoon_producer_offshore_name,
 	cartel: m.tycoon_producer_cartel_name,
-	arctic: m.tycoon_producer_arctic_name
+	arctic: m.tycoon_producer_arctic_name,
+	driller: m.tycoon_producer_driller_name,
+	pipeline: m.tycoon_producer_pipeline_name,
+	wellhead: m.tycoon_producer_wellhead_name,
+	valve: m.tycoon_producer_valve_name,
+	drillbit: m.tycoon_producer_drillbit_name,
+	rig: m.tycoon_producer_rig_name,
+	platform: m.tycoon_producer_platform_name,
+	platform2: m.tycoon_producer_platform2_name,
+	platform3: m.tycoon_producer_platform3_name,
+	platform4: m.tycoon_producer_platform4_name,
+	platform5: m.tycoon_producer_platform5_name,
+	platform6: m.tycoon_producer_platform6_name,
+	platform7: m.tycoon_producer_platform7_name,
+	platform8: m.tycoon_producer_platform8_name,
+	platform9: m.tycoon_producer_platform9_name,
+	platform10: m.tycoon_producer_platform10_name,
+	platform11: m.tycoon_producer_platform11_name,
+	platform12: m.tycoon_producer_platform12_name,
+	platform13: m.tycoon_producer_platform13_name,
+	platform14: m.tycoon_producer_platform14_name,
+	platform15: m.tycoon_producer_platform15_name,
+	platform16: m.tycoon_producer_platform16_name,
+	platform17: m.tycoon_producer_platform17_name,
+	platform18: m.tycoon_producer_platform18_name,
+	platform19: m.tycoon_producer_platform19_name,
+	platform20: m.tycoon_producer_platform20_name,
+	platform21: m.tycoon_producer_platform21_name,
+	platform22: m.tycoon_producer_platform22_name,
+	platform23: m.tycoon_producer_platform23_name,
+	superplatform: m.tycoon_producer_superplatform_name,
+	megaplatform: m.tycoon_producer_megaplatform_name,
+	gigaplatform: m.tycoon_producer_gigaplatform_name,
+	teraplatform: m.tycoon_producer_teraplatform_name,
+	exaplatform: m.tycoon_producer_exaplatform_name,
+	zetaplatform: m.tycoon_producer_zetaplatform_name,
+	yottaplatform: m.tycoon_producer_yottaplatform_name,
+	ultraplatform: m.tycoon_producer_ultraplatform_name,
+	infinityplatform: m.tycoon_producer_infinityplatform_name,
+	eternityplatform: m.tycoon_producer_eternityplatform_name
 };
 
 const PRODUCER_FLAVORS: Record<ProducerId, () => string> = {
@@ -39,7 +78,46 @@ const PRODUCER_FLAVORS: Record<ProducerId, () => string> = {
 	summit: m.tycoon_producer_summit_flavor,
 	offshore: m.tycoon_producer_offshore_flavor,
 	cartel: m.tycoon_producer_cartel_flavor,
-	arctic: m.tycoon_producer_arctic_flavor
+	arctic: m.tycoon_producer_arctic_flavor,
+	driller: m.tycoon_producer_driller_flavor,
+	pipeline: m.tycoon_producer_pipeline_flavor,
+	wellhead: m.tycoon_producer_wellhead_flavor,
+	valve: m.tycoon_producer_valve_flavor,
+	drillbit: m.tycoon_producer_drillbit_flavor,
+	rig: m.tycoon_producer_rig_flavor,
+	platform: m.tycoon_producer_platform_flavor,
+	platform2: m.tycoon_producer_platform2_flavor,
+	platform3: m.tycoon_producer_platform3_flavor,
+	platform4: m.tycoon_producer_platform4_flavor,
+	platform5: m.tycoon_producer_platform5_flavor,
+	platform6: m.tycoon_producer_platform6_flavor,
+	platform7: m.tycoon_producer_platform7_flavor,
+	platform8: m.tycoon_producer_platform8_flavor,
+	platform9: m.tycoon_producer_platform9_flavor,
+	platform10: m.tycoon_producer_platform10_flavor,
+	platform11: m.tycoon_producer_platform11_flavor,
+	platform12: m.tycoon_producer_platform12_flavor,
+	platform13: m.tycoon_producer_platform13_flavor,
+	platform14: m.tycoon_producer_platform14_flavor,
+	platform15: m.tycoon_producer_platform15_flavor,
+	platform16: m.tycoon_producer_platform16_flavor,
+	platform17: m.tycoon_producer_platform17_flavor,
+	platform18: m.tycoon_producer_platform18_flavor,
+	platform19: m.tycoon_producer_platform19_flavor,
+	platform20: m.tycoon_producer_platform20_flavor,
+	platform21: m.tycoon_producer_platform21_flavor,
+	platform22: m.tycoon_producer_platform22_flavor,
+	platform23: m.tycoon_producer_platform23_flavor,
+	superplatform: m.tycoon_producer_superplatform_flavor,
+	megaplatform: m.tycoon_producer_megaplatform_flavor,
+	gigaplatform: m.tycoon_producer_gigaplatform_flavor,
+	teraplatform: m.tycoon_producer_teraplatform_flavor,
+	exaplatform: m.tycoon_producer_exaplatform_flavor,
+	zetaplatform: m.tycoon_producer_zetaplatform_flavor,
+	yottaplatform: m.tycoon_producer_yottaplatform_flavor,
+	ultraplatform: m.tycoon_producer_ultraplatform_flavor,
+	infinityplatform: m.tycoon_producer_infinityplatform_flavor,
+	eternityplatform: m.tycoon_producer_eternityplatform_flavor
 };
 
 export function producerName(id: ProducerId): string {
@@ -59,7 +137,9 @@ const UNIQUE_UPGRADE_NAMES: Record<string, () => string> = {
 	clickcps_ribbon: m.tycoon_upgrade_clickcps_ribbon,
 	global_regulator: m.tycoon_upgrade_global_regulator,
 	global_agency: m.tycoon_upgrade_global_agency,
-	global_amendment: m.tycoon_upgrade_global_amendment
+	global_amendment: m.tycoon_upgrade_global_amendment,
+	crit_chance: m.tycoon_upgrade_crit_chance,
+	crit_mult: m.tycoon_upgrade_crit_mult
 };
 
 export function upgradeName(upgrade: UpgradeDef): string {
@@ -76,6 +156,12 @@ export function upgradeEffect(upgrade: UpgradeDef): string {
 	const locale = getLocale();
 	switch (upgrade.kind) {
 		case 'click':
+			if (upgrade.id === 'crit_chance') {
+				return m.tycoon_upgrade_effect_crit_chance({ mult: formatMultiplier(upgrade.value, locale) });
+			}
+			if (upgrade.id === 'crit_mult') {
+				return m.tycoon_upgrade_effect_crit_mult({ mult: formatMultiplier(upgrade.value, locale) });
+			}
 			return m.tycoon_upgrade_effect_click({ mult: formatMultiplier(upgrade.value, locale) });
 		case 'clickCps':
 			return m.tycoon_upgrade_effect_clickcps({
@@ -112,7 +198,18 @@ const ACHIEVEMENT_NAMES: Record<string, () => string> = {
 	serial_nationaliser: m.tycoon_ach_name_serial_nationaliser,
 	state_owned: m.tycoon_ach_name_state_owned,
 	investor: m.tycoon_ach_name_investor,
-	magnate: m.tycoon_ach_name_magnate
+	magnate: m.tycoon_ach_name_magnate,
+	tycoon_king: m.tycoon_ach_name_tycoon_king,
+	oil_barbarian: m.tycoon_ach_name_oil_barbarian,
+	drill_master: m.tycoon_ach_name_drill_master,
+	global_dominator: m.tycoon_ach_name_global_dominator,
+	crisis_legend: m.tycoon_ach_name_crisis_legend,
+	fake_warrior: m.tycoon_ach_name_fake_warrior,
+	platform_king: m.tycoon_ach_name_platform_king,
+	pipeline_king: m.tycoon_ach_name_pipeline_king,
+	well_king: m.tycoon_ach_name_well_king,
+	rig_king: m.tycoon_ach_name_rig_king,
+	monocle_king: m.tycoon_ach_name_monocle_king
 };
 
 export function achievementName(id: string): string {
@@ -170,7 +267,9 @@ const PERK_NAMES: Record<PerkId, () => string> = {
 	speed: m.tycoon_perk_speed_name,
 	tap: m.tycoon_perk_tap_name,
 	seed: m.tycoon_perk_seed_name,
-	offline: m.tycoon_perk_offline_name
+	offline: m.tycoon_perk_offline_name,
+	fake_news: m.tycoon_perk_fake_news_name,
+	invest_boost: m.tycoon_perk_invest_boost_name
 };
 
 export function perkName(id: PerkId): string {
@@ -211,6 +310,10 @@ export function perkEffectText(id: PerkId, level: number, maxed: boolean): strin
 			return m.tycoon_perk_seed_effect({ value });
 		case 'offline':
 			return m.tycoon_perk_offline_effect({ value });
+		case 'fake_news':
+			return m.tycoon_perk_fake_news_effect({ value: formatCount(perkEffect(id, 1), getLocale()) });
+		case 'invest_boost':
+			return m.tycoon_perk_invest_boost_effect({ value });
 	}
 }
 
