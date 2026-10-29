@@ -1,10 +1,11 @@
 /*
- * The Telegram Mini App bridge. The game calls the bot's named endpoints through
- * `Telegram.WebApp.Serverless.call` when the bot runs on Telegram Serverless; otherwise it posts to
- * the bot's own server (VITE_TELEGRAM_API_URL, set at build time) with the initData in a header,
- * and that server checks the signature. Either way the game never handles the bot token. Telegram's script is
- * injected only when the page was opened as a Mini App (the launch puts `tgWebAppData` in the URL
- * hash); a browser visit loads nothing extra. The initData is never read into storage or logs here.
+ * The Telegram Mini App bridge. The game calls the bot's named endpoints on the bot's own server
+ * (VITE_TELEGRAM_API_URL, set at build time), posting with the initData in a header; that server
+ * checks the signature. Telegram's own Serverless bridge is used only when no such server is
+ * configured, for a game hosted on Telegram Serverless. Either way the game never handles the bot
+ * token. Telegram's script is injected only when the page was opened as a Mini App (the launch puts
+ * `tgWebAppData` in the URL hash); a browser visit loads nothing extra. The initData is never read
+ * into storage or logs here.
  */
 
 const SCRIPT_URL = 'https://telegram.org/js/telegram-web-app.js';
@@ -241,15 +242,19 @@ async function postToApi<T>(
 	return fromApiReply(response.status, body) as T;
 }
 
-/** Calls one of the bot's endpoints; rejects with a TelegramCallError when it fails */
+/**
+ * Calls one of the bot's endpoints; rejects with a TelegramCallError when it fails. The bot's own
+ * server is used whenever one is configured: Telegram's script always has a Serverless bridge, but
+ * that bridge only posts to /api/<name> on the page's own origin, which is the game's host and has
+ * no such endpoints. The bridge is for a game hosted on Telegram Serverless, where none is set.
+ */
 export async function call<T>(name: string, input: unknown = {}): Promise<T> {
 	const app = await loadTelegram();
-	const serverless = app?.Serverless;
-	if (!serverless) {
-		const url = apiUrl();
-		if (!app?.initData || !url) throw new TelegramCallError('UNAVAILABLE');
-		return postToApi<T>(url, app.initData, name, input);
-	}
+	if (!app?.initData) throw new TelegramCallError('UNAVAILABLE');
+	const url = apiUrl();
+	if (url) return postToApi<T>(url, app.initData, name, input);
+	const serverless = app.Serverless;
+	if (!serverless) throw new TelegramCallError('UNAVAILABLE');
 	return new Promise<T>((resolve, reject) => {
 		try {
 			serverless.call(name, input, (error, result) => {
