@@ -322,7 +322,7 @@ export const WEAPONS: Record<WeaponKind, WeaponSpec> = {
 	// Tactical nuke: very long reload (blue bar), huge splash, radioactive burn for 10s, no skills
 	nuke: {
 		damage: 45,
-		fireMs: 2500,
+		fireMs: 4000,
 		range: 480,
 		projectileSpeed: 500,
 		pellets: 1,
