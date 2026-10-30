@@ -44,7 +44,8 @@ export const PERFECT_MERGE_MAX = 0.8;
 export const WAFER_BONUS = 100;
 export const LEVEL_BONUS = 25;
 
-/** How often a small mid-level event fires, in milliseconds */
+/** Endless mode: no level cap, map keeps going upward */
+export const ENDLESS = true;
 export const MICRO_MIN_MS = 13000;
 export const MICRO_MAX_MS = 21000;
 
