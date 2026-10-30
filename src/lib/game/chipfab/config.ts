@@ -21,15 +21,32 @@ export const REGROW_BY = 1.5;
 /** Modules supplied to Stage B per stacked layer, and per perfect drop on top of that */
 export const SUPPLY_PER_LAYER = 4;
 export const SUPPLY_PER_PERFECT = 4;
+/** Extra modules for a golden layer landed perfectly */
+export const SUPPLY_PER_GOLD = 6;
 /** Even a wafer that fell over at once yields this many modules */
 export const MIN_SUPPLY = 8;
 
 /** Milliseconds during which input is ignored after a stage change, so a late tap cannot slip in */
 export const LOCK_MS = 800;
 
+/** How long the BREAKING news card for the next level stays up, and input stays locked */
+export const CARD_MS = 3000;
+/** Extra points for landing a golden HBM layer perfectly */
+export const GOLD_BONUS = 150;
+/** Extra shortage relief for a golden layer, on top of the perfect relief */
+export const GOLD_RELIEF = 6;
+/** Every perfect layer of the wafer adds this share to the points made in Stage B */
+export const PERFECT_MERGE_BONUS = 0.1;
+/** The most Stage B can gain from a perfect wafer */
+export const PERFECT_MERGE_MAX = 0.8;
+
 /** Points for finishing a wafer and for finishing a level, the latter times the level number */
 export const WAFER_BONUS = 100;
 export const LEVEL_BONUS = 25;
+
+/** How often a small mid-level event fires, in milliseconds */
+export const MICRO_MIN_MS = 13000;
+export const MICRO_MAX_MS = 21000;
 
 export interface StackerParams {
 	/** How fast the sliding layer moves, in world units per second */

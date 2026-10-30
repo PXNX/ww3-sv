@@ -7,11 +7,13 @@
 import type { Random } from '../random';
 import {
 	FIELD_WIDTH,
+	GOLD_BONUS,
 	MIN_OVERLAP,
 	MIN_SUPPLY,
 	REGROW_AFTER,
 	REGROW_BY,
 	START_WIDTH,
+	SUPPLY_PER_GOLD,
 	SUPPLY_PER_LAYER,
 	SUPPLY_PER_PERFECT,
 	stackerParams
@@ -28,6 +30,8 @@ export interface Slab {
 	width: number;
 	/** 1 moves right, -1 moves left */
 	dir: 1 | -1;
+	/** A golden HBM layer: worth extra points and relief if it lands perfectly */
+	gold?: boolean;
 }
 
 export type DropKind = 'perfect' | 'trim' | 'miss';
@@ -50,6 +54,10 @@ export interface StackerState {
 	target: number;
 	perfects: number;
 	streak: number;
+	/** Chance that a new sliding layer is golden */
+	goldChance: number;
+	/** Golden layers landed perfectly this wafer */
+	goldPerfects: number;
 	status: 'running' | 'complete' | 'failed';
 }
 
@@ -94,22 +102,38 @@ export function advanceSlab(slab: Slab, dtMs: number, speed: number): Slab {
 }
 
 /** A fresh sliding layer of the given width, entering from a random side */
-export function newSlab(random: Random, width: number): Slab {
+export function newSlab(random: Random, width: number, goldChance = 0): Slab {
 	const dir: 1 | -1 = random() < 0.5 ? 1 : -1;
-	return { x: dir === 1 ? 0 : FIELD_WIDTH - width, width, dir };
+	const gold = goldChance > 0 && random() < goldChance;
+	return { x: dir === 1 ? 0 : FIELD_WIDTH - width, width, dir, gold };
 }
 
-export function createStacker(random: Random, level: number): StackerState {
+export interface StackerExtras {
+	/** Chance per layer that it is a golden HBM layer */
+	goldChance?: number;
+	/** Multiplies the perfect window */
+	toleranceScale?: number;
+	/** Multiplies the sliding speed */
+	speedScale?: number;
+	/** Widens or narrows the base layer */
+	widthBonus?: number;
+}
+
+export function createStacker(random: Random, level: number, extras: StackerExtras = {}): StackerState {
 	const params = stackerParams(level);
-	const base: Layer = { left: (FIELD_WIDTH - START_WIDTH) / 2, width: START_WIDTH };
+	const width = Math.max(10, Math.min(FIELD_WIDTH, START_WIDTH + (extras.widthBonus ?? 0)));
+	const base: Layer = { left: (FIELD_WIDTH - width) / 2, width };
+	const goldChance = Math.max(0, Math.min(0.9, extras.goldChance ?? 0));
 	return {
 		layers: [base],
-		slab: newSlab(random, base.width),
-		speed: params.speed,
-		tolerance: params.tolerance,
+		slab: newSlab(random, base.width, goldChance),
+		speed: params.speed * (extras.speedScale ?? 1),
+		tolerance: params.tolerance * (extras.toleranceScale ?? 1),
 		target: params.layers,
 		perfects: 0,
 		streak: 0,
+		goldChance,
+		goldPerfects: 0,
 		status: 'running'
 	};
 }
@@ -142,14 +166,20 @@ export interface DropResult {
 	points: number;
 	/** The wafer reached its target height with this drop */
 	complete: boolean;
+	/** The dropped layer was golden */
+	gold: boolean;
 }
+
+/** Points for a golden layer that does not land perfectly */
+export const GOLD_TRIM_POINTS = 40;
 
 /** Drops the sliding layer. Does nothing unless the stacker is running. */
 export function dropSlab(state: StackerState, random: Random): DropResult {
 	if (state.status !== 'running') {
-		return { state, kind: 'miss', cut: null, points: 0, complete: false };
+		return { state, kind: 'miss', cut: null, points: 0, complete: false, gold: false };
 	}
 	const dropped: Layer = { left: state.slab.x, width: state.slab.width };
+	const gold = state.slab.gold === true;
 	const result = trimLayer(topLayer(state), dropped, state.tolerance);
 
 	if (result.layer === null) {
@@ -158,7 +188,8 @@ export function dropSlab(state: StackerState, random: Random): DropResult {
 			kind: 'miss',
 			cut: result.cut,
 			points: 0,
-			complete: false
+			complete: false,
+			gold
 		};
 	}
 
@@ -174,19 +205,23 @@ export function dropSlab(state: StackerState, random: Random): DropResult {
 
 	const layers = [...state.layers, layer];
 	const complete = layers.length - 1 >= state.target;
+	let points = dropPoints(result.kind, streak);
+	if (gold) points += perfect ? GOLD_BONUS : GOLD_TRIM_POINTS;
 	return {
 		state: {
 			...state,
 			layers,
-			slab: newSlab(random, layer.width),
+			slab: newSlab(random, layer.width, state.goldChance),
 			perfects: state.perfects + (perfect ? 1 : 0),
 			streak,
+			goldPerfects: state.goldPerfects + (gold && perfect ? 1 : 0),
 			status: complete ? 'complete' : 'running'
 		},
 		kind: result.kind,
 		cut: result.cut,
-		points: dropPoints(result.kind, streak),
-		complete
+		points,
+		complete,
+		gold
 	};
 }
 
@@ -201,7 +236,10 @@ export interface WaferOutput {
 export function waferOutput(state: StackerState): WaferOutput {
 	const layers = stackedLayers(state);
 	return {
-		supply: Math.max(MIN_SUPPLY, layers * SUPPLY_PER_LAYER + state.perfects * SUPPLY_PER_PERFECT),
+		supply: Math.max(
+			MIN_SUPPLY,
+			layers * SUPPLY_PER_LAYER + state.perfects * SUPPLY_PER_PERFECT + state.goldPerfects * SUPPLY_PER_GOLD
+		),
 		quality: layers > 0 ? Math.min(1, state.perfects / layers) : 0
 	};
 }
