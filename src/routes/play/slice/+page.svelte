@@ -58,7 +58,7 @@
 	<!-- The HUD and the playfield share one width, as wide as the height allows -->
 	<section
 		class="mx-auto flex w-full flex-col items-center gap-2"
-		style:max-width="max(17rem, min(100%, calc((100dvh - 14rem) * 0.643)))"
+		style:max-width="max(17rem, min(100%, calc(100dvh - 8rem)))"
 	>
 		<div
 			class="flex w-full items-center justify-between gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1 shadow-[3px_3px_0_var(--color-ink)]"
