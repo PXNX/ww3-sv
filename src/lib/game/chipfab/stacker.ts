@@ -119,7 +119,11 @@ export interface StackerExtras {
 	widthBonus?: number;
 }
 
-export function createStacker(random: Random, level: number, extras: StackerExtras = {}): StackerState {
+export function createStacker(
+	random: Random,
+	level: number,
+	extras: StackerExtras = {}
+): StackerState {
 	const params = stackerParams(level);
 	const width = Math.max(10, Math.min(FIELD_WIDTH, START_WIDTH + (extras.widthBonus ?? 0)));
 	const base: Layer = { left: (FIELD_WIDTH - width) / 2, width };
@@ -238,7 +242,9 @@ export function waferOutput(state: StackerState): WaferOutput {
 	return {
 		supply: Math.max(
 			MIN_SUPPLY,
-			layers * SUPPLY_PER_LAYER + state.perfects * SUPPLY_PER_PERFECT + state.goldPerfects * SUPPLY_PER_GOLD
+			layers * SUPPLY_PER_LAYER +
+				state.perfects * SUPPLY_PER_PERFECT +
+				state.goldPerfects * SUPPLY_PER_GOLD
 		),
 		quality: layers > 0 ? Math.min(1, state.perfects / layers) : 0
 	};

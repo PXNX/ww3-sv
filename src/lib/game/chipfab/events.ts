@@ -103,7 +103,13 @@ export function applyCard(base: Modifiers, card: EventCard): Modifiers {
 	for (const key of Object.keys(card.mods) as (keyof Modifiers)[]) {
 		const value = card.mods[key];
 		if (value === undefined) continue;
-		if (key === 'supply' || key === 'lives' || key === 'score' || key === 'shortage' || key === 'waferWidth') {
+		if (
+			key === 'supply' ||
+			key === 'lives' ||
+			key === 'score' ||
+			key === 'shortage' ||
+			key === 'waferWidth'
+		) {
 			next[key] = base[key] + value;
 		} else {
 			next[key] = base[key] * value;

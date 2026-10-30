@@ -338,7 +338,7 @@ export const MODES: readonly GameMode[] = [
 		href: '/play/chipfab',
 		icon: IconCpu,
 		tileClass: 'bg-sky',
-		leaders: ['huang', 'altman', 'musk', 'zuckerberg'],
+		leaders: ['huang', 'altman', 'musk'],
 		name: m.mode_chipfab_name,
 		description: m.mode_chipfab_description
 	},

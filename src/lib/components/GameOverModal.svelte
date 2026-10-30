@@ -336,7 +336,7 @@
 							</span>
 						{/if}
 						{#if reward.xp > 0}
-							<span class="inline-flex items-center gap-1 xp-reward">
+							<span class="xp-reward inline-flex items-center gap-1">
 								<IconZap class="size-4" aria-hidden="true" />
 								{m.gameover_reward_xp({ count: reward.xp })}
 							</span>
@@ -477,6 +477,12 @@
 		</div>
 	</div>
 </dialog>
+<RewardedAdModal
+	open={adOpen}
+	coins={AD_COINS}
+	onClaim={claimAd}
+	onClose={() => (adOpen = false)}
+/>
 
 <!-- Outside the result dialog: a second modal inside the top layer is unreliable in older Safari -->
 <style>
@@ -498,9 +504,3 @@
 		}
 	}
 </style>
-<RewardedAdModal
-	open={adOpen}
-	coins={AD_COINS}
-	onClaim={claimAd}
-	onClose={() => (adOpen = false)}
-/>

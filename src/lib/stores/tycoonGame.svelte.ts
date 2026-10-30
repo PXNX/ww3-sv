@@ -332,6 +332,10 @@ export class TycoonGame {
 
 	setBuyMode(mode: '1x' | '10x' | 'max' | 'next') {
 		this.buyMode = mode;
+		this.buyAmount = mode === '1x' ? 1 : mode === '10x' ? 10 : mode === 'max' ? 'max' : 'next';
+		this.save();
+	}
+		this.buyMode = mode;
 		this.state.buyMode = mode;
 		this.save();
 	}
