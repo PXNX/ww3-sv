@@ -289,6 +289,10 @@ export function globalMultiplier(state: TycoonState): number {
 		prestigeMultiplier(state.prestigePoints, state) *
 		(1 + achievementBonus(state, 'output')) *
 		(1 + perkEffect('output', state.perks.output));
+	// Last tier upgrade at 1000 units: +2% overall production
+	const hasMaxTier = PRODUCERS.some((p) => state.owned[p.id] >= 1000);
+	if (hasMaxTier) multiplier *= 1.02;
+
 	for (const upgrade of GLOBAL_UPGRADES) {
 		if (hasUpgrade(state, upgrade.id)) multiplier *= upgrade.value;
 	}
