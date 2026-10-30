@@ -24,7 +24,9 @@ export type UnlockRequirement =
 	/** A best score above this in Block Puzzle */
 	| { kind: 'blocks'; score: number }
 	/** An achievement of the Oil Tycoon, which keeps its own save outside the career */
-	| { kind: 'tycoon'; achievement: string };
+	| { kind: 'tycoon'; achievement: string }
+	/** How many friends joined through the referral link */
+	| { kind: 'referral'; count: number };
 
 export interface LookUnlock {
 	id: string;
@@ -143,6 +145,18 @@ export const LOOK_UNLOCKS: readonly LookUnlock[] = [
 		part: 'skin',
 		value: '#9fd36a',
 		requirement: { kind: 'level', level: 30 }
+	},
+	{
+		id: 'afro-hairstyle',
+		part: 'hair',
+		value: 'afro',
+		requirement: { kind: 'referral', count: 10 }
+	},
+	{
+		id: 'propeller-hat',
+		part: 'hat',
+		value: 'propeller',
+		requirement: { kind: 'referral', count: 25 }
 	}
 ];
 
@@ -156,6 +170,8 @@ export interface UnlockProgress {
 	tycoon?: readonly string[];
 	/** What the other games have recorded; nothing done when not given */
 	games?: GameProgress;
+	/** How many friends joined through the referral link */
+	referralCount?: number;
 }
 
 /**
@@ -166,14 +182,16 @@ export function unlockProgress(
 	profile: CareerProfile,
 	level: number,
 	tycoon: readonly string[] = [],
-	games?: GameProgress
+	games?: GameProgress,
+	referralCount?: number
 ): UnlockProgress {
 	return {
 		level,
 		bestStreak: profile.bestStreak,
 		modes: profile.modes,
 		tycoon,
-		games
+		games,
+		referralCount
 	};
 }
 
@@ -192,6 +210,8 @@ export function requirementMet(requirement: UnlockRequirement, progress: UnlockP
 			return progress.modes[requirement.mode] !== undefined;
 		case 'tycoon':
 			return progress.tycoon?.includes(requirement.achievement) ?? false;
+		case 'referral':
+			return (progress.referralCount ?? 0) >= requirement.count;
 		case 'fury':
 			return requirementShare(requirement, progress) >= 1;
 		case 'venezuela':
@@ -261,6 +281,8 @@ export function requirementShare(requirement: UnlockRequirement, progress: Unloc
 			return progress.modes[requirement.mode] === undefined ? 0 : 1;
 		case 'tycoon':
 			return progress.tycoon?.includes(requirement.achievement) ? 1 : 0;
+		case 'referral':
+			return Math.min(1, (progress.referralCount ?? 0) / requirement.count);
 		case 'fury': {
 			const games = progress.games;
 			return games && games.furyTotal > 0 ? Math.min(1, games.furyWon / games.furyTotal) : 0;

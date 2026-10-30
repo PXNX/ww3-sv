@@ -82,6 +82,11 @@
 		/>
 	{:else if current.hair === 'bun'}
 		<circle cx="60" cy={head.top - 6} r="13" fill={current.hairColor} />
+	{:else if current.hair === 'afro'}
+		<path
+			d="M60 64 C52 72 52 84 60 88 C68 84 68 72 60 64 Z"
+			fill={current.hairColor}
+		/>
 	{/if}
 
 	<!-- Shirt -->
@@ -435,5 +440,12 @@
 		<circle cx="73" cy="60" r="11" fill="none" stroke="#f5c83a" stroke-width="2.5" />
 		<path d="M82 68 C94 80 90 96 80 106" fill="none" stroke-width="3.5" />
 		<path d="M82 68 C94 80 90 96 80 106" fill="none" stroke="#f5c83a" stroke-width="1.5" />
+	{:else if current.hat === 'propeller'}
+		<!-- A red propeller biplane style hat -->
+		<path
+			d="M{left + 8} {head.top - 8} L{left - 8} {head.top - 8} L{left - 8} {head.top + 8} L{left + 8} {head.top + 8} L{left + 8} {head.top - 8} Z"
+			fill="#e1a53c"
+		/>
+		<circle cx="60" cy={head.top - 8} r="4" fill="#111" stroke-width="2" />
 	{/if}
 </svg>

@@ -22,6 +22,7 @@
 		type LookPart
 	} from '#lib/game/avatar/look.js';
 	import { avatar } from '#lib/game/avatar/store.svelte.js';
+import { telegram } from '#lib/stores/telegram.svelte.js';
 	import {
 		firstLockedPart,
 		isUnlocked,
@@ -86,8 +87,9 @@
 	const tycoonAchievements = Array.isArray(tycoonSave?.achievements)
 		? tycoonSave.achievements.filter((id): id is string => typeof id === 'string')
 		: [];
+	const referralCount = $derived(telegram().invite?.friends ?? 0);
 	const progress = $derived(
-		unlockProgress(careerState.profile, careerState.level, tycoonAchievements, gameProgress)
+		unlockProgress(careerState.profile, careerState.level, tycoonAchievements, gameProgress, referralCount)
 	);
 	const collected = $derived(unlockedCount(progress));
 

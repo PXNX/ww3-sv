@@ -12,7 +12,7 @@ export const NOSES = ['button', 'pointy', 'potato', 'hook', 'beak'] as const;
 /** Hair on the face; the mustache is an extra look */
 export const FACIAL_HAIR = ['none', 'mustache'] as const;
 export const EYE_TYPES = ['dots', 'wide', 'sleepy', 'angry', 'shades'] as const;
-export const HAIRSTYLES = ['bald', 'buzz', 'mohawk', 'bun', 'curly', 'long', 'combover'] as const;
+export const HAIRSTYLES = ['bald', 'buzz', 'mohawk', 'bun', 'curly', 'long', 'combover', 'afro'] as const;
 export const HATS = [
 	'none',
 	'beret',
@@ -24,7 +24,8 @@ export const HATS = [
 	'lula',
 	'monocle',
 	'cylinder',
-	'cat-ears'
+	'cat-ears',
+	'propeller'
 ] as const;
 
 /** Skin tones from light to deep; the first matches the game's caricature skin token */
