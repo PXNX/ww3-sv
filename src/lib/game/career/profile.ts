@@ -227,7 +227,12 @@ export interface RunReward {
  * Banks a finished run. The base reward is the same for every game; the score only adds a
  * logarithmic bonus, so a game with small numbers is worth as much as one with big ones.
  */
-export function awardRun(profile: CareerProfile, run: RunInput, now: Date = new Date(), xpMult = 1): RunReward {
+export function awardRun(
+	profile: CareerProfile,
+	run: RunInput,
+	now: Date = new Date(),
+	xpMult = 1
+): RunReward {
 	const today = withToday(profile, now);
 	const day = dayKey(now);
 	const previous = today.modes[run.mode];

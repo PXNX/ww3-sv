@@ -69,7 +69,12 @@ class CareerStore {
 			return null;
 		}
 		this.#lastAward = { key, at: stamp };
-		const result = claimRun(this.profile, run, now, telegram().proUntil ? new Date(telegram().proUntil) > now ? 2 : 1 : 1);
+		const result = claimRun(
+			this.profile,
+			run,
+			now,
+			telegram().proUntil ? (new Date(telegram().proUntil) > now ? 2 : 1) : 1
+		);
 		this.#commit(result.profile);
 		return result;
 	}
