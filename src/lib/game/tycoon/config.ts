@@ -326,7 +326,8 @@ export const PERK_IDS = [
 	'fake_news',
 	'invest_boost',
 	'crit_chance',
-	'crit_mult'
+	'crit_mult',
+	'turbo'
 ] as const;
 
 export type PerkId = (typeof PERK_IDS)[number];
@@ -357,7 +358,8 @@ export const PERKS: readonly PerkDef[] = [
 	{ id: 'fake_news', maxLevel: 3, baseCost: 2000, costGrowth: 20, value: 50 },
 	{ id: 'invest_boost', maxLevel: 10, baseCost: 50, costGrowth: 3, value: 0.01 },
 	{ id: 'crit_chance', maxLevel: 10, baseCost: 4, costGrowth: 1.7, value: 0.02 },
-	{ id: 'crit_mult', maxLevel: 10, baseCost: 4, costGrowth: 1.7, value: 0.25 }
+	{ id: 'crit_mult', maxLevel: 10, baseCost: 4, costGrowth: 1.7, value: 0.25 },
+	{ id: 'turbo', maxLevel: 3, baseCost: 100, costGrowth: 3, value: 1.0 }
 ];
 
 // Offline progress

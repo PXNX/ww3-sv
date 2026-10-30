@@ -301,7 +301,7 @@ export function globalMultiplier(state: TycoonState): number {
 
 /** How much faster than normal the production cycles run; -2% per upgrade owned */
 export function speedMultiplier(state: TycoonState): number {
-	const base = (1 + achievementBonus(state, 'speed')) * (1 + perkEffect('speed', state.perks.speed));
+	const base = (1 + achievementBonus(state, 'speed')) * (1 + perkEffect('speed', state.perks.speed)) * (1 + perkEffect('turbo', state.perks.turbo));
 	const upgradeCount = state.upgrades.length;
 	return Math.max(0.1, base * Math.pow(0.98, upgradeCount));
 }
