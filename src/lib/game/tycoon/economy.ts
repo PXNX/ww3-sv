@@ -295,9 +295,11 @@ export function globalMultiplier(state: TycoonState): number {
 	return multiplier;
 }
 
-/** How much faster than normal the production cycles run */
+/** How much faster than normal the production cycles run; -2% per upgrade owned */
 export function speedMultiplier(state: TycoonState): number {
-	return (1 + achievementBonus(state, 'speed')) * (1 + perkEffect('speed', state.perks.speed));
+	const base = (1 + achievementBonus(state, 'speed')) * (1 + perkEffect('speed', state.perks.speed));
+	const upgradeCount = state.upgrades.length;
+	return Math.max(0.1, base * Math.pow(0.98, upgradeCount));
 }
 
 /** How long one cycle of a producer lasts right now */
