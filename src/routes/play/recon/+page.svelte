@@ -34,6 +34,12 @@
     {/each}
   </div>
 
+  <div class="flex gap-2 mt-2">
+    <button onclick={() => alert('Attack target — direct units to engage. Reduces danger.')" class="flex-1 bg-tie-red text-paper font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">ATTACK</button>
+    <button onclick={() => alert('Defend — hold position, block advances. Lowers danger fast.')" class="flex-1 bg-chartreuse text-ink font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">DEFEND</button>
+    <button onclick={() => alert('Destroy tank / facility — heavy strike, removes target.')" class="flex-1 bg-ink text-paper font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">DESTROY</button>
+  </div>
+
   <div class="flex gap-3 mt-2">
     <button onclick={() => alert('Drop shell — high-explosive impact on selected coordinates. FPV confirms visual.')} class="flex-1 bg-amber-500 text-ink font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">DROP SHELL</button>
     <button onclick={() => alert('Send artillery strike — multiple rounds, wider area. Confirmed via FPV feed with full detail.')} class="flex-1 bg-tie-red text-paper font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">ARTILLERY</button>

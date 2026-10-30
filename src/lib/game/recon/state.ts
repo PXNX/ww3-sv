@@ -28,6 +28,8 @@ export interface ReconState {
 	hotspots: { x: number; y: number; kind: TargetKind }[]; // pre-placed clickable markers for current view
 	strikes: { x: number; y: number; kind: 'shell' | 'artillery'; time: number }[]; // active explosions
 	shellsDropped: number;
+	selectedTarget: number | null;     // which target is selected for command
+	commands: { targetIdx: number; cmd: 'attack' | 'defend' | 'destroy'; result: string }[];
 }
 
 export const CAMERA_NAMES = ['Satellite', 'Global Hawk', 'Reaper', 'FPV Drone'] as const;
@@ -61,7 +63,9 @@ export function createRecon(): ReconState {
 		danger: 0,
 		hotspots: [],
 		strikes: [],
-		shellsDropped: 0
+		shellsDropped: 0,
+		selectedTarget: null,
+		commands: []
 	};
 }
 
@@ -96,6 +100,21 @@ export function clickTarget(s: ReconState, x: number, y: number): number {
 		// False positive or missed
 		s.danger = Math.min(100, s.danger + 25);
 		return 0;
+	}
+}
+
+export function executeCommand(s: ReconState, targetIdx: number, cmd: 'attack' | 'defend' | 'destroy') {
+	s.selectedTarget = targetIdx;
+	s.commands.push({ targetIdx, cmd, result: '' });
+	if (cmd === 'attack') {
+		s.found += 1;
+		s.danger = Math.max(0, s.danger - 15);
+	} else if (cmd === 'defend') {
+		s.danger = Math.max(0, s.danger - 30);
+	} else if (cmd === 'destroy') {
+		s.found += 2; // major hit
+		s.hotspots.splice(targetIdx, 1);
+		s.danger = Math.max(0, s.danger - 25);
 	}
 }
 
