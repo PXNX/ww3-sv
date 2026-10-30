@@ -117,10 +117,12 @@
 
 			<!-- Subtle floating specks in the background -->
 			<div class="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
-				{#each [1,2,3,4,5] as i}
+				{#each [1, 2, 3, 4, 5] as i}
 					<span
 						class="speck absolute rounded-full bg-paper/40"
-						style="width:{8 + i*3}px;height:{8 + i*3}px;left:{10 + i*15}%;top:{15 + i*12}%;animation: float {6 + i}s ease-in-out infinite alternate;animation-delay:-{i*1.2}s"
+						style="width:{8 + i * 3}px;height:{8 + i * 3}px;left:{10 + i * 15}%;top:{15 +
+							i * 12}%;animation: float {6 +
+							i}s ease-in-out infinite alternate;animation-delay:-{i * 1.2}s"
 					></span>
 				{/each}
 			</div>
@@ -156,6 +158,7 @@
 						label={m.centrifuge_dial_label()}
 						nothingLabel={m.centrifuge_dial_nothing()}
 						somethingLabel={m.centrifuge_dial_something()}
+						outOfBand={game.outOfBand}
 						class="w-[58%]"
 					/>
 				</div>
@@ -384,6 +387,48 @@
 		to {
 			opacity: 0;
 			transform: translateY(-28px);
+		}
+	}
+
+	/* Floating specks drift up gently, with different speeds so they never collide */
+	@keyframes float {
+		from {
+			transform: translateY(12%);
+			opacity: 0.35;
+		}
+		to {
+			transform: translateY(-16%);
+			opacity: 0.7;
+		}
+	}
+
+	/* Flicker scare: a red pulse that fades out over the scare lifetime */
+	.flicker {
+		animation: flicker var(--dur) ease-in forwards;
+		animation-delay: -80ms;
+	}
+
+	/* The dial blushes a warm tone whenever the needle has left the band */
+	.dial-glow {
+		box-shadow: 0 0 12px 4px var(--color-tie-red);
+		animation: dial-pulse 700ms ease-in-out infinite alternate;
+	}
+
+	@keyframes flicker {
+		from {
+			opacity: 0.6;
+		}
+		to {
+			opacity: 0;
+		}
+	}
+
+	@keyframes dial-pulse {
+		from {
+			filter: saturate(1);
+		}
+		to {
+			filter: saturate(1.8) brightness(1.3);
 		}
 	}
 

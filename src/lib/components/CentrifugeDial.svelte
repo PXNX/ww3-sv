@@ -15,7 +15,8 @@
 		label,
 		nothingLabel,
 		somethingLabel,
-		class: className = ''
+		class: className = '',
+		outOfBand = false
 	}: {
 		/** Needle position, -1 to 1 */
 		value: number;
@@ -27,6 +28,7 @@
 		/** Pocket text for the two red pockets */
 		somethingLabel: string;
 		class?: string;
+		outOfBand?: boolean;
 	} = $props();
 
 	const CENTER = 100;
@@ -95,7 +97,7 @@
 	const angle = $derived(Math.max(-1, Math.min(1, value)) * SWEEP);
 </script>
 
-<svg viewBox="0 0 200 200" role="img" aria-label={label} class={className}>
+<svg viewBox="0 0 200 200" role="img" aria-label={label} class="{className} {outOfBand ? 'dial-glow' : ''}"
 	<defs>
 		{#each pockets as pocket (pocket.id)}
 			<path id={pocket.id} d={pocket.textPath} />
