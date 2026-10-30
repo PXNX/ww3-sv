@@ -13,6 +13,10 @@ export function levelAt(index: number): Level {
 	return LEVELS[Math.min(Math.max(index, 0), LEVELS.length - 1)];
 }
 
+export function endlessLevelAt(index: number): Level {
+	return LEVELS[index % LEVELS.length];
+}
+
 export function tierLevels(tier: Tier): { level: Level; index: number }[] {
 	return LEVELS.flatMap((level, index) => (level.tier === tier ? [{ level, index }] : []));
 }
