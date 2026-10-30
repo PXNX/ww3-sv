@@ -446,6 +446,8 @@ const CLICK_UPGRADES: readonly UpgradeDef[] = [
 	{ id: 'click_fist', kind: 'click', cost: 25_000_000, requires: { type: 'none' }, value: 3 },
 	{ id: 'click_crane', kind: 'click', cost: 250_000_000, requires: { type: 'none' }, value: 4 },
 	{ id: 'click_titan', kind: 'click', cost: 2_500_000_000, requires: { type: 'none' }, value: 5 },
+	{ id: 'event_boost', kind: 'events', cost: 500_000, requires: { type: 'none' }, value: 1.25 },
+	{ id: 'event_master', kind: 'events', cost: 50_000_000, requires: { type: 'none' }, value: 1.5 },
 	{
 		id: 'clickcps_hands',
 		kind: 'clickCps',

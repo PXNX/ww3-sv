@@ -1,7 +1,7 @@
 /* Shared shapes of the idle game's state. The state is a plain object the rules mutate. */
 import type { PerkId, ProducerId } from './config.js';
 
-export type EventKind = 'spike' | 'sanctions' | 'pipeline' | 'protest';
+export type EventKind = 'spike' | 'sanctions' | 'pipeline' | 'protest' | 'strike' | 'leak' | 'bonus';
 
 /** What a player can answer to a crisis; 'timeout' is what happens when nobody answers */
 export type EventChoice = 'a' | 'b' | 'timeout';
@@ -14,7 +14,7 @@ export interface PendingEvent {
 	remainingMs: number;
 }
 
-export type EffectId = 'boom' | 'crash' | 'sanctioned' | 'maintenance' | 'leak' | 'protest';
+export type EffectId = 'boom' | 'crash' | 'sanctioned' | 'maintenance' | 'leak' | 'protest' | 'critchance' | 'strike';
 
 /** A temporary effect of a crisis */
 export interface ActiveEffect {

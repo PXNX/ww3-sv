@@ -41,7 +41,7 @@ import type {
 	TycoonState
 } from './types.js';
 
-export const EVENT_KINDS: readonly EventKind[] = ['spike', 'sanctions', 'pipeline', 'protest'];
+export const EVENT_KINDS: readonly EventKind[] = ['spike', 'sanctions', 'pipeline', 'protest', 'strike', 'leak', 'bonus'];
 
 /** Quiet time before the very first crisis of a run */
 export function firstEventDelay(random: Random): number {
@@ -130,7 +130,11 @@ export function startEvent(state: TycoonState, random: Random): TycoonEvent | nu
 }
 
 function earn(state: TycoonState, barrels: number) {
-	state.barrels += barrels;
+	const boosted = barrels * eventRewardMult(state);
+	state.barrels += boosted;
+	state.runTotal += boosted;
+	state.lifetime += boosted;
+}
 	state.runTotal += barrels;
 	state.lifetime += barrels;
 }
@@ -195,6 +199,28 @@ export function resolveEvent(
 				state.effects.push(effect('protest', PROTEST_MS, { prodMult: PROTEST_MULT, clickMult: 0 }));
 				outcome = 'protest';
 			}
+			break;
+		case 'strike':
+			if (choice === 'a') {
+				state.effects.push(effect('strike', 15000, { prodMult: 0.7 }));
+				outcome = 'mitigated';
+			} else {
+				state.effects.push(effect('strike', 25000, { prodMult: 0.5 }));
+				outcome = 'hit';
+			}
+			break;
+		case 'leak':
+			if (choice === 'a') {
+				state.barrels -= Math.max(1, Math.ceil(productionPerSecond(state) * 3));
+				outcome = 'patched';
+			} else {
+				state.effects.push(effect('leak', 20000, { prodMult: 0.6 }));
+				outcome = 'leaked';
+			}
+			break;
+		case 'bonus':
+			state.effects.push(effect('critchance', 20_000, { clickMult: 2 }));
+			outcome = 'critboost';
 			break;
 	}
 

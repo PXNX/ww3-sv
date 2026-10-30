@@ -302,6 +302,16 @@ export function speedMultiplier(state: TycoonState): number {
 	return Math.max(0.1, base * Math.pow(0.98, upgradeCount));
 }
 
+/** Event reward multiplier from event-boost upgrades */
+export function eventRewardMult(state: TycoonState): number {
+	let mult = 1;
+	for (const id of state.upgrades) {
+		const def = UPGRADES.find((u) => u.id === id);
+		if (def && def.kind === 'events') mult *= def.value;
+	}
+	return mult;
+}
+
 /** How long one cycle of a producer lasts right now */
 export function cycleMs(state: TycoonState, id: ProducerId): number {
 	return Math.max(MIN_CYCLE_MS, producerDef(id).cycleMs / speedMultiplier(state));
