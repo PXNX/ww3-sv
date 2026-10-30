@@ -38,6 +38,7 @@ import IconLeaf from '~icons/lucide/leaf';
 import IconContainer from '~icons/lucide/container';
 import IconSwords from '~icons/lucide/swords';
 import IconRocket from '~icons/lucide/rocket';
+import IconShuffle from '~icons/lucide/shuffle';
 import IconMusic from '~icons/lucide/music';
 import IconHandshake from '~icons/lucide/handshake';
 import IconBinoculars from '~icons/lucide/binoculars';

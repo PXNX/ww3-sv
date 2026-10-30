@@ -136,10 +136,7 @@
 
 		<button
 			type="button"
-			class="btn-chunky shrink-0 flex-col gap-0 px-3 py-1.5 leading-tight {maxed
-				? 'bg-paper'
-				: upgradeReady ? 'bg-chartreuse' : 'bg-explosion-yellow'}"
-			class:opacity-50={!affordable}
+			class="btn-chunky shrink-0 flex-col gap-0 px-3 py-1.5 leading-tight {maxed ? 'bg-paper' : !affordable ? 'bg-paper/40' : upgradeReady ? 'bg-chartreuse' : 'bg-explosion-yellow'}"
 			disabled={!affordable}
 			aria-label={maxed
 				? `${name}: ${m.tycoon_perk_maxed()}`
