@@ -539,8 +539,8 @@ export const MODES: readonly GameMode[] = [
 		icon: IconTerminal,
 		tileClass: 'bg-tie-red',
 		leaders: ['kim'],
-		name: () => 'Hermit Hackers',
-		description: () => 'Retro terminal: crack crypto wallets, install siphons and worms, flip breaker lights. Reach the quota before the trace hits 100.'
+		name: m.mode_hackers_name,
+		description: m.mode_hackers_description
 	},
 	{
 		id: 'recon',
