@@ -7,6 +7,7 @@
 import {
 	CONTRACTS,
 	SLOT_COUNT,
+	BUILDINGS,
 	type BuildingId,
 	type DroneId,
 	type ResourceId
@@ -22,6 +23,8 @@ import {
 	repair,
 	repairCost,
 	stepGame,
+	REPAIR_COST_DAMAGED,
+	REPAIR_COST_DESTROYED,
 	timeShare,
 	type Building,
 	type DroneworksEvent,
@@ -143,11 +146,20 @@ export class DroneworksGame {
 
 	/** Whether a slot can take this building right now, for the build menu */
 	canBuild(slot: number, id: BuildingId): boolean {
-		return this.status === 'playing' && canBuild(this.state, slot, id);
+		if (this.status !== 'playing') return false;
+		if (slot < 0 || slot >= SLOT_COUNT) return false;
+		if (this.slots[slot] !== null) return false;
+		return this.credits >= BUILDINGS[id].cost;
 	}
 
 	canRepair(slot: number): boolean {
-		return this.status === 'playing' && canRepair(this.state, slot);
+		if (this.status !== 'playing') return false;
+		if (slot < 0 || slot >= SLOT_COUNT) return false;
+		const building = this.slots[slot];
+		if (!building) return false;
+		if (building.condition === 'ok' || building.repairLeftMs > 0) return false;
+		const cost = building.condition === 'destroyed' ? REPAIR_COST_DESTROYED : REPAIR_COST_DAMAGED;
+		return this.credits >= cost;
 	}
 
 	repairCost(slot: number): number {
