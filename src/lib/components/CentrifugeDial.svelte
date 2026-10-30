@@ -97,7 +97,7 @@
 	const angle = $derived(Math.max(-1, Math.min(1, value)) * SWEEP);
 </script>
 
-<svg viewBox="0 0 200 200" role="img" aria-label={label} class="{className} {outOfBand ? 'dial-glow' : ''}"
+<svg viewBox="0 0 200 200" role="img" aria-label={label} class="{className} {outOfBand ? 'dial-glow' : ''}">
 	<defs>
 		{#each pockets as pocket (pocket.id)}
 			<path id={pocket.id} d={pocket.textPath} />
