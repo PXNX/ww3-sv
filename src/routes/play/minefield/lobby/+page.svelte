@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
 	import type { DifficultyId } from '#lib/game/minefield/difficulty.js';
@@ -12,11 +13,7 @@
 
 	function pick(id: DifficultyId) {
 		game.newGame(id);
-		goto('/play/minefield');
-	}
-
-	function start() {
-		goto('/play/minefield');
+		goto(resolve('/play/minefield'));
 	}
 
 	let showedTutorial = $state(false);
@@ -32,7 +29,5 @@
 		{/if}
 
 		<MinefieldDifficultyPicker selected={game.difficultyId} onpick={pick} />
-
-
 	</div>
 </GameShell>

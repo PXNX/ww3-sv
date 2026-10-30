@@ -45,6 +45,11 @@ describe('formatBig', () => {
 		expect(formatBig(1.234e17, 'de')).toBe('123,4Qa');
 		expect(formatBig(2.5e21, 'en')).toBe('2.5Sx');
 		expect(formatBig(9.99e14, 'en')).toBe('999T');
+		expect(formatBig(1e30, 'en')).toBe('1No');
+		expect(formatBig(1.5e33, 'en')).toBe('1.5Dc');
+		expect(formatBig(1e51, 'en')).toBe('1SxDc');
+		// 1e54 is SpDc (septendecillion), not the ambiguous SD
+		expect(formatBig(1e54, 'en')).toBe('1SpDc');
 	});
 
 	it('falls back to scientific notation past the last named tier', () => {
@@ -72,6 +77,9 @@ describe('other formatters', () => {
 		expect(formatMultiplier(1.256, 'en')).toBe('1.26');
 		expect(formatMultiplier(2, 'de')).toBe('2');
 		expect(formatMultiplier(1.5, 'de')).toBe('1,5');
+		// Big multipliers are shortened like the barrels, so they fit the stat pills
+		expect(formatMultiplier(12_345, 'en')).toBe('12.35K');
+		expect(formatMultiplier(1e30, 'en')).toBe('1No');
 	});
 
 	it('formats away time as hours, minutes or seconds', () => {

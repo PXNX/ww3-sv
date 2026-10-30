@@ -23,7 +23,6 @@
 		gameId,
 		reducedMotion,
 		disabled,
-		tankerLevel = 0,
 		overlay,
 		onRotate,
 		onRepairStart,
@@ -34,8 +33,6 @@
 		gameId: number;
 		reducedMotion: boolean;
 		disabled: boolean;
-		/** How full the tanker at the terminal is, from 0 to 1 */
-		tankerLevel?: number;
 		/** Notices drawn over the top of the board, such as the shutdown warning */
 		overlay?: Snippet;
 		onRotate: (cell: number) => void;
@@ -329,6 +326,4 @@
 			</div>
 		{/each}
 	</div>
-
-
 </div>

@@ -5,6 +5,7 @@
  */
 import type { ModeId } from '#lib/modes/registry.js';
 import { redeemGift as redeemGiftIn, type RedeemResult } from '#lib/game/giftcode/redeem.js';
+import { telegram } from '#lib/stores/telegram.svelte.js';
 import { localStore } from '#lib/services/storage.js';
 import type { CareerRankId } from './config';
 import {
@@ -68,7 +69,7 @@ class CareerStore {
 			return null;
 		}
 		this.#lastAward = { key, at: stamp };
-		const result = claimRun(this.profile, run, now);
+		const result = claimRun(this.profile, run, now, telegram().proUntil ? new Date(telegram().proUntil) > now ? 2 : 1 : 1);
 		this.#commit(result.profile);
 		return result;
 	}

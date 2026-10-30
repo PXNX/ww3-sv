@@ -6,7 +6,12 @@
 -->
 <script lang="ts">
 	import { MAX_OWNED, type ProducerId } from '#lib/game/tycoon/config.js';
-	import { maxAffordable, producerCost, producerDef } from '#lib/game/tycoon/economy.js';
+	import {
+		maxAffordable,
+		nextTierAt,
+		producerCost,
+		producerDef
+	} from '#lib/game/tycoon/economy.js';
 	import { formatBig, formatCount, formatCycle, formatDuration } from '#lib/game/tycoon/format.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -22,19 +27,30 @@
 	// Nothing more can be bought once the most is owned
 	const maxed = $derived(owned >= MAX_OWNED);
 	// "Max" buys what the barrels allow, but always shows the price of at least one unit; no amount
-	// goes beyond what is still allowed, so the price shown is the price paid
+	// goes beyond what is still allowed, so the price shown is the price paid. "Next" stops exactly
+	// at the producer's next level (or buys one unit once every level is open).
+	const nextTier = $derived(nextTierAt(id, owned));
 	const count = $derived(
 		Math.min(
 			MAX_OWNED - owned,
 			game.buyAmount === 'max'
 				? Math.max(1, maxAffordable(def, owned, game.barrels, game.pricing))
-				: game.buyAmount
+				: game.buyAmount === 'next'
+					? nextTier === null
+						? 1
+						: Math.max(1, nextTier - owned)
+					: game.buyAmount
 		)
 	);
 	const cost = $derived(producerCost(def, owned, count, game.pricing));
 	const affordable = $derived(!maxed && game.barrels >= cost);
 	const sanctioned = $derived(game.cut.includes(id));
-	const upgradeReady = $derived(game.availableIds.some((uid) => uid.startsWith(id + '_')));
+	// The ring lights up when the producer can be levelled to its next tier right now
+	const upgradeReady = $derived(
+		nextTier !== null &&
+			!maxed &&
+			game.barrels >= producerCost(def, owned, Math.max(1, nextTier - owned), game.pricing)
+	);
 	const name = $derived(producerName(id));
 	const cycle = $derived(game.cycles[id]);
 	// What one cycle pays: for all owned units, or for the first one before any is bought

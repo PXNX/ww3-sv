@@ -62,10 +62,15 @@ import { localStore, type Store } from '#lib/services/storage.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
 import type { SoundId } from '#lib/sound/sounds.js';
 import { formatBig } from '#lib/game/tycoon/format.js';
-import { achievementHat, achievementName, outcomeText } from '#lib/components/tycoonText.js';
+import {
+	achievementHat,
+	achievementName,
+	outcomeText,
+	producerName
+} from '#lib/components/tycoonText.js';
 
 export type TycoonStatus = 'playing' | 'paused';
-export type BuyAmount = 1 | 10 | 'max';
+export type BuyAmount = 1 | 10 | 'max' | 'next';
 
 export const BEST_KEY = ['tycoon', 'lifetime'] as const;
 
@@ -144,7 +149,7 @@ export class TycoonGame {
 	/** What selling at a price spike would pay */
 	sellValue = $state(0);
 	buyAmount = $state<BuyAmount>(1);
-	buyMode = $state<'1x' | '10x' | 'max'>('1x');
+	buyMode = $state<'1x' | '10x' | 'max' | 'next'>('1x');
 	toast = $state.raw<Toast | null>(null);
 	/** The report shown when the player comes back after a while; null once dismissed */
 	welcome = $state.raw<OfflineReport | null>(null);
@@ -253,7 +258,7 @@ export class TycoonGame {
 		return gained;
 	}
 
-	buy(id: ProducerId, amount: number | 'max' = this.buyAmount): number {
+	buy(id: ProducerId, amount: number | 'max' | 'next' = this.buyAmount): number {
 		if (this.status !== 'playing') return 0;
 		const { bought, events } = buyProducer(this.state, id, amount);
 		if (bought > 0) {
@@ -325,7 +330,7 @@ export class TycoonGame {
 		return true;
 	}
 
-	setBuyMode(mode: '1x' | '10x' | 'max') {
+	setBuyMode(mode: '1x' | '10x' | 'max' | 'next') {
 		this.buyMode = mode;
 		this.state.buyMode = mode;
 		this.save();
@@ -400,6 +405,12 @@ export class TycoonGame {
 				);
 				break;
 			case 'effect-end':
+				break;
+			case 'levelup':
+				this.#showToast(
+					m.tycoon_toast_levelup({ producer: producerName(event.producer), tier: event.tier })
+				);
+				this.#play('chime', 0);
 				break;
 			case 'prestige':
 				this.#showToast(m.tycoon_toast_prestige({ points: event.points }));

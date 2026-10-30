@@ -328,20 +328,27 @@
 		{/each}
 
 		{#key game.play.room}
-		<!-- The clerk: the player's token -->
-		<g
-			class="maze-pawn"
-			style:transform="translate({centerX(game.play.room)}px, {centerY(game.play.room)}px)"
-		>
-			<ellipse cx="0" cy="3.7" rx="2.8" ry="0.7" fill="var(--color-ink)" fill-opacity="0.25" />
-			<g stroke="var(--color-ink)" stroke-width="0.55" stroke-linejoin="round">
-				<rect x="-2.3" y="-0.4" width="4.6" height="4" rx="1.2" fill="var(--color-banner-slate)" />
-				<path d="M0 -0.2l.8 1.2-.8 2-.8-2z" fill="var(--color-tie-red)" stroke-width="0.3" />
-				<circle cx="0" cy="-2.2" r="2" fill="var(--color-skin)" />
-				<path d="M-2 -2.6a2 2 0 0 1 4 0c-1-.7-3-.7-4 0z" fill="var(--color-ink)" />
-				<rect x="2" y="1" width="2.2" height="2.6" rx="0.3" fill="var(--color-paper)" />
+			<!-- The clerk: the player's token -->
+			<g
+				class="maze-pawn"
+				style:transform="translate({centerX(game.play.room)}px, {centerY(game.play.room)}px)"
+			>
+				<ellipse cx="0" cy="3.7" rx="2.8" ry="0.7" fill="var(--color-ink)" fill-opacity="0.25" />
+				<g stroke="var(--color-ink)" stroke-width="0.55" stroke-linejoin="round">
+					<rect
+						x="-2.3"
+						y="-0.4"
+						width="4.6"
+						height="4"
+						rx="1.2"
+						fill="var(--color-banner-slate)"
+					/>
+					<path d="M0 -0.2l.8 1.2-.8 2-.8-2z" fill="var(--color-tie-red)" stroke-width="0.3" />
+					<circle cx="0" cy="-2.2" r="2" fill="var(--color-skin)" />
+					<path d="M-2 -2.6a2 2 0 0 1 4 0c-1-.7-3-.7-4 0z" fill="var(--color-ink)" />
+					<rect x="2" y="1" width="2.2" height="2.6" rx="0.3" fill="var(--color-paper)" />
+				</g>
 			</g>
-		</g>
 		{/key}
 	</svg>
 </div>
@@ -353,10 +360,18 @@
 	}
 
 	@keyframes swipe-bounce {
-		0% { transform: scale(1); }
-		30% { transform: scale(1.15) rotate(-2deg); }
-		60% { transform: scale(0.9) rotate(2deg); }
-		100% { transform: scale(1) rotate(0deg); }
+		0% {
+			transform: scale(1);
+		}
+		30% {
+			transform: scale(1.15) rotate(-2deg);
+		}
+		60% {
+			transform: scale(0.9) rotate(2deg);
+		}
+		100% {
+			transform: scale(1) rotate(0deg);
+		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {

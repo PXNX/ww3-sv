@@ -69,7 +69,7 @@
 		</p>
 		<p dir="auto" class="font-display text-sm font-bold">
 			{m.tycoon_prestige_points({
-				points: formatCount(game.prestigePoints, locale),
+				points: formatBig(game.prestigePoints, locale),
 				multiplier: formatMultiplier(game.multiplier, locale)
 			})}
 		</p>
@@ -78,7 +78,7 @@
 		</p>
 		{#if game.pendingPoints >= 1}
 			<p dir="auto" class="font-display text-base font-bold text-tie-red">
-				{m.tycoon_prestige_pending({ points: formatCount(game.pendingPoints, locale) })}
+				{m.tycoon_prestige_pending({ points: formatBig(game.pendingPoints, locale) })}
 			</p>
 			<button
 				type="button"
@@ -99,7 +99,7 @@
 		<div class="flex flex-wrap items-baseline justify-between gap-x-3">
 			<h2 dir="auto" class="font-display text-xl font-bold">{m.tycoon_perks_title()}</h2>
 			<p dir="auto" class="font-display text-sm font-bold tabular-nums">
-				{m.tycoon_perks_points({ points: formatCount(game.spendablePoints, locale) })}
+				{m.tycoon_perks_points({ points: formatBig(game.spendablePoints, locale) })}
 			</p>
 		</div>
 		<p dir="auto" class="text-sm leading-snug">{m.tycoon_perks_text()}</p>
@@ -123,7 +123,7 @@
 							: m.tycoon_perk_buy_label({
 									level: formatCount(level + 1, locale),
 									name: perkName(perk.id),
-									cost: formatCount(cost, locale)
+									cost: formatBig(cost, locale)
 								})}
 						onclick={() => game.buyPerk(perk.id)}
 					>
@@ -144,7 +144,7 @@
 						<span class="shrink-0 font-display text-base font-bold tabular-nums" dir="auto">
 							{maxed
 								? m.tycoon_perk_maxed()
-								: m.tycoon_perk_cost({ cost: formatCount(cost, locale) })}
+								: m.tycoon_perk_cost({ cost: formatBig(cost, locale) })}
 						</span>
 					</button>
 				</li>
@@ -200,7 +200,7 @@
 		</div>
 		<p dir="auto" class="text-sm leading-snug">
 			{m.tycoon_prestige_confirm_text({
-				points: formatCount(game.pendingPoints, locale),
+				points: formatBig(game.pendingPoints, locale),
 				percent: formatCount(game.pendingPoints * PRESTIGE_BONUS * 100, locale)
 			})}
 		</p>

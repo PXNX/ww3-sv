@@ -6,7 +6,7 @@
 -->
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages.js';
-	import { formatCount } from '#lib/game/tycoon/format.js';
+	import { formatBig } from '#lib/game/tycoon/format.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import Avatar from './Avatar.svelte';
 
@@ -107,7 +107,7 @@
 
 		<h2 id="nationalize-title" class="stamp" dir="auto">{m.tycoon_nationalized_stamp()}</h2>
 		<p class="points" dir="auto">
-			{m.tycoon_nationalized_points({ points: formatCount(shown, locale) })}
+			{m.tycoon_nationalized_points({ points: formatBig(shown, locale) })}
 		</p>
 		<p class="text" dir="auto">{m.tycoon_nationalized_text()}</p>
 

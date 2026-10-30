@@ -1,7 +1,7 @@
 /*
-  * Translated texts for the extra looks: what a lock asks for, in words a player can act on.
-  * The mode requirement names the game through the registry, so it follows the language.
-  */
+ * Translated texts for the extra looks: what a lock asks for, in words a player can act on.
+ * The mode requirement names the game through the registry, so it follows the language.
+ */
 import { modeById } from '#lib/modes/registry.js';
 import { m } from '#lib/paraglide/messages.js';
 import { achievementName } from './tycoonText.js';

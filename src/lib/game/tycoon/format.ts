@@ -25,7 +25,7 @@ const SD_NAMES: { min: number; suffix: string }[] = [
 	{ min: 1e45, suffix: 'QaDc' },
 	{ min: 1e48, suffix: 'QiDc' },
 	{ min: 1e51, suffix: 'SxDc' },
-	{ min: 1e54, suffix: 'SD' },
+	{ min: 1e54, suffix: 'SpDc' },
 	{ min: 1e57, suffix: 'OcDc' },
 	{ min: 1e60, suffix: 'NoDc' },
 	{ min: 1e63, suffix: 'Vg' },
@@ -112,7 +112,10 @@ export function formatCount(value: number, locale: string): string {
 
 /** A multiplier such as 1.25 as "x1.25" digits (no symbol), at most two decimals */
 export function formatMultiplier(value: number, locale: string): string {
-	return formatter(locale, { maximumFractionDigits: 2, minimumFractionDigits: 0 }).format(value);
+	if (Math.abs(value) < 1000) {
+		return formatter(locale, { maximumFractionDigits: 2, minimumFractionDigits: 0 }).format(value);
+	}
+	return formatBig(value, locale, 0);
 }
 
 /** A short length of time such as "2h 5m" (hours and minutes, or minutes, or seconds) */

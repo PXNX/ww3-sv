@@ -155,9 +155,31 @@ export function upgradeCost(state: Pick<TycoonState, 'owned'>, upgrade: UpgradeD
 
 /** The upgrades the player can see and buy now */
 export function availableUpgrades(state: TycoonState): UpgradeDef[] {
+	// Producer upgrades are not bought: they come with the producer's levels
 	return UPGRADES.filter(
-		(upgrade) => !hasUpgrade(state, upgrade.id) && requirementMet(state, upgrade)
+		(upgrade) =>
+			upgrade.kind !== 'producer' &&
+			!hasUpgrade(state, upgrade.id) &&
+			requirementMet(state, upgrade)
 	);
+}
+
+/** The tier upgrades of one producer, lowest tier first */
+export function producerTierUpgrades(id: ProducerId): readonly UpgradeDef[] {
+	return UPGRADES_OF_PRODUCER.get(id) ?? [];
+}
+
+/** The owned count at which the next tier unlocks, or null when every tier is already open */
+export function nextTierAt(id: ProducerId, owned: number): number | null {
+	let next: number | null = null;
+	for (const upgrade of producerTierUpgrades(id)) {
+		const requirement = upgrade.requires;
+		if (requirement.type !== 'owned') continue;
+		if (requirement.count > owned && (next === null || requirement.count < next)) {
+			next = requirement.count;
+		}
+	}
+	return next;
 }
 
 /** Sum of the boosts of one kind the unlocked achievements grant (for one producer, if given) */

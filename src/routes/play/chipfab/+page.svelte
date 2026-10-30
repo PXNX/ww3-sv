@@ -27,7 +27,6 @@
 	import { firstPlay } from '#lib/services/tutorial.js';
 	import { ChipFabGame } from '#lib/stores/chipfabGame.svelte.js';
 	import { cameoAsset } from '#lib/theme/cameos.js';
-	import IconDrop from '~icons/lucide/arrow-down-to-line';
 	import IconDown from '~icons/lucide/arrow-down';
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconLeft from '~icons/lucide/arrow-left';

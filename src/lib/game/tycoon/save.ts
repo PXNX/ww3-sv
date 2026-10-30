@@ -8,7 +8,7 @@ import type { Random } from '#lib/game/random.js';
 import type { Store } from '#lib/services/storage.js';
 import { MAX_OWNED, PERKS, PRODUCER_IDS, ACHIEVEMENTS, UPGRADES } from './config.js';
 import { cycleMs } from './economy.js';
-import { createState } from './state.js';
+import { createState, syncProducerTiers } from './state.js';
 import type { TycoonState } from './types.js';
 
 export const SAVE_VERSION = 2;
@@ -130,12 +130,14 @@ export function parseSave(
 		data.upgrades,
 		UPGRADES.map((upgrade) => upgrade.id)
 	);
+	// Older saves bought producer upgrades by hand; the tiers already earned are granted now
+	syncProducerTiers(state);
 	state.achievements = knownIds(
 		data.achievements,
 		ACHIEVEMENTS.map((achievement) => achievement.id)
 	);
 	const bm = typeof data.buyMode === 'string' ? data.buyMode : '1x';
-	state.buyMode = bm === '10x' || bm === 'max' ? bm : '1x';
+	state.buyMode = bm === '10x' || bm === 'max' || bm === 'next' ? bm : '1x';
 	return { state, savedAt };
 }
 

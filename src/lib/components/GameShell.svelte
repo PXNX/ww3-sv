@@ -31,7 +31,6 @@
 		landscape = false,
 		compact = false,
 		back = true,
-		backHref,
 		children
 	}: {
 		title: string;
@@ -51,8 +50,6 @@
 		compact?: boolean;
 		/** Shows the back link to the start screen */
 		back?: boolean;
-		/** Overrides the back link destination */
-		backHref?: string;
 		children: Snippet;
 	} = $props();
 
@@ -89,7 +86,7 @@
 {#snippet backLink()}
 	{#if back}
 		<a
-			href={backHref ?? resolve('/')}
+			href={resolve('/')}
 			class="btn-chunky px-2 py-1 text-sm sm:px-3"
 			class:bg-explosion-yellow={confirmingLeave}
 			aria-label={confirmingLeave ? m.game_back_confirm() : m.game_back()}

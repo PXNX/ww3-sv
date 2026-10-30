@@ -52,9 +52,10 @@ describe('the level set', () => {
 		expect(LEVELS[0].pairs.map((pair) => pair.port)).toEqual(['shanghai', 'piraeus', 'hamburg']);
 	});
 
-	it('clamps levelAt to the available levels', () => {
+	it('clamps below the first level and loops back to the first after the last', () => {
 		expect(levelAt(-3)).toBe(LEVELS[0]);
-		expect(levelAt(999)).toBe(LEVELS[LEVELS.length - 1]);
+		// Endless mode has no final level: the whole route starts over
+		expect(levelAt(999)).toBe(LEVELS[0]);
 	});
 
 	it('gives every port its own color and icon', () => {

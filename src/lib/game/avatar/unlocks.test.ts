@@ -91,7 +91,8 @@ describe('the extra looks', () => {
 					bestStreak: 7,
 					modes: { redsquare: {}, petrobras: {}, runcomrade: {} },
 					tycoon: ['maxed_all', 'tycoon_king'],
-					games: FINISHED
+					games: FINISHED,
+					referralCount: 30
 				})
 			)
 		).toBe(LOOK_UNLOCKS.length);
@@ -142,7 +143,8 @@ describe('the extra looks', () => {
 					bestStreak: 7,
 					modes: { redsquare: {}, petrobras: {}, runcomrade: {} },
 					tycoon: ['maxed_all', 'tycoon_king'],
-					games: FINISHED
+					games: FINISHED,
+					referralCount: 30
 				})
 			)
 		).toBeNull();

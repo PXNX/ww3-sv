@@ -16,7 +16,6 @@
 	import CentrifugeMenacing from './CentrifugeMenacing.svelte';
 	import CentrifugeSomething from './CentrifugeSomething.svelte';
 	import PauseOverlay from './PauseOverlay.svelte';
-	import IconGauge from '~icons/lucide/gauge';
 	import IconPlay from '~icons/lucide/play';
 
 	let { game }: { game: CentrifugeGame } = $props();
@@ -29,6 +28,7 @@
 	const banner = $derived(game.scares.find((scare) => scare.kind === 'banner'));
 	const shake = $derived(game.scares.find((scare) => scare.kind === 'shake'));
 	const something = $derived(game.scares.find((scare) => scare.kind === 'something'));
+	const flicker = $derived(game.scares.find((scare) => scare.kind === 'flicker'));
 
 	const loop = createFixedLoop({ update: (dtMs) => game.update(dtMs), render: () => {} });
 
@@ -90,7 +90,7 @@
 >
 	<div class="relative">
 		<div
-			class="scene relative h-full overflow-hidden rounded-[14px_8px_16px_10px] border-3 border-ink bg-sand shadow-[4px_4px_0_var(--color-ink)]"
+			class="scene relative h-full min-h-[24rem] overflow-hidden rounded-[14px_8px_16px_10px] border-3 border-ink bg-sand shadow-[4px_4px_0_var(--color-ink)]"
 			class:shaking={shake && !still}
 			class:rumble={shake && game.reducedMotion}
 			style:--shake="{shake ? 2 + shake.intensity * 7 : 0}px"
@@ -115,7 +115,26 @@
 				</p>
 			{/if}
 
-			<div class="relative z-10 flex h-full flex-col justify-end gap-1 p-3 pt-20">
+			<!-- Subtle floating specks in the background -->
+			<div class="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
+				{#each [1,2,3,4,5] as i}
+					<span
+						class="speck absolute rounded-full bg-paper/40"
+						style="width:{8 + i*3}px;height:{8 + i*3}px;left:{10 + i*15}%;top:{15 + i*12}%;animation: float {6 + i}s ease-in-out infinite alternate;animation-delay:-{i*1.2}s"
+					></span>
+				{/each}
+			</div>
+
+			<!-- Quick red pulse flicker scare -->
+			{#if flicker}
+				<div
+					class="flicker pointer-events-none absolute inset-0 z-30 bg-tie-red/25"
+					style:--dur="{flicker.durationMs}ms"
+					style:animation-play-state={play}
+				></div>
+			{/if}
+
+			<div class="relative z-10 flex h-full flex-col justify-end gap-1 p-3 pt-24 pb-10">
 				<div class="flex items-end justify-between gap-2">
 					<div class="relative flex w-[40%] flex-col items-center">
 						<p

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createRandom } from '#lib/game/random.js';
 import { createStore, type KeyValueStorage } from '#lib/services/storage.js';
 import { MAX_OWNED } from './config.js';
+import { producerTierUpgrades } from './economy.js';
 import {
 	SAVE_KEY,
 	SAVE_VERSION,
@@ -143,7 +144,11 @@ describe('save and load', () => {
 		expect(state.owned.tanker).toBe(0);
 		expect(state.owned.refinery).toBe(2);
 		expect(state.owned.lobbyist).toBe(0);
-		expect(state.upgrades).toEqual(['click_bucket']);
+		// Every producer level the owned count already earned is granted on load
+		expect(state.upgrades).toEqual([
+			'click_bucket',
+			...producerTierUpgrades('pumpjack').map((upgrade) => upgrade.id)
+		]);
 		expect(state.achievements).toEqual([]);
 		expect(state.perks).toEqual({
 			growth: 0,

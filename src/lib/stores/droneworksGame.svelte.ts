@@ -14,8 +14,6 @@ import {
 } from '#lib/game/droneworks/config.js';
 import {
 	build,
-	canBuild,
-	canRepair,
 	createGame,
 	demolish,
 	flakCount,

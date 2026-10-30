@@ -1,21 +1,19 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
+	import type { Difficulty } from '#lib/game/pipeline/pipelineStep.js';
 	import { PipelineGame } from '#lib/stores/pipelineGame.svelte.js';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import PipelineDifficultyPicker from '#lib/components/PipelineDifficultyPicker.svelte';
 
 	const game = new PipelineGame();
 
-	function pick(level: string) {
-		game.setDifficulty(level as any);
-		goto('/play/pipeline');
-	}
-
-	function start() {
-		goto('/play/pipeline');
+	function pick(level: Difficulty) {
+		game.setDifficulty(level);
+		goto(resolve('/play/pipeline'));
 	}
 
 	let showedTutorial = $state(false);
@@ -32,7 +30,5 @@
 
 		<h2 class="text-2xl font-bold">{m.pipeline_difficulty_label()}</h2>
 		<PipelineDifficultyPicker selected={game.difficulty} onpick={pick} />
-
-
 	</div>
 </GameShell>

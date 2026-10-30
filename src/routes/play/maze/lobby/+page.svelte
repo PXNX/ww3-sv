@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
 	import { MazeGame } from '#lib/stores/mazeGame.svelte.js';
@@ -9,22 +10,14 @@
 
 	const game = new MazeGame();
 
-	function pick(size: string) {
-		game.start(size as any);
-		goto('/play/maze');
-	}
-
-	function start() {
-		goto('/play/maze');
-	}
-
 	let showedTutorial = $state(false);
 	onMount(() => {
 		showedTutorial = firstPlay('maze');
-		const interval = setInterval(() => {
-			if (game.screen === 'play') goto('/play/maze');
-		}, 150);
-		return () => clearInterval(interval);
+	});
+
+	// The size cards start a run themselves, so the lobby follows as soon as one is chosen
+	$effect(() => {
+		if (game.screen === 'play') goto(resolve('/play/maze'));
 	});
 </script>
 
@@ -35,7 +28,5 @@
 		{/if}
 
 		<MazeSizePicker {game} />
-
-
 	</div>
 </GameShell>

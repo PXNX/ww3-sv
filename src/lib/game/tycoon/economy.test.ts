@@ -18,6 +18,7 @@ import {
 	cycleMs,
 	globalMultiplier,
 	maxAffordable,
+	nextTierAt,
 	offlineEfficiency,
 	perkCost,
 	pointsSpent,
@@ -173,12 +174,13 @@ describe('upgrades', () => {
 		const state = fresh();
 		const ids = () => availableUpgrades(state).map((upgrade) => upgrade.id);
 		expect(ids()).toContain('click_bucket');
-		expect(ids()).not.toContain('pumpjack_1');
+		state.upgrades.push('click_bucket');
+		expect(ids()).not.toContain('click_bucket');
+		// Producer levels are earned with the owned count, never sold in the shop
 		state.owned.pumpjack = 5;
-		expect(ids()).toContain('pumpjack_1');
-		expect(ids()).not.toContain('pumpjack_2');
-		state.upgrades.push('pumpjack_1');
 		expect(ids()).not.toContain('pumpjack_1');
+		expect(nextTierAt('pumpjack', 0)).toBe(5);
+		expect(nextTierAt('pumpjack', 5)).toBe(25);
 	});
 });
 

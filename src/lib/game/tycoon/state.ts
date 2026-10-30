@@ -24,6 +24,7 @@ import {
 	isCut,
 	maxAffordable,
 	maxedCount,
+	nextTierAt,
 	offlineEfficiency,
 	perkCost,
 	perkDef,
@@ -32,6 +33,7 @@ import {
 	producerCost,
 	producerDef,
 	producerOutput,
+	producerTierUpgrades,
 	productionPerSecond,
 	requirementMet,
 	seedBarrels,
@@ -94,19 +96,27 @@ export function tap(state: TycoonState, random: Random): { gained: number; event
 }
 
 /**
- * Buys units of a producer: a fixed amount, or 'max' for as many as the barrels allow.
- * Returns how many were bought (0 when the player cannot afford even one).
+ * Buys units of a producer: a fixed amount, 'max' for as many as the barrels allow, or 'next' for
+ * just enough to reach the producer's next level. Returns how many were bought (0 when the player
+ * cannot afford even one).
  */
 export function buyProducer(
 	state: TycoonState,
 	id: ProducerId,
-	amount: number | 'max' = 1
+	amount: number | 'max' | 'next' = 1
 ): { bought: number; events: TycoonEvent[] } {
 	const def = producerDef(id);
 	const owned = state.owned[id];
 	const prices = pricing(state);
-	let wanted =
-		amount === 'max' ? maxAffordable(def, owned, state.barrels, prices) : Math.floor(amount);
+	let wanted: number;
+	if (amount === 'max') {
+		wanted = maxAffordable(def, owned, state.barrels, prices);
+	} else if (amount === 'next') {
+		const target = nextTierAt(id, owned);
+		wanted = target === null ? 1 : target - owned;
+	} else {
+		wanted = Math.floor(amount);
+	}
 	// Never more than the most that can be owned
 	wanted = Math.min(wanted, MAX_OWNED - owned);
 	if (wanted <= 0) return { bought: 0, events: [] };
@@ -114,7 +124,28 @@ export function buyProducer(
 	if (!(cost <= state.barrels)) return { bought: 0, events: [] };
 	state.barrels -= cost;
 	state.owned[id] = owned + wanted;
-	return { bought: wanted, events: checkAchievements(state) };
+	return {
+		bought: wanted,
+		events: [...grantProducerTiers(state, id), ...checkAchievements(state)]
+	};
+}
+
+/** Levels up a producer: every tier whose owned requirement is met becomes an upgrade it keeps */
+export function grantProducerTiers(state: TycoonState, id: ProducerId): TycoonEvent[] {
+	const events: TycoonEvent[] = [];
+	for (const upgrade of producerTierUpgrades(id)) {
+		if (hasUpgrade(state, upgrade.id)) continue;
+		const requirement = upgrade.requires;
+		if (requirement.type !== 'owned' || state.owned[id] < requirement.count) continue;
+		state.upgrades.push(upgrade.id);
+		events.push({ type: 'levelup', producer: id, tier: upgrade.tier ?? 1 });
+	}
+	return events;
+}
+
+/** Grants every tier the owned units already earned; used when an older save is loaded */
+export function syncProducerTiers(state: TycoonState) {
+	for (const producer of PRODUCERS) grantProducerTiers(state, producer.id);
 }
 
 /** Buys an upgrade if it exists, is unlocked, not yet bought and affordable */

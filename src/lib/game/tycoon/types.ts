@@ -58,12 +58,13 @@ export interface TycoonState {
 	/** Quiet time until the next crisis, counted down only while nothing is going on */
 	nextEventMs: number;
 	lastEvent: EventKind | null;
-	/** Which buy button the player uses (1, 10 or max) */
-	buyMode: '1x' | '10x' | 'max';
+	/** Which buy button the player uses (1, 10, max or up to the next level) */
+	buyMode: '1x' | '10x' | 'max' | 'next';
 }
 
 export type TycoonEvent =
 	| { type: 'achievement'; id: string }
+	| { type: 'levelup'; producer: ProducerId; tier: number }
 	| { type: 'event-start'; kind: EventKind; producer?: ProducerId }
 	| { type: 'event-resolved'; kind: EventKind; outcome: EventOutcome; choice: EventChoice }
 	| { type: 'effect-end'; id: EffectId }

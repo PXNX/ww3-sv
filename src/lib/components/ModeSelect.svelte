@@ -87,14 +87,14 @@
 				draggable="false"
 			/>
 			{m.home_filter_active({ name: leaderById(leader).name() })}
-			<IconX class="size-4" aria-hidden="true" />
+			<IconX class="size-4 text-white dark:text-white" aria-hidden="true" />
 		</button>
 	</div>
 {/if}
 
 <div class="mb-4 flex flex-wrap items-center gap-2">
 	<button type="button" class="btn-chunky bg-explosion-yellow px-3 py-1 text-sm" onclick={surprise}>
-		<IconShuffle class="size-4" aria-hidden="true" />
+		<IconShuffle class="size-4 text-white dark:text-white" aria-hidden="true" />
 		{m.home_surprise()}
 	</button>
 	{#if recent.length > 0}
@@ -102,8 +102,8 @@
 		{#each recent as mode (mode.id)}
 			{#if mode.status === 'playable'}
 				{@const Icon = mode.icon}
-				<a href={resolveRoute(mode.href)} class="btn-chunky bg-paper px-2.5 py-1 text-sm">
-					<Icon class="size-4" aria-hidden="true" />
+				<a href={resolveRoute(mode.href)} class="btn-chunky bg-paper px-2.5 py-1 text-sm text-black dark:text-white">
+					<Icon class="size-4 text-white dark:text-white" aria-hidden="true" />
 					{mode.name()}
 				</a>
 			{/if}
@@ -146,14 +146,14 @@
 					class="absolute start-2 top-2 inline-flex items-center gap-1 rounded-md border-2 border-ink bg-explosion-yellow px-1.5 py-0.5 text-xs font-bold tabular-nums"
 					aria-label={m.career_best({ score: progress.best })}
 				>
-					<IconTrophy class="size-3.5" aria-hidden="true" />
+					<IconTrophy class="size-3.5 text-white dark:text-white" aria-hidden="true" />
 					{progress.best}
 				</span>
 			{/if}
 			<span class="mt-auto rounded-xl border-3 border-ink p-3 {mode.tileClass}" aria-hidden="true">
-				<Icon class="size-12" stroke-width="2.5" />
+				<Icon class="size-12 text-white dark:text-white" stroke-width="2.5" />
 			</span>
-			<h4 class="text-lg leading-tight font-bold text-paper [text-shadow:0_2px_0_var(--color-ink)]">
+			<h4 class="text-lg leading-tight font-bold text-paper dark:text-black [text-shadow:0_2px_0_var(--color-ink)]">
 				{mode.name()}
 			</h4>
 		{/snippet}
@@ -178,7 +178,7 @@
 				<span
 					class="mt-auto inline-flex items-center gap-1 rounded-md border-2 border-ink bg-sand px-2 py-0.5 text-xs font-bold"
 				>
-					<IconHourglass class="size-3.5" aria-hidden="true" />
+					<IconHourglass class="size-3.5 text-white dark:text-white" aria-hidden="true" />
 					{m.mode_coming_soon()}
 				</span>
 			</div>

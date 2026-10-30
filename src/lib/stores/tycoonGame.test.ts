@@ -9,7 +9,7 @@ import {
 	PRODUCERS,
 	UPGRADES
 } from '#lib/game/tycoon/config.js';
-import { perkCost, upgradeCost, upgradeDef } from '#lib/game/tycoon/economy.js';
+import { perkCost, producerDef, upgradeCost, upgradeDef } from '#lib/game/tycoon/economy.js';
 import { SAVE_KEY } from '#lib/game/tycoon/save.js';
 import { createHighscores } from '#lib/services/highscore.js';
 import { createStore, type KeyValueStorage } from '#lib/services/storage.js';
@@ -235,7 +235,9 @@ describe('TycoonGame persistence', () => {
 		const second = setup(first.storage, 1_000_000 + 600_000);
 		second.game.load();
 		expect(second.game.welcome?.creditedMs).toBe(600_000);
-		expect(second.game.barrels).toBeCloseTo(10 * 600 * OFFLINE_EFFICIENCY, 6);
+		// Ten tankers already have their first level, so they pump twice the base rate
+		const rate = 10 * producerDef('tanker').baseCps * 2;
+		expect(second.game.barrels).toBeCloseTo(rate * 600 * OFFLINE_EFFICIENCY, 6);
 		second.game.dismissWelcome();
 		expect(second.game.welcome).toBeNull();
 	});
@@ -247,7 +249,8 @@ describe('TycoonGame persistence', () => {
 		const second = setup(first.storage, 1_000_000 + OFFLINE_CAP_MS * 5);
 		second.game.load();
 		expect(second.game.welcome?.capped).toBe(true);
-		expect(second.game.barrels).toBeCloseTo(10 * (OFFLINE_CAP_MS / 1000) * OFFLINE_EFFICIENCY, 3);
+		const rate = 10 * producerDef('tanker').baseCps * 2;
+		expect(second.game.barrels).toBeCloseTo(rate * (OFFLINE_CAP_MS / 1000) * OFFLINE_EFFICIENCY, 3);
 	});
 
 	it('skips the report for a short absence and for nothing earned', () => {

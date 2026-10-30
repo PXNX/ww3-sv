@@ -103,7 +103,8 @@
 	const amounts: { value: BuyAmount; label: () => string }[] = [
 		{ value: 1, label: () => '×1' },
 		{ value: 10, label: () => '×10' },
-		{ value: 'max', label: () => m.tycoon_buy_max() }
+		{ value: 'max', label: () => m.tycoon_buy_max() },
+		{ value: 'next', label: () => m.tycoon_buy_next() }
 	];
 
 	const tabs: { id: Tab; label: () => string }[] = [

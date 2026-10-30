@@ -13,6 +13,7 @@ import {
 } from './config.js';
 import {
 	critMultUpgrade,
+	nextTierAt,
 	perkCost,
 	producerCost,
 	producerDef,
@@ -28,6 +29,7 @@ import {
 	canPrestige,
 	checkAchievements,
 	createState,
+	grantProducerTiers,
 	pendingPrestige,
 	prestige,
 	runCycles,
@@ -146,6 +148,33 @@ describe('buying', () => {
 		expect(tapValue(state)).toBe(2);
 		state.barrels = 0;
 		expect(buyUpgrade(state, 'click_valve').bought).toBe(false);
+	});
+
+	it("levels a producer up to its next tier with 'next'", () => {
+		const state = fresh();
+		state.barrels = 1e9;
+		expect(nextTierAt('pumpjack', 0)).toBe(5);
+		const { bought, events } = buyProducer(state, 'pumpjack', 'next');
+		expect(bought).toBe(5);
+		expect(state.owned.pumpjack).toBe(5);
+		expect(state.upgrades).toContain('pumpjack_1');
+		expect(events).toContainEqual({ type: 'levelup', producer: 'pumpjack', tier: 1 });
+		// The next tap of "next" reaches the following tier, not the whole way
+		expect(buyProducer(state, 'pumpjack', 'next').bought).toBe(20);
+		expect(state.owned.pumpjack).toBe(25);
+		expect(state.upgrades).toContain('pumpjack_2');
+	});
+
+	it('grants every tier the owned units already earned and never charges for it', () => {
+		const state = fresh();
+		state.owned.pumpjack = 25;
+		state.barrels = 0;
+		const events = grantProducerTiers(state, 'pumpjack');
+		expect(events.map((event) => event.type)).toEqual(['levelup', 'levelup']);
+		expect(state.upgrades).toEqual(['pumpjack_1', 'pumpjack_2']);
+		expect(state.barrels).toBe(0);
+		// A second call changes nothing
+		expect(grantProducerTiers(state, 'pumpjack')).toEqual([]);
 	});
 });
 

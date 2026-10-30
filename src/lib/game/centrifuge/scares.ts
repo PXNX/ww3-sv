@@ -8,7 +8,7 @@
 import { pickWeighted, randomInt, type Random } from '#lib/game/random.js';
 import { BANNER_COUNT, clamp01, lerp } from './config.js';
 
-export type ScareKind = 'siren' | 'banner' | 'shake' | 'something';
+export type ScareKind = 'siren' | 'banner' | 'shake' | 'something' | 'flicker';
 
 export interface Scare {
 	id: number;
@@ -40,7 +40,8 @@ const KIND_JITTER: Record<ScareKind, number> = {
 	banner: 0.5,
 	siren: 0.7,
 	something: 0.8,
-	shake: 1
+	shake: 1,
+	flicker: 0.9
 };
 
 /** Fade in and out of a scare, so the needle does not jump the moment it starts */
@@ -58,17 +59,18 @@ export function scareKindsAt(difficulty: number): { item: ScareKind; weight: num
 	];
 	if (difficulty >= 0.15) kinds.push({ item: 'shake', weight: 2 });
 	if (difficulty >= 0.3) kinds.push({ item: 'something', weight: 2 });
+	if (difficulty >= 0.5) kinds.push({ item: 'flicker', weight: 2 });
 	return kinds;
 }
 
 /** Most scares that may be on at once */
 export function maxConcurrent(difficulty: number): number {
-	return difficulty >= 0.85 ? 3 : difficulty >= 0.5 ? 2 : 1;
+	return difficulty >= 0.85 ? 4 : difficulty >= 0.5 ? 3 : 2;
 }
 
 /** Time between one scare starting and the next */
 export function gapMs(difficulty: number, random: Random): number {
-	return lerp(6000, 1800, clamp01(difficulty)) * (0.7 + random() * 0.6);
+	return lerp(5000, 1600, clamp01(difficulty)) * (0.7 + random() * 0.6);
 }
 
 /** Creates one scare of a kind not already on screen; null when every available kind is running */

@@ -1,4 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	goto('/play/pipeline/lobby');
+	import { resolve } from '$app/paths';
+
+	goto(resolve('/play/pipeline/lobby'));
 </script>
