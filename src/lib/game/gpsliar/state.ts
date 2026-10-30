@@ -45,6 +45,10 @@ export interface GameState {
 	hearts: number;
 	/** Seconds of grace left after a hit */
 	invulnerable: number;
+	/** Submarine is on attack: it will reach the tanker within ATTACK_TIME seconds unless diverted */
+	subAttack: boolean;
+	subTimer: number;     // seconds until submarine attacks if not diverted
+	subDiverted: boolean;
 	/** Harbours unloaded so far; the next one to visit is level.stops[delivered] */
 	delivered: number;
 	crossChecksLeft: number;
@@ -80,6 +84,9 @@ export function createGame(level: Level): GameState {
 		steer: { x: 0, y: 0 },
 		hearts: STARTING_HEARTS,
 		invulnerable: 0,
+		subAttack: false,
+		subTimer: 0,
+		subDiverted: false,
 		delivered: 0,
 		crossChecksLeft: level.crossChecks,
 		crossChecksUsed: 0,
