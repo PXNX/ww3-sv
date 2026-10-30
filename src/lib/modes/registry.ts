@@ -41,7 +41,6 @@ import IconRocket from '~icons/lucide/rocket';
 import IconMusic from '~icons/lucide/music';
 import IconHandshake from '~icons/lucide/handshake';
 import IconBinoculars from '~icons/lucide/binoculars';
-import IconRadar from '~icons/lucide/radar';
 import IconSailboat from '~icons/lucide/sailboat';
 import IconFactory from '~icons/lucide/factory';
 import IconTerminal from '~icons/lucide/terminal';
