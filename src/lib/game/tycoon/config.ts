@@ -449,6 +449,7 @@ const CLICK_UPGRADES: readonly UpgradeDef[] = [
 	{ id: 'click_titan', kind: 'click', cost: 2_500_000_000, requires: { type: 'none' }, value: 5 },
 	{ id: 'click_nitro', kind: 'click', cost: 100_000_000_000, requires: { type: 'none' }, value: 3 },
 	{ id: 'click_megatap', kind: 'click', cost: 500_000_000_000, requires: { type: 'total', count: 500 }, value: 6 },
+	{ id: 'click_god', kind: 'click', cost: 5_000_000_000_000, requires: { type: 'total', count: 2000 }, value: 10 },
 	{ id: 'event_boost', kind: 'events', cost: 500_000, requires: { type: 'none' }, value: 1.25 },
 	{ id: 'event_master', kind: 'events', cost: 50_000_000, requires: { type: 'none' }, value: 1.5 },
 	{
@@ -502,6 +503,20 @@ const GLOBAL_UPGRADES: readonly UpgradeDef[] = [
 		cost: 2_500_000_000,
 		requires: { type: 'total', count: 250 },
 		value: 2
+	},
+	{
+		id: 'global_mega',
+		kind: 'global',
+		cost: 500_000_000_000,
+		requires: { type: 'total', count: 500 },
+		value: 3
+	},
+	{
+		id: 'global_titan',
+		kind: 'global',
+		cost: 2_500_000_000_000,
+		requires: { type: 'total', count: 1000 },
+		value: 4
 	}
 ];
 
