@@ -31,8 +31,6 @@
 
 		<MazeSizePicker {game} />
 
-		<div class="flex justify-end">
-			<button type="button" class="btn-chunky px-4 py-1 text-lg" onclick={start}>Start</button>
-		</div>
+
 	</div>
 </GameShell>

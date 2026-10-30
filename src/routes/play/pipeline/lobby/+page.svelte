@@ -33,8 +33,6 @@
 		<h2 class="text-2xl font-bold">{m.pipeline_difficulty_label()}</h2>
 		<PipelineDifficultyPicker selected={game.difficulty} onpick={pick} />
 
-		<div class="flex justify-end">
-			<button type="button" class="btn-chunky px-4 py-1 text-lg" onclick={start}>Start</button>
-		</div>
+
 	</div>
 </GameShell>
