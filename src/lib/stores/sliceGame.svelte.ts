@@ -37,6 +37,7 @@ export class SliceGame {
 	missed = $state(0);
 	decoysHit = $state(0);
 	bestCombo = $state(0);
+	streak = $state(0);
 	/** Counts up whenever a heart is lost, so the field can flash */
 	hurtCount = $state(0);
 	best = $state<number | null>(null);
@@ -147,6 +148,7 @@ export class SliceGame {
 				this.#play('whoosh', 160);
 				break;
 			case 'sliced': {
+				this.streak += 1;
 				this.effects.push({
 					kind: 'puff',
 					x: event.x,
@@ -181,6 +183,7 @@ export class SliceGame {
 				break;
 			}
 			case 'decoy-hit':
+				this.streak = 0;
 				this.hurtCount += 1;
 				this.effects.push({
 					kind: 'puff',
@@ -202,6 +205,7 @@ export class SliceGame {
 				this.#play('ui-error', 0);
 				break;
 			case 'missed':
+				this.streak = 0;
 				this.hurtCount += 1;
 				this.effects.push({
 					kind: 'splash',

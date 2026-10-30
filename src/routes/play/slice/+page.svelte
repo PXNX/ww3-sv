@@ -71,6 +71,7 @@
 				{m.slice_hud_hint()}
 			</p>
 			<LivesBar lives={game.lives} max={STARTING_LIVES} class="shrink-0 text-xl" />
+			<span class="font-display text-sm font-bold">{game.streak}</span>
 		</div>
 
 		<SliceCanvas {game} />
