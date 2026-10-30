@@ -102,7 +102,10 @@
 		{#each recent as mode (mode.id)}
 			{#if mode.status === 'playable'}
 				{@const Icon = mode.icon}
-				<a href={resolveRoute(mode.href)} class="btn-chunky bg-paper px-2.5 py-1 text-sm text-black dark:text-white">
+				<a
+					href={resolveRoute(mode.href)}
+					class="btn-chunky bg-paper px-2.5 py-1 text-sm text-black dark:text-white"
+				>
 					<Icon class="size-4 text-white dark:text-white" aria-hidden="true" />
 					{mode.name()}
 				</a>
@@ -153,7 +156,9 @@
 			<span class="mt-auto rounded-xl border-3 border-ink p-3 {mode.tileClass}" aria-hidden="true">
 				<Icon class="size-12 text-white dark:text-white" stroke-width="2.5" />
 			</span>
-			<h4 class="text-lg leading-tight font-bold text-paper dark:text-black [text-shadow:0_2px_0_var(--color-ink)]">
+			<h4
+				class="text-lg leading-tight font-bold text-paper [text-shadow:0_2px_0_var(--color-ink)] dark:text-black"
+			>
 				{mode.name()}
 			</h4>
 		{/snippet}

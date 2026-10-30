@@ -298,7 +298,7 @@
 					{#each BUILDING_IDS as id (id)}
 						<button
 							type="button"
-							class="flex flex-col items-start gap-0.5 rounded-xl border-2 border-ink bg-sand px-2 py-1.5 text-left disabled:opacity-45"
+							class="build-btn flex flex-col items-start gap-0.5 rounded-xl border-2 border-ink bg-sand px-2 py-1.5 text-left disabled:opacity-45 transition-transform hover:-translate-y-0.5"
 							disabled={!canBuildHere(id)}
 							onclick={() => buildHere(id)}
 						>
@@ -426,6 +426,16 @@
 		}
 		to {
 			opacity: 0;
+		}
+	}
+
+	.build-btn:active {
+		transform: translateY(0);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.build-btn {
+			transition: none;
 		}
 	}
 
