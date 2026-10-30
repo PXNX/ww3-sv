@@ -9,4 +9,3 @@
   </div>
   <p class="text-ink/80 text-sm font-display mt-2">Push the poll line down with correct icons. Wrong pushes it back.</p>
 </div>
-</div>
