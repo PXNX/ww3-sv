@@ -6,7 +6,7 @@
  */
 import type { Random } from '../random';
 
-export type CameraMode = 'satellite' | 'globalhawk' | 'reaper';
+export type CameraMode = 'satellite' | 'globalhawk' | 'reaper' | 'fpv';
 
 export type TargetKind = 'vehicle' | 'troops' | 'facility' | 'supply';
 export interface Target {
@@ -26,13 +26,16 @@ export interface ReconState {
 	timer: number;           // seconds
 	danger: number;         // 0..100 detection-danger meter
 	hotspots: { x: number; y: number; kind: TargetKind }[]; // pre-placed clickable markers for current view
+	strikes: { x: number; y: number; kind: 'shell' | 'artillery'; time: number }[]; // active explosions
+	shellsDropped: number;
 }
 
-export const CAMERA_NAMES = ['Satellite', 'Global Hawk', 'Reaper'] as const;
+export const CAMERA_NAMES = ['Satellite', 'Global Hawk', 'Reaper', 'FPV Drone'] as const;
 export const CAMERA_LABELS: Record<CameraMode, string> = {
 	satellite: 'SATELLITE',
 	globalhawk: 'GLOBAL HAWK',
-	reaper: 'REAPER'
+	reaper: 'REAPER',
+	fpv: 'FPV DRONE'
 };
 
 export function createRecon(): ReconState {
@@ -56,7 +59,9 @@ export function createRecon(): ReconState {
 		won: false,
 		timer: 60,
 		danger: 0,
-		hotspots: []
+		hotspots: [],
+		strikes: [],
+		shellsDropped: 0
 	};
 }
 
@@ -65,6 +70,8 @@ export function setCamera(s: ReconState, c: CameraMode): void {
 	if (s.over) return;
 	s.camera = c;
 	s.hotspots = s.targets.map((t) => ({ x: t.x, y: t.y, kind: t.kind }));
+	// FPV drone: maximum detail — shows every target, including hidden ones
+	if (c === 'fpv') s.hotspots = s.targets.map((t) => ({ x: t.x, y: t.y, kind: t.kind }));
 	// Higher-resolution cameras (Reaper) reveal fewer clues — rotate them out
 	if (c === 'reaper') s.hotspots = s.hotspots.slice(0, 3);
 }
@@ -92,6 +99,17 @@ export function clickTarget(s: ReconState, x: number, y: number): number {
 	}
 }
 
+export function dropShell(s: ReconState, x: number, y: number, kind: 'shell' | 'artillery' = 'shell') {
+	if (s.over) return;
+	s.strikes.push({ x, y, kind, time: 2.5 });
+	s.shellsDropped += 1;
+	// Artillery strike destroys targets near impact; shell just marks
+	if (kind === 'artillery') {
+		// Damage nearby targets: remove from hotspots
+		s.hotspots = s.hotspots.filter((h) => Math.hypot(h.x - x, h.y - y) > 0.15);
+	}
+}
+
 export function stepRecon(s: ReconState, dtMs: number) {
 	if (s.over) return;
 	s.timer -= dtMs / 1000;
@@ -107,4 +125,6 @@ export function stepRecon(s: ReconState, dtMs: number) {
 		s.over = true;
 		s.won = true;
 	}
+	// Decay active strikes
+	s.strikes = s.strikes.map((str) => ({ ...str, time: str.time - dtMs / 1000 })).filter((str) => str.time > 0);
 }
