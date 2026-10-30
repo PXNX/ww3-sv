@@ -86,6 +86,15 @@
 			<IconHelp class="size-4" aria-hidden="true" />
 			<span class="hidden sm:inline">{m.maze_help_button()}</span>
 		</button>
+		<button
+			type="button"
+			class="btn-chunky px-2 py-1 text-sm sm:px-3"
+			disabled={game.steps === 0 && !game.won}
+			onclick={() => game.restart()}
+		>
+			<IconRotate class="size-4" aria-hidden="true" />
+			<span class="hidden sm:inline">{m.maze_restart()}</span>
+		</button>
 	{/snippet}
 
 	{#if playing}
@@ -137,21 +146,6 @@
 				{/key}
 			</p>
 
-			<div class="shrink-0 pointer-fine:hidden">
-				<MazeDpad onmove={(direction) => game.move(direction)} disabled={game.won} />
-			</div>
-
-			<div class="flex shrink-0 flex-wrap items-center justify-center gap-2">
-				<button
-					type="button"
-					class="btn-chunky px-3 py-1 text-sm"
-					disabled={game.steps === 0 && !game.won}
-					onclick={() => game.restart()}
-				>
-					<IconRotate class="size-4" aria-hidden="true" />
-					{m.maze_restart()}
-				</button>
-			</div>
 		</section>
 	{/if}
 

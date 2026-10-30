@@ -327,6 +327,7 @@
 			{/if}
 		{/each}
 
+		{#key game.play.room}
 		<!-- The clerk: the player's token -->
 		<g
 			class="maze-pawn"
@@ -341,17 +342,27 @@
 				<rect x="2" y="1" width="2.2" height="2.6" rx="0.3" fill="var(--color-paper)" />
 			</g>
 		</g>
+		{/key}
 	</svg>
 </div>
 
 <style>
 	.maze-pawn {
-		transition: transform 150ms ease-out;
+		transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
+		animation: swipe-bounce 220ms ease-out forwards;
+	}
+
+	@keyframes swipe-bounce {
+		0% { transform: scale(1); }
+		30% { transform: scale(1.15) rotate(-2deg); }
+		60% { transform: scale(0.9) rotate(2deg); }
+		100% { transform: scale(1) rotate(0deg); }
 	}
 
 	@media (prefers-reduced-motion: reduce) {
 		.maze-pawn {
 			transition: none;
+			animation: none;
 		}
 	}
 </style>
