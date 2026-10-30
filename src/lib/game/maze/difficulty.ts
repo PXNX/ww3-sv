@@ -17,9 +17,9 @@ export interface MazeConfig {
 }
 
 export const SIZES: Record<SizeId, MazeConfig> = {
-	small: { width: 5, height: 4, locks: 2, closed: 2, loops: 0.12, winding: 0.5 },
-	medium: { width: 6, height: 5, locks: 3, closed: 3, loops: 0.1, winding: 0.5 },
-	large: { width: 7, height: 6, locks: 4, closed: 5, loops: 0.08, winding: 0.5 }
+	small: { width: 5, height: 7, locks: 2, closed: 2, loops: 0.12, winding: 0.5 },
+	medium: { width: 6, height: 8, locks: 3, closed: 3, loops: 0.1, winding: 0.5 },
+	large: { width: 7, height: 9, locks: 4, closed: 5, loops: 0.08, winding: 0.5 }
 };
 
 export function isSizeId(value: unknown): value is SizeId {
