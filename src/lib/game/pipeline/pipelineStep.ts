@@ -160,7 +160,7 @@ export function createGame(
 	overrides: Partial<PipelineConfig> = {}
 ): PipelineState {
 	const config = { ...DIFFICULTY_CONFIG[difficulty], ...overrides };
-	const { grid, route, solution } = generateLayout(random, config.size, config.size);
+	const { grid, route, solution } = generateLayout(random, config.size + 1, config.size);
 	return {
 		difficulty,
 		config,

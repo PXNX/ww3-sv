@@ -330,19 +330,5 @@
 		{/each}
 	</div>
 
-	<div class="grid gap-1 px-2" style:grid-template-columns={columns}>
-		{#each { length: grid.cols }, col (col)}
-			<div class="aspect-[5/4]">
-				{#if col === grid.terminalCol}
-					<PipelineLandmark
-						kind="terminal"
-						active={view.flow.reachesTerminal}
-						label={m.pipeline_terminal()}
-						level={tankerLevel}
-						{reducedMotion}
-					/>
-				{/if}
-			</div>
-		{/each}
-	</div>
+
 </div>
