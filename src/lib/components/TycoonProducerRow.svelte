@@ -138,7 +138,8 @@
 			type="button"
 			class="btn-chunky shrink-0 flex-col gap-0 px-3 py-1.5 leading-tight {maxed ? 'bg-paper' : upgradeReady ? 'bg-explosion-yellow' : 'bg-paper'}"
 		class:opacity-40={!affordable}
-			disabled={!affordable}
+		class:btn-disabled={!affordable}
+		disabled={!affordable}
 			aria-label={maxed
 				? `${name}: ${m.tycoon_perk_maxed()}`
 				: m.tycoon_buy_label({ count, name, cost: formatBig(cost, locale) })}
