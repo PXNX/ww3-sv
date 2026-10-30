@@ -26,7 +26,7 @@
 		{#if game.cState === "aiming"}
 			<div class="w-full max-w-xs space-y-3">
 				<div><label class="font-display text-sm">Power: {game.power}%</label><input type="range" min="20" max="80" bind:value={game.power} class="w-full" /></div>
-				<div><label class="font-display text-sm">Angle: {game.angle}°</label><input type="range" min="-60" max="-30" bind:value={game.angle} class="w-full" /></div>
+				<div><label class="font-display text-sm">Angle: {game.angle}Â°</label><input type="range" min="-60" max="-30" bind:value={game.angle} class="w-full" /></div>
 				<button type="button" class="btn-chunky w-full py-3" onclick={() => game.throwStone()}>THROW</button>
 			</div>
 		{:else if game.cState === "sliding"}
