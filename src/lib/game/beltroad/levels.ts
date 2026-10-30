@@ -3,18 +3,19 @@
  * scripts/generate-beltroad-levels.ts and levels.test.ts solves every level again.
  */
 import data from './levels.json';
-import { TIERS, type Level, type Tier } from './board';
+import { type Level } from './board';
 
 export const LEVELS: readonly Level[] = data as unknown as Level[];
 
 export const LEVELS_PER_TIER = 6;
 
 export function levelAt(index: number): Level {
-	return LEVELS[Math.min(Math.max(index, 0), LEVELS.length - 1)];
+	const clamped = Math.min(Math.max(index, 0), LEVELS.length - 1);
+	return LEVELS[index >= LEVELS.length ? 0 : clamped];
 }
 
-export function tierLevels(tier: Tier): { level: Level; index: number }[] {
+export function tierLevels(tier: import('./board').Tier): { level: Level; index: number }[] {
 	return LEVELS.flatMap((level, index) => (level.tier === tier ? [{ level, index }] : []));
 }
 
-export { TIERS };
+export { TIERS } from './board';
