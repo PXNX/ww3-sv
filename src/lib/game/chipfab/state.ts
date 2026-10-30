@@ -32,13 +32,7 @@ import {
 	type Modifiers,
 	type MicroKind
 } from './events';
-import {
-	ORDER_PENALTY,
-	ORDER_RELIEF,
-	orderFor,
-	orderMet,
-	type Order
-} from './orders';
+import { ORDER_PENALTY, ORDER_RELIEF, orderFor, orderMet, type Order } from './orders';
 import { createRam, isRamDone, moveRam, type MergeEvent, type RamState } from './ram';
 import {
 	HEART_RESET,
@@ -257,8 +251,7 @@ export function skipCard(state: ChipFabState) {
 function startMerge(state: ChipFabState, random: Random, events: ChipFabEvent[]) {
 	const output = waferOutput(state.stacker);
 	state.ram = createRam(random, output.supply + state.mods.supply, output.quality);
-	state.mergeBonus =
-		1 + Math.min(PERFECT_MERGE_MAX, PERFECT_MERGE_BONUS * state.stacker.perfects);
+	state.mergeBonus = 1 + Math.min(PERFECT_MERGE_MAX, PERFECT_MERGE_BONUS * state.stacker.perfects);
 	state.stage = 'merge';
 	state.lockMs = LOCK_MS;
 	events.push({ type: 'stage', stage: 'merge' });
