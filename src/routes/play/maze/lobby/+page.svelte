@@ -9,7 +9,8 @@
 
 	const game = new MazeGame();
 
-	function pick() {
+	function pick(size: string) {
+		game.start(size as any);
 		goto('/play/maze');
 	}
 
@@ -20,6 +21,10 @@
 	let showedTutorial = $state(false);
 	onMount(() => {
 		showedTutorial = firstPlay('maze');
+		const interval = setInterval(() => {
+			if (game.screen === 'play') goto('/play/maze');
+		}, 150);
+		return () => clearInterval(interval);
 	});
 </script>
 
