@@ -526,7 +526,7 @@ const PRODUCER_UPGRADES: readonly UpgradeDef[] = PRODUCERS.flatMap((producer) =>
 		kind: 'producer' as const,
 		cost: producer.baseCost * costUnits,
 		requires: { type: 'owned' as const, producer: producer.id, count },
-		value: 2,
+		value: 2, // doubles producer output per tier
 		producer: producer.id,
 		tier: index + 1
 	}))
