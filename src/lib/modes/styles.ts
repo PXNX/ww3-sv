@@ -72,5 +72,13 @@ export const STYLE_OF_MODE: Record<ModeId, PlayStyle> = {
 	energiewende: 'management',
 	petrobras: 'management',
 	rareearth: 'management',
-	chipfab: 'management'
+	chipfab: 'management',
+	hackers: 'tactics',
+	recon: 'tactics',
+	killswitch: 'tactics',
+	shuffle: 'puzzle',
+	slider: 'reaction',
+	grain: 'platformer',
+	curling: 'platformer',
+	sabotage: 'tactics'
 };

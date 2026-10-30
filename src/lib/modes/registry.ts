@@ -89,7 +89,13 @@ export type ModeId =
 	| 'falklands'
 	| 'warroom'
 	| 'hackers'
-	| 'recon';
+	| 'recon'
+	| 'shuffle'
+	| 'slider'
+	| 'grain'
+	| 'curling'
+	| 'sabotage'
+	| 'killswitch';
 
 interface ModeBase {
 	id: ModeId;
@@ -544,6 +550,66 @@ export const MODES: readonly GameMode[] = [
 		leaders: ['musk'],
 		name: () => 'Recon',
 		description: () => 'Analyze satellite, Global Hawk and Reaper footage militarily — identify targets, read thermal signatures, assess threat levels.'
+	},
+	{
+		id: 'shuffle',
+		status: 'playable',
+		href: '/play/shuffle',
+		icon: IconShuffle,
+		tileClass: 'bg-khaki',
+		leaders: ['musk'],
+		name: () => 'Shadow Fleet',
+		description: () => 'Shell game: track the sanctioned tanker behind shifting cards.'
+	},
+	{
+		id: 'slider',
+		status: 'playable',
+		href: '/play/slider',
+		icon: IconVote,
+		tileClass: 'bg-amber-100',
+		leaders: ['musk'],
+		name: () => 'Sondage Slider',
+		description: () => 'Push the wobbling poll line downward with correct icons.'
+	},
+	{
+		id: 'grain',
+		status: 'playable',
+		href: '/play/grain',
+		icon: IconDroplets,
+		tileClass: 'bg-blue-950',
+		leaders: ['musk'],
+		name: () => 'Grain Corridor',
+		description: () => 'Black Sea runner: steer grain ships through mine lanes to port.'
+	},
+	{
+		id: 'curling',
+		status: 'playable',
+		href: '/play/curling',
+		icon: IconFeather,
+		tileClass: 'bg-cyan-100',
+		leaders: ['musk'],
+		name: () => 'Iceberg Curling',
+		description: () => 'Sweep the stone against the For Sale sign — 8 ends, stars for wins.'
+	},
+	{
+		id: 'sabotage',
+		status: 'playable',
+		href: '/play/sabotage',
+		icon: IconSwords,
+		tileClass: 'bg-tie-red',
+		leaders: ['musk'],
+		name: () => 'Gig Saboteur',
+		description: () => 'Top-down stealth: power line, depot, shell factory — 9 levels.'
+	},
+	{
+		id: 'killswitch',
+		status: 'playable',
+		href: '/play/killswitch',
+		icon: IconRocket,
+		tileClass: 'bg-slate-900',
+		leaders: ['musk'],
+		name: () => 'Starlink Kill Switch',
+		description: () => 'Cut satellite links before drones reach the refinery.'
 	}
 ];
 
