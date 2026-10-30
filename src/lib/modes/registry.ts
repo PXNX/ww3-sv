@@ -43,6 +43,7 @@ import IconHandshake from '~icons/lucide/handshake';
 import IconBinoculars from '~icons/lucide/binoculars';
 import IconSailboat from '~icons/lucide/sailboat';
 import IconFactory from '~icons/lucide/factory';
+import IconTerminal from '~icons/lucide/terminal';
 import IconMap from '~icons/lucide/map';
 
 export type ModeId =
@@ -86,7 +87,8 @@ export type ModeId =
 	| 'bordershift'
 	| 'droneworks'
 	| 'falklands'
-	| 'warroom';
+	| 'warroom'
+	| 'hackers';
 
 interface ModeBase {
 	id: ModeId;
@@ -521,6 +523,16 @@ export const MODES: readonly GameMode[] = [
 		leaders: ['merz', 'macron'],
 		name: m.mode_warroom_name,
 		description: m.mode_warroom_description
+	},
+	{
+		id: 'hackers',
+		status: 'playable',
+		href: '/play/hackers',
+		icon: IconTerminal,
+		tileClass: 'bg-tie-red',
+		leaders: ['kim'],
+		name: () => 'Hermit Hackers',
+		description: () => 'Retro terminal: crack crypto wallets, install siphons and worms, flip breaker lights. Reach the quota before the trace hits 100.'
 	}
 ];
 
