@@ -51,6 +51,9 @@
 			!maxed &&
 			game.barrels >= producerCost(def, owned, Math.max(1, nextTier - owned), game.pricing)
 	);
+	const hitsTier = $derived(
+		nextTier !== null && owned + count >= nextTier
+	);
 	const name = $derived(producerName(id));
 	const cycle = $derived(game.cycles[id]);
 	// What one cycle pays: for all owned units, or for the first one before any is bought
@@ -136,7 +139,7 @@
 
 		<button
 			type="button"
-			class="btn-chunky shrink-0 flex-col gap-0 px-3 py-1.5 leading-tight {maxed ? 'bg-paper' : upgradeReady ? 'bg-explosion-yellow' : 'bg-paper'}"
+			class="btn-chunky shrink-0 flex-col gap-0 px-3 py-1.5 leading-tight {maxed ? 'bg-paper' : hitsTier ? 'bg-explosion-yellow' : 'bg-paper'}"
 		class:opacity-40={!affordable}
 		class:btn-disabled={!affordable}
 		disabled={!affordable}

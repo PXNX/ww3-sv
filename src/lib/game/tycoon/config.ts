@@ -74,107 +74,107 @@ export const PRODUCERS: readonly ProducerDef[] = [
 	{ id: 'pumpjack', baseCost: 15, baseCps: 0.1, cycleMs: 1_000 },
 	{ id: 'tanker', baseCost: 100, baseCps: 1, cycleMs: 2_000 },
 	{ id: 'refinery', baseCost: 1_100, baseCps: 8, cycleMs: 3_000 },
-	{ id: 'lobbyist', baseCost: 12_000, baseCps: 47, cycleMs: 5_000 },
-	{ id: 'shadowfleet', baseCost: 130_000, baseCps: 260, cycleMs: 8_000 },
-	{ id: 'paperwork', baseCost: 1_400_000, baseCps: 1_400, cycleMs: 12_000 },
-	{ id: 'summit', baseCost: 20_000_000, baseCps: 7_800, cycleMs: 18_000 },
-	{ id: 'offshore', baseCost: 330_000_000, baseCps: 44_000, cycleMs: 25_000 },
-	{ id: 'cartel', baseCost: 5_100_000_000, baseCps: 260_000, cycleMs: 35_000 },
-	{ id: 'arctic', baseCost: 75_000_000_000, baseCps: 1_600_000, cycleMs: 50_000 },
-	{ id: 'driller', baseCost: 1_100_000_000_000, baseCps: 9_000_000, cycleMs: 60_000 },
-	{ id: 'pipeline', baseCost: 16_000_000_000_000, baseCps: 50_000_000, cycleMs: 70_000 },
-	{ id: 'wellhead', baseCost: 230_000_000_000_000, baseCps: 280_000_000, cycleMs: 80_000 },
-	{ id: 'valve', baseCost: 3_300_000_000_000_000, baseCps: 1_500_000_000, cycleMs: 90_000 },
-	{ id: 'drillbit', baseCost: 47_000_000_000_000_000, baseCps: 8_000_000_000, cycleMs: 100_000 },
-	{ id: 'rig', baseCost: 670_000_000_000_000_000, baseCps: 45_000_000_000, cycleMs: 110_000 },
+	{ id: 'lobbyist', baseCost: 12_000, baseCps: 94, cycleMs: 5_000 },
+	{ id: 'shadowfleet', baseCost: 130_000, baseCps: 520, cycleMs: 8_000 },
+	{ id: 'paperwork', baseCost: 1_400_000, baseCps: 2_800, cycleMs: 12_000 },
+	{ id: 'summit', baseCost: 20_000_000, baseCps: 15_600, cycleMs: 18_000 },
+	{ id: 'offshore', baseCost: 330_000_000, baseCps: 88_000, cycleMs: 25_000 },
+	{ id: 'cartel', baseCost: 5_100_000_000, baseCps: 520_000, cycleMs: 35_000 },
+	{ id: 'arctic', baseCost: 75_000_000_000, baseCps: 3_200_000, cycleMs: 50_000 },
+	{ id: 'driller', baseCost: 1_100_000_000_000, baseCps: 18_000_000, cycleMs: 60_000 },
+	{ id: 'pipeline', baseCost: 16_000_000_000_000, baseCps: 100_000_000, cycleMs: 70_000 },
+	{ id: 'wellhead', baseCost: 230_000_000_000_000, baseCps: 560_000_000, cycleMs: 80_000 },
+	{ id: 'valve', baseCost: 3_300_000_000_000_000, baseCps: 3_000_000_000, cycleMs: 90_000 },
+	{ id: 'drillbit', baseCost: 47_000_000_000_000_000, baseCps: 16_000_000_000, cycleMs: 100_000 },
+	{ id: 'rig', baseCost: 670_000_000_000_000_000, baseCps: 90_000_000_000, cycleMs: 110_000 },
 	{
 		id: 'platform',
 		baseCost: 9_500_000_000_000_000_000,
-		baseCps: 250_000_000_000,
+		baseCps: 500_000_000_000,
 		cycleMs: 120_000
 	},
 	{
 		id: 'platform2',
 		baseCost: 135_000_000_000_000_000_000,
-		baseCps: 1_400_000_000_000,
+		baseCps: 2_800_000_000_000,
 		cycleMs: 130_000
 	},
 	{
 		id: 'platform3',
 		baseCost: 1_900_000_000_000_000_000_000,
-		baseCps: 7_800_000_000_000,
+		baseCps: 15_600_000_000_000,
 		cycleMs: 140_000
 	},
 	{
 		id: 'platform4',
 		baseCost: 27_000_000_000_000_000_000_000,
-		baseCps: 43_000_000_000_000,
+		baseCps: 86_000_000_000_000,
 		cycleMs: 150_000
 	},
 	{
 		id: 'platform5',
 		baseCost: 380_000_000_000_000_000_000_000,
-		baseCps: 240_000_000_000_000,
+		baseCps: 480_000_000_000_000,
 		cycleMs: 160_000
 	},
 	{
 		id: 'platform6',
 		baseCost: 5_400_000_000_000_000_000_000_000,
-		baseCps: 1_300_000_000_000_000,
+		baseCps: 2_600_000_000_000_000,
 		cycleMs: 170_000
 	},
 	{
 		id: 'platform7',
 		baseCost: 76_000_000_000_000_000_000_000_000,
-		baseCps: 7_200_000_000_000_000,
+		baseCps: 14_400_000_000_000_000,
 		cycleMs: 180_000
 	},
 	{
 		id: 'platform8',
 		baseCost: 1_100_000_000_000_000_000_000_000_000,
-		baseCps: 40_000_000_000_000_000,
+		baseCps: 80_000_000_000_000_000,
 		cycleMs: 190_000
 	},
 	{
 		id: 'platform9',
 		baseCost: 15_000_000_000_000_000_000_000_000_000,
-		baseCps: 220_000_000_000_000_000,
+		baseCps: 440_000_000_000_000_000,
 		cycleMs: 200_000
 	},
 	{
 		id: 'platform10',
 		baseCost: 210_000_000_000_000_000_000_000_000_000,
-		baseCps: 1_200_000_000_000_000_000,
+		baseCps: 2_400_000_000_000_000_000,
 		cycleMs: 210_000
 	},
 	{
 		id: 'platform11',
 		baseCost: 3_000_000_000_000_000_000_000_000_000_000,
-		baseCps: 6_800_000_000_000_000_000,
+		baseCps: 13_600_000_000_000_000_000,
 		cycleMs: 220_000
 	},
 	{
 		id: 'platform12',
 		baseCost: 42_000_000_000_000_000_000_000_000_000_000,
-		baseCps: 38_000_000_000_000_000_000,
+		baseCps: 76_000_000_000_000_000_000,
 		cycleMs: 230_000
 	},
 	{
 		id: 'platform13',
 		baseCost: 600_000_000_000_000_000_000_000_000_000_000,
-		baseCps: 210_000_000_000_000_000_000,
+		baseCps: 420_000_000_000_000_000_000,
 		cycleMs: 240_000
 	},
 	{
 		id: 'platform14',
 		baseCost: 8_500_000_000_000_000_000_000_000_000_000_000,
-		baseCps: 1_200_000_000_000_000_000_000,
+		baseCps: 2_400_000_000_000_000_000_000,
 		cycleMs: 250_000
 	},
 	{
 		id: 'platform15',
 		baseCost: 120_000_000_000_000_000_000_000_000_000_000_000,
-		baseCps: 6_500_000_000_000_000_000_000,
+		baseCps: 13_000_000_000_000_000_000_000,
 		cycleMs: 260_000
 	},
 	{
@@ -427,16 +427,20 @@ export interface UpgradeDef {
 
 /** [owned units needed, cost in units of the producer's base price] */
 const TIERS: readonly (readonly [number, number])[] = [
-	[100, 10],
-	[200, 250],
-	[300, 2_500],
-	[400, 25_000],
-	[500, 250_000],
-	[600, 2_500_000],
-	[700, 25_000_000],
-	[800, 250_000_000],
-	[900, 2_500_000_000],
-	[1000, 25_000_000_000]
+	[5, 1],
+	[10, 2],
+	[25, 5],
+	[50, 10],
+	[100, 250],
+	[200, 2500],
+	[300, 25_000],
+	[400, 250_000],
+	[500, 2_500_000],
+	[600, 25_000_000],
+	[700, 250_000_000],
+	[800, 2_500_000_000],
+	[900, 25_000_000_000],
+	[1000, 250_000_000_000]
 ];
 
 const CLICK_UPGRADES: readonly UpgradeDef[] = [
