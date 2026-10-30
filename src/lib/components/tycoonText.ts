@@ -134,13 +134,23 @@ const UNIQUE_UPGRADE_NAMES: Record<string, () => string> = {
 	click_valve: m.tycoon_upgrade_click_valve,
 	click_hammer: m.tycoon_upgrade_click_hammer,
 	click_wrench: m.tycoon_upgrade_click_wrench,
+	click_fist: m.tycoon_upgrade_click_fist,
+	click_crane: m.tycoon_upgrade_click_crane,
+	click_titan: m.tycoon_upgrade_click_titan,
+	click_nitro: m.tycoon_upgrade_click_nitro,
+	click_megatap: m.tycoon_upgrade_click_megatap,
+	click_god: m.tycoon_upgrade_click_god,
 	clickcps_hands: m.tycoon_upgrade_clickcps_hands,
 	clickcps_ribbon: m.tycoon_upgrade_clickcps_ribbon,
 	global_regulator: m.tycoon_upgrade_global_regulator,
 	global_agency: m.tycoon_upgrade_global_agency,
 	global_amendment: m.tycoon_upgrade_global_amendment,
+	global_mega: m.tycoon_upgrade_global_mega,
+	global_titan: m.tycoon_upgrade_global_titan,
 	crit_chance: m.tycoon_upgrade_crit_chance,
-	crit_mult: m.tycoon_upgrade_crit_mult
+	crit_mult: m.tycoon_upgrade_crit_mult,
+	event_boost: m.tycoon_upgrade_event_boost,
+	event_master: m.tycoon_upgrade_event_master
 };
 
 export function upgradeName(upgrade: UpgradeDef): string {
@@ -176,6 +186,8 @@ export function upgradeEffect(upgrade: UpgradeDef): string {
 		}
 		case 'global':
 			return m.tycoon_upgrade_effect_global({ mult: formatMultiplier(upgrade.value, locale) });
+		case 'events':
+			return m.tycoon_upgrade_effect_events({ mult: formatMultiplier(upgrade.value, locale) });
 	}
 }
 
