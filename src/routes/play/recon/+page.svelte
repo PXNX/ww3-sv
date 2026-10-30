@@ -1,71 +1,278 @@
-<!-- Recon: satellite / Global Hawk / Reaper / FPV footage analysis -->
+<!--
+	Recon: an analyst tasks a drone over hostile ground. Each sortie is a map larger than the scope;
+	the player pans, locks the EO, IR and SAR sensors onto contacts to build a dossier, then
+	strikes the hostile ones and clears the rest, with a limited stock of missiles, civilians to
+	spare and air defence that hurts the drone. Up to eight sorties make a run.
+-->
 <script lang="ts">
-	export let level = 1;
+	import { onMount } from 'svelte';
+	import GameOverModal from '#lib/components/GameOverModal.svelte';
+	import GameShell from '#lib/components/GameShell.svelte';
+	import ReconCanvas from '#lib/components/ReconCanvas.svelte';
+	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import { MAX_SORTIES } from '#lib/game/recon/config.js';
+	import { SENSORS } from '#lib/game/recon/contacts.js';
+	import { RECON_TEXT } from '#lib/game/recon/text.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { firstPlay } from '#lib/services/tutorial.js';
+	import { ReconGame } from '#lib/stores/reconGame.svelte.js';
+	import IconCircleHelp from '~icons/lucide/circle-help';
+	import IconCrosshair from '~icons/lucide/crosshair';
+	import IconPause from '~icons/lucide/pause';
+	import IconPlay from '~icons/lucide/play';
+	import IconShieldCheck from '~icons/lucide/shield-check';
+
+	const game = new ReconGame();
+	const modeName = RECON_TEXT.title;
+
+	let showTutorial = $state(false);
+	onMount(() => {
+		showTutorial = firstPlay('recon');
+	});
+
+	const flying = $derived(game.status === 'playing' || game.status === 'paused');
+	const canAct = $derived(game.status === 'playing' && game.selectedNumber !== null);
+	const dossierRows = $derived(
+		game.dossier
+			? SENSORS.map((sensor) => ({
+					sensor,
+					reading: game.dossier?.[sensor] ?? null
+				}))
+			: []
+	);
+	const hint = $derived.by(() => {
+		if (game.selectedNumber === null) return RECON_TEXT.dossier.idle;
+		if (game.locking) return RECON_TEXT.dossier.locking;
+		if (game.suggestedSensor) return RECON_TEXT.dossier.needs(game.suggestedSensor);
+		return RECON_TEXT.dossier.settled;
+	});
 </script>
-<div class="relative h-full bg-gradient-to-b from-ink to-slate-950 rounded-xl overflow-hidden p-5">
-  <h2 class="font-display text-2xl font-bold text-paper mb-1">RECON / FPV / THERMAL</h2>
-  <p class="text-paper/60 text-xs font-display mb-4">Analyze satellite / Global Hawk / Reaper / FPV drone footage. Thermal vision reveals heat. Burn targets with napalm.</p>
 
-  <div class="flex gap-2 mb-4 flex-wrap">
-    {#each ['satellite','globalhawk','reaper','fpv','sar'] as cam}
-      <button type="button" onclick={() => alert('Switching to ' + cam.toUpperCase())} class="bg-paper/10 text-paper text-xs font-display border border-paper/30 rounded px-3 py-2 hover:bg-paper/20 active:scale-95 transition">{cam.toUpperCase()}</button>
-    {/each}
-    <button onclick={() => alert('Thermal vision on')} class="bg-orange-500 text-paper text-xs font-display border border-ink rounded px-3 py-2 hover:scale-105 shadow-[2px_2px_0_var(--color-ink)]">THERMAL</button>
-  </div>
+<GameShell
+	compact
+	title={modeName}
+	score={game.score}
+	best={game.best}
+	confirmLeave={game.status !== 'ready' && game.status !== 'over'}
+>
+	{#snippet actions()}
+		{#if flying}
+			<button
+				type="button"
+				class="btn-chunky px-2 py-1 text-sm sm:px-3"
+				aria-label={game.status === 'paused' ? m.game_resume() : m.game_pause()}
+				onclick={() => game.togglePause()}
+			>
+				{#if game.status === 'paused'}
+					<IconPlay class="size-4" aria-hidden="true" />
+					<span class="hidden sm:inline">{m.game_resume()}</span>
+				{:else}
+					<IconPause class="size-4" aria-hidden="true" />
+					<span class="hidden sm:inline">{m.game_pause()}</span>
+				{/if}
+			</button>
+		{/if}
+		<button
+			type="button"
+			class="btn-chunky px-2 py-1 text-sm sm:px-3"
+			aria-label={RECON_TEXT.help}
+			onclick={() => (showTutorial = true)}
+		>
+			<IconCircleHelp class="size-4" aria-hidden="true" />
+			<span class="hidden sm:inline">{RECON_TEXT.help}</span>
+		</button>
+	{/snippet}
 
-  <div class="relative h-56 bg-gradient-to-br from-slate-800 via-ink to-slate-900 rounded-lg border-2 border-paper/20 shadow-[inset_0_0_40px_rgba(255,255,255,0.06)] overflow-hidden">
-    <div class="absolute top-8 left-8 text-paper/20 text-6xl font-display font-extrabold select-none">IMAGERY</div>
-    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-36 h-36 rounded-full bg-chartreuse/20 border-2 border-chartreuse/60 backdrop-blur-sm flex items-center justify-center">
-      <div class="text-chartreuse font-display font-bold text-xl">FPV</div>
-    </div>
-    <!-- Crosshair markers -->
-    {#each [1,2,3,4] as _, i}
-      <button type="button" onclick={() => alert('Target ' + (i + 1) + ' selected')}
-        aria-label="Target {i+1}"
-        class="absolute w-4 h-4 bg-chartreuse rounded-full shadow-[0_0_8px_rgba(201,255,40,0.9)] hover:scale-125 transition-transform ring-2 ring-paper/20"
-        style="left:{25 + i*15}%;top:{15 + i*18}%;">
-      </button>
-    {/each}
-    <!-- Fuel tanks / workshop / factory / substations -->
-    <div class="absolute" style="left:20%;top:78%;"><div class="w-10 h-10 bg-yellow-600 rounded-full border-2 border-yellow-300 shadow-lg flex items-center justify-center"><span class="text-paper text-[0.5rem] font-display">FUEL</span></div></div>
-    <div class="absolute" style="left:40%;top:85%;"><div class="w-12 h-8 bg-orange-700 rounded-md border-2 border-orange-400 shadow-lg flex items-center justify-center"><span class="text-paper text-[0.55rem] font-display">FACTORY</span></div></div>
-    <div class="absolute" style="left:80%;top:70%;"><div class="w-10 h-8 bg-violet-600 rounded-md border-2 border-violet-300 shadow-lg flex items-center justify-center"><span class="text-paper text-[0.5rem] font-display">POWER</span></div></div>
-    <div class="absolute" style="left:55%;top:92%;"><div class="w-8 h-8 bg-blue-500 rounded-full border-2 border-blue-300 shadow-lg flex items-center justify-center"><span class="text-paper text-[0.45rem] font-display">WORK</span></div></div>
-    <div class="absolute" style="left:75%;top:88%;"><div class="w-10 h-6 bg-green-700 rounded-md border-2 border-green-400 shadow-lg flex items-center justify-center"><span class="text-paper text-[0.45rem] font-display">HANGAR</span></div></div>
-    <!-- People moving at bottom -->
-    <div class="absolute" style="left:30%;bottom:8%;"><div class="w-3 h-3 bg-paper rounded-full shadow animate-bounce"></div><div class="absolute -top-2 left-1 w-2 h-2 bg-paper rounded-full"></div></div>
-    <div class="absolute" style="left:60%;bottom:6%;"><div class="w-3 h-3 bg-paper rounded-full shadow animate-bounce" style="animation-delay:0.3s"></div><div class="absolute -top-2 left-1 w-2 h-2 bg-paper rounded-full"></div></div>
-    <!-- Air defenses / radar awareness -->
-    <div class="absolute" style="left:85%;top:10%;">
-      <div class="w-10 h-10 bg-tie-red rounded-full shadow-[0_0_10px_rgba(220,30,30,0.8)] flex items-center justify-center border-2 border-paper/30">
-        <span class="text-paper text-[0.5rem] font-display font-bold">RADAR</span>
-      </div>
-      <div class="absolute top-full left-0 text-[0.5rem] text-tie-red font-display">AIR DEF</div>
-    </div>
-    <!-- Strike markers -->
-    {#each [1] as _, i}
-      <div class="absolute" style="left:{40 + i*15}%;top:{30 + i*10}%;">
-        <div class="w-6 h-6 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.8)] animate-pulse"></div>
-        <span class="absolute top-7 left-0 text-amber-400 text-[0.6rem] font-display font-bold whitespace-nowrap">SHELL</span>
-      </div>
-    {/each}
-  </div>
+	<!-- Portrait: HUD, scope, sensors and dossier in a column. On a short (sideways phone) screen the
+	     scope sits on the left, as tall as the screen allows, and the rest stacks beside it. -->
+	<section
+		class="mx-auto grid w-full max-w-[max(17rem,min(100%,calc((100dvh-23rem)*0.857)))] gap-2 pb-2 [@media(max-height:520px)]:max-w-none [@media(max-height:520px)]:grid-cols-[auto_minmax(0,1fr)] [@media(max-height:520px)]:content-start"
+	>
+		<!-- Everything that can end the run or the sortie, above the scope it applies to -->
+		<div
+			class="grid grid-cols-4 gap-2 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1.5 font-display shadow-[3px_3px_0_var(--color-ink)] [@media(max-height:520px)]:col-start-2"
+		>
+			<div class="flex flex-col leading-tight">
+				<span class="text-[0.65rem] font-bold uppercase opacity-70">{RECON_TEXT.hud.sortie}</span>
+				<span class="text-lg font-bold tabular-nums">{game.sortie}/{MAX_SORTIES}</span>
+			</div>
+			<div class="flex flex-col leading-tight">
+				<span class="text-[0.65rem] font-bold uppercase opacity-70">{RECON_TEXT.hud.time}</span>
+				<span
+					class="text-lg font-bold tabular-nums {game.timeLeft <= 10 && flying
+						? 'text-tie-red'
+						: ''}">{game.timeLeft}s</span
+				>
+			</div>
+			<div class="flex flex-col leading-tight">
+				<span class="text-[0.65rem] font-bold uppercase opacity-70">{RECON_TEXT.hud.ordnance}</span>
+				<span class="flex items-center gap-1 text-lg font-bold tabular-nums">
+					<IconCrosshair class="size-4" aria-hidden="true" />{game.ordnance}
+				</span>
+			</div>
+			<div class="flex flex-col justify-between gap-0.5 leading-tight">
+				<span class="text-[0.65rem] font-bold uppercase opacity-70">{RECON_TEXT.hud.hull}</span>
+				<div
+					class="h-2.5 overflow-hidden rounded-full border-2 border-ink bg-sand"
+					role="meter"
+					aria-label={RECON_TEXT.hud.hull}
+					aria-valuemin="0"
+					aria-valuemax="100"
+					aria-valuenow={game.integrity}
+				>
+					<div
+						class="h-full {game.integrity < 35 || game.threatened ? 'bg-tie-red' : 'bg-chartreuse'}"
+						style:width="{game.integrity}%"
+					></div>
+				</div>
+				<span class="text-[0.65rem] font-bold uppercase opacity-70"
+					>{RECON_TEXT.hud.escalation}</span
+				>
+				<div
+					class="h-2.5 overflow-hidden rounded-full border-2 border-ink bg-sand"
+					role="meter"
+					aria-label={RECON_TEXT.hud.escalation}
+					aria-valuemin="0"
+					aria-valuemax="100"
+					aria-valuenow={game.escalation}
+				>
+					<div
+						class="h-full {game.escalation >= 60 ? 'bg-tie-red' : 'bg-explosion-yellow'}"
+						style:width="{game.escalation}%"
+					></div>
+				</div>
+			</div>
+		</div>
 
-  <div class="flex gap-2 mt-2">
-    <button onclick={() => alert('Attack target — direct units to engage.')} class="flex-1 bg-tie-red text-paper font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">ATTACK</button>
-    <button onclick={() => alert('Defend — hold position.')} class="flex-1 bg-chartreuse text-ink font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">DEFEND</button>
-    <button onclick={() => alert('Destroy / burn — napalm to see inside.')} class="flex-1 bg-ink text-paper font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">DESTROY / BURN</button>
-  </div>
+		<div
+			class="[@media(max-height:520px)]:row-span-3 [@media(max-height:520px)]:row-start-1 [@media(max-height:520px)]:w-[calc((100dvh-8rem)*0.857)]"
+		>
+			<ReconCanvas {game} />
+		</div>
 
-  <div class="flex gap-2 mt-2">
-    <button onclick={() => alert('Drop napalm — burn bunker.')} class="flex-1 bg-orange-600 text-paper font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">NAPALM</button>
-    <button onclick={() => alert('Drop shell.')} class="flex-1 bg-amber-500 text-ink font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">DROP SHELL</button>
-    <button onclick={() => alert('Artillery strike.')} class="flex-1 bg-tie-red text-paper font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">ARTILLERY</button>
-  </div>
+		<div
+			class="grid grid-cols-3 gap-2 [@media(max-height:520px)]:col-start-2"
+			role="group"
+			aria-label={RECON_TEXT.hud.sortie}
+		>
+			{#each SENSORS as sensor, index (sensor)}
+				<button
+					type="button"
+					class="btn-chunky flex-col justify-center gap-0 px-2 py-1 leading-tight {game.sensor ===
+					sensor
+						? 'bg-explosion-yellow'
+						: 'bg-paper'}"
+					aria-pressed={game.sensor === sensor}
+					disabled={game.status !== 'playing'}
+					onclick={() => game.chooseSensor(sensor)}
+				>
+					<span class="text-lg font-bold">{RECON_TEXT.sensors[sensor].name}</span>
+					<span
+						class="text-[0.65rem] font-bold uppercase opacity-70 [@media(max-height:520px)]:hidden"
+						>{RECON_TEXT.sensors[sensor].caption}<span class="hidden [@media(hover:hover)]:inline">
+							· {index + 1}</span
+						></span
+					>
+				</button>
+			{/each}
+		</div>
 
-  <div class="flex gap-3 mt-3">
-    <div class="flex-1 bg-paper/10 rounded p-2 text-xs text-paper font-display"><span class="text-chartreuse">●</span> Timer 60s</div>
-    <div class="flex-1 bg-paper/10 rounded p-2 text-xs text-paper font-display"><span class="text-amber-400">●</span> Danger 0%</div>
-    <div class="flex-1 bg-paper/10 rounded p-2 text-xs text-paper font-display"><span class="text-paper">●</span> Targets 0/3</div>
-  </div>
-</div>
+		<!-- The dossier of the selected contact and the verdict buttons, within reach of the thumb -->
+		<div
+			class="flex flex-col gap-2 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)] [@media(max-height:520px)]:col-start-2"
+		>
+			<div class="flex min-h-9 items-center gap-2">
+				<span class="shrink-0 font-display text-sm font-bold uppercase">
+					{game.selectedNumber === null
+						? RECON_TEXT.title
+						: RECON_TEXT.dossier.track(game.selectedNumber)}
+				</span>
+				<div class="flex flex-1 justify-end gap-1.5">
+					{#each dossierRows as row (row.sensor)}
+						<span
+							class="flex min-w-0 flex-col items-center rounded-md border-2 border-ink px-1.5 leading-tight {row.reading ===
+							null
+								? 'bg-sand'
+								: 'bg-explosion-yellow'}"
+						>
+							<span class="text-[0.6rem] font-bold uppercase"
+								>{RECON_TEXT.sensors[row.sensor].name}</span
+							>
+							<span class="truncate text-xs font-bold">
+								{row.reading === null ? '–' : RECON_TEXT.readings[row.reading]}
+							</span>
+						</span>
+					{/each}
+				</div>
+			</div>
+			<p
+				class="min-h-5 text-sm leading-tight font-semibold"
+				role="status"
+				aria-live="polite"
+				dir="auto"
+			>
+				{hint}
+			</p>
+			<div class="grid grid-cols-2 gap-2">
+				<button
+					type="button"
+					class="btn-chunky min-h-12 justify-center bg-tie-red text-paper"
+					disabled={!canAct || game.ordnance === 0}
+					onclick={() => game.strike()}
+				>
+					<IconCrosshair class="size-5" aria-hidden="true" />
+					{RECON_TEXT.dossier.strike}
+				</button>
+				<button
+					type="button"
+					class="btn-chunky min-h-12 justify-center bg-paper"
+					disabled={!canAct}
+					onclick={() => game.clearSelected()}
+				>
+					<IconShieldCheck class="size-5" aria-hidden="true" />
+					{RECON_TEXT.dossier.clear}
+				</button>
+			</div>
+		</div>
+	</section>
+
+	<TutorialModal
+		open={showTutorial}
+		title={RECON_TEXT.tutorial.title}
+		closeLabel={RECON_TEXT.helpClose}
+		onclose={() => (showTutorial = false)}
+	>
+		<p>{RECON_TEXT.tutorial.goal}</p>
+		<p>{RECON_TEXT.tutorial.controls}</p>
+		<p>{RECON_TEXT.tutorial.sensors}</p>
+		<p>{RECON_TEXT.tutorial.rules}</p>
+		<p>{RECON_TEXT.tutorial.verdict}</p>
+	</TutorialModal>
+
+	<GameOverModal
+		open={game.status === 'over'}
+		score={game.score}
+		mode="recon"
+		{modeName}
+		outcome={game.overReason === 'won' ? 'won' : 'lost'}
+		title={game.overReason ? RECON_TEXT.over.title(game.overReason) : undefined}
+		isNewBest={game.isNewBest}
+		onRetry={() => game.retry()}
+	>
+		{#if game.overReason}
+			<p class="mb-3 text-center text-sm leading-snug" dir="auto">
+				{RECON_TEXT.over.body(game.overReason)}
+			</p>
+		{/if}
+		<dl class="flex justify-center gap-6 font-display">
+			<div class="flex flex-col items-center">
+				<dt class="text-xs font-bold uppercase">{RECON_TEXT.over.sorties}</dt>
+				<dd class="text-2xl font-bold tabular-nums">{game.sortiesFlown}</dd>
+			</div>
+			<div class="flex flex-col items-center">
+				<dt class="text-xs font-bold uppercase">{RECON_TEXT.over.best}</dt>
+				<dd class="text-2xl font-bold tabular-nums">{game.bestSortie}</dd>
+			</div>
+		</dl>
+	</GameOverModal>
+</GameShell>
