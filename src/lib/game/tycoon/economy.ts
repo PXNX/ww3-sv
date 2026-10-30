@@ -232,7 +232,7 @@ export function availablePoints(state: TycoonState): number {
 }
 
 export function totalPerkLevels(state: TycoonState): number {
-	return PERKS.reduce((sum, def) => sum + state.perks[def.id], 0);
+	return PERKS.reduce((sum, def) => sum + (state.perks[def.id] ?? 0), 0);
 }
 
 /** What a perk does at a level, in the unit of its kind (see PerkDef.value) */

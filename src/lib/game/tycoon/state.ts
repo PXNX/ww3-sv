@@ -289,7 +289,7 @@ export function buyPerk(
 	id: PerkId
 ): { bought: boolean; events: TycoonEvent[] } {
 	const def = perkDef(id);
-	const level = state.perks[id];
+	const level = state.perks[id] ?? 0;
 	// The price is worked out once, before the level is bought, so the price shown is the price paid
 	const cost = perkCost(def, level, state);
 	if (level >= def.maxLevel || availablePoints(state) < cost) {
