@@ -494,11 +494,11 @@ export class TycoonGame {
 		this.perkPrices = keep(
 			this.perkPrices,
 			Object.fromEntries(
-				PERKS.map((def) => [def.id, perkCost(def, state.perks[def.id], state)])
+				PERKS.map((def) => [def.id, perkCost(def, state.perks[def.id] ?? 0, state)])
 			) as Record<PerkId, number>
 		);
 		this.canInvest = PERKS.some(
-			(def) => state.perks[def.id] < def.maxLevel && this.perkPrices[def.id] <= this.spendablePoints
+			(def) => (state.perks[def.id] ?? 0) < def.maxLevel && this.perkPrices[def.id] <= this.spendablePoints
 		);
 		this.prestiges = state.prestiges;
 		this.pendingPoints = pendingPrestige(state);
