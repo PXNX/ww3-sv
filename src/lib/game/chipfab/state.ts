@@ -102,6 +102,8 @@ export interface ChipFabState {
 	mergeBonus: number;
 	/** Milliseconds until the next small event */
 	microMs: number;
+	/** Random source for the small events inside a level */
+	microRandom: Random;
 }
 
 export type ChipFabEvent =
@@ -179,7 +181,8 @@ export function createGame(random: Random): ChipFabState {
 		bestTier: 0,
 		bestCombo: 0,
 		mergeBonus: 1,
-		microMs: nextMicroMs(random)
+		microMs: nextMicroMs(random),
+		microRandom: random
 	};
 }
 
@@ -229,7 +232,7 @@ export function stepGame(state: ChipFabState, dtMs: number): ChipFabEvent[] {
 
 	state.microMs -= dtMs;
 	if (state.microMs <= 0) {
-		const micro = drawMicroEvent(state.microMsRandom ?? Math.random);
+		const micro = drawMicroEvent(state.microRandom);
 		state.shortage = clampShortage(state.shortage + micro.shortage);
 		state.score += micro.points;
 		events.push({
@@ -238,7 +241,7 @@ export function stepGame(state: ChipFabState, dtMs: number): ChipFabEvent[] {
 			shortage: micro.shortage,
 			points: micro.points
 		});
-		state.microMs = nextMicroMs(state.microMsRandom ?? Math.random);
+		state.microMs = nextMicroMs(state.microRandom);
 		resolveShortage(state, events);
 	}
 	return events;

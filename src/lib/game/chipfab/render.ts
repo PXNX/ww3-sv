@@ -15,6 +15,9 @@ export const FLOOR_Y = 128;
 const INK = '#111111';
 const SAND = '#e8e1bc';
 const PAPER = '#ffffff';
+/** The golden HBM layer, and its paler glint */
+const GOLD = '#e2b13c';
+const GOLD_GLINT = 'rgba(255,248,200,0.85)';
 /** Layer colors, cycling: silicon, copper, oxide and friends, all from the app palette */
 const LAYER_COLORS = ['#4fa8d8', '#ddb93c', '#7c8c5c', '#aeb4be', '#f6c9a0', '#6a7c9b'] as const;
 const BASE_COLOR = '#cfc693';
@@ -60,11 +63,12 @@ function slabShape(
 	layer: Layer,
 	y: number,
 	fill: string,
-	dashed = false
+	dashed = false,
+	gold = false
 ) {
 	context.lineWidth = 0.9;
 	context.strokeStyle = INK;
-	context.fillStyle = fill;
+	context.fillStyle = gold ? GOLD : fill;
 	context.fillRect(layer.left, y, layer.width, LAYER_HEIGHT);
 	context.strokeRect(layer.left, y, layer.width, LAYER_HEIGHT);
 	// A light strip on top and a few pads make it read as a silicon layer, not a plain bar
@@ -73,6 +77,12 @@ function slabShape(
 	context.fillStyle = 'rgba(17,17,17,0.35)';
 	for (let pad = layer.left + 3; pad < layer.left + layer.width - 2; pad += 5) {
 		context.fillRect(pad, y + LAYER_HEIGHT - 2.1, 1.6, 1.2);
+	}
+	if (gold) {
+		// A glint across the golden layer so it reads as a prize, not just another bar
+		context.fillStyle = GOLD_GLINT;
+		context.fillRect(layer.left + 1.2, y + 1.6, Math.max(1, layer.width * 0.35), 0.9);
+		context.fillRect(layer.left + 1.2, y + 3.4, Math.max(1, layer.width * 0.18), 0.7);
 	}
 	if (dashed) {
 		context.setLineDash([2, 1.6]);
@@ -142,7 +152,7 @@ export function drawStacker(
 
 	if (stacker.status === 'running') {
 		const slab = { left: stacker.slab.x, width: stacker.slab.width };
-		slabShape(context, slab, layerY(count), layerColor(count), true);
+		slabShape(context, slab, layerY(count), layerColor(count), true, stacker.slab.gold === true);
 	}
 
 	for (const effect of extras.effects) {

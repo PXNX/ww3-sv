@@ -36,14 +36,18 @@ export function clampShortage(value: number): number {
 	return Math.min(SHORTAGE_MAX, Math.max(0, value));
 }
 
-/** The meter after `dtMs` of the shortage getting worse */
+/** The meter after `dtMs` of the shortage getting worse; `rateScale` comes from news cards */
 export function tickShortage(
 	value: number,
 	dtMs: number,
 	level: number,
-	levelSeconds: number
+	levelSeconds: number,
+	rateScale = 1
 ): number {
-	return clampShortage(value + (shortageRate(level, levelSeconds) * Math.max(0, dtMs)) / 1000);
+	const scale = Number.isFinite(rateScale) ? Math.max(0, rateScale) : 1;
+	return clampShortage(
+		value + (shortageRate(level, levelSeconds) * scale * Math.max(0, dtMs)) / 1000
+	);
 }
 
 /** How much a freshly created memory module of this tier eases the shortage; 0 below high tier */

@@ -5,7 +5,9 @@
  * synced after each step.
  */
 import { STARTING_LIVES } from '#lib/game/chipfab/config.js';
+import type { EventCard, MicroKind } from '#lib/game/chipfab/events.js';
 import { CHEER_STREAK, CHEER_TIER, jacketPose, type JacketPose } from '#lib/game/chipfab/jacket.js';
+import { orderProgress, type Order } from '#lib/game/chipfab/orders.js';
 import { moduleLabel, type Board } from '#lib/game/chipfab/ram.js';
 import {
 	drawScenePreview,
@@ -21,6 +23,7 @@ import {
 	dropLayer,
 	moveModules,
 	shortagePercent,
+	skipCard,
 	stepGame,
 	type ChipFabEvent,
 	type ChipFabState,
@@ -88,6 +91,16 @@ export class ChipFabGame {
 	hurtCount = $state(0);
 	/** The memory module board of Stage B */
 	board = $state.raw<Board>([]);
+	/** The news card that bends the current level, if any */
+	card = $state.raw<EventCard | null>(null);
+	/** How long the news card is still showing */
+	cardMs = $state(0);
+	/** The customer order for this level */
+	order = $state.raw<Order | null>(null);
+	/** 0 to 1: how far the order is from being met */
+	orderShare = $state(0);
+	/** Points multiplier Stage B got from the perfect layers of the wafer */
+	mergeBonus = $state(1);
 	/** Modules that were just merged away and are still sliding onto their partner */
 	leaving = $state.raw<LeavingModule[]>([]);
 	toast = $state.raw<Toast | null>(null);
@@ -130,6 +143,11 @@ export class ChipFabGame {
 	/** The pose Jensen Huang shows right now */
 	get pose(): JacketPose {
 		return jacketPose(this.shortage, this.reaction);
+	}
+
+	/** True while the BREAKING card is on screen */
+	get cardOpen(): boolean {
+		return this.card !== null && this.cardMs > 0 && this.status === 'playing';
 	}
 
 	/** Reads the stored bests; call in the browser only */
@@ -182,6 +200,14 @@ export class ChipFabGame {
 		this.#syncChrome();
 	}
 
+	/** Taps the BREAKING card away and unlocks the level right away */
+	skipCard() {
+		if (this.status !== 'playing') return;
+		skipCard(this.state);
+		this.cardMs = 0;
+		this.#play('ui-tap', 0);
+	}
+
 	/** One fixed step: called by the game loop */
 	update(dtMs: number) {
 		this.#age(dtMs);
@@ -230,15 +256,21 @@ export class ChipFabGame {
 						ageMs: 0,
 						durationMs: FLASH_MS * short
 					});
-					this.#showToast(
-						event.streak > 1
-							? m.chipfab_popup_streak({ count: event.streak })
-							: m.chipfab_popup_perfect()
-					);
-					this.#play('chime', 0);
-					if (event.streak >= CHEER_STREAK) this.#react('cheers', CHEER_MS);
+					if (event.gold) {
+						this.#showToast(m.chipfab_popup_gold());
+						this.#play('chime-big', 0);
+						this.#react('cheers', CHEER_MS);
+					} else {
+						this.#showToast(
+							event.streak > 1
+								? m.chipfab_popup_streak({ count: event.streak })
+								: m.chipfab_popup_perfect()
+						);
+						this.#play('chime', 0);
+						if (event.streak >= CHEER_STREAK) this.#react('cheers', CHEER_MS);
+					}
 				} else if (event.kind === 'trim') {
-					this.#play('blocks-place', 0);
+					this.#play(event.gold ? 'pickup' : 'blocks-place', 0);
 				} else {
 					this.#showToast(m.chipfab_popup_miss());
 					this.#play('ui-error', 0);
@@ -275,6 +307,8 @@ export class ChipFabGame {
 							price: formatPrice(modulePrice(event.tier, this.shortage))
 						})
 					);
+				} else if (event.combo >= 3) {
+					this.#showToast(m.chipfab_popup_combo({ count: event.combo }));
 				}
 				this.#play(big ? 'chime-big' : event.tier >= HIGH_TIER ? 'chime' : 'pop', SOUND_GAP_MS);
 				if (big) this.#react('cheers', CHEER_MS);
@@ -282,6 +316,25 @@ export class ChipFabGame {
 			}
 			case 'slide':
 				this.#play('ui-tap', SOUND_GAP_MS);
+				break;
+			case 'card':
+				this.#play('sparkle', 0);
+				break;
+			case 'order':
+				this.#play('ding', SOUND_GAP_MS);
+				break;
+			case 'order-done':
+				this.#showToast(m.chipfab_popup_order_done({ bonus: event.bonus }));
+				this.#play('new-best', 0);
+				this.#react('cheers', CHEER_MS);
+				break;
+			case 'order-missed':
+				this.#showToast(m.chipfab_popup_order_missed());
+				this.#play('ui-error', 0);
+				this.#react('sulks', SULK_MS);
+				break;
+			case 'micro':
+				this.#micro(event.kind);
 				break;
 			case 'level':
 				this.#showToast(m.chipfab_popup_level({ level: event.level }));
@@ -299,6 +352,22 @@ export class ChipFabGame {
 			case 'game-over':
 				this.#finish();
 				break;
+		}
+	}
+
+	/** A small event inside a level: a flavour line and its sound, the numbers already applied */
+	#micro(kind: MicroKind) {
+		if (kind === 'brownout') {
+			this.#showToast(m.chipfab_micro_brownout());
+			this.hurtCount += 1;
+			this.#play('alarm', 0);
+		} else if (kind === 'boast') {
+			this.#showToast(m.chipfab_micro_boast());
+			this.#play('pickup', 0);
+			this.#react('cheers', CHEER_MS);
+		} else {
+			this.#showToast(m.chipfab_micro_rival());
+			this.#play('pop', 0);
 		}
 	}
 
@@ -348,6 +417,15 @@ export class ChipFabGame {
 		this.topTier = state.highestTier;
 		this.levelsCleared = state.levelsCleared;
 		this.board = state.ram.board;
+		this.card = state.card;
+		this.cardMs = state.cardMs;
+		this.order = state.order;
+		this.orderShare = orderProgress(
+			state.order ?? { customer: 'nvidia', kind: 'tier', target: 2, reward: 100 },
+			state.bestTier,
+			state.bestCombo
+		);
+		this.mergeBonus = state.mergeBonus;
 	}
 
 	#finish() {
