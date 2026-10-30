@@ -44,6 +44,7 @@ import {
 	type DroneId,
 	type ResourceId
 } from './config.js';
+export { REPAIR_COST_DAMAGED, REPAIR_COST_DESTROYED } from './config.js';
 
 export type Condition = 'ok' | 'damaged' | 'destroyed';
 
