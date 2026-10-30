@@ -10,7 +10,7 @@
     {#each ['satellite','globalhawk','reaper','fpv','sar'] as cam}
       <button type="button" onclick={() => alert('Switching to ' + cam.toUpperCase())} class="bg-paper/10 text-paper text-xs font-display border border-paper/30 rounded px-3 py-2 hover:bg-paper/20 active:scale-95 transition">{cam.toUpperCase()}</button>
     {/each}
-    <button onclick={() => alert('THERMAL VISION ON — see heat signatures, bunker interiors, hidden targets.')" class="bg-orange-500 text-paper text-xs font-display border border-ink rounded px-3 py-2 hover:scale-105 shadow-[2px_2px_0_var(--color-ink)]">THERMAL</button>
+    <button onclick={() => alert('Thermal vision on')} class="bg-orange-500 text-paper text-xs font-display border border-ink rounded px-3 py-2 hover:scale-105 shadow-[2px_2px_0_var(--color-ink)]">THERMAL</button>
   </div>
 
   <div class="relative h-56 bg-gradient-to-br from-slate-800 via-ink to-slate-900 rounded-lg border-2 border-paper/20 shadow-[inset_0_0_40px_rgba(255,255,255,0.06)] overflow-hidden">
@@ -26,20 +26,6 @@
         style="left:{25 + i*15}%;top:{15 + i*18}%;">
       </button>
     {/each}
-    <!-- Bunkers with foliage and buildings -->
-    <div class="absolute" style="left:10%;top:55%;">
-      <div class="w-14 h-14 bg-stone-800 rounded-lg border-2 border-stone-600 shadow-lg flex items-center justify-center relative">
-        <span class="text-stone-300 text-[0.6rem] font-display font-bold">BUNKER</span>
-        <div class="absolute -top-3 -left-3 w-4 h-8 bg-green-900 rounded-sm opacity-60"></div>
-        <div class="absolute -top-2 -right-2 w-3 h-6 bg-green-800 rounded-sm opacity-50"></div>
-      </div>
-    </div>
-    <div class="absolute" style="left:65%;top:25%;">
-      <div class="w-12 h-10 bg-stone-700 rounded-md border-2 border-stone-500 shadow-lg flex items-center justify-center relative">
-        <span class="text-stone-200 text-[0.55rem] font-display font-bold">BLDG</span>
-        <div class="absolute -top-2 left-0 w-6 h-5 bg-green-800 rounded-full opacity-40"></div>
-      </div>
-    </div>
     <!-- Fuel tanks / workshop / factory / substations -->
     <div class="absolute" style="left:20%;top:78%;"><div class="w-10 h-10 bg-yellow-600 rounded-full border-2 border-yellow-300 shadow-lg flex items-center justify-center"><span class="text-paper text-[0.5rem] font-display">FUEL</span></div></div>
     <div class="absolute" style="left:40%;top:85%;"><div class="w-12 h-8 bg-orange-700 rounded-md border-2 border-orange-400 shadow-lg flex items-center justify-center"><span class="text-paper text-[0.55rem] font-display">FACTORY</span></div></div>
@@ -66,15 +52,15 @@
   </div>
 
   <div class="flex gap-2 mt-2">
-    <button onclick="alert('Attack target — direct units to engage.')" class="flex-1 bg-tie-red text-paper font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">ATTACK</button>
-    <button onclick="alert('Defend — hold position.')" class="flex-1 bg-chartreuse text-ink font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">DEFEND</button>
-    <button onclick="alert('Destroy / burn — napalm to see inside.')" class="flex-1 bg-ink text-paper font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">DESTROY / BURN</button>
+    <button onclick={() => alert('Attack target — direct units to engage.')} class="flex-1 bg-tie-red text-paper font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">ATTACK</button>
+    <button onclick={() => alert('Defend — hold position.')} class="flex-1 bg-chartreuse text-ink font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">DEFEND</button>
+    <button onclick={() => alert('Destroy / burn — napalm to see inside.')} class="flex-1 bg-ink text-paper font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">DESTROY / BURN</button>
   </div>
 
   <div class="flex gap-2 mt-2">
-    <button onclick="alert('Drop napalm — burn bunker, reveal hidden target.')" class="flex-1 bg-orange-600 text-paper font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">NAPALM</button>
-    <button onclick="alert('Drop shell.')" class="flex-1 bg-amber-500 text-ink font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">DROP SHELL</button>
-    <button onclick="alert('Artillery strike.')" class="flex-1 bg-tie-red text-paper font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">ARTILLERY</button>
+    <button onclick={() => alert('Drop napalm — burn bunker.')} class="flex-1 bg-orange-600 text-paper font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">NAPALM</button>
+    <button onclick={() => alert('Drop shell.')} class="flex-1 bg-amber-500 text-ink font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">DROP SHELL</button>
+    <button onclick={() => alert('Artillery strike.')} class="flex-1 bg-tie-red text-paper font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">ARTILLERY</button>
   </div>
 
   <div class="flex gap-3 mt-3">

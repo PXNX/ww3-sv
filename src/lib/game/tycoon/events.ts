@@ -135,9 +135,6 @@ function earn(state: TycoonState, barrels: number) {
 	state.runTotal += boosted;
 	state.lifetime += boosted;
 }
-	state.runTotal += barrels;
-	state.lifetime += barrels;
-}
 
 /**
  * Applies the player's answer (or the timeout) to the pending crisis. Returns nothing when there
