@@ -2069,6 +2069,8 @@
 	"tycoon_perk_crit_chance_effect": "Шанс критичного дотику: {value}",
 	"tycoon_perk_crit_mult_name": "Більші виграші",
 	"tycoon_perk_crit_mult_effect": "Бонус критичного дотику: {value}",
+	"tycoon_perk_turbo_name": "Турборежим",
+	"tycoon_perk_turbo_effect": "Швидкість виробництва: {value}",
 	"tycoon_cameo_label": "Барон (вигаданий)",
 	"tycoon_cameo_alt": "Карикатура: огрядний нафтовий барон у циліндрі, з моноклем і довгою сигарою обіймає бочку",
 	"tycoon_cameo_message": "Націоналізація? Дурниці! Це лише тимчасова зміна в паперах.",

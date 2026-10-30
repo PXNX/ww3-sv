@@ -235,8 +235,8 @@ describe('TycoonGame persistence', () => {
 		const second = setup(first.storage, 1_000_000 + 600_000);
 		second.game.load();
 		expect(second.game.welcome?.creditedMs).toBe(600_000);
-		// Ten tankers already have their first level, so they pump twice the base rate
-		const rate = 10 * producerDef('tanker').baseCps * 2;
+		// Ten tankers already have two levels (x4), and each upgrade owned slows production by 2%
+		const rate = 10 * producerDef('tanker').baseCps * 4 * 0.98 ** 2;
 		expect(second.game.barrels).toBeCloseTo(rate * 600 * OFFLINE_EFFICIENCY, 6);
 		second.game.dismissWelcome();
 		expect(second.game.welcome).toBeNull();
@@ -249,7 +249,7 @@ describe('TycoonGame persistence', () => {
 		const second = setup(first.storage, 1_000_000 + OFFLINE_CAP_MS * 5);
 		second.game.load();
 		expect(second.game.welcome?.capped).toBe(true);
-		const rate = 10 * producerDef('tanker').baseCps * 2;
+		const rate = 10 * producerDef('tanker').baseCps * 4 * 0.98 ** 2;
 		expect(second.game.barrels).toBeCloseTo(rate * (OFFLINE_CAP_MS / 1000) * OFFLINE_EFFICIENCY, 3);
 	});
 

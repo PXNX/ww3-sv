@@ -54,7 +54,7 @@ describe('save and load', () => {
 			runTotal: 99_999,
 			lifetime: 1_000_000,
 			taps: 321,
-			upgrades: ['click_bucket', 'pumpjack_1'],
+			upgrades: ['click_bucket', 'pumpjack_1', 'pumpjack_2'],
 			prestigePoints: 7,
 			prestiges: 2,
 			achievements: ['first_tap', 'kilo'],
@@ -160,7 +160,8 @@ describe('save and load', () => {
 			fake_news: 0,
 			invest_boost: 0,
 			crit_chance: 0,
-			crit_mult: 0
+			crit_mult: 0,
+			turbo: 0
 		});
 		// No cycle runs past its end, and a producer that is not owned has no cycle going
 		expect(state.progress.pumpjack).toBe(1000);

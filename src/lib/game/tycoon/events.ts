@@ -29,7 +29,7 @@ import {
 	SPIKE_SELL_SECONDS,
 	type ProducerId
 } from './config.js';
-import { productionPerSecond, producerOutput } from './economy.js';
+import { eventRewardMult, productionPerSecond, producerOutput } from './economy.js';
 import type {
 	ActiveEffect,
 	EffectId,

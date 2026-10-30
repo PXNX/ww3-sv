@@ -2069,6 +2069,8 @@
 	"tycoon_perk_crit_chance_effect": "Шанс критического нажатия: {value}",
 	"tycoon_perk_crit_mult_name": "Крупные выигрыши",
 	"tycoon_perk_crit_mult_effect": "Бонус критического нажатия: {value}",
+	"tycoon_perk_turbo_name": "Турборежим",
+	"tycoon_perk_turbo_effect": "Скорость производства: {value}",
 	"tycoon_cameo_label": "Барон (вымышленный)",
 	"tycoon_cameo_alt": "Карикатура: полный нефтяной барон в цилиндре, с моноклем и длинной сигарой обнимает бочку",
 	"tycoon_cameo_message": "Национализация? Чепуха! Это всего лишь временное изменение в бумагах.",

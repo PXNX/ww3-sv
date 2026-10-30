@@ -2069,6 +2069,8 @@
 	"tycoon_perk_crit_chance_effect": "Chance auf kritische Tipps: {value}",
 	"tycoon_perk_crit_mult_name": "Größere Glückstreffer",
 	"tycoon_perk_crit_mult_effect": "Bonus kritischer Tipps: {value}",
+	"tycoon_perk_turbo_name": "Turbomodus",
+	"tycoon_perk_turbo_effect": "Produktionsgeschwindigkeit: {value}",
 	"tycoon_cameo_label": "Der Baron (fiktiv)",
 	"tycoon_cameo_alt": "Cartoon eines rundlichen Ölbarons mit Zylinder, Monokel und langer Zigarre, der ein Fass umarmt",
 	"tycoon_cameo_message": "Verstaatlicht? Unsinn! Das ist lediglich eine vorübergehende Änderung auf dem Papier.",

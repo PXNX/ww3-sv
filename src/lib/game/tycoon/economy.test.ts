@@ -68,6 +68,20 @@ describe('cost curve', () => {
 		}
 	});
 
+	it('keeps every producer dearer and stronger than the one before, at a steady rate', () => {
+		for (let i = 1; i < PRODUCERS.length; i++) {
+			const [before, def] = [PRODUCERS[i - 1], PRODUCERS[i]];
+			expect(def.baseCost, def.id).toBeGreaterThan(before.baseCost);
+			expect(def.baseCps, def.id).toBeGreaterThan(before.baseCps);
+			// No jumps, and from the fifth producer on the price rises faster than the output
+			const costStep = def.baseCost / before.baseCost;
+			const cpsStep = def.baseCps / before.baseCps;
+			expect(costStep, def.id).toBeLessThan(20);
+			expect(cpsStep, def.id).toBeLessThan(12);
+			if (i >= 4) expect(cpsStep, def.id).toBeLessThan(costStep);
+		}
+	});
+
 	it('finds the largest affordable batch exactly', () => {
 		for (const owned of [0, 4, 30]) {
 			for (const budget of [0, 14, 15, 100, 5_000, 123_456, 9e9]) {
@@ -102,9 +116,10 @@ describe('production', () => {
 		const state = fresh();
 		state.owned.tanker = 10;
 		state.upgrades.push('tanker_1');
-		expect(producerOutput(state, 'tanker')).toBeCloseTo(20, 9);
+		// Every upgrade owned slows production by 2%
+		expect(producerOutput(state, 'tanker')).toBeCloseTo(20 * 0.98, 9);
 		state.upgrades.push('tanker_2');
-		expect(producerOutput(state, 'tanker')).toBeCloseTo(40, 9);
+		expect(producerOutput(state, 'tanker')).toBeCloseTo(40 * 0.98 ** 2, 9);
 		expect(producerOutput(state, 'pumpjack')).toBe(0);
 	});
 
@@ -118,7 +133,7 @@ describe('production', () => {
 		state.upgrades.push('global_regulator');
 		const expected = 1.5 * 1.05 * (1 + 2 * perkValue('output')) * 1.25;
 		expect(globalMultiplier(state)).toBeCloseTo(expected, 9);
-		expect(productionPerSecond(state)).toBeCloseTo(1 * expected, 9);
+		expect(productionPerSecond(state)).toBeCloseTo(1 * expected * 0.98, 9);
 	});
 
 	it('lets crisis effects cut one producer or scale the output, but not calm production', () => {
@@ -152,7 +167,8 @@ describe('production', () => {
 		expect(tapValue(state)).toBe(4);
 		state.owned.tanker = 100;
 		state.upgrades.push('clickcps_hands');
-		expect(tapValue(state)).toBeCloseTo(4 + 0.01 * 100, 9);
+		// Hundred tankers own the first three levels (5, 10 and 25 units)
+		expect(tapValue(state)).toBeCloseTo(4 + 0.01 * 100 * 0.98 ** 3, 9);
 		state.effects.push({
 			id: 'protest',
 			remainingMs: 1000,
@@ -180,7 +196,8 @@ describe('upgrades', () => {
 		state.owned.pumpjack = 5;
 		expect(ids()).not.toContain('pumpjack_1');
 		expect(nextTierAt('pumpjack', 0)).toBe(5);
-		expect(nextTierAt('pumpjack', 5)).toBe(25);
+		expect(nextTierAt('pumpjack', 5)).toBe(10);
+		expect(nextTierAt('pumpjack', 25)).toBe(50);
 	});
 });
 

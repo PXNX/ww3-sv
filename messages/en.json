@@ -2069,6 +2069,8 @@
 	"tycoon_perk_crit_chance_effect": "Critical tap chance: {value}",
 	"tycoon_perk_crit_mult_name": "Bigger Windfalls",
 	"tycoon_perk_crit_mult_effect": "Critical tap bonus: {value}",
+	"tycoon_perk_turbo_name": "Turbo Mode",
+	"tycoon_perk_turbo_effect": "Production speed: {value}",
 	"tycoon_cameo_label": "The Baron (fictional)",
 	"tycoon_cameo_alt": "Cartoon of a plump oil baron in a top hat with a monocle and a long cigar, hugging a barrel",
 	"tycoon_cameo_message": "Nationalized? Nonsense! It is merely a temporary change in the paperwork.",

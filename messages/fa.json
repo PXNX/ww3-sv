@@ -2069,6 +2069,8 @@
 	"tycoon_perk_crit_chance_effect": "شانس ضربه بحرانی: {value}",
 	"tycoon_perk_crit_mult_name": "برد بزرگ‌تر",
 	"tycoon_perk_crit_mult_effect": "پاداش ضربه بحرانی: {value}",
+	"tycoon_perk_turbo_name": "حالت توربو",
+	"tycoon_perk_turbo_effect": "سرعت تولید: {value}",
 	"tycoon_cameo_label": "بارون (تخیلی)",
 	"tycoon_cameo_alt": "کارتون بارون چاق نفت با کلاه استوانه‌ای، تک‌عینک و سیگار برگ بلند که بشکه‌ای را در آغوش گرفته",
 	"tycoon_cameo_message": "ملی‌سازی؟ مزخرف! این فقط یک تغییر موقت در کاغذبازی است.",

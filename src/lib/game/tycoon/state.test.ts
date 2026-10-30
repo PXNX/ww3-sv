@@ -160,8 +160,8 @@ describe('buying', () => {
 		expect(state.upgrades).toContain('pumpjack_1');
 		expect(events).toContainEqual({ type: 'levelup', producer: 'pumpjack', tier: 1 });
 		// The next tap of "next" reaches the following tier, not the whole way
-		expect(buyProducer(state, 'pumpjack', 'next').bought).toBe(20);
-		expect(state.owned.pumpjack).toBe(25);
+		expect(buyProducer(state, 'pumpjack', 'next').bought).toBe(5);
+		expect(state.owned.pumpjack).toBe(10);
 		expect(state.upgrades).toContain('pumpjack_2');
 	});
 
@@ -170,8 +170,8 @@ describe('buying', () => {
 		state.owned.pumpjack = 25;
 		state.barrels = 0;
 		const events = grantProducerTiers(state, 'pumpjack');
-		expect(events.map((event) => event.type)).toEqual(['levelup', 'levelup']);
-		expect(state.upgrades).toEqual(['pumpjack_1', 'pumpjack_2']);
+		expect(events.map((event) => event.type)).toEqual(['levelup', 'levelup', 'levelup']);
+		expect(state.upgrades).toEqual(['pumpjack_1', 'pumpjack_2', 'pumpjack_3']);
 		expect(state.barrels).toBe(0);
 		// A second call changes nothing
 		expect(grantProducerTiers(state, 'pumpjack')).toEqual([]);

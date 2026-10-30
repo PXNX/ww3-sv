@@ -2069,6 +2069,8 @@
 	"tycoon_perk_crit_chance_effect": "فرصة اللمسة الحرجة: {value}",
 	"tycoon_perk_crit_mult_name": "مكاسب أكبر",
 	"tycoon_perk_crit_mult_effect": "مكافأة اللمسة الحرجة: {value}",
+	"tycoon_perk_turbo_name": "الوضع التوربيني",
+	"tycoon_perk_turbo_effect": "سرعة الإنتاج: {value}",
 	"tycoon_cameo_label": "البارون (شخصية خيالية)",
 	"tycoon_cameo_alt": "رسم كاريكاتوري لبارون نفط ممتلئ بقبعة عالية وعدسة أحادية وسيجار طويل يحتضن برميلًا",
 	"tycoon_cameo_message": "تأميم؟ هراء! إنه مجرد تغيير مؤقت في الأوراق.",

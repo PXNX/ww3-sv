@@ -315,7 +315,8 @@ const PERK_NAMES: Record<PerkId, () => string> = {
 	fake_news: m.tycoon_perk_fake_news_name,
 	invest_boost: m.tycoon_perk_invest_boost_name,
 	crit_chance: m.tycoon_perk_crit_chance_name,
-	crit_mult: m.tycoon_perk_crit_mult_name
+	crit_mult: m.tycoon_perk_crit_mult_name,
+	turbo: m.tycoon_perk_turbo_name
 };
 
 export function perkName(id: PerkId): string {
@@ -366,6 +367,8 @@ export function perkEffectText(id: PerkId, level: number, maxed: boolean): strin
 			return m.tycoon_perk_crit_chance_effect({ value });
 		case 'crit_mult':
 			return m.tycoon_perk_crit_mult_effect({ value });
+		case 'turbo':
+			return m.tycoon_perk_turbo_effect({ value });
 	}
 }
 
