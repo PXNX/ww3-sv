@@ -155,29 +155,31 @@
 
 	<section class="mx-auto flex w-full max-w-none flex-col gap-3">
 		{#if game.welcome}
-			<div class="sticker pop-in flex flex-col gap-1 bg-explosion-yellow p-3" role="status">
-				<h2 dir="auto" class="font-display text-xl font-bold">{m.tycoon_welcome_title()}</h2>
-				<p dir="auto" class="text-sm leading-snug">
-					{m.tycoon_welcome_text({
-						time: formatDuration(game.welcome.creditedMs, locale),
-						barrels: formatBig(game.welcome.barrels, locale)
-					})}
-				</p>
-				{#if game.welcome.capped}
-					<p dir="auto" class="text-xs leading-snug font-semibold">
-						{m.tycoon_welcome_capped({
-							hours: formatCount(OFFLINE_CAP_MS / 3_600_000, locale),
-							percent: formatCount(OFFLINE_EFFICIENCY * 100, locale)
-						})}
-					</p>
-				{/if}
-				<button
-					type="button"
-					class="btn-chunky mt-1 self-end bg-paper px-3 py-1 text-sm"
-					onclick={() => game.dismissWelcome()}
-				>
-					{m.tycoon_welcome_close()}
-				</button>
+			<div class="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 backdrop-blur-md" role="dialog" aria-modal="true" aria-label="Welcome back overview">
+				<div class="relative mx-4 w-full max-w-xl rounded-3xl border-3 border-ink bg-paper shadow-[8px_8px_0_var(--color-ink)] p-6 animate-[popIn_0.7s_ease-out]">
+					<div class="absolute -top-6 -right-6 w-32 h-32 rounded-full border-[6px] border-chartreuse/30 animate-pulse"></div>
+					<div class="absolute -bottom-4 -left-4 w-24 h-24 rounded-full bg-explosion-yellow/20 animate-bounce"></div>
+					<h2 dir="auto" class="font-display text-3xl font-extrabold text-ink mb-2 tracking-tight">{m.tycoon_welcome_title()}</h2>
+					<p dir="auto" class="text-ink/70 font-display text-sm mb-6">{m.tycoon_welcome_text({ time: formatDuration(game.welcome.creditedMs, locale), barrels: formatBig(game.welcome.barrels, locale) })}</p>
+					<div class="grid grid-cols-3 gap-3 mb-6">
+						<div class="rounded-2xl bg-ink text-paper p-4 text-center shadow-[4px_4px_0_#000]">
+							<div class="font-display text-3xl font-bold tabular-nums">{formatDuration(game.welcome.creditedMs, locale)}</div>
+							<div class="text-[0.65rem] uppercase tracking-widest opacity-80">Offline</div>
+						</div>
+						<div class="rounded-2xl bg-chartreuse text-ink p-4 text-center shadow-[4px_4px_0_#000]">
+							<div class="font-display text-3xl font-bold tabular-nums">{formatBig(game.welcome.barrels, locale)}</div>
+							<div class="text-[0.65rem] uppercase tracking-widest opacity-80">Barrels</div>
+						</div>
+						<div class="rounded-2xl bg-explosion-yellow text-ink p-4 text-center shadow-[4px_4px_0_#000]">
+							<div class="font-display text-3xl font-bold tabular-nums">{game.welcome.capped ? '~'+formatCount(Math.round(OFFLINE_EFFICIENCY*100), locale)+'%' : '100%'}</div>
+							<div class="text-[0.65rem] uppercase tracking-widest opacity-80">Efficiency</div>
+						</div>
+					</div>
+					{#if game.welcome.capped}
+						<p dir="auto" class="text-xs leading-snug font-semibold mb-4 text-ink/70">{m.tycoon_welcome_capped({ hours: formatCount(OFFLINE_CAP_MS/3_600_000, locale), percent: formatCount(OFFLINE_EFFICIENCY*100, locale) })}</p>
+					{/if}
+					<button type="button" class="btn-chunky w-full bg-ink text-paper px-4 py-3 text-base shadow-[4px_4px_0_var(--color-chartreuse)] hover:scale-[1.02] active:scale-[0.98] transition" onclick={() => game.dismissWelcome()}>{m.tycoon_welcome_close()}</button>
+				</div>
 			</div>
 		{/if}
 
