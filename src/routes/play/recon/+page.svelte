@@ -45,6 +45,23 @@
     <button onclick={() => alert('Send artillery strike — multiple rounds, wider area. Confirmed via FPV feed with full detail.')} class="flex-1 bg-tie-red text-paper font-display font-bold rounded px-3 py-2 shadow-[2px_2px_0_var(--color-ink)] hover:scale-[1.03] active:scale-[0.97] transition text-xs">ARTILLERY</button>
   </div>
 
+    <!-- Bunkers / buildings with foliage -->
+    <div class="absolute" style="left:10%;top:55%;">
+      <div class="w-14 h-14 bg-stone-800 rounded-lg border-2 border-stone-600 shadow-lg flex items-center justify-center relative">
+        <span class="text-stone-300 text-[0.6rem] font-display font-bold">BUNKER</span>
+        <div class="absolute -top-3 -left-3 w-4 h-8 bg-green-900 rounded-sm opacity-60"></div>
+        <div class="absolute -top-2 -right-2 w-3 h-6 bg-green-800 rounded-sm opacity-50"></div>
+      </div>
+      <button onclick={() => alert('Open bunker — reveal hidden target inside.')" class="absolute top-full left-0 mt-1 text-[0.6rem] bg-paper/90 text-ink px-2 py-0.5 rounded shadow border border-ink font-display font-bold whitespace-nowrap">OPEN</button>
+    </div>
+    <div class="absolute" style="left:65%;top:25%;">
+      <div class="w-12 h-10 bg-stone-700 rounded-md border-2 border-stone-500 shadow-lg flex items-center justify-center relative">
+        <span class="text-stone-200 text-[0.55rem] font-display font-bold">BLDG</span>
+        <div class="absolute -top-2 left-0 w-6 h-5 bg-green-800 rounded-full opacity-40"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="flex gap-3 mt-3">
     <div class="flex-1 bg-paper/10 rounded p-2 text-xs text-paper font-display"><span class="text-chartreuse">●</span> Timer 60s</div>
     <div class="flex-1 bg-paper/10 rounded p-2 text-xs text-paper font-display"><span class="text-amber-400">●</span> Danger 0%</div>

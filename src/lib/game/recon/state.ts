@@ -8,7 +8,13 @@ import type { Random } from '../random';
 
 export type CameraMode = 'satellite' | 'globalhawk' | 'reaper' | 'fpv';
 
-export type TargetKind = 'vehicle' | 'troops' | 'facility' | 'supply';
+export type TargetKind = 'vehicle' | 'troops' | 'facility' | 'supply' | 'bunker';
+export interface Bunker {
+	id: number;
+	x: number; y: number;
+	revealed: boolean;
+	hiddenTarget?: TargetKind;
+}
 export interface Target {
 	kind: TargetKind;
 	x: number; // 0..1 horizontal position within the scene
@@ -30,6 +36,7 @@ export interface ReconState {
 	shellsDropped: number;
 	selectedTarget: number | null;     // which target is selected for command
 	commands: { targetIdx: number; cmd: 'attack' | 'defend' | 'destroy'; result: string }[];
+	bunkers: Bunker[];
 }
 
 export const CAMERA_NAMES = ['Satellite', 'Global Hawk', 'Reaper', 'FPV Drone'] as const;
@@ -65,7 +72,12 @@ export function createRecon(): ReconState {
 		strikes: [],
 		shellsDropped: 0,
 		selectedTarget: null,
-		commands: []
+		commands: [],
+		bunkers: [
+			{ id: 1, x: 0.2, y: 0.35, revealed: false, hiddenTarget: 'vehicle' },
+			{ id: 2, x: 0.7, y: 0.6, revealed: false, hiddenTarget: 'troops' },
+			{ id: 3, x: 0.45, y: 0.8, revealed: false, hiddenTarget: 'facility' }
+		]
 	};
 }
 
@@ -100,6 +112,15 @@ export function clickTarget(s: ReconState, x: number, y: number): number {
 		// False positive or missed
 		s.danger = Math.min(100, s.danger + 25);
 		return 0;
+	}
+}
+
+export function openBunker(s: ReconState, bunkerId: number) {
+	const b = s.bunkers.find((bk) => bk.id === bunkerId);
+	if (!b || b.revealed) return;
+	b.revealed = true;
+	if (b.hiddenTarget) {
+		s.hotspots.push({ x: b.x, y: b.y, kind: b.hiddenTarget });
 	}
 }
 
