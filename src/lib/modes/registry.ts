@@ -609,8 +609,8 @@ export const MODES: readonly GameMode[] = [
 		icon: IconRocket,
 		tileClass: 'bg-slate-900',
 		leaders: ['musk'],
-		name: () => 'Starlink Kill Switch',
-		description: () => 'Cut satellite links before drones reach the refinery.'
+		name: m.mode_killswitch_name,
+		description: m.mode_killswitch_description
 	}
 ];
 
