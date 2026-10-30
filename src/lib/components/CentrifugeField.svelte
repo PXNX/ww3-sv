@@ -90,7 +90,7 @@
 >
 	<div class="relative">
 		<div
-			class="scene relative aspect-[5/6] overflow-hidden rounded-[14px_8px_16px_10px] border-3 border-ink bg-sand shadow-[4px_4px_0_var(--color-ink)]"
+			class="scene relative h-full overflow-hidden rounded-[14px_8px_16px_10px] border-3 border-ink bg-sand shadow-[4px_4px_0_var(--color-ink)]"
 			class:shaking={shake && !still}
 			class:rumble={shake && game.reducedMotion}
 			style:--shake="{shake ? 2 + shake.intensity * 7 : 0}px"
@@ -254,19 +254,6 @@
 			<PauseOverlay onResume={() => game.resume()} />
 		{/if}
 	</div>
-
-	<button
-		type="button"
-		class="btn-chunky w-full justify-center bg-explosion-yellow py-4 text-2xl"
-		aria-keyshortcuts="Space"
-		onclick={(event) => {
-			// A pointer press is already handled by the field; this is the keyboard path
-			if (event.detail === 0) game.press();
-		}}
-	>
-		<IconGauge class="size-6" aria-hidden="true" />
-		{m.centrifuge_stabilize()}
-	</button>
 
 	<p class="sr-only" aria-live="polite">
 		{#if playing}

@@ -53,7 +53,7 @@ export class VaultGame {
 	lives = $state(STARTING_LIVES);
 	level = $state(1);
 	cols = $state(4);
-	rows = $state(3);
+	rows = $state(4);
 	cards = $state.raw<Card[]>([]);
 	/** The banker's raised eyebrows, 0 to 2 (the third one costs a heart and resets this) */
 	eyebrows = $state(0);

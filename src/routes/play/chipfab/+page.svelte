@@ -187,15 +187,7 @@
 		<ChipFabField {game} />
 
 		{#if game.stage === 'stack'}
-			<button
-				type="button"
-				class="btn-chunky w-full bg-explosion-yellow text-lg"
-				disabled={game.status !== 'playing'}
-				onclick={() => game.drop()}
-			>
-				<IconDrop class="size-5" aria-hidden="true" />
-				{m.chipfab_drop_button()}
-			</button>
+			<!-- layer drop handled by tap on field -->
 		{:else}
 			<div dir="ltr" class="grid w-full grid-cols-4 gap-2">
 				{#each pad as item (item.direction)}
