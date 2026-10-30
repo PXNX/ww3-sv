@@ -133,7 +133,7 @@
 			type="button"
 			class="btn-chunky shrink-0 flex-col gap-0 px-3 py-1.5 leading-tight {maxed
 				? 'bg-paper'
-				: 'bg-explosion-yellow'}"
+				: upgradeReady ? 'bg-chartreuse' : 'bg-explosion-yellow'}"
 			class:opacity-50={!affordable}
 			disabled={!affordable}
 			aria-label={maxed
