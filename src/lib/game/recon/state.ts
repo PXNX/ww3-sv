@@ -6,7 +6,7 @@
  */
 import type { Random } from '../random';
 
-export type CameraMode = 'satellite' | 'globalhawk' | 'reaper' | 'fpv';
+export type CameraMode = 'satellite' | 'globalhawk' | 'reaper' | 'fpv' | 'sar';
 
 export type TargetKind = 'vehicle' | 'troops' | 'facility' | 'supply' | 'bunker';
 export interface Bunker {
@@ -44,7 +44,8 @@ export const CAMERA_LABELS: Record<CameraMode, string> = {
 	satellite: 'SATELLITE',
 	globalhawk: 'GLOBAL HAWK',
 	reaper: 'REAPER',
-	fpv: 'FPV DRONE'
+	fpv: 'FPV DRONE',
+	sar: 'SYNTHETIC APERTURE RADAR'
 };
 
 export function createRecon(): ReconState {

@@ -7,7 +7,7 @@
   <p class="text-paper/60 text-xs font-display mb-4">Analyze satellite / Global Hawk / Reaper / FPV drone footage. Thermal vision reveals heat. Burn targets with napalm.</p>
 
   <div class="flex gap-2 mb-4 flex-wrap">
-    {#each ['satellite','globalhawk','reaper','fpv'] as cam}
+    {#each ['satellite','globalhawk','reaper','fpv','sar'] as cam}
       <button type="button" onclick={() => alert('Switching to ' + cam.toUpperCase())} class="bg-paper/10 text-paper text-xs font-display border border-paper/30 rounded px-3 py-2 hover:bg-paper/20 active:scale-95 transition">{cam.toUpperCase()}</button>
     {/each}
     <button onclick={() => alert('THERMAL VISION ON — see heat signatures, bunker interiors, hidden targets.')" class="bg-orange-500 text-paper text-xs font-display border border-ink rounded px-3 py-2 hover:scale-105 shadow-[2px_2px_0_var(--color-ink)]">THERMAL</button>
@@ -40,6 +40,15 @@
         <div class="absolute -top-2 left-0 w-6 h-5 bg-green-800 rounded-full opacity-40"></div>
       </div>
     </div>
+    <!-- Fuel tanks / workshop / factory / substations -->
+    <div class="absolute" style="left:20%;top:78%;"><div class="w-10 h-10 bg-yellow-600 rounded-full border-2 border-yellow-300 shadow-lg flex items-center justify-center"><span class="text-paper text-[0.5rem] font-display">FUEL</span></div></div>
+    <div class="absolute" style="left:40%;top:85%;"><div class="w-12 h-8 bg-orange-700 rounded-md border-2 border-orange-400 shadow-lg flex items-center justify-center"><span class="text-paper text-[0.55rem] font-display">FACTORY</span></div></div>
+    <div class="absolute" style="left:80%;top:70%;"><div class="w-10 h-8 bg-violet-600 rounded-md border-2 border-violet-300 shadow-lg flex items-center justify-center"><span class="text-paper text-[0.5rem] font-display">POWER</span></div></div>
+    <div class="absolute" style="left:55%;top:92%;"><div class="w-8 h-8 bg-blue-500 rounded-full border-2 border-blue-300 shadow-lg flex items-center justify-center"><span class="text-paper text-[0.45rem] font-display">WORK</span></div></div>
+    <div class="absolute" style="left:75%;top:88%;"><div class="w-10 h-6 bg-green-700 rounded-md border-2 border-green-400 shadow-lg flex items-center justify-center"><span class="text-paper text-[0.45rem] font-display">HANGAR</span></div></div>
+    <!-- People moving at bottom -->
+    <div class="absolute" style="left:30%;bottom:8%;"><div class="w-3 h-3 bg-paper rounded-full shadow animate-bounce"></div><div class="absolute -top-2 left-1 w-2 h-2 bg-paper rounded-full"></div></div>
+    <div class="absolute" style="left:60%;bottom:6%;"><div class="w-3 h-3 bg-paper rounded-full shadow animate-bounce" style="animation-delay:0.3s"></div><div class="absolute -top-2 left-1 w-2 h-2 bg-paper rounded-full"></div></div>
     <!-- Air defenses / radar awareness -->
     <div class="absolute" style="left:85%;top:10%;">
       <div class="w-10 h-10 bg-tie-red rounded-full shadow-[0_0_10px_rgba(220,30,30,0.8)] flex items-center justify-center border-2 border-paper/30">
