@@ -68,10 +68,15 @@
 	<div
 		class="flex items-center gap-3 rounded-2xl border-3 border-ink px-3 py-2 {maxed
 			? 'bg-khaki'
-			: 'bg-paper'}"
+			: 'bg-paper'} relative overflow-hidden"
 		class:ring-4={upgradeReady}
 		class:ring-success={upgradeReady}
 	>
+		{#if upgradeReady}
+			<div class="absolute inset-0 pointer-events-none" aria-hidden="true">
+				<div class="absolute top-0 left-[-100%] w-[200%] h-full bg-gradient-to-r from-transparent via-chartreuse/40 to-transparent animate-[glowWave_1.8s_ease-in-out_infinite]"></div>
+			</div>
+		{/if}
 		<span class="relative shrink-0">
 			<span
 				class="grid size-12 place-items-center rounded-xl border-3 border-ink {sanctioned
@@ -153,9 +158,13 @@
 </li>
 
 <style>
-	/* Rows far off screen are not laid out or painted, which keeps a long list light */
 	.tycoon-row {
 		content-visibility: auto;
 		contain-intrinsic-size: auto 84px;
+	}
+	@keyframes glowWave {
+		0% { transform: translateX(0); }
+		50% { transform: translateX(50%); }
+		100% { transform: translateX(0); }
 	}
 </style>
