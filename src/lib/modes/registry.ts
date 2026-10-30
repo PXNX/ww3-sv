@@ -41,6 +41,7 @@ import IconRocket from '~icons/lucide/rocket';
 import IconMusic from '~icons/lucide/music';
 import IconHandshake from '~icons/lucide/handshake';
 import IconBinoculars from '~icons/lucide/binoculars';
+import IconRadar from '~icons/lucide/radar';
 import IconSailboat from '~icons/lucide/sailboat';
 import IconFactory from '~icons/lucide/factory';
 import IconTerminal from '~icons/lucide/terminal';
@@ -88,7 +89,8 @@ export type ModeId =
 	| 'droneworks'
 	| 'falklands'
 	| 'warroom'
-	| 'hackers';
+	| 'hackers'
+	| 'recon';
 
 interface ModeBase {
 	id: ModeId;
@@ -533,6 +535,16 @@ export const MODES: readonly GameMode[] = [
 		leaders: ['kim'],
 		name: () => 'Hermit Hackers',
 		description: () => 'Retro terminal: crack crypto wallets, install siphons and worms, flip breaker lights. Reach the quota before the trace hits 100.'
+	},
+	{
+		id: 'recon',
+		status: 'playable',
+		href: '/play/recon',
+		icon: IconRadar,
+		tileClass: 'bg-ink',
+		leaders: ['musk'],
+		name: () => 'Recon',
+		description: () => 'Analyze satellite, Global Hawk and Reaper footage militarily — identify targets, read thermal signatures, assess threat levels.'
 	}
 ];
 
