@@ -236,10 +236,10 @@ export function totalPerkLevels(state: TycoonState): number {
 }
 
 /** What a perk does at a level, in the unit of its kind (see PerkDef.value) */
-export function perkEffect(id: PerkId, level: number): number {
+export function perkEffect(id: PerkId, level: number | undefined): number {
 	const def = perkDef(id);
-	if (id === 'seed') return level > 0 ? def.value * 10 ** (level - 1) : 0;
-	return def.value * level;
+	if (id === 'seed') return (level ?? 0) > 0 ? def.value * 10 ** ((level ?? 0) - 1) : 0;
+	return def.value * (level ?? 0);
 }
 
 /** Barrels a new run starts with */
