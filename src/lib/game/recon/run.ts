@@ -122,6 +122,7 @@ export function createRun(random: Random): Run {
 		overReason: null,
 		cam: { x: START.x, y: START.y },
 		sensor: 'eo',
+		view: 'uav',
 		lock: null,
 		selected: null,
 		timeLeft: 0,

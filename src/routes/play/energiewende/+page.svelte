@@ -140,6 +140,7 @@
 	score={game.score}
 	best={game.best}
 	confirmLeave={game.status === 'playing' || game.status === 'paused'}
+	onQuit={() => game.forfeit()}
 >
 	{#snippet actions()}
 		<button
