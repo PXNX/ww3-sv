@@ -108,6 +108,12 @@ export class BalloonGame {
 		else this.resume();
 	}
 
+	/** The back link during a run: ends it as a loss */
+	forfeit() {
+		if (this.status !== 'playing' && this.status !== 'paused') return;
+		this.#finish(false);
+	}
+
 	/** The burner button: held down climbs, released sinks */
 	burner(on: boolean) {
 		if (this.status !== 'playing') on = false;

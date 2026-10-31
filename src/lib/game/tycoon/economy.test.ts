@@ -136,6 +136,15 @@ describe('production', () => {
 		expect(productionPerSecond(state)).toBeCloseTo(1 * expected * 0.98, 9);
 	});
 
+	it('pays 5% more overall production once a producer reaches its last level', () => {
+		const state = fresh();
+		expect(globalMultiplier(state)).toBe(1);
+		state.owned.pumpjack = 999;
+		expect(globalMultiplier(state)).toBe(1);
+		state.owned.pumpjack = 1000;
+		expect(globalMultiplier(state)).toBeCloseTo(1.05, 9);
+	});
+
 	it('lets crisis effects cut one producer or scale the output, but not calm production', () => {
 		const state = fresh();
 		state.owned.pumpjack = 10;

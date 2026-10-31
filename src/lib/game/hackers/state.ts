@@ -15,10 +15,21 @@ import {
 	TRACE_MAX,
 	TRACE_RELIEF,
 	TRACE_ROTATED,
-	TRACE_WRONG_GUESS,
-	contractSpec,
 	type ContractSpec
 } from './config';
+import {
+	emptyUpgrades,
+	effectiveSpec,
+	minerIncome,
+	siphonShare,
+	upgradeCost,
+	walletFor,
+	SIPHON_DAY_MS,
+	toolSpec,
+	type ToolId,
+	type Upgrades,
+	wrongGuessTrace
+} from './software';
 import { isDark, makePanel, pressRelay } from './breaker';
 import {
 	captureChip,
@@ -49,6 +60,9 @@ export interface Contract {
 	keylog: Keylog;
 	panel: boolean[];
 	moves: number;
+	/** DogeLite still in the target's wallet; the siphon drains a share of it every day */
+	wallet: number;
+	walletStart: number;
 }
 
 export interface HackersState {
@@ -62,6 +76,14 @@ export interface HackersState {
 	number: number;
 	over: boolean;
 	timeMs: number;
+	/** Software bought in this run */
+	upgrades: Upgrades;
+	/** Mined DogeLite that has not reached a whole coin yet */
+	pendingIncome: number;
+	/** Time towards the siphon's next day */
+	siphonMs: number;
+	/** DogeLite the siphon has drained in this run */
+	siphoned: number;
 }
 
 export type HackersEvent =
@@ -75,12 +97,19 @@ export type HackersEvent =
 	| { type: 'keys-done'; points: number }
 	| { type: 'relay' }
 	| { type: 'contract-done'; points: number; n: number }
+	| { type: 'upgrade'; tool: ToolId; level: number; cost: number }
+	| { type: 'siphon'; amount: number; left: number }
 	| { type: 'traced' }
 	| { type: 'game-over' };
 
-export function newContract(n: number, random: Random): Contract {
-	const spec = contractSpec(n);
+export function newContract(
+	n: number,
+	random: Random,
+	upgrades: Upgrades = emptyUpgrades()
+): Contract {
+	const spec = effectiveSpec(n, upgrades);
 	const target = TARGETS[(n - 1) % TARGETS.length];
+	const wallet = walletFor(n);
 	return {
 		n,
 		ip: target.ip,
@@ -91,20 +120,27 @@ export function newContract(n: number, random: Random): Contract {
 		guesses: [],
 		keylog: createKeylog(random, spec.passphraseLength),
 		panel: [],
-		moves: 0
+		moves: 0,
+		wallet,
+		walletStart: wallet
 	};
 }
 
 export function createGame(random: Random): HackersState {
+	const upgrades = emptyUpgrades();
 	return {
-		contract: newContract(1, random),
+		contract: newContract(1, random, upgrades),
 		lives: STARTING_LIVES,
 		trace: 0,
 		score: 0,
 		completed: 0,
 		number: 1,
 		over: false,
-		timeMs: 0
+		timeMs: 0,
+		upgrades,
+		pendingIncome: 0,
+		siphonMs: 0,
+		siphoned: 0
 	};
 }
 
@@ -125,7 +161,7 @@ function addTrace(state: HackersState, amount: number, random: Random): HackersE
 		return events;
 	}
 	state.trace = TRACE_AFTER_TRACED;
-	state.contract = newContract(state.number, random);
+	state.contract = newContract(state.number, random, state.upgrades);
 	events.push(contractEvent(state.contract));
 	return events;
 }
@@ -163,7 +199,7 @@ export function submitGuess(
 		return events;
 	}
 
-	events.push(...addTrace(state, TRACE_WRONG_GUESS, random));
+	events.push(...addTrace(state, wrongGuessTrace(state.upgrades), random));
 	if (state.over || state.contract !== contract) return events;
 	if (attemptsLeft(contract) <= 0) {
 		// The firewall changes the locks: new code, fresh attempts, and the trace does not forget
@@ -226,17 +262,67 @@ export function flipRelay(state: HackersState, index: number, random: Random): H
 	state.number += 1;
 	state.trace = Math.max(0, state.trace - TRACE_RELIEF);
 	events.push({ type: 'contract-done', points, n: contract.n });
-	state.contract = newContract(state.number, random);
+	state.contract = newContract(state.number, random, state.upgrades);
 	events.push(contractEvent(state.contract));
 	return events;
 }
 
-/** Advances the clock: the trace creeps up, and the keystrokes stream */
+/** Buys the next level of a tool with the DogeLite in the bank */
+export function buyUpgrade(state: HackersState, tool: ToolId): HackersEvent[] {
+	if (state.over) return [];
+	const level = state.upgrades[tool];
+	const cost = upgradeCost(tool, level);
+	if (cost === null || state.score < cost) return [];
+
+	state.score -= cost;
+	state.upgrades = { ...state.upgrades, [tool]: level + 1 };
+	// The three stage tools change the contract in play right away; the miner and the siphon
+	// simply keep running
+	if (tool !== 'miner' && tool !== 'siphon') {
+		state.contract.spec = effectiveSpec(state.contract.n, state.upgrades);
+	}
+	return [{ type: 'upgrade', tool, level: level + 1, cost }];
+}
+
+/**
+ * The miner pays every second, the siphon only after access is gained and then once per target
+ * day, taking a share of whatever is left in the target's wallet.
+ */
+function passiveIncome(state: HackersState, dtMs: number): HackersEvent[] {
+	const events: HackersEvent[] = [];
+
+	state.pendingIncome += (minerIncome(state.upgrades) * dtMs) / 1000;
+	const mined = Math.floor(state.pendingIncome);
+	if (mined > 0) {
+		state.pendingIncome -= mined;
+		state.score += mined;
+	}
+
+	const share = siphonShare(state.upgrades);
+	const contract = state.contract;
+	if (share <= 0 || contract.stage === 'breach' || contract.wallet <= 0) return events;
+
+	state.siphonMs += dtMs;
+	while (state.siphonMs >= SIPHON_DAY_MS && contract.wallet > 0) {
+		state.siphonMs -= SIPHON_DAY_MS;
+		const drained = Math.min(
+			contract.wallet,
+			Math.max(1, Math.round(contract.wallet * share))
+		);
+		contract.wallet -= drained;
+		state.score += drained;
+		state.siphoned += drained;
+		events.push({ type: 'siphon', amount: drained, left: contract.wallet });
+	}
+	return events;
+}
+
+/** Advances the clock: the trace creeps up, the software earns, and the keystrokes stream */
 export function step(state: HackersState, dtMs: number, random: Random): HackersEvent[] {
 	if (state.over) return [];
 	state.timeMs += dtMs;
+	const events: HackersEvent[] = passiveIncome(state, dtMs);
 	const contract = state.contract;
-	const events: HackersEvent[] = [];
 	if (contract.stage === 'keylog') {
 		const result = stepKeylog(
 			contract.keylog,

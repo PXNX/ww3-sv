@@ -54,7 +54,14 @@
 	const STARS = ['unseen', 'quick', 'quiet'] as const;
 </script>
 
-<GameShell title={modeName} score={game.score} best={game.best} compact confirmLeave={running}>
+<GameShell
+	title={modeName}
+	score={game.score}
+	best={game.best}
+	compact
+	confirmLeave={running}
+	onQuit={() => game.forfeit()}
+>
 	{#snippet actions()}
 		{#if game.screen === 'playing'}
 			<button

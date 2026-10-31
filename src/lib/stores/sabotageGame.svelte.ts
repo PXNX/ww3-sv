@@ -239,6 +239,12 @@ export class SabotageGame {
 		this.#resetInput();
 	}
 
+	/** The back link during a run: it counts as the run being busted */
+	forfeit() {
+		if (!this.run || this.screen === 'over') return;
+		this.#finishRun(false);
+	}
+
 	// --- Input -------------------------------------------------------------------------------
 
 	setKey(code: string, down: boolean) {

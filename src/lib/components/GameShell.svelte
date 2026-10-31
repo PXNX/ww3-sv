@@ -1,8 +1,9 @@
 <!--
 	Shared frame for every game page: a back link to the start screen and a slate header banner
 	with the mode name and the current score. The game itself goes in the default slot. While a
-	game is running (`confirmLeave`) the back link asks once more before throwing it away, and
-	whatever sound is still playing stops when the page is left. Immersive games fill the whole
+	game is running (`confirmLeave`) the back link asks once more before throwing it away, unless
+	the page passes `onQuit`: then the back link ends the run as a loss, showing the game over
+	screen the game already has. Whatever sound is still playing stops when the page is left. Immersive games fill the whole
 	viewport instead: the controls and a small score badge float above the playfield, and the
 	`--hud-top` variable tells the game how far down its own overlays start to stay clear of them;
 	`--hud-left` and `--hud-right` keep overlays along the top edge clear of the corners, where
@@ -26,6 +27,7 @@
 		best,
 		actions,
 		confirmLeave = false,
+		onQuit,
 		wide = false,
 		immersive = false,
 		landscape = false,
@@ -40,6 +42,8 @@
 		actions?: Snippet;
 		/** True while a game is in progress: the back link then needs a second tap to leave */
 		confirmLeave?: boolean;
+		/** Ends the running game as a loss instead of leaving the page */
+		onQuit?: () => void;
 		/** Landscape games: use the full width and drop the banner on short (sideways phone) screens */
 		wide?: boolean;
 		/** The game fills the whole viewport; the back link and the actions float on top of it */
@@ -57,6 +61,9 @@
 	let confirmingLeave = $state(false);
 	let confirmTimer: ReturnType<typeof setTimeout> | undefined;
 	onDestroy(() => clearTimeout(confirmTimer));
+
+	// A page that can end its own run takes over the back link while that run is going
+	const quit = $derived(confirmLeave ? onQuit : undefined);
 
 	// A running game is only left on the second tap within a few seconds
 	function onBack(event: MouseEvent) {
@@ -85,18 +92,30 @@
 
 {#snippet backLink()}
 	{#if back}
-		<a
-			href={resolve('/')}
-			class="btn-chunky px-2 py-1 text-sm sm:px-3"
-			class:bg-explosion-yellow={confirmingLeave}
-			aria-label={confirmingLeave ? m.game_back_confirm() : m.game_back()}
-			onclick={onBack}
-		>
-			<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
-			<span class={confirmingLeave ? '' : 'hidden sm:inline'}>
-				{confirmingLeave ? m.game_back_confirm() : m.game_back()}
-			</span>
-		</a>
+		{#if quit}
+			<button
+				type="button"
+				class="btn-chunky px-2 py-1 text-sm sm:px-3"
+				aria-label={m.game_back()}
+				onclick={quit}
+			>
+				<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
+				<span class="hidden sm:inline">{m.game_back()}</span>
+			</button>
+		{:else}
+			<a
+				href={resolve('/')}
+				class="btn-chunky px-2 py-1 text-sm sm:px-3"
+				class:bg-explosion-yellow={confirmingLeave}
+				aria-label={confirmingLeave ? m.game_back_confirm() : m.game_back()}
+				onclick={onBack}
+			>
+				<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
+				<span class={confirmingLeave ? '' : 'hidden sm:inline'}>
+					{confirmingLeave ? m.game_back_confirm() : m.game_back()}
+				</span>
+			</a>
+		{/if}
 	{/if}
 {/snippet}
 
