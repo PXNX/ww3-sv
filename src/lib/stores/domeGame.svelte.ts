@@ -117,6 +117,12 @@ export class DomeGame {
 		else this.resume();
 	}
 
+	/** The back link during a run: ends it as a loss */
+	forfeit() {
+		if (this.status !== 'playing' && this.status !== 'paused') return;
+		this.#finish();
+	}
+
 	/** A tap or click on the field, in world units */
 	tapAt(point: Point) {
 		if (this.status !== 'playing') return;
