@@ -178,6 +178,12 @@ export class DroneWallGame {
 		else this.resume();
 	}
 
+	/** The back link during a run: ends it as a loss */
+	forfeit() {
+		if (this.status !== 'playing' && this.status !== 'paused') return;
+		this.#finish();
+	}
+
 	/** Selects a slot to build on or manage; selecting it again closes the panel */
 	select(slot: number | null) {
 		if (slot !== null && !this.state.map.slots[slot]) return;

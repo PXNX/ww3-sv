@@ -47,5 +47,10 @@ export const ESCALATION = {
 	decoyStruck: 10
 } as const;
 
+/** FPV / satellite / UAV (Predator/GlobalHawk) platform views */
+export type View = 'fpv' | 'satellite' | 'uav';
+export const VIEWS: readonly View[] = ['fpv', 'satellite', 'uav'] as const;
+export const VIEW_SCALE: Record<View, number> = { fpv: 1.5, satellite: 0.5, uav: 1 };
+
 /** The start of every sortie: the drone arrives from the south edge */
 export const START = { x: MAP_W / 2, y: MAP_H - VIEW_H / 2 - 10 } as const;

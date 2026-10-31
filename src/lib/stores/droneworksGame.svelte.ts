@@ -142,6 +142,12 @@ export class DroneworksGame {
 		else if (this.status === 'paused') this.resume();
 	}
 
+	/** The back link during a run: ends it as a loss */
+	forfeit() {
+		if (this.status !== 'playing' && this.status !== 'paused') return;
+		this.#finish();
+	}
+
 	/** Whether a slot can take this building right now, for the build menu */
 	canBuild(slot: number, id: BuildingId): boolean {
 		if (this.status !== 'playing') return false;
