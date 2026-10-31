@@ -150,7 +150,10 @@ const UNIQUE_UPGRADE_NAMES: Record<string, () => string> = {
 	crit_chance: m.tycoon_upgrade_crit_chance,
 	crit_mult: m.tycoon_upgrade_crit_mult,
 	event_boost: m.tycoon_upgrade_event_boost,
-	event_master: m.tycoon_upgrade_event_master
+	event_master: m.tycoon_upgrade_event_master,
+	speed_compressor: m.tycoon_upgrade_speed_compressor,
+	speed_overdrive: m.tycoon_upgrade_speed_overdrive,
+	speed_singularity: m.tycoon_upgrade_speed_singularity
 };
 
 export function upgradeName(upgrade: UpgradeDef): string {
@@ -186,6 +189,10 @@ export function upgradeEffect(upgrade: UpgradeDef): string {
 		}
 		case 'global':
 			return m.tycoon_upgrade_effect_global({ mult: formatMultiplier(upgrade.value, locale) });
+		case 'speed':
+			return m.tycoon_upgrade_effect_speed({
+				percent: formatCount((upgrade.value - 1) * 100, locale)
+			});
 		case 'events':
 			return m.tycoon_upgrade_effect_events({ mult: formatMultiplier(upgrade.value, locale) });
 	}

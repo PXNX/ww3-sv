@@ -406,7 +406,7 @@ export const PROTEST_MULT = 0.7;
 export const PROTEST_MS = 25_000;
 
 // Upgrades
-export type UpgradeKind = 'click' | 'clickCps' | 'producer' | 'global';
+export type UpgradeKind = 'click' | 'clickCps' | 'producer' | 'global' | 'speed' | 'events';
 
 export type UpgradeRequirement =
 	| { type: 'none' }
@@ -418,7 +418,10 @@ export interface UpgradeDef {
 	kind: UpgradeKind;
 	cost: number;
 	requires: UpgradeRequirement;
-	/** click and global: a multiplier; clickCps: the share of output a tap adds; producer: a multiplier */
+	/**
+	 * click and global: a multiplier; clickCps: the share of output a tap adds; producer: a
+	 * multiplier; speed: a multiplier on the cycle speed; events: a multiplier on crisis payouts
+	 */
 	value: number;
 	producer?: ProducerId;
 	/** Position among the producer's tiers, counting from 1 (producer upgrades only) */
@@ -524,6 +527,34 @@ const GLOBAL_UPGRADES: readonly UpgradeDef[] = [
 	}
 ];
 
+/**
+ * The three dearest shop upgrades: each makes every production cycle 2% faster. They are bought
+ * late, after most of the producers are already heavily invested in.
+ */
+const SPEED_UPGRADES: readonly UpgradeDef[] = [
+	{
+		id: 'speed_compressor',
+		kind: 'speed',
+		cost: 10_000_000_000_000,
+		requires: { type: 'total', count: 1200 },
+		value: 1.02
+	},
+	{
+		id: 'speed_overdrive',
+		kind: 'speed',
+		cost: 1_000_000_000_000_000,
+		requires: { type: 'total', count: 1600 },
+		value: 1.02
+	},
+	{
+		id: 'speed_singularity',
+		kind: 'speed',
+		cost: 100_000_000_000_000_000,
+		requires: { type: 'total', count: 2000 },
+		value: 1.02
+	}
+];
+
 const PRODUCER_UPGRADES: readonly UpgradeDef[] = PRODUCERS.flatMap((producer) =>
 	TIERS.map(([count, costUnits], index) => ({
 		id: `${producer.id}_${index + 1}`,
@@ -539,7 +570,8 @@ const PRODUCER_UPGRADES: readonly UpgradeDef[] = PRODUCERS.flatMap((producer) =>
 export const UPGRADES: readonly UpgradeDef[] = [
 	...CLICK_UPGRADES,
 	...PRODUCER_UPGRADES,
-	...GLOBAL_UPGRADES
+	...GLOBAL_UPGRADES,
+	...SPEED_UPGRADES
 ];
 
 // Achievements
