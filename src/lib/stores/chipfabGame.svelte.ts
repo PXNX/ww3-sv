@@ -186,6 +186,12 @@ export class ChipFabGame {
 		else this.resume();
 	}
 
+	/** The back link during a run: ends it as a loss */
+	forfeit() {
+		if (this.status !== 'playing' && this.status !== 'paused') return;
+		this.#finish();
+	}
+
 	/** Stage A: drop the sliding layer */
 	drop() {
 		if (this.status !== 'playing') return;
