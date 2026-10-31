@@ -128,6 +128,12 @@ export class CentrifugeGame {
 		else this.resume();
 	}
 
+	/** The back link during a run: ends it as a loss */
+	forfeit() {
+		if (this.status !== 'playing' && this.status !== 'paused') return;
+		this.#finish();
+	}
+
 	/** The one button: stabilize the dial (right only once the needle has left the safe band) */
 	press() {
 		if (this.status !== 'playing') return;
