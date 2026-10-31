@@ -89,6 +89,7 @@ export interface Run {
 	/** Centre of the scope, which is also where the drone hovers */
 	cam: { x: number; y: number };
 	sensor: Sensor;
+	view: View;
 	lock: Lock | null;
 	selected: number | null;
 	timeLeft: number;
