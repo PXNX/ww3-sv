@@ -259,6 +259,30 @@ describe('production cycles and speed', () => {
 			9
 		);
 	});
+
+	it('adds 2% speed per speed upgrade, which costs no slowdown of its own', () => {
+		const state = fresh();
+		expect(speedMultiplier(state)).toBe(1);
+		state.upgrades.push('speed_compressor');
+		expect(speedMultiplier(state)).toBeCloseTo(1.02, 9);
+		state.upgrades.push('speed_overdrive');
+		expect(speedMultiplier(state)).toBeCloseTo(1.02 ** 2, 9);
+		// Every other upgrade still slows the cycles by 2%
+		state.upgrades.push('click_bucket');
+		expect(speedMultiplier(state)).toBeCloseTo(1.02 ** 2 * 0.98, 9);
+	});
+
+	it('prices the speed upgrades above every other upgrade in the shop', () => {
+		const shop = UPGRADES.filter((upgrade) => upgrade.kind !== 'producer');
+		const others = shop.filter((upgrade) => upgrade.kind !== 'speed');
+		const dearest = Math.max(...others.map((upgrade) => upgrade.cost));
+		const speeds = shop.filter((upgrade) => upgrade.kind === 'speed');
+		expect(speeds).toHaveLength(3);
+		for (const upgrade of speeds) {
+			expect(upgrade.value).toBeCloseTo(1.02, 9);
+			expect(upgrade.cost).toBeGreaterThan(dearest);
+		}
+	});
 });
 
 describe('achievement boosts', () => {

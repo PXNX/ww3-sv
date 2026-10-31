@@ -299,11 +299,24 @@ export function globalMultiplier(state: TycoonState): number {
 	return multiplier;
 }
 
-/** How much faster than normal the production cycles run; -2% per upgrade owned */
+/**
+ * How much faster than normal the production cycles run: -2% per upgrade owned, except that the
+ * speed upgrades pay their own multiplier instead of counting toward that slowdown, so each of
+ * them really adds its 2%
+ */
 export function speedMultiplier(state: TycoonState): number {
-	const base = (1 + achievementBonus(state, 'speed')) * (1 + perkEffect('speed', state.perks.speed)) * (1 + perkEffect('turbo', state.perks.turbo));
-	const upgradeCount = state.upgrades.length;
-	return Math.max(0.1, base * Math.pow(0.98, upgradeCount));
+	const base =
+		(1 + achievementBonus(state, 'speed')) *
+		(1 + perkEffect('speed', state.perks.speed)) *
+		(1 + perkEffect('turbo', state.perks.turbo));
+	let slowdown = 1;
+	let boost = 1;
+	for (const id of state.upgrades) {
+		const def = UPGRADE_BY_ID.get(id);
+		if (def?.kind === 'speed') boost *= def.value;
+		else slowdown *= 0.98;
+	}
+	return Math.max(0.1, base * boost * slowdown);
 }
 
 /** Event reward multiplier from event-boost upgrades */
