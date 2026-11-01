@@ -3515,5 +3515,6 @@
 	"hackers_income_rate": "+{rate}/с",
 	"hackers_wallet": "Гаманець {left}/{total}",
 	"hackers_siphon_access": "сифону потрібен доступ",
-	"hackers_siphon_next": "наступний злив через {seconds} с"
+	"hackers_siphon_next": "наступний злив через {seconds} с",
+	"hackers_stat_siphoned": "Злито"
 }

@@ -3515,5 +3515,6 @@
 	"hackers_income_rate": "+{rate}/с",
 	"hackers_wallet": "Кошелёк {left}/{total}",
 	"hackers_siphon_access": "сифону нужен доступ",
-	"hackers_siphon_next": "следующий слив через {seconds} с"
+	"hackers_siphon_next": "следующий слив через {seconds} с",
+	"hackers_stat_siphoned": "Слито"
 }

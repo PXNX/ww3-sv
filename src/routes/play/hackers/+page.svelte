@@ -270,6 +270,10 @@
 				<dt class="text-xs font-bold uppercase">{m.hackers_stat_coins()}</dt>
 				<dd class="text-2xl font-bold tabular-nums">{game.score}</dd>
 			</div>
+			<div class="flex flex-col items-center">
+				<dt class="text-xs font-bold uppercase">{m.hackers_stat_siphoned()}</dt>
+				<dd class="text-2xl font-bold tabular-nums">{game.siphoned}</dd>
+			</div>
 		</dl>
 	</GameOverModal>
 </GameShell>

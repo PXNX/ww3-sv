@@ -3515,5 +3515,6 @@
 	"hackers_income_rate": "+{rate}/ث",
 	"hackers_wallet": "المحفظة {left}/{total}",
 	"hackers_siphon_access": "الماصّ يحتاج إلى وصول",
-	"hackers_siphon_next": "السحب التالي خلال {seconds} ثانية"
+	"hackers_siphon_next": "السحب التالي خلال {seconds} ثانية",
+	"hackers_stat_siphoned": "المسحوب"
 }

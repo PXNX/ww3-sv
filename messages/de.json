@@ -3515,5 +3515,6 @@
 	"hackers_income_rate": "+{rate}/s",
 	"hackers_wallet": "Wallet {left}/{total}",
 	"hackers_siphon_access": "Siphon braucht Zugang",
-	"hackers_siphon_next": "nächster Zugriff in {seconds} s"
+	"hackers_siphon_next": "nächster Zugriff in {seconds} s",
+	"hackers_stat_siphoned": "Abgezweigt"
 }

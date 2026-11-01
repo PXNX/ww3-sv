@@ -3515,5 +3515,6 @@
 	"hackers_income_rate": "+{rate}/ثانیه",
 	"hackers_wallet": "کیف پول {left}/{total}",
 	"hackers_siphon_access": "مکنده به دسترسی نیاز دارد",
-	"hackers_siphon_next": "تخلیه بعدی در {seconds} ثانیه"
+	"hackers_siphon_next": "تخلیه بعدی در {seconds} ثانیه",
+	"hackers_stat_siphoned": "کشیده‌شده"
 }
