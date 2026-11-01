@@ -3493,5 +3493,12 @@
 	"hackers_log_traced": "> ВИЯВЛЕНО! Верховний керівник невдоволений.",
 	"hackers_gameover_title": "Виявлено!",
 	"hackers_stat_contracts": "Контрактів виконано",
-	"hackers_stat_coins": "DogeLite"
+	"hackers_stat_coins": "DogeLite",
+	"hackers_tool_breach": "Набір злому",
+	"hackers_tool_keylog": "Кейлогер",
+	"hackers_tool_relays": "Руйнівник реле",
+	"hackers_tool_miner": "Криптомайнер",
+	"hackers_tool_siphon": "Сифон гаманця",
+	"hackers_log_upgrade": "> {tool} покращено до LV {level} (-{cost} DogeLite)",
+	"hackers_log_siphon": "> сифон злив {amount} DogeLite. У гаманці лишилося {left}."
 }

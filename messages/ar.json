@@ -3493,5 +3493,12 @@
 	"hackers_log_traced": "> تم تتبعك! القائد الأعلى غير راضٍ.",
 	"hackers_gameover_title": "تم تتبعك!",
 	"hackers_stat_contracts": "العقود المنجزة",
-	"hackers_stat_coins": "DogeLite"
+	"hackers_stat_coins": "DogeLite",
+	"hackers_tool_breach": "مجموعة الاختراق",
+	"hackers_tool_keylog": "مسجل المفاتيح",
+	"hackers_tool_relays": "كاسر المرحلات",
+	"hackers_tool_miner": "معدّن العملات",
+	"hackers_tool_siphon": "ماصّ المحفظة",
+	"hackers_log_upgrade": "> تمت ترقية {tool} إلى المستوى {level} (-{cost} DogeLite)",
+	"hackers_log_siphon": "> ماصّ المحفظة سحب {amount} DogeLite. تبقى {left} في المحفظة."
 }

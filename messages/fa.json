@@ -3493,5 +3493,12 @@
 	"hackers_log_traced": "> ردیابی شدی! رهبر عالی ناراضی است.",
 	"hackers_gameover_title": "ردیابی شدی!",
 	"hackers_stat_contracts": "قراردادهای انجام‌شده",
-	"hackers_stat_coins": "دوج‌لایت"
+	"hackers_stat_coins": "دوج‌لایت",
+	"hackers_tool_breach": "کیت نفوذ",
+	"hackers_tool_keylog": "کی‌لاگر",
+	"hackers_tool_relays": "شکننده رله",
+	"hackers_tool_miner": "ماینر رمزارز",
+	"hackers_tool_siphon": "مکنده کیف پول",
+	"hackers_log_upgrade": "> {tool} به سطح {level} ارتقا یافت (-{cost} DogeLite)",
+	"hackers_log_siphon": "> مکنده {amount} DogeLite کشید. {left} در کیف پول ماند."
 }

@@ -3493,5 +3493,12 @@
 	"hackers_log_traced": "> ВЫЧИСЛЕН! Верховный руководитель недоволен.",
 	"hackers_gameover_title": "Вычислен!",
 	"hackers_stat_contracts": "Контрактов выполнено",
-	"hackers_stat_coins": "DogeLite"
+	"hackers_stat_coins": "DogeLite",
+	"hackers_tool_breach": "Набор взлома",
+	"hackers_tool_keylog": "Кейлоггер",
+	"hackers_tool_relays": "Разрушитель реле",
+	"hackers_tool_miner": "Криптомайнер",
+	"hackers_tool_siphon": "Сифон кошелька",
+	"hackers_log_upgrade": "> {tool} улучшен до LV {level} (-{cost} DogeLite)",
+	"hackers_log_siphon": "> сифон слил {amount} DogeLite. В кошельке осталось {left}."
 }

@@ -3493,5 +3493,12 @@
 	"hackers_log_traced": "> TRACED! The Supreme Leader is displeased.",
 	"hackers_gameover_title": "Traced!",
 	"hackers_stat_contracts": "Contracts done",
-	"hackers_stat_coins": "DogeLite"
+	"hackers_stat_coins": "DogeLite",
+	"hackers_tool_breach": "Breach Suite",
+	"hackers_tool_keylog": "Keylogger",
+	"hackers_tool_relays": "Relay Breaker",
+	"hackers_tool_miner": "Cryptominer",
+	"hackers_tool_siphon": "Wallet Siphon",
+	"hackers_log_upgrade": "> {tool} upgraded to LV {level} (-{cost} DogeLite)",
+	"hackers_log_siphon": "> siphon drained {amount} DogeLite. {left} left in the wallet."
 }

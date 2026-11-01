@@ -3493,5 +3493,12 @@
 	"hackers_log_traced": "> AUFGESPÜRT! Der Oberste Führer ist verstimmt.",
 	"hackers_gameover_title": "Aufgespürt!",
 	"hackers_stat_contracts": "Aufträge erledigt",
-	"hackers_stat_coins": "DogeLite"
+	"hackers_stat_coins": "DogeLite",
+	"hackers_tool_breach": "Breach-Suite",
+	"hackers_tool_keylog": "Keylogger",
+	"hackers_tool_relays": "Relais-Brecher",
+	"hackers_tool_miner": "Kryptominer",
+	"hackers_tool_siphon": "Wallet-Siphon",
+	"hackers_log_upgrade": "> {tool} auf LV {level} aufgerüstet (-{cost} DogeLite)",
+	"hackers_log_siphon": "> Siphon hat {amount} DogeLite abgezogen. Noch {left} in der Wallet."
 }
