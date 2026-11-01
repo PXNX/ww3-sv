@@ -21,7 +21,9 @@ import {
 	REPAIR_BETWEEN_SORTIES,
 	START,
 	VIEW_H,
-	VIEW_W
+	VIEW_SCALE,
+	VIEW_W,
+	type View
 } from './config.js';
 import {
 	emptyDossier,
@@ -182,16 +184,18 @@ export function track(run: Run, id: number): Track | undefined {
 	return run.tracks.find((t) => t.contact.id === id);
 }
 
-function clampCam(x: number, y: number) {
+function clampCam(run: Run, x: number, y: number) {
+	const halfW = VIEW_W / (2 * VIEW_SCALE[run.view]);
+	const halfH = VIEW_H / (2 * VIEW_SCALE[run.view]);
 	return {
-		x: Math.min(MAP_W - VIEW_W / 2, Math.max(VIEW_W / 2, x)),
-		y: Math.min(MAP_H - VIEW_H / 2, Math.max(VIEW_H / 2, y))
+		x: Math.min(MAP_W - halfW, Math.max(halfW, x)),
+		y: Math.min(MAP_H - halfH, Math.max(halfH, y))
 	};
 }
 
 export function panTo(run: Run, x: number, y: number) {
 	if (run.phase !== 'active') return;
-	run.cam = clampCam(x, y);
+	run.cam = clampCam(run, x, y);
 }
 
 export function panBy(run: Run, dx: number, dy: number) {
@@ -199,9 +203,19 @@ export function panBy(run: Run, dx: number, dy: number) {
 }
 
 export function inView(run: Run, x: number, y: number, margin = 0): boolean {
+	const scale = VIEW_SCALE[run.view];
 	return (
-		Math.abs(x - run.cam.x) <= VIEW_W / 2 - margin && Math.abs(y - run.cam.y) <= VIEW_H / 2 - margin
+		Math.abs(x - run.cam.x) <= VIEW_W / (2 * scale) - margin &&
+		Math.abs(y - run.cam.y) <= VIEW_H / (2 * scale) - margin
 	);
+}
+
+/** Switches the platform view; the scope keeps its centre but changes how much ground it shows */
+export function setView(run: Run, view: View) {
+	if (run.phase !== 'active' || run.view === view) return;
+	run.view = view;
+	run.cam = clampCam(run, run.cam.x, run.cam.y);
+	run.lock = null;
 }
 
 export function setSensor(run: Run, sensor: Sensor) {
