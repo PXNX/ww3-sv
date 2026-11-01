@@ -5,7 +5,7 @@
  * shows is reactive, and it is copied over once per update.
  */
 import { prefersReducedMotion } from '#lib/game/loop.js';
-import { MAX_INTEGRITY, MISSILE_FLIGHT_S } from '#lib/game/recon/config.js';
+import { MAX_INTEGRITY, MISSILE_FLIGHT_S, type View } from '#lib/game/recon/config.js';
 import {
 	inferRole,
 	nextSensor,
@@ -22,6 +22,7 @@ import {
 	panBy,
 	panTo,
 	setSensor,
+	setView,
 	stepRun,
 	strike,
 	tapContact,
@@ -77,6 +78,8 @@ export class ReconGame {
 	integrity = $state(MAX_INTEGRITY);
 	escalation = $state(0);
 	sensor = $state<Sensor>('eo');
+	/** The platform the scope looks through: FPV drone, satellite or Predator/Global Hawk */
+	view = $state<View>('uav');
 	threatened = $state(false);
 	banner = $state<ReconBanner | null>(null);
 	/** The selected contact: 1-based number for display, what the sensors have logged so far */
@@ -190,6 +193,16 @@ export class ReconGame {
 		this.switchMs = SWITCH_MS;
 		soundManager().play('ui-toggle');
 		// Keep the selected contact: the new sensor starts reading it straight away
+		if (this.run.selected !== null) tapContact(this.run, this.run.selected);
+		this.#sync();
+	}
+
+	chooseView(view: View) {
+		if (this.status !== 'playing' || this.run.view === view) return;
+		setView(this.run, view);
+		this.switchMs = SWITCH_MS;
+		soundManager().play('ui-toggle');
+		// Keep the selected contact: the new view starts reading it straight away
 		if (this.run.selected !== null) tapContact(this.run, this.run.selected);
 		this.#sync();
 	}
@@ -366,6 +379,7 @@ export class ReconGame {
 		this.integrity = Math.round(run.integrity);
 		this.escalation = Math.round(run.escalation);
 		this.sensor = run.sensor;
+		this.view = run.view;
 		this.threatened = run.threatened;
 		this.locking = run.lock !== null;
 
