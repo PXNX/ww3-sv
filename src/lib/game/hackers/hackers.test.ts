@@ -15,6 +15,7 @@ import { captureLetter, createKeylog, neededLetter, stepKeylog } from './keylog'
 import { scoreGuess } from './mastermind';
 import {
 	attemptsLeft,
+	buyUpgrade,
 	createGame,
 	flipRelay,
 	step,
@@ -23,6 +24,14 @@ import {
 	typeLetter,
 	type HackersState
 } from './state';
+import {
+	minerIncome,
+	SIPHON_DAY_MS,
+	siphonShare,
+	toolSpec,
+	upgradeCost,
+	walletFor
+} from './software';
 
 const random = createRandom(42);
 
@@ -262,6 +271,128 @@ describe('relays and contracts', () => {
 		const state = atStage('breaker');
 		expect(flipRelay(state, 99, random)).toEqual([]);
 		expect(flipRelay(state, -1, random)).toEqual([]);
+	});
+});
+
+describe('software shop', () => {
+	function rich(stage: 'breach' | 'keylog' | 'breaker' = 'breach'): HackersState {
+		const state = atStage(stage);
+		state.score = 100_000;
+		return state;
+	}
+
+	it('charges more for every level and stops at the maximum', () => {
+		expect(upgradeCost('breach', 0)).toBe(60);
+		expect(upgradeCost('breach', 1)).toBeGreaterThan(upgradeCost('breach', 0));
+		expect(upgradeCost('breach', toolSpec('breach').maxLevel)).toBeNull();
+		expect(upgradeCost('miner', toolSpec('miner').maxLevel)).toBeNull();
+	});
+
+	it('spends DogeLite and raises the level', () => {
+		const state = rich();
+		const events = buyUpgrade(state, 'breach');
+		expect(events).toEqual([{ type: 'upgrade', tool: 'breach', level: 1, cost: 60 }]);
+		expect(state.upgrades.breach).toBe(1);
+		expect(state.score).toBe(100_000 - 60);
+	});
+
+	it('refuses to buy what the bank cannot pay for or what is maxed', () => {
+		const poor = createGame(createRandom(1));
+		expect(buyUpgrade(poor, 'miner')).toEqual([]);
+		expect(poor.upgrades.miner).toBe(0);
+
+		const state = rich();
+		for (let level = 0; level < toolSpec('relays').maxLevel; level++) {
+			expect(buyUpgrade(state, 'relays')).toHaveLength(1);
+		}
+		expect(buyUpgrade(state, 'relays')).toEqual([]);
+		expect(state.upgrades.relays).toBe(toolSpec('relays').maxLevel);
+	});
+
+	it('gives the breach suite an extra attempt and softer wrong guesses', () => {
+		const state = rich();
+		buyUpgrade(state, 'breach');
+		expect(attemptsLeft(state.contract)).toBe(contractSpec(1).maxAttempts + 1);
+
+		submitGuess(state, [7, 7, 7, 7], random);
+		expect(state.trace).toBeGreaterThan(0);
+		expect(state.trace).toBeLessThan(TRACE_WRONG_GUESS);
+	});
+
+	it('slows the keystroke stream and the alarm trace with a keylogger and a relay breaker', () => {
+		const state = rich();
+		const base = contractSpec(1);
+		buyUpgrade(state, 'keylog');
+		buyUpgrade(state, 'relays');
+		expect(state.contract.spec.chipMs).toBeGreaterThan(base.chipMs);
+		expect(state.contract.spec.spawnMs).toBeGreaterThan(base.spawnMs);
+		expect(state.contract.spec.creep.breaker).toBeLessThan(base.creep.breaker);
+	});
+
+	it('pays the miner on the player\u2019s own machine every second', () => {
+		const state = rich();
+		buyUpgrade(state, 'miner');
+		const before = state.score;
+		step(state, 1000, random);
+		expect(state.score).toBe(before + minerIncome(state.upgrades));
+	});
+});
+
+describe('wallet siphon', () => {
+	function siphoned(stage: 'breach' | 'keylog' | 'breaker'): HackersState {
+		const state = atStage(stage);
+		state.score = 100_000;
+		// No keystrokes on screen, so a long step cannot fill the trace and end the contract
+		state.contract.keylog.chips = [];
+		state.contract.keylog.spawnMs = Number.MAX_SAFE_INTEGER;
+		buyUpgrade(state, 'siphon');
+		return state;
+	}
+
+	it('needs access: it drains nothing before the access code is cracked', () => {
+		const state = siphoned('breach');
+		const before = state.score;
+		const wallet = state.contract.wallet;
+		step(state, SIPHON_DAY_MS * 2, random);
+		expect(state.contract.wallet).toBe(wallet);
+		expect(state.score).toBe(before);
+	});
+
+	it('drains a share of the target\u2019s wallet once a day', () => {
+		const state = siphoned('keylog');
+		const before = state.score;
+		const wallet = state.contract.wallet;
+		step(state, SIPHON_DAY_MS - 1, random);
+		expect(state.contract.wallet).toBe(wallet);
+
+		const events = step(state, 1, random);
+		const paid = events.find((event) => event.type === 'siphon');
+		expect(paid).toBeDefined();
+		expect(state.contract.wallet).toBe(wallet - Math.max(1, Math.round(wallet * siphonShare(state.upgrades))));
+		expect(state.score).toBeGreaterThan(before);
+		expect(state.siphoned).toBeGreaterThan(0);
+	});
+
+	it('never takes more than the wallet holds and stops when it is empty', () => {
+		const state = siphoned('breaker');
+		state.contract.wallet = 1;
+		step(state, SIPHON_DAY_MS, random);
+		expect(state.contract.wallet).toBe(0);
+		const before = state.score;
+		step(state, SIPHON_DAY_MS * 2, random);
+		expect(state.contract.wallet).toBe(0);
+		expect(state.score).toBe(before);
+	});
+
+	it('starts the next target with a fresh wallet', () => {
+		const state = siphoned('breaker');
+		state.contract.panel = pressRelay(
+			Array.from({ length: 9 }, () => false),
+			3,
+			4
+		);
+		flipRelay(state, 4, random);
+		expect(state.contract.wallet).toBe(walletFor(2));
 	});
 });
 
