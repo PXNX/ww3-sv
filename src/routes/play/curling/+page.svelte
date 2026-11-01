@@ -8,24 +8,21 @@
 	import { onMount } from 'svelte';
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
-	import LivesBar from '#lib/components/LivesBar.svelte';
 	import CurlingCanvas from '#lib/components/CurlingCanvas.svelte';
 	import TutorialModal from '#lib/components/TutorialModal.svelte';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
-	import { m } from '#lib/paraglide/messages.js';
 	import { CurlingGame } from '#lib/stores/curlingGame.svelte.js';
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
 
 	const game = new CurlingGame({ reducedMotion: prefersReducedMotion() });
-	const modeName = m.mode_curling_name();
+	const modeName = 'Iceberg Curling';
 
 	// The how-to-play screen opens on the first visit and whenever the help button is tapped
 	let showTutorial = $state(false);
 	onMount(() => {
-		game.loadBest();
 		showTutorial = firstPlay('curling');
 	});
 
@@ -34,12 +31,12 @@
 		showTutorial = true;
 	}
 
-	const cameo = $derived({
-		image: cameoAsset('snowflake.svg'),
-		alt: m.cameo_placeholder_alt(),
-		message: m.cameo_placeholder_message(),
-		label: m.cameo_placeholder_label()
-	});
+	const cameo = {
+		image: '??',
+		alt: '',
+		message: '',
+		label: ''
+	};
 </script>
 
 <GameShell
@@ -54,11 +51,10 @@
 			<button
 				type="button"
 				class="btn-chunky px-2 py-1 text-sm sm:px-3"
-				aria-label={m.game_help()}
+				aria-label="Help"
 				onclick={openHelp}
 			>
 				<IconHelp class="size-4" aria-hidden="true" />
-				<span class="hidden sm:inline">{m.game_help()}</span>
 			</button>
 		{/if}
 	{/snippet}
@@ -66,6 +62,15 @@
 	<CurlingCanvas {game} />
 
 	{#if showTutorial}
-		<TutorialModal />
+		<TutorialModal
+			open={showTutorial}
+			title="Iceberg Curling"
+			closeLabel="Got it"
+			onclose={() => (showTutorial = false)}
+		>
+			<p>Drag back to aim and set power. Release to throw the stone.</p>
+			<p>Hold SWEEP while sliding to reduce friction and control curl.</p>
+			<p>Knock blocks into the house across 8 ends to score stars.</p>
+		</TutorialModal>
 	{/if}
 </GameShell>

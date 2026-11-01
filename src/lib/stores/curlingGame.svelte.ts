@@ -91,4 +91,16 @@ export class CurlingGame {
 		this.best = result.best;
 		soundManager().play('sparkle');
 	}
+
+	forfeit() {
+		if (this.cState !== 'playing' && this.cState !== 'paused') return;
+		this.#endGame();
+	}
+
+	get sealPositions(): Array<{ x: number; y: number }> {
+		return Array.from({ length: this.state.sealsHit }, () => ({
+			x: 0.2 + Math.random() * 0.6,
+			y: 0.15 + Math.random() * 0.3
+		}));
+	}
 }
