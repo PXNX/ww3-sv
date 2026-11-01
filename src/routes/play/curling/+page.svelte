@@ -17,7 +17,7 @@
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
 
-	const game = new CurlingGame({ reducedMotion: prefersReducedMotion() });
+	const game = new CurlingGame();
 	const modeName = 'Iceberg Curling';
 
 	// The how-to-play screen opens on the first visit and whenever the help button is tapped
@@ -27,7 +27,7 @@
 	});
 
 	function openHelp() {
-		game.pause();
+		game.togglePause();
 		showTutorial = true;
 	}
 

@@ -93,8 +93,17 @@ export class CurlingGame {
 	}
 
 	forfeit() {
-		if (this.cState !== 'playing' && this.cState !== 'paused') return;
-		this.#endGame();
+		if (this.cState === 'aiming' || this.cState === 'sliding') {
+			this.#endGame();
+		}
+	}
+
+	pause() {
+		this.sweeping = false;
+	}
+
+	togglePause() {
+		this.pause();
 	}
 
 	get sealPositions(): Array<{ x: number; y: number }> {

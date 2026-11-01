@@ -12,7 +12,7 @@
 	import { createFixedLoop, onAppHidden } from '#lib/game/loop.js';
 	import { stepCurl } from '#lib/game/curling/state.js';
 	import { drawIceSheet, drawHouse, drawStone, drawSeal, drawPenguin } from '#lib/game/curling/render.js';
-	import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
+	import { createRandom, seedFromString } from '#lib/game/random.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { haptic } from '#lib/haptic/haptic.svelte.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';

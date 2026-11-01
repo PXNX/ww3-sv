@@ -4,7 +4,8 @@
  * seals, a lost penguin, and sweep control.
  * Coordinates are world units (0 to 1) scaled by the canvas.
  */
-import { createRandom, Random, seedFromString } from '#lib/game/random.js';
+import type { Random } from '#lib/game/random.js';
+import { createRandom, seedFromString } from '#lib/game/random.js';
 import type { CurlState, CurlState as CurlStateType } from './state';
 
 const HOUSE_CENTER_X = 0.5;
