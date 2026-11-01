@@ -8,7 +8,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createFixedLoop, onAppHidden } from '#lib/game/loop.js';
-	import { VIEW_H, VIEW_W } from '#lib/game/recon/config.js';
+	import { VIEW_H, VIEW_SCALE, VIEW_W } from '#lib/game/recon/config.js';
 	import { SENSORS } from '#lib/game/recon/contacts.js';
 	import { drawScene, minimapToMap } from '#lib/game/recon/render.js';
 	import { RECON_TEXT, brief } from '#lib/game/recon/text.js';
@@ -128,8 +128,13 @@
 			return;
 		}
 		gesture.moved = true;
-		// The map follows the finger, so the scope moves the opposite way
-		game.pan(-(event.clientX - gesture.lastX) / scale, -(event.clientY - gesture.lastY) / scale);
+		// The map follows the finger, so the scope moves the opposite way; the zoom decides how
+		// much ground a pixel of travel is worth
+		const s = VIEW_SCALE[game.run.view];
+		game.pan(
+			-(event.clientX - gesture.lastX) / scale / s,
+			-(event.clientY - gesture.lastY) / scale / s
+		);
 		gesture.lastX = event.clientX;
 		gesture.lastY = event.clientY;
 	}
@@ -140,7 +145,11 @@
 		gesture = null;
 		if (event.type === 'pointercancel' || done.moved || done.minimap) return;
 		const point = scopePoint(event);
-		game.tapAt(game.run.cam.x + (point.x - VIEW_W / 2), game.run.cam.y + (point.y - VIEW_H / 2));
+		const s = VIEW_SCALE[game.run.view];
+		game.tapAt(
+			game.run.cam.x + (point.x - VIEW_W / 2) / s,
+			game.run.cam.y + (point.y - VIEW_H / 2) / s
+		);
 	}
 
 	const isInteractive = (target: EventTarget | null) =>
