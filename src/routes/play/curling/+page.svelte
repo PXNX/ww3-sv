@@ -1,42 +1,71 @@
-<!-- Iceberg Curling - Fully Implemented -->
+<!--
+	Iceberg Curling playfield: canvas-based stone physics with sweep controls.
+	Aim by dragging back to set power and angle, release to throw the iceberg.
+	Sweep to reduce friction and control curl.
+	8 ends with stars; seals and a lost penguin are obstacles.
+-->
 <script lang="ts">
-	import { CurlingGame } from "#lib/stores/curlingGame.svelte.js";
-	import GameShell from "#lib/components/GameShell.svelte";
-	import GameOverModal from "#lib/components/GameOverModal.svelte";
+	import { onMount } from 'svelte';
+	import GameOverModal from '#lib/components/GameOverModal.svelte';
+	import GameShell from '#lib/components/GameShell.svelte';
+	import LivesBar from '#lib/components/LivesBar.svelte';
+	import CurlingCanvas from '#lib/components/CurlingCanvas.svelte';
+	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import { prefersReducedMotion } from '#lib/game/loop.js';
+	import { firstPlay } from '#lib/services/tutorial.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { CurlingGame } from '#lib/stores/curlingGame.svelte.js';
+	import IconHelp from '~icons/lucide/circle-help';
+	import IconPause from '~icons/lucide/pause';
+	import IconPlay from '~icons/lucide/play';
 
-	const game = new CurlingGame();
-	const modeName = "Iceberg Curling";
+	const game = new CurlingGame({ reducedMotion: prefersReducedMotion() });
+	const modeName = m.mode_curling_name();
+
+	// The how-to-play screen opens on the first visit and whenever the help button is tapped
+	let showTutorial = $state(false);
+	onMount(() => {
+		game.loadBest();
+		showTutorial = firstPlay('curling');
+	});
+
+	function openHelp() {
+		game.pause();
+		showTutorial = true;
+	}
+
+	const cameo = $derived({
+		image: cameoAsset('snowflake.svg'),
+		alt: m.cameo_placeholder_alt(),
+		message: m.cameo_placeholder_message(),
+		label: m.cameo_placeholder_label()
+	});
 </script>
 
-<GameShell title={modeName} score={game.score} best={game.best} confirmLeave={game.cState === "sliding"}>
-	<div class="mx-auto flex w-full max-w-2xl flex-col items-center gap-4 p-4">
-		<div class="flex w-full items-center justify-between rounded-xl border-3 border-ink bg-cyan-100 px-4 py-2 shadow-[3px_3px_0_var(--color-ink)]">
-			<div class="font-display text-sm font-bold text-ink">End: {game.state.ends + 1}/{8}</div>
-			<div class="font-display text-sm font-bold text-ink">Sweeps: {game.state.sweeps}</div>
-			<div class="font-display text-sm font-bold text-ink">Score: {game.score}</div>
-		</div>
-		<div class="relative h-[400px] w-full overflow-hidden rounded-xl border-3 border-ink bg-gradient-to-b from-cyan-50 to-blue-100 shadow-[4px_4px_0_var(--color-ink)]">
-			<div class="absolute bottom-0 left-0 right-0 h-32 bg-blue-200"></div>
-			<div class="absolute bottom-20 left-1/2 h-16 w-16 -translate-x-1/2 rounded-full border-4 border-red-500 bg-white/50"></div>
-			<div class="absolute bottom-24 left-1/2 -translate-x-1/2 text-2xl">??</div>
-			<div class="absolute h-8 w-8 -translate-x-1/2 -translate-y-1/2 transition-all duration-75" style:left="{game.state.stone.x * 100}%; bottom:{10 + game.state.stone.y * 60}%"><div class="text-2xl">??</div></div>
-			<div class="absolute bottom-40 right-4 text-xl">??</div>
-			<div class="absolute top-10 left-10 text-lg">??</div>
-		</div>
-		{#if game.cState === "aiming"}
-			<div class="w-full max-w-xs space-y-3">
-				<div><label class="font-display text-sm">Power: {game.power}%</label><input type="range" min="20" max="80" bind:value={game.power} class="w-full" /></div>
-				<div><label class="font-display text-sm">Angle: {game.angle}°</label><input type="range" min="-60" max="-30" bind:value={game.angle} class="w-full" /></div>
-				<button type="button" class="btn-chunky w-full py-3" onclick={() => game.throwStone()}>THROW</button>
-			</div>
-		{:else if game.cState === "sliding"}
-			<button type="button" class="btn-chunky px-8 py-4 text-lg" onmousedown={() => game.sweep(true)} onmouseup={() => game.sweep(false)} ontouchstart={() => game.sweep(true)} ontouchend={() => game.sweep(false)}>SWEEP</button>
+<GameShell
+	title={modeName}
+	score={game.score}
+	best={game.best}
+	confirmLeave={game.cState !== 'aiming'}
+	onQuit={() => game.forfeit()}
+>
+	{#snippet actions()}
+		{#if game.cState !== 'over'}
+			<button
+				type="button"
+				class="btn-chunky px-2 py-1 text-sm sm:px-3"
+				aria-label={m.game_help()}
+				onclick={openHelp}
+			>
+				<IconHelp class="size-4" aria-hidden="true" />
+				<span class="hidden sm:inline">{m.game_help()}</span>
+			</button>
 		{/if}
-		<div class="font-display text-xs text-ink/70">Sweep to reduce friction and control curl</div>
-	</div>
-	<GameOverModal open={game.over} score={game.state.score} mode="curling" {modeName} isNewBest={game.isNewBest} title="Game Over" onRetry={() => game.start()}>
-		<dl class="grid grid-cols-1 gap-2 font-display text-sm">
-			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2"><dt class="font-bold">Final Score</dt><dd class="text-2xl font-bold">{game.state.score}</dd></div>
-		</dl>
-	</GameOverModal>
+	{/snippet}
+
+	<CurlingCanvas {game} />
+
+	{#if showTutorial}
+		<TutorialModal />
+	{/if}
 </GameShell>
