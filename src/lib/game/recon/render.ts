@@ -4,7 +4,16 @@
  * Everything is procedural; nothing here changes game state. The context is expected to be scaled
  * so that one unit is one world unit of the VIEW_W by VIEW_H scope.
  */
-import { AA_RADIUS, MAP_H, MAP_W, MISSILE_FLIGHT_S, VIEW_H, VIEW_W } from './config.js';
+import {
+	AA_RADIUS,
+	MAP_H,
+	MAP_W,
+	MISSILE_FLIGHT_S,
+	VIEW_H,
+	VIEW_SCALE,
+	VIEW_W,
+	type View
+} from './config.js';
 import type { Contact, Sensor } from './contacts.js';
 import type { Run, Track } from './run.js';
 import type { Terrain } from './terrain.js';
@@ -28,6 +37,19 @@ const LABEL: Record<Sensor, string> = {
 	ir: 'IR · WHITE HOT',
 	sar: 'SAR · X-BAND'
 };
+
+/** What the platform line of the HUD calls each view */
+const VIEW_LABEL: Record<View, string> = {
+	fpv: 'FPV · DRONE CAM',
+	satellite: 'SAT · ORBIT',
+	uav: 'UAV · PREDATOR'
+};
+
+/** Screen pixels per world unit for the active view */
+const viewScale = (view: View) => VIEW_SCALE[view];
+
+/** Positive remainder, so scrolled grids and ticks never jump */
+const mod = (v: number, m: number) => ((v % m) + m) % m;
 
 interface GroundPalette {
 	base: string;
@@ -144,10 +166,12 @@ function disc(c: CanvasRenderingContext2D, x: number, y: number, r: number, fill
 
 function drawTerrain(c: CanvasRenderingContext2D, terrain: Terrain, sensor: Sensor, run: Run) {
 	const p = GROUND[sensor];
-	const x0 = run.cam.x - VIEW_W / 2 - 30;
-	const x1 = run.cam.x + VIEW_W / 2 + 30;
-	const y0 = run.cam.y - VIEW_H / 2 - 30;
-	const y1 = run.cam.y + VIEW_H / 2 + 30;
+	const halfW = VIEW_W / (2 * viewScale(run.view)) + 30;
+	const halfH = VIEW_H / (2 * viewScale(run.view)) + 30;
+	const x0 = run.cam.x - halfW;
+	const x1 = run.cam.x + halfW;
+	const y0 = run.cam.y - halfH;
+	const y1 = run.cam.y + halfH;
 	const seen = (x: number, y: number, w: number, h: number) =>
 		x < x1 && x + w > x0 && y < y1 && y + h > y0;
 
@@ -773,12 +797,82 @@ function drawMinimap(c: CanvasRenderingContext2D, run: Run, accent: string) {
 	}
 	c.strokeStyle = accent;
 	c.lineWidth = 1.5;
+	// The scope rectangle is the ground the active view covers, not the screen size
+	const s = viewScale(run.view);
+	const sw = (VIEW_W / s) * sx;
+	const sh = (VIEW_H / s) * sy;
 	c.strokeRect(
-		x + (run.cam.x - VIEW_W / 2) * sx,
-		y + (run.cam.y - VIEW_H / 2) * sy,
-		VIEW_W * sx,
-		VIEW_H * sy
+		x + (run.cam.x - VIEW_W / (2 * s)) * sx,
+		y + (run.cam.y - VIEW_H / (2 * s)) * sy,
+		sw,
+		sh
 	);
+	c.restore();
+}
+
+/** The part of the HUD that tells the three platform views apart at a glance */
+function drawViewOverlay(c: CanvasRenderingContext2D, rs: RenderState, accent: string) {
+	const { run } = rs;
+	c.save();
+	if (run.view === 'satellite') {
+		// A faint map grid locked to the ground: the wide swath still reads as a chart
+		const s = viewScale(run.view);
+		const step = 45;
+		const left = run.cam.x - VIEW_W / (2 * s);
+		const top = run.cam.y - VIEW_H / (2 * s);
+		c.globalAlpha = 0.15;
+		c.strokeStyle = accent;
+		c.lineWidth = 1;
+		c.beginPath();
+		for (let px = -mod(left * s, step); px < VIEW_W; px += step) {
+			c.moveTo(px, 0);
+			c.lineTo(px, VIEW_H);
+		}
+		for (let py = -mod(top * s, step); py < VIEW_H; py += step) {
+			c.moveTo(0, py);
+			c.lineTo(VIEW_W, py);
+		}
+		c.stroke();
+		c.globalAlpha = 0.45;
+		c.setLineDash([7, 7]);
+		c.beginPath();
+		c.moveTo(0, 58);
+		c.lineTo(VIEW_W, 58);
+		c.stroke();
+		c.setLineDash([]);
+	} else if (run.view === 'fpv') {
+		// Rolling shutter band and a small attitude ladder: a fast, low drone feed
+		const band = mod(rs.timeMs / 14, VIEW_H + 160) - 80;
+		const g = c.createLinearGradient(0, band - 50, 0, band + 50);
+		g.addColorStop(0, 'rgba(255,255,255,0)');
+		g.addColorStop(0.5, 'rgba(255,255,255,0.06)');
+		g.addColorStop(1, 'rgba(255,255,255,0)');
+		c.fillStyle = g;
+		c.fillRect(0, band - 50, VIEW_W, 100);
+		c.globalAlpha = 0.7;
+		c.strokeStyle = accent;
+		c.lineWidth = 1.5;
+		c.beginPath();
+		for (const dy of [-46, -34, 34, 46]) {
+			const len = Math.abs(dy) > 40 ? 14 : 22;
+			c.moveTo(VIEW_W / 2 - len, VIEW_H / 2 + dy);
+			c.lineTo(VIEW_W / 2 + len, VIEW_H / 2 + dy);
+		}
+		c.stroke();
+	} else {
+		// UAV: a slow sensor sweep around the reticle
+		c.globalAlpha = 0.35;
+		c.strokeStyle = accent;
+		c.lineWidth = 1;
+		c.beginPath();
+		c.arc(VIEW_W / 2, VIEW_H / 2, 52, 0, Math.PI * 2);
+		c.stroke();
+		const a = rs.timeMs / 900;
+		c.beginPath();
+		c.moveTo(VIEW_W / 2, VIEW_H / 2);
+		c.lineTo(VIEW_W / 2 + Math.cos(a) * 52, VIEW_H / 2 + Math.sin(a) * 52);
+		c.stroke();
+	}
 	c.restore();
 }
 
@@ -788,7 +882,7 @@ function drawOverlay(c: CanvasRenderingContext2D, rs: RenderState) {
 	const accent = ACCENT[sensor];
 	c.save();
 
-	if (sensor !== 'eo') {
+	if (sensor !== 'eo' || run.view === 'fpv') {
 		c.fillStyle = 'rgba(0,0,0,0.13)';
 		for (let y = 0; y < VIEW_H; y += 3) c.fillRect(0, y, VIEW_W, 1);
 		c.save();
@@ -811,7 +905,16 @@ function drawOverlay(c: CanvasRenderingContext2D, rs: RenderState) {
 		VIEW_H * 0.75
 	);
 	vignette.addColorStop(0, 'rgba(0,0,0,0)');
-	vignette.addColorStop(1, sensor === 'eo' ? 'rgba(0,0,0,0.28)' : 'rgba(0,0,0,0.5)');
+	vignette.addColorStop(
+		1,
+		run.view === 'fpv'
+			? 'rgba(0,0,0,0.62)'
+			: run.view === 'satellite'
+				? 'rgba(0,0,0,0.16)'
+				: sensor === 'eo'
+					? 'rgba(0,0,0,0.28)'
+					: 'rgba(0,0,0,0.5)'
+	);
 	c.fillStyle = vignette;
 	c.fillRect(0, 0, VIEW_W, VIEW_H);
 
@@ -822,22 +925,24 @@ function drawOverlay(c: CanvasRenderingContext2D, rs: RenderState) {
 		c.strokeRect(0, 0, VIEW_W, VIEW_H);
 	}
 
-	// Edge ticks that scroll with the map
+	// Edge ticks that scroll with the map; their spacing follows the view's zoom
+	const s = viewScale(run.view);
+	const step = 20;
+	const left = run.cam.x - VIEW_W / (2 * s);
+	const top = run.cam.y - VIEW_H / (2 * s);
 	c.strokeStyle = accent;
 	c.globalAlpha = 0.7;
 	c.lineWidth = 1;
 	c.beginPath();
-	for (let i = 0; i < VIEW_W; i += 20) {
-		const mapX = Math.round(run.cam.x - VIEW_W / 2 + i);
-		const len = Math.round(mapX / 20) % 5 === 0 ? 7 : 3.5;
-		const px = i - ((run.cam.x - VIEW_W / 2) % 20);
-		c.moveTo(px + 20, 0);
-		c.lineTo(px + 20, len);
+	for (let px = -mod(left * s, step); px < VIEW_W; px += step) {
+		const len = Math.round((left + px / s) / 20) % 5 === 0 ? 7 : 3.5;
+		c.moveTo(px, 0);
+		c.lineTo(px, len);
 	}
-	for (let j = 0; j < VIEW_H; j += 20) {
-		const py = j - ((run.cam.y - VIEW_H / 2) % 20) + 20;
+	for (let py = -mod(top * s, step); py < VIEW_H; py += step) {
+		const len = Math.round((top + py / s) / 20) % 5 === 0 ? 7 : 3.5;
 		c.moveTo(0, py);
-		c.lineTo(Math.round((run.cam.y - VIEW_H / 2 + j) / 20) % 5 === 0 ? 7 : 3.5, py);
+		c.lineTo(len, py);
 	}
 	c.stroke();
 	c.globalAlpha = 1;
@@ -863,6 +968,7 @@ function drawOverlay(c: CanvasRenderingContext2D, rs: RenderState) {
 	c.stroke();
 
 	// Reticle: this is where the drone hovers
+	drawViewOverlay(c, rs, accent);
 	const reticle = run.threatened ? '#ff6a64' : accent;
 	c.strokeStyle = 'rgba(0,0,0,0.5)';
 	c.lineWidth = 4;
@@ -877,6 +983,11 @@ function drawOverlay(c: CanvasRenderingContext2D, rs: RenderState) {
 	c.textBaseline = 'alphabetic';
 	c.textAlign = 'left';
 	outlinedText(c, LABEL[sensor], 16, 28, accent);
+	c.font = 'bold 9px ui-monospace, Consolas, monospace';
+	c.globalAlpha = 0.85;
+	outlinedText(c, VIEW_LABEL[run.view], 16, 42, accent);
+	c.globalAlpha = 1;
+	c.font = 'bold 10px ui-monospace, Consolas, monospace';
 	c.textAlign = 'right';
 	if (Math.floor(rs.timeMs / 600) % 2 === 0) {
 		c.beginPath();
@@ -943,7 +1054,10 @@ export function drawScene(
 	c.clip();
 	c.translate(shake.x, shake.y);
 	c.save();
-	c.translate(VIEW_W / 2 - run.cam.x, VIEW_H / 2 - run.cam.y);
+	const s = viewScale(run.view);
+	c.translate(VIEW_W / 2, VIEW_H / 2);
+	c.scale(s, s);
+	c.translate(-run.cam.x, -run.cam.y);
 	drawTerrain(c, run.terrain, run.sensor, run);
 
 	// Air defence rings sit under everything else
@@ -951,10 +1065,11 @@ export function drawScene(
 		if (t.contact.kind === 'aa' && t.status === 'open') drawAaRing(c, t.contact, rs);
 	}
 	const ordered = [...run.tracks].sort((a, b) => a.contact.y - b.contact.y);
+	const halfW = VIEW_W / (2 * s) + 70;
+	const halfH = VIEW_H / (2 * s) + 80;
 	for (const t of ordered) {
 		const { x, y } = t.contact;
-		if (Math.abs(x - run.cam.x) > VIEW_W / 2 + 70 || Math.abs(y - run.cam.y) > VIEW_H / 2 + 80)
-			continue;
+		if (Math.abs(x - run.cam.x) > halfW || Math.abs(y - run.cam.y) > halfH) continue;
 		drawContact(c, t, rs);
 	}
 	for (const t of run.tracks) {
