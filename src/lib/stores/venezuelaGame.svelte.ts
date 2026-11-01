@@ -199,6 +199,12 @@ export class VenezuelaGame {
 		else this.resume();
 	}
 
+	/** The back link during a run: ends it as a loss */
+	forfeit() {
+		if (this.status !== 'playing' && this.status !== 'paused') return;
+		this.#lose();
+	}
+
 	/** A key, touch zone or button goes down or up */
 	setHeld(source: string, action: Action, down: boolean) {
 		if (down && this.status !== 'playing') return;

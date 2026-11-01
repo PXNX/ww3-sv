@@ -178,6 +178,12 @@ export class BlocksGame {
 		if (this.selected !== null) soundManager().play('click');
 	}
 
+	/** The back link during a run: ends it as a loss */
+	forfeit() {
+		if (this.over) return;
+		this.#end();
+	}
+
 	/** Where the selected piece would land for a tap on the given cell, and whether that is legal */
 	preview(row: number, col: number): Preview | null {
 		const piece = this.selectedPiece;

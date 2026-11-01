@@ -73,6 +73,7 @@
 	title={m.mode_merge_name()}
 	score={game.state.score}
 	best={game.best}
+ onQuit={() => game.forfeit()}
 	confirmLeave={!game.over && game.state.moves > 0}
 >
 	{#snippet actions()}

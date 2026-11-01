@@ -172,6 +172,12 @@ export class FuryGame {
 		this.paused = paused;
 	}
 
+	/** The back link during a run: ends it as a loss */
+	forfeit() {
+		if (this.screen !== 'play' || this.showWin || this.showFail) return;
+		if (this.match) this.#finish(this.match);
+	}
+
 	/** Pointer or keyboard aiming; null cancels */
 	setAim(aim: Aim | null) {
 		if (this.phase !== 'aiming' || this.paused) return;

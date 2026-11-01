@@ -410,6 +410,19 @@ export class ChessGame {
 		this.start();
 	}
 
+	/** The back link during a run: ends it as a loss */
+	forfeit() {
+		if (this.over) return;
+		this.over = true;
+		this.selected = null;
+		this.armedCard = null;
+		this.promotion = null;
+		const result = this.scores.submit(SCORE_BEST, this.score);
+		this.isNewBest = result.isNewBest;
+		this.best = result.best;
+		this.store.remove(SAVE_KEY);
+	}
+
 	destroy() {
 		clearTimeout(this.putinTimer);
 	}

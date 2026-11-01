@@ -62,7 +62,13 @@
 	};
 </script>
 
-<GameShell title={modeName} score={game.status === 'won' ? game.score : undefined} best={game.best}>
+<GameShell
+	title={modeName}
+	score={game.status === 'won' ? game.score : undefined}
+	best={game.best}
+	confirmLeave={game.status === 'playing' || game.status === 'paused'}
+	onQuit={() => game.forfeit()}
+>
 	{#snippet actions()}
 		<button
 			type="button"

@@ -52,6 +52,7 @@
 	{title}
 	score={playing ? game.score : undefined}
 	best={playing ? game.best : undefined}
+ onQuit={() => game.forfeit()}
 	confirmLeave={running}
 	immersive={playing}
 	landscape

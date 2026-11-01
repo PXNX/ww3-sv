@@ -202,6 +202,12 @@ export class MergeGame {
 		this.save();
 	}
 
+	/** The back link during a run: ends it as a loss */
+	forfeit() {
+		if (this.over) return;
+		this.finish();
+	}
+
 	destroy() {
 		clearTimeout(this.leaveTimer);
 	}
