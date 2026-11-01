@@ -133,9 +133,14 @@ export class VetoGame {
 	}
 
 	togglePause() {
-		if (this.status === 'playing') this.pause();
-		else this.resume();
 	}
+
+	/** The back link during a run: ends it as a loss */
+	forfeit() {
+		if (this.status !== 'playing' && this.status !== 'paused') return;
+		this.#finish();
+	}
+
 
 	/** The player taps vote yes, abstain or veto */
 	vote(action: Action) {

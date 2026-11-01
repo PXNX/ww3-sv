@@ -117,9 +117,14 @@ export class RareEarthGame {
 	}
 
 	togglePause() {
-		if (this.status === 'playing') this.pause();
-		else this.resume();
 	}
+
+	/** The back link during a run: ends it as a loss */
+	forfeit() {
+		if (this.status !== 'playing' && this.status !== 'paused') return;
+		this.#finish();
+	}
+
 
 	/** A tap on a node: the next lane */
 	cycle(nodeId: string, stepBy = 1) {

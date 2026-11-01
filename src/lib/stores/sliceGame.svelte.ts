@@ -100,9 +100,14 @@ export class SliceGame {
 	}
 
 	togglePause() {
-		if (this.status === 'playing') this.pause();
-		else this.resume();
 	}
+
+	/** The back link during a run: ends it as a loss */
+	forfeit() {
+		if (this.status !== 'playing' && this.status !== 'paused') return;
+		this.#finish();
+	}
+
 
 	/** A press on the field at a world position starts a new swipe (a tap alone can cut) */
 	pointerDown(x: number, y: number) {

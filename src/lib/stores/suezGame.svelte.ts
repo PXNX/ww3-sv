@@ -114,9 +114,14 @@ export class SuezGame {
 	}
 
 	togglePause() {
-		if (this.status === 'playing') this.pause();
-		else this.resume();
 	}
+
+	/** The back link during a run: ends it as a loss */
+	forfeit() {
+		if (this.status !== 'playing' && this.status !== 'paused') return;
+		this.#finish();
+	}
+
 
 	/** A press on the field at a world position: grabs an end or calls the excavator */
 	press(pointerId: number, x: number, y: number, pointerType: string): PressResult {

@@ -119,9 +119,14 @@ export class WhackGame {
 	}
 
 	togglePause() {
-		if (this.status === 'playing') this.pause();
-		else this.resume();
 	}
+
+	/** The back link during a run: ends it as a loss */
+	forfeit() {
+		if (this.status !== 'playing' && this.status !== 'paused') return;
+		this.#finish();
+	}
+
 
 	/** A press on the field at a world position */
 	pointerDown(x: number, y: number) {
