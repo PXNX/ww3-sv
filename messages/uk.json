@@ -3500,5 +3500,20 @@
 	"hackers_tool_miner": "Криптомайнер",
 	"hackers_tool_siphon": "Сифон гаманця",
 	"hackers_log_upgrade": "> {tool} покращено до LV {level} (-{cost} DogeLite)",
-	"hackers_log_siphon": "> сифон злив {amount} DogeLite. У гаманці лишилося {left}."
+	"hackers_log_siphon": "> сифон злив {amount} DogeLite. У гаманці лишилося {left}.",
+	"hackers_shop_title": "Програмне забезпечення",
+	"hackers_shop_hint": "Витрачай DogeLite на софт. Інструменти полегшують три етапи, майнер заробляє на твоїй машині, а сифон щодня спустошує гаманець цілі.",
+	"hackers_shop_buy": "Купити · {cost}",
+	"hackers_shop_install": "Встановити · {cost}",
+	"hackers_shop_max": "Максимум",
+	"hackers_shop_level": "Рівень {level}/{max}",
+	"hackers_tool_breach_effect": "+{attempts} спроб, хибні коди коштують на {relief}% менше сліду",
+	"hackers_tool_keylog_effect": "потік клавіш на {pct}% повільніший",
+	"hackers_tool_relays_effect": "слід тривоги на {pct}% повільніший",
+	"hackers_tool_miner_effect": "+{rate} DogeLite за секунду на твоїй машині",
+	"hackers_tool_siphon_effect": "зливає {pct}% гаманця цілі кожні {seconds} с",
+	"hackers_income_rate": "+{rate}/с",
+	"hackers_wallet": "Гаманець {left}/{total}",
+	"hackers_siphon_access": "сифону потрібен доступ",
+	"hackers_siphon_next": "наступний злив через {seconds} с"
 }

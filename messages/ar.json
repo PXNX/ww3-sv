@@ -3500,5 +3500,20 @@
 	"hackers_tool_miner": "معدّن العملات",
 	"hackers_tool_siphon": "ماصّ المحفظة",
 	"hackers_log_upgrade": "> تمت ترقية {tool} إلى المستوى {level} (-{cost} DogeLite)",
-	"hackers_log_siphon": "> ماصّ المحفظة سحب {amount} DogeLite. تبقى {left} في المحفظة."
+	"hackers_log_siphon": "> ماصّ المحفظة سحب {amount} DogeLite. تبقى {left} في المحفظة.",
+	"hackers_shop_title": "البرمجيات",
+	"hackers_shop_hint": "أنفق DogeLite على البرمجيات. الأدوات تسهّل المراحل الثلاث، والمعدّن يكسب على جهازك، والماصّ يستنزف محفظة الهدف كل يوم.",
+	"hackers_shop_buy": "شراء · {cost}",
+	"hackers_shop_install": "تثبيت · {cost}",
+	"hackers_shop_max": "الأقصى",
+	"hackers_shop_level": "المستوى {level}/{max}",
+	"hackers_tool_breach_effect": "+{attempts} محاولات، والتخمينات الخاطئة تكلّف {relief}% أقل من التتبع",
+	"hackers_tool_keylog_effect": "تدفق المفاتيح أبطأ بنسبة {pct}%",
+	"hackers_tool_relays_effect": "تتبع الإنذار أبطأ بنسبة {pct}%",
+	"hackers_tool_miner_effect": "+{rate} DogeLite في الثانية على جهازك",
+	"hackers_tool_siphon_effect": "يسحب {pct}% من محفظة الهدف كل {seconds} ثانية",
+	"hackers_income_rate": "+{rate}/ث",
+	"hackers_wallet": "المحفظة {left}/{total}",
+	"hackers_siphon_access": "الماصّ يحتاج إلى وصول",
+	"hackers_siphon_next": "السحب التالي خلال {seconds} ثانية"
 }

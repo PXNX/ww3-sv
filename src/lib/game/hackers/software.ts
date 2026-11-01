@@ -74,6 +74,21 @@ export function relayCreep(upgrades: Upgrades): number {
 	return RELAY_CREEP_RELIEF ** upgrades.relays;
 }
 
+/** For the shop: how much less trace a wrong guess costs, in percent */
+export function breachReliefPercent(upgrades: Upgrades): number {
+	return Math.round((1 - BREACH_TRACE_RELIEF ** upgrades.breach) * 100);
+}
+
+/** For the shop: how much slower the keystroke stream runs, in percent */
+export function keylogSlowdownPercent(upgrades: Upgrades): number {
+	return Math.round(KEYLOG_SLOWDOWN * upgrades.keylog * 100);
+}
+
+/** For the shop: how much slower the alarm trace creeps, in percent */
+export function relayReliefPercent(upgrades: Upgrades): number {
+	return Math.round((1 - RELAY_CREEP_RELIEF ** upgrades.relays) * 100);
+}
+
 /** The contract numbers with the bought tools folded in */
 export function effectiveSpec(n: number, upgrades: Upgrades): ContractSpec {
 	const base = contractSpec(n);

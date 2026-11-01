@@ -3500,5 +3500,20 @@
 	"hackers_tool_miner": "ماینر رمزارز",
 	"hackers_tool_siphon": "مکنده کیف پول",
 	"hackers_log_upgrade": "> {tool} به سطح {level} ارتقا یافت (-{cost} DogeLite)",
-	"hackers_log_siphon": "> مکنده {amount} DogeLite کشید. {left} در کیف پول ماند."
+	"hackers_log_siphon": "> مکنده {amount} DogeLite کشید. {left} در کیف پول ماند.",
+	"hackers_shop_title": "نرم‌افزار",
+	"hackers_shop_hint": "DogeLite را صرف نرم‌افزار کن. ابزارها سه مرحله را آسان‌تر می‌کنند، ماینر روی دستگاه خودت درآمد می‌سازد و مکنده هر روز کیف پول هدف را خالی می‌کند.",
+	"hackers_shop_buy": "خرید · {cost}",
+	"hackers_shop_install": "نصب · {cost}",
+	"hackers_shop_max": "حداکثر",
+	"hackers_shop_level": "سطح {level}/{max}",
+	"hackers_tool_breach_effect": "+{attempts} تلاش، حدس‌های اشتباه {relief}% رد کمتری می‌گذارند",
+	"hackers_tool_keylog_effect": "جریان کلیدها {pct}% کندتر",
+	"hackers_tool_relays_effect": "ردِ هشدار {pct}% کندتر",
+	"hackers_tool_miner_effect": "+{rate} DogeLite در ثانیه روی دستگاه خودت",
+	"hackers_tool_siphon_effect": "هر {seconds} ثانیه {pct}% از کیف پول هدف را می‌کشد",
+	"hackers_income_rate": "+{rate}/ثانیه",
+	"hackers_wallet": "کیف پول {left}/{total}",
+	"hackers_siphon_access": "مکنده به دسترسی نیاز دارد",
+	"hackers_siphon_next": "تخلیه بعدی در {seconds} ثانیه"
 }

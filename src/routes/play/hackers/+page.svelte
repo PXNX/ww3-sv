@@ -11,6 +11,7 @@
 	import HackersBreach from '#lib/components/HackersBreach.svelte';
 	import HackersKeylog from '#lib/components/HackersKeylog.svelte';
 	import HackersRelays from '#lib/components/HackersRelays.svelte';
+	import HackersShop from '#lib/components/HackersShop.svelte';
 	import LivesBar from '#lib/components/LivesBar.svelte';
 	import PauseOverlay from '#lib/components/PauseOverlay.svelte';
 	import { STARTING_LIVES, TRACE_MAX } from '#lib/game/hackers/config.js';
@@ -20,9 +21,11 @@
 	import { HackersGame } from '#lib/stores/hackersGame.svelte.js';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
+	import IconWrench from '~icons/lucide/wrench';
 
 	const game = new HackersGame();
 	const modeName = m.mode_hackers_name();
+	let shopOpen = $state(false);
 
 	const STAGES: { id: Stage; label: () => string }[] = [
 		{ id: 'breach', label: m.hackers_stage_breach },
@@ -123,7 +126,47 @@
 					<div class="h-full {traceTone}" style:width="{game.trace}%"></div>
 				</div>
 			</div>
+			{#if game.status === 'playing' || game.status === 'paused'}
+				<button
+					type="button"
+					class="btn-chunky shrink-0 px-2 py-1 text-xs"
+					aria-expanded={shopOpen}
+					aria-controls="hackers-shop"
+					onclick={() => (shopOpen = !shopOpen)}
+				>
+					<IconWrench class="size-4" aria-hidden="true" />
+					<span class="hidden sm:inline">{m.hackers_shop_title()}</span>
+				</button>
+			{/if}
 		</div>
+
+		{#if game.status === 'playing' || game.status === 'paused'}
+			{#if game.incomePerSecond > 0 || game.siphonRate > 0}
+				<div class="flex flex-wrap gap-1.5 font-display text-[11px] font-bold">
+					{#if game.incomePerSecond > 0}
+						<span
+							class="rounded-[8px_4px_10px_6px] border-2 border-ink bg-paper px-1.5 py-0.5 shadow-[2px_2px_0_var(--color-ink)]"
+						>
+							{m.hackers_tool_miner()}
+							{m.hackers_income_rate({ rate: game.incomePerSecond })}
+						</span>
+					{/if}
+					{#if game.siphonRate > 0}
+						<span
+							class="rounded-[8px_4px_10px_6px] border-2 border-ink bg-paper px-1.5 py-0.5 shadow-[2px_2px_0_var(--color-ink)]"
+						>
+							{m.hackers_tool_siphon()}
+							{m.hackers_wallet({ left: game.wallet, total: game.walletStart })}
+						</span>
+					{/if}
+				</div>
+			{/if}
+			{#if shopOpen}
+				<div id="hackers-shop">
+					<HackersShop {game} />
+				</div>
+			{/if}
+		{/if}
 
 		{#key game.hurtCount}
 			<div

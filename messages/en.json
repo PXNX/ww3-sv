@@ -3500,5 +3500,20 @@
 	"hackers_tool_miner": "Cryptominer",
 	"hackers_tool_siphon": "Wallet Siphon",
 	"hackers_log_upgrade": "> {tool} upgraded to LV {level} (-{cost} DogeLite)",
-	"hackers_log_siphon": "> siphon drained {amount} DogeLite. {left} left in the wallet."
+	"hackers_log_siphon": "> siphon drained {amount} DogeLite. {left} left in the wallet.",
+	"hackers_shop_title": "Software",
+	"hackers_shop_hint": "Spend DogeLite on software. The tools make the three stages easier, the miner earns on your own machine, and the siphon drains the target's wallet every day.",
+	"hackers_shop_buy": "Buy · {cost}",
+	"hackers_shop_install": "Install · {cost}",
+	"hackers_shop_max": "Maxed",
+	"hackers_shop_level": "LV {level}/{max}",
+	"hackers_tool_breach_effect": "+{attempts} attempts, wrong guesses cost {relief}% less trace",
+	"hackers_tool_keylog_effect": "keystroke stream {pct}% slower",
+	"hackers_tool_relays_effect": "alarm trace {pct}% slower",
+	"hackers_tool_miner_effect": "+{rate} DogeLite per second on your own machine",
+	"hackers_tool_siphon_effect": "drains {pct}% of the target's wallet every {seconds}s",
+	"hackers_income_rate": "+{rate}/s",
+	"hackers_wallet": "Wallet {left}/{total}",
+	"hackers_siphon_access": "siphon needs access",
+	"hackers_siphon_next": "next drain in {seconds}s"
 }
