@@ -259,6 +259,13 @@ export class MapleGame {
 		this.#submit();
 	}
 
+	/** The back link during a run: ends it as a loss */
+	forfeit() {
+		if (this.state.phase !== 'playing') return;
+		this.state = { ...this.state, phase: 'over' as const };
+		this.#lose();
+	}
+
 	#submit() {
 		const level = levelAt(this.levelIndex);
 		const result = this.#scores().submit(highscoreParts(level.id), scoreOf(this.state));
