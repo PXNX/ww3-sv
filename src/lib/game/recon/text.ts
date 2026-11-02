@@ -2,8 +2,15 @@
  * Every user-facing string of Recon in one place, plain English for now, so that moving the mode
  * to paraglide later is a mechanical change.
  */
+import type { View } from './config.js';
 import type { Reading, Sensor } from './contacts.js';
 import type { OverReason, SortieResult } from './run.js';
+
+const VIEW_TEXT = {
+	fpv: { name: 'FPV', caption: 'Drone' },
+	satellite: { name: 'SAT', caption: 'Orbit' },
+	uav: { name: 'UAV', caption: 'Predator' }
+} satisfies Record<View, { name: string; caption: string }>;
 
 const SENSOR_TEXT = {
 	eo: { name: 'EO', caption: 'Optical' },
@@ -24,9 +31,11 @@ export const RECON_TEXT = {
 		time: 'Time',
 		ordnance: 'Missiles',
 		hull: 'Hull',
-		escalation: 'Escalation'
+		escalation: 'Escalation',
+		platform: 'Platform'
 	},
 	sensors: SENSOR_TEXT,
+	views: VIEW_TEXT,
 	readings: {
 		military: 'Military',
 		civilian: 'Civilian',
@@ -96,6 +105,8 @@ export const RECON_TEXT = {
 			'Drag the map to pan the scope, or tap the small map in the corner. Tap a contact to select it and lock the active sensor on it; the reading stays in its dossier.',
 		sensors:
 			'EO sees colour: olive is military, bright colours are civilian, a net hides what is under it. IR sees heat. SAR sees metal. IR and SAR work through nets.',
+		views:
+			'FPV flies low and close, the satellite sees the whole theatre at once, the UAV sits in between. Switch platform to change how much ground the scope covers; the sensors work the same in all three.',
 		rules:
 			'Olive with metal or heat is hostile. Olive with neither is a decoy. Under a net: metal is hostile, heat alone is civilians, nothing is a decoy.',
 		verdict:
