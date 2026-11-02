@@ -42,6 +42,8 @@
 	let lines = $state.raw<string[]>([...BOOT]);
 	let command = $state('');
 	let program = $state<Program>('none');
+	let sessionMs = $state(0);
+	let hackStartMs = $state(0);
 
 	/** Favourites float to the top, the rest keep the order of the list */
 	const targets = $derived(
@@ -92,6 +94,7 @@
 	}
 
 	function hack(ip?: string) {
+		hackStartMs = Date.now();
 		const target = ip === undefined ? 0 : TARGETS.findIndex((entry) => entry.ip === ip);
 		if (target < 0) {
 			say(m.hackers_term_unknown_ip({ ip: ip ?? '' }));
@@ -142,6 +145,15 @@
 				lines = [];
 				program = 'none';
 				break;
+			case 'logoff':
+				say('> SESSION ENDED — LOGGED OFF');
+				say(`> Time in terminal: ${Math.round(sessionMs / 1000)}s`);
+				game.quit();
+				break;
+			case 'time':
+				say(`> Session time: ${Math.round(sessionMs / 1000)}s`);
+				if (hackStartMs > 0) say(`> Last hack started ${Math.round((Date.now() - hackStartMs) / 1000)}s ago`);
+				break;
 			default:
 				say(m.hackers_term_unknown({ cmd: name }));
 				break;
@@ -166,7 +178,7 @@
 </script>
 
 <section
-	class="relative overflow-hidden rounded-[14px_8px_16px_10px] border-3 border-ink bg-[#021208] p-3 font-mono text-[#39ff6a] shadow-[4px_4px_0_var(--color-ink)] [text-shadow:0_0_6px_rgba(57,255,106,0.5)]"
+	class="h-screen w-screen overflow-hidden bg-[#021208] p-2 font-mono text-[#39ff6a] shadow-inner [text-shadow:0_0_6px_rgba(57,255,106,0.5)] flex flex-col"
 	aria-label={m.hackers_term_aria()}
 >
 	<div
