@@ -67,6 +67,13 @@ export interface Bridge {
 	h: number;
 }
 
+export interface Block {
+	x: number;
+	y: number;
+	w: number;
+	h: number;
+}
+
 export interface Warehouse {
 	x: number;
 	y: number;
@@ -86,6 +93,10 @@ export interface Terrain {
 	warehouses: Warehouse[];
 	bunkers: Warehouse[];
 	river: Point[];
+	/** A dense cluster of buildings close together on a grid */
+	blocks: Block[];
+	/** Substations that boost power returns */
+	substations: Warehouse[];
 }
 
 const COLS = 4;
@@ -207,5 +218,10 @@ export function generateTerrain(random: Random): Terrain {
 		for (let x = 0; x <= MAP_W; x += 40) river.push({ x, y: ry + Math.sin(x / 180) * 18 });
 	}
 
-	return { fields, woods, roads, villages, houses, barns, pylons, bridges, warehouses, bunkers, river };
+	const blocks: Block[] = [];
+	for (let i = 0; i < randomInt(random, 1, 3); i++) blocks.push({ x: range(random, 50, MAP_W - 150), y: range(random, 50, MAP_H - 150), w: range(random, 120, 200), h: range(random, 120, 200) });
+	const substations: Warehouse[] = [];
+	for (let i = 0; i < randomInt(random, 1, 2); i++) substations.push({ x: range(random, 150, MAP_W - 150), y: range(random, 150, MAP_H - 150), w: range(random, 18, 28), h: range(random, 14, 20) });
+
+	return { fields, woods, roads, villages, houses, barns, pylons, bridges, warehouses, bunkers, river, blocks, substations };
 }
