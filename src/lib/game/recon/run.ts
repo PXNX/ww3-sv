@@ -410,16 +410,36 @@ export function stepRun(run: Run, dt: number) {
 		endSortie(run, 'timeout');
 	}
 
-	// Moving contacts
+	// Moving contacts: some enemies chase civilian cars, soldiers enter buildings
 	for (const t of run.tracks) {
 		if (t.status === 'struck') continue;
 		const kind = t.contact.kind;
-		if (!['tank', 'truck', 'command', 'radar', 'mortar'].includes(kind)) continue;
+		const moveKinds = ['tank', 'truck', 'command', 'radar', 'mortar'];
+		if (!moveKinds.includes(kind)) continue;
 		const speed = kind === 'radar' ? 10 : kind === 'mortar' ? 8 : 14;
-		const dx = Math.cos(run.clock * 0.5 + t.contact.id) * dt * speed;
-		const dy = Math.sin(run.clock * 0.3 + t.contact.id) * dt * speed;
-		t.contact.x = Math.max(20, Math.min(MAP_W - 20, t.contact.x + dx));
-		t.contact.y = Math.max(20, Math.min(MAP_H - 20, t.contact.y + dy));
-		t.contact.heading += dt * 0.8;
+		// Some hostile contacts move toward nearest civilian car
+		if (kind === 'tank' || kind === 'truck') {
+			const car = run.tracks.find(
+				(tr) => tr.status === 'open' && tr.contact.role === 'civilian' && (tr.contact.kind === 'car' || tr.contact.kind === 'bus')
+			);
+			if (car) {
+				const dx = car.contact.x - t.contact.x;
+				const dy = car.contact.y - t.contact.y;
+				const d = Math.hypot(dx, dy) || 1;
+				t.contact.x += (dx / d) * dt * speed * 0.7;
+				t.contact.y += (dy / d) * dt * speed * 0.7;
+				t.contact.heading = Math.atan2(dy, dx);
+			} else {
+				t.contact.x += Math.cos(run.clock * 0.5 + t.contact.id) * dt * speed;
+				t.contact.y += Math.sin(run.clock * 0.3 + t.contact.id) * dt * speed;
+				t.contact.heading += dt * 0.8;
+			}
+		} else {
+			t.contact.x += Math.cos(run.clock * 0.5 + t.contact.id) * dt * speed;
+			t.contact.y += Math.sin(run.clock * 0.3 + t.contact.id) * dt * speed;
+			t.contact.heading += dt * 0.8;
+		}
+		t.contact.x = Math.max(20, Math.min(MAP_W - 20, t.contact.x));
+		t.contact.y = Math.max(20, Math.min(MAP_H - 20, t.contact.y));
 	}
 }
