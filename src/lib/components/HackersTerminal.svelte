@@ -36,7 +36,8 @@
 	const HW_NAMES: Record<HardwareId, () => string> = {
 		cpu: m.hackers_hw_cpu,
 		ram: m.hackers_hw_ram,
-		gpu: m.hackers_hw_gpu
+		gpu: m.hackers_hw_gpu,
+		cable: () => 'Cable'
 	};
 
 	let lines = $state.raw<string[]>([...BOOT]);
