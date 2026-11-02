@@ -27,11 +27,17 @@ export type ContactKind =
 	| 'tractor'
 	| 'bus'
 	| 'herd'
-	| 'farm';
+	| 'farm'
+	| 'radar'
+	| 'mortar'
+	| 'drone'
+	| 'supply';
 
-export const HOSTILE_KINDS: readonly ContactKind[] = ['tank', 'truck', 'artillery', 'command'];
-export const DECOY_KINDS: readonly ContactKind[] = ['tank', 'truck', 'artillery'];
-export const CIVILIAN_KINDS: readonly ContactKind[] = ['car', 'tractor', 'bus', 'herd'];
+export const HOSTILE_KINDS: readonly ContactKind[] = [
+	'tank', 'truck', 'artillery', 'command', 'mortar', 'radar', 'drone', 'supply'
+];
+export const DECOY_KINDS: readonly ContactKind[] = ['tank', 'truck', 'artillery', 'radar', 'mortar'];
+export const CIVILIAN_KINDS: readonly ContactKind[] = ['car', 'tractor', 'bus', 'herd', 'drone', 'supply'];
 
 export interface Contact {
 	id: number;

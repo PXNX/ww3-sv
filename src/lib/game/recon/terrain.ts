@@ -47,12 +47,35 @@ export interface Village {
 	r: number;
 }
 
+export interface Barn {
+	x: number;
+	y: number;
+	w: number;
+	h: number;
+}
+
+export interface Pylon {
+	x: number;
+	y: number;
+	h: number;
+}
+
+export interface Bridge {
+	x: number;
+	y: number;
+	w: number;
+	h: number;
+}
+
 export interface Terrain {
 	fields: Field[];
 	woods: Wood[];
 	roads: Road[];
 	villages: Village[];
 	houses: House[];
+	barns: Barn[];
+	pylons: Pylon[];
+	bridges: Bridge[];
 }
 
 const COLS = 4;
@@ -134,5 +157,34 @@ export function generateTerrain(random: Random): Terrain {
 		}
 	}
 
-	return { fields, woods, roads, villages, houses };
+	const barns: Barn[] = [];
+	for (let i = 0; i < randomInt(random, 2, 4); i++) {
+		barns.push({
+			x: range(random, 60, MAP_W - 60),
+			y: range(random, 60, MAP_H - 60),
+			w: range(random, 24, 40),
+			h: range(random, 16, 28)
+		});
+	}
+
+	const pylons: Pylon[] = [];
+	for (let i = 0; i < randomInt(random, 1, 3); i++) {
+		pylons.push({
+			x: range(random, 80, MAP_W - 80),
+			y: range(random, 80, MAP_H - 120),
+			h: range(random, 30, 60)
+		});
+	}
+
+	const bridges: Bridge[] = [];
+	for (let i = 0; i < randomInt(random, 1, 2); i++) {
+		bridges.push({
+			x: range(random, 100, MAP_W - 100),
+			y: range(random, 200, MAP_H - 200),
+			w: range(random, 40, 70),
+			h: 6
+		});
+	}
+
+	return { fields, woods, roads, villages, houses, barns, pylons, bridges };
 }
