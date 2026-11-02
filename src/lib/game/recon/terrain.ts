@@ -67,6 +67,13 @@ export interface Bridge {
 	h: number;
 }
 
+export interface Warehouse {
+	x: number;
+	y: number;
+	w: number;
+	h: number;
+}
+
 export interface Terrain {
 	fields: Field[];
 	woods: Wood[];
@@ -76,6 +83,9 @@ export interface Terrain {
 	barns: Barn[];
 	pylons: Pylon[];
 	bridges: Bridge[];
+	warehouses: Warehouse[];
+	bunkers: Warehouse[];
+	river: Point[];
 }
 
 const COLS = 4;
@@ -186,5 +196,16 @@ export function generateTerrain(random: Random): Terrain {
 		});
 	}
 
-	return { fields, woods, roads, villages, houses, barns, pylons, bridges };
+	const warehouses: Warehouse[] = [];
+	const bunkers: Warehouse[] = [];
+	for (let i = 0; i < randomInt(random, 2, 5); i++) warehouses.push({ x: range(random, 60, MAP_W - 60), y: range(random, 60, MAP_H - 60), w: range(random, 30, 50), h: range(random, 16, 30) });
+	for (let i = 0; i < randomInt(random, 0, 2); i++) bunkers.push({ x: range(random, 100, MAP_W - 100), y: range(random, 120, MAP_H - 120), w: range(random, 20, 35), h: range(random, 10, 20) });
+
+	const river: Point[] = [];
+	if (random() < 0.5) {
+		const ry = range(random, MAP_H * 0.35, MAP_H * 0.65);
+		for (let x = 0; x <= MAP_W; x += 40) river.push({ x, y: ry + Math.sin(x / 180) * 18 });
+	}
+
+	return { fields, woods, roads, villages, houses, barns, pylons, bridges, warehouses, bunkers, river };
 }
