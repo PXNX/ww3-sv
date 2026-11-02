@@ -409,4 +409,17 @@ export function stepRun(run: Run, dt: number) {
 		run.timeLeft = 0;
 		endSortie(run, 'timeout');
 	}
+
+	// Moving contacts
+	for (const t of run.tracks) {
+		if (t.status === 'struck') continue;
+		const kind = t.contact.kind;
+		if (!['tank', 'truck', 'command', 'radar', 'mortar'].includes(kind)) continue;
+		const speed = kind === 'radar' ? 10 : kind === 'mortar' ? 8 : 14;
+		const dx = Math.cos(run.clock * 0.5 + t.contact.id) * dt * speed;
+		const dy = Math.sin(run.clock * 0.3 + t.contact.id) * dt * speed;
+		t.contact.x = Math.max(20, Math.min(MAP_W - 20, t.contact.x + dx));
+		t.contact.y = Math.max(20, Math.min(MAP_H - 20, t.contact.y + dy));
+		t.contact.heading += dt * 0.8;
+	}
 }
