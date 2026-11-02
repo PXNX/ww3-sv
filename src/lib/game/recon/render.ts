@@ -236,6 +236,18 @@ function drawTerrain(c: CanvasRenderingContext2D, terrain: Terrain, sensor: Sens
 		if (sensor === 'eo') c.strokeRect(h.x - h.w / 2, h.y - h.h / 2, h.w, h.h);
 	}
 
+	// Building blocks near soldiers become highlighted targets
+	for (const b of (terrain as any).blocks ?? []) {
+		const nearSoldier = run.tracks.some(
+			t => t.status === 'open' && t.contact.role === 'hostile' && Math.hypot(t.contact.x - b.x, t.contact.y - b.y) < 70
+		);
+		if (nearSoldier) {
+			c.strokeStyle = '#e5484d';
+			c.lineWidth = 3;
+			c.strokeRect(b.x - b.w / 2 + 2, b.y - b.h / 2 + 2, b.w - 4, b.h - 4);
+		}
+	}
+
 	// Extra structures for more objects to distinguish
 	for (const b of terrain.barns ?? []) {
 		if (!seen(b.x - 20, b.y - 20, 50, 50)) continue;
