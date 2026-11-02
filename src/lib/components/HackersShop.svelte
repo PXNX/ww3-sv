@@ -13,6 +13,7 @@
 		breachReliefPercent,
 		keylogSlowdownPercent,
 		relayReliefPercent,
+		upgradeCost,
 		type ToolId
 	} from '#lib/game/hackers/software.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -85,7 +86,7 @@
 	<ul class="grid gap-1.5 sm:grid-cols-2">
 		{#each TOOL_SPECS as tool (tool.id)}
 			{@const level = game.upgrades[tool.id]}
-			{@const cost = game.cost(tool.id)}
+			{@const cost = upgradeCost(tool.id, level)}
 			<li class="flex flex-col gap-1 rounded-[8px_4px_10px_6px] border-2 border-ink bg-sand p-1.5">
 				<div class="flex items-baseline justify-between gap-2">
 					<span class="font-display text-sm leading-tight font-bold">{TOOL_NAMES[tool.id]()}</span>

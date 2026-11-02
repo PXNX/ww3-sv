@@ -28,7 +28,6 @@ import {
 	minerIncome,
 	siphonShare,
 	SIPHON_DAY_MS,
-	upgradeCost,
 	type ToolId,
 	type Upgrades
 } from '#lib/game/hackers/software.js';
@@ -179,11 +178,6 @@ export class HackersGame {
 	flipRelay(index: number) {
 		if (this.status !== 'playing') return;
 		this.#apply(flipRelay(this.state, index, this.#random));
-	}
-
-	/** What the next level of a tool costs, or null once it is maxed */
-	cost(tool: ToolId): number | null {
-		return upgradeCost(tool, this.state.upgrades[tool]);
 	}
 
 	/** Buys the next level of a tool with the DogeLite in the bank */

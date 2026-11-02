@@ -283,7 +283,7 @@ describe('software shop', () => {
 
 	it('charges more for every level and stops at the maximum', () => {
 		expect(upgradeCost('breach', 0)).toBe(60);
-		expect(upgradeCost('breach', 1)).toBeGreaterThan(upgradeCost('breach', 0));
+		expect(upgradeCost('breach', 1)!).toBeGreaterThan(upgradeCost('breach', 0)!);
 		expect(upgradeCost('breach', toolSpec('breach').maxLevel)).toBeNull();
 		expect(upgradeCost('miner', toolSpec('miner').maxLevel)).toBeNull();
 	});
