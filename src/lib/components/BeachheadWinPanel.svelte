@@ -1,6 +1,8 @@
 <!-- Island-taken panel for Beachhead: stars, score, survivors, next island, and sharing on a new best -->
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages.js';
+	import { achievementName } from '#lib/components/beachheadText.js';
+	import type { Resources } from '#lib/game/beachhead/campaign.js';
 	import type { ScoreCard } from '#lib/services/share.js';
 	import BeachheadStars from './BeachheadStars.svelte';
 	import Confetti from './Confetti.svelte';
@@ -17,7 +19,8 @@
 		deployed,
 		loot,
 		islandName,
-		taxRate,
+		islandIncome,
+		newAchievements,
 		isNewBest,
 		hasNext,
 		modeName,
@@ -33,12 +36,14 @@
 		alive: number;
 		/** Troops landed during the attack */
 		deployed: number;
-		/** Supplies won in this battle */
-		loot: number;
+		/** Resources won in this battle */
+		loot: Resources;
 		/** The island just taken, for the control message */
 		islandName: string;
-		/** Supplies per minute the island adds to the tax income */
-		taxRate: number;
+		/** What the island adds to the production per minute */
+		islandIncome: Resources;
+		/** Achievements unlocked by this victory */
+		newAchievements: string[];
 		isNewBest: boolean;
 		/** Another island follows this one */
 		hasNext: boolean;
@@ -95,12 +100,19 @@
 				{m.beachhead_win_troops({ alive, total: deployed })}
 			</span>
 			<span class="rounded-md border-2 border-ink bg-explosion-yellow px-2 py-0.5">
-				{m.beachhead_victory_loot({ count: loot })}
-			</span>
-			<span class="rounded-md border-2 border-ink bg-khaki px-2 py-0.5 text-paper">
-				{m.beachhead_island_tax({ rate: taxRate })}
+				{m.beachhead_victory_loot(loot)}
 			</span>
 		</p>
+		<p class="text-sm font-semibold">
+			{m.beachhead_island_tax(islandIncome)}
+		</p>
+		{#if newAchievements.length > 0}
+			<p class="rounded-md border-2 border-ink bg-explosion-yellow px-2 py-1 text-sm font-bold">
+				{m.beachhead_win_achievements({
+					names: newAchievements.map((id) => achievementName(id)).join(', ')
+				})}
+			</p>
+		{/if}
 
 		{#if !hasNext}
 			<p class="font-semibold">{m.beachhead_all_cleared()}</p>

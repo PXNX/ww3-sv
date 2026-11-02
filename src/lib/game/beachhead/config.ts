@@ -142,12 +142,160 @@ export const BUILDINGS: Record<BuildingKind, BuildingStats> = {
 	depot: { width: 1, height: 1, hp: 220, damage: 0, range: 0, reloadMs: 0, splash: 0, score: 150 }
 };
 
+/** The units the player can load into the landing craft */
+export type TroopKind =
+	| 'assault'
+	| 'tank'
+	| 'mortar'
+	| 'drone'
+	| 'medic'
+	| 'hero'
+	| 'artillery'
+	| 'apc'
+	| 'demo'
+	| 'heavy';
+
+export interface TroopStats {
+	hp: number;
+	damage: number;
+	range: number;
+	speed: number;
+	attackMs: number;
+	/** Boat space one unit takes; a hero takes none and lands with the first boat */
+	space: number;
+	/** Units with a projectile lob or launch it instead of hitting instantly */
+	projectile?: ProjectileKind;
+	projectileSpeed?: number;
+	splash?: number;
+	homing?: boolean;
+	/** Grid cells a shot may land away from its aim point; big guns are not precise */
+	scatter?: number;
+	/** The M113 keeps a squad of reinforcements coming */
+	spawnKind?: TroopKind;
+	spawnEveryMs?: number;
+	spawnCap?: number;
+	/** Passive healing the unit gives the troops around it */
+	healRadius?: number;
+	healAmount?: number;
+	healEveryMs?: number;
+}
+
+export const TROOPS: Record<TroopKind, TroopStats> = {
+	assault: {
+		hp: 100,
+		damage: 16,
+		range: 1.15,
+		speed: 3,
+		attackMs: 620,
+		space: 1
+	},
+	tank: {
+		hp: 520,
+		damage: 55,
+		range: 2.1,
+		speed: 1.9,
+		attackMs: 1400,
+		space: 6,
+		projectile: 'shell',
+		projectileSpeed: 9,
+		splash: 1
+	},
+	mortar: {
+		hp: 130,
+		damage: 50,
+		range: 4.4,
+		speed: 2.4,
+		attackMs: 2400,
+		space: 3,
+		projectile: 'shell',
+		projectileSpeed: 7.5,
+		splash: 1.25
+	},
+	drone: {
+		hp: 110,
+		damage: 30,
+		range: 3.4,
+		speed: 3.2,
+		attackMs: 1600,
+		space: 2,
+		projectile: 'drone',
+		projectileSpeed: 11,
+		homing: true
+	},
+	medic: {
+		hp: 150,
+		damage: 6,
+		range: 1,
+		speed: 2.8,
+		attackMs: 1000,
+		space: 2,
+		healRadius: 1.9,
+		healAmount: 9,
+		healEveryMs: 900
+	},
+	hero: {
+		hp: 700,
+		damage: 70,
+		range: 1.1,
+		speed: 2.9,
+		attackMs: 800,
+		space: 0,
+		// Prigozhin's hammer: a heavy swing, then a pulse that patches up everyone around him
+		healRadius: 2.2,
+		healAmount: 28,
+		healEveryMs: 2400
+	},
+	artillery: {
+		hp: 120,
+		damage: 90,
+		range: 5.2,
+		speed: 1.8,
+		attackMs: 3000,
+		space: 4,
+		// Devastating against a cluster, but the crew cannot hit the same spot twice
+		projectile: 'shell',
+		projectileSpeed: 7,
+		splash: 1.7,
+		scatter: 2
+	},
+	apc: {
+		hp: 900,
+		damage: 10,
+		range: 1,
+		speed: 1.6,
+		attackMs: 1200,
+		space: 5,
+		// A rolling barracks: it drops a rifleman every few seconds while it survives
+		spawnKind: 'assault',
+		spawnEveryMs: 5000,
+		spawnCap: 4
+	},
+	demo: {
+		hp: 55,
+		damage: 320,
+		range: 0.85,
+		speed: 3.6,
+		attackMs: 1800,
+		space: 2,
+		// A heavy charge on a short fuse: enormous damage, almost no staying power
+		projectile: 'shell',
+		projectileSpeed: 13,
+		splash: 1.2
+	},
+	heavy: {
+		hp: 340,
+		damage: 9,
+		range: 1.5,
+		speed: 1.7,
+		attackMs: 110,
+		space: 4
+		// The minigun trades reach for a stream of bullets
+	}
+};
+
+/** The assault soldier, also the default troop used by the physics and battle tests */
 export const TROOP = {
-	hp: 100,
-	damage: 16,
-	range: 1.15,
-	speed: 3,
-	attackMs: 620,
+	...TROOPS.assault,
 	/** Troops stop short of a building they bump into and attack that instead */
 	body: 0.18,
 	/** Push from a nearby blast, in grid cells per second */
@@ -159,6 +307,17 @@ export const TROOP = {
 	/** Milliseconds a muzzle flash stays visible */
 	muzzleMs: 90
 };
+
+/** The eight landing craft; a boat carries more as it is upgraded */
+export const BOAT_COUNT = 8;
+/** Boat space by level; index 0 is unused */
+export const BOAT_CAPACITY = [0, 6, 7, 8, 9, 10, 11, 12, 13] as const;
+/** The first three boats are in the water from the start, one more per headquarters level */
+export const STARTING_BOATS = 3;
+export const MAX_BOAT_LEVEL = 8;
+export const MAX_HQ_LEVEL = 8;
+export const MAX_TRAINING_LEVEL = 8;
+export const MAX_TROOP_LEVEL = 8;
 
 /** The support skills the player can call in during an assault */
 export type SkillId = 'flamingo' | 'barrage' | 'flare' | 'smoke' | 'heal';

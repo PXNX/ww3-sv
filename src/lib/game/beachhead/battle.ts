@@ -13,26 +13,59 @@ import {
 	SKILL_ENERGY,
 	SQUADS,
 	TROOP,
+	TROOPS,
 	TROOPS_PER_SQUAD,
 	type BuildingKind,
 	type Island,
 	type ProjectileKind,
-	type SkillId
+	type SkillId,
+	type TroopKind
 } from './config.js';
 
 export type BattleStatus = 'playing' | 'won' | 'lost';
 
-/** What the player's shore-base upgrades change about the landing party */
-export interface BattleModifiers {
-	troopHp: number;
-	troopDamage: number;
-	troopsPerSquad: number;
+/** One soldier as the shore base has trained them, including boat type and level bonuses */
+export interface SquadTroop {
+	kind: TroopKind;
+	hp: number;
+	damage: number;
+	range: number;
+	speed: number;
+	attackMs: number;
+	projectile?: ProjectileKind;
+	projectileSpeed?: number;
+	splash?: number;
+	homing?: boolean;
+	/** How far a shot can land from its aim point */
+	scatter?: number;
+	/** The M113 drops reinforcements while it lives */
+	spawnKind?: TroopKind;
+	spawnEveryMs?: number;
+	spawnCap?: number;
+	healRadius?: number;
+	healAmount?: number;
+	healEveryMs?: number;
 }
 
+/** What the player's shore base and army change about the landing party */
+export interface BattleModifiers {
+	/** One entry per boat, in the order the boats land */
+	squads: readonly (readonly SquadTroop[])[];
+}
+
+const RIFLEMAN: SquadTroop = {
+	kind: 'assault',
+	hp: TROOPS.assault.hp,
+	damage: TROOPS.assault.damage,
+	range: TROOPS.assault.range,
+	speed: TROOPS.assault.speed,
+	attackMs: TROOPS.assault.attackMs
+};
+
 export const DEFAULT_MODIFIERS: BattleModifiers = {
-	troopHp: TROOP.hp,
-	troopDamage: TROOP.damage,
-	troopsPerSquad: TROOPS_PER_SQUAD
+	squads: Array.from({ length: SQUADS }, () =>
+		Array.from({ length: TROOPS_PER_SQUAD }, () => RIFLEMAN)
+	)
 };
 
 export interface Building {
@@ -55,11 +88,35 @@ export interface Building {
 
 export interface Troop {
 	id: number;
+	kind: TroopKind;
 	x: number;
 	y: number;
 	hp: number;
 	/** The troop's full health with the current training upgrade, for the health bar */
 	maxHp: number;
+	/** This unit's attack, range and reload, from its type and training level */
+	damage: number;
+	range: number;
+	speed: number;
+	attackMs: number;
+	projectile?: ProjectileKind;
+	projectileSpeed?: number;
+	splash?: number;
+	homing?: boolean;
+	/** How far a shot can land from its aim point */
+	scatter?: number;
+	/** The M113 drops reinforcements while it lives */
+	spawnKind?: TroopKind;
+	spawnEveryMs?: number;
+	spawnCap?: number;
+	spawnCooldownMs: number;
+	/** Set on units an APC has dropped, so its cap counts them */
+	spawnedBy?: number;
+	/** Medics and the hero patch up the troops around them */
+	healRadius?: number;
+	healAmount?: number;
+	healEveryMs?: number;
+	healCooldownMs: number;
 	cooldownMs: number;
 	targetId: number | null;
 	flashMs: number;
@@ -83,6 +140,8 @@ export interface Troop {
 export interface Projectile {
 	id: number;
 	kind: ProjectileKind;
+	/** True for a shell the landing party fired at a building */
+	friendly: boolean;
 	sourceId: number;
 	targetId: number;
 	fromX: number;
@@ -129,7 +188,13 @@ export type BattleEvent =
 			fromY: number;
 			toX: number;
 			toY: number;
+			/** Set for a tank, mortar team or drone operator */
+			troopKind?: TroopKind;
+			/** Set when the damage lands with a projectile instead of instantly */
+			flightMs?: number;
 	  }
+	| { kind: 'troop-heal'; x: number; y: number; amount: number; hero: boolean }
+	| { kind: 'troop-spawn'; x: number; y: number; troopKind: TroopKind }
 	| {
 			kind: 'defense-shot';
 			buildingId: number;
@@ -175,12 +240,12 @@ export interface BattleState {
 	island: Island;
 	timeMs: number;
 	squadsLeft: number;
+	/** The boats still waiting offshore, with the units packed into each */
+	squads: SquadTroop[][];
 	/** Troops landed so far, for the survival share in the stars */
 	deployed: number;
-	/** The upgraded strength of one soldier */
-	troopHp: number;
-	troopDamage: number;
-	troopsPerSquad: number;
+	/** Total health that has landed, so a party of tanks is judged fairly */
+	deployedHp: number;
 	troops: Troop[];
 	buildings: Building[];
 	/** Shells, rockets and drones still in the air */
@@ -204,18 +269,22 @@ function clamp(value: number, min: number, max: number): number {
 	return Math.min(max, Math.max(min, value));
 }
 
+function copySquad(squad: readonly SquadTroop[]): SquadTroop[] {
+	return squad.map((troop) => ({ ...troop }));
+}
+
 export function createBattle(
 	island: Island,
 	modifiers: BattleModifiers = DEFAULT_MODIFIERS
 ): BattleState {
+	const squads = modifiers.squads.map(copySquad);
 	return {
 		island,
 		timeMs: 0,
-		squadsLeft: SQUADS,
+		squadsLeft: squads.length,
+		squads,
 		deployed: 0,
-		troopHp: modifiers.troopHp,
-		troopDamage: modifiers.troopDamage,
-		troopsPerSquad: modifiers.troopsPerSquad,
+		deployedHp: 0,
 		troops: [],
 		buildings: island.buildings.map((spec, id) => {
 			const stats = BUILDINGS[spec.kind];
@@ -329,18 +398,23 @@ function insideZone(zone: SkillZone | null, x: number, y: number): boolean {
 	return zone !== null && Math.hypot(x - zone.x, y - zone.y) <= zone.radius;
 }
 
-/** Lands the next squad on a beach row; false when there is no craft left or the row is off the map */
+/** Lands the next boat on a beach row; false when there is no craft left or the row is off the map */
 export function deploy(state: BattleState, row: number): boolean {
 	if (state.status !== 'playing' || state.squadsLeft <= 0) return false;
 	if (!Number.isInteger(row) || row < 0 || row >= ROWS) return false;
+	const squad = state.squads.shift();
+	if (!squad || squad.length === 0) return false;
 	const base = state.troops.length > 0 ? Math.max(...state.troops.map((troop) => troop.id)) + 1 : 0;
-	for (let index = 0; index < state.troopsPerSquad; index++) {
+	squad.forEach((spec, index) => {
 		state.troops.push({
+			...spec,
 			id: base + index,
 			x: LANDING_X,
-			y: row + 0.5 + (index - (state.troopsPerSquad - 1) / 2) * 0.16,
-			hp: state.troopHp,
-			maxHp: state.troopHp,
+			y: row + 0.5 + (index - (squad.length - 1) / 2) * 0.16,
+			hp: spec.hp,
+			maxHp: spec.hp,
+			healCooldownMs: (spec.healEveryMs ?? 0) * 0.5,
+			spawnCooldownMs: spec.spawnEveryMs ?? 0,
 			cooldownMs: index * 40,
 			targetId: null,
 			flashMs: 0,
@@ -353,9 +427,10 @@ export function deploy(state: BattleState, row: number): boolean {
 			walkPhase: index * 1.7,
 			moving: false
 		});
-	}
-	state.squadsLeft -= 1;
-	state.deployed += state.troopsPerSquad;
+		state.deployedHp += spec.hp;
+	});
+	state.squadsLeft = state.squads.length;
+	state.deployed += squad.length;
 	state.events.push({ kind: 'deploy', x: LANDING_X, y: row + 0.5 });
 	return true;
 }
@@ -486,6 +561,31 @@ function woundWithSplash(
 
 function landProjectile(state: BattleState, projectile: Projectile) {
 	const radius = Math.max(0.35, projectile.splash);
+	if (projectile.friendly) {
+		// A tank shell, mortar bomb or drone strike: damage the buildings around the impact
+		let hits = 0;
+		for (const building of state.buildings) {
+			if (building.destroyed || building.hp <= 0) continue;
+			const primary = building.id === projectile.targetId;
+			if (
+				rectDistance(projectile.x, projectile.y, building) > (primary ? radius : projectile.splash)
+			) {
+				continue;
+			}
+			building.hp = Math.max(0, building.hp - Math.round(projectile.damage * (primary ? 1 : 0.6)));
+			building.flashMs = 130;
+			hits += 1;
+		}
+		state.events.push({
+			kind: 'projectile-impact',
+			projectileKind: projectile.kind,
+			x: projectile.x,
+			y: projectile.y,
+			radius,
+			hits
+		});
+		return;
+	}
 	let hits = 0;
 	for (const troop of state.troops) {
 		if (troop.hp <= 0) continue;
@@ -579,6 +679,103 @@ function stepSkillZones(state: BattleState, frameMs: number) {
 	}
 }
 
+/** The next free id for a troop that lands or is dropped mid-battle */
+function nextTroopId(state: BattleState): number {
+	return state.troops.reduce((highest, troop) => Math.max(highest, troop.id), -1) + 1;
+}
+
+/** One reinforcement as the M113 drops it: the spawned kind at its base stats */
+function spawnedTroop(state: BattleState, source: Troop, kind: TroopKind, index: number): Troop {
+	const stats = TROOPS[kind];
+	const angle = (index / 4) * Math.PI * 2 + source.id;
+	return {
+		kind,
+		hp: stats.hp,
+		maxHp: stats.hp,
+		damage: stats.damage,
+		range: stats.range,
+		speed: stats.speed,
+		attackMs: stats.attackMs,
+		projectile: stats.projectile,
+		projectileSpeed: stats.projectileSpeed,
+		splash: stats.splash,
+		homing: stats.homing,
+		scatter: stats.scatter,
+		spawnKind: stats.spawnKind,
+		spawnEveryMs: stats.spawnEveryMs,
+		spawnCap: stats.spawnCap,
+		healRadius: stats.healRadius,
+		healAmount: stats.healAmount,
+		healEveryMs: stats.healEveryMs,
+		healCooldownMs: 0,
+		spawnCooldownMs: 0,
+		spawnedBy: source.id,
+		id: nextTroopId(state) + index,
+		x: clamp(source.x + Math.cos(angle) * 0.3, LANDING_X, COLUMNS - 0.3),
+		y: clamp(source.y + Math.sin(angle) * 0.3, 0.3, ROWS - 0.3),
+		cooldownMs: index * 90,
+		targetId: null,
+		flashMs: 0,
+		vx: 0,
+		vy: 0,
+		stunMs: 0,
+		muzzleMs: 0,
+		aimX: 1,
+		aimY: 0,
+		walkPhase: index * 1.3,
+		moving: false
+	};
+}
+
+/** APCs keep spawning reinforcements up to their cap while they are alive */
+function stepTroopSpawning(state: BattleState, frameMs: number) {
+	for (const troop of state.troops) {
+		if (troop.hp <= 0 || !troop.spawnKind || !troop.spawnEveryMs) continue;
+		troop.spawnCooldownMs -= frameMs;
+		if (troop.spawnCooldownMs > 0) continue;
+		troop.spawnCooldownMs += troop.spawnEveryMs;
+		const alive = state.troops.filter(
+			(candidate) => candidate.hp > 0 && candidate.spawnedBy === troop.id
+		).length;
+		if (alive >= (troop.spawnCap ?? 0)) continue;
+		const spawn = spawnedTroop(state, troop, troop.spawnKind, alive);
+		state.troops.push(spawn);
+		state.deployed += 1;
+		state.deployedHp += spawn.maxHp;
+		state.events.push({
+			kind: 'troop-spawn',
+			x: spawn.x,
+			y: spawn.y,
+			troopKind: spawn.kind
+		});
+	}
+}
+
+function stepTroopHealing(state: BattleState, frameMs: number) {
+	for (const troop of state.troops) {
+		if (troop.hp <= 0 || !troop.healRadius || !troop.healAmount || !troop.healEveryMs) continue;
+		troop.healCooldownMs -= frameMs;
+		if (troop.healCooldownMs > 0) continue;
+		troop.healCooldownMs += troop.healEveryMs;
+		let healed = 0;
+		for (const ally of state.troops) {
+			if (ally.hp <= 0 || ally.hp >= ally.maxHp) continue;
+			if (Math.hypot(ally.x - troop.x, ally.y - troop.y) > troop.healRadius) continue;
+			const amount = Math.min(ally.maxHp - ally.hp, troop.healAmount);
+			ally.hp += amount;
+			healed += amount;
+		}
+		if (healed < 1) continue;
+		state.events.push({
+			kind: 'troop-heal',
+			x: troop.x,
+			y: troop.y,
+			amount: Math.round(healed),
+			hero: troop.kind === 'hero'
+		});
+	}
+}
+
 export function stepBattle(state: BattleState, dtMs: number) {
 	if (state.status !== 'playing' || dtMs <= 0) return;
 	const frameMs = Math.min(dtMs, 100);
@@ -610,7 +807,7 @@ export function stepBattle(state: BattleState, dtMs: number) {
 			const dy = state.flare.y - troop.y;
 			const length = Math.hypot(dx, dy);
 			if (length > 0.35) {
-				const step = Math.min(TROOP.speed * dt, length);
+				const step = Math.min(troop.speed * dt, length);
 				troop.x += (dx / length) * step;
 				troop.y += (dy / length) * step;
 				troop.walkPhase += dt * 12;
@@ -629,12 +826,12 @@ export function stepBattle(state: BattleState, dtMs: number) {
 		if (!target) continue;
 
 		let distance = rectDistance(troop.x, troop.y, target);
-		if (!marchingToFlare && distance > TROOP.range) {
+		if (!marchingToFlare && distance > troop.range) {
 			const point = nearestPointOn(troop.x, troop.y, target);
 			const dx = point.x - troop.x;
 			const dy = point.y - troop.y;
 			const length = Math.hypot(dx, dy) || 1;
-			const step = Math.min(TROOP.speed * dt, Math.max(0, distance - TROOP.range));
+			const step = Math.min(troop.speed * dt, Math.max(0, distance - troop.range));
 			troop.x += (dx / length) * step;
 			troop.y += (dy / length) * step;
 			troop.walkPhase += dt * 12;
@@ -657,22 +854,84 @@ export function stepBattle(state: BattleState, dtMs: number) {
 
 		const point = nearestPointOn(troop.x, troop.y, target);
 		aimAt(troop, point.x, point.y);
-		if (distance <= TROOP.range + 0.01 && troop.cooldownMs <= 0) {
-			target.hp = Math.max(0, target.hp - state.troopDamage);
-			target.flashMs = 130;
-			troop.cooldownMs = TROOP.attackMs;
+		if (distance <= troop.range + 0.01 && troop.cooldownMs <= 0) {
+			troop.cooldownMs = troop.attackMs;
 			troop.muzzleMs = TROOP.muzzleMs;
-			state.events.push({
-				kind: 'troop-shot',
-				troopId: troop.id,
-				buildingId: target.id,
-				fromX: troop.x + troop.aimX * 0.22,
-				fromY: troop.y + troop.aimY * 0.22,
-				toX: nearestPointOn(troop.x, troop.y, target).x,
-				toY: nearestPointOn(troop.x, troop.y, target).y
-			});
+			if (troop.projectile) {
+				// Inaccurate artillery lands around the aim point rather than on it
+				const scatter = troop.scatter ?? 0;
+				const wander = state.timeMs * 0.0011 + troop.id * 2.399;
+				const impactX =
+					scatter === 0
+						? point.x
+						: clamp(
+								point.x +
+									Math.cos(wander) * scatter * (0.4 + 0.6 * Math.abs(Math.sin(wander * 1.7))),
+								0.15,
+								COLUMNS - 0.15
+							);
+				const impactY =
+					scatter === 0
+						? point.y
+						: clamp(
+								point.y +
+									Math.sin(wander) * scatter * (0.4 + 0.6 * Math.abs(Math.cos(wander * 1.3))),
+								0.15,
+								ROWS - 0.15
+							);
+				const flightMs = Math.round(
+					clamp((distance / (troop.projectileSpeed ?? 9)) * 1000, 220, 900)
+				);
+				state.projectiles.push({
+					id:
+						state.projectiles.reduce((highest, projectile) => Math.max(highest, projectile.id), 0) +
+						1,
+					kind: troop.projectile,
+					friendly: true,
+					sourceId: troop.id,
+					targetId: target.id,
+					fromX: troop.x + troop.aimX * 0.22,
+					fromY: troop.y + troop.aimY * 0.22,
+					toX: impactX,
+					toY: impactY,
+					x: troop.x + troop.aimX * 0.22,
+					y: troop.y + troop.aimY * 0.22,
+					ageMs: 0,
+					flightMs,
+					damage: troop.damage,
+					splash: troop.splash ?? 0,
+					homing: troop.homing ?? false
+				});
+				state.events.push({
+					kind: 'troop-shot',
+					troopId: troop.id,
+					buildingId: target.id,
+					fromX: troop.x + troop.aimX * 0.22,
+					fromY: troop.y + troop.aimY * 0.22,
+					toX: impactX,
+					toY: impactY,
+					troopKind: troop.kind,
+					flightMs
+				});
+			} else {
+				target.hp = Math.max(0, target.hp - troop.damage);
+				target.flashMs = 130;
+				state.events.push({
+					kind: 'troop-shot',
+					troopId: troop.id,
+					buildingId: target.id,
+					fromX: troop.x + troop.aimX * 0.22,
+					fromY: troop.y + troop.aimY * 0.22,
+					toX: point.x,
+					toY: point.y,
+					troopKind: troop.kind
+				});
+			}
 		}
 	}
+
+	stepTroopSpawning(state, frameMs);
+	stepTroopHealing(state, frameMs);
 
 	for (const building of state.buildings) {
 		building.flashMs = Math.max(0, building.flashMs - frameMs);
@@ -727,6 +986,7 @@ export function stepBattle(state: BattleState, dtMs: number) {
 					state.projectiles.reduce((highest, projectile) => Math.max(highest, projectile.id), 0) +
 					1,
 				kind: stats.projectile,
+				friendly: false,
 				sourceId: building.id,
 				targetId: target.id,
 				fromX: centerX,
@@ -796,7 +1056,7 @@ export function scoreOf(state: BattleState): number {
 export function starsOf(state: BattleState): number {
 	if (state.status !== 'won') return 0;
 	const remaining = state.troops.reduce((sum, troop) => sum + troop.hp, 0);
-	const share = state.deployed > 0 ? remaining / (state.deployed * state.troopHp) : 0;
+	const share = state.deployedHp > 0 ? remaining / state.deployedHp : 0;
 	if (share >= 0.5) return 3;
 	if (share >= 0.25) return 2;
 	return 1;

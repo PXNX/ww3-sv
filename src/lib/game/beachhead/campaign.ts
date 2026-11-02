@@ -1,28 +1,77 @@
 /*
- * Beachhead campaign: the shore base, its upgrades and the islands under the player's control.
+ * Beachhead campaign: the shore base, its buildings and the islands under the player's control.
  * Everything here is stored locally and calculated from plain numbers, so the economy can be
- * tested without a browser. Controlled islands add their production to the tax income; supplies
- * are spent on the headquarters, troop training and bigger landing craft.
+ * tested without a browser. Controlled islands produce wood, stone, iron and gold; those resources
+ * pay for headquarters, training ground and landing-craft levels, for troop training and for the
+ * army that fills the boats. Upgrades run on a builder for a while, one build at a time (two for
+ * Pro subscribers). A boat carries a fixed number of troop spaces and every unit takes a different
+ * amount, so the loadout is a small packing puzzle.
  */
-import { ISLAND_IDS, TROOP, TROOPS_PER_SQUAD, type Island } from './config.js';
-import type { BattleModifiers } from './battle.js';
+import {
+	BOAT_CAPACITY,
+	BOAT_COUNT,
+	ISLAND_IDS,
+	MAX_BOAT_LEVEL,
+	MAX_HQ_LEVEL,
+	MAX_TRAINING_LEVEL,
+	MAX_TROOP_LEVEL,
+	STARTING_BOATS,
+	TROOPS,
+	type Island,
+	type TroopKind
+} from './config.js';
+import type { BattleModifiers, SquadTroop } from './battle.js';
 
 export const SAVE_KEY = 'beachhead:save';
-export const STARTING_SUPPLIES = 100;
-/** Supplies per minute from the home shore, before the islands and the headquarters bonus */
-export const HOME_INCOME_PER_MIN = 1;
+export const SAVE_VERSION = 3;
 /** Longer absences stop earning at this point, so a save cannot grow forever */
 export const INCOME_CAP_MS = 8 * 60 * 60 * 1000;
 
-/** What each island adds to the tax income once controlled, in supplies per minute */
-export const ISLAND_INCOME = [2, 3, 4, 5, 6, 8] as const;
+export type ResourceKind = 'wood' | 'stone' | 'iron' | 'gold';
+export type Resources = Record<ResourceKind, number>;
+export const RESOURCE_KINDS: readonly ResourceKind[] = ['wood', 'stone', 'iron', 'gold'];
 
-export type UpgradeKey = 'hq' | 'troops' | 'landing';
+export const STARTING_RESOURCES: Resources = { wood: 120, stone: 80, iron: 40, gold: 10 };
+/** What the home shore produces per minute on its own; the islands add their own lines */
+export const HOME_PRODUCTION: Resources = { wood: 1, stone: 0, iron: 0, gold: 0 };
+/** What each island adds to the tax income once controlled, in units per minute */
+export const ISLAND_PRODUCTION: readonly Resources[] = [
+	{ wood: 2, stone: 1, iron: 0, gold: 0 },
+	{ wood: 2, stone: 1, iron: 1, gold: 0 },
+	{ wood: 3, stone: 2, iron: 1, gold: 0 },
+	{ wood: 2, stone: 2, iron: 2, gold: 1 },
+	{ wood: 3, stone: 3, iron: 3, gold: 1 },
+	{ wood: 3, stone: 3, iron: 3, gold: 2 }
+];
 
-export interface Upgrades {
+export type BoatKey = `boat-${number}`;
+export type BuildingKey = 'hq' | 'training' | BoatKey;
+export type Army = Record<Exclude<TroopKind, 'hero'>, number>;
+export type TroopLevels = Record<TroopKind, number>;
+
+export const BOAT_KEYS: readonly BoatKey[] = Array.from(
+	{ length: BOAT_COUNT },
+	(_, index) => `boat-${index}` as BoatKey
+);
+export const BUILDING_KEYS: readonly BuildingKey[] = ['hq', 'training', ...BOAT_KEYS];
+/** Troop kinds the player loads into boats; the hero always comes along and takes no space */
+export const ARMY_KINDS: readonly Exclude<TroopKind, 'hero'>[] = [
+	'assault',
+	'tank',
+	'mortar',
+	'drone',
+	'medic',
+	'artillery',
+	'apc',
+	'demo',
+	'heavy'
+];
+
+export interface Levels {
 	hq: number;
-	troops: number;
-	landing: number;
+	training: number;
+	/** One level per landing craft, in boarding order */
+	boats: number[];
 }
 
 export interface IslandControl {
@@ -31,37 +80,562 @@ export interface IslandControl {
 	controlled: boolean;
 }
 
+/** A building upgrade that is running on a builder */
+export interface BuildTask {
+	key: BuildingKey;
+	startedAt: number;
+	endsAt: number;
+}
+
+export interface CareerStats {
+	wins: number;
+	threeStarWins: number;
+	winsWithoutSkills: number;
+	heroWins: number;
+}
+
 export interface BeachheadSave {
-	version: 1;
-	supplies: number;
-	upgrades: Upgrades;
+	version: 3;
+	resources: Resources;
+	levels: Levels;
+	troops: TroopLevels;
+	army: Army;
 	islands: Record<string, IslandControl>;
+	/** Building upgrades on the builders right now */
+	builders: BuildTask[];
+	/** Ids of the Beachhead achievements already paid out */
+	achievements: string[];
+	stats: CareerStats;
 	/** Unix milliseconds of the last income tick */
 	lastIncomeMs: number;
 }
 
-export const MAX_UPGRADE: Record<UpgradeKey, number> = { hq: 5, troops: 5, landing: 4 };
+/** Cost of the first upgrade of each building family; each later level grows by a factor */
+const BUILDING_BASE_COST: Record<'hq' | 'training' | 'boat', Resources> = {
+	hq: { wood: 160, stone: 120, iron: 50, gold: 10 },
+	training: { wood: 90, stone: 60, iron: 20, gold: 4 },
+	boat: { wood: 50, stone: 30, iron: 10, gold: 2 }
+};
+const BUILDING_COST_GROWTH = 1.55;
 
-/** Cost to go from the current level to the next; index 0 is unused */
-export const UPGRADE_COSTS: Record<UpgradeKey, readonly number[]> = {
-	hq: [0, 250, 600, 1200, 2200],
-	troops: [0, 90, 220, 480, 900],
-	landing: [0, 180, 420, 850]
+const TROOP_BASE_COST: Record<TroopKind, Resources> = {
+	assault: { wood: 50, stone: 30, iron: 15, gold: 3 },
+	tank: { wood: 120, stone: 80, iron: 50, gold: 8 },
+	mortar: { wood: 90, stone: 60, iron: 35, gold: 6 },
+	drone: { wood: 80, stone: 50, iron: 40, gold: 6 },
+	medic: { wood: 100, stone: 70, iron: 30, gold: 5 },
+	hero: { wood: 140, stone: 100, iron: 60, gold: 12 },
+	artillery: { wood: 130, stone: 90, iron: 55, gold: 9 },
+	apc: { wood: 150, stone: 110, iron: 70, gold: 10 },
+	demo: { wood: 70, stone: 45, iron: 55, gold: 5 },
+	heavy: { wood: 120, stone: 85, iron: 65, gold: 8 }
 };
 
-/** A win pays loot; taking an island for the first time pays a bonus on top */
-export const REPLAY_LOOT = 15;
-export function lootFor(index: number, firstControl: boolean): number {
-	return 60 + index * 25 + (firstControl ? 40 : 0);
+/** The army of a fresh base: a full first wave of riflemen */
+const STARTING_ARMY: Army = {
+	assault: 18,
+	tank: 0,
+	mortar: 0,
+	drone: 0,
+	medic: 0,
+	artillery: 0,
+	apc: 0,
+	demo: 0,
+	heavy: 0
+};
+
+/** A full troop-level record, with level one for every kind the game knows */
+function defaultTroopLevels(): TroopLevels {
+	return Object.fromEntries(Object.keys(TROOPS).map((kind) => [kind, 1])) as TroopLevels;
 }
+
+/** Fills in troop kinds an older save did not know about */
+function fillArmy(army: Partial<Army>): Army {
+	return Object.fromEntries(
+		ARMY_KINDS.map((kind) => [
+			kind,
+			Number.isInteger(army[kind]) && (army[kind] as number) >= 0 ? (army[kind] as number) : 0
+		])
+	) as Army;
+}
+
+function fillTroopLevels(levels: Partial<TroopLevels>): TroopLevels {
+	return Object.fromEntries(
+		(Object.keys(TROOPS) as TroopKind[]).map((kind) => {
+			const level = levels[kind];
+			return [kind, Number.isInteger(level) && (level as number) >= 1 ? level : 1];
+		})
+	) as TroopLevels;
+}
+const TROOP_COST_GROWTH = 1.5;
+
+/** How long a building upgrade runs, before the level growth */
+const BUILD_BASE_MS: Record<'hq' | 'training' | 'boat', number> = {
+	hq: 30_000,
+	training: 20_000,
+	boat: 10_000
+};
+const BUILD_TIME_GROWTH = 1.45;
 
 export function newSave(nowMs: number): BeachheadSave {
 	return {
-		version: 1,
-		supplies: STARTING_SUPPLIES,
-		upgrades: { hq: 1, troops: 1, landing: 1 },
+		version: SAVE_VERSION,
+		resources: { ...STARTING_RESOURCES },
+		levels: {
+			hq: 1,
+			training: 1,
+			boats: Array.from({ length: BOAT_COUNT }, () => 1)
+		},
+		troops: defaultTroopLevels(),
+		army: { ...STARTING_ARMY },
 		islands: {},
+		builders: [],
+		achievements: [],
+		stats: { wins: 0, threeStarWins: 0, winsWithoutSkills: 0, heroWins: 0 },
 		lastIncomeMs: nowMs
+	};
+}
+
+function resourceCost(base: Resources, factor: number): Resources {
+	return {
+		wood: Math.max(1, Math.round(base.wood * factor)),
+		stone: Math.max(1, Math.round(base.stone * factor)),
+		iron: Math.max(1, Math.round(base.iron * factor)),
+		gold: Math.max(1, Math.round(base.gold * factor))
+	};
+}
+
+function buildingFamily(key: BuildingKey): 'hq' | 'training' | 'boat' {
+	if (key === 'hq' || key === 'training') return key;
+	return 'boat';
+}
+
+/** How many boats are in the water at this headquarters level */
+export function boatsAtHq(hq: number): number {
+	return Math.min(BOAT_COUNT, STARTING_BOATS + Math.max(0, hq - 1));
+}
+
+export function boatUnlocked(save: BeachheadSave, index: number): boolean {
+	return index >= 0 && index < boatsAtHq(save.levels.hq) && lookupBoatLevel(save, index) !== null;
+}
+
+function lookupBoatLevel(save: BeachheadSave, index: number): number | null {
+	return save.levels.boats[index] ?? null;
+}
+
+export function boatCapacity(level: number): number {
+	return BOAT_CAPACITY[Math.min(MAX_BOAT_LEVEL, Math.max(1, level))] ?? 0;
+}
+
+export function levelOf(save: BeachheadSave, key: BuildingKey): number {
+	if (key === 'hq') return save.levels.hq;
+	if (key === 'training') return save.levels.training;
+	return lookupBoatLevel(save, Number(key.slice('boat-'.length))) ?? 1;
+}
+
+export function maxLevelOf(key: BuildingKey): number {
+	if (key === 'hq') return MAX_HQ_LEVEL;
+	if (key === 'training') return MAX_TRAINING_LEVEL;
+	return MAX_BOAT_LEVEL;
+}
+
+/** The cost of the next level, or null when the building is already maxed out */
+export function upgradeCost(save: BeachheadSave, key: BuildingKey): Resources | null {
+	const level = levelOf(save, key);
+	if (level >= maxLevelOf(key)) return null;
+	return resourceCost(
+		BUILDING_BASE_COST[buildingFamily(key)],
+		Math.pow(BUILDING_COST_GROWTH, level - 1)
+	);
+}
+
+/** Training and boats can outgrow the headquarters by one level, as in a base builder */
+export function upgradeLocked(save: BeachheadSave, key: BuildingKey): boolean {
+	if (key === 'hq') return false;
+	if (key.startsWith('boat-')) {
+		const index = Number(key.slice('boat-'.length));
+		if (!boatUnlocked(save, index)) return true;
+	}
+	return levelOf(save, key) + 1 > Math.min(maxLevelOf(key), save.levels.hq + 1);
+}
+
+export function canAfford(save: BeachheadSave, cost: Resources): boolean {
+	return RESOURCE_KINDS.every((kind) => save.resources[kind] >= cost[kind]);
+}
+
+export function canUpgrade(save: BeachheadSave, key: BuildingKey): boolean {
+	const cost = upgradeCost(save, key);
+	return cost !== null && !upgradeLocked(save, key) && canAfford(save, cost);
+}
+
+function payResources(resources: Resources, cost: Resources): Resources {
+	return {
+		wood: resources.wood - cost.wood,
+		stone: resources.stone - cost.stone,
+		iron: resources.iron - cost.iron,
+		gold: resources.gold - cost.gold
+	};
+}
+
+/** How long the next level of a building takes on a builder */
+export function buildDurationMs(key: BuildingKey, level: number): number {
+	const family = buildingFamily(key);
+	return Math.round(BUILD_BASE_MS[family] * Math.pow(BUILD_TIME_GROWTH, Math.max(0, level - 1)));
+}
+
+export function constructionOf(save: BeachheadSave, key: BuildingKey): BuildTask | undefined {
+	return save.builders.find((task) => task.key === key);
+}
+
+/** One builder from the start; a Pro subscription runs a second one in parallel */
+export function builderSlots(pro: boolean): number {
+	return pro ? 2 : 1;
+}
+
+export function freeBuilderSlots(save: BeachheadSave, slots: number): number {
+	return Math.max(0, slots - save.builders.length);
+}
+
+/**
+ * Starts a level on a builder. Null when the upgrade is locked, already running, unaffordable or
+ * every builder is busy. The resources are taken at once, as in a base builder.
+ */
+export function startUpgrade(
+	save: BeachheadSave,
+	key: BuildingKey,
+	nowMs: number,
+	slots: number
+): BeachheadSave | null {
+	if (!Number.isFinite(nowMs) || save.builders.length >= slots) return null;
+	if (constructionOf(save, key)) return null;
+	const cost = upgradeCost(save, key);
+	if (!cost || upgradeLocked(save, key) || !canAfford(save, cost)) return null;
+	const endsAt = nowMs + buildDurationMs(key, levelOf(save, key));
+	return {
+		...save,
+		resources: payResources(save.resources, cost),
+		builders: [...save.builders, { key, startedAt: nowMs, endsAt }]
+	};
+}
+
+function withBuildingLevel(save: BeachheadSave, key: BuildingKey): BeachheadSave {
+	if (key === 'hq') {
+		return { ...save, levels: { ...save.levels, hq: Math.min(MAX_HQ_LEVEL, save.levels.hq + 1) } };
+	}
+	if (key === 'training') {
+		return {
+			...save,
+			levels: {
+				...save.levels,
+				training: Math.min(MAX_TRAINING_LEVEL, save.levels.training + 1)
+			}
+		};
+	}
+	const index = Number(key.slice('boat-'.length));
+	const boats = save.levels.boats.map((level, boat) =>
+		boat === index ? Math.min(MAX_BOAT_LEVEL, level + 1) : level
+	);
+	return { ...save, levels: { ...save.levels, boats } };
+}
+
+/** Finishes every build whose time is up; returns the same save when nothing was done */
+export function finishBuilds(save: BeachheadSave, nowMs: number): BeachheadSave {
+	const done = save.builders.filter((task) => nowMs >= task.endsAt);
+	if (done.length === 0) return save;
+	let next: BeachheadSave = {
+		...save,
+		builders: save.builders.filter((task) => nowMs < task.endsAt)
+	};
+	for (const task of done) next = withBuildingLevel(next, task.key);
+	return next;
+}
+
+/** Total troop space the landing party can use with every unlocked boat */
+export function armyCapacity(save: BeachheadSave): number {
+	return save.levels.boats.reduce(
+		(sum, level, index) => sum + (boatUnlocked(save, index) ? boatCapacity(level) : 0),
+		0
+	);
+}
+
+export function armySpace(army: Army): number {
+	return ARMY_KINDS.reduce((sum, kind) => sum + army[kind] * TROOPS[kind].space, 0);
+}
+
+export function usedArmySpace(save: BeachheadSave): number {
+	return armySpace(save.army);
+}
+
+/** Adds or removes units; adding is refused when the boats have no space left */
+export function changeTroop(
+	save: BeachheadSave,
+	kind: Exclude<TroopKind, 'hero'>,
+	delta: number
+): BeachheadSave {
+	if (!ARMY_KINDS.includes(kind) || !Number.isFinite(delta) || delta === 0) return save;
+	const current = save.army[kind];
+	const next = Math.max(0, Math.round(current + delta));
+	if (next === current) return save;
+	if (delta > 0) {
+		const extra = (next - current) * TROOPS[kind].space;
+		if (usedArmySpace(save) + extra > armyCapacity(save)) return save;
+	}
+	return { ...save, army: { ...save.army, [kind]: next } };
+}
+
+export function troopLevel(save: BeachheadSave, kind: TroopKind): number {
+	return save.troops[kind] ?? 1;
+}
+
+/** Training ground level gates troop levels: a troop can never be better trained than the ground */
+export function troopUpgradeLocked(save: BeachheadSave, kind: TroopKind): boolean {
+	return troopLevel(save, kind) >= Math.min(MAX_TROOP_LEVEL, save.levels.training);
+}
+
+export function troopUpgradeCost(save: BeachheadSave, kind: TroopKind): Resources | null {
+	const level = troopLevel(save, kind);
+	if (level >= MAX_TROOP_LEVEL) return null;
+	return resourceCost(TROOP_BASE_COST[kind], Math.pow(TROOP_COST_GROWTH, level - 1));
+}
+
+export function canUpgradeTroop(save: BeachheadSave, kind: TroopKind): boolean {
+	const cost = troopUpgradeCost(save, kind);
+	return cost !== null && !troopUpgradeLocked(save, kind) && canAfford(save, cost);
+}
+
+/** Troop training happens at the ground and is paid at once; it is not a builder job */
+export function applyTroopUpgrade(save: BeachheadSave, kind: TroopKind): BeachheadSave {
+	if (!canUpgradeTroop(save, kind)) return save;
+	const cost = troopUpgradeCost(save, kind) as Resources;
+	return {
+		...save,
+		resources: payResources(save.resources, cost),
+		troops: { ...save.troops, [kind]: troopLevel(save, kind) + 1 }
+	};
+}
+
+/** Troop stats at a level: every level adds health and damage */
+export function troopStatsForLevel(kind: TroopKind, level: number) {
+	const base = TROOPS[kind];
+	const steps = Math.max(0, Math.min(MAX_TROOP_LEVEL, level) - 1);
+	return {
+		...base,
+		hp: Math.round(base.hp * (1 + 0.16 * steps)),
+		damage: Math.round(base.damage * (1 + 0.14 * steps))
+	};
+}
+
+export function troopStats(save: BeachheadSave, kind: TroopKind) {
+	return troopStatsForLevel(kind, troopLevel(save, kind));
+}
+
+/** Boats in boarding order with their capacity and the units packed into them */
+export interface BoatLoad {
+	index: number;
+	level: number;
+	capacity: number;
+	unlocked: boolean;
+	units: TroopKind[];
+}
+
+function packArmy(save: BeachheadSave): BoatLoad[] {
+	const remaining: Army = { ...save.army };
+	// Big units first, so a tank is never squeezed out by a crowd of assault soldiers
+	const order: Exclude<TroopKind, 'hero'>[] = [
+		'tank',
+		'apc',
+		'artillery',
+		'heavy',
+		'mortar',
+		'drone',
+		'demo',
+		'medic',
+		'assault'
+	];
+	return save.levels.boats.map((level, index) => {
+		const capacity = boatCapacity(level);
+		const unlocked = boatUnlocked(save, index);
+		const units: TroopKind[] = [];
+		if (unlocked) {
+			let space = capacity;
+			for (const kind of order) {
+				while (remaining[kind] > 0 && space >= TROOPS[kind].space) {
+					units.push(kind);
+					remaining[kind] -= 1;
+					space -= TROOPS[kind].space;
+				}
+			}
+		}
+		return { index, level, capacity, unlocked, units };
+	});
+}
+
+export function boatLoads(save: BeachheadSave): BoatLoad[] {
+	return packArmy(save);
+}
+
+function squadSpec(save: BeachheadSave, kind: TroopKind): SquadTroop {
+	const stats = troopStats(save, kind);
+	return {
+		kind,
+		hp: stats.hp,
+		damage: stats.damage,
+		range: stats.range,
+		speed: stats.speed,
+		attackMs: stats.attackMs,
+		projectile: stats.projectile,
+		projectileSpeed: stats.projectileSpeed,
+		splash: stats.splash,
+		homing: stats.homing,
+		scatter: stats.scatter,
+		spawnKind: stats.spawnKind,
+		spawnEveryMs: stats.spawnEveryMs,
+		spawnCap: stats.spawnCap,
+		healRadius: stats.healRadius,
+		healAmount: stats.healAmount,
+		healEveryMs: stats.healEveryMs
+	};
+}
+
+/** The squads in the order they land: one per non-empty boat, with the hero on the first */
+export function landingPlan(save: BeachheadSave): SquadTroop[][] {
+	const squads: SquadTroop[][] = [];
+	for (const load of packArmy(save)) {
+		if (load.units.length === 0) continue;
+		squads.push(load.units.map((kind) => squadSpec(save, kind)));
+	}
+	const hero = squadSpec(save, 'hero');
+	if (squads.length === 0) squads.push([hero]);
+	else squads[0].push(hero);
+	return squads;
+}
+
+/** What the shore-base upgrades and the army change about the landing party */
+export function modifiersFor(save: BeachheadSave): BattleModifiers {
+	return { squads: landingPlan(save) };
+}
+
+/** Every island under the player's flag gives three stars */
+export function allIslandsPerfect(save: BeachheadSave): boolean {
+	return ISLAND_IDS.every((islandId) => starsOf(save, islandId) === 3);
+}
+
+/** Headquarters, training ground and all eight boats at their top level */
+export function baseFullyMaxed(save: BeachheadSave): boolean {
+	return (
+		save.levels.hq >= MAX_HQ_LEVEL &&
+		save.levels.training >= MAX_TRAINING_LEVEL &&
+		save.levels.boats.every((level) => level >= MAX_BOAT_LEVEL)
+	);
+}
+
+export interface BeachheadAchievement {
+	id: string;
+	/** Fake News paid into the career wallet */
+	coins: number;
+	check(save: BeachheadSave): boolean;
+}
+
+/** Achievements, easiest first; the last two also unlock a cosmetic cap in the avatar editor */
+export const ACHIEVEMENTS: readonly BeachheadAchievement[] = [
+	{
+		id: 'first-landing',
+		coins: 25,
+		check: (save) => controlledCount(save, ISLAND_IDS) >= 1
+	},
+	{
+		id: 'archipelago',
+		coins: 100,
+		check: (save) => controlledCount(save, ISLAND_IDS) >= ISLAND_IDS.length
+	},
+	{
+		id: 'armada',
+		coins: 50,
+		check: (save) => boatsAtHq(save.levels.hq) >= BOAT_COUNT
+	},
+	{
+		id: 'veteran',
+		coins: 50,
+		check: (save) => save.stats.wins >= 10
+	},
+	{
+		id: 'no-support',
+		coins: 75,
+		check: (save) => save.stats.winsWithoutSkills >= 1
+	},
+	{
+		id: 'heroic',
+		coins: 75,
+		check: (save) => save.stats.heroWins >= 1
+	},
+	{
+		id: 'top-hq',
+		coins: 125,
+		check: (save) => save.levels.hq >= MAX_HQ_LEVEL
+	},
+	{
+		id: 'all-stars',
+		coins: 250,
+		check: allIslandsPerfect
+	},
+	{
+		id: 'fortress',
+		coins: 350,
+		check: baseFullyMaxed
+	}
+];
+
+export function achievementById(id: string): BeachheadAchievement | undefined {
+	return ACHIEVEMENTS.find((achievement) => achievement.id === id);
+}
+
+export interface AchievementPayout {
+	save: BeachheadSave;
+	earned: string[];
+	coins: number;
+}
+
+/** Marks every newly reached achievement and totals the Fake News it pays */
+export function claimAchievements(save: BeachheadSave): AchievementPayout {
+	const earned = ACHIEVEMENTS.filter(
+		(achievement) => !save.achievements.includes(achievement.id) && achievement.check(save)
+	);
+	if (earned.length === 0) return { save, earned: [], coins: 0 };
+	return {
+		save: {
+			...save,
+			achievements: [...save.achievements, ...earned.map((achievement) => achievement.id)]
+		},
+		earned: earned.map((achievement) => achievement.id),
+		coins: earned.reduce((sum, achievement) => sum + achievement.coins, 0)
+	};
+}
+
+/** Counts a battle result, used by the victory achievements */
+export function recordVictory(
+	save: BeachheadSave,
+	result: { stars: number; skillsUsed: number; heroAlive: boolean }
+): BeachheadSave {
+	return {
+		...save,
+		stats: {
+			wins: save.stats.wins + 1,
+			threeStarWins: save.stats.threeStarWins + (result.stars >= 3 ? 1 : 0),
+			winsWithoutSkills: save.stats.winsWithoutSkills + (result.skillsUsed === 0 ? 1 : 0),
+			heroWins: save.stats.heroWins + (result.heroAlive ? 1 : 0)
+		}
+	};
+}
+
+/** A win pays loot; taking an island for the first time pays a bonus on top */
+export const REPLAY_LOOT = 15;
+export function lootFor(index: number, firstControl: boolean): Resources {
+	const scale = 1 + index * 0.35 + (firstControl ? 0.5 : 0);
+	return {
+		wood: Math.round(40 * scale),
+		stone: Math.round(25 * scale),
+		iron: Math.round(12 * scale),
+		gold: Math.round(2 * scale)
 	};
 }
 
@@ -81,17 +655,60 @@ function isIslandControl(value: unknown): value is IslandControl {
 	);
 }
 
+function isIslands(value: unknown): value is Record<string, IslandControl> {
+	return (
+		typeof value === 'object' &&
+		value !== null &&
+		!Array.isArray(value) &&
+		Object.values(value).every(isIslandControl)
+	);
+}
+
+function isResources(value: unknown): value is Resources {
+	if (typeof value !== 'object' || value === null) return false;
+	const candidate = value as Partial<Resources>;
+	return RESOURCE_KINDS.every(
+		(kind) =>
+			typeof candidate[kind] === 'number' &&
+			Number.isFinite(candidate[kind]) &&
+			candidate[kind]! >= 0
+	);
+}
+
+function isBuildTask(value: unknown): value is BuildTask {
+	if (typeof value !== 'object' || value === null) return false;
+	const task = value as Partial<BuildTask>;
+	return (
+		typeof task.key === 'string' &&
+		BUILDING_KEYS.includes(task.key as BuildingKey) &&
+		typeof task.startedAt === 'number' &&
+		Number.isFinite(task.startedAt) &&
+		typeof task.endsAt === 'number' &&
+		Number.isFinite(task.endsAt) &&
+		task.endsAt >= task.startedAt
+	);
+}
+
+function isStats(value: unknown): value is CareerStats {
+	if (typeof value !== 'object' || value === null) return false;
+	const stats = value as Partial<CareerStats>;
+	return (
+		Number.isInteger(stats.wins) &&
+		stats.wins! >= 0 &&
+		Number.isInteger(stats.threeStarWins) &&
+		stats.threeStarWins! >= 0 &&
+		Number.isInteger(stats.winsWithoutSkills) &&
+		stats.winsWithoutSkills! >= 0 &&
+		Number.isInteger(stats.heroWins) &&
+		stats.heroWins! >= 0
+	);
+}
+
 export function isBeachheadSave(value: unknown): value is BeachheadSave {
 	if (typeof value !== 'object' || value === null) return false;
 	const candidate = value as Partial<BeachheadSave>;
-	if (candidate.version !== 1) return false;
-	if (
-		typeof candidate.supplies !== 'number' ||
-		!Number.isFinite(candidate.supplies) ||
-		candidate.supplies < 0
-	) {
-		return false;
-	}
+	if (candidate.version !== SAVE_VERSION) return false;
+	if (!isResources(candidate.resources)) return false;
 	if (
 		typeof candidate.lastIncomeMs !== 'number' ||
 		!Number.isFinite(candidate.lastIncomeMs) ||
@@ -99,18 +716,124 @@ export function isBeachheadSave(value: unknown): value is BeachheadSave {
 	) {
 		return false;
 	}
-	const upgrades = candidate.upgrades;
-	if (typeof upgrades !== 'object' || upgrades === null) return false;
+	const levels = candidate.levels;
+	if (typeof levels !== 'object' || levels === null) return false;
+	if (!isLevel(levels.hq, MAX_HQ_LEVEL) || !isLevel(levels.training, MAX_TRAINING_LEVEL)) {
+		return false;
+	}
 	if (
-		!isLevel(upgrades.hq, MAX_UPGRADE.hq) ||
-		!isLevel(upgrades.troops, MAX_UPGRADE.troops) ||
-		!isLevel(upgrades.landing, MAX_UPGRADE.landing)
+		!Array.isArray(levels.boats) ||
+		levels.boats.length !== BOAT_COUNT ||
+		!levels.boats.every((level) => isLevel(level, MAX_BOAT_LEVEL))
 	) {
 		return false;
 	}
-	const islands = candidate.islands;
-	if (typeof islands !== 'object' || islands === null || Array.isArray(islands)) return false;
-	return Object.values(islands).every(isIslandControl);
+	const troops = candidate.troops;
+	if (typeof troops !== 'object' || troops === null) return false;
+	if (
+		!(Object.keys(TROOPS) as TroopKind[]).every((kind) => isLevel(troops[kind], MAX_TROOP_LEVEL))
+	) {
+		return false;
+	}
+	const army = candidate.army;
+	if (typeof army !== 'object' || army === null) return false;
+	if (!ARMY_KINDS.every((kind) => Number.isInteger(army[kind]) && army[kind] >= 0)) return false;
+	if (!Array.isArray(candidate.builders) || !candidate.builders.every(isBuildTask)) return false;
+	if (
+		!Array.isArray(candidate.achievements) ||
+		!candidate.achievements.every((id) => typeof id === 'string')
+	) {
+		return false;
+	}
+	if (!isStats(candidate.stats)) return false;
+	return isIslands(candidate.islands);
+}
+
+interface LegacyUpgrades {
+	hq: number;
+	troops: number;
+	landing: number;
+}
+
+interface LegacySave {
+	version: 1 | 2;
+	supplies: number;
+	upgrades?: LegacyUpgrades;
+	levels?: Levels;
+	troops?: TroopLevels;
+	army?: Army;
+	islands: Record<string, IslandControl>;
+	lastIncomeMs: number;
+}
+
+function isLegacySave(value: unknown): value is LegacySave {
+	if (typeof value !== 'object' || value === null) return false;
+	const candidate = value as Partial<LegacySave>;
+	if (candidate.version !== 1 && candidate.version !== 2) return false;
+	return (
+		typeof candidate.supplies === 'number' &&
+		Number.isFinite(candidate.supplies) &&
+		candidate.supplies >= 0 &&
+		typeof candidate.lastIncomeMs === 'number' &&
+		Number.isFinite(candidate.lastIncomeMs) &&
+		candidate.lastIncomeMs >= 0 &&
+		isIslands(candidate.islands)
+	);
+}
+
+/** The old single supply stock becomes the four resources, in a sensible split */
+function resourcesFromSupplies(supplies: number): Resources {
+	return {
+		wood: Math.round(supplies),
+		stone: Math.round(supplies * 0.6),
+		iron: Math.round(supplies * 0.3),
+		gold: Math.round(supplies * 0.1)
+	};
+}
+
+/**
+ * Reads a stored save, upgrading the single-supply versions (three abstract upgrades, then the
+ * first building-level save) to resources, builders and achievements.
+ */
+export function parseSave(value: unknown): BeachheadSave | null {
+	if (isBeachheadSave(value)) return value;
+	if (!isLegacySave(value)) return null;
+	const legacy = value;
+	const levels: Levels =
+		legacy.version === 2 && legacy.levels
+			? {
+					hq: legacy.levels.hq,
+					training: legacy.levels.training,
+					boats: [...legacy.levels.boats]
+				}
+			: {
+					hq: legacy.upgrades?.hq ?? 1,
+					training: legacy.upgrades?.troops ?? 1,
+					boats: Array.from({ length: BOAT_COUNT }, (_, index) =>
+						index < STARTING_BOATS ? (legacy.upgrades?.landing ?? 1) : 1
+					)
+				};
+	const troops: TroopLevels =
+		legacy.version === 2 && legacy.troops ? fillTroopLevels(legacy.troops) : defaultTroopLevels();
+	const army: Army =
+		legacy.version === 2 && legacy.army ? fillArmy(legacy.army) : { ...STARTING_ARMY };
+	const save: BeachheadSave = {
+		version: SAVE_VERSION,
+		resources: resourcesFromSupplies(legacy.supplies),
+		levels,
+		troops,
+		army,
+		islands: legacy.islands,
+		builders: [],
+		achievements: [],
+		stats: { wins: 0, threeStarWins: 0, winsWithoutSkills: 0, heroWins: 0 },
+		lastIncomeMs: legacy.lastIncomeMs
+	};
+	// Never load an army that no boat could carry
+	if (usedArmySpace(save) > armyCapacity(save)) {
+		return { ...save, army: { ...STARTING_ARMY, assault: armyCapacity(save) } };
+	}
+	return save;
 }
 
 export function islandControl(save: BeachheadSave, islandId: string): IslandControl {
@@ -143,18 +866,50 @@ export function totalStars(save: BeachheadSave, islandIds: readonly string[]): n
 	return islandIds.reduce((sum, islandId) => sum + starsOf(save, islandId), 0);
 }
 
-/** Supplies per minute: the home shore plus every controlled island, raised by the headquarters */
-export function incomeRate(save: BeachheadSave, islandIds: readonly string[]): number {
-	let production = HOME_INCOME_PER_MIN;
+/** One island's own production line, with the headquarters bonus applied */
+export function islandProduction(save: BeachheadSave, index: number): Resources {
+	const line = ISLAND_PRODUCTION[index] ?? { wood: 0, stone: 0, iron: 0, gold: 0 };
+	const multiplier = 1 + 0.25 * (save.levels.hq - 1);
+	return {
+		wood: Math.round(line.wood * multiplier * 10) / 10,
+		stone: Math.round(line.stone * multiplier * 10) / 10,
+		iron: Math.round(line.iron * multiplier * 10) / 10,
+		gold: Math.round(line.gold * multiplier * 10) / 10
+	};
+}
+
+/** Production per minute: the home shore plus every controlled island, raised by the headquarters */
+export function incomeRate(save: BeachheadSave, islandIds: readonly string[]): Resources {
+	const total: Resources = { ...HOME_PRODUCTION };
 	for (const [index, islandId] of islandIds.entries()) {
-		if (isControlled(save, islandId)) production += ISLAND_INCOME[index] ?? 0;
+		if (!isControlled(save, islandId)) continue;
+		const production = ISLAND_PRODUCTION[index];
+		if (!production) continue;
+		for (const kind of RESOURCE_KINDS) total[kind] += production[kind];
 	}
-	const multiplier = 1 + 0.25 * (save.upgrades.hq - 1);
-	return Math.round(production * multiplier * 10) / 10;
+	const multiplier = 1 + 0.25 * (save.levels.hq - 1);
+	return {
+		wood: Math.round(total.wood * multiplier * 10) / 10,
+		stone: Math.round(total.stone * multiplier * 10) / 10,
+		iron: Math.round(total.iron * multiplier * 10) / 10,
+		gold: Math.round(total.gold * multiplier * 10) / 10
+	};
+}
+
+/** The approximate worth of a resource, for sorting and for the loot line */
+export const RESOURCE_VALUE: Record<ResourceKind, number> = {
+	wood: 1,
+	stone: 1.5,
+	iron: 3,
+	gold: 8
+};
+
+export function resourcesWorth(resources: Resources): number {
+	return RESOURCE_KINDS.reduce((sum, kind) => sum + resources[kind] * RESOURCE_VALUE[kind], 0);
 }
 
 /**
- * Adds the supplies earned since the last tick. Whole minutes are banked and the rest is left for
+ * Adds the resources earned since the last tick. Whole minutes are banked and the rest is left for
  * the next visit, so opening and closing the base repeatedly cannot round up extra income.
  */
 export function claimIncome(
@@ -167,47 +922,30 @@ export function claimIncome(
 	const capped = Math.min(INCOME_CAP_MS, elapsed);
 	const minutes = Math.floor(capped / 60_000);
 	if (minutes <= 0) return save;
-	const amount = Math.floor(incomeRate(save, islandIds) * minutes);
+	const rate = incomeRate(save, islandIds);
+	const resources: Resources = {
+		wood: save.resources.wood + Math.floor(rate.wood * minutes),
+		stone: save.resources.stone + Math.floor(rate.stone * minutes),
+		iron: save.resources.iron + Math.floor(rate.iron * minutes),
+		gold: save.resources.gold + Math.floor(rate.gold * minutes)
+	};
 	return {
 		...save,
-		supplies: save.supplies + amount,
+		resources,
 		// An absence longer than the cap is paid once; the clock then jumps to now, so calling
 		// this again at the same moment cannot bank the capped hours a second time.
 		lastIncomeMs: elapsed > INCOME_CAP_MS ? nowMs : save.lastIncomeMs + minutes * 60_000
 	};
 }
 
-/** The cost of the next level, or null when that upgrade is already maxed out */
-export function upgradeCost(save: BeachheadSave, key: UpgradeKey): number | null {
-	const level = save.upgrades[key];
-	if (level >= MAX_UPGRADE[key]) return null;
-	return UPGRADE_COSTS[key][level] ?? null;
-}
-
-/** Troops and landing craft cannot outgrow the headquarters by more than one level */
-export function upgradeLocked(save: BeachheadSave, key: UpgradeKey): boolean {
-	if (key === 'hq') return false;
-	return save.upgrades[key] + 1 > Math.min(MAX_UPGRADE[key], save.upgrades.hq + 1);
-}
-
-export function canUpgrade(save: BeachheadSave, key: UpgradeKey): boolean {
-	const cost = upgradeCost(save, key);
-	return cost !== null && !upgradeLocked(save, key) && save.supplies >= cost;
-}
-
-export function applyUpgrade(save: BeachheadSave, key: UpgradeKey): BeachheadSave {
-	if (!canUpgrade(save, key)) return save;
-	const cost = upgradeCost(save, key) as number;
-	return {
-		...save,
-		supplies: save.supplies - cost,
-		upgrades: { ...save.upgrades, [key]: save.upgrades[key] + 1 }
+export function addResources(save: BeachheadSave, loot: Resources): BeachheadSave {
+	const resources: Resources = {
+		wood: save.resources.wood + Math.max(0, Math.floor(loot.wood)),
+		stone: save.resources.stone + Math.max(0, Math.floor(loot.stone)),
+		iron: save.resources.iron + Math.max(0, Math.floor(loot.iron)),
+		gold: save.resources.gold + Math.max(0, Math.floor(loot.gold))
 	};
-}
-
-export function addSupplies(save: BeachheadSave, amount: number): BeachheadSave {
-	if (!Number.isFinite(amount) || amount <= 0) return save;
-	return { ...save, supplies: save.supplies + Math.floor(amount) };
+	return { ...save, resources };
 }
 
 /** Marks an island controlled, keeping the better star rating */
@@ -223,17 +961,6 @@ export function controlIsland(save: BeachheadSave, islandId: string, stars: numb
 				controlled: true
 			}
 		}
-	};
-}
-
-/** One more soldier per squad and tougher, harder-hitting troops per training level */
-export function modifiersFor(save: BeachheadSave): BattleModifiers {
-	const training = save.upgrades.troops - 1;
-	const landing = save.upgrades.landing - 1;
-	return {
-		troopHp: Math.round(TROOP.hp * (1 + 0.1 * training)),
-		troopDamage: Math.round(TROOP.damage * (1 + 0.12 * training)),
-		troopsPerSquad: TROOPS_PER_SQUAD + landing
 	};
 }
 

@@ -32,7 +32,8 @@ describe('game progress for the avatar', () => {
 			venezuelaTotal: LEVEL_IDS.length,
 			purrSolved: false,
 			petrobrasStreak: 0,
-			blocksBest: 0
+			blocksBest: 0,
+			beachheadAchievements: []
 		});
 	});
 

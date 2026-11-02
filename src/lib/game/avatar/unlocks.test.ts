@@ -39,7 +39,8 @@ const NOTHING: GameProgress = {
 	venezuelaTotal: 6,
 	purrSolved: false,
 	petrobrasStreak: 0,
-	blocksBest: 0
+	blocksBest: 0,
+	beachheadAchievements: []
 };
 
 /** ...and for one who has done everything */
@@ -49,7 +50,18 @@ const FINISHED: GameProgress = {
 	venezuelaWon: 6,
 	purrSolved: true,
 	petrobrasStreak: 10,
-	blocksBest: 9001
+	blocksBest: 9001,
+	beachheadAchievements: [
+		'first-landing',
+		'archipelago',
+		'armada',
+		'veteran',
+		'no-support',
+		'heroic',
+		'top-hq',
+		'all-stars',
+		'fortress'
+	]
 };
 
 /** A player with nothing earned yet, plus whatever the test cares about */
@@ -250,13 +262,32 @@ describe('the extra looks', () => {
 		expect(randomLook(9, nothingAllowed)).toEqual(DEFAULT_LOOK);
 	});
 
+	it('opens the Beachhead cap and ogre ears with the hardest achievements', () => {
+		const cap = unlockFor('hat', 'cap')!;
+		const ears = unlockFor('hat', 'ogre-ears')!;
+		expect(requirementMet(cap.requirement, progress())).toBe(false);
+		expect(requirementMet(ears.requirement, progress())).toBe(false);
+		const stars = { ...NOTHING, beachheadAchievements: ['all-stars'] };
+		const fortress = { ...NOTHING, beachheadAchievements: ['fortress'] };
+		expect(requirementMet(cap.requirement, progress({ games: stars }))).toBe(true);
+		expect(requirementMet(ears.requirement, progress({ games: stars }))).toBe(false);
+		expect(requirementMet(cap.requirement, progress({ games: fortress }))).toBe(false);
+		expect(requirementMet(ears.requirement, progress({ games: fortress }))).toBe(true);
+		expect(requirementShare(ears.requirement, progress({ games: stars }))).toBe(0);
+		expect(requirementShare(ears.requirement, progress({ games: fortress }))).toBe(1);
+	});
+
 	it('names the first locked part of a ready-made look', () => {
 		const hitman = LOOK_PRESETS.find((preset) => preset.id === 'agent-47')!;
 		const ogre = LOOK_PRESETS.find((preset) => preset.id === 'ogre')!;
 		expect(firstLockedPart(hitman.look, progress())?.unlock.id).toBe('suit');
 		expect(firstLockedPart(hitman.look, progress({ level: 10 }))).toBeNull();
 		expect(firstLockedPart(ogre.look, progress({ level: 10 }))?.unlock.id).toBe('alien-skin');
-		expect(firstLockedPart(ogre.look, progress({ level: 30 }))).toBeNull();
+		const beachhead = {
+			...NOTHING,
+			beachheadAchievements: ['all-stars', 'fortress']
+		};
+		expect(firstLockedPart(ogre.look, progress({ level: 30, games: beachhead }))).toBeNull();
 	});
 });
 

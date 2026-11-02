@@ -4,6 +4,7 @@
  */
 import { modeById } from '#lib/modes/registry.js';
 import { m } from '#lib/paraglide/messages.js';
+import { achievementName as beachheadAchievementName } from './beachheadText.js';
 import { achievementName } from './tycoonText.js';
 import type { UnlockRequirement } from '#lib/game/avatar/unlocks.js';
 
@@ -36,5 +37,10 @@ export function requirementText(requirement: UnlockRequirement): string {
 			});
 		case 'referral':
 			return m.avatar_unlock_referral({ count: requirement.count });
+		case 'beachhead':
+			return m.avatar_unlock_beachhead({
+				game: modeById('beachhead').name(),
+				achievement: beachheadAchievementName(requirement.achievement)
+			});
 	}
 }

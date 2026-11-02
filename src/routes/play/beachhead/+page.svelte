@@ -11,7 +11,6 @@
 	import TutorialModal from '#lib/components/TutorialModal.svelte';
 	import { buildingName, islandName } from '#lib/components/beachheadText.js';
 	import type { SkillId } from '#lib/game/beachhead/config.js';
-	import { ISLAND_INCOME } from '#lib/game/beachhead/campaign.js';
 	import {
 		fullscreenAvailable,
 		isFullscreen,
@@ -41,7 +40,11 @@
 	const game = new BeachheadGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_beachhead_name();
 
-	const SKILL_BUTTONS = [
+	const SKILL_BUTTONS: readonly {
+		id: SkillId;
+		icon: typeof IconBomb;
+		label: () => string;
+	}[] = [
 		{ id: 'flamingo', icon: IconRocket, label: () => m.beachhead_skill_flamingo() },
 		{ id: 'barrage', icon: IconBomb, label: () => m.beachhead_skill_barrage() },
 		{ id: 'flare', icon: IconFlameKindling, label: () => m.beachhead_skill_flare() },
@@ -267,7 +270,8 @@
 		deployed={game.deployed}
 		loot={game.loot}
 		islandName={islandName(game.islandIndex)}
-		taxRate={ISLAND_INCOME[game.islandIndex] ?? 0}
+		islandIncome={game.islandIncome}
+		newAchievements={game.newAchievements}
 		isNewBest={game.isNewBest}
 		hasNext={game.hasNextIsland}
 		{modeName}

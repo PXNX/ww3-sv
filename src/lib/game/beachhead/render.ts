@@ -170,10 +170,12 @@ function drawSea(context: CanvasRenderingContext2D, timeMs: number) {
 }
 
 function drawLandingCraft(context: CanvasRenderingContext2D, count: number, timeMs: number) {
+	// Up to eight craft wait offshore, spread over the whole beach rather than in one column
+	const gap = count > 1 ? (ROWS - 1.3) / (count - 1) : 0;
 	for (let index = 0; index < count; index++) {
 		const bob = Math.sin(timeMs / 650 + index * 1.8) * 0.05;
 		const x = 0.34 + Math.sin(timeMs / 1400 + index) * 0.03;
-		const y = 1.05 + index * 2.35 + bob;
+		const y = 0.65 + (count > 1 ? index * gap : (ROWS - 1) / 2) + bob;
 		// Wake, then a blunt little craft with a ramp down towards the beach
 		context.strokeStyle = 'rgba(255,255,255,0.55)';
 		context.lineWidth = 0.04;
@@ -602,10 +604,393 @@ function drawBuilding(context: CanvasRenderingContext2D, building: Building, tim
 	}
 }
 
+/** A pair of walking legs, drawn in the troop's own rotated frame */
+function drawLegs(context: CanvasRenderingContext2D, troop: Troop) {
+	const stride = troop.moving ? Math.sin(troop.walkPhase) * 0.06 : 0;
+	context.strokeStyle = INK;
+	context.lineWidth = 0.035;
+	context.beginPath();
+	context.moveTo(-0.02, 0.05);
+	context.lineTo(-0.02 + stride, 0.17);
+	context.moveTo(0.05, 0.05);
+	context.lineTo(0.05 - stride, 0.17);
+	context.stroke();
+}
+
+function drawMuzzle(
+	context: CanvasRenderingContext2D,
+	troop: Troop,
+	length: number,
+	spread: number
+) {
+	if (troop.muzzleMs <= 0) return;
+	const flash = troop.muzzleMs / TROOP.muzzleMs;
+	context.fillStyle = EXPLOSION_YELLOW;
+	context.globalAlpha = flash;
+	context.beginPath();
+	context.moveTo(length, -0.02);
+	context.lineTo(length + 0.12, -spread * flash);
+	context.lineTo(length + 0.07, 0.02);
+	context.closePath();
+	context.fill();
+	context.globalAlpha = 1;
+}
+
+function drawRifleman(context: CanvasRenderingContext2D, troop: Troop) {
+	drawLegs(context, troop);
+	circle(context, 0, 0, 0.115, KHAKI, 0.035);
+	circle(context, 0.03, -0.1, 0.07, SKIN, 0.03);
+	context.fillStyle = KHAKI;
+	context.beginPath();
+	context.arc(0.03, -0.11, 0.075, Math.PI, Math.PI * 2);
+	context.fill();
+	context.strokeStyle = INK;
+	context.lineWidth = 0.025;
+	context.stroke();
+	context.strokeStyle = INK;
+	context.lineWidth = 0.035;
+	context.beginPath();
+	context.moveTo(0.05, -0.02);
+	context.lineTo(0.28, -0.02);
+	context.stroke();
+	drawMuzzle(context, troop, 0.28, 0.08);
+}
+
+function drawTank(context: CanvasRenderingContext2D, troop: Troop) {
+	// Treads with rolling links, a squat hull and a turret with a long barrel
+	context.fillStyle = STEEL;
+	context.strokeStyle = INK;
+	context.lineWidth = 0.035;
+	for (const side of [-1, 1]) {
+		context.beginPath();
+		context.roundRect(-0.24, side * 0.1 - 0.06, 0.48, 0.12, 0.03);
+		context.fill();
+		context.stroke();
+		const roll = troop.moving ? (troop.walkPhase * 0.06) % 0.12 : 0;
+		context.fillStyle = KHAKI;
+		for (let link = 0; link < 4; link++) {
+			context.fillRect(-0.2 + ((link * 0.12 + roll) % 0.44), side * 0.1 - 0.03, 0.05, 0.06);
+		}
+		context.fillStyle = STEEL;
+	}
+	const hull = KHAKI;
+	context.beginPath();
+	context.roundRect(-0.2, -0.15, 0.4, 0.3, 0.06);
+	context.fillStyle = hull;
+	context.fill();
+	context.strokeStyle = INK;
+	context.lineWidth = 0.035;
+	context.stroke();
+	// A lighter stripe, so the hull reads as painted metal
+	context.fillStyle = SAND_DARK;
+	context.fillRect(-0.16, 0.01, 0.32, 0.035);
+	circle(context, 0.02, -0.02, 0.1, KHAKI, 0.035);
+	context.strokeStyle = INK;
+	context.lineWidth = 0.05;
+	context.beginPath();
+	context.moveTo(0.06, -0.03);
+	context.lineTo(0.4, -0.03);
+	context.stroke();
+	drawMuzzle(context, troop, 0.4, 0.1);
+}
+
+function drawMortarTeam(context: CanvasRenderingContext2D, troop: Troop) {
+	// Two kneeling crew behind a steep tube, so the lobbed shots read at a glance
+	drawLegs(context, troop);
+	circle(context, -0.04, 0.02, 0.1, KHAKI, 0.03);
+	circle(context, 0.02, -0.09, 0.06, SKIN, 0.025);
+	context.fillStyle = STEEL;
+	context.beginPath();
+	context.roundRect(-0.12, -0.02, 0.24, 0.14, 0.03);
+	context.fill();
+	context.strokeStyle = INK;
+	context.lineWidth = 0.03;
+	context.stroke();
+	context.strokeStyle = INK;
+	context.lineWidth = 0.07;
+	context.beginPath();
+	context.moveTo(-0.04, 0.02);
+	context.lineTo(0.2, -0.18);
+	context.stroke();
+	context.strokeStyle = STEEL;
+	context.lineWidth = 0.045;
+	context.stroke();
+	circle(context, -0.06, 0.1, 0.06, MUSTARD, 0.025);
+	if (troop.muzzleMs > 0) {
+		const flash = troop.muzzleMs / TROOP.muzzleMs;
+		context.globalAlpha = flash;
+		circle(context, 0.23, -0.21, 0.06 + flash * 0.04, EXPLOSION_YELLOW, 0);
+		context.globalAlpha = 1;
+	}
+}
+
+function drawDroneOperator(context: CanvasRenderingContext2D, troop: Troop, timeMs: number) {
+	drawLegs(context, troop);
+	circle(context, 0, 0, 0.115, BANNER_SLATE, 0.035);
+	circle(context, 0.03, -0.1, 0.07, SKIN, 0.03);
+	context.fillStyle = BANNER_SLATE;
+	context.beginPath();
+	context.arc(0.03, -0.11, 0.075, Math.PI, Math.PI * 2);
+	context.fill();
+	context.strokeStyle = INK;
+	context.lineWidth = 0.025;
+	context.stroke();
+	// The controller and its antenna
+	context.strokeStyle = INK;
+	context.lineWidth = 0.03;
+	context.beginPath();
+	context.moveTo(0.04, 0.04);
+	context.lineTo(0.16, -0.02);
+	context.stroke();
+	context.beginPath();
+	context.moveTo(0.12, -0.02);
+	context.lineTo(0.12, -0.12);
+	context.stroke();
+	// The quadcopter hovers above, its rotors a blur
+	const hover = Math.sin(timeMs / 220 + troop.id) * 0.03;
+	const dx = 0.02;
+	const dy = -0.32 + hover;
+	context.strokeStyle = 'rgba(17,17,17,0.35)';
+	context.lineWidth = 0.02;
+	context.setLineDash([0.04, 0.05]);
+	context.beginPath();
+	context.moveTo(0.12, -0.12);
+	context.lineTo(dx, dy + 0.04);
+	context.stroke();
+	context.setLineDash([]);
+	for (const [ox, oy] of [
+		[-0.09, -0.04],
+		[0.09, -0.04],
+		[-0.09, 0.04],
+		[0.09, 0.04]
+	] as const) {
+		circle(context, dx + ox, dy + oy, 0.045, INK, 0);
+	}
+	circle(context, dx, dy, 0.045, TIE_RED, 0.02);
+}
+
+function drawMedic(context: CanvasRenderingContext2D, troop: Troop) {
+	drawLegs(context, troop);
+	circle(context, 0, 0, 0.115, PAPER, 0.035);
+	// A red cross on the chest
+	context.fillStyle = TIE_RED;
+	context.fillRect(-0.03, -0.07, 0.06, 0.14);
+	context.fillRect(-0.07, -0.03, 0.14, 0.06);
+	circle(context, 0.03, -0.11, 0.07, SKIN, 0.03);
+	context.fillStyle = PAPER;
+	context.beginPath();
+	context.arc(0.03, -0.12, 0.075, Math.PI, Math.PI * 2);
+	context.fill();
+	context.strokeStyle = INK;
+	context.lineWidth = 0.025;
+	context.stroke();
+	// A small satchel with another cross
+	rect(context, -0.16, 0.0, 0.09, 0.1, PAPER, 0.02);
+	context.fillStyle = TIE_RED;
+	context.fillRect(-0.13, 0.02, 0.03, 0.06);
+	context.fillRect(-0.145, 0.035, 0.06, 0.03);
+	context.strokeStyle = INK;
+	context.lineWidth = 0.03;
+	context.beginPath();
+	context.moveTo(0.05, -0.02);
+	context.lineTo(0.2, -0.02);
+	context.stroke();
+	drawMuzzle(context, troop, 0.2, 0.05);
+}
+
+function drawHero(context: CanvasRenderingContext2D, troop: Troop, timeMs: number) {
+	// Bigger than the troops, shaven head, grey beard, black jacket and the healing hammer
+	context.save();
+	context.scale(1.25, 1.25);
+	drawLegs(context, troop);
+	circle(context, 0, 0, 0.13, STEEL, 0.04);
+	context.fillStyle = KHAKI;
+	context.fillRect(-0.1, 0.02, 0.2, 0.05);
+	circle(context, 0.03, -0.12, 0.08, SKIN, 0.03);
+	// Grey beard and a flat cap
+	context.fillStyle = '#c9c4bb';
+	context.beginPath();
+	context.arc(0.05, -0.1, 0.06, 0, Math.PI);
+	context.fill();
+	context.fillStyle = STEEL;
+	context.beginPath();
+	context.arc(0.03, -0.14, 0.08, Math.PI, Math.PI * 2);
+	context.fill();
+	context.strokeStyle = INK;
+	context.lineWidth = 0.025;
+	context.stroke();
+	context.fillRect(-0.01, -0.2, 0.14, 0.025);
+	// The hammer swings while it is on cooldown, then rests on the shoulder
+	const swing =
+		troop.attackMs > 0
+			? Math.sin((1 - Math.min(1, troop.cooldownMs / troop.attackMs)) * Math.PI) * 0.9
+			: 0;
+	context.save();
+	context.translate(-0.02, -0.06);
+	context.rotate(-0.5 - swing);
+	context.strokeStyle = INK;
+	context.lineWidth = 0.05;
+	context.beginPath();
+	context.moveTo(0, 0);
+	context.lineTo(0, -0.34);
+	context.stroke();
+	rect(context, -0.09, -0.46, 0.18, 0.14, MUSTARD, 0.03);
+	context.restore();
+	// A faint pulse while the heal is ready to fire
+	if (troop.healEveryMs && troop.healCooldownMs < 400) {
+		context.globalAlpha = 0.35;
+		circle(context, 0, 0.05, 0.24 + Math.sin(timeMs / 120) * 0.03, HEAL_GREEN, 0);
+		context.globalAlpha = 1;
+	}
+	context.restore();
+}
+
+function drawArtillery(context: CanvasRenderingContext2D, troop: Troop) {
+	// A towed howitzer: split trail, two wheels and a long barrel pointed at the island
+	context.strokeStyle = INK;
+	context.lineWidth = 0.04;
+	context.beginPath();
+	context.moveTo(-0.2, 0.14);
+	context.lineTo(0.12, 0.02);
+	context.moveTo(-0.2, -0.14);
+	context.lineTo(0.12, -0.02);
+	context.stroke();
+	for (const side of [-1, 1]) {
+		circle(context, -0.02, side * 0.12, 0.075, STEEL, 0.03);
+		circle(context, -0.02, side * 0.12, 0.028, SAND_DARK, 0);
+	}
+	rect(context, -0.12, -0.07, 0.24, 0.14, KHAKI, 0.03);
+	context.strokeStyle = INK;
+	context.lineWidth = 0.07;
+	context.beginPath();
+	context.moveTo(0.02, -0.02);
+	context.lineTo(0.42, -0.13);
+	context.stroke();
+	context.strokeStyle = STEEL;
+	context.lineWidth = 0.04;
+	context.stroke();
+	circle(context, 0.02, -0.02, 0.05, MUSTARD, 0.02);
+	// The crewman crouches behind the breech
+	circle(context, -0.16, 0.02, 0.075, KHAKI, 0.03);
+	circle(context, -0.14, -0.07, 0.05, SKIN, 0.02);
+	drawMuzzle(context, troop, 0.42, 0.08);
+}
+
+function drawApc(context: CanvasRenderingContext2D, troop: Troop) {
+	// A boxy M113: sloped front, tracks and a rear ramp the reinforcements walk out of
+	context.fillStyle = STEEL;
+	context.strokeStyle = INK;
+	context.lineWidth = 0.035;
+	for (const side of [-1, 1]) {
+		context.beginPath();
+		context.roundRect(-0.27, side * 0.11 - 0.07, 0.54, 0.14, 0.03);
+		context.fill();
+		context.stroke();
+		const roll = troop.moving ? (troop.walkPhase * 0.07) % 0.14 : 0;
+		context.fillStyle = KHAKI;
+		for (let link = 0; link < 4; link++) {
+			context.fillRect(-0.23 + ((link * 0.14 + roll) % 0.5), side * 0.11 - 0.04, 0.06, 0.08);
+		}
+		context.fillStyle = STEEL;
+	}
+	context.beginPath();
+	context.moveTo(-0.24, -0.1);
+	context.lineTo(0.16, -0.13);
+	context.lineTo(0.27, -0.03);
+	context.lineTo(0.27, 0.06);
+	context.lineTo(0.16, 0.13);
+	context.lineTo(-0.24, 0.1);
+	context.closePath();
+	context.fillStyle = KHAKI;
+	context.fill();
+	context.strokeStyle = INK;
+	context.lineWidth = 0.04;
+	context.stroke();
+	// A hatch, a vision block and the ramp at the back
+	rect(context, -0.04, -0.09, 0.14, 0.1, SAND_DARK, 0.025);
+	context.fillStyle = STEEL;
+	context.fillRect(0.14, -0.04, 0.08, 0.045);
+	rect(context, -0.28, -0.11, 0.06, 0.22, STEEL, 0.025);
+	context.fillStyle = EXPLOSION_YELLOW;
+	context.fillRect(-0.3, -0.03, 0.03, 0.06);
+}
+
+function drawDemo(context: CanvasRenderingContext2D, troop: Troop, timeMs: number) {
+	// A small, fast sapper with a bundle of dynamite and a burning fuse
+	drawLegs(context, troop);
+	circle(context, 0, 0, 0.105, TIE_RED, 0.035);
+	context.fillStyle = MUSTARD;
+	context.fillRect(-0.02, -0.06, 0.05, 0.12);
+	circle(context, 0.03, -0.1, 0.065, SKIN, 0.03);
+	context.fillStyle = TIE_RED;
+	context.beginPath();
+	context.arc(0.03, -0.115, 0.068, Math.PI, Math.PI * 2);
+	context.fill();
+	context.strokeStyle = INK;
+	context.lineWidth = 0.025;
+	context.stroke();
+	// The charge, carried in both hands in front
+	const bundle = 0.16;
+	rect(context, bundle, -0.06, 0.12, 0.12, MUSTARD, 0.025);
+	context.strokeStyle = INK;
+	context.lineWidth = 0.02;
+	context.beginPath();
+	context.moveTo(bundle + 0.02, -0.02);
+	context.lineTo(bundle + 0.04, 0.06);
+	context.moveTo(bundle + 0.06, -0.02);
+	context.lineTo(bundle + 0.06, 0.06);
+	context.stroke();
+	const spark = 0.02 + Math.abs(Math.sin(timeMs / 90 + troop.id)) * 0.025;
+	circle(context, bundle + 0.06, -0.09, spark, EXPLOSION_YELLOW, 0);
+}
+
+function drawHeavy(context: CanvasRenderingContext2D, troop: Troop) {
+	// A bulky gunner behind a six-barrel minigun; the barrels spin while it fires
+	context.save();
+	context.scale(1.12, 1.12);
+	drawLegs(context, troop);
+	circle(context, -0.02, 0, 0.13, KHAKI, 0.04);
+	context.fillStyle = STEEL;
+	context.fillRect(-0.16, -0.06, 0.1, 0.14);
+	circle(context, -0.02, -0.11, 0.075, SKIN, 0.03);
+	context.fillStyle = BANNER_SLATE;
+	context.beginPath();
+	context.arc(-0.02, -0.12, 0.08, Math.PI, Math.PI * 2);
+	context.fill();
+	context.strokeStyle = INK;
+	context.lineWidth = 0.03;
+	context.stroke();
+	// The gun body, then the spinning barrel cluster
+	const spin = troop.cooldownMs > 0 ? troop.cooldownMs / Math.max(1, troop.attackMs) : 0;
+	rect(context, 0.02, -0.08, 0.14, 0.15, STEEL, 0.025);
+	context.save();
+	context.translate(0.16, -0.01);
+	for (let barrel = 0; barrel < 6; barrel++) {
+		const angle = spin * Math.PI * 6 + (barrel / 6) * Math.PI * 2;
+		context.strokeStyle = barrel % 2 === 0 ? INK : STEEL;
+		context.lineWidth = 0.035;
+		context.beginPath();
+		context.moveTo(0, 0);
+		context.lineTo(0.24, Math.sin(angle) * 0.055);
+		context.stroke();
+	}
+	context.restore();
+	drawMuzzle(context, troop, 0.4, 0.07);
+	context.restore();
+}
+
 function drawTroop(context: CanvasRenderingContext2D, troop: Troop, timeMs: number) {
 	context.fillStyle = 'rgba(17,17,17,0.25)';
 	context.beginPath();
-	context.ellipse(troop.x, troop.y + 0.16, 0.14, 0.06, 0, 0, Math.PI * 2);
+	context.ellipse(
+		troop.x,
+		troop.y + (troop.kind === 'tank' ? 0.2 : 0.16),
+		troop.kind === 'tank' ? 0.28 : 0.14,
+		troop.kind === 'tank' ? 0.1 : 0.06,
+		0,
+		0,
+		Math.PI * 2
+	);
 	context.fill();
 
 	const walking = troop.moving;
@@ -617,44 +1002,37 @@ function drawTroop(context: CanvasRenderingContext2D, troop: Troop, timeMs: numb
 	context.translate(troop.x, troop.y - 0.02 + bob);
 	context.rotate(angle);
 
-	// Legs, torso and a helmet, all pointing along the aim direction
-	context.strokeStyle = INK;
-	context.lineWidth = 0.035;
-	const stride = walking ? Math.sin(troop.walkPhase) * 0.06 : 0;
-	context.beginPath();
-	context.moveTo(-0.02, 0.05);
-	context.lineTo(-0.02 + stride, 0.17);
-	context.moveTo(0.05, 0.05);
-	context.lineTo(0.05 - stride, 0.17);
-	context.stroke();
-	circle(context, 0, 0, 0.115, KHAKI, 0.035);
-	circle(context, 0.03, -0.1, 0.07, SKIN, 0.03);
-	context.fillStyle = KHAKI;
-	context.beginPath();
-	context.arc(0.03, -0.11, 0.075, Math.PI, Math.PI * 2);
-	context.fill();
-	context.strokeStyle = INK;
-	context.lineWidth = 0.025;
-	context.stroke();
-
-	// Rifle along the aim direction
-	context.strokeStyle = INK;
-	context.lineWidth = 0.035;
-	context.beginPath();
-	context.moveTo(0.05, -0.02);
-	context.lineTo(0.28, -0.02);
-	context.stroke();
-	if (troop.muzzleMs > 0) {
-		const flash = troop.muzzleMs / TROOP.muzzleMs;
-		context.fillStyle = EXPLOSION_YELLOW;
-		context.globalAlpha = flash;
-		context.beginPath();
-		context.moveTo(0.28, -0.02);
-		context.lineTo(0.4, -0.08 * flash);
-		context.lineTo(0.35, 0.02);
-		context.closePath();
-		context.fill();
-		context.globalAlpha = 1;
+	switch (troop.kind) {
+		case 'tank':
+			drawTank(context, troop);
+			break;
+		case 'mortar':
+			drawMortarTeam(context, troop);
+			break;
+		case 'drone':
+			drawDroneOperator(context, troop, timeMs);
+			break;
+		case 'medic':
+			drawMedic(context, troop);
+			break;
+		case 'hero':
+			drawHero(context, troop, timeMs);
+			break;
+		case 'artillery':
+			drawArtillery(context, troop);
+			break;
+		case 'apc':
+			drawApc(context, troop);
+			break;
+		case 'demo':
+			drawDemo(context, troop, timeMs);
+			break;
+		case 'heavy':
+			drawHeavy(context, troop);
+			break;
+		default:
+			drawRifleman(context, troop);
+			break;
 	}
 	context.restore();
 
@@ -680,7 +1058,14 @@ function drawTroop(context: CanvasRenderingContext2D, troop: Troop, timeMs: numb
 		context.globalAlpha = 1;
 	}
 	if (troop.hp < troop.maxHp) {
-		healthBar(context, troop.x - 0.18, troop.y - 0.3, 0.36, troop.hp / troop.maxHp, TIE_RED);
+		healthBar(
+			context,
+			troop.x - 0.18,
+			troop.y - (troop.kind === 'tank' ? 0.42 : 0.3),
+			0.36,
+			troop.hp / troop.maxHp,
+			TIE_RED
+		);
 	}
 }
 

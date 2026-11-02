@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { BUILDINGS, ISLANDS, ROWS, SQUADS, TROOP, TROOPS_PER_SQUAD, type Island } from './config';
+import {
+	BUILDINGS,
+	ISLANDS,
+	ROWS,
+	SQUADS,
+	TROOP,
+	TROOPS,
+	TROOPS_PER_SQUAD,
+	type Island,
+	type TroopKind
+} from './config';
 import {
 	createBattle,
 	deploy,
@@ -35,6 +45,28 @@ function play(state: BattleState, seconds: number) {
 	}
 	return state;
 }
+
+/** One landing-party unit built straight from the tuning table */
+function unit(kind: TroopKind) {
+	const stats = TROOPS[kind];
+	return {
+		kind,
+		hp: stats.hp,
+		damage: stats.damage,
+		range: stats.range,
+		speed: stats.speed,
+		attackMs: stats.attackMs,
+		projectile: stats.projectile,
+		projectileSpeed: stats.projectileSpeed,
+		splash: stats.splash,
+		scatter: stats.scatter,
+		spawnKind: stats.spawnKind,
+		spawnEveryMs: stats.spawnEveryMs,
+		spawnCap: stats.spawnCap
+	};
+}
+
+const FAR_HQ: Island = { id: 'far-hq', buildings: [{ kind: 'hq', x: 9, y: 3 }] };
 
 describe('landing', () => {
 	it('starts with every craft and no troops ashore', () => {
@@ -133,6 +165,55 @@ describe('the attack', () => {
 		expect(starsOf(battle)).toBe(2);
 		for (const troop of battle.troops) troop.hp = 10;
 		expect(starsOf(battle)).toBe(1);
+	});
+});
+
+describe('the special troops', () => {
+	it('has the M113 drop reinforcements until its cap is reached', () => {
+		const apc = { ...unit('apc'), spawnEveryMs: 100, spawnCap: 2 };
+		const state = createBattle(FAR_HQ, { squads: [[apc]] });
+		deploy(state, 3);
+		play(state, 0.6);
+
+		const spawned = state.troops.filter((troop) => troop.spawnedBy !== undefined);
+		expect(spawned).toHaveLength(2);
+		expect(spawned.every((troop) => troop.kind === 'assault')).toBe(true);
+		expect(spawned.every((troop) => troop.maxHp === TROOPS.assault.hp)).toBe(true);
+		expect(state.deployed).toBe(3);
+		expect(state.events.filter((event) => event.kind === 'troop-spawn')).toHaveLength(2);
+
+		// The cap holds even after many more spawn intervals
+		play(state, 1);
+		expect(state.troops.filter((troop) => troop.spawnedBy !== undefined)).toHaveLength(2);
+	});
+
+	it('scatters the field artillery around the aim point', () => {
+		const state = createBattle(FAR_HQ, { squads: [[unit('artillery')]] });
+		deploy(state, 3);
+		play(state, 20);
+
+		const shots = state.events.filter(
+			(event) => event.kind === 'troop-shot' && event.troopKind === 'artillery'
+		);
+		expect(shots.length).toBeGreaterThan(0);
+		for (const shot of shots) {
+			if (shot.kind !== 'troop-shot') continue;
+			// It aims at the left edge of the headquarters, but never lands right on it
+			expect(Math.hypot(shot.toX - 9, shot.toY - 3.5)).toBeGreaterThan(0.4);
+		}
+	});
+
+	it('lets a demolitionist blow up a headquarters with a handful of charges', () => {
+		const island: Island = {
+			id: 'demo-run',
+			buildings: [{ kind: 'hq', x: 4, y: 3 }]
+		};
+		const state = createBattle(island, { squads: [[unit('demo')]] });
+		deploy(state, 3);
+		play(state, 15);
+
+		expect(state.status).toBe('won');
+		expect(state.buildings[0].destroyed).toBe(true);
 	});
 });
 

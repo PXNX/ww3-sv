@@ -26,7 +26,9 @@ export type UnlockRequirement =
 	/** An achievement of the Oil Tycoon, which keeps its own save outside the career */
 	| { kind: 'tycoon'; achievement: string }
 	/** How many friends joined through the referral link */
-	| { kind: 'referral'; count: number };
+	| { kind: 'referral'; count: number }
+	/** An achievement of Beachhead, which keeps its own save outside the career */
+	| { kind: 'beachhead'; achievement: string };
 
 export interface LookUnlock {
 	id: string;
@@ -157,6 +159,20 @@ export const LOOK_UNLOCKS: readonly LookUnlock[] = [
 		part: 'hat',
 		value: 'propeller',
 		requirement: { kind: 'referral', count: 25 }
+	},
+	{
+		id: 'beachhead-cap',
+		part: 'hat',
+		value: 'cap',
+		// Every island taken at three stars in Beachhead
+		requirement: { kind: 'beachhead', achievement: 'all-stars' }
+	},
+	{
+		id: 'beachhead-ogre-ears',
+		part: 'hat',
+		value: 'ogre-ears',
+		// Headquarters, training ground and all eight boats at the top level
+		requirement: { kind: 'beachhead', achievement: 'fortress' }
 	}
 ];
 
@@ -222,6 +238,8 @@ export function requirementMet(requirement: UnlockRequirement, progress: UnlockP
 			return (progress.games?.petrobrasStreak ?? 0) >= requirement.streak;
 		case 'blocks':
 			return (progress.games?.blocksBest ?? 0) > requirement.score;
+		case 'beachhead':
+			return (progress.games?.beachheadAchievements ?? []).includes(requirement.achievement);
 	}
 }
 
@@ -299,6 +317,10 @@ export function requirementShare(requirement: UnlockRequirement, progress: Unloc
 			return Math.min(1, (progress.games?.petrobrasStreak ?? 0) / requirement.streak);
 		case 'blocks':
 			return Math.min(1, (progress.games?.blocksBest ?? 0) / (requirement.score + 1));
+		case 'beachhead':
+			return (progress.games?.beachheadAchievements ?? []).includes(requirement.achievement)
+				? 1
+				: 0;
 	}
 }
 

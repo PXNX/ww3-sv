@@ -1,7 +1,7 @@
 /*
  * Beachhead store: the shore base, the island map, the running assault, pause, results and the
  * locally stored campaign. The battle is a plain object the canvas reads every frame; only the
- * values the page chrome shows (squads, troops, score, supplies, status) are reactive.
+ * values the page chrome shows (squads, troops, score, resources, status) are reactive.
  */
 import {
 	BUILDINGS,
@@ -12,7 +12,8 @@ import {
 	SKILL_ENERGY,
 	type BuildingKind,
 	type Island,
-	type SkillId
+	type SkillId,
+	type TroopKind
 } from '#lib/game/beachhead/config.js';
 import {
 	canCastSkill,
@@ -29,33 +30,59 @@ import {
 	type BattleState
 } from '#lib/game/beachhead/battle.js';
 import {
-	MAX_UPGRADE,
+	ACHIEVEMENTS,
 	SAVE_KEY,
-	addSupplies,
-	applyUpgrade,
-	canUpgrade,
+	addResources,
+	applyTroopUpgrade,
+	armyCapacity as armyCapacityOf,
+	boatLoads as boatLoadsOf,
+	buildDurationMs as buildDurationOf,
+	builderSlots as builderSlotsFor,
+	canAfford,
+	canUpgrade as canUpgradeBuilding,
+	canUpgradeTroop as canUpgradeTroopAt,
+	changeTroop as changeTroopIn,
+	claimAchievements,
 	claimIncome,
+	constructionOf,
 	controlIsland,
 	controlledCount,
+	finishBuilds,
+	freeBuilderSlots as freeBuilderSlotsOf,
 	incomeRate as incomeOf,
-	isBeachheadSave,
 	isControlled,
+	islandProduction,
 	isUnlocked,
+	levelOf,
 	lootFor,
+	maxLevelOf,
 	modifiersFor,
 	newSave,
+	parseSave,
+	recordVictory,
 	starsOf as saveStars,
+	startUpgrade as startUpgradeIn,
 	totalStars,
-	upgradeCost,
+	troopLevel,
+	troopStats,
+	troopUpgradeCost,
+	troopUpgradeLocked,
+	upgradeCost as upgradeCostOf,
 	upgradeLocked,
+	usedArmySpace as usedArmySpaceOf,
 	type BeachheadSave,
-	type UpgradeKey
+	type BoatLoad,
+	type BuildingKey,
+	type CareerStats,
+	type Resources
 } from '#lib/game/beachhead/campaign.js';
+import { career } from '#lib/game/career/store.svelte.js';
 import { drawBattlePreview, type Effect, type SceneExtras } from '#lib/game/beachhead/render.js';
 import { highscores, type Highscores } from '#lib/services/highscore.js';
 import { localStore, type Store } from '#lib/services/storage.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
 import type { SoundId } from '#lib/sound/sounds.js';
+import { telegram } from '#lib/stores/telegram.svelte.js';
 
 export type BeachheadScreen = 'base' | 'map' | 'play';
 export type BeachheadStatus = 'playing' | 'paused' | 'won' | 'over';
@@ -75,6 +102,29 @@ export interface BeachheadOptions {
 	store?: () => Store;
 	/** Injected for tests; defaults to the wall clock */
 	now?: () => number;
+	/** Injected for tests; defaults to the Pro subscription of the account */
+	pro?: () => boolean;
+	/** Injected for tests; defaults to paying Fake News into the career wallet */
+	rewardCoins?: (amount: number) => void;
+}
+
+/** One line of the achievement list on the base screen */
+export interface AchievementRow {
+	id: string;
+	coins: number;
+	earned: boolean;
+}
+
+/** A building card on the base screen, with its live build state */
+export interface BuildRow {
+	key: BuildingKey;
+	level: number;
+	max: number;
+	cost: Resources | null;
+	locked: boolean;
+	/** Milliseconds left on a build in progress, or null when the builder is free */
+	remainingMs: number | null;
+	canStart: boolean;
 }
 
 export class BeachheadGame {
@@ -89,8 +139,10 @@ export class BeachheadGame {
 	buildingsTotal = $state(0);
 	score = $state(0);
 	stars = $state(0);
-	/** Supplies won in the last battle, shown on the result panel */
-	loot = $state(0);
+	/** Resources won in the last battle, shown on the result panel */
+	loot = $state<Resources>({ wood: 0, stone: 0, iron: 0, gold: 0 });
+	/** Achievements earned by the last battle, shown on the result panel */
+	newAchievements = $state<string[]>([]);
 	isNewBest = $state(false);
 	best = $state<number | null>(null);
 	campaign = $state<BeachheadSave>(newSave(0));
@@ -115,6 +167,8 @@ export class BeachheadGame {
 	#scores: () => Highscores;
 	#store: () => Store;
 	#now: () => number;
+	#pro: () => boolean;
+	#rewardCoins: (amount: number) => void;
 	#finishMs = 0;
 	#shotSound = 0;
 
@@ -122,12 +176,18 @@ export class BeachheadGame {
 		reducedMotion = false,
 		scores = highscores,
 		store = localStore,
-		now = Date.now
+		now = Date.now,
+		pro = () => telegram().pro,
+		rewardCoins = (amount) => {
+			career().grantCoins(amount);
+		}
 	}: BeachheadOptions = {}) {
 		this.reducedMotion = reducedMotion;
 		this.#scores = scores;
 		this.#store = store;
 		this.#now = now;
+		this.#pro = pro;
+		this.#rewardCoins = rewardCoins;
 		this.battle = createBattle(ISLANDS[0], modifiersFor(this.campaign));
 		this.#sync();
 	}
@@ -160,29 +220,85 @@ export class BeachheadGame {
 		return controlledCount(this.campaign, ISLAND_IDS);
 	}
 
-	get incomeRate(): number {
+	/** Resources produced each minute by the home shore and the controlled islands */
+	get income(): Resources {
 		return incomeOf(this.campaign, ISLAND_IDS);
 	}
 
-	get supplies(): number {
-		return this.campaign.supplies;
+	get resources(): Resources {
+		return this.campaign.resources;
 	}
 
-	/** Reads the stored campaign, banks the income earned since the last visit and saves it */
+	/** The production line of the island in play, with the headquarters bonus applied */
+	get islandIncome(): Resources {
+		return islandProduction(this.campaign, this.islandIndex);
+	}
+
+	/** The production line a single island adds once it is controlled */
+	incomeFor(index: number): Resources {
+		return islandProduction(this.campaign, index);
+	}
+
+	get builderSlots(): number {
+		return builderSlotsFor(this.#pro());
+	}
+
+	get buildersBusy(): number {
+		return this.campaign.builders.length;
+	}
+
+	get freeBuilders(): number {
+		return freeBuilderSlotsOf(this.campaign, this.builderSlots);
+	}
+
+	get isPro(): boolean {
+		return this.#pro();
+	}
+
+	get boats(): BoatLoad[] {
+		return boatLoadsOf(this.campaign);
+	}
+
+	get armyCapacity(): number {
+		return armyCapacityOf(this.campaign);
+	}
+
+	get armyUsed(): number {
+		return usedArmySpaceOf(this.campaign);
+	}
+
+	get stats(): CareerStats {
+		return this.campaign.stats;
+	}
+
+	get achievements(): AchievementRow[] {
+		return ACHIEVEMENTS.map((achievement) => ({
+			id: achievement.id,
+			coins: achievement.coins,
+			earned: this.campaign.achievements.includes(achievement.id)
+		}));
+	}
+
+	/** Reads the stored campaign, banks the income earned since the last visit, finishes builds */
 	load() {
-		const stored = this.#store().read(SAVE_KEY, null, isBeachheadSave);
+		const stored = parseSave(this.#store().read<unknown>(SAVE_KEY, null));
 		const base = stored ?? newSave(this.#now());
-		const claimed = claimIncome(base, ISLAND_IDS, this.#now());
+		const finished = finishBuilds(base, this.#now());
+		const claimed = claimIncome(finished, ISLAND_IDS, this.#now());
 		this.campaign = claimed;
-		if (claimed !== base || !stored) this.#store().write(SAVE_KEY, claimed);
+		if (claimed !== base || !stored) this.#commit(claimed, { write: true, claim: false });
 	}
 
-	/** Adds the supplies produced since the last tick; harmless to call often */
+	/** Finishes any due build and banks production; called often by the base screen */
+	tick() {
+		const finished = finishBuilds(this.campaign, this.#now());
+		const claimed = claimIncome(finished, ISLAND_IDS, this.#now());
+		if (claimed !== this.campaign) this.#commit(claimed, { write: true });
+	}
+
+	/** Adds the resources produced since the last tick; harmless to call often */
 	collectIncome() {
-		const claimed = claimIncome(this.campaign, ISLAND_IDS, this.#now());
-		if (claimed === this.campaign) return;
-		this.campaign = claimed;
-		this.#store().write(SAVE_KEY, claimed);
+		this.tick();
 	}
 
 	isUnlocked(index: number): boolean {
@@ -201,34 +317,114 @@ export class BeachheadGame {
 		return this.#scores().get(highscoreParts(islandId));
 	}
 
-	upgradeCost(key: UpgradeKey): number | null {
-		return upgradeCost(this.campaign, key);
+	levelOf(key: BuildingKey): number {
+		return levelOf(this.campaign, key);
 	}
 
-	upgradeLocked(key: UpgradeKey): boolean {
+	maxLevelOf(key: BuildingKey): number {
+		return maxLevelOf(key);
+	}
+
+	upgradeCost(key: BuildingKey): Resources | null {
+		return upgradeCostOf(this.campaign, key);
+	}
+
+	upgradeLocked(key: BuildingKey): boolean {
 		return upgradeLocked(this.campaign, key);
 	}
 
-	canUpgrade(key: UpgradeKey): boolean {
-		return canUpgrade(this.campaign, key);
+	buildDuration(key: BuildingKey): number {
+		return buildDurationOf(key, levelOf(this.campaign, key));
 	}
 
-	maxUpgrade(key: UpgradeKey): number {
-		return MAX_UPGRADE[key];
+	constructionOf(key: BuildingKey) {
+		return constructionOf(this.campaign, key);
 	}
 
-	/** Buys the next level of an upgrade and saves immediately */
-	upgrade(key: UpgradeKey): boolean {
-		const next = applyUpgrade(this.campaign, key);
-		if (next === this.campaign) return false;
-		this.campaign = next;
-		this.#store().write(SAVE_KEY, next);
+	/** Milliseconds left on a build, or null when that building is not being built */
+	buildRemaining(key: BuildingKey): number | null {
+		const task = this.constructionOf(key);
+		if (!task) return null;
+		return Math.max(0, task.endsAt - this.#now());
+	}
+
+	canUpgrade(key: BuildingKey): boolean {
+		return (
+			canUpgradeBuilding(this.campaign, key) &&
+			this.freeBuilders > 0 &&
+			this.constructionOf(key) === undefined
+		);
+	}
+
+	/** Starts the next level on a builder and takes the resources at once */
+	upgrade(key: BuildingKey): boolean {
+		const next = startUpgradeIn(this.campaign, key, this.#now(), this.builderSlots);
+		if (!next) return false;
+		this.#commit(next);
 		this.#play('chime', 0.7);
 		return true;
 	}
 
+	/** Building cards for the base screen, with cost, lock and timer */
+	buildRows(): BuildRow[] {
+		const keys: BuildingKey[] = ['hq', 'training'];
+		for (let index = 0; index < this.campaign.levels.boats.length; index++) {
+			keys.push(`boat-${index}` as BuildingKey);
+		}
+		return keys.map((key) => ({
+			key,
+			level: this.levelOf(key),
+			max: this.maxLevelOf(key),
+			cost: this.upgradeCost(key),
+			locked: this.upgradeLocked(key),
+			remainingMs: this.buildRemaining(key),
+			canStart: this.canUpgrade(key)
+		}));
+	}
+
+	troopLevel(kind: TroopKind): number {
+		return troopLevel(this.campaign, kind);
+	}
+
+	troopStats(kind: TroopKind) {
+		return troopStats(this.campaign, kind);
+	}
+
+	troopUpgradeCost(kind: TroopKind): Resources | null {
+		return troopUpgradeCost(this.campaign, kind);
+	}
+
+	troopUpgradeLocked(kind: TroopKind): boolean {
+		return troopUpgradeLocked(this.campaign, kind);
+	}
+
+	canUpgradeTroop(kind: TroopKind): boolean {
+		return canUpgradeTroopAt(this.campaign, kind);
+	}
+
+	/** Trains a troop level at the training ground; it is paid at once and needs no builder */
+	upgradeTroop(kind: TroopKind): boolean {
+		const next = applyTroopUpgrade(this.campaign, kind);
+		if (next === this.campaign) return false;
+		this.#commit(next);
+		this.#play('chime', 0.6);
+		return true;
+	}
+
+	/** Adds or removes units from the army, refusing to overload the boats */
+	changeTroop(kind: Exclude<TroopKind, 'hero'>, delta: number): boolean {
+		const next = changeTroopIn(this.campaign, kind, delta);
+		if (next === this.campaign) return false;
+		this.#commit(next);
+		return true;
+	}
+
+	canAfford(cost: Resources): boolean {
+		return canAfford(this.campaign, cost);
+	}
+
 	goBase() {
-		this.collectIncome();
+		this.tick();
 		this.effects = [];
 		this.shake = 0;
 		this.focusKind = null;
@@ -238,7 +434,7 @@ export class BeachheadGame {
 	}
 
 	goMap() {
-		this.collectIncome();
+		this.tick();
 		this.effects = [];
 		this.shake = 0;
 		this.focusKind = null;
@@ -258,7 +454,8 @@ export class BeachheadGame {
 		this.#finishMs = 0;
 		this.#shotSound = 0;
 		this.isNewBest = false;
-		this.loot = 0;
+		this.loot = { wood: 0, stone: 0, iron: 0, gold: 0 };
+		this.newAchievements = [];
 		this.stars = 0;
 		this.focusKind = null;
 		this.selectedSkill = null;
@@ -290,7 +487,7 @@ export class BeachheadGame {
 		else this.resume();
 	}
 
-	/** A tap on the beach lands the next squad there; a tap on a building focuses the troops */
+	/** A tap on the beach lands the next boat there; a tap on a building focuses the troops */
 	tap(worldX: number, worldY: number) {
 		if (this.screen !== 'play' || this.status !== 'playing') return;
 		if (this.battle.status !== 'playing') return;
@@ -402,6 +599,17 @@ export class BeachheadGame {
 		this.shake = Math.max(this.shake, amount);
 	}
 
+	/** Stores a new campaign, paying out any achievement that just became reachable */
+	#commit(save: BeachheadSave, { write = true, claim = true, announce = false } = {}) {
+		const payout = claim ? claimAchievements(save) : { save, earned: [], coins: 0 };
+		this.campaign = payout.save;
+		if (payout.coins > 0) {
+			this.#rewardCoins(payout.coins);
+			if (announce) this.newAchievements = [...this.newAchievements, ...payout.earned];
+		}
+		if (write) this.#store().write(SAVE_KEY, this.campaign);
+	}
+
 	#playShot(friendly: boolean, x: number) {
 		if (this.#shotSound > 0) return;
 		this.#shotSound = this.reducedMotion ? 0.18 : 0.09;
@@ -434,6 +642,37 @@ export class BeachheadGame {
 					durationMs: 120
 				});
 				this.#playShot(true, event.fromX);
+				break;
+			case 'troop-spawn':
+				this.#effect({
+					kind: 'ring',
+					x: event.x,
+					y: event.y,
+					radius: 0.7,
+					color: '#7c8c5c',
+					ageMs: 0,
+					durationMs: 420
+				});
+				this.#effect({
+					kind: 'splash',
+					x: event.x,
+					y: event.y,
+					ageMs: 0,
+					durationMs: 380
+				});
+				this.#play('chime', 0.35);
+				break;
+			case 'troop-heal':
+				this.#effect({
+					kind: 'ring',
+					x: event.x,
+					y: event.y,
+					radius: event.hero ? 2.4 : 1.6,
+					color: '#3fa65a',
+					ageMs: 0,
+					durationMs: 520
+				});
+				if (event.amount >= 20) this.#play('chime', 0.4);
 				break;
 			case 'defense-shot':
 				if (event.weapon === 'flame') {
@@ -595,10 +834,18 @@ export class BeachheadGame {
 		if (this.battle.status === 'won') {
 			this.stars = starsOf(this.battle);
 			const first = !isControlled(this.campaign, this.islandId);
-			this.loot = lootFor(this.islandIndex, first);
-			this.campaign = controlIsland(this.campaign, this.islandId, this.stars);
-			this.campaign = addSupplies(this.campaign, this.loot);
-			this.#store().write(SAVE_KEY, this.campaign);
+			const loot = lootFor(this.islandIndex, first);
+			const heroAlive = this.battle.troops.some((troop) => troop.kind === 'hero' && troop.hp > 0);
+			let next = controlIsland(this.campaign, this.islandId, this.stars);
+			next = addResources(next, loot);
+			next = recordVictory(next, {
+				stars: this.stars,
+				skillsUsed: this.battle.skillsUsed,
+				heroAlive
+			});
+			this.loot = loot;
+			this.newAchievements = [];
+			this.#commit(next, { announce: true });
 			const result = this.#scores().submit(highscoreParts(this.islandId), scoreOf(this.battle));
 			this.isNewBest = result.isNewBest;
 			this.best = result.best;

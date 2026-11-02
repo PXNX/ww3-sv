@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+	BOAT_CAPACITY,
 	BUILDINGS,
 	COLUMNS,
 	ISLANDS,
@@ -11,6 +12,7 @@ import {
 	SKILL_ENERGY,
 	SQUADS,
 	TROOP,
+	TROOPS,
 	TROOPS_PER_SQUAD,
 	type BuildingKind,
 	type SkillId
@@ -139,6 +141,60 @@ describe('beachhead tuning', () => {
 			expect(guns(index), ISLANDS[index].id).toBeGreaterThanOrEqual(guns(index - 1));
 			expect(threat(index), ISLANDS[index].id).toBeGreaterThan(threat(0));
 		}
+	});
+});
+
+describe('the expanded landing party', () => {
+	it('gives every troop kind real stats and a boat space that fits', () => {
+		for (const [kind, stats] of Object.entries(TROOPS)) {
+			expect(stats.hp, kind).toBeGreaterThan(0);
+			expect(stats.damage, kind).toBeGreaterThan(0);
+			expect(stats.range, kind).toBeGreaterThan(0);
+			expect(stats.speed, kind).toBeGreaterThan(0);
+			expect(stats.attackMs, kind).toBeGreaterThan(0);
+			expect(stats.space, kind).toBeGreaterThanOrEqual(0);
+			if (kind !== 'hero') expect(stats.space, kind).toBeLessThanOrEqual(BOAT_CAPACITY[1]);
+		}
+		// Only the hero rides along without taking up boat space
+		expect(Object.entries(TROOPS).filter(([, stats]) => stats.space === 0)).toHaveLength(1);
+	});
+
+	it('has an area gun that cannot hit the same spot twice', () => {
+		const artillery = TROOPS.artillery;
+		expect(artillery.projectile).toBe('shell');
+		expect(artillery.splash).toBeGreaterThan(TROOPS.mortar.splash);
+		expect(artillery.scatter).toBeGreaterThan(1);
+		// It outranges every other troop but pays for it with a slow reload
+		for (const [kind, stats] of Object.entries(TROOPS)) {
+			if (kind !== 'artillery') expect(artillery.range, kind).toBeGreaterThan(stats.range);
+		}
+		expect(artillery.attackMs).toBeGreaterThan(TROOPS.mortar.attackMs);
+	});
+
+	it('lets the M113 keep dropping reinforcements', () => {
+		const apc = TROOPS.apc;
+		expect(apc.spawnKind).toBe('assault');
+		expect(apc.spawnEveryMs).toBeGreaterThan(0);
+		expect(apc.spawnCap).toBeGreaterThan(0);
+		// It is the toughest thing on the beach and barely shoots itself
+		expect(apc.hp).toBeGreaterThan(TROOPS.tank.hp);
+		expect(apc.damage).toBeLessThan(TROOPS.assault.damage);
+	});
+
+	it('trades all its staying power for one huge demolition charge', () => {
+		const demo = TROOPS.demo;
+		expect(demo.hp).toBeLessThan(TROOPS.assault.hp);
+		expect(demo.damage).toBeGreaterThan(TROOPS.tank.damage * 4);
+		expect(demo.splash).toBeGreaterThan(0);
+		expect(demo.speed).toBeGreaterThan(TROOPS.assault.speed);
+	});
+
+	it('gives the heavy a minigun that fires faster than anything else', () => {
+		const heavy = TROOPS.heavy;
+		for (const [kind, stats] of Object.entries(TROOPS)) {
+			if (kind !== 'heavy') expect(heavy.attackMs, kind).toBeLessThan(stats.attackMs);
+		}
+		expect(heavy.hp).toBeGreaterThan(TROOPS.assault.hp * 2);
 	});
 });
 

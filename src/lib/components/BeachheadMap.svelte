@@ -6,7 +6,6 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages.js';
 	import { ISLAND_IDS } from '#lib/game/beachhead/config.js';
-	import { ISLAND_INCOME } from '#lib/game/beachhead/campaign.js';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
 	import { islandName } from './beachheadText';
 	import BeachheadStars from './BeachheadStars.svelte';
@@ -34,11 +33,8 @@
 			</div>
 		</div>
 		<div class="flex flex-wrap items-center gap-2 font-display font-bold">
-			<p class="rounded-md border-2 border-ink bg-paper px-2 py-0.5">
-				{m.beachhead_supplies({ count: game.supplies })}
-			</p>
 			<p class="rounded-md border-2 border-ink bg-explosion-yellow px-2 py-0.5">
-				{m.beachhead_income({ rate: game.incomeRate })}
+				{m.beachhead_income_summary(game.income)}
 			</p>
 			<p class="rounded-md border-2 border-ink bg-paper px-2 py-0.5">
 				{m.beachhead_controlled_count({ count: game.controlled, total: game.islandCount })}
@@ -56,7 +52,7 @@
 			<IconAnchor class="size-8 shrink-0" aria-hidden="true" />
 			<span class="flex flex-col leading-tight">
 				<span class="text-lg font-bold">{m.beachhead_home_base()}</span>
-				<span class="text-sm font-semibold">{m.beachhead_income({ rate: game.incomeRate })}</span>
+				<span class="text-sm font-semibold">{m.beachhead_income_summary(game.income)}</span>
 			</span>
 		</span>
 		<span class="rounded-md border-2 border-ink bg-sand px-2 py-0.5 text-sm font-bold">
@@ -70,7 +66,7 @@
 			{@const controlled = game.isControlled(islandId)}
 			{@const stars = game.starsFor(islandId)}
 			{@const best = unlocked ? game.bestFor(islandId) : null}
-			{@const tax = ISLAND_INCOME[index] ?? 0}
+			{@const tax = game.incomeFor(index)}
 			<li class="flex">
 				<button
 					type="button"
@@ -80,7 +76,7 @@
 					style:--tilt="{TILTS[index % TILTS.length]}deg"
 					disabled={!unlocked}
 					aria-label={unlocked
-						? `${m.beachhead_island_label({ index: index + 1 })}, ${islandName(index)}, ${controlled ? `${m.beachhead_island_controlled()}, ${m.beachhead_island_tax({ rate: tax })}` : m.beachhead_island_stars({ stars })}`
+						? `${m.beachhead_island_label({ index: index + 1 })}, ${islandName(index)}, ${controlled ? `${m.beachhead_island_controlled()}, ${m.beachhead_island_tax(tax)}` : m.beachhead_island_stars({ stars })}`
 						: `${m.beachhead_island_label({ index: index + 1 })}, ${m.beachhead_island_locked()}`}
 					onclick={() => game.openIsland(index)}
 				>
@@ -108,7 +104,7 @@
 						<BeachheadStars {stars} class="size-4" />
 						{#if controlled}
 							<span class="text-xs font-bold text-khaki tabular-nums">
-								{m.beachhead_island_tax({ rate: tax })}
+								{m.beachhead_island_tax(tax)}
 							</span>
 						{:else}
 							<span

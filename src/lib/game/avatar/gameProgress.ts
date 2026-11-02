@@ -4,6 +4,8 @@
  * keeps its own record in local storage (its level progress or its high scores); this reads them
  * without starting any game, as plain numbers for the unlock rules.
  */
+import { SAVE_KEY as BEACHHEAD_SAVE_KEY } from '#lib/game/beachhead/campaign.js';
+import { parseSave as parseBeachheadSave } from '#lib/game/beachhead/campaign.js';
 import { PREPARED_LEVEL_COUNT, levelIdAt } from '#lib/game/fury/levels/index.js';
 import { PROGRESS_KEY as FURY_PROGRESS_KEY, isFuryProgress } from '#lib/game/fury/progress.js';
 import { PURR_SOLVED_KEY } from '#lib/game/purrpentagram/config.js';
@@ -32,6 +34,8 @@ export interface GameProgress {
 	petrobrasStreak: number;
 	/** Block Puzzle: the best score ever */
 	blocksBest: number;
+	/** Beachhead: the achievement ids earned in its own save */
+	beachheadAchievements: readonly string[];
 }
 
 export function readGameProgress(
@@ -42,6 +46,7 @@ export function readGameProgress(
 	const venezuelaRaw = store.read<unknown>(VENEZUELA_PROGRESS_KEY, null);
 	const fury = isFuryProgress(furyRaw) ? furyRaw : null;
 	const venezuela = isVenezuelaProgress(venezuelaRaw) ? venezuelaRaw : null;
+	const beachhead = parseBeachheadSave(store.read<unknown>(BEACHHEAD_SAVE_KEY, null));
 	let furyWon = 0;
 	for (let index = 0; index < PREPARED_LEVEL_COUNT; index += 1) {
 		if ((fury?.stars[levelIdAt(index)] ?? 0) > 0) furyWon += 1;
@@ -53,6 +58,7 @@ export function readGameProgress(
 		venezuelaTotal: VENEZUELA_LEVEL_IDS.length,
 		purrSolved: store.read<unknown>(PURR_SOLVED_KEY, false) === true,
 		petrobrasStreak: scores.get(PETROBRAS_STREAK_KEY) ?? 0,
-		blocksBest: scores.get(BLOCKS_BEST_KEY) ?? 0
+		blocksBest: scores.get(BLOCKS_BEST_KEY) ?? 0,
+		beachheadAchievements: beachhead?.achievements ?? []
 	};
 }
