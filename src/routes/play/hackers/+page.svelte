@@ -108,7 +108,7 @@
 		{/if}
 	{/snippet}
 
-	<section class="mx-auto flex w-full max-w-xl flex-col gap-2">
+	<section class="mx-auto flex h-screen w-full flex-col gap-2 bg-[#021208] p-1 text-[#39ff6a] [text-shadow:0_0_6px_rgba(57,255,106,0.5)]">
 		{#if game.status === 'ready'}
 			<HackersTerminal {game} />
 		{:else}
