@@ -235,6 +235,37 @@ function drawTerrain(c: CanvasRenderingContext2D, terrain: Terrain, sensor: Sens
 		c.fillRect(h.x - h.w / 2, h.y - h.h / 2, h.w, h.h * 0.5);
 		if (sensor === 'eo') c.strokeRect(h.x - h.w / 2, h.y - h.h / 2, h.w, h.h);
 	}
+
+	// Extra structures for more objects to distinguish
+	for (const b of terrain.barns ?? []) {
+		if (!seen(b.x - 20, b.y - 20, 50, 50)) continue;
+		c.fillStyle = p.house;
+		box(c, b.x - b.w / 2, b.y - b.h / 2, b.w, b.h, p.house);
+		c.fillStyle = p.roofs[0];
+		c.fillRect(b.x - b.w / 2, b.y - b.h / 2, b.w, b.h * 0.55);
+	}
+	for (const pylon of terrain.pylons ?? []) {
+		if (!seen(pylon.x - 8, pylon.y - 8, 20, pylon.h + 20)) continue;
+		c.strokeStyle = '#777777';
+		c.lineWidth = 2.5;
+		c.beginPath();
+		c.moveTo(pylon.x, pylon.y + pylon.h);
+		c.lineTo(pylon.x, pylon.y);
+		c.stroke();
+		c.fillStyle = '#888888';
+		disc(c, pylon.x, pylon.y - 6, 4, '#888888');
+	}
+	for (const br of terrain.bridges ?? []) {
+		if (!seen(br.x - 30, br.y - 10, 80, 30)) continue;
+		c.strokeStyle = '#b0b090';
+		c.lineWidth = 3;
+		c.beginPath();
+		c.moveTo(br.x - br.w / 2, br.y);
+		c.lineTo(br.x + br.w / 2, br.y);
+		c.stroke();
+		c.fillStyle = '#d0d0b0';
+		c.fillRect(br.x - br.w / 2, br.y - 3, br.w, 6);
+	}
 }
 
 // ---------- contacts ----------
@@ -304,7 +335,7 @@ function lookFor(contact: Contact, sensor: Sensor): Look | null {
 }
 
 /** Kinds that do not turn with a heading */
-const UPRIGHT = new Set(['aa', 'command', 'troops', 'herd']);
+const UPRIGHT = new Set(['aa', 'command', 'troops', 'herd', 'radar', 'mortar', 'supply']);
 
 function drawSprite(c: CanvasRenderingContext2D, contact: Contact, look: Look, timeMs: number) {
 	c.save();
@@ -385,6 +416,33 @@ function drawSprite(c: CanvasRenderingContext2D, contact: Contact, look: Look, t
 			fillStroke(c, look.body);
 			box(c, 2.5, -4.5, 4.5, 9, look.glass);
 			box(c, -7, -4.5, 3, 9, look.glass);
+			break;
+		case 'radar':
+			rrect(c, -14, -10, 28, 20, 3);
+			fillStroke(c, look.body);
+			c.strokeStyle = look.dark;
+			c.lineWidth = 1.5;
+			c.beginPath();
+			c.moveTo(-10, -5); c.lineTo(0, -10); c.lineTo(10, -5);
+			c.lineTo(0, 0); c.lineTo(-10, -5);
+			c.stroke();
+			break;
+		case 'mortar':
+			rrect(c, -9, -7, 18, 14, 2);
+			fillStroke(c, look.body);
+			disc(c, 0, -3, 5, look.dark);
+			box(c, -3, 3, 6, 4, look.dark);
+			break;
+		case 'drone':
+			rrect(c, -12, -8, 24, 16, 4);
+			fillStroke(c, look.body);
+			disc(c, 0, -2, 7, look.dark);
+			box(c, -4, 6, 8, 2, look.dark);
+			break;
+		case 'supply':
+			box(c, -12, -6, 24, 12, look.body);
+			box(c, -6, 0, 12, 6, look.dark);
+			disc(c, 0, -2, 3, look.dark);
 			break;
 		case 'tractor':
 			disc(c, -7, -8, 5, look.dark);
