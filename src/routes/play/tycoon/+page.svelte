@@ -229,7 +229,7 @@
 						</div>
 						<div class="flex justify-between gap-2">
 							<span>{m.tycoon_hud_breakdown_maxed()}</span>
-							<span>×{formatMultiplier((game.state.owned ? Object.values(game.state.owned).some((n) => n >= 1000) ? 1.05 : 1) : 1, locale)}</span>
+							<span>×{formatMultiplier(game.state.owned ? (Object.values(game.state.owned).some((n) => n >= 1000) ? 1.05 : 1) : 1, locale)}</span>
 						</div>
 						<div class="flex justify-between gap-2">
 							<span>{m.tycoon_hud_breakdown_globals()}</span>
