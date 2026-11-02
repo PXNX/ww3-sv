@@ -1,32 +1,7 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { m } from '#lib/paraglide/messages.js';
-	import { firstPlay } from '#lib/services/tutorial.js';
-	import { MazeGame } from '#lib/stores/mazeGame.svelte.js';
-	import GameShell from '#lib/components/GameShell.svelte';
-	import MazeSizePicker from '#lib/components/MazeSizePicker.svelte';
 
-	const game = new MazeGame();
-
-	let showedTutorial = $state(false);
-	onMount(() => {
-		showedTutorial = firstPlay('maze');
-	});
-
-	// The size cards start a run themselves, so the lobby follows as soon as one is chosen
-	$effect(() => {
-		if (game.screen === 'play') goto(resolve('/play/maze'));
-	});
+	// The size cards live on the game page itself, so the old lobby hands straight over
+	goto(resolve('/play/maze'));
 </script>
-
-<GameShell title={m.mode_maze_name()} back={false}>
-	<div class="mx-auto flex w-full max-w-xl flex-col gap-4 px-2 py-2">
-		{#if showedTutorial}
-			<p class="text-sm leading-snug opacity-80">{m.maze_keyboard_hint()}</p>
-		{/if}
-
-		<MazeSizePicker {game} />
-	</div>
-</GameShell>
