@@ -38,6 +38,7 @@
 
 	onMount(() => {
 		game.loadBest();
+		game.loadProfile();
 		const stopHidden = onAppHidden(() => game.pause());
 		return () => {
 			loop.pause();

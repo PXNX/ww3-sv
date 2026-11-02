@@ -9,6 +9,20 @@ import { haptic } from '#lib/haptic/haptic.svelte.js';
 import { STARTING_LIVES, TRACE_MAX } from '#lib/game/hackers/config.js';
 import type { Chip } from '#lib/game/hackers/keylog.js';
 import {
+	emptyHardware,
+	type Hardware,
+	type HardwareId
+} from '#lib/game/hackers/hardware.js';
+import {
+	bankRun,
+	buyHardware as buyHardwareLevel,
+	defaultProfile,
+	HACKERS_PROFILE_KEY,
+	isProfile,
+	toggleFavorite as toggleProfileFavorite,
+	type HackersProfile
+} from '#lib/game/hackers/profile.js';
+import {
 	buyUpgrade,
 	attemptsLeft,
 	createGame,
@@ -34,6 +48,7 @@ import {
 import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
 import { m } from '#lib/paraglide/messages.js';
 import { highscores, type Highscores } from '#lib/services/highscore.js';
+import { localStore, type Store } from '#lib/services/storage.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
 import type { SoundId } from '#lib/sound/sounds.js';
 
@@ -93,19 +108,30 @@ export class HackersGame {
 	walletStart = $state(0);
 	/** DogeLite the siphon has drained in this run */
 	siphoned = $state(0);
+	/** DogeLite left over from earlier runs, spent on hardware */
+	bank = $state(0);
+	/** The unit's own machine, kept between runs */
+	hardware = $state.raw<Hardware>(emptyHardware());
+	/** Addresses marked in the target list */
+	favorites = $state.raw<string[]>([]);
+	/** What the last finished run put into the bank */
+	lastDeposit = $state(0);
 
 	/** Rules state, deliberately not reactive */
 	state: HackersState;
 
 	#random: Random = createRandom(1);
 	#scores: () => Highscores;
+	#store: () => Store;
 	#seed: () => number;
 
 	constructor({
 		scores = highscores,
+		store = localStore,
 		seed = randomSeed
-	}: { scores?: () => Highscores; seed?: () => number } = {}) {
+	}: { scores?: () => Highscores; store?: () => Store; seed?: () => number } = {}) {
 		this.#scores = scores;
+		this.#store = store;
 		this.#seed = seed;
 		this.state = createGame(this.#random);
 		this.#sync();
@@ -116,13 +142,21 @@ export class HackersGame {
 		this.best = this.#scores().get(HACKERS_BEST_KEY);
 	}
 
-	start() {
+	/** Reads bank, hardware and favourites from local storage; call in the browser only */
+	loadProfile() {
+		this.#applyProfile(
+			this.#store().read<HackersProfile>(HACKERS_PROFILE_KEY, defaultProfile(), isProfile)
+		);
+	}
+
+	start(targetIndex = 0) {
 		this.#random = createRandom(this.#seed());
-		this.state = createGame(this.#random);
+		this.state = createGame(this.#random, { hardware: this.hardware, targetIndex });
 		this.log = [];
 		this.input = [];
 		this.isNewBest = false;
 		this.hurtCount = 0;
+		this.lastDeposit = 0;
 		this.#sync();
 		this.status = 'playing';
 		this.#apply([openingEvent(this.state)]);
@@ -189,6 +223,29 @@ export class HackersGame {
 			return;
 		}
 		this.#apply(events);
+	}
+
+	/** Buys hardware for the unit's own machine from the bank, before a run */
+	buyHardware(id: HardwareId) {
+		if (this.status !== 'ready') return;
+		const next = buyHardwareLevel(this.#profile(), id);
+		if (!next) {
+			this.#play('ui-error', 0.4);
+			return;
+		}
+		this.#saveProfile(next);
+		this.#play('click', 0.7);
+		haptic().play(0.2);
+	}
+
+	/** Stars or unstars an address in the target list */
+	toggleFavorite(ip: string) {
+		this.#saveProfile(toggleProfileFavorite(this.#profile(), ip));
+		this.#play('ui-tap', 0.4);
+	}
+
+	isFavorite(ip: string): boolean {
+		return this.favorites.includes(ip);
 	}
 
 	/** One fixed step: called by the page's game loop */
@@ -338,8 +395,8 @@ export class HackersGame {
 		this.moves = contract.moves;
 		this.par = contract.spec.presses;
 		this.upgrades = { ...state.upgrades };
-		this.incomePerSecond = minerIncome(state.upgrades);
-		this.siphonRate = siphonShare(state.upgrades);
+		this.incomePerSecond = minerIncome(state.upgrades, state.hardware);
+		this.siphonRate = siphonShare(state.upgrades, state.hardware);
 		this.siphonProgress = Math.min(1, state.siphonMs / SIPHON_DAY_MS);
 		this.wallet = contract.wallet;
 		this.walletStart = contract.walletStart;
@@ -353,5 +410,23 @@ export class HackersGame {
 		this.best = result.best;
 		this.input = [];
 		this.status = 'over';
+		// What the run earned stays in the bank, even after a trace-out
+		this.lastDeposit = this.state.score;
+		this.#saveProfile(bankRun(this.#profile(), this.state.score));
+	}
+
+	#profile(): HackersProfile {
+		return { bank: this.bank, hardware: this.hardware, favorites: this.favorites };
+	}
+
+	#applyProfile(profile: HackersProfile) {
+		this.bank = profile.bank;
+		this.hardware = { ...profile.hardware };
+		this.favorites = [...profile.favorites];
+	}
+
+	#saveProfile(profile: HackersProfile) {
+		this.#applyProfile(profile);
+		this.#store().write(HACKERS_PROFILE_KEY, profile);
 	}
 }
