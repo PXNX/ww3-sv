@@ -46,6 +46,7 @@ const TAP_UPGRADES = UPGRADES.filter(
 );
 const ACHIEVEMENTS_BY_REWARD = new Map<AchievementReward['kind'], AchievementDef[]>();
 for (const def of ACHIEVEMENTS) {
+	if (!def.reward) continue;
 	const list = ACHIEVEMENTS_BY_REWARD.get(def.reward.kind) ?? [];
 	list.push(def);
 	ACHIEVEMENTS_BY_REWARD.set(def.reward.kind, list);
