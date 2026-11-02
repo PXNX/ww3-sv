@@ -10,7 +10,9 @@
 	Telegram's full screen puts its own buttons. Landscape games also go full screen on phones while immersive, hiding the browser bars.
 	A `compact` page puts the back link and the actions into the banner, one row instead of two, for
 	games whose board needs the height; `back={false}` drops the back link, for a game opened from a
-	chat's game message that has nowhere to go back to.
+	chat's game message that has nowhere to go back to. A game with its own level or difficulty
+	choice passes `backTo` while playing, so the back link returns to that choice instead of the
+	start screen.
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
@@ -33,6 +35,7 @@
 		landscape = false,
 		compact = false,
 		back = true,
+		backTo,
 		children
 	}: {
 		title: string;
@@ -54,6 +57,8 @@
 		compact?: boolean;
 		/** Shows the back link to the start screen */
 		back?: boolean;
+		/** The game's own level or difficulty choice: the back link returns there instead of the start screen */
+		backTo?: () => void;
 		children: Snippet;
 	} = $props();
 
@@ -62,16 +67,30 @@
 	let confirmTimer: ReturnType<typeof setTimeout> | undefined;
 	onDestroy(() => clearTimeout(confirmTimer));
 
-	// A page that can end its own run takes over the back link while that run is going
-	const quit = $derived(confirmLeave ? onQuit : undefined);
+	// A page that can end its own run takes over the back link while that run is going; a page with
+	// its own level or difficulty choice goes back there, which is not a loss
+	const quit = $derived(confirmLeave && !backTo ? onQuit : undefined);
+
+	function askAgain() {
+		confirmingLeave = true;
+		clearTimeout(confirmTimer);
+		confirmTimer = setTimeout(() => (confirmingLeave = false), CONFIRM_MS);
+	}
 
 	// A running game is only left on the second tap within a few seconds
 	function onBack(event: MouseEvent) {
 		if (!confirmLeave || confirmingLeave) return;
 		event.preventDefault();
-		confirmingLeave = true;
-		clearTimeout(confirmTimer);
-		confirmTimer = setTimeout(() => (confirmingLeave = false), CONFIRM_MS);
+		askAgain();
+	}
+
+	// The same second tap, but back to the game's own choice screen
+	function onBackTo() {
+		if (confirmLeave && !confirmingLeave) {
+			askAgain();
+			return;
+		}
+		backTo?.();
 	}
 
 	$effect(() => {
@@ -101,6 +120,19 @@
 			>
 				<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
 				<span class="hidden sm:inline">{m.game_back()}</span>
+			</button>
+		{:else if backTo}
+			<button
+				type="button"
+				class="btn-chunky px-2 py-1 text-sm sm:px-3"
+				class:bg-explosion-yellow={confirmingLeave}
+				aria-label={confirmingLeave ? m.game_back_confirm() : m.game_back()}
+				onclick={onBackTo}
+			>
+				<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
+				<span class={confirmingLeave ? '' : 'hidden sm:inline'}>
+					{confirmingLeave ? m.game_back_confirm() : m.game_back()}
+				</span>
 			</button>
 		{:else}
 			<a

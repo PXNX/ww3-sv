@@ -84,7 +84,11 @@
 	}
 </script>
 
-<GameShell {title} confirmLeave={playing && !showWin}>
+<GameShell
+	{title}
+	confirmLeave={playing && !showWin}
+	backTo={playing ? () => game.backToSelect() : undefined}
+>
 	{#snippet actions()}
 		<button
 			type="button"

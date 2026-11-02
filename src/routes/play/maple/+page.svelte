@@ -56,8 +56,8 @@
 	{title}
 	score={playing ? game.score : undefined}
 	best={playing ? game.best : undefined}
- onQuit={() => game.forfeit()}
 	confirmLeave={playing && running && game.moves > 0}
+	backTo={playing ? () => game.backToSelect() : undefined}
 >
 	{#snippet actions()}
 		<button

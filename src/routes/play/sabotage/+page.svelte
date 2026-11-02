@@ -60,7 +60,7 @@
 	best={game.best}
 	compact
 	confirmLeave={running}
-	onQuit={() => game.forfeit()}
+	backTo={inJob ? () => game.backToSelect() : undefined}
 >
 	{#snippet actions()}
 		{#if game.screen === 'playing'}
