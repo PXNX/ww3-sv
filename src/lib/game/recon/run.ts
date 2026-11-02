@@ -413,6 +413,7 @@ export function stepRun(run: Run, dt: number) {
 	// Moving contacts: some enemies chase civilian cars, soldiers enter buildings
 	for (const t of run.tracks) {
 		if (t.status === 'struck') continue;
+		if (t.contact.covered) continue;
 		const kind = t.contact.kind;
 		const moveKinds = ['tank', 'truck', 'command', 'radar', 'mortar'];
 		if (!moveKinds.includes(kind)) continue;
