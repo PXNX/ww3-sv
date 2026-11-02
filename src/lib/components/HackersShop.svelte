@@ -47,10 +47,12 @@
 					pct: relayReliefPercent(game.upgrades)
 				});
 			case 'miner':
-				return m.hackers_tool_miner_effect({ rate: minerIncome(game.upgrades) });
+				return m.hackers_tool_miner_effect({
+					rate: minerIncome(game.upgrades, game.hardware)
+				});
 			case 'siphon':
 				return m.hackers_tool_siphon_effect({
-					pct: Math.round(siphonShare(game.upgrades) * 100),
+					pct: Math.round(siphonShare(game.upgrades, game.hardware) * 100),
 					seconds: daySeconds
 				});
 		}

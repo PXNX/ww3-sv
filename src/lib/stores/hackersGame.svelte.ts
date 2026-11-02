@@ -114,8 +114,6 @@ export class HackersGame {
 	hardware = $state.raw<Hardware>(emptyHardware());
 	/** Addresses marked in the target list */
 	favorites = $state.raw<string[]>([]);
-	/** What the last finished run put into the bank */
-	lastDeposit = $state(0);
 
 	/** Rules state, deliberately not reactive */
 	state: HackersState;
@@ -156,7 +154,6 @@ export class HackersGame {
 		this.input = [];
 		this.isNewBest = false;
 		this.hurtCount = 0;
-		this.lastDeposit = 0;
 		this.#sync();
 		this.status = 'playing';
 		this.#apply([openingEvent(this.state)]);
@@ -424,7 +421,6 @@ export class HackersGame {
 		this.input = [];
 		this.status = 'over';
 		// What the run earned stays in the bank, even after a trace-out
-		this.lastDeposit = this.state.score;
 		this.#saveProfile(bankRun(this.#profile(), this.state.score));
 	}
 
