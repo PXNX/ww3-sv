@@ -207,6 +207,37 @@ export class ReconGame {
 		this.#sync();
 	}
 
+	/** Ground orders: attack or defend a world point (simplified order) */
+	orderUnits(targetX: number, targetY: number, mode: 'attack' | 'defend') {
+		if (this.status !== 'playing') return;
+		for (const t of this.run.tracks) {
+			if (t.status === 'struck' || t.contact.role === 'civilian') continue;
+			// Move toward target if attack; stay near if defend
+			const dx = targetX - t.contact.x;
+			const dy = targetY - t.contact.y;
+			const d = Math.hypot(dx, dy);
+			if (d > 10) {
+				t.contact.x += (dx / d) * 30 * (mode === 'attack' ? 1 : 0.3) * 0.05;
+				t.contact.y += (dy / d) * 30 * (mode === 'attack' ? 1 : 0.3) * 0.05;
+			}
+		}
+		soundManager().play('click');
+		this.#sync();
+	}
+
+	/** Artillery barrage: strikes everything within radius r of world point (x, y) */
+	barrage(x: number, y: number, r = 60) {
+		if (this.status !== 'playing') return;
+		for (const t of this.run.tracks) {
+			if (t.status !== 'struck' && Math.hypot(t.contact.x - x, t.contact.y - y) < r) {
+				const id = t.contact.id;
+				strike(this.run, id);
+			}
+		}
+		soundManager().play('whoosh');
+		this.#sync();
+	}
+
 	/** A tap on the scope at a world position: selects the contact there or drops the selection */
 	tapAt(x: number, y: number) {
 		if (this.status !== 'playing') return;
