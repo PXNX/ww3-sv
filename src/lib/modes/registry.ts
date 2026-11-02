@@ -46,6 +46,7 @@ import IconSailboat from '~icons/lucide/sailboat';
 import IconFactory from '~icons/lucide/factory';
 import IconTerminal from '~icons/lucide/terminal';
 import IconMap from '~icons/lucide/map';
+import IconTreePalm from '~icons/lucide/tree-palm';
 
 export type ModeId =
 	| 'blocks'
@@ -96,7 +97,8 @@ export type ModeId =
 	| 'grain'
 	| 'curling'
 	| 'sabotage'
-	| 'killswitch';
+	| 'killswitch'
+	| 'beachhead';
 
 interface ModeBase {
 	id: ModeId;
@@ -550,7 +552,8 @@ export const MODES: readonly GameMode[] = [
 		tileClass: 'bg-ink',
 		leaders: ['musk'],
 		name: () => 'Recon',
-		description: () => 'Analyze satellite, Global Hawk and Reaper footage militarily — identify targets, read thermal signatures, assess threat levels.'
+		description: () =>
+			'Analyze satellite, Global Hawk and Reaper footage militarily — identify targets, read thermal signatures, assess threat levels.'
 	},
 	{
 		id: 'shuffle',
@@ -611,6 +614,16 @@ export const MODES: readonly GameMode[] = [
 		leaders: ['musk'],
 		name: m.mode_killswitch_name,
 		description: m.mode_killswitch_description
+	},
+	{
+		id: 'beachhead',
+		status: 'playable',
+		href: '/play/beachhead',
+		icon: IconTreePalm,
+		tileClass: 'bg-flag-blue',
+		leaders: ['maduro'],
+		name: m.mode_beachhead_name,
+		description: m.mode_beachhead_description
 	}
 ];
 

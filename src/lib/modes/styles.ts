@@ -66,6 +66,7 @@ export const STYLE_OF_MODE: Record<ModeId, PlayStyle> = {
 	sondage: 'tactics',
 	bordershift: 'tactics',
 	redsquare: 'tactics',
+	beachhead: 'tactics',
 
 	// Run a business and keep it supplied
 	tycoon: 'management',
