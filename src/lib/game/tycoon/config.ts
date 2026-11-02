@@ -402,11 +402,25 @@ const PRODUCER_UPGRADES: readonly UpgradeDef[] = PRODUCERS.flatMap((producer) =>
 	}))
 );
 
+const EXTRA_UPGRADES: readonly UpgradeDef[] = [
+	{ id: 'click_augment', kind: 'click', cost: 500_000, requires: { type: 'none' }, value: 3 },
+	{ id: 'click_telegraph', kind: 'click', cost: 5_000_000, requires: { type: 'none' }, value: 4 },
+	{ id: 'click_neural', kind: 'click', cost: 50_000_000, requires: { type: 'total', count: 50 }, value: 6 },
+	{ id: 'click_rocket', kind: 'click', cost: 1_000_000_000, requires: { type: 'total', count: 500 }, value: 8 },
+	{ id: 'global_solo', kind: 'global', cost: 10_000_000, requires: { type: 'total', count: 30 }, value: 2.25 },
+	{ id: 'global_legislature', kind: 'global', cost: 100_000_000, requires: { type: 'total', count: 150 }, value: 3 },
+	{ id: 'global_pivot', kind: 'global', cost: 2_500_000_000, requires: { type: 'total', count: 400 }, value: 4.5 },
+	{ id: 'global_reinforcement', kind: 'global', cost: 5_000_000_000, requires: { type: 'total', count: 800 }, value: 6 },
+	{ id: 'event_backing', kind: 'events', cost: 2_000_000, requires: { type: 'none' }, value: 1.4 },
+	{ id: 'clickcps_share', kind: 'clickCps', cost: 5_000_000, requires: { type: 'total', count: 50 }, value: 0.03 },
+];
+
 export const UPGRADES: readonly UpgradeDef[] = [
 	...CLICK_UPGRADES,
 	...PRODUCER_UPGRADES,
 	...GLOBAL_UPGRADES,
-	...SPEED_UPGRADES
+	...SPEED_UPGRADES,
+	...EXTRA_UPGRADES
 ];
 
 // Achievements

@@ -13,6 +13,7 @@ import {
 	type Hardware,
 	type HardwareId
 } from './hardware.js';
+import { emptyBotnet, type Botnet } from './botnet.js';
 
 export interface HackersProfile {
 	/** DogeLite left over from finished runs */

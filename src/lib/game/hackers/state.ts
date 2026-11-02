@@ -31,7 +31,8 @@ import {
 	wrongGuessTrace
 } from './software';
 import { isDark, makePanel, pressRelay } from './breaker';
-import { emptyHardware, type Hardware } from './hardware';
+import { emptyHardware, hardwareSpec, hardwareEffects, type Hardware } from './hardware';
+import { emptyBotnet, botnetIncome, downloadTime, type Botnet } from './botnet';
 import {
 	captureChip,
 	captureLetter,
@@ -81,8 +82,14 @@ export interface HackersState {
 	upgrades: Upgrades;
 	/** The unit's own machine, bought with banked DogeLite and kept between runs */
 	hardware: Hardware;
+	/** The botnet: nodes earn data, used by the automatic bruteforcer */
+	botnet: Botnet;
+	/** Data earned from botnet nodes and downloads — buys extra software */
+	data: number;
 	/** Which entry of TARGETS the contract in play sits on */
 	targetIndex: number;
+	/** Bruteforce progress on the current contract (0 to 1), auto-gains access at 1 */
+	bruteforceProgress: number;
 	/** Mined DogeLite that has not reached a whole coin yet */
 	pendingIncome: number;
 	/** Time towards the siphon's next day */
@@ -138,12 +145,15 @@ export interface GameOptions {
 	hardware?: Hardware;
 	/** Target picked in the terminal's target list */
 	targetIndex?: number;
+	/** Botnet and data from the profile */
+	botnet?: Botnet;
 }
 
 export function createGame(random: Random, options: GameOptions = {}): HackersState {
 	const upgrades = emptyUpgrades();
 	const hardware = options.hardware ?? emptyHardware();
 	const targetIndex = options.targetIndex ?? 0;
+	const botnet = options.botnet ?? emptyBotnet();
 	return {
 		contract: newContract(1, random, upgrades, hardware, targetIndex),
 		lives: STARTING_LIVES,
@@ -155,7 +165,10 @@ export function createGame(random: Random, options: GameOptions = {}): HackersSt
 		timeMs: 0,
 		upgrades,
 		hardware: { ...hardware },
+		botnet: { ...botnet },
 		targetIndex,
+		data: botnet.data,
+		bruteforceProgress: 0,
 		pendingIncome: 0,
 		siphonMs: 0,
 		siphoned: 0
@@ -327,6 +340,23 @@ function passiveIncome(state: HackersState, dtMs: number): HackersEvent[] {
 	if (mined > 0) {
 		state.pendingIncome -= mined;
 		state.score += mined;
+	}
+
+	// Botnet nodes earn data continuously
+	const dataRate = botnetIncome(state.botnet);
+	state.data += dataRate * dtMs / 1000;
+
+	// Automatic bruteforcer: progresses toward cracking the breach stage
+	if (state.contract.stage === 'breach' && state.upgrades.bruteforce > 0) {
+		const cableBonus = downloadSpeed(state.hardware);
+		const nodeBonus = 1 + 0.2 * state.botnet.nodes;
+		const rate = (0.015 * state.upgrades.bruteforce) * cableBonus * nodeBonus; // progress per second
+		state.bruteforceProgress = Math.min(1, state.bruteforceProgress + rate * dtMs / 1000);
+		if (state.bruteforceProgress >= 1) {
+			state.contract.stage = 'keylog';
+			state.bruteforceProgress = 0;
+			// Reset to new keylog state (simplified — keep same contract number)
+		}
 	}
 
 	const share = siphonShare(state.upgrades, state.hardware);

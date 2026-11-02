@@ -12,7 +12,7 @@ import type { ContractSpec } from './config';
 import { contractSpec, TRACE_WRONG_GUESS } from './config';
 import { emptyHardware, hardwareEffects, type Hardware } from './hardware';
 
-export type ToolId = 'breach' | 'keylog' | 'relays' | 'miner' | 'siphon';
+export type ToolId = 'breach' | 'keylog' | 'relays' | 'miner' | 'siphon' | 'bruteforce' | 'worm' | 'rootkit' | 'backdoor';
 
 export type Upgrades = Record<ToolId, number>;
 
@@ -30,7 +30,15 @@ export const TOOL_SPECS: readonly ToolSpec[] = [
 	{ id: 'keylog', maxLevel: 5, baseCost: 80, costGrowth: 1.85 },
 	{ id: 'relays', maxLevel: 5, baseCost: 100, costGrowth: 1.85 },
 	{ id: 'miner', maxLevel: 8, baseCost: 120, costGrowth: 1.7 },
-	{ id: 'siphon', maxLevel: 5, baseCost: 200, costGrowth: 1.9 }
+	{ id: 'siphon', maxLevel: 5, baseCost: 200, costGrowth: 1.9 },
+	/** Auto-cracks the breach stage using botnet nodes and cable speed */
+	{ id: 'bruteforce', maxLevel: 5, baseCost: 160, costGrowth: 1.85 },
+	/** Keeps keylogger running across contracts — bought with data */
+	{ id: 'worm', maxLevel: 3, baseCost: 250, costGrowth: 2 },
+	/** Cuts every trace creep — bought with data */
+	{ id: 'rootkit', maxLevel: 3, baseCost: 300, costGrowth: 2 },
+	/** Doubles siphon share — bought with data */
+	{ id: 'backdoor', maxLevel: 3, baseCost: 350, costGrowth: 2 }
 ];
 
 export function toolSpec(id: ToolId): ToolSpec {
@@ -38,7 +46,7 @@ export function toolSpec(id: ToolId): ToolSpec {
 }
 
 export function emptyUpgrades(): Upgrades {
-	return { breach: 0, keylog: 0, relays: 0, miner: 0, siphon: 0 };
+	return { breach: 0, keylog: 0, relays: 0, miner: 0, siphon: 0, bruteforce: 0, worm: 0, rootkit: 0, backdoor: 0 };
 }
 
 /** What the next level of a tool costs; null once it is maxed */
@@ -75,6 +83,26 @@ export function relayCreep(upgrades: Upgrades): number {
 	return RELAY_CREEP_RELIEF ** upgrades.relays;
 }
 
+/** Extra access attempts bought with the bruteforce tool */
+export function bruteAttempts(upgrades: Upgrades): number {
+	return upgrades.bruteforce;
+}
+
+/** Speed boost from worm (keylog stream slower) */
+export function wormSlowdown(upgrades: Upgrades): number {
+	return upgrades.worm > 0 ? 0.85 : 1;
+}
+
+/** All-stage creep reduction from rootkit */
+export function rootkitCreep(upgrades: Upgrades): number {
+	return upgrades.rootkit > 0 ? 0.85 : 1;
+}
+
+/** Extra siphon share from backdoor */
+export function backdoorShare(upgrades: Upgrades): number {
+	return 0.05 * upgrades.backdoor;
+}
+
 /** For the shop: how much less trace a wrong guess costs, in percent */
 export function breachReliefPercent(upgrades: Upgrades): number {
 	return Math.round((1 - BREACH_TRACE_RELIEF ** upgrades.breach) * 100);
@@ -94,21 +122,25 @@ export function relayReliefPercent(upgrades: Upgrades): number {
 export function effectiveSpec(
 	n: number,
 	upgrades: Upgrades,
-	hardware: Hardware = emptyHardware()
+	hardware: Hardware = emptyHardware(),
+	botnet: { nodes: number } = { nodes: 0 }
 ): ContractSpec {
 	const base = contractSpec(n);
 	const slow = keylogSpeed(upgrades);
 	const ram = hardwareEffects(hardware).creepMultiplier;
+	const crawl = rootkitCreep(upgrades);
 	const creep = {
-		breach: base.creep.breach * ram,
-		keylog: base.creep.keylog * ram,
-		breaker: base.creep.breaker * relayCreep(upgrades) * ram
+		breach: base.creep.breach * ram * crawl,
+		keylog: base.creep.keylog * ram * crawl,
+		breaker: base.creep.breaker * relayCreep(upgrades) * ram * crawl
 	};
+	// Worm: keylog stream is effectively slower, reflected in chip/spawn
+	// Backdoor: siphon share bump already in siphonShare()
 	return {
 		...base,
 		maxAttempts: base.maxAttempts + breachAttempts(upgrades),
-		chipMs: Math.round(base.chipMs * slow),
-		spawnMs: Math.round(base.spawnMs * slow),
+		chipMs: Math.round(base.chipMs * slow * wormSlowdown(upgrades)),
+		spawnMs: Math.round(base.spawnMs * slow * wormSlowdown(upgrades)),
 		creep
 	};
 }
@@ -126,7 +158,7 @@ export const SIPHON_DAY_MS = 20000;
 /** The share of the target's wallet the siphon takes per day */
 export function siphonShare(upgrades: Upgrades, hardware: Hardware = emptyHardware()): number {
 	if (upgrades.siphon <= 0) return 0;
-	return Math.min(1, 0.15 + 0.1 * upgrades.siphon + hardwareEffects(hardware).siphonBonus);
+	return Math.min(1, 0.15 + 0.1 * upgrades.siphon + hardwareEffects(hardware).siphonBonus + backdoorShare(upgrades));
 }
 
 /** What a target's wallet holds on the contract of that number */

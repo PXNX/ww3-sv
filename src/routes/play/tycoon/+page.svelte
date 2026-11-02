@@ -33,7 +33,7 @@
 		PRODUCERS,
 		STEP_MS
 	} from '#lib/game/tycoon/config.js';
-	import { upgradeDef } from '#lib/game/tycoon/economy.js';
+	import { upgradeDef, prestigeMultiplier } from '#lib/game/tycoon/economy.js';
 	import {
 		formatBig,
 		formatCount,
@@ -55,6 +55,7 @@
 	type Tab = 'producers' | 'upgrades' | 'achievements' | 'prestige';
 	let tab = $state<Tab>('producers');
 	let showTutorial = $state(false);
+	let showBreakdown = $state(false);
 
 	const loop = createFixedLoop({
 		stepMs: STEP_MS,
@@ -207,9 +208,35 @@
 				<span class="rounded-full border-2 border-ink bg-sand px-2 py-0.5" dir="auto">
 					{m.tycoon_hud_per_tap({ amount: formatBig(game.tapGain, locale, 1) })}
 				</span>
-				<span class="rounded-full border-2 border-ink bg-sand px-2 py-0.5" dir="auto">
+				<span
+					class="cursor-pointer rounded-full border-2 border-ink bg-sand px-2 py-0.5 tabular-nums hover:scale-105 transition"
+					onclick={() => showBreakdown = !showBreakdown}
+					dir="auto"
+					title="Click for breakdown"
+				>
 					{m.tycoon_hud_multiplier({ value: formatMultiplier(game.totalMultiplier, locale) })}
 				</span>
+				{#if showBreakdown}
+					<div class="w-full rounded-xl border-3 border-ink bg-paper p-3 shadow-[3px_3px_0_var(--color-ink)] font-display text-xs leading-snug" dir="ltr">
+						<p class="font-bold uppercase tracking-wide">{m.tycoon_hud_breakdown_title()}</p>
+						<div class="flex justify-between gap-2">
+							<span>{m.tycoon_hud_breakdown_base()}</span>
+							<span>×{formatMultiplier(game.state.prestigePoints ? 1 + game.state.prestigePoints * 0.05 : 1, locale)}</span>
+						</div>
+						<div class="flex justify-between gap-2">
+							<span>{m.tycoon_hud_breakdown_out()}</span>
+							<span>×{formatMultiplier(game.totalMultiplier / (game.state.prestigePoints ? 1 + game.state.prestigePoints * 0.05 : 1), locale)}</span>
+						</div>
+						<div class="flex justify-between gap-2">
+							<span>{m.tycoon_hud_breakdown_maxed()}</span>
+							<span>×{formatMultiplier((game.state.owned ? Object.values(game.state.owned).some((n) => n >= 1000) ? 1.05 : 1) : 1, locale)}</span>
+						</div>
+						<div class="flex justify-between gap-2">
+							<span>{m.tycoon_hud_breakdown_globals()}</span>
+							<span>×{formatMultiplier(1, locale)}</span>
+						</div>
+					</div>
+				{/if}
 				<span class="rounded-full border-2 border-ink bg-sand px-2 py-0.5" dir="auto">
 					{m.tycoon_hud_lifetime({ amount: formatBig(game.lifetime, locale) })}
 				</span>
