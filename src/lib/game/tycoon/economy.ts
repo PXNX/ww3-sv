@@ -192,6 +192,7 @@ export function achievementBonus(
 	const earned = idSet(state.achievements);
 	for (const def of ACHIEVEMENTS_BY_REWARD.get(kind) ?? []) {
 		const reward = def.reward;
+		if (!reward) continue;
 		if (!earned.has(def.id)) continue;
 		if (reward.kind === 'producer' && reward.producer !== producer) continue;
 		bonus += reward.value;

@@ -451,7 +451,9 @@ export interface AchievementDef {
 	id: string;
 	kind: AchievementKind;
 	threshold: number;
-	reward: AchievementReward;
+	reward?: AchievementReward;
+	/** Unlocks clothing instead of a game bonus */
+	clothing?: { part: string; value: string };
 }
 
 export const ACHIEVEMENTS: readonly AchievementDef[] = [
@@ -499,7 +501,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
 	{ id: 'state_owned', kind: 'prestige', threshold: 10, reward: { kind: 'speed', value: 0.1 } },
 	{ id: 'investor', kind: 'perks', threshold: 10, reward: { kind: 'tap', value: 0.25 } },
 	{ id: 'magnate', kind: 'perks', threshold: 30, reward: { kind: 'output', value: 0.1 } },
-	{ id: 'tycoon_king', kind: 'prestige', threshold: 25, reward: { kind: 'speed', value: 0.15 } },
+	{ id: 'tycoon_king', kind: 'prestige', threshold: 25, clothing: { part: 'hat', value: 'cylinder' } },
 	{ id: 'oil_barbarian', kind: 'taps', threshold: 100_000, reward: { kind: 'tap', value: 0.3 } },
 	{ id: 'drill_master', kind: 'owned', threshold: 500, reward: { kind: 'discount', value: 0.08 } },
 	{
@@ -547,6 +549,6 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
 		id: 'maxed_all',
 		kind: 'maxed',
 		threshold: PRODUCER_IDS.length,
-		reward: { kind: 'output', value: 0.25 }
+		clothing: { part: 'hat', value: 'monocle' }
 	}
 ];
