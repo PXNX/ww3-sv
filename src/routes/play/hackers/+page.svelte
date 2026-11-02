@@ -12,6 +12,7 @@
 	import HackersKeylog from '#lib/components/HackersKeylog.svelte';
 	import HackersRelays from '#lib/components/HackersRelays.svelte';
 	import HackersShop from '#lib/components/HackersShop.svelte';
+	import HackersTerminal from '#lib/components/HackersTerminal.svelte';
 	import LivesBar from '#lib/components/LivesBar.svelte';
 	import PauseOverlay from '#lib/components/PauseOverlay.svelte';
 	import { STARTING_LIVES, TRACE_MAX } from '#lib/game/hackers/config.js';
@@ -21,6 +22,7 @@
 	import { HackersGame } from '#lib/stores/hackersGame.svelte.js';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
+	import IconTerminal from '~icons/lucide/terminal';
 	import IconWrench from '~icons/lucide/wrench';
 
 	const game = new HackersGame();
@@ -107,9 +109,12 @@
 	{/snippet}
 
 	<section class="mx-auto flex w-full max-w-xl flex-col gap-2">
-		<div
-			class="flex items-center gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1.5 shadow-[3px_3px_0_var(--color-ink)]"
-		>
+		{#if game.status === 'ready'}
+			<HackersTerminal {game} />
+		{:else}
+			<div
+				class="flex items-center gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1.5 shadow-[3px_3px_0_var(--color-ink)]"
+			>
 			<LivesBar lives={game.lives} max={STARTING_LIVES} class="shrink-0 text-xl" />
 			<div class="min-w-0 flex-1">
 				<div class="flex items-baseline justify-between gap-2 font-display text-xs font-bold">
@@ -223,33 +228,14 @@
 					</div>
 				</div>
 
-				{#if game.status === 'ready'}
-					<div
-						class="absolute inset-0 z-20 flex items-center justify-center bg-ink/60 p-4 [text-shadow:none]"
-					>
-						<div
-							class="sticker pop-in flex max-w-sm flex-col items-center gap-3 p-4 text-center font-sans text-ink"
-							style:--tilt="-1.5deg"
-						>
-							<p class="leading-snug font-semibold">{m.hackers_how_to()}</p>
-							<p class="hidden text-sm sm:block">{m.hackers_keyboard_hint()}</p>
-							<button
-								type="button"
-								class="btn-chunky bg-tie-red text-xl"
-								onclick={() => game.start()}
-							>
-								<IconPlay class="size-5" aria-hidden="true" />
-								{m.hackers_start()}
-							</button>
-						</div>
-					</div>
-				{:else if game.status === 'paused'}
+				{#if game.status === 'paused'}
 					<div class="absolute inset-0 z-20 [text-shadow:none]">
 						<PauseOverlay cover onResume={() => game.resume()} />
 					</div>
 				{/if}
 			</div>
 		{/key}
+		{/if}
 	</section>
 
 	<GameOverModal
@@ -276,5 +262,13 @@
 				<dd class="text-2xl font-bold tabular-nums">{game.siphoned}</dd>
 			</div>
 		</dl>
+		<button
+			type="button"
+			class="btn-chunky mx-auto mt-1 px-3 py-1 text-sm"
+			onclick={() => game.quit()}
+		>
+			<IconTerminal class="size-4" aria-hidden="true" />
+			{m.hackers_term_back()}
+		</button>
 	</GameOverModal>
 </GameShell>

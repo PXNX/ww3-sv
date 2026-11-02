@@ -162,6 +162,19 @@ export class HackersGame {
 		this.#apply([openingEvent(this.state)]);
 	}
 
+	/** Closes the game-over sheet and goes back to the boot terminal */
+	quit() {
+		if (this.status !== 'over') return;
+		this.#random = createRandom(this.#seed());
+		this.state = createGame(this.#random, { hardware: this.hardware });
+		this.log = [];
+		this.input = [];
+		this.isNewBest = false;
+		this.hurtCount = 0;
+		this.#sync();
+		this.status = 'ready';
+	}
+
 	pause() {
 		if (this.status === 'playing') this.status = 'paused';
 	}
