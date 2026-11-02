@@ -174,6 +174,8 @@
 				});
 			case 'gpu':
 				return m.hackers_hw_gpu_effect({ pct: Math.round(effects.siphonBonus * 100) });
+		case 'cable':
+			return '';
 		}
 	}
 </script>
