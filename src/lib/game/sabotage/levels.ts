@@ -6,8 +6,8 @@
  */
 import { parseMap, type Grid, type Vec } from './map.js';
 
-export type Theme = 'power' | 'depot' | 'factory' | 'airport';
-export type TargetKind = 'pylon' | 'transformer' | 'ammo' | 'press' | 'plane';
+export type Theme = 'power' | 'depot' | 'factory';
+export type TargetKind = 'pylon' | 'transformer' | 'ammo' | 'press';
 
 export interface GuardDef {
 	kind: 'guard' | 'dog';
@@ -890,73 +890,6 @@ const DEFINITIONS: LevelDef[] = [
 			floodlight([10, 12], 3.5, 2, 2.5, 1),
 			camera([7, 3], 0, 30, 6.5, 5.5, 2)
 		]
-	},
-	{
-		id: 'terminal-strike',
-		theme: 'airport',
-		targetKind: 'plane',
-		title: 'Terminal strike',
-		par: 80,
-		card: {
-			channel: 'Gig Heroes',
-			poster: 'Vlad Talent',
-			message: 'The VIP lounge is on lockdown. You have minutes before customs locks the gate. Fast drone guard, door corridors, one plane target.'
-		},
-		map: [
-			'##############',
-			'#..........#.f',
-			'#.T......#T..#',
-			'#....D....#...',
-			'#..........#...',
-			'#...####D###..#',
-			'#...#.....#..#',
-			'#...b..#..#..#',
-			'#..b..,,,,..#.f',
-			'#..####....#.f',
-			'#..#..........#',
-			'#..#.........Ef',
-			'#.b...........#',
-			'#.T..b........#',
-			'##############'
-		],
-		guards: [
-			guard([[2, 3], [10, 3]], 0.8),
-			guard([[11, 6], [11, 9]], 1, 1)
-		],
-		sensors: [camera([10, 4], 180, 40, 5, 7), camera([6, 1], 90, 25, 6, 6)]
-	},
-	{
-		id: 'tarmac-spray',
-		theme: 'airport',
-		targetKind: 'plane',
-		title: 'Tarmac spray',
-		par: 100,
-		card: {
-			channel: 'Gig Heroes',
-			poster: 'Vlad Talent',
-			message: 'Night operation over the runway. Two drones patrolling, one fast jet waiting at the end. Run through the tarmac, crash in.'
-		},
-		map: [
-			'################',
-			'#T.......T..#.f',
-			'#..####..####..#',
-			'#..#..b#..####..#',
-			'#..#..b#..####..#',
-			'#............#.f',
-			'#.xx..xx..xx..#.f',
-			'#............#...',
-			'#..####D####..#.f',
-			'#..#..b#..####..#',
-			'#..#..b#..####..#',
-			'#S...........E.#',
-			'################'
-		],
-		guards: [
-			guard([[3, 6], [9, 6]], 1),
-			guard([[2, 2], [8, 2]], 0.9, 1),
-			guard([[11, 8], [11, 11]], 1, 2)
-		],
-		sensors: [camera([7, 1], 180, 35, 6, 6), camera([7, 3], 0, 35, 6, 6, 2)]
 	}
 ];
 

@@ -393,24 +393,6 @@ function drawTargetArt(
 			rect(ctx, cx - t * 0.32, cy - t * 0.44, t * 0.64, t * 0.16, body ?? '#d9a441', 2);
 			break;
 		}
-		case 'plane': {
-			ctx.fillStyle = body ?? '#e6e2d3';
-			ctx.beginPath();
-			ctx.moveTo(cx - t * 0.35, cy + t * 0.1);
-			ctx.lineTo(cx + t * 0.35, cy + t * 0.1);
-			ctx.lineTo(cx + t * 0.45, cy);
-			ctx.lineTo(cx + t * 0.35, cy - t * 0.1);
-			ctx.lineTo(cx - t * 0.35, cy - t * 0.1);
-			ctx.lineTo(cx - t * 0.45, cy);
-			ctx.closePath();
-			ctx.fill();
-			ctx.stroke();
-			// wings
-			ctx.fillStyle = body ?? '#b0a892';
-			ctx.fillRect(cx - t * 0.15, cy + t * 0.08, t * 0.3, t * 0.06);
-			ctx.fillRect(cx - t * 0.15, cy - t * 0.14, t * 0.3, t * 0.06);
-			break;
-		}
 	}
 }
 
