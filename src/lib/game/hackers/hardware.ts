@@ -5,7 +5,7 @@
  */
 import { isFiniteNumber } from '#lib/services/storage.js';
 
-export type HardwareId = 'cpu' | 'ram' | 'gpu';
+export type HardwareId = 'cpu' | 'ram' | 'gpu' | 'cable';
 
 export type Hardware = Record<HardwareId, number>;
 
@@ -21,7 +21,9 @@ export interface HardwareSpec {
 export const HARDWARE_SPECS: readonly HardwareSpec[] = [
 	{ id: 'cpu', maxLevel: 5, baseCost: 150, costGrowth: 1.9 },
 	{ id: 'ram', maxLevel: 5, baseCost: 120, costGrowth: 1.8 },
-	{ id: 'gpu', maxLevel: 5, baseCost: 200, costGrowth: 2 }
+	{ id: 'gpu', maxLevel: 5, baseCost: 200, costGrowth: 2 },
+	/** The link to the rest of the net: copper pair, twisted pair, fiber, glass fiber, quantum pipe */
+	{ id: 'cable', maxLevel: 5, baseCost: 90, costGrowth: 1.8 }
 ];
 
 /** Fictional part names, indexed by level */
@@ -41,9 +43,16 @@ const GPU_NAMES = [
 	'Radeon "Vaultcracker"',
 	'Instinct "Siphon"'
 ] as const;
+const CABLE_NAMES = [
+	'Copper pair',
+	'Twisted pair',
+	'Fiber',
+	'Glass fiber',
+	'Quantum pipe'
+] as const;
 
 export function emptyHardware(): Hardware {
-	return { cpu: 0, ram: 0, gpu: 0 };
+	return { cpu: 0, ram: 0, gpu: 0, cable: 0 };
 }
 
 export function hardwareSpec(id: HardwareId): HardwareSpec {
@@ -72,6 +81,15 @@ export function hardwareEffects(hardware: Hardware): HardwareEffects {
 		creepMultiplier: 0.96 ** hardware.ram,
 		siphonBonus: 0.05 * hardware.gpu
 	};
+}
+
+export function cableName(hardware: Hardware): string {
+	return CABLE_NAMES[Math.min(hardware.cable, CABLE_NAMES.length - 1)];
+}
+
+/** How fast the unit pulls data off other machines: 1 at level 0, +30% per level */
+export function downloadSpeed(hardware: Hardware): number {
+	return 1 + 0.3 * hardware.cable;
 }
 
 export function cpuName(hardware: Hardware): string {
