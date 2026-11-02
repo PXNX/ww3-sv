@@ -12,11 +12,12 @@
 
 	let { game, onpick }: { game: SabotageGame; onpick: (index: number) => void } = $props();
 
-	const THEMES: readonly Theme[] = ['power', 'depot', 'factory'];
+	const THEMES: readonly Theme[] = ['power', 'depot', 'factory', 'airport'];
 	const THEME_TINT: Record<Theme, string> = {
 		power: 'bg-explosion-yellow',
 		depot: 'bg-khaki',
-		factory: 'bg-tie-red'
+		factory: 'bg-tie-red',
+		airport: 'bg-sky-400'
 	};
 
 	const groups = $derived(
