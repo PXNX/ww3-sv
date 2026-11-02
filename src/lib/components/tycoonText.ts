@@ -297,6 +297,7 @@ export function achievementDescription(def: AchievementDef): string {
 
 /** The boost an achievement unlocks, such as "+5% per tap" */
 export function achievementReward(reward: AchievementReward): string {
+	if (!reward) return '';
 	const percent = formatCount(reward.value * 100, getLocale());
 	switch (reward.kind) {
 		case 'tap':
