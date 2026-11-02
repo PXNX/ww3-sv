@@ -45,10 +45,10 @@ const fresh = () => createState(createRandom(1));
 const perkValue = (id: PerkId) => PERKS.find((perk) => perk.id === id)!.value;
 
 describe('cost curve', () => {
-	it('starts at the base price and grows 15 percent per unit owned', () => {
+	it('starts at the base price and grows by the cost growth per unit owned', () => {
 		expect(producerCost(pumpjack, 0)).toBe(15);
 		expect(producerCost(pumpjack, 1)).toBe(Math.ceil(15 * COST_GROWTH));
-		expect(producerCost(tanker, 10)).toBe(Math.ceil(100 * COST_GROWTH ** 10));
+		expect(producerCost(tanker, 10)).toBe(Math.ceil(tanker.baseCost * COST_GROWTH ** 10));
 	});
 
 	it('prices a batch as the sum of its single purchases', () => {
@@ -109,7 +109,10 @@ describe('production', () => {
 		expect(productionPerSecond(state)).toBe(0);
 		state.owned.pumpjack = 10;
 		state.owned.tanker = 2;
-		expect(productionPerSecond(state)).toBeCloseTo(10 * 0.1 + 2 * 1, 9);
+		expect(productionPerSecond(state)).toBeCloseTo(
+			10 * pumpjack.baseCps + 2 * tanker.baseCps,
+			9
+		);
 	});
 
 	it('doubles a producer with each of its tier upgrades', () => {
@@ -117,9 +120,9 @@ describe('production', () => {
 		state.owned.tanker = 10;
 		state.upgrades.push('tanker_1');
 		// Every upgrade owned slows production by 2%
-		expect(producerOutput(state, 'tanker')).toBeCloseTo(20 * 0.98, 9);
+		expect(producerOutput(state, 'tanker')).toBeCloseTo(20 * tanker.baseCps * 0.98, 9);
 		state.upgrades.push('tanker_2');
-		expect(producerOutput(state, 'tanker')).toBeCloseTo(40 * 0.98 ** 2, 9);
+		expect(producerOutput(state, 'tanker')).toBeCloseTo(40 * tanker.baseCps * 0.98 ** 2, 9);
 		expect(producerOutput(state, 'pumpjack')).toBe(0);
 	});
 
@@ -133,7 +136,10 @@ describe('production', () => {
 		state.upgrades.push('global_regulator');
 		const expected = 1.5 * 1.05 * (1 + 2 * perkValue('output')) * 1.25;
 		expect(globalMultiplier(state)).toBeCloseTo(expected, 9);
-		expect(productionPerSecond(state)).toBeCloseTo(1 * expected * 0.98, 9);
+		expect(productionPerSecond(state)).toBeCloseTo(
+			10 * pumpjack.baseCps * expected * 0.98,
+			9
+		);
 	});
 
 	it('pays 5% more overall production once a producer reaches its last level', () => {
@@ -157,7 +163,7 @@ describe('production', () => {
 			clickMult: 1,
 			producer: 'tanker'
 		});
-		expect(productionPerSecond(state)).toBeCloseTo(1, 9);
+		expect(productionPerSecond(state)).toBeCloseTo(10 * pumpjack.baseCps, 9);
 		state.effects.push({
 			id: 'leak',
 			remainingMs: 1000,
@@ -165,8 +171,11 @@ describe('production', () => {
 			prodMult: 0.5,
 			clickMult: 1
 		});
-		expect(productionPerSecond(state)).toBeCloseTo(0.5, 9);
-		expect(calmProduction(state)).toBeCloseTo(11, 9);
+		expect(productionPerSecond(state)).toBeCloseTo(10 * pumpjack.baseCps * 0.5, 9);
+		expect(calmProduction(state)).toBeCloseTo(
+			10 * pumpjack.baseCps + 10 * tanker.baseCps,
+			9
+		);
 	});
 
 	it('turns a tap into more with click upgrades, a share of output and no crisis block', () => {
@@ -177,7 +186,7 @@ describe('production', () => {
 		state.owned.tanker = 100;
 		state.upgrades.push('clickcps_hands');
 		// Hundred tankers own the first three levels (5, 10 and 25 units)
-		expect(tapValue(state)).toBeCloseTo(4 + 0.01 * 100 * 0.98 ** 3, 9);
+		expect(tapValue(state)).toBeCloseTo(4 + 0.01 * 100 * tanker.baseCps * 0.98 ** 3, 9);
 		state.effects.push({
 			id: 'protest',
 			remainingMs: 1000,
@@ -310,7 +319,7 @@ describe('achievement boosts', () => {
 		const state = fresh();
 		state.achievements = ['stack', 'hoard'];
 		expect(pricing(state).factor).toBeCloseTo(0.95, 9);
-		expect(producerCost(tanker, 0, 1, pricing(state))).toBe(95);
+		expect(producerCost(tanker, 0, 1, pricing(state))).toBeCloseTo(tanker.baseCost * 0.95, 9);
 	});
 
 	it('all grant a boost', () => {
