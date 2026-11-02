@@ -108,7 +108,7 @@ describe('TycoonGame', () => {
 		expect(game.barrels).toBe(0);
 		game.resume();
 		game.update(2000);
-		expect(game.barrels).toBeCloseTo(20, 6);
+		expect(game.barrels).toBeCloseTo(10 * producerDef('tanker').baseCps * 2, 6);
 	});
 
 	it('answers a crisis and blocks taps during a protest', () => {
@@ -275,10 +275,10 @@ describe('TycoonGame persistence', () => {
 		clock.now += 120_000;
 		game.back();
 		expect(game.welcome?.creditedMs).toBe(120_000);
-		expect(game.barrels).toBeCloseTo(10 * 120 * OFFLINE_EFFICIENCY, 6);
+		expect(game.barrels).toBeCloseTo(10 * producerDef('tanker').baseCps * 120 * OFFLINE_EFFICIENCY, 6);
 		// Coming back twice does not credit twice
 		game.back();
-		expect(game.barrels).toBeCloseTo(10 * 120 * OFFLINE_EFFICIENCY, 6);
+		expect(game.barrels).toBeCloseTo(10 * producerDef('tanker').baseCps * 120 * OFFLINE_EFFICIENCY, 6);
 	});
 
 	it('starts a fresh game from a corrupt save instead of crashing', () => {
