@@ -25,6 +25,9 @@ export type BuildingKind =
 /** Which troop a gun picks when several are in range */
 export type Targeting = 'nearest' | 'weakest' | 'farthest';
 
+/** How a projectile travels and how it is drawn */
+export type ProjectileKind = 'shell' | 'rocket' | 'drone';
+
 export interface BuildingStats {
 	width: number;
 	height: number;
@@ -41,6 +44,12 @@ export interface BuildingStats {
 	minRange?: number;
 	/** Defaults to the nearest troop in range */
 	targeting?: Targeting;
+	/** Guns with a projectile fire a visible shot that lands a moment later */
+	projectile?: ProjectileKind;
+	/** Projectile speed in grid cells per second; the flight time follows the distance */
+	projectileSpeed?: number;
+	/** Rockets and drones follow a living target instead of flying to where it stood */
+	homing?: boolean;
 	/** Score for destroying it */
 	score: number;
 }
@@ -67,6 +76,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingStats> = {
 		splash: 1,
 		minRange: 1.6,
 		targeting: 'farthest',
+		projectile: 'shell',
+		projectileSpeed: 8.5,
 		score: 320
 	},
 	'fpv-nest': {
@@ -78,6 +89,9 @@ export const BUILDINGS: Record<BuildingKind, BuildingStats> = {
 		reloadMs: 2100,
 		splash: 0,
 		targeting: 'weakest',
+		projectile: 'drone',
+		projectileSpeed: 10,
+		homing: true,
 		score: 300
 	},
 	'air-defence': {
@@ -89,6 +103,9 @@ export const BUILDINGS: Record<BuildingKind, BuildingStats> = {
 		reloadMs: 1000,
 		splash: 0.5,
 		targeting: 'farthest',
+		projectile: 'rocket',
+		projectileSpeed: 15,
+		homing: true,
 		score: 340
 	},
 	sniper: {
@@ -132,8 +149,52 @@ export const TROOP = {
 	speed: 3,
 	attackMs: 620,
 	/** Troops stop short of a building they bump into and attack that instead */
-	body: 0.18
+	body: 0.18,
+	/** Push from a nearby blast, in grid cells per second */
+	knockback: 2.4,
+	/** How quickly a pushed troop slows down; higher is snappier */
+	drag: 7,
+	/** Milliseconds a troop is too shaken to move or shoot after a blast */
+	stunMs: 260,
+	/** Milliseconds a muzzle flash stays visible */
+	muzzleMs: 90
 };
+
+/** The support skills the player can call in during an assault */
+export type SkillId = 'flamingo' | 'barrage' | 'flare' | 'smoke' | 'heal';
+
+export interface SkillStats {
+	/** Grid cells around the aim point that are affected */
+	radius: number;
+	/** Damage each impact deals to every building it catches */
+	damage: number;
+	/** Milliseconds before the first impact, so the missile can be seen coming */
+	delayMs: number;
+	/** Extra impacts for a barrage and how far they scatter around the aim point */
+	shells?: number;
+	scatter?: number;
+	/** How long a flare, smoke cloud or healing circle stays on the island */
+	durationMs?: number;
+	/** Health restored per second to troops inside a healing circle */
+	healPerSecond?: number;
+}
+
+export const SKILLS: Record<SkillId, SkillStats> = {
+	flamingo: { radius: 2.2, damage: 360, delayMs: 850 },
+	barrage: { radius: 1.1, damage: 90, delayMs: 550, shells: 6, scatter: 1.5 },
+	flare: { radius: 0.35, damage: 0, delayMs: 0, durationMs: 9000 },
+	smoke: { radius: 2.3, damage: 0, delayMs: 0, durationMs: 9000 },
+	heal: { radius: 2.2, damage: 0, delayMs: 0, durationMs: 7000, healPerSecond: 16 }
+};
+
+/** Every skill use costs more than the last; destroyed buildings give a little energy back */
+export const SKILL_ENERGY = {
+	start: 150,
+	baseCost: 30,
+	costStep: 15,
+	max: 300,
+	rewardPerBuilding: 12
+} as const;
 
 export const SQUADS = 3;
 export const TROOPS_PER_SQUAD = 4;

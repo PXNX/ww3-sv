@@ -34,3 +34,39 @@ export function leaveLandscape(): void {
 	if (entered && document.fullscreenElement) void document.exitFullscreen().catch(() => {});
 	entered = false;
 }
+
+/** Whether this browser has the Fullscreen API at all */
+export function fullscreenAvailable(): boolean {
+	return (
+		typeof document !== 'undefined' &&
+		typeof document.documentElement.requestFullscreen === 'function'
+	);
+}
+
+export function isFullscreen(): boolean {
+	return typeof document !== 'undefined' && document.fullscreenElement !== null;
+}
+
+/** Toggles full screen without touching the orientation lock, for the in-game button */
+export async function toggleFullscreen(): Promise<boolean> {
+	if (!fullscreenAvailable()) return false;
+	try {
+		if (document.fullscreenElement) {
+			await document.exitFullscreen();
+			entered = false;
+			return false;
+		}
+		await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+		entered = true;
+		return true;
+	} catch {
+		return isFullscreen();
+	}
+}
+
+/** Calls the listener whenever the browser enters or leaves full screen */
+export function onFullscreenChange(listener: () => void): () => void {
+	if (typeof document === 'undefined') return () => {};
+	document.addEventListener('fullscreenchange', listener);
+	return () => document.removeEventListener('fullscreenchange', listener);
+}

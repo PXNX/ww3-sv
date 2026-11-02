@@ -163,14 +163,17 @@ export function claimIncome(
 	nowMs: number
 ): BeachheadSave {
 	if (!Number.isFinite(nowMs) || nowMs <= save.lastIncomeMs) return save;
-	const elapsed = Math.min(INCOME_CAP_MS, nowMs - save.lastIncomeMs);
-	const minutes = Math.floor(elapsed / 60_000);
+	const elapsed = nowMs - save.lastIncomeMs;
+	const capped = Math.min(INCOME_CAP_MS, elapsed);
+	const minutes = Math.floor(capped / 60_000);
 	if (minutes <= 0) return save;
 	const amount = Math.floor(incomeRate(save, islandIds) * minutes);
 	return {
 		...save,
 		supplies: save.supplies + amount,
-		lastIncomeMs: save.lastIncomeMs + minutes * 60_000
+		// An absence longer than the cap is paid once; the clock then jumps to now, so calling
+		// this again at the same moment cannot bank the capped hours a second time.
+		lastIncomeMs: elapsed > INCOME_CAP_MS ? nowMs : save.lastIncomeMs + minutes * 60_000
 	};
 }
 
