@@ -3631,5 +3631,18 @@
 	"beachhead_lost_hint": "طوّر قاعدتك وجنودك ثم حاول مجدداً.",
 	"beachhead_home_base": "الساحل الأم",
 	"beachhead_tutorial_base": "إمدادات الجزر المحتلة وضرائبها تدفع ثمن ترقيات قاعدتك الساحلية: قيادة أقوى وجنود أفضل تدريباً وسفن إنزال أكبر.",
-	"beachhead_tutorial_map": "تُظهر خريطة الجزر ما تتحكم فيه. كل جزيرة تحت السيطرة تضيف إمدادات في الدقيقة؛ خذ الجزر بالترتيب."
+	"beachhead_tutorial_map": "تُظهر خريطة الجزر ما تتحكم فيه. كل جزيرة تحت السيطرة تضيف إمدادات في الدقيقة؛ خذ الجزر بالترتيب.",
+	"beachhead_fullscreen": "ملء الشاشة",
+	"beachhead_exit_fullscreen": "الخروج من ملء الشاشة",
+	"beachhead_tutorial_landscape": "أدر الهاتف أفقياً واستخدم ملء الشاشة لأوسع رؤية للجزيرة.",
+	"beachhead_skills_title": "مهارات المعركة",
+	"beachhead_skill_energy": "{energy} طاقة",
+	"beachhead_skill_cost": "{cost} طاقة",
+	"beachhead_skill_aim": "اضغط على الجزيرة لاستدعاء {skill}",
+	"beachhead_skill_flamingo": "صاروخ فلامنغو",
+	"beachhead_skill_barrage": "وابل ناري",
+	"beachhead_skill_flare": "شعلة توجيه",
+	"beachhead_skill_smoke": "ستار دخاني",
+	"beachhead_skill_heal": "دائرة شفاء",
+	"beachhead_tutorial_skills": "شريط المهارات يستدعي الدعم: صاروخ فلامنغو أو وابل ناري أو شعلة توجيه أو ستار دخاني أو دائرة شفاء. كل استخدام يكلّف طاقة أكثر من السابق، والمباني المدمّرة تعيد بعضها."
 }

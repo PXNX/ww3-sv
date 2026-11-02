@@ -4,18 +4,24 @@
  * values the page chrome shows (squads, troops, score, supplies, status) are reactive.
  */
 import {
+	BUILDINGS,
 	ISLANDS,
 	ISLAND_IDS,
 	ROWS,
 	SHORE_X,
+	SKILL_ENERGY,
 	type BuildingKind,
-	type Island
+	type Island,
+	type SkillId
 } from '#lib/game/beachhead/config.js';
 import {
+	canCastSkill,
+	castSkill,
 	createBattle,
 	deploy,
 	scoreOf,
 	setFocus,
+	skillCost,
 	starsOf,
 	stepBattle,
 	troopsAlive,
@@ -90,12 +96,20 @@ export class BeachheadGame {
 	campaign = $state<BeachheadSave>(newSave(0));
 	/** The building the troops are focused on, for the HUD; null when they choose their own targets */
 	focusKind = $state<BuildingKind | null>(null);
+	/** Support-skill energy and the price of the next call */
+	energy = $state(0);
+	skillsUsed = $state(0);
+	skillPrice = $state(0);
+	/** A skill waiting for a tap on the island, or null */
+	selectedSkill = $state<SkillId | null>(null);
 
 	/** Simulation state, deliberately not reactive */
 	battle: BattleState;
 	effects: Effect[] = [];
 	/** Animation clock for the waves and flags, which keeps running through the result delay */
 	timeMs = 0;
+	/** Screen shake left, in grid cells; it fades out every frame */
+	shake = 0;
 	readonly reducedMotion: boolean;
 
 	#scores: () => Highscores;
@@ -115,6 +129,7 @@ export class BeachheadGame {
 		this.#store = store;
 		this.#now = now;
 		this.battle = createBattle(ISLANDS[0], modifiersFor(this.campaign));
+		this.#sync();
 	}
 
 	get island(): Island {
@@ -215,7 +230,9 @@ export class BeachheadGame {
 	goBase() {
 		this.collectIncome();
 		this.effects = [];
+		this.shake = 0;
 		this.focusKind = null;
+		this.selectedSkill = null;
 		this.screen = 'base';
 		this.status = 'playing';
 	}
@@ -223,7 +240,9 @@ export class BeachheadGame {
 	goMap() {
 		this.collectIncome();
 		this.effects = [];
+		this.shake = 0;
 		this.focusKind = null;
+		this.selectedSkill = null;
 		this.screen = 'map';
 		this.status = 'playing';
 	}
@@ -234,6 +253,7 @@ export class BeachheadGame {
 		this.islandIndex = index;
 		this.battle = createBattle(ISLANDS[index], modifiersFor(this.campaign));
 		this.effects = [];
+		this.shake = 0;
 		this.timeMs = 0;
 		this.#finishMs = 0;
 		this.#shotSound = 0;
@@ -241,6 +261,7 @@ export class BeachheadGame {
 		this.loot = 0;
 		this.stars = 0;
 		this.focusKind = null;
+		this.selectedSkill = null;
 		this.best = this.bestFor(this.islandId);
 		this.screen = 'play';
 		this.status = 'playing';
@@ -274,6 +295,17 @@ export class BeachheadGame {
 		if (this.screen !== 'play' || this.status !== 'playing') return;
 		if (this.battle.status !== 'playing') return;
 
+		if (this.selectedSkill) {
+			const skill = this.selectedSkill;
+			if (castSkill(this.battle, skill, worldX, worldY)) {
+				this.selectedSkill = null;
+				this.#sync();
+			} else {
+				this.#play('ui-error', 0.4);
+			}
+			return;
+		}
+
 		if (worldX < SHORE_X) {
 			const row = Math.min(ROWS - 1, Math.max(0, Math.floor(worldY)));
 			if (deploy(this.battle, row)) this.setFocus(null);
@@ -301,10 +333,30 @@ export class BeachheadGame {
 		this.focusKind = building?.kind ?? null;
 	}
 
+	get canUseSkill(): boolean {
+		return this.status === 'playing' && this.energy >= this.skillPrice;
+	}
+
+	/** Arms a support skill; the next tap on the island calls it in there */
+	chooseSkill(skill: SkillId) {
+		if (this.screen !== 'play' || this.status !== 'playing') return;
+		if (!canCastSkill(this.battle)) {
+			this.#play('ui-error', 0.4);
+			return;
+		}
+		this.selectedSkill = this.selectedSkill === skill ? null : skill;
+		this.#play('click', 0.4);
+	}
+
+	cancelSkill() {
+		this.selectedSkill = null;
+	}
+
 	/** One fixed step: called by the canvas game loop */
 	update(dtMs: number) {
 		this.timeMs += dtMs;
 		this.#shotSound = Math.max(0, this.#shotSound - dtMs);
+		this.shake = Math.max(0, this.shake - dtMs * 0.0015);
 		for (const effect of this.effects) effect.ageMs += dtMs;
 		this.effects = this.effects.filter((effect) => effect.ageMs < effect.durationMs);
 
@@ -327,6 +379,7 @@ export class BeachheadGame {
 		return {
 			effects: this.effects,
 			timeMs: this.timeMs,
+			shake: this.shake,
 			reducedMotion: this.reducedMotion
 		};
 	}
@@ -342,6 +395,11 @@ export class BeachheadGame {
 
 	#effect(effect: Effect) {
 		this.effects.push(effect);
+	}
+
+	#shakeBy(amount: number) {
+		if (this.reducedMotion) return;
+		this.shake = Math.max(this.shake, amount);
 	}
 
 	#playShot(friendly: boolean, x: number) {
@@ -378,19 +436,94 @@ export class BeachheadGame {
 				this.#playShot(true, event.fromX);
 				break;
 			case 'defense-shot':
-				this.#effect({
-					kind: 'tracer',
-					fromX: event.fromX,
-					fromY: event.fromY,
-					toX: event.toX,
-					toY: event.toY,
-					friendly: false,
-					ageMs: 0,
-					durationMs: 140
-				});
+				if (event.weapon === 'flame') {
+					this.#effect({
+						kind: 'flame',
+						fromX: event.fromX,
+						fromY: event.fromY,
+						toX: event.toX,
+						toY: event.toY,
+						ageMs: 0,
+						durationMs: 240
+					});
+				} else if (event.flightMs === undefined) {
+					this.#effect({
+						kind: 'tracer',
+						fromX: event.fromX,
+						fromY: event.fromY,
+						toX: event.toX,
+						toY: event.toY,
+						friendly: false,
+						ageMs: 0,
+						durationMs: 140
+					});
+				}
+				// Shells, rockets and drones are drawn from the battle state while they fly
 				this.#playShot(false, event.fromX);
 				break;
-			case 'building-destroyed':
+			case 'projectile-impact':
+				this.#effect({
+					kind: 'explosion',
+					x: event.x,
+					y: event.y,
+					size: 0.42 + event.radius * 0.45,
+					ageMs: 0,
+					durationMs: (event.hits > 0 ? 480 : 360) * short + 60
+				});
+				this.#play(event.hits > 0 ? 'explosion-small' : 'explosion-tiny', 0.65);
+				this.#shakeBy(event.radius > 0.8 ? 0.12 : 0.06);
+				break;
+			case 'skill-cast': {
+				const color =
+					event.skill === 'heal' ? '#3fa65a' : event.skill === 'flare' ? '#f28c28' : '#4fa8d8';
+				this.#effect({
+					kind: 'float',
+					x: event.x,
+					y: event.y - 0.5,
+					text: `-${event.cost}⚡`,
+					color,
+					ageMs: 0,
+					durationMs: 850
+				});
+				this.#effect({
+					kind: 'ring',
+					x: event.x,
+					y: event.y,
+					radius: event.skill === 'smoke' ? 2.3 : event.skill === 'heal' ? 2.2 : 0.7,
+					color,
+					ageMs: 0,
+					durationMs: 520
+				});
+				if (event.skill === 'heal') this.#play('chime', 0.5);
+				else if (event.skill === 'flare') this.#play('zap', 0.5);
+				else if (event.skill === 'smoke') this.#play('whoosh', 0.6);
+				else this.#play('whoosh', 0.7);
+				break;
+			}
+			case 'skill-impact': {
+				const missile = event.skill === 'flamingo';
+				this.#effect({
+					kind: 'explosion',
+					x: event.x,
+					y: event.y,
+					size: missile ? 1.45 : 0.55,
+					ageMs: 0,
+					durationMs: (missile ? 640 : 420) * short + 60
+				});
+				this.#effect({
+					kind: 'debris',
+					x: event.x,
+					y: event.y,
+					size: missile ? 1.6 : 0.8,
+					seed: event.x * 2.1 + event.y,
+					ageMs: 0,
+					durationMs: 640 * short + 60
+				});
+				this.#play(missile ? 'explosion-big' : 'explosion-small', missile ? 1 : 0.6);
+				this.#shakeBy(missile ? 0.52 : 0.12);
+				break;
+			}
+			case 'building-destroyed': {
 				if (event.buildingId === this.battle.focusId) this.setFocus(null);
 				this.#effect({
 					kind: 'explosion',
@@ -400,8 +533,42 @@ export class BeachheadGame {
 					ageMs: 0,
 					durationMs: (event.big ? 700 : 450) * short + 60
 				});
+				this.#effect({
+					kind: 'debris',
+					x: event.x,
+					y: event.y,
+					size: event.big ? 1.4 : 0.9,
+					seed: event.buildingId * 1.7,
+					ageMs: 0,
+					durationMs: 700 * short + 60
+				});
+				const building = this.battle.buildings.find(
+					(candidate) => candidate.id === event.buildingId
+				);
+				if (building) {
+					this.#effect({
+						kind: 'float',
+						x: event.x,
+						y: event.y - 0.4,
+						text: `+${BUILDINGS[building.kind].score}`,
+						color: 'var(--color-explosion-yellow)',
+						ageMs: 0,
+						durationMs: 900
+					});
+				}
+				this.#effect({
+					kind: 'float',
+					x: event.x + 0.6,
+					y: event.y - 0.05,
+					text: `+${SKILL_ENERGY.rewardPerBuilding}⚡`,
+					color: '#4fa8d8',
+					ageMs: 0,
+					durationMs: 900
+				});
 				this.#play(event.big ? 'explosion-big' : 'explosion-small', event.big ? 1 : 0.7);
+				this.#shakeBy(event.big ? 0.42 : 0.16);
 				break;
+			}
 			case 'troop-down':
 				this.#effect({
 					kind: 'down',
@@ -411,6 +578,7 @@ export class BeachheadGame {
 					durationMs: 650 * short + 60
 				});
 				this.#play('explosion-tiny', 0.45);
+				this.#shakeBy(0.07);
 				break;
 			case 'won':
 				this.#play('chime-big', 0.8);
@@ -452,5 +620,8 @@ export class BeachheadGame {
 		this.buildingsLeft = battle.buildings.filter((building) => !building.destroyed).length;
 		this.buildingsTotal = battle.buildings.length;
 		this.score = scoreOf(battle);
+		this.energy = battle.energy;
+		this.skillsUsed = battle.skillsUsed;
+		this.skillPrice = skillCost(battle);
 	}
 }

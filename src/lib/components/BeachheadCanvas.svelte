@@ -105,7 +105,7 @@
 
 <div
 	bind:this={stage}
-	class="relative flex min-h-0 flex-1 touch-none items-center justify-center overflow-hidden px-2 pt-[calc(var(--hud-top)+0.5rem)] pb-[calc(0.5rem+env(safe-area-inset-bottom))] select-none"
+	class="relative flex min-h-0 flex-1 touch-none items-center justify-center overflow-hidden px-2 pt-[calc(var(--hud-top)+0.5rem)] pb-[calc(3.5rem+env(safe-area-inset-bottom))] select-none"
 >
 	<canvas
 		bind:this={canvas}

@@ -3631,5 +3631,18 @@
 	"beachhead_lost_hint": "Verbessere Stützpunkt und Truppen und versuche es erneut.",
 	"beachhead_home_base": "Heimischer Küstenstreifen",
 	"beachhead_tutorial_base": "Vorräte aus eroberten Inseln und ihre Steuern bezahlen Verbesserungen an deinem Küstenstützpunkt: ein stärkeres Hauptquartier, besser ausgebildete Truppen und größere Landungsboote.",
-	"beachhead_tutorial_map": "Die Inselkarte zeigt, was du kontrollierst. Jede kontrollierte Insel bringt Vorräte pro Minute; nimm die Inseln der Reihe nach ein."
+	"beachhead_tutorial_map": "Die Inselkarte zeigt, was du kontrollierst. Jede kontrollierte Insel bringt Vorräte pro Minute; nimm die Inseln der Reihe nach ein.",
+	"beachhead_fullscreen": "Vollbild",
+	"beachhead_exit_fullscreen": "Vollbild beenden",
+	"beachhead_tutorial_landscape": "Dreh das Handy quer und nutze den Vollbildmodus für die breiteste Sicht auf die Insel.",
+	"beachhead_skills_title": "Kampffähigkeiten",
+	"beachhead_skill_energy": "{energy} Energie",
+	"beachhead_skill_cost": "{cost} Energie",
+	"beachhead_skill_aim": "Tippe auf die Insel, um {skill} einzusetzen",
+	"beachhead_skill_flamingo": "Flamingo-Rakete",
+	"beachhead_skill_barrage": "Sperrfeuer",
+	"beachhead_skill_flare": "Leuchtfackel",
+	"beachhead_skill_smoke": "Rauchwand",
+	"beachhead_skill_heal": "Heilkreis",
+	"beachhead_tutorial_skills": "Die Fähigkeitsleiste ruft Unterstützung: eine Flamingo-Rakete, Sperrfeuer, eine Leuchtfackel, eine Rauchwand oder einen Heilkreis. Jeder Einsatz kostet mehr Energie als der letzte; zerstörte Gebäude geben etwas zurück."
 }

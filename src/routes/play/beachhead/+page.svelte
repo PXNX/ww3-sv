@@ -10,27 +10,61 @@
 	import RotateHint from '#lib/components/RotateHint.svelte';
 	import TutorialModal from '#lib/components/TutorialModal.svelte';
 	import { buildingName, islandName } from '#lib/components/beachheadText.js';
+	import type { SkillId } from '#lib/game/beachhead/config.js';
 	import { ISLAND_INCOME } from '#lib/game/beachhead/campaign.js';
+	import {
+		fullscreenAvailable,
+		isFullscreen,
+		onFullscreenChange,
+		toggleFullscreen
+	} from '#lib/game/landscape.js';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
 	import { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
+	import IconBomb from '~icons/lucide/bomb';
+	import IconCloud from '~icons/lucide/cloud';
 	import IconFlag from '~icons/lucide/flag-triangle-right';
+	import IconFlameKindling from '~icons/lucide/flame-kindling';
+	import IconHeartPulse from '~icons/lucide/heart-pulse';
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconList from '~icons/lucide/list';
 	import IconMap from '~icons/lucide/map';
+	import IconMaximize from '~icons/lucide/maximize';
+	import IconMinimize from '~icons/lucide/minimize';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
+	import IconRocket from '~icons/lucide/rocket';
 	import IconRotate from '~icons/lucide/rotate-ccw';
+	import IconZap from '~icons/lucide/zap';
 
 	const game = new BeachheadGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_beachhead_name();
 
+	const SKILL_BUTTONS = [
+		{ id: 'flamingo', icon: IconRocket, label: () => m.beachhead_skill_flamingo() },
+		{ id: 'barrage', icon: IconBomb, label: () => m.beachhead_skill_barrage() },
+		{ id: 'flare', icon: IconFlameKindling, label: () => m.beachhead_skill_flare() },
+		{ id: 'smoke', icon: IconCloud, label: () => m.beachhead_skill_smoke() },
+		{ id: 'heal', icon: IconHeartPulse, label: () => m.beachhead_skill_heal() }
+	];
+
+	const skillLabel = (id: SkillId) => SKILL_BUTTONS.find((skill) => skill.id === id)?.label() ?? '';
+
 	let showTutorial = $state(false);
+	let fullscreen = $state(false);
+	let canFullscreen = $state(false);
 	onMount(() => {
 		game.load();
 		showTutorial = firstPlay('beachhead');
+		canFullscreen = fullscreenAvailable();
+		fullscreen = isFullscreen();
+		return onFullscreenChange(() => (fullscreen = isFullscreen()));
 	});
+
+	async function toggleFullscreenMode() {
+		fullscreen = await toggleFullscreen();
+	}
 
 	function openHelp() {
 		game.pause();
@@ -62,6 +96,24 @@
 			<span class="hidden sm:inline">{m.beachhead_help_button()}</span>
 		</button>
 		{#if playing && running}
+			{#if canFullscreen}
+				<button
+					type="button"
+					class="btn-chunky px-2 py-1 text-sm sm:px-3"
+					aria-label={fullscreen ? m.beachhead_exit_fullscreen() : m.beachhead_fullscreen()}
+					title={fullscreen ? m.beachhead_exit_fullscreen() : m.beachhead_fullscreen()}
+					onclick={toggleFullscreenMode}
+				>
+					{#if fullscreen}
+						<IconMinimize class="size-4" aria-hidden="true" />
+					{:else}
+						<IconMaximize class="size-4" aria-hidden="true" />
+					{/if}
+					<span class="hidden sm:inline">
+						{fullscreen ? m.beachhead_exit_fullscreen() : m.beachhead_fullscreen()}
+					</span>
+				</button>
+			{/if}
 			<button type="button" class="btn-chunky px-3 py-1 text-sm" onclick={() => game.togglePause()}>
 				{#if game.status === 'paused'}
 					<IconPlay class="size-4" aria-hidden="true" />
@@ -112,6 +164,10 @@
 				<span class="rounded-md border-2 border-ink bg-paper px-1.5 py-0.5">
 					{m.beachhead_troops({ count: game.troops })}
 				</span>
+				<span class="rounded-md border-2 border-ink bg-paper px-1.5 py-0.5">
+					<IconZap class="inline size-3 -translate-y-px" aria-hidden="true" />
+					{m.beachhead_skill_energy({ energy: game.energy })}
+				</span>
 				{#if game.focusKind}
 					<span class="rounded-md border-2 border-ink bg-explosion-yellow px-1.5 py-0.5">
 						{m.beachhead_focus({ building: buildingName(game.focusKind) })}
@@ -127,6 +183,43 @@
 					</span>
 				{/if}
 			</div>
+
+			{#if game.status === 'playing'}
+				<div
+					class="pointer-events-none absolute inset-x-0 bottom-2 z-30 flex flex-col items-center gap-1 px-2"
+				>
+					{#if game.selectedSkill}
+						<span
+							class="pointer-events-auto rounded-md border-2 border-ink bg-explosion-yellow px-2 py-0.5 font-display text-xs font-bold shadow-[2px_2px_0_var(--color-ink)]"
+						>
+							{m.beachhead_skill_aim({ skill: skillLabel(game.selectedSkill) })}
+						</span>
+					{/if}
+					<div class="flex flex-wrap justify-center gap-1">
+						{#each SKILL_BUTTONS as skill (skill.id)}
+							{@const SkillIcon = skill.icon}
+							<button
+								type="button"
+								class="btn-chunky pointer-events-auto px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-45 sm:px-3"
+								class:bg-explosion-yellow={game.selectedSkill === skill.id}
+								disabled={!game.canUseSkill && game.selectedSkill !== skill.id}
+								aria-pressed={game.selectedSkill === skill.id}
+								aria-label={`${skill.label()} — ${m.beachhead_skill_cost({ cost: game.skillPrice })}`}
+								title={`${skill.label()} — ${m.beachhead_skill_cost({ cost: game.skillPrice })}`}
+								onclick={() => game.chooseSkill(skill.id)}
+							>
+								<SkillIcon class="size-4" aria-hidden="true" />
+								<span class="hidden sm:inline">{skill.label()}</span>
+								<span
+									class="rounded-md bg-ink px-1 py-0.5 text-[0.62rem] leading-none text-paper tabular-nums"
+								>
+									{game.skillPrice}
+								</span>
+							</button>
+						{/each}
+					</div>
+				</div>
+			{/if}
 
 			<RotateHint />
 
@@ -159,9 +252,11 @@
 		<p>{m.beachhead_tutorial_deploy()}</p>
 		<p>{m.beachhead_tutorial_focus()}</p>
 		<p>{m.beachhead_tutorial_defences()}</p>
+		<p>{m.beachhead_tutorial_skills()}</p>
 		<p>{m.beachhead_tutorial_stars()}</p>
 		<p>{m.beachhead_tutorial_base()}</p>
 		<p>{m.beachhead_tutorial_map()}</p>
+		<p>{m.beachhead_tutorial_landscape()}</p>
 	</TutorialModal>
 
 	<BeachheadWinPanel

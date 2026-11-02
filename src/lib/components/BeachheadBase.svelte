@@ -113,9 +113,11 @@
 						<Icon class="size-6 shrink-0" aria-hidden="true" />
 						<div class="leading-tight">
 							<p class="font-bold">{upgrade.name}</p>
-							<p class="text-xs font-semibold">
-								{m.beachhead_upgrade_level({ level, max })}
-							</p>
+							{#key level}
+								<p class="pop-in text-xs font-semibold">
+									{m.beachhead_upgrade_level({ level, max })}
+								</p>
+							{/key}
 						</div>
 					</div>
 					<p class="text-sm leading-snug">{upgrade.hint}</p>

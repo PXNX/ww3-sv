@@ -3631,5 +3631,18 @@
 	"beachhead_lost_hint": "Upgrade your base and troops, then try again.",
 	"beachhead_home_base": "Home shore",
 	"beachhead_tutorial_base": "Supplies from captured islands and their tax pay for upgrades at your shore base: a stronger headquarters, better-trained troops and bigger landing craft.",
-	"beachhead_tutorial_map": "The island map shows what you control. Each controlled island adds supplies per minute; take the islands in order."
+	"beachhead_tutorial_map": "The island map shows what you control. Each controlled island adds supplies per minute; take the islands in order.",
+	"beachhead_fullscreen": "Fullscreen",
+	"beachhead_exit_fullscreen": "Exit fullscreen",
+	"beachhead_tutorial_landscape": "Turn the phone sideways and use fullscreen for the widest view of the island.",
+	"beachhead_skills_title": "Battle skills",
+	"beachhead_skill_energy": "{energy} energy",
+	"beachhead_skill_cost": "{cost} energy",
+	"beachhead_skill_aim": "Tap the island to call in {skill}",
+	"beachhead_skill_flamingo": "Flamingo missile",
+	"beachhead_skill_barrage": "Barrage",
+	"beachhead_skill_flare": "Flare",
+	"beachhead_skill_smoke": "Smoke screen",
+	"beachhead_skill_heal": "Healing circle",
+	"beachhead_tutorial_skills": "The skill bar calls in support: a Flamingo missile, a barrage, a flare, a smoke screen or a healing circle. Each call costs more energy than the last; destroyed buildings give some back."
 }

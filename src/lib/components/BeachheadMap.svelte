@@ -13,6 +13,7 @@
 	import IconAnchor from '~icons/lucide/anchor';
 	import IconLock from '~icons/lucide/lock';
 	import IconTreePalm from '~icons/lucide/tree-palm';
+	import IconWaves from '~icons/lucide/waves';
 
 	let { game }: { game: BeachheadGame } = $props();
 
@@ -23,7 +24,7 @@
 	<div class="flex flex-wrap items-end justify-between gap-2">
 		<div class="flex items-center gap-3">
 			<span
-				class="flex size-14 shrink-0 items-center justify-center rounded-[14px_8px_16px_10px] border-3 border-ink bg-flag-blue text-paper shadow-[3px_3px_0_var(--color-ink)]"
+				class="island-bob flex size-14 shrink-0 items-center justify-center rounded-[14px_8px_16px_10px] border-3 border-ink bg-flag-blue text-paper shadow-[3px_3px_0_var(--color-ink)]"
 			>
 				<IconTreePalm class="size-8" aria-hidden="true" />
 			</span>
@@ -73,7 +74,9 @@
 			<li class="flex">
 				<button
 					type="button"
-					class="sticker sticker-interactive flex min-h-40 w-full flex-col items-center justify-center gap-1 p-2 text-center disabled:cursor-not-allowed disabled:bg-sand"
+					class="sticker sticker-interactive relative flex min-h-40 w-full flex-col items-center justify-center gap-1 overflow-hidden p-2 text-center disabled:cursor-not-allowed disabled:bg-sand"
+					class:island-controlled={controlled}
+					class:attack-ready={unlocked && !controlled}
 					style:--tilt="{TILTS[index % TILTS.length]}deg"
 					disabled={!unlocked}
 					aria-label={unlocked
@@ -81,8 +84,18 @@
 						: `${m.beachhead_island_label({ index: index + 1 })}, ${m.beachhead_island_locked()}`}
 					onclick={() => game.openIsland(index)}
 				>
-					<span class="flex items-center gap-1 font-display text-lg leading-none font-bold">
-						<span class="text-2xl">{index + 1}</span>
+					{#if unlocked}
+						<IconWaves
+							class="pointer-events-none absolute inset-x-0 bottom-0 size-full text-flag-blue/15"
+							aria-hidden="true"
+						/>
+					{/if}
+					<span
+						class="relative flex items-center gap-1 font-display text-lg leading-none font-bold"
+					>
+						<span class="island-bob inline-block text-2xl" style:animation-delay="{index * 0.22}s"
+							>{index + 1}</span
+						>
 						{#if controlled}
 							<span
 								class="rounded-md border-2 border-ink bg-khaki px-1 py-0.5 text-[0.65rem] uppercase"
@@ -118,3 +131,46 @@
 		{/each}
 	</ol>
 </section>
+
+<style>
+	@keyframes island-bob {
+		0%,
+		100% {
+			transform: translateY(0) rotate(-2deg);
+		}
+		50% {
+			transform: translateY(-3px) rotate(2deg);
+		}
+	}
+
+	@keyframes attack-glow {
+		0%,
+		100% {
+			box-shadow: 4px 4px 0 var(--color-ink);
+		}
+		50% {
+			box-shadow:
+				4px 4px 0 var(--color-ink),
+				0 0 0 5px color-mix(in srgb, var(--color-explosion-yellow) 55%, transparent);
+		}
+	}
+
+	.island-bob {
+		animation: island-bob 3.4s ease-in-out infinite;
+	}
+
+	.island-controlled {
+		background: color-mix(in srgb, var(--color-khaki) 22%, var(--color-paper));
+	}
+
+	.attack-ready {
+		animation: attack-glow 2.2s ease-in-out infinite;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.island-bob,
+		.attack-ready {
+			animation: none;
+		}
+	}
+</style>
