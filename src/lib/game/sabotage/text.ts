@@ -9,8 +9,7 @@ import type { Stars } from './scoring.js';
 export const THEME_NAMES: Record<Theme, string> = {
 	power: 'Power line',
 	depot: 'Ammo depot',
-	factory: 'Shell factory',
-	airport: 'Airport'
+	factory: 'Shell factory'
 };
 
 export const STAR_NAMES: Record<keyof Stars, { name: string; hint: string }> = {
