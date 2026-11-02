@@ -10,7 +10,7 @@
 	import GameShell from '#lib/components/GameShell.svelte';
 	import ReconCanvas from '#lib/components/ReconCanvas.svelte';
 	import TutorialModal from '#lib/components/TutorialModal.svelte';
-	import { MAX_SORTIES } from '#lib/game/recon/config.js';
+	import { MAX_SORTIES, VIEWS } from '#lib/game/recon/config.js';
 	import { SENSORS } from '#lib/game/recon/contacts.js';
 	import { RECON_TEXT } from '#lib/game/recon/text.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -145,7 +145,7 @@
 		</div>
 
 		<div
-			class="[@media(max-height:520px)]:row-span-3 [@media(max-height:520px)]:row-start-1 [@media(max-height:520px)]:w-[calc((100dvh-8rem)*0.857)]"
+			class="[@media(max-height:520px)]:row-span-4 [@media(max-height:520px)]:row-start-1 [@media(max-height:520px)]:w-[calc((100dvh-8rem)*0.857)]"
 		>
 			<ReconCanvas {game} />
 		</div>
