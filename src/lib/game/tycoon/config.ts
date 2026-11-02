@@ -71,227 +71,62 @@ export interface ProducerDef {
 }
 
 export const PRODUCERS: readonly ProducerDef[] = [
-	{ id: 'pumpjack', baseCost: 15, baseCps: 0.1, cycleMs: 1_000 },
-	{ id: 'tanker', baseCost: 100, baseCps: 1, cycleMs: 2_000 },
-	{ id: 'refinery', baseCost: 1_100, baseCps: 8, cycleMs: 3_000 },
-	{ id: 'lobbyist', baseCost: 12_000, baseCps: 94, cycleMs: 5_000 },
-	{ id: 'shadowfleet', baseCost: 130_000, baseCps: 520, cycleMs: 8_000 },
-	{ id: 'paperwork', baseCost: 1_400_000, baseCps: 2_800, cycleMs: 12_000 },
-	{ id: 'summit', baseCost: 20_000_000, baseCps: 15_600, cycleMs: 18_000 },
-	{ id: 'offshore', baseCost: 330_000_000, baseCps: 88_000, cycleMs: 25_000 },
-	{ id: 'cartel', baseCost: 5_100_000_000, baseCps: 520_000, cycleMs: 35_000 },
-	{ id: 'arctic', baseCost: 75_000_000_000, baseCps: 3_200_000, cycleMs: 50_000 },
-	{ id: 'driller', baseCost: 1_100_000_000_000, baseCps: 18_000_000, cycleMs: 60_000 },
-	{ id: 'pipeline', baseCost: 16_000_000_000_000, baseCps: 100_000_000, cycleMs: 70_000 },
-	{ id: 'wellhead', baseCost: 230_000_000_000_000, baseCps: 560_000_000, cycleMs: 80_000 },
-	{ id: 'valve', baseCost: 3_300_000_000_000_000, baseCps: 3_000_000_000, cycleMs: 90_000 },
-	{ id: 'drillbit', baseCost: 47_000_000_000_000_000, baseCps: 16_000_000_000, cycleMs: 100_000 },
-	{ id: 'rig', baseCost: 670_000_000_000_000_000, baseCps: 90_000_000_000, cycleMs: 110_000 },
-	{
-		id: 'platform',
-		baseCost: 9_500_000_000_000_000_000,
-		baseCps: 500_000_000_000,
-		cycleMs: 120_000
-	},
-	{
-		id: 'platform2',
-		baseCost: 135_000_000_000_000_000_000,
-		baseCps: 2_800_000_000_000,
-		cycleMs: 130_000
-	},
-	{
-		id: 'platform3',
-		baseCost: 1_900_000_000_000_000_000_000,
-		baseCps: 15_600_000_000_000,
-		cycleMs: 140_000
-	},
-	{
-		id: 'platform4',
-		baseCost: 27_000_000_000_000_000_000_000,
-		baseCps: 86_000_000_000_000,
-		cycleMs: 150_000
-	},
-	{
-		id: 'platform5',
-		baseCost: 380_000_000_000_000_000_000_000,
-		baseCps: 480_000_000_000_000,
-		cycleMs: 160_000
-	},
-	{
-		id: 'platform6',
-		baseCost: 5_400_000_000_000_000_000_000_000,
-		baseCps: 2_600_000_000_000_000,
-		cycleMs: 170_000
-	},
-	{
-		id: 'platform7',
-		baseCost: 76_000_000_000_000_000_000_000_000,
-		baseCps: 14_400_000_000_000_000,
-		cycleMs: 180_000
-	},
-	{
-		id: 'platform8',
-		baseCost: 1_100_000_000_000_000_000_000_000_000,
-		baseCps: 80_000_000_000_000_000,
-		cycleMs: 190_000
-	},
-	{
-		id: 'platform9',
-		baseCost: 15_000_000_000_000_000_000_000_000_000,
-		baseCps: 440_000_000_000_000_000,
-		cycleMs: 200_000
-	},
-	{
-		id: 'platform10',
-		baseCost: 210_000_000_000_000_000_000_000_000_000,
-		baseCps: 2_400_000_000_000_000_000,
-		cycleMs: 210_000
-	},
-	{
-		id: 'platform11',
-		baseCost: 3_000_000_000_000_000_000_000_000_000_000,
-		baseCps: 13_600_000_000_000_000_000,
-		cycleMs: 220_000
-	},
-	{
-		id: 'platform12',
-		baseCost: 42_000_000_000_000_000_000_000_000_000_000,
-		baseCps: 76_000_000_000_000_000_000,
-		cycleMs: 230_000
-	},
-	{
-		id: 'platform13',
-		baseCost: 600_000_000_000_000_000_000_000_000_000_000,
-		baseCps: 420_000_000_000_000_000_000,
-		cycleMs: 240_000
-	},
-	{
-		id: 'platform14',
-		baseCost: 8_500_000_000_000_000_000_000_000_000_000_000,
-		baseCps: 2_400_000_000_000_000_000_000,
-		cycleMs: 250_000
-	},
-	{
-		id: 'platform15',
-		baseCost: 120_000_000_000_000_000_000_000_000_000_000_000,
-		baseCps: 13_000_000_000_000_000_000_000,
-		cycleMs: 260_000
-	},
-	{
-		id: 'platform16',
-		baseCost: 1.7e36,
-		baseCps: 7.2e22,
-		cycleMs: 270_000
-	},
-	{
-		id: 'platform17',
-		baseCost: 2.4e37,
-		baseCps: 4e23,
-		cycleMs: 280_000
-	},
-	{
-		id: 'platform18',
-		baseCost: 3.4e38,
-		baseCps: 2.2e24,
-		cycleMs: 290_000
-	},
-	{
-		id: 'platform19',
-		baseCost: 4.9e39,
-		baseCps: 1.2e25,
-		cycleMs: 300_000
-	},
-	{
-		id: 'platform20',
-		baseCost: 6.9e40,
-		baseCps: 6.8e25,
-		cycleMs: 310_000
-	},
-	{
-		id: 'platform21',
-		baseCost: 9.8e41,
-		baseCps: 3.8e26,
-		cycleMs: 320_000
-	},
-	{
-		id: 'platform22',
-		baseCost: 1.4e43,
-		baseCps: 2.1e27,
-		cycleMs: 330_000
-	},
-	{
-		id: 'platform23',
-		baseCost: 2e44,
-		baseCps: 1.2e28,
-		cycleMs: 340_000
-	},
-	{
-		id: 'superplatform',
-		baseCost: 2.8e45,
-		baseCps: 6.5e28,
-		cycleMs: 350_000
-	},
-	{
-		id: 'megaplatform',
-		baseCost: 4e46,
-		baseCps: 3.6e29,
-		cycleMs: 360_000
-	},
-	{
-		id: 'gigaplatform',
-		baseCost: 5.7e47,
-		baseCps: 2e30,
-		cycleMs: 370_000
-	},
-	{
-		id: 'teraplatform',
-		baseCost: 8.1e48,
-		baseCps: 1.1e31,
-		cycleMs: 380_000
-	},
-	{
-		id: 'exaplatform',
-		baseCost: 1.1e50,
-		baseCps: 6.2e31,
-		cycleMs: 390_000
-	},
-	{
-		id: 'zetaplatform',
-		baseCost: 1.6e51,
-		baseCps: 3.4e32,
-		cycleMs: 400_000
-	},
-	{
-		id: 'yottaplatform',
-		baseCost: 2.3e52,
-		baseCps: 1.9e33,
-		cycleMs: 410_000
-	},
-	{
-		id: 'ultraplatform',
-		baseCost: 3.3e53,
-		baseCps: 1.1e34,
-		cycleMs: 420_000
-	},
-	{
-		id: 'infinityplatform',
-		baseCost: 4.7e54,
-		baseCps: 5.8e34,
-		cycleMs: 430_000
-	},
-	{
-		id: 'eternityplatform',
-		baseCost: 6.6e55,
-		baseCps: 3.2e35,
-		cycleMs: 440_000
-	}
+	{ id: 'pumpjack', baseCost: 15, baseCps: 0.1, cycleMs: 1_000 }, // pays for itself in 150s
+	{ id: 'tanker', baseCost: 180, baseCps: 1.12, cycleMs: 2_000 }, // pays for itself in 161s
+	{ id: 'refinery', baseCost: 2_160, baseCps: 12.6, cycleMs: 3_000 }, // pays for itself in 172s
+	{ id: 'lobbyist', baseCost: 25_900, baseCps: 141, cycleMs: 5_000 }, // pays for itself in 184s
+	{ id: 'shadowfleet', baseCost: 311_000, baseCps: 1_580, cycleMs: 8_000 }, // pays for itself in 197s
+	{ id: 'paperwork', baseCost: 3_730_000, baseCps: 17_700, cycleMs: 12_000 }, // pays for itself in 210s
+	{ id: 'summit', baseCost: 44_800_000, baseCps: 199_000, cycleMs: 18_000 }, // pays for itself in 225s
+	{ id: 'offshore', baseCost: 537_000_000, baseCps: 2_230_000, cycleMs: 25_000 }, // pays for itself in 241s
+	{ id: 'cartel', baseCost: 6_450_000_000, baseCps: 25_000_000, cycleMs: 35_000 }, // pays for itself in 258s
+	{ id: 'arctic', baseCost: 77_400_000_000, baseCps: 281_000_000, cycleMs: 50_000 }, // pays for itself in 276s
+	{ id: 'driller', baseCost: 929_000_000_000, baseCps: 3_150_000_000, cycleMs: 60_000 }, // pays for itself in 295s
+	{ id: 'pipeline', baseCost: 11_100_000_000_000, baseCps: 35_300_000_000, cycleMs: 70_000 }, // pays for itself in 316s
+	{ id: 'wellhead', baseCost: 134_000_000_000_000, baseCps: 396_000_000_000, cycleMs: 80_000 }, // pays for itself in 338s
+	{ id: 'valve', baseCost: 1.6e15, baseCps: 4_440_000_000_000, cycleMs: 90_000 }, // pays for itself in 361s
+	{ id: 'drillbit', baseCost: 1.93e16, baseCps: 49_800_000_000_000, cycleMs: 100_000 }, // pays for itself in 387s
+	{ id: 'rig', baseCost: 2.31e17, baseCps: 558_000_000_000_000, cycleMs: 110_000 }, // pays for itself in 414s
+	{ id: 'platform', baseCost: 2.77e18, baseCps: 6.26e15, cycleMs: 120_000 }, // pays for itself in 443s
+	{ id: 'platform2', baseCost: 3.33e19, baseCps: 7.02e16, cycleMs: 130_000 }, // pays for itself in 474s
+	{ id: 'platform3', baseCost: 3.99e20, baseCps: 7.88e17, cycleMs: 140_000 }, // pays for itself in 507s
+	{ id: 'platform4', baseCost: 4.79e21, baseCps: 8.83e18, cycleMs: 150_000 }, // pays for itself in 542s
+	{ id: 'platform5', baseCost: 5.75e22, baseCps: 9.91e19, cycleMs: 160_000 }, // pays for itself in 580s
+	{ id: 'platform6', baseCost: 6.9e23, baseCps: 1.11e21, cycleMs: 170_000 }, // pays for itself in 621s
+	{ id: 'platform7', baseCost: 8.28e24, baseCps: 1.25e22, cycleMs: 180_000 }, // pays for itself in 665s
+	{ id: 'platform8', baseCost: 9.94e25, baseCps: 1.4e23, cycleMs: 190_000 }, // pays for itself in 711s
+	{ id: 'platform9', baseCost: 1.19e27, baseCps: 1.57e24, cycleMs: 200_000 }, // pays for itself in 761s
+	{ id: 'platform10', baseCost: 1.43e28, baseCps: 1.76e25, cycleMs: 210_000 }, // pays for itself in 814s
+	{ id: 'platform11', baseCost: 1.72e29, baseCps: 1.97e26, cycleMs: 220_000 }, // pays for itself in 871s
+	{ id: 'platform12', baseCost: 2.06e30, baseCps: 2.21e27, cycleMs: 230_000 }, // pays for itself in 932s
+	{ id: 'platform13', baseCost: 2.47e31, baseCps: 2.48e28, cycleMs: 240_000 }, // pays for itself in 997s
+	{ id: 'platform14', baseCost: 2.97e32, baseCps: 2.78e29, cycleMs: 250_000 }, // pays for itself in 1067s
+	{ id: 'platform15', baseCost: 3.56e33, baseCps: 3.12e30, cycleMs: 260_000 }, // pays for itself in 1142s
+	{ id: 'platform16', baseCost: 4.27e34, baseCps: 3.5e31, cycleMs: 270_000 }, // pays for itself in 1222s
+	{ id: 'platform17', baseCost: 5.13e35, baseCps: 3.92e32, cycleMs: 280_000 }, // pays for itself in 1307s
+	{ id: 'platform18', baseCost: 6.15e36, baseCps: 4.4e33, cycleMs: 290_000 }, // pays for itself in 1399s
+	{ id: 'platform19', baseCost: 7.38e37, baseCps: 4.93e34, cycleMs: 300_000 }, // pays for itself in 1497s
+	{ id: 'platform20', baseCost: 8.86e38, baseCps: 5.53e35, cycleMs: 310_000 }, // pays for itself in 1601s
+	{ id: 'platform21', baseCost: 1.06e40, baseCps: 6.2e36, cycleMs: 320_000 }, // pays for itself in 1714s
+	{ id: 'platform22', baseCost: 1.28e41, baseCps: 6.96e37, cycleMs: 330_000 }, // pays for itself in 1834s
+	{ id: 'platform23', baseCost: 1.53e42, baseCps: 7.8e38, cycleMs: 340_000 }, // pays for itself in 1962s
+	{ id: 'superplatform', baseCost: 1.84e43, baseCps: 8.75e39, cycleMs: 350_000 }, // pays for itself in 2099s
+	{ id: 'megaplatform', baseCost: 2.2e44, baseCps: 9.82e40, cycleMs: 360_000 }, // pays for itself in 2246s
+	{ id: 'gigaplatform', baseCost: 2.65e45, baseCps: 1.1e42, cycleMs: 370_000 }, // pays for itself in 2403s
+	{ id: 'teraplatform', baseCost: 3.17e46, baseCps: 1.23e43, cycleMs: 380_000 }, // pays for itself in 2572s
+	{ id: 'exaplatform', baseCost: 3.81e47, baseCps: 1.38e44, cycleMs: 390_000 }, // pays for itself in 2752s
+	{ id: 'zetaplatform', baseCost: 4.57e48, baseCps: 1.55e45, cycleMs: 400_000 }, // pays for itself in 2944s
+	{ id: 'yottaplatform', baseCost: 5.49e49, baseCps: 1.74e46, cycleMs: 410_000 }, // pays for itself in 3150s
+	{ id: 'ultraplatform', baseCost: 6.58e50, baseCps: 1.95e47, cycleMs: 420_000 }, // pays for itself in 3371s
+	{ id: 'infinityplatform', baseCost: 7.9e51, baseCps: 2.19e48, cycleMs: 430_000 }, // pays for itself in 3607s
+	{ id: 'eternityplatform', baseCost: 9.48e52, baseCps: 2.46e49, cycleMs: 440_000 }, // pays for itself in 3859s
 ];
 
 /** No speed bonus makes a cycle shorter than this */
 export const MIN_CYCLE_MS = 200;
 
 /** Every unit bought makes the next one this much dearer */
-export const COST_GROWTH = 1.15;
+export const COST_GROWTH = 1.12;
 
 /** More than this of one producer is never accepted from a save file */
 export const MAX_OWNED = 1000;
