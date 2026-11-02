@@ -212,7 +212,6 @@ export class ReconGame {
 		if (this.status !== 'playing') return;
 		for (const t of this.run.tracks) {
 			if (t.status === 'struck' || t.contact.role === 'civilian') continue;
-<
 			// Move toward target if attack; stay near if defend
 
 			const dx = targetX - t.contact.x;
