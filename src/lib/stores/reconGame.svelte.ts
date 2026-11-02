@@ -212,10 +212,9 @@ export class ReconGame {
 		if (this.status !== 'playing') return;
 		for (const t of this.run.tracks) {
 			if (t.status === 'struck' || t.contact.role === 'civilian') continue;
-<<<<<<< Updated upstream
+<
 			// Move toward target if attack; stay near if defend
-=======
->>>>>>> Stashed changes
+
 			const dx = targetX - t.contact.x;
 			const dy = targetY - t.contact.y;
 			const d = Math.hypot(dx, dy);
