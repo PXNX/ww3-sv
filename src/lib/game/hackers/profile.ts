@@ -20,6 +20,8 @@ export interface HackersProfile {
 	bank: number;
 	/** The unit's own machine */
 	hardware: Hardware;
+	/** Botnet + data from previous runs */
+	botnet: Botnet;
 	/** Addresses marked in the target list */
 	favorites: string[];
 }
@@ -28,7 +30,7 @@ export interface HackersProfile {
 export const HACKERS_PROFILE_KEY = 'hackers:profile';
 
 export function defaultProfile(): HackersProfile {
-	return { bank: 0, hardware: emptyHardware(), favorites: [] };
+	return { bank: 0, hardware: emptyHardware(), botnet: emptyBotnet(), favorites: [] };
 }
 
 export function isProfile(value: unknown): value is HackersProfile {
@@ -38,6 +40,7 @@ export function isProfile(value: unknown): value is HackersProfile {
 		isFiniteNumber(profile.bank) &&
 		profile.bank >= 0 &&
 		isHardware(profile.hardware) &&
+		(profile.botnet === undefined || (typeof profile.botnet === 'object' && typeof (profile.botnet as Record<string, unknown>).nodes === 'number')) &&
 		Array.isArray(profile.favorites) &&
 		profile.favorites.every((ip) => typeof ip === 'string')
 	);
@@ -72,6 +75,15 @@ export function hardwareMaxed(profile: HackersProfile, id: HardwareId): boolean 
 
 export function isFavorite(profile: HackersProfile, ip: string): boolean {
 	return profile.favorites.includes(ip);
+}
+
+/** Adds a botnet node from data */
+export function addBotnetNode(profile: HackersProfile, dataCost: number): HackersProfile | null {
+	if (profile.botnet.data < dataCost) return null;
+	return {
+		...profile,
+		botnet: { ...profile.botnet, nodes: profile.botnet.nodes + 1, data: profile.botnet.data - dataCost }
+	};
 }
 
 /** Marks or unmarks an address, keeping the rest of the list in order */
