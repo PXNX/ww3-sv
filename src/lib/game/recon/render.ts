@@ -75,8 +75,8 @@ const GROUND: Record<Sensor, GroundPalette> = {
 		woodLine: '#3f6a34',
 		road: '#ece5c4',
 		roadEdge: INK,
-		house: '#f3ecd0',
-		roofs: ['#e5484d', '#d9823b', '#4fa8d8'],
+		house: '#b5b08a',
+		roofs: ['#a88a74', '#8a7a6c', '#80706a'],
 		line: 2
 	},
 	ir: {
@@ -88,8 +88,8 @@ const GROUND: Record<Sensor, GroundPalette> = {
 		woodLine: '#3a3a3a',
 		road: '#181818',
 		roadEdge: '#101010',
-		house: '#555555',
-		roofs: ['#6a6a6a', '#606060', '#707070'],
+		house: '#404040',
+		roofs: ['#383838', '#323232', '#3a3a3a'],
 		line: 1
 	},
 	sar: {
@@ -101,8 +101,8 @@ const GROUND: Record<Sensor, GroundPalette> = {
 		woodLine: '#3a6249',
 		road: '#050b08',
 		roadEdge: '#030605',
-		house: '#b9ecce',
-		roofs: ['#d6fbe3', '#a9dcbc', '#e8fff1'],
+		house: '#5a7a6e',
+		roofs: ['#4a6a5c', '#5e7a6a', '#527a5e'],
 		line: 1
 	}
 };
