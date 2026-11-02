@@ -10,6 +10,7 @@
  */
 import type { ContractSpec } from './config';
 import { contractSpec, TRACE_WRONG_GUESS } from './config';
+import { emptyHardware, hardwareEffects, type Hardware } from './hardware';
 
 export type ToolId = 'breach' | 'keylog' | 'relays' | 'miner' | 'siphon';
 
@@ -89,33 +90,43 @@ export function relayReliefPercent(upgrades: Upgrades): number {
 	return Math.round((1 - RELAY_CREEP_RELIEF ** upgrades.relays) * 100);
 }
 
-/** The contract numbers with the bought tools folded in */
-export function effectiveSpec(n: number, upgrades: Upgrades): ContractSpec {
+/** The contract numbers with the bought tools and the unit's own machine folded in */
+export function effectiveSpec(
+	n: number,
+	upgrades: Upgrades,
+	hardware: Hardware = emptyHardware()
+): ContractSpec {
 	const base = contractSpec(n);
 	const slow = keylogSpeed(upgrades);
+	const ram = hardwareEffects(hardware).creepMultiplier;
+	const creep = {
+		breach: base.creep.breach * ram,
+		keylog: base.creep.keylog * ram,
+		breaker: base.creep.breaker * relayCreep(upgrades) * ram
+	};
 	return {
 		...base,
 		maxAttempts: base.maxAttempts + breachAttempts(upgrades),
 		chipMs: Math.round(base.chipMs * slow),
 		spawnMs: Math.round(base.spawnMs * slow),
-		creep: { ...base.creep, breaker: base.creep.breaker * relayCreep(upgrades) },
+		creep
 	};
 }
 
 /** DogeLite a second the miner on the player's own machine pays */
 export const MINER_INCOME_PER_LEVEL = 3;
 
-export function minerIncome(upgrades: Upgrades): number {
-	return upgrades.miner * MINER_INCOME_PER_LEVEL;
+export function minerIncome(upgrades: Upgrades, hardware: Hardware = emptyHardware()): number {
+	return upgrades.miner * MINER_INCOME_PER_LEVEL * hardwareEffects(hardware).minerMultiplier;
 }
 
 /** One target day of the siphon clock */
 export const SIPHON_DAY_MS = 20000;
 
 /** The share of the target's wallet the siphon takes per day */
-export function siphonShare(upgrades: Upgrades): number {
+export function siphonShare(upgrades: Upgrades, hardware: Hardware = emptyHardware()): number {
 	if (upgrades.siphon <= 0) return 0;
-	return Math.min(1, 0.15 + 0.1 * upgrades.siphon);
+	return Math.min(1, 0.15 + 0.1 * upgrades.siphon + hardwareEffects(hardware).siphonBonus);
 }
 
 /** What a target's wallet holds on the contract of that number */

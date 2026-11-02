@@ -4,6 +4,7 @@ import { isDark, makePanel, pressRelay } from './breaker';
 import {
 	GLYPHS,
 	STARTING_LIVES,
+	TARGETS,
 	TRACE_AFTER_TRACED,
 	TRACE_HONEYPOT,
 	TRACE_MAX,
@@ -30,8 +31,17 @@ import {
 	siphonShare,
 	toolSpec,
 	upgradeCost,
-	walletFor
+	walletFor,
+	emptyUpgrades
 } from './software';
+import {
+	HARDWARE_SPECS,
+	emptyHardware,
+	hardwareCost,
+	hardwareEffects,
+	hardwareSpec,
+	isHardware
+} from './hardware';
 
 const random = createRandom(42);
 
@@ -393,6 +403,106 @@ describe('wallet siphon', () => {
 		);
 		flipRelay(state, 4, random);
 		expect(state.contract.wallet).toBe(walletFor(2));
+	});
+});
+
+describe('own hardware', () => {
+	it('charges more for every level and stops at the maximum', () => {
+		expect(hardwareCost('cpu', 0)).toBe(150);
+		expect(hardwareCost('cpu', 1)!).toBeGreaterThan(hardwareCost('cpu', 0)!);
+		expect(hardwareCost('gpu', hardwareSpec('gpu').maxLevel)).toBeNull();
+		expect(HARDWARE_SPECS.map((spec) => spec.id)).toEqual(['cpu', 'ram', 'gpu']);
+	});
+
+	it('turns levels into mining, trace and siphon multipliers', () => {
+		expect(hardwareEffects(emptyHardware())).toEqual({
+			minerMultiplier: 1,
+			creepMultiplier: 1,
+			siphonBonus: 0
+		});
+		const effects = hardwareEffects({ cpu: 2, ram: 3, gpu: 2 });
+		expect(effects.minerMultiplier).toBeCloseTo(1.5);
+		expect(effects.creepMultiplier).toBeCloseTo(0.96 ** 3);
+		expect(effects.siphonBonus).toBeCloseTo(0.1);
+	});
+
+	it('guards what comes out of local storage', () => {
+		expect(isHardware({ cpu: 5, ram: 0, gpu: 5 })).toBe(true);
+		expect(isHardware({ cpu: 6, ram: 0, gpu: 0 })).toBe(false);
+		expect(isHardware({ cpu: 1.5, ram: 0, gpu: 0 })).toBe(false);
+		expect(isHardware({ cpu: 1, ram: -1, gpu: 0 })).toBe(false);
+		expect(isHardware(null)).toBe(false);
+	});
+
+	it('makes the miner pay more with a better CPU', () => {
+		const hardware = { cpu: 2, ram: 0, gpu: 0 };
+		const state = createGame(createRandom(5), { hardware });
+		state.score = 100_000;
+		buyUpgrade(state, 'miner');
+		expect(minerIncome(state.upgrades, hardware)).toBe(
+			minerIncome(state.upgrades, emptyHardware()) * 1.5
+		);
+		const before = state.score;
+		step(state, 2000, random);
+		expect(state.score).toBe(before + Math.floor(minerIncome(state.upgrades, hardware) * 2));
+	});
+
+	it('leaves more room before the trace fills with more RAM', () => {
+		const base = contractSpec(1).creep;
+		const state = createGame(createRandom(5), { hardware: { cpu: 0, ram: 2, gpu: 0 } });
+		expect(state.contract.spec.creep.breach).toBeCloseTo(base.breach * 0.96 ** 2);
+		expect(state.contract.spec.creep.keylog).toBeCloseTo(base.keylog * 0.96 ** 2);
+		expect(state.contract.spec.creep.breaker).toBeCloseTo(base.breaker * 0.96 ** 2);
+	});
+
+	it('lets a better GPU take a bigger share of the wallet', () => {
+		const upgrades = { ...emptyUpgrades(), siphon: 1 };
+		const plain = siphonShare(upgrades);
+		const boosted = siphonShare(upgrades, { cpu: 0, ram: 0, gpu: 2 });
+		expect(boosted).toBeCloseTo(plain + 0.1);
+	});
+});
+
+describe('target list', () => {
+	/** A dark panel that one press on the middle relay can finish */
+	function freshPanel(): boolean[] {
+		return pressRelay(
+			Array.from({ length: 9 }, () => false),
+			3,
+			4
+		);
+	}
+
+	it('starts on the target chosen in the terminal', () => {
+		const state = createGame(createRandom(7), { targetIndex: 2 });
+		expect(state.contract.ip).toBe(TARGETS[2].ip);
+		expect(state.contract.system).toBe(TARGETS[2].system);
+		expect(state.targetIndex).toBe(2);
+	});
+
+	it('moves on to the next listed target when a contract is finished', () => {
+		const state = createGame(createRandom(7), { targetIndex: 2 });
+		state.contract.stage = 'breaker';
+		state.contract.panel = freshPanel();
+		flipRelay(state, 4, random);
+		expect(state.completed).toBe(1);
+		expect(state.targetIndex).toBe(3);
+		expect(state.contract.ip).toBe(TARGETS[3].ip);
+	});
+
+	it('wraps around the list and keeps the target after a trace-out', () => {
+		const last = createGame(createRandom(7), { targetIndex: TARGETS.length - 1 });
+		last.contract.stage = 'breaker';
+		last.contract.panel = freshPanel();
+		flipRelay(last, 4, random);
+		expect(last.targetIndex).toBe(0);
+		expect(last.contract.ip).toBe(TARGETS[0].ip);
+
+		const traced = createGame(createRandom(7), { targetIndex: 1 });
+		step(traced, 500_000, random);
+		expect(traced.lives).toBe(STARTING_LIVES - 1);
+		expect(traced.targetIndex).toBe(1);
+		expect(traced.contract.ip).toBe(TARGETS[1].ip);
 	});
 });
 

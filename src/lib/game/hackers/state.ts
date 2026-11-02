@@ -31,6 +31,7 @@ import {
 	wrongGuessTrace
 } from './software';
 import { isDark, makePanel, pressRelay } from './breaker';
+import { emptyHardware, type Hardware } from './hardware';
 import {
 	captureChip,
 	captureLetter,
@@ -78,6 +79,10 @@ export interface HackersState {
 	timeMs: number;
 	/** Software bought in this run */
 	upgrades: Upgrades;
+	/** The unit's own machine, bought with banked DogeLite and kept between runs */
+	hardware: Hardware;
+	/** Which entry of TARGETS the contract in play sits on */
+	targetIndex: number;
 	/** Mined DogeLite that has not reached a whole coin yet */
 	pendingIncome: number;
 	/** Time towards the siphon's next day */
@@ -105,10 +110,12 @@ export type HackersEvent =
 export function newContract(
 	n: number,
 	random: Random,
-	upgrades: Upgrades = emptyUpgrades()
+	upgrades: Upgrades = emptyUpgrades(),
+	hardware: Hardware = emptyHardware(),
+	targetIndex = 0
 ): Contract {
-	const spec = effectiveSpec(n, upgrades);
-	const target = TARGETS[(n - 1) % TARGETS.length];
+	const spec = effectiveSpec(n, upgrades, hardware);
+	const target = TARGETS[((targetIndex % TARGETS.length) + TARGETS.length) % TARGETS.length];
 	const wallet = walletFor(n);
 	return {
 		n,
@@ -126,10 +133,19 @@ export function newContract(
 	};
 }
 
-export function createGame(random: Random): HackersState {
+export interface GameOptions {
+	/** The unit's own machine from the profile */
+	hardware?: Hardware;
+	/** Target picked in the terminal's target list */
+	targetIndex?: number;
+}
+
+export function createGame(random: Random, options: GameOptions = {}): HackersState {
 	const upgrades = emptyUpgrades();
+	const hardware = options.hardware ?? emptyHardware();
+	const targetIndex = options.targetIndex ?? 0;
 	return {
-		contract: newContract(1, random, upgrades),
+		contract: newContract(1, random, upgrades, hardware, targetIndex),
 		lives: STARTING_LIVES,
 		trace: 0,
 		score: 0,
@@ -138,6 +154,8 @@ export function createGame(random: Random): HackersState {
 		over: false,
 		timeMs: 0,
 		upgrades,
+		hardware: { ...hardware },
+		targetIndex,
 		pendingIncome: 0,
 		siphonMs: 0,
 		siphoned: 0
@@ -161,7 +179,13 @@ function addTrace(state: HackersState, amount: number, random: Random): HackersE
 		return events;
 	}
 	state.trace = TRACE_AFTER_TRACED;
-	state.contract = newContract(state.number, random, state.upgrades);
+	state.contract = newContract(
+		state.number,
+		random,
+		state.upgrades,
+		state.hardware,
+		state.targetIndex
+	);
 	events.push(contractEvent(state.contract));
 	return events;
 }
@@ -262,7 +286,14 @@ export function flipRelay(state: HackersState, index: number, random: Random): H
 	state.number += 1;
 	state.trace = Math.max(0, state.trace - TRACE_RELIEF);
 	events.push({ type: 'contract-done', points, n: contract.n });
-	state.contract = newContract(state.number, random, state.upgrades);
+	state.targetIndex = (state.targetIndex + 1) % TARGETS.length;
+	state.contract = newContract(
+		state.number,
+		random,
+		state.upgrades,
+		state.hardware,
+		state.targetIndex
+	);
 	events.push(contractEvent(state.contract));
 	return events;
 }
@@ -279,7 +310,7 @@ export function buyUpgrade(state: HackersState, tool: ToolId): HackersEvent[] {
 	// The three stage tools change the contract in play right away; the miner and the siphon
 	// simply keep running
 	if (tool !== 'miner' && tool !== 'siphon') {
-		state.contract.spec = effectiveSpec(state.contract.n, state.upgrades);
+		state.contract.spec = effectiveSpec(state.contract.n, state.upgrades, state.hardware);
 	}
 	return [{ type: 'upgrade', tool, level: level + 1, cost }];
 }
@@ -291,14 +322,14 @@ export function buyUpgrade(state: HackersState, tool: ToolId): HackersEvent[] {
 function passiveIncome(state: HackersState, dtMs: number): HackersEvent[] {
 	const events: HackersEvent[] = [];
 
-	state.pendingIncome += (minerIncome(state.upgrades) * dtMs) / 1000;
+	state.pendingIncome += (minerIncome(state.upgrades, state.hardware) * dtMs) / 1000;
 	const mined = Math.floor(state.pendingIncome);
 	if (mined > 0) {
 		state.pendingIncome -= mined;
 		state.score += mined;
 	}
 
-	const share = siphonShare(state.upgrades);
+	const share = siphonShare(state.upgrades, state.hardware);
 	const contract = state.contract;
 	if (share <= 0 || contract.stage === 'breach' || contract.wallet <= 0) return events;
 
