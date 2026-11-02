@@ -36,12 +36,12 @@ export function sortieParams(sortie: number): SortieParams {
 	const late = n - 2;
 	return {
 		contacts,
-		timeS: Math.max(55, 78 - 3 * (n - 1)),
+		timeS: Math.max(42, 65 - 3 * (n - 1)),
 		hostiles: Math.ceil(contacts / 2),
 		aaCount: n < 3 ? 0 : n < 6 ? 1 : 2,
-		coverChance: n < 2 ? 0 : Math.min(0.5, 0.15 + 0.07 * late),
-		decoyChance: n < 2 ? 0 : Math.min(0.6, 0.35 + 0.05 * late),
-		coldChance: n < 2 ? 0 : Math.min(0.4, 0.1 + 0.05 * late),
+		coverChance: n < 2 ? 0 : Math.min(0.75, 0.25 + 0.1 * late),
+		decoyChance: n < 2 ? 0 : Math.min(0.8, 0.5 + 0.08 * late),
+		coldChance: n < 2 ? 0 : Math.min(0.65, 0.2 + 0.08 * late),
 		troopsChance: n < 2 ? 0 : 0.25
 	};
 }
