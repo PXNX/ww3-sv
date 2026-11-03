@@ -33,6 +33,7 @@
 	import BeachheadArmy from '#lib/components/BeachheadArmy.svelte';
 	import BeachheadResources from '#lib/components/BeachheadResources.svelte';
 	import BeachheadSheet from '#lib/components/BeachheadSheet.svelte';
+	import BeachheadTraining from '#lib/components/BeachheadTraining.svelte';
 	import BeachheadTakeoverNotice from '#lib/components/BeachheadTakeoverNotice.svelte';
 	import ResourceIcon from '#lib/components/ResourceIcon.svelte';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
@@ -45,6 +46,7 @@
 	import IconCircleArrowUp from '~icons/lucide/circle-arrow-up';
 	import IconCrosshair from '~icons/lucide/crosshair';
 	import IconFlag from '~icons/lucide/flag-triangle-right';
+	import IconGraduationCap from '~icons/lucide/graduation-cap';
 	import IconHammer from '~icons/lucide/hammer';
 	import IconLock from '~icons/lucide/lock';
 	import IconMove from '~icons/lucide/move';
@@ -64,7 +66,7 @@
 		cell: Cell;
 		valid: boolean;
 	};
-	type Sheet = 'army' | 'mines' | 'trophies';
+	type Sheet = 'army' | 'training' | 'mines' | 'trophies';
 
 	let stage: HTMLDivElement | undefined = $state();
 	let canvas: HTMLCanvasElement | undefined = $state();
@@ -502,6 +504,17 @@
 							{row.level}/{row.max}
 						</span>
 					</p>
+					{#if panel.key === 'training'}
+						<button
+							type="button"
+							class="btn-chunky flex size-10 items-center justify-center rounded-full bg-explosion-yellow p-0"
+							aria-label={m.beachhead_open_training()}
+							title={m.beachhead_open_training()}
+							onclick={() => (sheet = 'training')}
+						>
+							<IconGraduationCap class="size-6" aria-hidden="true" />
+						</button>
+					{/if}
 					{#if row.remainingMs !== null}
 						<p class="flex items-center gap-1 font-display font-bold text-flag-blue tabular-nums">
 							<IconHammer class="size-4" aria-hidden="true" />
@@ -589,6 +602,14 @@
 	onclose={() => (sheet = null)}
 >
 	<BeachheadArmy {game} />
+</BeachheadSheet>
+
+<BeachheadSheet
+	open={sheet === 'training'}
+	title={m.beachhead_building_training()}
+	onclose={() => (sheet = null)}
+>
+	<BeachheadTraining {game} />
 </BeachheadSheet>
 
 <BeachheadSheet

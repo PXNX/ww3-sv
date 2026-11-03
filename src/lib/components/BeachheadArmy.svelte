@@ -5,54 +5,27 @@
 -->
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages.js';
-	import { ARMY_KINDS, type Resources } from '#lib/game/beachhead/campaign.js';
-	import {
-		MAX_TROOP_LEVEL,
-		TROOPS,
-		type ArmyKind,
-		type TroopKind
-	} from '#lib/game/beachhead/config.js';
+	import { ARMY_KINDS } from '#lib/game/beachhead/campaign.js';
+	import { TROOPS, type ArmyKind, type TroopKind } from '#lib/game/beachhead/config.js';
 	import { troopName } from '#lib/components/beachheadText.js';
 	import { TROOP_ICONS } from '#lib/components/beachheadIcons.js';
 	import ResourceIcon from '#lib/components/ResourceIcon.svelte';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
-	import IconCircleArrowUp from '~icons/lucide/circle-arrow-up';
 	import IconLock from '~icons/lucide/lock';
 	import IconMinus from '~icons/lucide/minus';
 	import IconPlus from '~icons/lucide/plus';
 	import IconRotateCcw from '~icons/lucide/rotate-ccw';
 	import IconShip from '~icons/lucide/ship';
-	import IconStar from '~icons/lucide/star';
 	import IconUsers from '~icons/lucide/users';
 
 	let { game }: { game: BeachheadGame } = $props();
 
-	const RESOURCE_KINDS = ['wood', 'stone', 'iron', 'gold'] as const;
-	const kinds = Object.keys(TROOPS) as TroopKind[];
+	const kinds = ARMY_KINDS;
 	const isArmy = (kind: TroopKind): kind is ArmyKind =>
 		(ARMY_KINDS as readonly string[]).includes(kind);
 	const fill = $derived(game.armyCapacity > 0 ? game.armyUsed / game.armyCapacity : 0);
 	const lost = $derived(game.lost);
 </script>
-
-{#snippet costChips(cost: Resources)}
-	<span
-		class="flex flex-wrap items-center justify-center gap-1 font-display text-[0.7rem] font-bold"
-	>
-		{#each RESOURCE_KINDS as resource (resource)}
-			<span
-				class="inline-flex items-center gap-0.5 rounded border-2 border-ink px-1 {game.resources[
-					resource
-				] >= cost[resource]
-					? 'bg-paper'
-					: 'bg-tie-red text-paper'}"
-			>
-				<ResourceIcon kind={resource} class="size-3.5" />
-				{cost[resource]}
-			</span>
-		{/each}
-	</span>
-{/snippet}
 
 <div class="flex flex-wrap items-center gap-2">
 	<IconUsers class="size-5 shrink-0" aria-hidden="true" />
@@ -109,9 +82,6 @@
 <ul class="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
 	{#each kinds as kind (kind)}
 		{@const TroopIcon = TROOP_ICONS[kind]}
-		{@const level = game.troopLevel(kind)}
-		{@const cost = game.troopUpgradeCost(kind)}
-		{@const locked = game.troopUpgradeLocked(kind)}
 		<li
 			class="relative flex flex-col items-center gap-1 rounded-[14px] border-2 border-ink bg-sand p-2"
 		>
@@ -129,22 +99,6 @@
 				<TroopIcon class="size-7" aria-hidden="true" />
 			</span>
 			<p class="text-center text-xs leading-tight font-bold">{troopName(kind)}</p>
-			<div
-				class="flex gap-px"
-				role="img"
-				aria-label={m.beachhead_troop_level({ level, max: MAX_TROOP_LEVEL })}
-				title={m.beachhead_troop_stats({
-					hp: game.troopStats(kind).hp,
-					damage: game.troopStats(kind).damage
-				})}
-			>
-				{#each Array.from({ length: MAX_TROOP_LEVEL }, (_, index) => index + 1) as pip (pip)}
-					<span
-						class="h-1.5 w-2 rounded-sm border border-ink {pip <= level ? 'bg-khaki' : 'bg-paper'}"
-					></span>
-				{/each}
-			</div>
-
 			{#if isArmy(kind)}
 				<div class="flex items-center gap-1">
 					<button
@@ -180,23 +134,6 @@
 					<ResourceIcon kind="gold" class="size-3.5" />
 					{game.retrainGold(kind)}
 				</span>
-			{/if}
-
-			{#if cost === null}
-				<IconStar class="size-5 text-explosion-yellow" aria-label={m.beachhead_upgrade_max()} />
-			{:else if locked}
-				<IconLock class="size-5" aria-label={m.beachhead_troop_locked()} />
-			{:else}
-				{@render costChips(cost)}
-				<button
-					type="button"
-					class="btn-chunky flex size-8 items-center justify-center rounded-full p-0"
-					aria-label={`${m.beachhead_troop_train()} ${troopName(kind)}`}
-					disabled={!game.canUpgradeTroop(kind)}
-					onclick={() => game.upgradeTroop(kind)}
-				>
-					<IconCircleArrowUp class="size-5" aria-hidden="true" />
-				</button>
 			{/if}
 		</li>
 	{/each}
