@@ -60,3 +60,24 @@ describe('the bunker', () => {
 		expect(securedShare(parseSave(JSON.parse(JSON.stringify(save)))!)).toBeCloseTo(0.32, 5);
 	});
 });
+
+describe('cutting a build with an advert', () => {
+	it('takes a tenth of the total time off, a few times, and never ends in the past', async () => {
+		const { canCutBuild, cutBuildTime, startUpgrade, MAX_AD_CUTS } = await import('./campaign');
+		const start = {
+			...newSave(0),
+			resources: { wood: 999, stone: 999, iron: 999, gold: 99 }
+		};
+		let save = startUpgrade(start, 'boat-0', 0, 1)!;
+		const task = save.builders[0];
+		const total = task.endsAt - task.startedAt;
+		expect(canCutBuild(save, 'training')).toBe(false);
+		save = cutBuildTime(save, 'boat-0', 0)!;
+		expect(save.builders[0].endsAt).toBe(task.endsAt - Math.round(total * 0.1));
+		for (let cut = 1; cut < MAX_AD_CUTS; cut++) save = cutBuildTime(save, 'boat-0', 0)!;
+		expect(cutBuildTime(save, 'boat-0', 0)).toBeNull();
+		// A cut never moves the end before now
+		const late = cutBuildTime(startUpgrade(start, 'boat-0', 0, 1)!, 'boat-0', task.endsAt)!;
+		expect(late.builders[0].endsAt).toBe(task.endsAt);
+	});
+});

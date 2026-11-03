@@ -186,6 +186,8 @@ export interface BuildTask {
 	key: BuildingKey;
 	startedAt: number;
 	endsAt: number;
+	/** How many adverts have already cut this build's time */
+	cuts?: number;
 }
 
 export interface CareerStats {
@@ -566,6 +568,33 @@ function withBuildingLevel(save: BeachheadSave, key: BuildingKey): BeachheadSave
 		boat === index ? Math.min(MAX_BOAT_LEVEL, level + 1) : level
 	);
 	return { ...save, levels: { ...save.levels, boats } };
+}
+
+/** An advert cuts a tenth of a build's total time off it, up to this many times per build */
+export const AD_CUT_SHARE = 0.1;
+export const MAX_AD_CUTS = 4;
+
+export function canCutBuild(save: BeachheadSave, key: BuildingKey): boolean {
+	const task = constructionOf(save, key);
+	return task !== undefined && (task.cuts ?? 0) < MAX_AD_CUTS;
+}
+
+/** Takes 10% of the total build time off a running build; the build can never end in the past */
+export function cutBuildTime(
+	save: BeachheadSave,
+	key: BuildingKey,
+	nowMs: number
+): BeachheadSave | null {
+	const task = constructionOf(save, key);
+	if (!task || !canCutBuild(save, key) || !Number.isFinite(nowMs)) return null;
+	const total = task.endsAt - task.startedAt;
+	const endsAt = Math.max(nowMs, task.endsAt - total * AD_CUT_SHARE);
+	return {
+		...save,
+		builders: save.builders.map((entry) =>
+			entry === task ? { ...entry, endsAt, cuts: (entry.cuts ?? 0) + 1 } : entry
+		)
+	};
 }
 
 /** Finishes every build whose time is up; returns the same save when nothing was done */

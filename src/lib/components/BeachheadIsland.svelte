@@ -37,6 +37,7 @@
 	import type { BuildingKind } from '#lib/game/beachhead/config.js';
 	import { zoomPan } from '#lib/components/zoomPan.js';
 	import BeachheadArmy from '#lib/components/BeachheadArmy.svelte';
+	import RewardedAdModal from '#lib/components/RewardedAdModal.svelte';
 	import BeachheadCrystals from '#lib/components/BeachheadCrystals.svelte';
 	import BeachheadPortrait from '#lib/components/BeachheadPortrait.svelte';
 	import BeachheadUpgradeWindow from '#lib/components/BeachheadUpgradeWindow.svelte';
@@ -67,6 +68,7 @@
 	import IconShield from '~icons/lucide/shield';
 	import IconShieldCheck from '~icons/lucide/shield-check';
 	import IconSkull from '~icons/lucide/skull';
+	import IconTv from '~icons/lucide/tv';
 	import IconTrash from '~icons/lucide/trash-2';
 	import IconTrophy from '~icons/lucide/trophy';
 	import IconUsers from '~icons/lucide/users';
@@ -99,6 +101,8 @@
 	let drag: Drag | null = null;
 	let dragging = $state(false);
 	let clock = $state(0);
+	/** The building whose build time an advert is about to cut */
+	let adFor = $state<string | null>(null);
 
 	const mineName = (kind: DefenseKind): string => buildingName(kind as BuildingKind);
 	const mineHint = (kind: DefenseKind): string =>
@@ -614,6 +618,18 @@
 							<IconHammer class="size-4" aria-hidden="true" />
 							{timeLeft(row.remainingMs)}
 						</p>
+						{#if game.canCutBuild(row.key)}
+							<button
+								type="button"
+								class="btn-chunky flex items-center gap-1 bg-explosion-yellow px-2 py-1 text-xs"
+								aria-label={m.beachhead_ad_cut()}
+								title={m.beachhead_ad_cut()}
+								onclick={() => (adFor = row.key)}
+							>
+								<IconTv class="size-4" aria-hidden="true" />
+								−10%
+							</button>
+						{/if}
 					{:else if panel.boatLocked}
 						<p
 							class="flex items-center gap-1 text-sm font-bold"
@@ -696,6 +712,16 @@
 		</div>
 	{/if}
 </div>
+
+<RewardedAdModal
+	open={adFor !== null}
+	coins={0}
+	claimLabel={m.beachhead_ad_cut()}
+	onClaim={() => {
+		if (adFor) game.cutBuildTime(adFor as BuildingKey);
+	}}
+	onClose={() => (adFor = null)}
+/>
 
 <BeachheadSheet
 	open={sheet === 'army'}

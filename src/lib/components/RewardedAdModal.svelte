@@ -13,12 +13,15 @@
 	let {
 		open,
 		coins,
+		claimLabel,
 		onClaim,
 		onClose
 	}: {
 		open: boolean;
 		/** What the advert pays, shown on the claim button */
 		coins: number;
+		/** Replaces the coin text on the claim button when the advert pays something else */
+		claimLabel?: string;
 		onClaim: () => void;
 		onClose: () => void;
 	} = $props();
@@ -115,7 +118,7 @@
 			onclick={claim}
 		>
 			<IconNewspaper class="size-5" aria-hidden="true" />
-			{m.ad_claim({ coins })}
+			{claimLabel ?? m.ad_claim({ coins })}
 		</button>
 		<button type="button" class="btn-chunky px-3 py-1 text-sm" onclick={close}>
 			{m.ad_close()}

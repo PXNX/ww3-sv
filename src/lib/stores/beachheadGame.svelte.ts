@@ -57,7 +57,9 @@ import {
 	changeTroop as changeTroopIn,
 	chartedCount as chartedCountOf,
 	claimAchievements,
+	canCutBuild,
 	claimIncome,
+	cutBuildTime,
 	constructionOf,
 	controlIsland,
 	controlledCount,
@@ -624,6 +626,19 @@ export class BeachheadGame {
 		if (!next) return false;
 		this.#commit(next, { claim: false });
 		this.#play('click', 0.5);
+		return true;
+	}
+
+	canCutBuild(key: BuildingKey): boolean {
+		return canCutBuild(this.campaign, key);
+	}
+
+	/** Cuts a tenth of the total time off a running build, as the reward of an advert */
+	cutBuildTime(key: BuildingKey): boolean {
+		const next = cutBuildTime(this.campaign, key, this.#now());
+		if (!next) return false;
+		this.#commit(next, { claim: false });
+		this.#play('chime', 0.6);
 		return true;
 	}
 
