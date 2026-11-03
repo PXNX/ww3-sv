@@ -42,8 +42,12 @@ export interface BaseLayout {
 export const FOREST: Footprint & Cell = { x: 4, y: 0, width: 5, height: 2 };
 export const MOUNTAIN: Footprint & Cell = { x: 12, y: 12, width: 2, height: 2 };
 
+/** Three cottages whose families pay taxes in gold, and the quarry ditch dug beside the mountain */
+export const HOUSES: Footprint & Cell = { x: 1, y: 4, width: 3, height: 1 };
+export const QUARRY: Footprint & Cell = { x: 10, y: 12, width: 2, height: 2 };
+
 export function touchesNature(cell: Cell, footprint: Footprint): boolean {
-	return [FOREST, MOUNTAIN].some((rect) => overlaps(cell, footprint, rect, rect));
+	return [FOREST, MOUNTAIN, HOUSES, QUARRY].some((rect) => overlaps(cell, footprint, rect, rect));
 }
 
 export const LAYOUT_KEYS: readonly LayoutKey[] = [

@@ -77,6 +77,15 @@ describe('the default island', () => {
 	});
 });
 
+describe('the cottages and the quarry', () => {
+	it('are ground nobody can build on', () => {
+		const layout = defaultLayout();
+		expect(canPlace(layout, { width: 1, height: 1 }, { x: 2, y: 4 })).toBe(false);
+		expect(canPlace(layout, { width: 1, height: 1 }, { x: 10, y: 13 })).toBe(false);
+		expect(moveBuilding(layout, 'radar', { x: 10, y: 12 })).toBeNull();
+	});
+});
+
 describe('the forest and the mountain', () => {
 	it('are not building land: nothing can stand or be mined there', () => {
 		const layout = defaultLayout();
@@ -175,7 +184,7 @@ describe('reading a stored layout', () => {
 	});
 
 	it('keeps a valid arrangement', () => {
-		const moved = moveBuilding(defaultLayout(), 'radar', { x: 9, y: 12 })!;
+		const moved = moveBuilding(defaultLayout(), 'radar', { x: 8, y: 12 })!;
 		const withMine = addMine(moved, 'mine-emp', { x: 4, y: 4 })!;
 		expect(normalizeLayout(JSON.parse(JSON.stringify(withMine)))).toEqual(withMine);
 	});

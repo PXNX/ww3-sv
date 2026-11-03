@@ -346,7 +346,7 @@ describe('production', () => {
 		const minute = claimIncome(save, ISLAND_IDS, NOW + 60_000);
 		expect(minute.resources).toEqual({
 			wood: STARTING_RESOURCES.wood + HOME_PRODUCTION.wood,
-			stone: STARTING_RESOURCES.stone,
+			stone: STARTING_RESOURCES.stone + HOME_PRODUCTION.stone,
 			iron: STARTING_RESOURCES.iron + HOME_PRODUCTION.iron,
 			gold: STARTING_RESOURCES.gold + HOME_PRODUCTION.gold
 		});

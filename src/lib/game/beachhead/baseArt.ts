@@ -5,11 +5,14 @@
  * from a new one at a glance.
  */
 import { wallLeft, wallRight, drawFlag, drawMineArt } from './buildingArt.js';
+import { drawResourceGlyph } from './resourceIcons.js';
 import {
 	BASE_COLS,
 	BASE_ROWS,
 	FOREST,
+	HOUSES,
 	MOUNTAIN,
+	QUARRY,
 	boatDock,
 	footprintOf,
 	positionOf,
@@ -838,6 +841,134 @@ function drawMountain(context: CanvasRenderingContext2D, view: IsoView) {
 	}
 }
 
+/** A cottage with a chimney that smokes; a coin floats up now and then as the family pays its tax */
+function drawHouse(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	x: number,
+	y: number,
+	timeMs: number,
+	seed: number
+) {
+	drawShadow(context, view, x + 0.1, y + 0.1, 0.8, 0.8);
+	drawBox(
+		context,
+		view,
+		x + 0.12,
+		y + 0.14,
+		0.76,
+		0.72,
+		0,
+		0.5,
+		paletteOf(seed % 2 === 0 ? '#e8cf95' : '#d9c3a0')
+	);
+	wallLeft(context, view, x + 0.4, x + 0.62, y + 0.86, 0, 0.32, '#6b4526');
+	wallLeft(context, view, x + 0.2, x + 0.34, y + 0.86, 0.22, 0.4, '#cfe6f5');
+	drawRoof(
+		context,
+		view,
+		x + 0.04,
+		y + 0.06,
+		0.92,
+		0.88,
+		0.5,
+		0.45,
+		paletteOf(seed % 2 === 0 ? '#b0383d' : '#8a5a2b')
+	);
+	drawBox(context, view, x + 0.68, y + 0.22, 0.12, 0.12, 0.5, 0.9, paletteOf('#8d8f93'), 0.03);
+	// Chimney smoke
+	for (let puff = 0; puff < 2; puff++) {
+		const rise = ((timeMs / 2200 + puff / 2 + seed * 0.3) % 1) * 0.6;
+		const at = view.project(x + 0.74 + rise * 0.2, y + 0.28, 0.95 + rise);
+		context.globalAlpha = 0.4 * (1 - rise / 0.6);
+		context.fillStyle = '#d9dde2';
+		context.beginPath();
+		context.arc(at.x, at.y, 0.07 + rise * 0.1, 0, Math.PI * 2);
+		context.fill();
+	}
+	context.globalAlpha = 1;
+	// The tax: a coin pops out of the door, floats up and fades
+	const cycle = (timeMs / 4200 + seed * 0.37) % 1;
+	if (cycle < 0.45) {
+		const t = cycle / 0.45;
+		const coin = view.project(x + 0.5, y + 0.9, 0.5 + t * 0.9);
+		context.globalAlpha = Math.sin(Math.min(1, t) * Math.PI);
+		drawResourceGlyph(context, 'gold', coin.x, coin.y, 0.42);
+		context.globalAlpha = 1;
+	}
+}
+
+/** The quarry ditch: a stepped pit in the grass with a pile of cut stone and a rope windlass */
+function drawQuarry(context: CanvasRenderingContext2D, view: IsoView, timeMs: number) {
+	const { x, y, width: w, height: h } = QUARRY;
+	onGround(context, view, () => {
+		context.fillStyle = '#a78f63';
+		context.fillRect(x + 0.05, y + 0.05, w - 0.1, h - 0.1);
+		context.fillStyle = '#7a6746';
+		context.fillRect(x + 0.25, y + 0.25, w - 0.5, h - 0.5);
+		context.fillStyle = '#4d4030';
+		context.fillRect(x + 0.5, y + 0.5, w - 1, h - 1);
+		context.lineWidth = 0.05;
+		context.strokeStyle = INK;
+		context.strokeRect(x + 0.05, y + 0.05, w - 0.1, h - 0.1);
+		context.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+	});
+	// Cut blocks stacked beside the pit
+	for (const [dx, dy, lift] of [
+		[w + 0.05, 0.2, 0],
+		[w + 0.05, 0.62, 0],
+		[w + 0.1, 0.4, 0.22]
+	] as const) {
+		drawBox(
+			context,
+			view,
+			x + dx,
+			y + dy,
+			0.4,
+			0.34,
+			lift,
+			lift + 0.22,
+			paletteOf('#b7b9bd'),
+			0.035
+		);
+	}
+	// A windlass over the pit hauling a bucket of rubble
+	drawBar(
+		context,
+		view,
+		{ x: x + 0.2, y: y + 0.1, z: 0 },
+		{ x: x + 0.2, y: y + 0.1, z: 0.8 },
+		'#6b4526',
+		0.07
+	);
+	drawBar(
+		context,
+		view,
+		{ x: x + 1.8, y: y + 0.1, z: 0 },
+		{ x: x + 1.8, y: y + 0.1, z: 0.8 },
+		'#6b4526',
+		0.07
+	);
+	drawBar(
+		context,
+		view,
+		{ x: x + 0.2, y: y + 0.1, z: 0.8 },
+		{ x: x + 1.8, y: y + 0.1, z: 0.8 },
+		'#6b4526',
+		0.06
+	);
+	const bucket = 0.2 + (Math.sin(timeMs / 900) * 0.5 + 0.5) * 0.45;
+	drawBar(
+		context,
+		view,
+		{ x: x + 1.0, y: y + 0.1, z: 0.8 },
+		{ x: x + 1.0, y: y + 0.1, z: bucket },
+		'#d9c3a0',
+		0.025
+	);
+	drawBox(context, view, x + 0.9, y, 0.2, 0.2, bucket - 0.2, bucket, paletteOf('#8d8f93'), 0.03);
+}
+
 /** Bushes and flowers on the lawn, so the island is not bare grass */
 const GREENERY: { x: number; y: number; flower?: string }[] = [
 	{ x: 0.7, y: 0.5 },
@@ -1369,6 +1500,16 @@ export function drawHome(context: CanvasRenderingContext2D, scene: HomeScene, vi
 			draw: () => drawTree(context, view, tree.x, tree.y, tree.size, scene.timeMs)
 		});
 	}
+	for (let house = 0; house < HOUSES.width; house++) {
+		standing.push({
+			depth: depthOf(HOUSES.x + house + 0.5, HOUSES.y + 0.5),
+			draw: () => drawHouse(context, view, HOUSES.x + house, HOUSES.y, scene.timeMs, house)
+		});
+	}
+	standing.push({
+		depth: depthOf(QUARRY.x + QUARRY.width / 2, QUARRY.y + QUARRY.height / 2) - 0.6,
+		draw: () => drawQuarry(context, view, scene.timeMs)
+	});
 	standing.push({
 		depth: depthOf(MOUNTAIN.x + MOUNTAIN.width / 2, MOUNTAIN.y + MOUNTAIN.height / 2),
 		draw: () => drawMountain(context, view)
