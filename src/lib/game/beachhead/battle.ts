@@ -19,7 +19,9 @@ import {
 	TROOPS,
 	TROOPS_PER_SQUAD,
 	VEHICLE_TROOPS,
+	HEDGEHOG_SLOW,
 	isMine,
+	isScenery,
 	type BuildingKind,
 	type Island,
 	type ProjectileKind,
@@ -379,7 +381,7 @@ export function createBattle(
 /** Taps a building to focus the landing party on it; tapping nothing clears the focus */
 export function setFocus(state: BattleState, buildingId: number | null) {
 	const building = state.buildings.find((candidate) => candidate.id === buildingId);
-	state.focusId = building && !building.destroyed && !isMine(building.kind) ? building.id : null;
+	state.focusId = building && !building.destroyed && !isScenery(building.kind) ? building.id : null;
 }
 
 /** What the next support skill costs; every call raises the price for the rest of the attack */
@@ -424,7 +426,7 @@ export function castSkill(state: BattleState, skill: SkillId, x: number, y: numb
 		// The pulse lands at once and switches off every defence in the circle for a while
 		let hits = 0;
 		for (const building of state.buildings) {
-			if (building.destroyed || isMine(building.kind) || building.hp <= 0) continue;
+			if (building.destroyed || isScenery(building.kind) || building.hp <= 0) continue;
 			if (BUILDINGS[building.kind].damage <= 0 && !BUILDINGS[building.kind].pulse) continue;
 			if (rectDistance(aimX, aimY, building) > stats.radius) continue;
 			building.stunMs = Math.max(building.stunMs, stats.durationMs ?? 2600);
@@ -558,7 +560,7 @@ function settleTroop(state: BattleState, troop: Troop) {
 	troop.x = clamp(troop.x, 0.35, COLUMNS - 0.2);
 	troop.y = clamp(troop.y, 0.2, ROWS - 0.2);
 	for (const building of state.buildings) {
-		if (building.destroyed || isMine(building.kind)) continue;
+		if (building.destroyed || isScenery(building.kind)) continue;
 		const left = building.x - TROOP.body;
 		const right = building.x + building.width + TROOP.body;
 		const top = building.y - TROOP.body;
@@ -600,7 +602,7 @@ function chooseTarget(state: BattleState, troop: Troop): number | null {
 	let best: Building | null = null;
 	let bestDistance = Number.POSITIVE_INFINITY;
 	for (const building of state.buildings) {
-		if (building.destroyed || isMine(building.kind)) continue;
+		if (building.destroyed || isScenery(building.kind)) continue;
 		const distance = rectDistance(troop.x, troop.y, building);
 		if (distance < bestDistance - 1e-9) {
 			best = building;
@@ -645,7 +647,7 @@ function landProjectile(state: BattleState, projectile: Projectile) {
 		// A tank shell, mortar bomb or drone strike: damage the buildings around the impact
 		let hits = 0;
 		for (const building of state.buildings) {
-			if (building.destroyed || building.hp <= 0 || isMine(building.kind)) continue;
+			if (building.destroyed || building.hp <= 0 || isScenery(building.kind)) continue;
 			const primary = building.id === projectile.targetId;
 			if (
 				rectDistance(projectile.x, projectile.y, building) > (primary ? radius : projectile.splash)
@@ -727,7 +729,7 @@ function stepSkillStrikes(state: BattleState, frameMs: number) {
 			if (rectDistance(strike.x, strike.y, mine) <= strike.radius) blastMine(state, mine, 'skill');
 		}
 		for (const building of state.buildings) {
-			if (building.destroyed || building.hp <= 0 || isMine(building.kind)) continue;
+			if (building.destroyed || building.hp <= 0 || isScenery(building.kind)) continue;
 			if (rectDistance(strike.x, strike.y, building) > strike.radius) continue;
 			building.hp = Math.max(
 				0,
@@ -963,7 +965,17 @@ export function stepBattle(state: BattleState, dtMs: number) {
 		if (troop.stunMs > 0) continue;
 
 		const command = commandBonus(state, troop);
-		const moveSpeed = troop.speed * (1 + command.speed);
+		// Vehicles crawl past a Czech hedgehog; infantry steps over it
+		const slowed =
+			VEHICLE_TROOPS.includes(troop.kind) &&
+			state.buildings.some(
+				(building) =>
+					!building.destroyed &&
+					building.kind === 'hedgehog' &&
+					Math.hypot(troop.x - (building.x + 0.5), troop.y - (building.y + 0.5)) <=
+						HEDGEHOG_SLOW.radius
+			);
+		const moveSpeed = troop.speed * (1 + command.speed) * (slowed ? HEDGEHOG_SLOW.speedShare : 1);
 
 		// A flare is a movement order: walk to the marker, but still shoot anything in range
 		let marchingToFlare = false;
@@ -1008,7 +1020,7 @@ export function stepBattle(state: BattleState, dtMs: number) {
 
 		// Whatever building the troop walks into is shot first: no soldier shoots through a wall
 		for (const building of state.buildings) {
-			if (building.destroyed || building.id === target.id || isMine(building.kind)) continue;
+			if (building.destroyed || building.id === target.id || isScenery(building.kind)) continue;
 			if (rectDistance(troop.x, troop.y, building) <= TROOP.body) {
 				troop.targetId = building.id;
 				target = building;
@@ -1215,7 +1227,7 @@ export function stepBattle(state: BattleState, dtMs: number) {
 	state.troops = state.troops.filter((troop) => troop.hp > 0);
 
 	for (const building of state.buildings) {
-		if (building.destroyed || building.hp > 0 || isMine(building.kind)) continue;
+		if (building.destroyed || building.hp > 0 || isScenery(building.kind)) continue;
 		building.destroyed = true;
 		// Wrecking a structure recharges the support skills a little, so a long assault can keep going
 		state.energy = Math.min(SKILL_ENERGY.max, state.energy + SKILL_ENERGY.rewardPerBuilding);

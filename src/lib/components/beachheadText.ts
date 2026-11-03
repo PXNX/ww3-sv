@@ -135,6 +135,8 @@ export function buildingName(kind: BuildingKind): string {
 			return m.beachhead_building_flame();
 		case 'depot':
 			return m.beachhead_building_depot();
+		case 'hedgehog':
+			return m.beachhead_building_hedgehog();
 		case 'himars':
 			return m.beachhead_building_himars();
 		case 'patriot':

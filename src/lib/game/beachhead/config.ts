@@ -34,11 +34,17 @@ export type BuildingKind =
 	| 'himars'
 	| 'patriot'
 	| 'jammer'
+	| 'hedgehog'
 	| MineKind;
 
 /** One-cell mines: they sit on the ground and go off when a troop walks over them */
 export type MineKind = 'mine-emp' | 'mine-personnel' | 'mine-at';
 export const MINE_KINDS: readonly MineKind[] = ['mine-personnel', 'mine-at', 'mine-emp'];
+
+/** Props that sit on the island without being targets: the mines and the beach obstacles */
+export function isScenery(kind: BuildingKind): boolean {
+	return isMine(kind) || kind === 'hedgehog';
+}
 
 export function isMine(kind: BuildingKind): kind is MineKind {
 	return kind === 'mine-emp' || kind === 'mine-personnel' || kind === 'mine-at';
@@ -303,6 +309,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingStats> = {
 		pulse: { radius: 2.8, stunMs: 1100, everyMs: 4200 },
 		score: 300
 	},
+	// A Czech hedgehog: welded rails on the beach that slow every vehicle driving past
+	hedgehog: { width: 1, height: 1, hp: 260, damage: 0, range: 0, reloadMs: 0, splash: 0, score: 0 },
 	// Mines are not shot at and score nothing; their effect lives in MINES
 	'mine-personnel': {
 		width: 1,
@@ -317,6 +325,9 @@ export const BUILDINGS: Record<BuildingKind, BuildingStats> = {
 	'mine-at': { width: 1, height: 1, hp: 40, damage: 0, range: 0, reloadMs: 0, splash: 0, score: 0 },
 	'mine-emp': { width: 1, height: 1, hp: 40, damage: 0, range: 0, reloadMs: 0, splash: 0, score: 0 }
 };
+
+/** How far from a hedgehog a vehicle is slowed, and how much of its speed it keeps there */
+export const HEDGEHOG_SLOW = { radius: 0.8, speedShare: 0.35 } as const;
 
 /** Vehicles take the full hit from anti-tank mines and shrug off personnel mines */
 export const VEHICLE_TROOPS: readonly TroopKind[] = ['tank', 'apc', 'artillery'];
@@ -979,7 +990,22 @@ function withFrost(island: Island, index: number): Island {
 	};
 }
 
-export const ISLANDS: readonly Island[] = [...CORE_ISLANDS, ...EXTRA_ISLANDS].map(withFrost);
+/** A row of Czech hedgehogs on the beach slows the tanks as they land; later islands lay more of them */
+function withHedgehogs(island: Island, index: number): Island {
+	const count = Math.min(ROWS - 1, 2 + Math.floor(index / 4));
+	const taken = new Set(island.buildings.map((b) => `${b.x},${b.y}`));
+	const hedgehogs: IslandBuilding[] = [];
+	for (let k = 0; k < count; k++) {
+		const y = Math.min(ROWS - 1, Math.round(((k + 0.5) * ROWS) / count - 0.5));
+		if (taken.has(`2,${y}`)) continue;
+		hedgehogs.push({ kind: 'hedgehog', x: 2, y });
+	}
+	return { ...island, buildings: [...island.buildings, ...hedgehogs] };
+}
+
+export const ISLANDS: readonly Island[] = [...CORE_ISLANDS, ...EXTRA_ISLANDS]
+	.map(withFrost)
+	.map(withHedgehogs);
 
 export const ISLAND_IDS: readonly string[] = ISLANDS.map((island) => island.id);
 

@@ -825,6 +825,29 @@ function drawJammerArt(
 	drawBlob(context, view, cx, cy, 1.34, 0.07, '#7fd8ff', 0.025);
 }
 
+/** A Czech hedgehog: three rails welded into a star */
+function drawHedgehogArt(context: CanvasRenderingContext2D, view: IsoView, b: Placement) {
+	const cx = b.x + 0.5;
+	const cy = b.y + 0.5;
+	const arm = 0.38;
+	for (const [dx, dy, dz] of [
+		[arm, arm, 0.5],
+		[-arm, arm, 0.5],
+		[arm, -arm, 0.5],
+		[0, 0, 0.62]
+	] as const) {
+		drawBar(
+			context,
+			view,
+			{ x: cx - dx, y: cy - dy, z: 0.5 - dz + 0.02 },
+			{ x: cx + dx, y: cy + dy, z: 0.5 + dz - 0.02 },
+			'#5d6470',
+			0.1
+		);
+	}
+	drawBlob(context, view, cx, cy, 0.5, 0.09, '#8b97a6', 0.03);
+}
+
 export function drawEnemyBuilding(
 	context: CanvasRenderingContext2D,
 	view: IsoView,
@@ -840,6 +863,9 @@ export function drawEnemyBuilding(
 			else if (theme === 'jungle') drawJungleHq(context, view, building, timeMs);
 			else if (theme === 'desert') drawDesertHq(context, view, building, timeMs);
 			else drawEnemyHq(context, view, building, timeMs);
+			break;
+		case 'hedgehog':
+			drawHedgehogArt(context, view, building);
 			break;
 		case 'himars':
 			drawHimarsArt(context, view, building);

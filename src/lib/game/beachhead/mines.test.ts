@@ -208,3 +208,42 @@ describe('missiles and shells over mines', () => {
 		});
 	});
 });
+
+describe('Czech hedgehogs', () => {
+	const unitOf = (kind: TroopKind) => unit(kind);
+
+	it('lie on the beach of every island and are never an objective', () => {
+		for (const island of ISLANDS) {
+			const hedgehogs = island.buildings.filter((building) => building.kind === 'hedgehog');
+			expect(hedgehogs.length, island.id).toBeGreaterThanOrEqual(2);
+			for (const hedgehog of hedgehogs) expect(hedgehog.x).toBe(2);
+		}
+		const state = createBattle(ISLANDS[0]);
+		const hedgehog = state.buildings.find((building) => building.kind === 'hedgehog')!;
+		setFocus(state, hedgehog.id);
+		expect(state.focusId).toBeNull();
+	});
+
+	it('slow a tank that drives past them but not a rifleman', () => {
+		const run = (kind: TroopKind, hedgehog: boolean) => {
+			const state = createBattle(
+				{
+					id: 'beach',
+					buildings: [
+						{ kind: 'hq', x: 9, y: 3 },
+						...(hedgehog ? [{ kind: 'hedgehog' as const, x: 2, y: 3 }] : [])
+					]
+				},
+				{ squads: [[unitOf(kind)]] }
+			);
+			deploy(state, 3);
+			const troop = state.troops[0];
+			troop.x = 2.3;
+			troop.y = 3.5;
+			for (let step = 0; step < 10; step++) stepBattle(state, 100);
+			return state.troops[0].x;
+		};
+		expect(run('tank', true) - 2.3).toBeLessThan((run('tank', false) - 2.3) * 0.6);
+		expect(run('assault', true)).toBeCloseTo(run('assault', false), 5);
+	});
+});

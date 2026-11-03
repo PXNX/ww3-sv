@@ -10,7 +10,7 @@ import {
 	ROWS,
 	SHORE_X,
 	SKILL_ENERGY,
-	isMine,
+	isScenery,
 	type ArmyKind,
 	type BuildingKind,
 	type Island,
@@ -994,7 +994,7 @@ export class BeachheadGame {
 			this.battle.buildings.find(
 				(candidate) =>
 					!candidate.destroyed &&
-					!isMine(candidate.kind) &&
+					!isScenery(candidate.kind) &&
 					point.x >= candidate.x &&
 					point.x <= candidate.x + candidate.width &&
 					point.y >= candidate.y &&
@@ -1577,7 +1577,7 @@ export class BeachheadGame {
 		this.troops = troopsAlive(battle);
 		this.deployed = battle.deployed;
 		// Mines are scenery that bites back; only real structures count towards the objective list
-		const structures = battle.buildings.filter((building) => !isMine(building.kind));
+		const structures = battle.buildings.filter((building) => !isScenery(building.kind));
 		this.buildingsLeft = structures.filter((building) => !building.destroyed).length;
 		this.buildingsTotal = structures.length;
 		this.score = scoreOf(battle);
