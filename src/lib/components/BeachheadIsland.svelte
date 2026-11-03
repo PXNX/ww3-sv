@@ -223,13 +223,6 @@
 			onclick: () => (sheet = 'crystals')
 		},
 		{
-			id: 'trophies',
-			label: m.beachhead_achievements_title(),
-			icon: IconTrophy,
-			active: sheet === 'trophies',
-			onclick: () => (sheet = 'trophies')
-		},
-		{
 			id: 'test',
 			label: m.beachhead_test_start(),
 			icon: IconShieldCheck,
@@ -462,6 +455,18 @@
 			<IconFlag class="size-4 text-khaki" aria-hidden="true" />
 			{game.controlled}/{game.islandCount}
 		</p>
+		<button
+			type="button"
+			class="btn-chunky pointer-events-auto relative flex size-10 items-center justify-center rounded-full p-0 {sheet ===
+			'trophies'
+				? 'bg-explosion-yellow'
+				: ''}"
+			aria-label={m.beachhead_achievements_title()}
+			title={m.beachhead_achievements_title()}
+			onclick={() => (sheet = 'trophies')}
+		>
+			<IconTrophy class="size-5" aria-hidden="true" />
+		</button>
 		<div class="pointer-events-auto">
 			<BeachheadTakeoverNotice {game} />
 		</div>
