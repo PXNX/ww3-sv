@@ -9,6 +9,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
+	import '#lib/styles/hackers.css';
 	import IconPlay from '~icons/lucide/play';
 
 	let {
@@ -17,6 +18,7 @@
 		hint,
 		resumeLabel,
 		cover = false,
+		terminal = false,
 		children
 	}: {
 		onResume: () => void;
@@ -28,6 +30,8 @@
 		resumeLabel?: string;
 		/** Hides the playfield behind a solid layer instead of dimming it */
 		cover?: boolean;
+		/** Green-on-black terminal look */
+		terminal?: boolean;
 		/** Extra buttons or controls shown under the Resume button */
 		children?: Snippet;
 	} = $props();
@@ -40,9 +44,11 @@
 </script>
 
 <div
-	class="pointer-events-auto absolute inset-0 z-20 flex items-center justify-center rounded-[inherit] p-4 {cover
-		? 'bg-banner-slate'
-		: 'bg-ink/40'}"
+	class="pointer-events-auto absolute inset-0 z-20 flex items-center justify-center rounded-[inherit] p-4 {terminal
+		? 'hk-theme bg-black/90'
+		: cover
+			? 'bg-banner-slate'
+			: 'bg-ink/40'}"
 	role="dialog"
 	aria-modal="true"
 	aria-labelledby="pause-overlay-title"

@@ -35,6 +35,7 @@
 	} from '#lib/theme/cameos.js';
 	import { CHARACTER_NAME } from '#lib/theme/character.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
+	import '#lib/styles/hackers.css';
 	import Confetti from './Confetti.svelte';
 	import GroupLeaderboard from './GroupLeaderboard.svelte';
 	import ResultCharacter from './ResultCharacter.svelte';
@@ -57,6 +58,7 @@
 		withCharacter = true,
 		isNewBest = false,
 		wide = false,
+		terminal = false,
 		title,
 		drawBoard,
 		customCameo,
@@ -76,6 +78,8 @@
 		isNewBest?: boolean;
 		/** A wider card on larger screens, for extra stats laid out in columns */
 		wide?: boolean;
+		/** Green-on-black terminal look without the score, cameo, character and share button */
+		terminal?: boolean;
 		/** Defaults to "Game over" */
 		title?: string;
 		drawBoard?: ScoreCard['drawBoard'];
@@ -260,7 +264,7 @@
 
 <dialog
 	bind:this={dialog}
-	class="modal modal-bottom sm:modal-middle"
+	class="modal modal-bottom sm:modal-middle {terminal ? 'hk-theme' : ''}"
 	aria-labelledby="game-over-title"
 	style:background-color={offset > 0 ? `oklch(0% 0 0 / ${backdropAlpha})` : undefined}
 	oncancel={(event) => event.preventDefault()}
@@ -289,7 +293,7 @@
 		</button>
 
 		<div class="flex w-full flex-col items-center gap-3" inert={peeked}>
-			{#if isNewBest}
+			{#if isNewBest && !terminal}
 				<Confetti />
 			{/if}
 
@@ -301,19 +305,21 @@
 			>
 				<h2 id="game-over-title" class="text-3xl font-bold">{title ?? m.gameover_title()}</h2>
 
-				<div class="flex flex-col items-center">
-					<span class="text-sm font-bold uppercase">{m.gameover_final_score()}</span>
-					<span class="pop-in font-display text-5xl font-bold text-tie-red tabular-nums"
-						>{score}</span
-					>
-					{#if isNewBest}
-						<span
-							class="pop-in mt-1 rotate-2 rounded-md border-2 border-ink bg-explosion-yellow px-2 font-bold"
+				{#if !terminal}
+					<div class="flex flex-col items-center">
+						<span class="text-sm font-bold uppercase">{m.gameover_final_score()}</span>
+						<span class="pop-in font-display text-5xl font-bold text-tie-red tabular-nums"
+							>{score}</span
 						>
-							{m.gameover_new_best()}
-						</span>
-					{/if}
-				</div>
+						{#if isNewBest}
+							<span
+								class="pop-in mt-1 rotate-2 rounded-md border-2 border-ink bg-explosion-yellow px-2 font-bold"
+							>
+								{m.gameover_new_best()}
+							</span>
+						{/if}
+					</div>
+				{/if}
 			</div>
 
 			{#if children}
@@ -379,7 +385,7 @@
 				</div>
 			{/if}
 
-			{#if showCameo}
+			{#if showCameo && !terminal}
 				<figure
 					class="flex w-full items-center gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-sand p-3 text-start"
 				>
@@ -397,7 +403,7 @@
 				</figure>
 			{/if}
 
-			{#if withCharacter && open}
+			{#if withCharacter && open && !terminal}
 				<ResultCharacter {mode} {outcome} class="w-24" />
 			{/if}
 
@@ -471,7 +477,7 @@
 			</div>
 
 			<!-- A run from a chat's game message is already on that chat's leaderboard -->
-			{#if isNewBest && !groupGame}
+			{#if isNewBest && !groupGame && !terminal}
 				<ShareButton {modeName} {score} {drawBoard} />
 			{/if}
 		</div>

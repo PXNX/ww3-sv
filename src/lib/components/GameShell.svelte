@@ -12,7 +12,8 @@
 	games whose board needs the height; `back={false}` drops the back link, for a game opened from a
 	chat's game message that has nowhere to go back to. A game with its own level or difficulty
 	choice passes `backTo` while playing, so the back link returns to that choice instead of the
-	start screen.
+	start screen. `backStyle="terminal"` draws the back link as a green-on-black terminal button
+	(`< menu`, always with its text) for games with their own full-screen look.
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
@@ -21,6 +22,7 @@
 	import { enterLandscape, leaveLandscape } from '#lib/game/landscape.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
+	import '#lib/styles/hackers.css';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
 
 	let {
@@ -36,6 +38,7 @@
 		compact = false,
 		back = true,
 		backTo,
+		backStyle = 'default',
 		children
 	}: {
 		title: string;
@@ -59,6 +62,8 @@
 		back?: boolean;
 		/** The game's own level or difficulty choice: the back link returns there instead of the start screen */
 		backTo?: () => void;
+		/** 'terminal' swaps the chunky back button for a green-on-black terminal one */
+		backStyle?: 'default' | 'terminal';
 		children: Snippet;
 	} = $props();
 
@@ -69,6 +74,11 @@
 
 	// A page that can end its own run takes over the back link while that run is going; a page with
 	// its own level or difficulty choice goes back there, which is not a loss
+	const terminalBack = $derived(backStyle === 'terminal');
+	const backClass = $derived(terminalBack ? 'hk-back' : 'btn-chunky px-2 py-1 text-sm sm:px-3');
+	const labelClass = (confirming: boolean) =>
+		terminalBack ? '' : confirming ? '' : 'hidden sm:inline';
+
 	const quit = $derived(confirmLeave && !backTo ? onQuit : undefined);
 
 	function askAgain() {
@@ -112,38 +122,47 @@
 {#snippet backLink()}
 	{#if back}
 		{#if quit}
-			<button
-				type="button"
-				class="btn-chunky px-2 py-1 text-sm sm:px-3"
-				aria-label={m.game_back()}
-				onclick={quit}
-			>
-				<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
-				<span class="hidden sm:inline">{m.game_back()}</span>
+			<button type="button" class={backClass} aria-label={m.game_back()} onclick={quit}>
+				{#if terminalBack}
+					<span class="hk-back-arrow" aria-hidden="true">&lt;</span>
+				{:else}
+					<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
+				{/if}
+				<span class={labelClass(false)}>{m.game_back()}</span>
 			</button>
 		{:else if backTo}
 			<button
 				type="button"
-				class="btn-chunky px-2 py-1 text-sm sm:px-3"
-				class:bg-explosion-yellow={confirmingLeave}
+				class={backClass}
+				class:bg-explosion-yellow={confirmingLeave && !terminalBack}
+				class:hk-back-confirm={confirmingLeave && terminalBack}
 				aria-label={confirmingLeave ? m.game_back_confirm() : m.game_back()}
 				onclick={onBackTo}
 			>
-				<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
-				<span class={confirmingLeave ? '' : 'hidden sm:inline'}>
+				{#if terminalBack}
+					<span class="hk-back-arrow" aria-hidden="true">&lt;</span>
+				{:else}
+					<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
+				{/if}
+				<span class={labelClass(confirmingLeave)}>
 					{confirmingLeave ? m.game_back_confirm() : m.game_back()}
 				</span>
 			</button>
 		{:else}
 			<a
 				href={resolve('/')}
-				class="btn-chunky px-2 py-1 text-sm sm:px-3"
-				class:bg-explosion-yellow={confirmingLeave}
+				class={backClass}
+				class:bg-explosion-yellow={confirmingLeave && !terminalBack}
+				class:hk-back-confirm={confirmingLeave && terminalBack}
 				aria-label={confirmingLeave ? m.game_back_confirm() : m.game_back()}
 				onclick={onBack}
 			>
-				<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
-				<span class={confirmingLeave ? '' : 'hidden sm:inline'}>
+				{#if terminalBack}
+					<span class="hk-back-arrow" aria-hidden="true">&lt;</span>
+				{:else}
+					<IconArrowLeft class="size-4 rtl:rotate-180" aria-hidden="true" />
+				{/if}
+				<span class={labelClass(confirmingLeave)}>
 					{confirmingLeave ? m.game_back_confirm() : m.game_back()}
 				</span>
 			</a>

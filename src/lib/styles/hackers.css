@@ -1,0 +1,418 @@
+/*
+ * Hermit Hackers look: a green phosphor terminal on black. `.hk-theme` re-points the shared colour
+ * tokens (so the shared pause card and result sheet turn green too), `.hk-screen` is the full
+ * screen terminal with scanlines, glow and a faint flicker, and `.hk-back` is the back link in the
+ * game shell. Flicker, glitch and flashes are switched off for reduced motion.
+ */
+
+.hk-theme,
+.hk-screen {
+	--hk-green: #39ff6a;
+	--hk-green-dim: rgb(57 255 106 / 0.55);
+	--hk-green-faint: rgb(57 255 106 / 0.22);
+	--hk-bg: #010a04;
+	--hk-panel: #04180b;
+	--hk-panel-hi: #0b2a14;
+	--hk-amber: #e8b923;
+	--hk-red: #ff4d55;
+	--hk-glow: 0 0 6px rgb(57 255 106 / 0.55);
+	--hk-mono:
+		ui-monospace, 'Cascadia Mono', 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+	--color-ink: var(--hk-green);
+	--color-line: var(--hk-green);
+	--color-paper: var(--hk-bg);
+	--color-sand: var(--hk-panel);
+	--color-banner-slate: var(--hk-bg);
+	--color-tie-red: var(--hk-red);
+	--color-explosion-yellow: var(--hk-panel-hi);
+	--color-khaki: var(--hk-panel-hi);
+	--color-mustard: var(--hk-amber);
+	--font-display: var(--hk-mono);
+	--outline: 2px solid var(--hk-green);
+	--shadow-hard: 0 0 14px rgb(57 255 106 / 0.35);
+	--shadow-hard-small: 0 0 6px rgb(57 255 106 / 0.35);
+	--shadow-raised: 0 0 10px rgb(57 255 106 / 0.3);
+
+	font-family: var(--hk-mono);
+	color: var(--hk-green);
+	text-shadow: var(--hk-glow);
+}
+
+.hk-theme .btn-chunky {
+	border-radius: 4px;
+	background: var(--hk-panel);
+	color: var(--hk-green);
+	min-height: 2.75rem;
+	text-transform: lowercase;
+}
+
+.hk-theme .btn-chunky:hover,
+.hk-theme .btn-chunky:focus-visible {
+	background: var(--hk-green);
+	color: var(--hk-bg);
+	text-shadow: none;
+}
+
+.hk-theme .sticker {
+	border-radius: 4px;
+	rotate: 0deg;
+	background: var(--hk-bg);
+	box-shadow: 0 0 22px rgb(57 255 106 / 0.35);
+}
+
+dialog.hk-theme::backdrop,
+dialog.hk-theme {
+	background-color: rgb(0 8 3 / 0.82);
+}
+
+.hk-theme :focus-visible,
+.hk-screen :focus-visible {
+	outline: 2px solid var(--hk-green);
+	outline-offset: 2px;
+}
+
+/* ---- Back link in the game shell ------------------------------------------------------- */
+
+.hk-back {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5ch;
+	min-height: 2.75rem;
+	min-inline-size: 2.75rem;
+	padding-inline: 0.85rem;
+	font-family: ui-monospace, 'Cascadia Mono', 'SF Mono', Menlo, Consolas, monospace;
+	font-size: 0.95rem;
+	font-weight: 700;
+	text-transform: lowercase;
+	color: #39ff6a;
+	background: #010a04;
+	border: 2px solid #39ff6a;
+	border-radius: 4px;
+	box-shadow:
+		0 0 10px rgb(57 255 106 / 0.45),
+		inset 0 0 8px rgb(57 255 106 / 0.18);
+	text-shadow: 0 0 6px rgb(57 255 106 / 0.7);
+	cursor: pointer;
+	user-select: none;
+	-webkit-tap-highlight-color: transparent;
+	transition:
+		background-color 120ms,
+		color 120ms;
+}
+
+.hk-back:hover,
+.hk-back:focus-visible {
+	background: #39ff6a;
+	color: #010a04;
+	text-shadow: none;
+	outline: 2px solid #39ff6a;
+	outline-offset: 3px;
+}
+
+.hk-back:active {
+	background: #7dff9b;
+	color: #010a04;
+}
+
+.hk-back-confirm {
+	color: #e8b923;
+	border-color: #e8b923;
+	box-shadow: 0 0 10px rgb(232 185 35 / 0.5);
+	animation: hk-blink 0.8s steps(2, jump-none) infinite;
+}
+
+.hk-back-arrow {
+	display: inline-block;
+}
+
+[dir='rtl'] .hk-back-arrow {
+	transform: scaleX(-1);
+}
+
+/* ---- Screen ----------------------------------------------------------------------------- */
+
+.hk-screen {
+	position: relative;
+	display: flex;
+	flex: 1 1 auto;
+	min-height: 0;
+	flex-direction: column;
+	overflow: hidden;
+	background: var(--hk-bg);
+	padding-block-start: var(--hud-top, 3.5rem);
+	padding-block-end: max(0.5rem, env(safe-area-inset-bottom));
+	padding-inline-start: max(0.5rem, env(safe-area-inset-left));
+	padding-inline-end: max(0.5rem, env(safe-area-inset-right));
+	font-size: 0.9rem;
+	line-height: 1.45;
+}
+
+.hk-screen *,
+.hk-theme * {
+	font-family: inherit;
+}
+
+/* Scanlines, a little CRT vignette and the flicker, over everything but the HUD */
+.hk-crt {
+	pointer-events: none;
+	position: absolute;
+	inset: 0;
+	z-index: 30;
+	background:
+		repeating-linear-gradient(0deg, rgb(0 0 0 / 0.28) 0 1px, transparent 1px 3px),
+		radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / 0.55) 100%);
+	animation: hk-flicker 7s steps(1, end) infinite;
+}
+
+.hk-glow {
+	pointer-events: none;
+	position: absolute;
+	inset: 0;
+	z-index: 29;
+	box-shadow: inset 0 0 70px rgb(57 255 106 / 0.12);
+}
+
+.hk-panel {
+	border: 1px solid var(--hk-green-dim);
+	background: var(--hk-panel);
+	box-shadow: inset 0 0 18px rgb(57 255 106 / 0.08);
+	border-radius: 4px;
+}
+
+.hk-rule {
+	border-top: 1px solid var(--hk-green-faint);
+}
+
+/* Buttons: every control the player taps is at least 44px */
+.hk-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5ch;
+	min-height: 2.75rem;
+	min-inline-size: 2.75rem;
+	padding-inline: 0.75rem;
+	font-weight: 700;
+	color: var(--hk-green);
+	background: var(--hk-panel);
+	border: 2px solid var(--hk-green);
+	border-radius: 4px;
+	cursor: pointer;
+	user-select: none;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+	transition:
+		background-color 100ms,
+		color 100ms,
+		box-shadow 100ms;
+}
+
+.hk-btn:hover:not(:disabled) {
+	background: var(--hk-panel-hi);
+	box-shadow: 0 0 10px rgb(57 255 106 / 0.45);
+}
+
+.hk-btn:active:not(:disabled),
+.hk-btn[aria-pressed='true'],
+.hk-btn[aria-expanded='true'] {
+	background: var(--hk-green);
+	color: var(--hk-bg);
+	text-shadow: none;
+}
+
+.hk-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.hk-btn-solid {
+	background: var(--hk-green);
+	color: var(--hk-bg);
+	text-shadow: none;
+}
+
+.hk-btn-solid:hover:not(:disabled) {
+	background: #7dff9b;
+}
+
+.hk-btn-sm {
+	min-height: 2.75rem;
+	font-size: 0.8rem;
+}
+
+.hk-cursor {
+	display: inline-block;
+	inline-size: 0.6em;
+	block-size: 1.05em;
+	vertical-align: text-bottom;
+	background: var(--hk-green);
+	box-shadow: var(--hk-glow);
+	animation: hk-blink 1s steps(2, jump-none) infinite;
+}
+
+.hk-meter {
+	position: relative;
+	block-size: 0.9rem;
+	border: 1px solid var(--hk-green);
+	border-radius: 2px;
+	background: var(--hk-bg);
+	overflow: hidden;
+}
+
+.hk-meter > span {
+	display: block;
+	block-size: 100%;
+	background: repeating-linear-gradient(90deg, currentColor 0 6px, transparent 6px 8px);
+	transition: width 150ms linear;
+}
+
+/* Trace warning: the whole screen starts to tear */
+.hk-glitch {
+	animation: hk-glitch 2.4s steps(1, end) infinite;
+}
+
+.hk-shake {
+	animation: hk-shake 0.4s steps(2, end) 1;
+}
+
+.hk-warn {
+	color: var(--hk-red);
+	text-shadow: 0 0 8px rgb(255 77 85 / 0.8);
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	animation: hk-blink 0.6s steps(2, jump-none) infinite;
+}
+
+.hk-flash {
+	pointer-events: none;
+	position: absolute;
+	inset: 0;
+	z-index: 28;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: clamp(1.4rem, 7vw, 2.6rem);
+	font-weight: 800;
+	letter-spacing: 0.12em;
+	opacity: 0;
+	animation: hk-flash 0.55s ease-out 1;
+}
+
+.hk-flash[data-kind='ok'] {
+	color: var(--hk-green);
+	background: radial-gradient(circle, rgb(57 255 106 / 0.22), transparent 70%);
+}
+
+.hk-flash[data-kind='fail'] {
+	color: var(--hk-red);
+	text-shadow: 0 0 10px rgb(255 77 85 / 0.8);
+	background: radial-gradient(circle, rgb(255 77 85 / 0.28), transparent 70%);
+}
+
+@keyframes hk-blink {
+	0%,
+	49% {
+		opacity: 1;
+	}
+	50%,
+	100% {
+		opacity: 0;
+	}
+}
+
+@keyframes hk-flicker {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	41% {
+		opacity: 0.86;
+	}
+	42% {
+		opacity: 1;
+	}
+	77% {
+		opacity: 0.92;
+	}
+	78% {
+		opacity: 1;
+	}
+}
+
+@keyframes hk-glitch {
+	0%,
+	86%,
+	100% {
+		transform: none;
+		text-shadow: var(--hk-glow);
+	}
+	88% {
+		transform: translateX(-3px);
+		text-shadow:
+			2px 0 rgb(255 77 85 / 0.8),
+			-2px 0 rgb(80 200 255 / 0.7);
+	}
+	92% {
+		transform: translateX(4px) skewX(-2deg);
+		text-shadow:
+			-2px 0 rgb(255 77 85 / 0.8),
+			2px 0 rgb(80 200 255 / 0.7);
+	}
+	95% {
+		transform: translateX(-1px);
+	}
+}
+
+@keyframes hk-shake {
+	0% {
+		transform: translate(0, 0);
+	}
+	25% {
+		transform: translate(-6px, 2px);
+		filter: hue-rotate(60deg);
+	}
+	50% {
+		transform: translate(5px, -3px);
+	}
+	75% {
+		transform: translate(-3px, 1px);
+	}
+	100% {
+		transform: translate(0, 0);
+	}
+}
+
+@keyframes hk-flash {
+	0% {
+		opacity: 0;
+	}
+	15% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.hk-crt,
+	.hk-glitch,
+	.hk-shake,
+	.hk-cursor,
+	.hk-warn,
+	.hk-back-confirm {
+		animation: none;
+	}
+
+	.hk-flash {
+		animation: none;
+		opacity: 0;
+	}
+
+	.hk-btn,
+	.hk-back,
+	.hk-meter > span {
+		transition: none;
+	}
+}
