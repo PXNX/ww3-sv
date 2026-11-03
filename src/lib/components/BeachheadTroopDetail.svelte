@@ -86,8 +86,15 @@
 				></div>
 			{/if}
 		</div>
-		<span class="w-14 text-end font-display text-sm font-bold tabular-nums">
+		<span
+			class="flex w-24 items-center justify-end gap-1 font-display text-sm font-bold tabular-nums"
+		>
 			{Math.round(value * 10) / 10}
+			{#if extra > 0}
+				<span class="rounded-full bg-[#3fa65a] px-1.5 text-xs text-paper">
+					+{Math.round(extra * 10) / 10}
+				</span>
+			{/if}
 		</span>
 	</li>
 {/snippet}
