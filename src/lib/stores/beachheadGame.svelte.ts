@@ -42,14 +42,18 @@ import {
 	canUpgrade as canUpgradeBuilding,
 	canUpgradeTroop as canUpgradeTroopAt,
 	changeTroop as changeTroopIn,
+	chartedCount as chartedCountOf,
 	claimAchievements,
 	claimIncome,
 	constructionOf,
 	controlIsland,
 	controlledCount,
+	capturesOf,
 	finishBuilds,
+	fortificationScale,
 	freeBuilderSlots as freeBuilderSlotsOf,
 	incomeRate as incomeOf,
+	isCharted as isChartedIn,
 	isControlled,
 	islandProduction,
 	isUnlocked,
@@ -59,6 +63,7 @@ import {
 	modifiersFor,
 	newSave,
 	parseSave,
+	processTakebacks,
 	recordVictory,
 	starsOf as saveStars,
 	startUpgrade as startUpgradeIn,
@@ -104,6 +109,8 @@ export interface BeachheadOptions {
 	now?: () => number;
 	/** Injected for tests; defaults to the Pro subscription of the account */
 	pro?: () => boolean;
+	/** Injected for tests; defaults to Math.random for enemy takebacks */
+	random?: () => number;
 	/** Injected for tests; defaults to paying Fake News into the career wallet */
 	rewardCoins?: (amount: number) => void;
 }
@@ -143,6 +150,8 @@ export class BeachheadGame {
 	loot = $state<Resources>({ wood: 0, stone: 0, iron: 0, gold: 0 });
 	/** Achievements earned by the last battle, shown on the result panel */
 	newAchievements = $state<string[]>([]);
+	/** Islands the enemy took back while the player was away, until the notice is dismissed */
+	recentTakeovers = $state<string[]>([]);
 	isNewBest = $state(false);
 	best = $state<number | null>(null);
 	campaign = $state<BeachheadSave>(newSave(0));
@@ -168,6 +177,7 @@ export class BeachheadGame {
 	#store: () => Store;
 	#now: () => number;
 	#pro: () => boolean;
+	#random: () => number;
 	#rewardCoins: (amount: number) => void;
 	#finishMs = 0;
 	#shotSound = 0;
@@ -178,6 +188,7 @@ export class BeachheadGame {
 		store = localStore,
 		now = Date.now,
 		pro = () => telegram().pro,
+		random = Math.random,
 		rewardCoins = (amount) => {
 			career().grantCoins(amount);
 		}
@@ -187,6 +198,7 @@ export class BeachheadGame {
 		this.#store = store;
 		this.#now = now;
 		this.#pro = pro;
+		this.#random = random;
 		this.#rewardCoins = rewardCoins;
 		this.battle = createBattle(ISLANDS[0], modifiersFor(this.campaign));
 		this.#sync();
@@ -204,8 +216,25 @@ export class BeachheadGame {
 		return ISLAND_IDS.length;
 	}
 
+	/** How many islands the radar tower has charted */
+	get chartedCount(): number {
+		return chartedCountOf(this.campaign);
+	}
+
+	isCharted(index: number): boolean {
+		return isChartedIn(this.campaign, index);
+	}
+
+	/** The next island that is open and not already under the player's flag */
+	get nextAttackableIndex(): number | null {
+		for (let index = 0; index < ISLAND_IDS.length; index++) {
+			if (this.isUnlocked(index) && !this.isControlled(ISLAND_IDS[index])) return index;
+		}
+		return null;
+	}
+
 	get hasNextIsland(): boolean {
-		return this.islandIndex + 1 < ISLAND_IDS.length;
+		return this.nextAttackableIndex !== null;
 	}
 
 	get collectedStars(): number {
@@ -285,15 +314,26 @@ export class BeachheadGame {
 		const base = stored ?? newSave(this.#now());
 		const finished = finishBuilds(base, this.#now());
 		const claimed = claimIncome(finished, ISLAND_IDS, this.#now());
-		this.campaign = claimed;
-		if (claimed !== base || !stored) this.#commit(claimed, { write: true, claim: false });
+		const takebacks = this.#applyTakebacks(claimed);
+		this.campaign = takebacks;
+		if (takebacks !== base || !stored) this.#commit(takebacks, { write: true, claim: false });
 	}
 
 	/** Finishes any due build and banks production; called often by the base screen */
 	tick() {
 		const finished = finishBuilds(this.campaign, this.#now());
 		const claimed = claimIncome(finished, ISLAND_IDS, this.#now());
-		if (claimed !== this.campaign) this.#commit(claimed, { write: true });
+		const takebacks = this.#applyTakebacks(claimed);
+		if (takebacks !== this.campaign) this.#commit(takebacks, { write: true });
+	}
+
+	/** Enemy retakes one controlled island per six-hour interval, oldest interval first */
+	#applyTakebacks(save: BeachheadSave): BeachheadSave {
+		const result = processTakebacks(save, ISLAND_IDS, this.#now(), this.#random);
+		if (result.lost.length > 0) {
+			this.recentTakeovers = [...new Set([...this.recentTakeovers, ...result.lost])];
+		}
+		return result.save;
 	}
 
 	/** Adds the resources produced since the last tick; harmless to call often */
@@ -311,6 +351,24 @@ export class BeachheadGame {
 
 	starsFor(islandId: string): number {
 		return saveStars(this.campaign, islandId);
+	}
+
+	capturesFor(islandId: string): number {
+		return capturesOf(this.campaign, islandId);
+	}
+
+	/** Extra enemy health and damage as a percentage, from every earlier capture */
+	defensePercent(islandId: string): number {
+		return Math.round((fortificationScale(this.capturesFor(islandId)) - 1) * 100);
+	}
+
+	/** The enemy notice banner, cleared when the player has read it */
+	get takeoverNotice(): string[] {
+		return this.recentTakeovers;
+	}
+
+	dismissTakeovers() {
+		this.recentTakeovers = [];
 	}
 
 	bestFor(islandId: string): number | null {
@@ -367,7 +425,7 @@ export class BeachheadGame {
 
 	/** Building cards for the base screen, with cost, lock and timer */
 	buildRows(): BuildRow[] {
-		const keys: BuildingKey[] = ['hq', 'training'];
+		const keys: BuildingKey[] = ['hq', 'training', 'radar'];
 		for (let index = 0; index < this.campaign.levels.boats.length; index++) {
 			keys.push(`boat-${index}` as BuildingKey);
 		}
@@ -443,11 +501,12 @@ export class BeachheadGame {
 		this.status = 'playing';
 	}
 
-	/** Starts an island; locked islands stay shut */
+	/** Starts an island; locked islands stay shut and controlled islands are not replayed */
 	openIsland(index: number) {
 		if (!this.isUnlocked(index) || index < 0 || index >= ISLAND_IDS.length) return;
+		if (this.isControlled(ISLAND_IDS[index])) return;
 		this.islandIndex = index;
-		this.battle = createBattle(ISLANDS[index], modifiersFor(this.campaign));
+		this.battle = createBattle(ISLANDS[index], modifiersFor(this.campaign, ISLANDS[index].id));
 		this.effects = [];
 		this.shake = 0;
 		this.timeMs = 0;
@@ -470,7 +529,8 @@ export class BeachheadGame {
 	}
 
 	openNextIsland() {
-		if (this.hasNextIsland) this.openIsland(this.islandIndex + 1);
+		const next = this.nextAttackableIndex;
+		if (next !== null) this.openIsland(next);
 	}
 
 	pause() {

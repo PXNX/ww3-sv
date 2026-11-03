@@ -318,6 +318,9 @@ export const MAX_BOAT_LEVEL = 8;
 export const MAX_HQ_LEVEL = 8;
 export const MAX_TRAINING_LEVEL = 8;
 export const MAX_TROOP_LEVEL = 8;
+/** The radar tower starts by charting six islands and reveals one more per level */
+export const MAX_RADAR_LEVEL = 4;
+export const BASE_CHARTED_ISLANDS = 6;
 
 /** The support skills the player can call in during an assault */
 export type SkillId = 'flamingo' | 'barrage' | 'flare' | 'smoke' | 'heal';
@@ -450,7 +453,75 @@ export const ISLANDS: readonly Island[] = [
 			{ kind: 'flame', x: 8, y: 6 },
 			{ kind: 'depot', x: 5, y: 5 }
 		]
+	},
+	{
+		id: 'black-reef',
+		buildings: [
+			{ kind: 'hq', x: 9, y: 3 },
+			{ kind: 'field-cannon', x: 5, y: 1 },
+			{ kind: 'field-cannon', x: 5, y: 5 },
+			{ kind: 'mortar', x: 7, y: 1 },
+			{ kind: 'mortar', x: 7, y: 6 },
+			{ kind: 'sniper', x: 6, y: 3 },
+			{ kind: 'mg', x: 8, y: 1 },
+			{ kind: 'mg', x: 8, y: 6 },
+			{ kind: 'fpv-nest', x: 4, y: 3 },
+			{ kind: 'air-defence', x: 6, y: 0 },
+			{ kind: 'flame', x: 10, y: 6 },
+			{ kind: 'depot', x: 4, y: 6 }
+		]
+	},
+	{
+		id: 'iron-bay',
+		buildings: [
+			{ kind: 'hq', x: 9, y: 3 },
+			{ kind: 'field-cannon', x: 4, y: 1 },
+			{ kind: 'field-cannon', x: 4, y: 5 },
+			{ kind: 'mortar', x: 6, y: 1 },
+			{ kind: 'mortar', x: 6, y: 6 },
+			{ kind: 'sniper', x: 8, y: 0 },
+			{ kind: 'sniper', x: 7, y: 3 },
+			{ kind: 'mg', x: 8, y: 6 },
+			{ kind: 'mg', x: 10, y: 6 },
+			{ kind: 'fpv-nest', x: 5, y: 3 },
+			{ kind: 'air-defence', x: 7, y: 0 },
+			{ kind: 'flame', x: 8, y: 4 },
+			{ kind: 'depot', x: 4, y: 3 }
+		]
+	},
+	{
+		id: 'dragons-teeth',
+		buildings: [
+			{ kind: 'hq', x: 9, y: 3 },
+			{ kind: 'field-cannon', x: 4, y: 1 },
+			{ kind: 'field-cannon', x: 4, y: 6 },
+			{ kind: 'mortar', x: 6, y: 1 },
+			{ kind: 'mortar', x: 6, y: 6 },
+			{ kind: 'sniper', x: 8, y: 0 },
+			{ kind: 'sniper', x: 7, y: 3 },
+			{ kind: 'mg', x: 8, y: 6 },
+			{ kind: 'mg', x: 10, y: 6 },
+			{ kind: 'fpv-nest', x: 5, y: 3 },
+			{ kind: 'air-defence', x: 7, y: 0 },
+			{ kind: 'flame', x: 8, y: 4 },
+			{ kind: 'flame', x: 10, y: 1 },
+			{ kind: 'depot', x: 4, y: 3 },
+			{ kind: 'depot', x: 6, y: 3 }
+		]
 	}
+];
+
+/** Where each island sits on the sea chart, as a percentage of the chart's width and height */
+export const ISLAND_MAP_POSITIONS: readonly { x: number; y: number }[] = [
+	{ x: 23, y: 72 },
+	{ x: 37, y: 49 },
+	{ x: 50, y: 76 },
+	{ x: 63, y: 39 },
+	{ x: 76, y: 62 },
+	{ x: 88, y: 30 },
+	{ x: 32, y: 24 },
+	{ x: 70, y: 84 },
+	{ x: 89, y: 76 }
 ];
 
 export const ISLAND_IDS: readonly string[] = ISLANDS.map((island) => island.id);

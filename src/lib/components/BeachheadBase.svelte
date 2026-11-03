@@ -11,6 +11,7 @@
 	import { ARMY_KINDS, type BuildingKey, type Resources } from '#lib/game/beachhead/campaign.js';
 	import { MAX_TROOP_LEVEL, TROOPS, type TroopKind } from '#lib/game/beachhead/config.js';
 	import { achievementHint, achievementName, troopName } from '#lib/components/beachheadText.js';
+	import BeachheadTakeoverNotice from '#lib/components/BeachheadTakeoverNotice.svelte';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
 	import IconAnvil from '~icons/lucide/anvil';
 	import IconBlocks from '~icons/lucide/blocks';
@@ -28,6 +29,7 @@
 	import IconLock from '~icons/lucide/lock';
 	import IconMinus from '~icons/lucide/minus';
 	import IconPlus from '~icons/lucide/plus';
+	import IconRadar from '~icons/lucide/radar';
 	import IconSend from '~icons/lucide/send';
 	import IconShield from '~icons/lucide/shield';
 	import IconShip from '~icons/lucide/ship';
@@ -63,9 +65,13 @@
 		heavy: IconFlame
 	};
 
-	const BUILD_ICONS: Record<'hq' | 'training' | 'boat', Component<SvelteHTMLElements['svg']>> = {
+	const BUILD_ICONS: Record<
+		'hq' | 'training' | 'radar' | 'boat',
+		Component<SvelteHTMLElements['svg']>
+	> = {
 		hq: IconFlag,
 		training: IconDumbbell,
+		radar: IconRadar,
 		boat: IconShip
 	};
 
@@ -102,14 +108,25 @@
 						? m.beachhead_upgrade_hq()
 						: row.key === 'training'
 							? m.beachhead_building_training()
-							: m.beachhead_building_boat({ index: (boatIndex ?? 0) + 1 }),
+							: row.key === 'radar'
+								? m.beachhead_building_radar()
+								: m.beachhead_building_boat({ index: (boatIndex ?? 0) + 1 }),
 				hint:
 					row.key === 'hq'
 						? m.beachhead_building_hq_hint()
 						: row.key === 'training'
 							? m.beachhead_building_training_hint()
-							: m.beachhead_building_boat_hint({ space: boat?.capacity ?? 0 }),
-				icon: BUILD_ICONS[row.key === 'hq' ? 'hq' : row.key === 'training' ? 'training' : 'boat'],
+							: row.key === 'radar'
+								? m.beachhead_building_radar_hint({ count: game.chartedCount })
+								: m.beachhead_building_boat_hint({ space: boat?.capacity ?? 0 }),
+				icon:
+					row.key === 'hq'
+						? BUILD_ICONS.hq
+						: row.key === 'training'
+							? BUILD_ICONS.training
+							: row.key === 'radar'
+								? BUILD_ICONS.radar
+								: BUILD_ICONS.boat,
 				unlockLevel: boatIndex === null ? 0 : boatIndex - 1
 			};
 		});
@@ -163,6 +180,8 @@
 			{m.beachhead_controlled_count({ count: game.controlled, total: game.islandCount })}
 		</p>
 	</div>
+
+	<BeachheadTakeoverNotice {game} />
 
 	<!-- The resource bar: what is in the warehouse, and what every minute adds to it -->
 	<div class="sticker flex flex-wrap items-center justify-between gap-3 p-3" style:--tilt="-0.5deg">

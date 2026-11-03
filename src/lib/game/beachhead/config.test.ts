@@ -5,6 +5,7 @@ import {
 	COLUMNS,
 	ISLANDS,
 	ISLAND_IDS,
+	ISLAND_MAP_POSITIONS,
 	LANDING_PARTY,
 	ROWS,
 	SHORE_X,
@@ -111,6 +112,16 @@ describe('beachhead tuning', () => {
 	it('keeps island ids unique and in sync with the id list', () => {
 		expect(new Set(ISLAND_IDS).size).toBe(ISLANDS.length);
 		expect(ISLAND_IDS).toEqual(ISLANDS.map((island) => island.id));
+	});
+
+	it('places every island inside the sea chart', () => {
+		expect(ISLAND_MAP_POSITIONS).toHaveLength(ISLANDS.length);
+		for (const [index, position] of ISLAND_MAP_POSITIONS.entries()) {
+			expect(position.x, `island ${index} x`).toBeGreaterThan(0);
+			expect(position.x, `island ${index} x`).toBeLessThan(100);
+			expect(position.y, `island ${index} y`).toBeGreaterThan(0);
+			expect(position.y, `island ${index} y`).toBeLessThan(100);
+		}
 	});
 
 	it('gives every island exactly one headquarters', () => {

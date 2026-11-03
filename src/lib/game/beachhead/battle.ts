@@ -51,6 +51,8 @@ export interface SquadTroop {
 export interface BattleModifiers {
 	/** One entry per boat, in the order the boats land */
 	squads: readonly (readonly SquadTroop[])[];
+	/** Enemy fortification from earlier captures; multiplies building health and damage */
+	defenseScale?: number;
 }
 
 const RIFLEMAN: SquadTroop = {
@@ -79,6 +81,10 @@ export interface Building {
 	maxHp: number;
 	/** Milliseconds until this gun can fire again */
 	cooldownMs: number;
+	/** This island's damage per shot after its fortification */
+	damage: number;
+	/** Milliseconds between two shots */
+	reloadMs: number;
 	destroyed: boolean;
 	/** Counts down after a hit, for the hit flash */
 	flashMs: number;
@@ -278,6 +284,9 @@ export function createBattle(
 	modifiers: BattleModifiers = DEFAULT_MODIFIERS
 ): BattleState {
 	const squads = modifiers.squads.map(copySquad);
+	const defenseScale = Math.max(1, modifiers.defenseScale ?? 1);
+	const scaledHp = (hp: number) => Math.round(hp * defenseScale);
+	const scaledDamage = (damage: number) => (damage > 0 ? Math.round(damage * defenseScale) : 0);
 	return {
 		island,
 		timeMs: 0,
@@ -288,6 +297,7 @@ export function createBattle(
 		troops: [],
 		buildings: island.buildings.map((spec, id) => {
 			const stats = BUILDINGS[spec.kind];
+			const hp = scaledHp(stats.hp);
 			return {
 				id,
 				kind: spec.kind,
@@ -295,10 +305,12 @@ export function createBattle(
 				y: spec.y,
 				width: stats.width,
 				height: stats.height,
-				hp: stats.hp,
-				maxHp: stats.hp,
+				hp,
+				maxHp: hp,
 				// Stagger the first volley a little so the guns do not all fire on the same frame
 				cooldownMs: (stats.reloadMs * (id % 3)) / 3,
+				damage: scaledDamage(stats.damage),
+				reloadMs: stats.reloadMs,
 				destroyed: false,
 				flashMs: 0,
 				recoilMs: 0
@@ -938,7 +950,7 @@ export function stepBattle(state: BattleState, dtMs: number) {
 		building.recoilMs = Math.max(0, building.recoilMs - frameMs);
 		if (building.destroyed || building.hp <= 0) continue;
 		const stats = BUILDINGS[building.kind];
-		if (stats.damage <= 0) continue;
+		if (building.damage <= 0) continue;
 		building.cooldownMs = Math.max(0, building.cooldownMs - frameMs);
 		if (building.cooldownMs > 0) continue;
 
@@ -997,16 +1009,16 @@ export function stepBattle(state: BattleState, dtMs: number) {
 				y: centerY,
 				ageMs: 0,
 				flightMs,
-				damage: stats.damage,
+				damage: building.damage,
 				splash: stats.splash,
 				homing: stats.homing ?? false
 			});
 			state.events.push({ ...event, flightMs });
 		} else {
-			woundWithSplash(state, target, stats.damage, centerX, centerY, stats.splash);
+			woundWithSplash(state, target, building.damage, centerX, centerY, stats.splash);
 			state.events.push(event);
 		}
-		building.cooldownMs = stats.reloadMs;
+		building.cooldownMs = building.reloadMs;
 	}
 
 	for (const troop of state.troops) {

@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
 	BOAT_CAPACITY,
 	BOAT_COUNT,
+	BASE_CHARTED_ISLANDS,
 	ISLAND_IDS,
 	MAX_BOAT_LEVEL,
 	MAX_HQ_LEVEL,
+	MAX_RADAR_LEVEL,
 	MAX_TRAINING_LEVEL,
 	STARTING_BOATS,
 	TROOPS
@@ -17,6 +19,7 @@ import {
 	ISLAND_PRODUCTION,
 	SAVE_VERSION,
 	STARTING_RESOURCES,
+	TAKEBACK_INTERVAL_MS,
 	addResources,
 	applyTroopUpgrade,
 	armyCapacity,
@@ -28,14 +31,19 @@ import {
 	builderSlots,
 	canUpgrade,
 	canUpgradeTroop,
+	capturesOf,
 	changeTroop,
+	chartedCount,
 	claimAchievements,
 	claimIncome,
 	controlIsland,
 	controlledCount,
+	everCaptured,
 	finishBuilds,
+	fortificationScale,
 	incomeRate,
 	isBeachheadSave,
+	isCharted,
 	isUnlocked,
 	islandProduction,
 	landingPlan,
@@ -45,6 +53,7 @@ import {
 	modifiersFor,
 	newSave,
 	parseSave,
+	processTakebacks,
 	recordVictory,
 	startUpgrade,
 	starsOf,
@@ -80,6 +89,7 @@ describe('the campaign save', () => {
 		expect(save.levels).toEqual({
 			hq: 1,
 			training: 1,
+			radar: 1,
 			boats: Array.from({ length: BOAT_COUNT }, () => 1)
 		});
 		expect(save.builders).toEqual([]);
@@ -90,10 +100,30 @@ describe('the campaign save', () => {
 		expect(isUnlocked(save, ISLAND_IDS, 5)).toBe(false);
 	});
 
-	it('opens the next island only after the previous one is controlled', () => {
+	it('opens the next island only after the previous one has been taken', () => {
 		const save = controlIsland(newSave(NOW), ISLAND_IDS[0], 2);
 		expect(isUnlocked(save, ISLAND_IDS, 1)).toBe(true);
 		expect(isUnlocked(save, ISLAND_IDS, 2)).toBe(false);
+	});
+
+	it('charts only the first six islands until the radar tower is upgraded', () => {
+		const save = newSave(NOW);
+		expect(chartedCount(save)).toBe(BASE_CHARTED_ISLANDS);
+		expect(isCharted(save, BASE_CHARTED_ISLANDS - 1)).toBe(true);
+		expect(isCharted(save, BASE_CHARTED_ISLANDS)).toBe(false);
+		const upgraded = { ...save, levels: { ...save.levels, radar: MAX_RADAR_LEVEL } };
+		expect(chartedCount(upgraded)).toBe(ISLAND_IDS.length);
+		expect(isCharted(upgraded, ISLAND_IDS.length - 1)).toBe(true);
+	});
+
+	it('keeps the next island open after the enemy retakes the one before it', () => {
+		let save = controlIsland(newSave(NOW), ISLAND_IDS[0], 3);
+		save = controlIsland(save, ISLAND_IDS[1], 2);
+		const result = processTakebacks(save, ISLAND_IDS, NOW + TAKEBACK_INTERVAL_MS, () => 0);
+		expect(result.lost).toEqual([ISLAND_IDS[0]]);
+		expect(everCaptured(result.save, ISLAND_IDS[0])).toBe(true);
+		expect(isUnlocked(result.save, ISLAND_IDS, 1)).toBe(true);
+		expect(isUnlocked(result.save, ISLAND_IDS, 2)).toBe(true);
 	});
 
 	it('keeps the better stars when an island is taken again', () => {
@@ -102,6 +132,46 @@ describe('the campaign save', () => {
 		expect(starsOf(save, ISLAND_IDS[0])).toBe(3);
 		expect(starsOf(save, ISLAND_IDS[1])).toBe(0);
 		expect(totalStars(save, ISLAND_IDS)).toBe(3);
+	});
+
+	it('counts every capture and hardens the island each time', () => {
+		let save = controlIsland(newSave(NOW), ISLAND_IDS[0], 2);
+		expect(capturesOf(save, ISLAND_IDS[0])).toBe(1);
+		expect(fortificationScale(0)).toBe(1);
+		expect(fortificationScale(1)).toBeCloseTo(1.2);
+		save = controlIsland(save, ISLAND_IDS[0], 3);
+		expect(capturesOf(save, ISLAND_IDS[0])).toBe(2);
+		expect(modifiersFor(save, ISLAND_IDS[0]).defenseScale).toBeCloseTo(1.4);
+		expect(fortificationScale(20)).toBe(3);
+	});
+
+	it('retakes one random controlled island every six hours and keeps its stars', () => {
+		const save = saveWithControlled(0, 1, 2);
+		const first = processTakebacks(save, ISLAND_IDS, NOW + TAKEBACK_INTERVAL_MS, () => 0);
+		expect(first.lost).toEqual([ISLAND_IDS[0]]);
+		expect(first.save.islands[ISLAND_IDS[0]]).toMatchObject({
+			controlled: false,
+			stars: 2,
+			captures: 1
+		});
+		expect(controlledCount(first.save, ISLAND_IDS)).toBe(2);
+
+		const later = processTakebacks(
+			first.save,
+			ISLAND_IDS,
+			NOW + TAKEBACK_INTERVAL_MS * 3,
+			() => 0.99
+		);
+		expect(later.lost).toHaveLength(2);
+		expect(controlledCount(later.save, ISLAND_IDS)).toBe(0);
+		expect(later.save.lastTakebackMs).toBe(NOW + TAKEBACK_INTERVAL_MS * 3);
+	});
+
+	it('does not retake an island when the player holds none', () => {
+		const save = newSave(NOW);
+		const result = processTakebacks(save, ISLAND_IDS, NOW + TAKEBACK_INTERVAL_MS * 2, () => 0);
+		expect(result.lost).toEqual([]);
+		expect(result.save.lastTakebackMs).toBe(NOW + TAKEBACK_INTERVAL_MS * 2);
 	});
 
 	it('pays more for a first capture than for a replay, and more on later islands', () => {
@@ -167,17 +237,42 @@ describe('migrating older saves', () => {
 			lastIncomeMs: NOW
 		});
 		expect(migrated).not.toBeNull();
-		expect(migrated!.levels).toEqual({ hq: 3, training: 3, boats });
+		expect(migrated!.levels).toEqual({ hq: 3, training: 3, radar: 1, boats });
 		expect(migrated!.troops.tank).toBe(2);
 		expect(migrated!.army.assault).toBe(6);
 		expect(migrated!.resources.wood).toBe(50);
-		expect(migrated!.islands[ISLAND_IDS[0]]).toEqual({ stars: 2, controlled: true });
+		expect(migrated!.islands[ISLAND_IDS[0]]).toEqual({
+			stars: 2,
+			controlled: true,
+			captures: 1
+		});
+	});
+
+	it('adds the radar tower, takeback clock and capture counts to a version 3 save', () => {
+		const current = newSave(NOW);
+		const legacyV3 = {
+			...current,
+			version: 3,
+			levels: { hq: 2, training: 2, boats: current.levels.boats },
+			islands: {
+				[ISLAND_IDS[0]]: { stars: 2, controlled: true },
+				[ISLAND_IDS[1]]: { stars: 3, controlled: false }
+			}
+		} as Record<string, unknown>;
+		delete legacyV3.lastTakebackMs;
+		const migrated = parseSave(legacyV3);
+		expect(migrated).not.toBeNull();
+		expect(migrated!.version).toBe(SAVE_VERSION);
+		expect(migrated!.levels.radar).toBe(1);
+		expect(migrated!.lastTakebackMs).toBe(NOW);
+		expect(migrated!.islands[ISLAND_IDS[0]].captures).toBe(1);
+		expect(migrated!.islands[ISLAND_IDS[1]].captures).toBe(1);
 	});
 
 	it('returns null for anything that is neither a current nor a known old save', () => {
 		expect(parseSave(null)).toBeNull();
 		expect(parseSave({ version: 1 })).toBeNull();
-		expect(parseSave({ version: 4, resources: STARTING_RESOURCES })).toBeNull();
+		expect(parseSave({ version: 5, resources: STARTING_RESOURCES })).toBeNull();
 	});
 });
 
@@ -295,6 +390,7 @@ describe('buildings and builders', () => {
 			levels: {
 				hq: MAX_HQ_LEVEL,
 				training: MAX_TRAINING_LEVEL,
+				radar: MAX_RADAR_LEVEL,
 				boats: Array.from({ length: BOAT_COUNT }, () => MAX_BOAT_LEVEL)
 			}
 		};
@@ -501,13 +597,16 @@ describe('achievements', () => {
 			levels: {
 				hq: MAX_HQ_LEVEL,
 				training: MAX_TRAINING_LEVEL,
+				radar: MAX_RADAR_LEVEL,
 				boats: Array.from({ length: BOAT_COUNT }, () => MAX_BOAT_LEVEL)
 			}
 		};
 		expect(ACHIEVEMENTS.find((a) => a.id === 'fortress')!.check(maxed)).toBe(true);
 		const stars = {
 			...maxed,
-			islands: Object.fromEntries(ISLAND_IDS.map((id) => [id, { stars: 3, controlled: true }]))
+			islands: Object.fromEntries(
+				ISLAND_IDS.map((id) => [id, { stars: 3, controlled: true, captures: 1 }])
+			)
 		};
 		expect(ACHIEVEMENTS.find((a) => a.id === 'all-stars')!.check(stars)).toBe(true);
 	});

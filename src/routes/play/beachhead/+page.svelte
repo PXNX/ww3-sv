@@ -277,7 +277,6 @@
 		{modeName}
 		drawBoard={game.drawBoard}
 		onNext={() => game.openNextIsland()}
-		onRetry={() => game.retry()}
 		onIslands={() => game.goMap()}
 	/>
 

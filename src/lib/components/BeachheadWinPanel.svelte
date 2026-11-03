@@ -9,7 +9,6 @@
 	import ShareButton from './ShareButton.svelte';
 	import IconArrowRight from '~icons/lucide/arrow-right';
 	import IconList from '~icons/lucide/list';
-	import IconRotate from '~icons/lucide/rotate-ccw';
 
 	let {
 		open,
@@ -26,7 +25,6 @@
 		modeName,
 		drawBoard,
 		onNext,
-		onRetry,
 		onIslands
 	}: {
 		open: boolean;
@@ -50,7 +48,6 @@
 		modeName: string;
 		drawBoard?: ScoreCard['drawBoard'];
 		onNext: () => void;
-		onRetry: () => void;
 		onIslands: () => void;
 	} = $props();
 
@@ -125,10 +122,6 @@
 					<IconArrowRight class="size-5 rtl:rotate-180" aria-hidden="true" />
 				</button>
 			{/if}
-			<button type="button" class="btn-chunky" onclick={onRetry}>
-				<IconRotate class="size-5" aria-hidden="true" />
-				{m.beachhead_retry()}
-			</button>
 			<button type="button" class="btn-chunky" onclick={onIslands}>
 				<IconList class="size-5" aria-hidden="true" />
 				{m.beachhead_to_map()}

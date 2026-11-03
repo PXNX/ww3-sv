@@ -100,6 +100,17 @@ describe('landing', () => {
 });
 
 describe('the attack', () => {
+	it('fortifies building health and damage after earlier captures', () => {
+		const state = createBattle(GUARDED_ISLAND, { squads: [], defenseScale: 2 });
+		const hq = state.buildings[0];
+		const mg = state.buildings[1];
+		expect(hq.maxHp).toBe(Math.round(BUILDINGS.hq.hp * 2));
+		expect(hq.damage).toBe(0);
+		expect(mg.damage).toBe(Math.round(BUILDINGS.mg.damage * 2));
+		expect(mg.reloadMs).toBe(BUILDINGS.mg.reloadMs);
+		expect(state.buildings[1].hp).toBe(Math.round(BUILDINGS.mg.hp * 2));
+	});
+
 	it('walks to an undefended headquarters and destroys it', () => {
 		const battle = createBattle(OPEN_ISLAND);
 		deploy(battle, 3);

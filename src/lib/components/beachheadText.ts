@@ -11,7 +11,10 @@ const ISLAND_NAMES = [
 	m.beachhead_island_3_name,
 	m.beachhead_island_4_name,
 	m.beachhead_island_5_name,
-	m.beachhead_island_6_name
+	m.beachhead_island_6_name,
+	m.beachhead_island_7_name,
+	m.beachhead_island_8_name,
+	m.beachhead_island_9_name
 ];
 
 export function islandName(index: number): string {

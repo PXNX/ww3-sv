@@ -8,11 +8,13 @@
  * amount, so the loadout is a small packing puzzle.
  */
 import {
+	BASE_CHARTED_ISLANDS,
 	BOAT_CAPACITY,
 	BOAT_COUNT,
 	ISLAND_IDS,
 	MAX_BOAT_LEVEL,
 	MAX_HQ_LEVEL,
+	MAX_RADAR_LEVEL,
 	MAX_TRAINING_LEVEL,
 	MAX_TROOP_LEVEL,
 	STARTING_BOATS,
@@ -23,9 +25,16 @@ import {
 import type { BattleModifiers, SquadTroop } from './battle.js';
 
 export const SAVE_KEY = 'beachhead:save';
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 /** Longer absences stop earning at this point, so a save cannot grow forever */
 export const INCOME_CAP_MS = 8 * 60 * 60 * 1000;
+/** One controlled island is lost to the enemy on this rhythm */
+export const TAKEBACK_INTERVAL_MS = 6 * 60 * 60 * 1000;
+/** Each capture hardens an island by this much, up to the cap below */
+export const FORTIFY_PER_CAPTURE = 0.2;
+export const MAX_FORTIFY_BONUS = 2;
+/** A very old save cannot trigger thousands of takebacks in one visit */
+const MAX_TAKEBACK_STEPS = 500;
 
 export type ResourceKind = 'wood' | 'stone' | 'iron' | 'gold';
 export type Resources = Record<ResourceKind, number>;
@@ -41,11 +50,14 @@ export const ISLAND_PRODUCTION: readonly Resources[] = [
 	{ wood: 3, stone: 2, iron: 1, gold: 0 },
 	{ wood: 2, stone: 2, iron: 2, gold: 1 },
 	{ wood: 3, stone: 3, iron: 3, gold: 1 },
-	{ wood: 3, stone: 3, iron: 3, gold: 2 }
+	{ wood: 3, stone: 3, iron: 3, gold: 2 },
+	{ wood: 4, stone: 3, iron: 4, gold: 2 },
+	{ wood: 4, stone: 4, iron: 5, gold: 3 },
+	{ wood: 5, stone: 5, iron: 6, gold: 4 }
 ];
 
 export type BoatKey = `boat-${number}`;
-export type BuildingKey = 'hq' | 'training' | BoatKey;
+export type BuildingKey = 'hq' | 'training' | 'radar' | BoatKey;
 export type Army = Record<Exclude<TroopKind, 'hero'>, number>;
 export type TroopLevels = Record<TroopKind, number>;
 
@@ -53,7 +65,7 @@ export const BOAT_KEYS: readonly BoatKey[] = Array.from(
 	{ length: BOAT_COUNT },
 	(_, index) => `boat-${index}` as BoatKey
 );
-export const BUILDING_KEYS: readonly BuildingKey[] = ['hq', 'training', ...BOAT_KEYS];
+export const BUILDING_KEYS: readonly BuildingKey[] = ['hq', 'training', 'radar', ...BOAT_KEYS];
 /** Troop kinds the player loads into boats; the hero always comes along and takes no space */
 export const ARMY_KINDS: readonly Exclude<TroopKind, 'hero'>[] = [
 	'assault',
@@ -70,6 +82,8 @@ export const ARMY_KINDS: readonly Exclude<TroopKind, 'hero'>[] = [
 export interface Levels {
 	hq: number;
 	training: number;
+	/** Radar tower level; each level charts one more island on the sea map */
+	radar: number;
 	/** One level per landing craft, in boarding order */
 	boats: number[];
 }
@@ -78,6 +92,8 @@ export interface IslandControl {
 	/** Best star rating, 0 while never taken */
 	stars: number;
 	controlled: boolean;
+	/** How often the island has been captured; every capture hardens its defences */
+	captures: number;
 }
 
 /** A building upgrade that is running on a builder */
@@ -95,7 +111,7 @@ export interface CareerStats {
 }
 
 export interface BeachheadSave {
-	version: 3;
+	version: 4;
 	resources: Resources;
 	levels: Levels;
 	troops: TroopLevels;
@@ -108,12 +124,15 @@ export interface BeachheadSave {
 	stats: CareerStats;
 	/** Unix milliseconds of the last income tick */
 	lastIncomeMs: number;
+	/** Unix milliseconds of the last enemy takeback check */
+	lastTakebackMs: number;
 }
 
 /** Cost of the first upgrade of each building family; each later level grows by a factor */
-const BUILDING_BASE_COST: Record<'hq' | 'training' | 'boat', Resources> = {
+const BUILDING_BASE_COST: Record<'hq' | 'training' | 'radar' | 'boat', Resources> = {
 	hq: { wood: 160, stone: 120, iron: 50, gold: 10 },
 	training: { wood: 90, stone: 60, iron: 20, gold: 4 },
+	radar: { wood: 140, stone: 110, iron: 60, gold: 12 },
 	boat: { wood: 50, stone: 30, iron: 10, gold: 2 }
 };
 const BUILDING_COST_GROWTH = 1.55;
@@ -170,9 +189,10 @@ function fillTroopLevels(levels: Partial<TroopLevels>): TroopLevels {
 const TROOP_COST_GROWTH = 1.5;
 
 /** How long a building upgrade runs, before the level growth */
-const BUILD_BASE_MS: Record<'hq' | 'training' | 'boat', number> = {
+const BUILD_BASE_MS: Record<'hq' | 'training' | 'radar' | 'boat', number> = {
 	hq: 30_000,
 	training: 20_000,
+	radar: 25_000,
 	boat: 10_000
 };
 const BUILD_TIME_GROWTH = 1.45;
@@ -184,6 +204,7 @@ export function newSave(nowMs: number): BeachheadSave {
 		levels: {
 			hq: 1,
 			training: 1,
+			radar: 1,
 			boats: Array.from({ length: BOAT_COUNT }, () => 1)
 		},
 		troops: defaultTroopLevels(),
@@ -192,7 +213,8 @@ export function newSave(nowMs: number): BeachheadSave {
 		builders: [],
 		achievements: [],
 		stats: { wins: 0, threeStarWins: 0, winsWithoutSkills: 0, heroWins: 0 },
-		lastIncomeMs: nowMs
+		lastIncomeMs: nowMs,
+		lastTakebackMs: nowMs
 	};
 }
 
@@ -205,8 +227,8 @@ function resourceCost(base: Resources, factor: number): Resources {
 	};
 }
 
-function buildingFamily(key: BuildingKey): 'hq' | 'training' | 'boat' {
-	if (key === 'hq' || key === 'training') return key;
+function buildingFamily(key: BuildingKey): 'hq' | 'training' | 'radar' | 'boat' {
+	if (key === 'hq' || key === 'training' || key === 'radar') return key;
 	return 'boat';
 }
 
@@ -230,12 +252,14 @@ export function boatCapacity(level: number): number {
 export function levelOf(save: BeachheadSave, key: BuildingKey): number {
 	if (key === 'hq') return save.levels.hq;
 	if (key === 'training') return save.levels.training;
+	if (key === 'radar') return save.levels.radar;
 	return lookupBoatLevel(save, Number(key.slice('boat-'.length))) ?? 1;
 }
 
 export function maxLevelOf(key: BuildingKey): number {
 	if (key === 'hq') return MAX_HQ_LEVEL;
 	if (key === 'training') return MAX_TRAINING_LEVEL;
+	if (key === 'radar') return MAX_RADAR_LEVEL;
 	return MAX_BOAT_LEVEL;
 }
 
@@ -249,7 +273,7 @@ export function upgradeCost(save: BeachheadSave, key: BuildingKey): Resources | 
 	);
 }
 
-/** Training and boats can outgrow the headquarters by one level, as in a base builder */
+/** Training, radar and boats can outgrow the headquarters by one level, as in a base builder */
 export function upgradeLocked(save: BeachheadSave, key: BuildingKey): boolean {
 	if (key === 'hq') return false;
 	if (key.startsWith('boat-')) {
@@ -329,6 +353,12 @@ function withBuildingLevel(save: BeachheadSave, key: BuildingKey): BeachheadSave
 				...save.levels,
 				training: Math.min(MAX_TRAINING_LEVEL, save.levels.training + 1)
 			}
+		};
+	}
+	if (key === 'radar') {
+		return {
+			...save,
+			levels: { ...save.levels, radar: Math.min(MAX_RADAR_LEVEL, save.levels.radar + 1) }
 		};
 	}
 	const index = Number(key.slice('boat-'.length));
@@ -510,9 +540,18 @@ export function landingPlan(save: BeachheadSave): SquadTroop[][] {
 	return squads;
 }
 
+/** How much harder an island's guns hit and how much more health they have after captures */
+export function fortificationScale(captures: number): number {
+	const safe = Number.isFinite(captures) ? Math.max(0, Math.floor(captures)) : 0;
+	return 1 + Math.min(MAX_FORTIFY_BONUS, FORTIFY_PER_CAPTURE * safe);
+}
+
 /** What the shore-base upgrades and the army change about the landing party */
-export function modifiersFor(save: BeachheadSave): BattleModifiers {
-	return { squads: landingPlan(save) };
+export function modifiersFor(save: BeachheadSave, islandId?: string): BattleModifiers {
+	return {
+		squads: landingPlan(save),
+		defenseScale: islandId ? fortificationScale(islandControl(save, islandId).captures) : 1
+	};
 }
 
 /** Every island under the player's flag gives three stars */
@@ -520,11 +559,12 @@ export function allIslandsPerfect(save: BeachheadSave): boolean {
 	return ISLAND_IDS.every((islandId) => starsOf(save, islandId) === 3);
 }
 
-/** Headquarters, training ground and all eight boats at their top level */
+/** Headquarters, radar tower, training ground and all eight boats at their top level */
 export function baseFullyMaxed(save: BeachheadSave): boolean {
 	return (
 		save.levels.hq >= MAX_HQ_LEVEL &&
 		save.levels.training >= MAX_TRAINING_LEVEL &&
+		save.levels.radar >= MAX_RADAR_LEVEL &&
 		save.levels.boats.every((level) => level >= MAX_BOAT_LEVEL)
 	);
 }
@@ -651,6 +691,8 @@ function isIslandControl(value: unknown): value is IslandControl {
 		Number.isInteger(candidate.stars) &&
 		(candidate.stars as number) >= 0 &&
 		(candidate.stars as number) <= 3 &&
+		Number.isInteger(candidate.captures) &&
+		(candidate.captures as number) >= 0 &&
 		(!candidate.controlled || (candidate.stars as number) >= 1)
 	);
 }
@@ -716,9 +758,20 @@ export function isBeachheadSave(value: unknown): value is BeachheadSave {
 	) {
 		return false;
 	}
+	if (
+		typeof candidate.lastTakebackMs !== 'number' ||
+		!Number.isFinite(candidate.lastTakebackMs) ||
+		candidate.lastTakebackMs < 0
+	) {
+		return false;
+	}
 	const levels = candidate.levels;
 	if (typeof levels !== 'object' || levels === null) return false;
-	if (!isLevel(levels.hq, MAX_HQ_LEVEL) || !isLevel(levels.training, MAX_TRAINING_LEVEL)) {
+	if (
+		!isLevel(levels.hq, MAX_HQ_LEVEL) ||
+		!isLevel(levels.training, MAX_TRAINING_LEVEL) ||
+		!isLevel(levels.radar, MAX_RADAR_LEVEL)
+	) {
 		return false;
 	}
 	if (
@@ -755,15 +808,74 @@ interface LegacyUpgrades {
 	landing: number;
 }
 
+interface LegacyLevels {
+	hq: number;
+	training: number;
+	radar?: number;
+	boats: number[];
+}
+
+interface LegacyIslandControl {
+	stars: number;
+	controlled: boolean;
+	captures?: number;
+}
+
 interface LegacySave {
 	version: 1 | 2;
 	supplies: number;
 	upgrades?: LegacyUpgrades;
-	levels?: Levels;
+	levels?: LegacyLevels;
 	troops?: TroopLevels;
 	army?: Army;
-	islands: Record<string, IslandControl>;
+	islands: Record<string, LegacyIslandControl>;
 	lastIncomeMs: number;
+}
+
+function isLegacyIslandControl(value: unknown): value is LegacyIslandControl {
+	if (typeof value !== 'object' || value === null) return false;
+	const candidate = value as Partial<LegacyIslandControl>;
+	return (
+		typeof candidate.controlled === 'boolean' &&
+		Number.isInteger(candidate.stars) &&
+		(candidate.stars as number) >= 0 &&
+		(candidate.stars as number) <= 3 &&
+		(!candidate.controlled || (candidate.stars as number) >= 1) &&
+		(candidate.captures === undefined ||
+			(Number.isInteger(candidate.captures) && candidate.captures >= 0))
+	);
+}
+
+function isLegacyIslands(value: unknown): value is Record<string, LegacyIslandControl> {
+	return (
+		typeof value === 'object' &&
+		value !== null &&
+		!Array.isArray(value) &&
+		Object.values(value).every(isLegacyIslandControl)
+	);
+}
+
+/** Older saves had no capture count; a controlled island counts as one capture */
+function normalizeIslands(
+	islands: Record<string, LegacyIslandControl>
+): Record<string, IslandControl> {
+	return Object.fromEntries(
+		Object.entries(islands).map(([islandId, control]) => [
+			islandId,
+			{
+				stars: control.stars,
+				controlled: control.controlled,
+				captures:
+					control.captures !== undefined
+						? control.captures
+						: control.controlled
+							? 1
+							: control.stars > 0
+								? 1
+								: 0
+			}
+		])
+	);
 }
 
 function isLegacySave(value: unknown): value is LegacySave {
@@ -777,7 +889,7 @@ function isLegacySave(value: unknown): value is LegacySave {
 		typeof candidate.lastIncomeMs === 'number' &&
 		Number.isFinite(candidate.lastIncomeMs) &&
 		candidate.lastIncomeMs >= 0 &&
-		isIslands(candidate.islands)
+		isLegacyIslands(candidate.islands)
 	);
 }
 
@@ -791,12 +903,35 @@ function resourcesFromSupplies(supplies: number): Resources {
 	};
 }
 
+/** Version 3 knows the economy but not the radar tower, takebacks or capture counts */
+function upgradeV3Save(value: unknown): BeachheadSave | null {
+	if (typeof value !== 'object' || value === null) return null;
+	const candidate = value as Record<string, unknown>;
+	if (candidate.version !== 3) return null;
+	const levels = candidate.levels;
+	const islands = candidate.islands;
+	const lastIncomeMs = candidate.lastIncomeMs;
+	if (typeof levels !== 'object' || levels === null) return null;
+	if (!isLegacyIslands(islands)) return null;
+	if (typeof lastIncomeMs !== 'number' || !Number.isFinite(lastIncomeMs)) return null;
+	const prepared = {
+		...candidate,
+		version: SAVE_VERSION,
+		levels: { ...levels, radar: 1 },
+		islands: normalizeIslands(islands),
+		lastTakebackMs: lastIncomeMs
+	};
+	return isBeachheadSave(prepared) ? prepared : null;
+}
+
 /**
  * Reads a stored save, upgrading the single-supply versions (three abstract upgrades, then the
- * first building-level save) to resources, builders and achievements.
+ * first building-level save) and the version-3 economy save to radar, takebacks and captures.
  */
 export function parseSave(value: unknown): BeachheadSave | null {
 	if (isBeachheadSave(value)) return value;
+	const upgraded = upgradeV3Save(value);
+	if (upgraded) return upgraded;
 	if (!isLegacySave(value)) return null;
 	const legacy = value;
 	const levels: Levels =
@@ -804,11 +939,13 @@ export function parseSave(value: unknown): BeachheadSave | null {
 			? {
 					hq: legacy.levels.hq,
 					training: legacy.levels.training,
+					radar: legacy.levels.radar ?? 1,
 					boats: [...legacy.levels.boats]
 				}
 			: {
 					hq: legacy.upgrades?.hq ?? 1,
 					training: legacy.upgrades?.troops ?? 1,
+					radar: 1,
 					boats: Array.from({ length: BOAT_COUNT }, (_, index) =>
 						index < STARTING_BOATS ? (legacy.upgrades?.landing ?? 1) : 1
 					)
@@ -823,11 +960,12 @@ export function parseSave(value: unknown): BeachheadSave | null {
 		levels,
 		troops,
 		army,
-		islands: legacy.islands,
+		islands: normalizeIslands(legacy.islands),
 		builders: [],
 		achievements: [],
 		stats: { wins: 0, threeStarWins: 0, winsWithoutSkills: 0, heroWins: 0 },
-		lastIncomeMs: legacy.lastIncomeMs
+		lastIncomeMs: legacy.lastIncomeMs,
+		lastTakebackMs: legacy.lastIncomeMs
 	};
 	// Never load an army that no boat could carry
 	if (usedArmySpace(save) > armyCapacity(save)) {
@@ -837,25 +975,48 @@ export function parseSave(value: unknown): BeachheadSave | null {
 }
 
 export function islandControl(save: BeachheadSave, islandId: string): IslandControl {
-	return save.islands[islandId] ?? { stars: 0, controlled: false };
+	return save.islands[islandId] ?? { stars: 0, controlled: false, captures: 0 };
 }
 
 export function starsOf(save: BeachheadSave, islandId: string): number {
 	return islandControl(save, islandId).stars;
 }
 
+export function capturesOf(save: BeachheadSave, islandId: string): number {
+	return islandControl(save, islandId).captures;
+}
+
 export function isControlled(save: BeachheadSave, islandId: string): boolean {
 	return islandControl(save, islandId).controlled;
 }
 
-/** The first island is always open; every other one needs the previous island controlled */
+/** The island has been taken at least once, even if the enemy has since retaken it */
+export function everCaptured(save: BeachheadSave, islandId: string): boolean {
+	const control = islandControl(save, islandId);
+	return control.stars > 0 || control.captures > 0;
+}
+
+/** How many islands the radar tower has charted on the sea map */
+export function chartedCount(save: BeachheadSave, total: number = ISLAND_IDS.length): number {
+	return Math.min(total, BASE_CHARTED_ISLANDS + save.levels.radar - 1);
+}
+
+export function isCharted(save: BeachheadSave, index: number): boolean {
+	return index >= 0 && index < chartedCount(save);
+}
+
+/**
+ * The first island is always open. Every other island must be charted by the radar tower and
+ * the island before it must have been captured at least once; a takeback does not relock it.
+ */
 export function isUnlocked(
 	save: BeachheadSave,
 	islandIds: readonly string[],
 	index: number
 ): boolean {
-	if (index <= 0) return index === 0;
-	return isControlled(save, islandIds[index - 1]);
+	if (index < 0 || index >= islandIds.length) return false;
+	if (index === 0) return true;
+	return isCharted(save, index) && everCaptured(save, islandIds[index - 1]);
 }
 
 export function controlledCount(save: BeachheadSave, islandIds: readonly string[]): number {
@@ -948,7 +1109,7 @@ export function addResources(save: BeachheadSave, loot: Resources): BeachheadSav
 	return { ...save, resources };
 }
 
-/** Marks an island controlled, keeping the better star rating */
+/** Marks an island controlled, keeping the better star rating and counting the capture */
 export function controlIsland(save: BeachheadSave, islandId: string, stars: number): BeachheadSave {
 	const previous = islandControl(save, islandId);
 	const best = Math.min(3, Math.max(1, Math.round(stars)));
@@ -958,9 +1119,56 @@ export function controlIsland(save: BeachheadSave, islandId: string, stars: numb
 			...save.islands,
 			[islandId]: {
 				stars: Math.max(previous.stars, best),
-				controlled: true
+				controlled: true,
+				captures: previous.captures + 1
 			}
 		}
+	};
+}
+
+export interface TakebackResult {
+	save: BeachheadSave;
+	/** Islands the enemy retook during this check, oldest first */
+	lost: string[];
+}
+
+/**
+ * The enemy retakes one random controlled island every six hours. Captures and stars stay, so
+ * progression stays open and the island can be stormed again with its hardened defences.
+ */
+export function processTakebacks(
+	save: BeachheadSave,
+	islandIds: readonly string[],
+	nowMs: number,
+	random: () => number = Math.random
+): TakebackResult {
+	if (!Number.isFinite(nowMs) || nowMs <= save.lastTakebackMs) return { save, lost: [] };
+	const intervals = Math.min(
+		MAX_TAKEBACK_STEPS,
+		Math.floor((nowMs - save.lastTakebackMs) / TAKEBACK_INTERVAL_MS)
+	);
+	if (intervals <= 0) return { save, lost: [] };
+
+	let islands = save.islands;
+	let lost: string[] = [];
+	for (let step = 0; step < intervals; step++) {
+		const held = islandIds.filter((islandId) => isControlled({ ...save, islands }, islandId));
+		if (held.length === 0) break;
+		const pick = Math.min(held.length - 1, Math.max(0, Math.floor(random() * held.length)));
+		const islandId = held[pick];
+		islands = {
+			...islands,
+			[islandId]: { ...islandControl({ ...save, islands }, islandId), controlled: false }
+		};
+		lost = [...lost, islandId];
+	}
+	return {
+		save: {
+			...save,
+			islands,
+			lastTakebackMs: save.lastTakebackMs + intervals * TAKEBACK_INTERVAL_MS
+		},
+		lost
 	};
 }
 

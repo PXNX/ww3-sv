@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { SKILL_ENERGY } from '#lib/game/beachhead/config.js';
+import { ISLAND_IDS, SKILL_ENERGY } from '#lib/game/beachhead/config.js';
+import { TAKEBACK_INTERVAL_MS, controlIsland } from '#lib/game/beachhead/campaign.js';
 import { createHighscores } from '#lib/services/highscore.js';
 import { createStore, type KeyValueStorage } from '#lib/services/storage.js';
 import { BeachheadGame } from './beachheadGame.svelte.js';
@@ -20,7 +21,8 @@ function newGame() {
 	return new BeachheadGame({
 		scores: () => createHighscores(store),
 		store: () => store,
-		now: () => 1_000_000
+		now: () => 1_000_000,
+		random: () => 0
 	});
 }
 
@@ -30,6 +32,31 @@ function startedGame() {
 	game.openIsland(0);
 	return game;
 }
+
+describe('BeachheadGame campaign guards', () => {
+	it('does not open an island that is already under the player flag', () => {
+		const game = newGame();
+		game.load();
+		game.campaign = controlIsland(game.campaign, ISLAND_IDS[0], 3);
+		game.openIsland(0);
+		expect(game.screen).toBe('base');
+	});
+
+	it('lets the enemy retake an island on the six-hour tick and posts a notice', () => {
+		const game = newGame();
+		game.load();
+		game.campaign = {
+			...controlIsland(game.campaign, ISLAND_IDS[0], 2),
+			lastTakebackMs: 1_000_000 - TAKEBACK_INTERVAL_MS
+		};
+		game.tick();
+		expect(game.isControlled(ISLAND_IDS[0])).toBe(false);
+		expect(game.starsFor(ISLAND_IDS[0])).toBe(2);
+		expect(game.takeoverNotice).toContain(ISLAND_IDS[0]);
+		game.dismissTakeovers();
+		expect(game.takeoverNotice).toEqual([]);
+	});
+});
 
 describe('BeachheadGame skills', () => {
 	it('arms a skill, then casts it where the island is tapped', () => {
