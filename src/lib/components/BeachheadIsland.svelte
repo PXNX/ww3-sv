@@ -18,6 +18,8 @@
 		MAX_MINES,
 		defenseUnlocked,
 		isGuard,
+		isRemovable,
+		STORE_CATEGORIES,
 		canPlace,
 		footprintOf,
 		isLayoutKey,
@@ -65,7 +67,7 @@
 	import IconHourglass from '~icons/lucide/hourglass';
 	import IconLock from '~icons/lucide/lock';
 	import IconMove from '~icons/lucide/move';
-	import IconShield from '~icons/lucide/shield';
+	import IconStore from '~icons/lucide/store';
 	import IconShieldCheck from '~icons/lucide/shield-check';
 	import IconSkull from '~icons/lucide/skull';
 	import IconTv from '~icons/lucide/tv';
@@ -102,6 +104,8 @@
 	let drag: Drag | null = null;
 	let dragging = $state(false);
 	let clock = $state(0);
+	/** The category tab open in the store */
+	let storeTab = $state<keyof typeof STORE_CATEGORIES>('mines');
 	/** The building whose build time an advert is about to cut */
 	let adFor = $state<string | null>(null);
 
@@ -227,8 +231,8 @@
 		},
 		{
 			id: 'mines',
-			label: m.beachhead_island_defences_title(),
-			icon: IconShield,
+			label: m.beachhead_store_title(),
+			icon: IconStore,
 			active: sheet === 'mines',
 			onclick: () => (sheet = 'mines')
 		},
@@ -575,15 +579,17 @@
 						{/if}
 						{mineName(panel.mine.kind)}
 					</p>
-					<button
-						type="button"
-						class="btn-chunky flex size-9 items-center justify-center rounded-full p-0"
-						aria-label={m.beachhead_island_mine_sell()}
-						title={m.beachhead_island_mine_sell()}
-						onclick={() => game.sellMine(panel.mine.id)}
-					>
-						<IconTrash class="size-5" aria-hidden="true" />
-					</button>
+					{#if isRemovable(panel.mine.kind)}
+						<button
+							type="button"
+							class="btn-chunky flex size-9 items-center justify-center rounded-full p-0"
+							aria-label={m.beachhead_island_mine_sell()}
+							title={m.beachhead_island_mine_sell()}
+							onclick={() => game.sellMine(panel.mine.id)}
+						>
+							<IconTrash class="size-5" aria-hidden="true" />
+						</button>
+					{/if}
 				{:else}
 					{@const row = panel.row}
 					<p class="flex items-center gap-2 leading-tight font-bold" title={panel.hint}>
@@ -780,17 +786,34 @@
 
 <BeachheadSheet
 	open={sheet === 'mines'}
-	title={m.beachhead_island_defences_title()}
+	title={m.beachhead_store_title()}
 	onclose={() => (sheet = null)}
 >
 	<p class="text-sm font-semibold tabular-nums">
 		{m.beachhead_island_mines_count({ count: game.layout.mines.length, max: MAX_MINES })}
 	</p>
-	<ul class="grid grid-cols-3 gap-2 sm:grid-cols-4">
-		{#each DEFENSE_KINDS as kind (kind)}
+	<div class="flex gap-1.5" role="tablist">
+		{#each Object.keys(STORE_CATEGORIES) as tab (tab)}
+			<button
+				type="button"
+				role="tab"
+				aria-selected={storeTab === tab}
+				class="btn-chunky px-3 py-1 text-sm {storeTab === tab ? 'bg-explosion-yellow' : ''}"
+				onclick={() => (storeTab = tab as keyof typeof STORE_CATEGORIES)}
+			>
+				{tab === 'mines'
+					? m.beachhead_island_mines_title()
+					: tab === 'guns'
+						? m.beachhead_store_guns()
+						: m.beachhead_store_obstacles()}
+			</button>
+		{/each}
+	</div>
+	<ul class="flex gap-2 overflow-x-auto pb-2">
+		{#each STORE_CATEGORIES[storeTab] as kind (kind)}
 			{@const unlocked = defenseUnlocked(kind, game.levelOf('hq'))}
 			<li
-				class="flex flex-col items-center gap-1.5 rounded-[14px] border-2 border-ink bg-sand p-2 {unlocked
+				class="flex w-40 shrink-0 flex-col items-center gap-1.5 rounded-[14px] border-2 border-ink bg-sand p-2 {unlocked
 					? ''
 					: 'opacity-70'}"
 			>

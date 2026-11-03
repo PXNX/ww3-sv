@@ -103,3 +103,20 @@ describe('the jammer', () => {
 		expect(withSquad.events.some((event) => event.kind === 'jammer-pulse')).toBe(true);
 	});
 });
+
+describe('what can be taken away again', () => {
+	it('lets you sell mines and hedgehogs but not a gun that is placed', async () => {
+		const { sellMine } = await import('./campaign');
+		const { isRemovable } = await import('./baseLayout');
+		expect(isRemovable('mine-at')).toBe(true);
+		expect(isRemovable('hedgehog')).toBe(true);
+		expect(isRemovable('himars')).toBe(false);
+		let save = buyMine(rich(8), 'mine-emp')!;
+		save = buyMine(save, 'hedgehog')!;
+		save = buyMine(save, 'himars')!;
+		const [mine, hedgehog, gun] = layoutOf(save).mines;
+		expect(sellMine(save, gun.id)).toBeNull();
+		expect(sellMine(save, mine.id)).not.toBeNull();
+		expect(sellMine(save, hedgehog.id)).not.toBeNull();
+	});
+});

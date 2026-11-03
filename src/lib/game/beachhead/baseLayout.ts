@@ -9,7 +9,7 @@ import { MINE_KINDS, type MineKind } from './config.js';
 /** The guns from the other game modes that the headquarters unlocks for your own base */
 export type GuardKind =
 	'sniper' | 'flame' | 'mortar' | 'fpv-nest' | 'patriot' | 'himars' | 'jammer';
-export type DefenseKind = MineKind | GuardKind;
+export type DefenseKind = MineKind | GuardKind | 'hedgehog';
 export const GUARD_KINDS: readonly GuardKind[] = [
 	'sniper',
 	'flame',
@@ -19,7 +19,19 @@ export const GUARD_KINDS: readonly GuardKind[] = [
 	'himars',
 	'jammer'
 ];
-export const DEFENSE_KINDS: readonly DefenseKind[] = [...MINE_KINDS, ...GUARD_KINDS];
+export const DEFENSE_KINDS: readonly DefenseKind[] = [...MINE_KINDS, ...GUARD_KINDS, 'hedgehog'];
+
+/** Only mines and Czech hedgehogs can be taken away again; a placed gun or building is there to stay */
+export function isRemovable(kind: DefenseKind): boolean {
+	return kind === 'hedgehog' || (MINE_KINDS as readonly string[]).includes(kind);
+}
+
+/** The store's tabs: the kinds of each category */
+export const STORE_CATEGORIES: Record<'mines' | 'guns' | 'obstacles', readonly DefenseKind[]> = {
+	mines: MINE_KINDS,
+	guns: GUARD_KINDS,
+	obstacles: ['hedgehog']
+};
 
 /** The headquarters level that unlocks each gun */
 export const GUARD_UNLOCK_HQ: Record<GuardKind, number> = {
@@ -156,7 +168,8 @@ export const DEFENSE_COST: Record<DefenseKind, Record<LayoutResource, number>> =
 	'fpv-nest': { wood: 100, stone: 60, iron: 140, gold: 12 },
 	patriot: { wood: 160, stone: 120, iron: 240, gold: 24 },
 	himars: { wood: 220, stone: 160, iron: 320, gold: 32 },
-	jammer: { wood: 180, stone: 140, iron: 280, gold: 36 }
+	jammer: { wood: 180, stone: 140, iron: 280, gold: 36 },
+	hedgehog: { wood: 20, stone: 10, iron: 30, gold: 0 }
 };
 
 export function mineRefund(kind: DefenseKind): Record<LayoutResource, number> {

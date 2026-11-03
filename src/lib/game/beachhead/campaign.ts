@@ -40,6 +40,7 @@ import type { ExpeditionState } from './expedition.js';
 import {
 	DEFENSE_COST,
 	defenseUnlocked,
+	isRemovable,
 	addMine,
 	defaultLayout,
 	isLayoutKey,
@@ -1683,6 +1684,8 @@ export function moveMineTo(save: BeachheadSave, id: number, cell: Cell): Beachhe
 /** Takes a mine away again and pays half of it back, up to what the warehouses can hold */
 export function sellMine(save: BeachheadSave, id: number): BeachheadSave | null {
 	const mine = layoutOf(save).mines.find((candidate) => candidate.id === id);
+	// A placed gun stays; only mines and hedgehogs can be taken up again
+	if (mine && !isRemovable(mine.kind)) return null;
 	const layout = mine ? removeMine(layoutOf(save), id) : null;
 	if (!mine || !layout) return null;
 	const refund = mineRefund(mine.kind);
