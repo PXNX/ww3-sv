@@ -29,17 +29,20 @@ export function zoomPan(node: HTMLElement, options: ZoomPanOptions = {}) {
 	const content = (): HTMLElement | null => node.querySelector<HTMLElement>('[data-zoom]');
 
 	let announced = 0;
-	let frame = 0;
+	let settle: ReturnType<typeof setTimeout> | undefined;
 
-	/** Tells the picture how far it is zoomed, so canvases can redraw sharp instead of stretching pixels */
+	/**
+	 * Tells the picture how far it is zoomed, so canvases can redraw sharp instead of stretching pixels.
+	 * Only once the gesture has paused: resizing a canvas bitmap on every step clears it and makes the
+	 * animated scenery stutter, while the CSS transform alone scales smoothly in the meantime.
+	 */
 	function announce() {
-		if (frame) return;
-		frame = requestAnimationFrame(() => {
-			frame = 0;
-			if (Math.abs(scale - announced) < 0.02) return;
+		clearTimeout(settle);
+		settle = setTimeout(() => {
+			if (Math.abs(scale - announced) < 0.05) return;
 			announced = scale;
 			node.dispatchEvent(new CustomEvent('zoomchange', { detail: { scale } }));
-		});
+		}, 160);
 	}
 
 	function clampAndApply() {
@@ -196,7 +199,7 @@ export function zoomPan(node: HTMLElement, options: ZoomPanOptions = {}) {
 			node.removeEventListener('click', onClick, true);
 			node.removeEventListener('dblclick', onDoubleClick);
 			observer.disconnect();
-			cancelAnimationFrame(frame);
+			clearTimeout(settle);
 		}
 	};
 }
