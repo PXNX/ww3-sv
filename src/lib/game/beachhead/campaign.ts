@@ -99,7 +99,7 @@ export const BUILDING_KEYS: readonly BuildingKey[] = [
 	...WAREHOUSE_KEYS
 ];
 
-export const STARTING_RESOURCES: Resources = { wood: 120, stone: 80, iron: 40, gold: 30 };
+export const STARTING_RESOURCES: Resources = { wood: 300, stone: 220, iron: 100, gold: 30 };
 /** What the home shore produces per minute on its own; the islands add their own lines */
 export const HOME_PRODUCTION: Resources = { wood: 1, stone: 0, iron: 0, gold: 1 };
 /** What each island adds to the tax income once controlled, in units per minute */
@@ -191,12 +191,12 @@ const BUILDING_BASE_COST: Record<
 	'hq' | 'training' | 'radar' | 'dojo' | 'boat' | 'warehouse',
 	Resources
 > = {
-	hq: { wood: 160, stone: 120, iron: 50, gold: 10 },
-	training: { wood: 90, stone: 60, iron: 20, gold: 4 },
-	radar: { wood: 140, stone: 110, iron: 60, gold: 12 },
-	dojo: { wood: 320, stone: 260, iron: 140, gold: 40 },
-	boat: { wood: 50, stone: 30, iron: 10, gold: 2 },
-	warehouse: { wood: 70, stone: 50, iron: 15, gold: 2 }
+	hq: { wood: 320, stone: 240, iron: 100, gold: 20 },
+	training: { wood: 180, stone: 120, iron: 40, gold: 8 },
+	radar: { wood: 280, stone: 220, iron: 120, gold: 24 },
+	dojo: { wood: 640, stone: 520, iron: 280, gold: 80 },
+	boat: { wood: 100, stone: 60, iron: 20, gold: 4 },
+	warehouse: { wood: 140, stone: 100, iron: 30, gold: 4 }
 };
 const BUILDING_COST_GROWTH = 1.55;
 
@@ -263,12 +263,12 @@ const TROOP_COST_GROWTH = 1.5;
 
 /** How long a building upgrade runs, before the level growth */
 const BUILD_BASE_MS: Record<'hq' | 'training' | 'radar' | 'dojo' | 'boat' | 'warehouse', number> = {
-	hq: 30_000,
-	training: 20_000,
-	radar: 25_000,
-	dojo: 45_000,
-	boat: 10_000,
-	warehouse: 12_000
+	hq: 150_000,
+	training: 100_000,
+	radar: 125_000,
+	dojo: 225_000,
+	boat: 50_000,
+	warehouse: 60_000
 };
 const BUILD_TIME_GROWTH = 1.45;
 
