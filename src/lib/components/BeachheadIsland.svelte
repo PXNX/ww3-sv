@@ -85,7 +85,8 @@
 		cell: Cell;
 		valid: boolean;
 	};
-	type Sheet = 'army' | 'training' | 'hero' | 'upgrade' | 'mines' | 'crystals' | 'trophies';
+	type Sheet =
+		'army' | 'training' | 'hero' | 'upgrade' | 'mines' | 'crystals' | 'trophies' | 'expedition';
 
 	let stage: HTMLDivElement | undefined = $state();
 	let canvas: HTMLCanvasElement | undefined = $state();

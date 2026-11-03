@@ -19,15 +19,19 @@
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
 	import { islandName } from './beachheadText';
 	import { zoomPan } from './zoomPan';
+	import BeachheadExpedition from './BeachheadExpedition.svelte';
 	import BeachheadResources from './BeachheadResources.svelte';
+	import BeachheadSheet from './BeachheadSheet.svelte';
 	import BeachheadTakeoverNotice from './BeachheadTakeoverNotice.svelte';
 	import IconAnchor from '~icons/lucide/anchor';
+	import IconCompass from '~icons/lucide/compass';
 	import IconCrosshair from '~icons/lucide/crosshair';
 	import IconFlag from '~icons/lucide/flag-triangle-right';
 	import IconLock from '~icons/lucide/lock';
 	import IconRadar from '~icons/lucide/radar';
 
 	let { game }: { game: BeachheadGame } = $props();
+	let expeditionOpen = $state(false);
 
 	const HOME = HOME_MAP_POSITION;
 	/** The chart is about 16:9, so sideways distances count a little more than upward ones */
@@ -303,12 +307,39 @@
 			<BeachheadTakeoverNotice {game} />
 		</div>
 	</div>
+	<div
+		class="pointer-events-none absolute right-(--hud-right) bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40"
+	>
+		<button
+			type="button"
+			class="btn-chunky pointer-events-auto relative flex size-14 items-center justify-center rounded-full bg-explosion-yellow p-0"
+			aria-label={m.beachhead_expedition_title()}
+			title={m.beachhead_expedition_title()}
+			onclick={() => (expeditionOpen = true)}
+		>
+			<IconCompass class="size-7" aria-hidden="true" />
+			{#if game.expeditionDone}
+				<span
+					class="absolute -end-1 -top-1 size-4 rounded-full border-2 border-ink bg-tie-red"
+					aria-hidden="true"
+				></span>
+			{/if}
+		</button>
+	</div>
 	<div class="pointer-events-none absolute top-(--hud-top) right-(--hud-right) z-40">
 		<div class="pointer-events-auto">
 			<BeachheadResources {game} />
 		</div>
 	</div>
 </div>
+
+<BeachheadSheet
+	open={expeditionOpen}
+	title={m.beachhead_expedition_title()}
+	onclose={() => (expeditionOpen = false)}
+>
+	<BeachheadExpedition {game} />
+</BeachheadSheet>
 
 <style>
 	.map-sea {

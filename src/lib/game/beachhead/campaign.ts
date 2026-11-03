@@ -36,6 +36,7 @@ import {
 } from './config.js';
 import type { BattleModifiers, SquadTroop } from './battle.js';
 import { baseEffects, normalizeCrystals, type CrystalState } from './crystals.js';
+import type { ExpeditionState } from './expedition.js';
 import {
 	DEFENSE_COST,
 	defenseUnlocked,
@@ -261,6 +262,8 @@ export interface BeachheadSave {
 	layout?: BaseLayout;
 	/** Troops killed in attacks that still wait to be retrained with gold; older saves have none */
 	lost?: Partial<Army>;
+	/** The expedition that is out at sea, if any */
+	expedition?: ExpeditionState;
 	/** Crystals: loose stock, levels and the slots on buildings and on the base itself */
 	crystals?: CrystalState;
 	/** Training level of the support skills; a skill missing here is at level one */
@@ -1561,7 +1564,7 @@ function upgradeV5Save(value: unknown): BeachheadSave | null {
  * warehouse save to the hero dojo and the Azov commander.
  */
 export function parseSave(value: unknown): BeachheadSave | null {
-	const parsed = parseSaveVersions(value);
+	let parsed = parseSaveVersions(value);
 	if (!parsed) return parsed;
 	// Nothing can be stored beyond what the warehouses hold, whatever an older save says
 	const capacities = storageCapacities(parsed);
@@ -1571,6 +1574,15 @@ export function parseSave(value: unknown): BeachheadSave | null {
 		iron: Math.min(parsed.resources.iron, capacities.iron),
 		gold: Math.min(parsed.resources.gold, capacities.gold)
 	};
+	const expedition = parsed.expedition;
+	const validExpedition =
+		typeof expedition === 'object' &&
+		expedition !== null &&
+		[expedition.tier, expedition.startedAt, expedition.endsAt, expedition.seed].every(
+			(value) => typeof value === 'number' && Number.isFinite(value)
+		);
+	if (parsed.expedition !== undefined && !validExpedition)
+		parsed = { ...parsed, expedition: undefined };
 	const withCrystals =
 		parsed.crystals === undefined
 			? { ...parsed, resources }

@@ -127,6 +127,15 @@ import {
 import type { BaseLayout, Cell, DefenseKind } from '#lib/game/beachhead/baseLayout.js';
 import { testIslandOf } from '#lib/game/beachhead/defenseTest.js';
 import {
+	EXPEDITION_TIERS,
+	canStartExpedition,
+	claimExpedition,
+	expeditionOf,
+	expeditionReady,
+	startExpedition,
+	type ChestRewards
+} from '#lib/game/beachhead/expedition.js';
+import {
 	addCrystals,
 	baseEffects,
 	baseSlots,
@@ -217,6 +226,8 @@ export class BeachheadGame {
 	/** Resources won in the last battle, shown on the result panel */
 	loot = $state<Resources>({ wood: 0, stone: 0, iron: 0, gold: 0 });
 	/** Troops the last attack killed, shown on the result panel until they are retrained */
+	/** What the last chest held, shown until the sheet is closed */
+	chest = $state<ChestRewards | null>(null);
 	/** The crystal the last victory dropped, if any */
 	crystalFound = $state<{ type: CrystalType; count: number } | null>(null);
 	/** How many seconds the last attack took */
@@ -828,6 +839,50 @@ export class BeachheadGame {
 		this.#commit(next, { claim: false });
 		this.#play('click', 0.5);
 		return true;
+	}
+
+	/** The expedition at sea, with when it is due back */
+	get expedition() {
+		return expeditionOf(this.campaign);
+	}
+
+	get expeditionDone(): boolean {
+		return expeditionReady(this.campaign, this.#now());
+	}
+
+	expeditionTiers = EXPEDITION_TIERS;
+
+	canStartExpedition(tier: number): boolean {
+		return canStartExpedition(this.campaign, tier);
+	}
+
+	/** Sends a ship out for a few hours; the price is paid now and the chest is fixed from here */
+	startExpedition(tier: number): boolean {
+		const next = startExpedition(
+			this.campaign,
+			tier,
+			this.#now(),
+			Math.floor(this.#random() * 2_000_000_000) + 1
+		);
+		if (!next) {
+			this.#play('ui-error', 0.4);
+			return false;
+		}
+		this.chest = null;
+		this.#commit(next, { claim: false });
+		this.#play('chime', 0.6);
+		return true;
+	}
+
+	/** Opens the chest of a ship that is back and pays the Fake News into the career wallet */
+	openChest(): ChestRewards | null {
+		const result = claimExpedition(this.campaign, this.#now());
+		if (!result) return null;
+		this.#commit(result.save, { claim: false });
+		if (result.rewards.coins > 0) this.#rewardCoins(result.rewards.coins);
+		this.chest = result.rewards;
+		this.#play('chime-big', 0.9);
+		return result.rewards;
 	}
 
 	/** Troops killed in attacks that wait to be retrained, by kind */
