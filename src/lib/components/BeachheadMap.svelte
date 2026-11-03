@@ -55,14 +55,6 @@
 	/** The chart is about 16:9, so sideways distances count a little more than upward ones */
 	const ASPECT = 1.78;
 
-	/** The sailing route from the home shore through every charted island */
-	const route = $derived.by(() => {
-		const points = [HOME, ...ISLAND_MAP_POSITIONS.slice(0, game.chartedCount)];
-		return points
-			.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
-			.join(' ');
-	});
-
 	function noise(seed: number): number {
 		const value = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
 		return value - Math.floor(value);
@@ -202,25 +194,6 @@
 				<ellipse cx="55" cy="34" rx="7" ry="3" />
 				<ellipse cx="80" cy="36" rx="6" ry="3" />
 			</g>
-		</svg>
-
-		<svg
-			class="pointer-events-none absolute inset-0 size-full"
-			viewBox="0 0 100 100"
-			preserveAspectRatio="none"
-			aria-hidden="true"
-		>
-			<path
-				d={route}
-				fill="none"
-				stroke="var(--color-paper)"
-				stroke-width="2.5"
-				stroke-dasharray="2.5 5"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				opacity="0.55"
-				vector-effect="non-scaling-stroke"
-			/>
 		</svg>
 
 		<!-- Home bay -->
