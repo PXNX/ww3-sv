@@ -897,10 +897,14 @@ export class BeachheadGame {
 		this.#retreat();
 		const slots = crystalsOf(this.campaign).slots;
 		this.battle = createBattle(
-			testIslandOf(this.layout, (target) => {
-				const type = slots[target];
-				return type ? { type, level: crystalLevel(this.campaign, type) } : undefined;
-			}),
+			testIslandOf(
+				this.layout,
+				(target) => {
+					const type = slots[target];
+					return type ? { type, level: crystalLevel(this.campaign, type) } : undefined;
+				},
+				(house) => this.levelOf(`house-${house}` as BuildingKey)
+			),
 			{
 				...modifiersFor(this.campaign),
 				// The bulwark crystal toughens everything in your own base

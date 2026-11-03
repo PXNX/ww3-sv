@@ -76,7 +76,23 @@ export const STORAGE_PER_LEVEL = 500;
 
 export type BoatKey = `boat-${number}`;
 export type WarehouseKey = `warehouse-${ResourceKind}-${number}`;
-export type BuildingKey = 'hq' | 'training' | 'radar' | 'dojo' | 'bunker' | BoatKey | WarehouseKey;
+/** The producers on the island: the cottages that pay taxes, the sawmill in the forest, the quarry and the iron mine */
+export type ProducerKey = 'house-0' | 'house-1' | 'house-2' | 'sawmill' | 'quarry' | 'mine';
+export const PRODUCER_KEYS: readonly ProducerKey[] = [
+	'house-0',
+	'house-1',
+	'house-2',
+	'sawmill',
+	'quarry',
+	'mine'
+];
+export const MAX_PRODUCER_LEVEL = 6;
+export function isProducer(key: string): key is ProducerKey {
+	return (PRODUCER_KEYS as readonly string[]).includes(key);
+}
+
+export type BuildingKey =
+	'hq' | 'training' | 'radar' | 'dojo' | 'bunker' | ProducerKey | BoatKey | WarehouseKey;
 export type Army = Record<ArmyKind, number>;
 export type TroopLevels = Record<TroopKind, number>;
 
@@ -112,6 +128,30 @@ export const STARTING_RESOURCES: Resources = { wood: 300, stone: 220, iron: 100,
 /** Every cottage on the island pays this much gold per minute in taxes */
 export const HOUSE_TAX = 1;
 export const HOUSE_COUNT = 3;
+/**
+ * What each producer adds per minute at level one; every level adds half as much again. The cottages
+ * pay the gold, the sawmill the wood, the quarry the stone and the mine the iron, and the shore adds
+ * a little of its own.
+ */
+export const PRODUCER_OUTPUT: Record<ProducerKey, Partial<Resources>> = {
+	'house-0': { gold: 1 },
+	'house-1': { gold: 1 },
+	'house-2': { gold: 1 },
+	sawmill: { wood: 2 },
+	quarry: { stone: 2 },
+	mine: { iron: 1 }
+};
+
+/** The home shore's production now: the level-one base plus what every producer has gained since */
+export function homeProduction(save: BeachheadSave): Resources {
+	const total: Resources = { ...HOME_PRODUCTION };
+	for (const key of PRODUCER_KEYS) {
+		const gain = 0.5 * (levelOf(save, key) - 1);
+		for (const kind of RESOURCE_KINDS) total[kind] += (PRODUCER_OUTPUT[key][kind] ?? 0) * gain;
+	}
+	return total;
+}
+
 export const HOME_PRODUCTION: Resources = {
 	wood: 3,
 	// The quarry ditch beside the mountain digs out stone
@@ -165,6 +205,8 @@ export interface Levels {
 	radar: number;
 	/** Hero dojo level; it caps both the Azov commander's level and his skill level */
 	dojo: number;
+	/** Levels of the producers; a missing one is level one */
+	producers?: Partial<Record<ProducerKey, number>>;
 	/** Bunker level; it decides how much of the stockpile raiders cannot take. Older saves have none. */
 	bunker?: number;
 	/** One level per landing craft, in boarding order */
@@ -227,7 +269,7 @@ export interface BeachheadSave {
 
 /** Cost of the first upgrade of each building family; each later level grows by a factor */
 const BUILDING_BASE_COST: Record<
-	'hq' | 'training' | 'radar' | 'dojo' | 'bunker' | 'boat' | 'warehouse',
+	'hq' | 'training' | 'radar' | 'dojo' | 'bunker' | 'producer' | 'boat' | 'warehouse',
 	Resources
 > = {
 	hq: { wood: 320, stone: 240, iron: 100, gold: 20 },
@@ -235,6 +277,7 @@ const BUILDING_BASE_COST: Record<
 	radar: { wood: 280, stone: 220, iron: 120, gold: 24 },
 	dojo: { wood: 640, stone: 520, iron: 280, gold: 80 },
 	bunker: { wood: 260, stone: 360, iron: 200, gold: 30 },
+	producer: { wood: 120, stone: 90, iron: 40, gold: 6 },
 	boat: { wood: 100, stone: 60, iron: 20, gold: 4 },
 	warehouse: { wood: 140, stone: 100, iron: 30, gold: 4 }
 };
@@ -303,7 +346,7 @@ const TROOP_COST_GROWTH = 1.5;
 
 /** How long a building upgrade runs, before the level growth */
 const BUILD_BASE_MS: Record<
-	'hq' | 'training' | 'radar' | 'dojo' | 'bunker' | 'boat' | 'warehouse',
+	'hq' | 'training' | 'radar' | 'dojo' | 'bunker' | 'producer' | 'boat' | 'warehouse',
 	number
 > = {
 	hq: 150_000,
@@ -311,6 +354,7 @@ const BUILD_BASE_MS: Record<
 	radar: 125_000,
 	dojo: 225_000,
 	bunker: 150_000,
+	producer: 90_000,
 	boat: 50_000,
 	warehouse: 60_000
 };
@@ -352,7 +396,8 @@ function resourceCost(base: Resources, factor: number): Resources {
 
 function buildingFamily(
 	key: BuildingKey
-): 'hq' | 'training' | 'radar' | 'dojo' | 'bunker' | 'boat' | 'warehouse' {
+): 'hq' | 'training' | 'radar' | 'dojo' | 'bunker' | 'producer' | 'boat' | 'warehouse' {
+	if (isProducer(key)) return 'producer';
 	if (key === 'hq' || key === 'training' || key === 'radar' || key === 'dojo' || key === 'bunker') {
 		return key;
 	}
@@ -383,6 +428,7 @@ export function levelOf(save: BeachheadSave, key: BuildingKey): number {
 	if (key === 'radar') return save.levels.radar;
 	if (key === 'dojo') return save.levels.dojo;
 	if (key === 'bunker') return save.levels.bunker ?? 1;
+	if (isProducer(key)) return Math.min(MAX_PRODUCER_LEVEL, save.levels.producers?.[key] ?? 1);
 	if (key.startsWith('warehouse-')) {
 		const index = WAREHOUSE_KEYS.indexOf(key as WarehouseKey);
 		return index >= 0 ? (save.levels.warehouses[index] ?? 1) : 1;
@@ -396,6 +442,7 @@ export function maxLevelOf(key: BuildingKey): number {
 	if (key === 'radar') return MAX_RADAR_LEVEL;
 	if (key === 'dojo') return MAX_DOJO_LEVEL;
 	if (key === 'bunker') return MAX_BUNKER_LEVEL;
+	if (isProducer(key)) return MAX_PRODUCER_LEVEL;
 	if (key.startsWith('warehouse-')) return MAX_WAREHOUSE_LEVEL;
 	return MAX_BOAT_LEVEL;
 }
@@ -526,6 +573,15 @@ export function startUpgrade(
 }
 
 function withBuildingLevel(save: BeachheadSave, key: BuildingKey): BeachheadSave {
+	if (isProducer(key)) {
+		return {
+			...save,
+			levels: {
+				...save.levels,
+				producers: { ...save.levels.producers, [key]: levelOf(save, key) + 1 }
+			}
+		};
+	}
 	if (key === 'hq') {
 		return { ...save, levels: { ...save.levels, hq: Math.min(MAX_HQ_LEVEL, save.levels.hq + 1) } };
 	}
@@ -1700,7 +1756,7 @@ export function incomeRate(save: BeachheadSave, islandIds: readonly string[]): R
 }
 
 function incomeRateRaw(save: BeachheadSave, islandIds: readonly string[]): Resources {
-	const total: Resources = { ...HOME_PRODUCTION };
+	const total: Resources = homeProduction(save);
 	for (const [index, islandId] of islandIds.entries()) {
 		if (!isControlled(save, islandId)) continue;
 		const production = ISLAND_PRODUCTION[index];

@@ -14,6 +14,7 @@ import {
 	HOUSES,
 	MOUNTAIN,
 	QUARRY,
+	SAWMILL,
 	boatDock,
 	defaultLayout,
 	footprintOf,
@@ -901,6 +902,78 @@ function drawHouse(
 	}
 }
 
+/** A small sawmill: an open shed with a spinning blade and a stack of planks beside the logs */
+function drawSawmill(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	level: number,
+	timeMs: number
+) {
+	const { x, y } = SAWMILL;
+	drawShadow(context, view, x, y, 1, 2);
+	drawBox(context, view, x + 0.08, y + 0.15, 0.84, 1.1, 0, 0.12, paletteOf('#8a5a2b'));
+	for (const [dx, dy] of [
+		[0.14, 0.2],
+		[0.86, 0.2],
+		[0.14, 1.2],
+		[0.86, 1.2]
+	] as const) {
+		drawBar(
+			context,
+			view,
+			{ x: x + dx, y: y + dy, z: 0.1 },
+			{ x: x + dx, y: y + dy, z: 0.75 },
+			'#6b4526',
+			0.07
+		);
+	}
+	drawRoof(
+		context,
+		view,
+		x + 0.02,
+		y + 0.1,
+		0.96,
+		1.2,
+		0.75,
+		0.3 + level * 0.03,
+		paletteOf('#b0383d')
+	);
+	// A log on the bench and a blade that spins in front of it
+	drawCylinder(context, view, x + 0.5, y + 0.65, 0.13, 0.12, 0.3, paletteOf('#9b6a3c'), 0.03);
+	const blade = view.project(x + 0.5, y + 1.05, 0.38);
+	context.save();
+	context.translate(blade.x, blade.y);
+	context.rotate(timeMs / 120);
+	context.beginPath();
+	for (let tooth = 0; tooth < 10; tooth++) {
+		const angle = (tooth / 10) * Math.PI * 2;
+		context.lineTo(Math.cos(angle) * 0.2, Math.sin(angle) * 0.2);
+		context.lineTo(Math.cos(angle + 0.15) * 0.14, Math.sin(angle + 0.15) * 0.14);
+	}
+	context.closePath();
+	context.fillStyle = '#c4ccd6';
+	context.fill();
+	context.lineWidth = 0.03;
+	context.strokeStyle = INK;
+	context.stroke();
+	context.restore();
+	// Planks stacked beside it, a few more with every level
+	for (let plank = 0; plank < 1 + level; plank++) {
+		drawBox(
+			context,
+			view,
+			x + 0.15,
+			y + 1.45 + (plank % 2) * 0.02,
+			0.7,
+			0.14,
+			plank * 0.07,
+			plank * 0.07 + 0.07,
+			paletteOf('#e2b277'),
+			0.025
+		);
+	}
+}
+
 /** The quarry ditch: a stepped pit in the grass with a pile of cut stone and a rope windlass */
 function drawQuarry(context: CanvasRenderingContext2D, view: IsoView, timeMs: number) {
 	const { x, y, width: w, height: h } = QUARRY;
@@ -1596,9 +1669,25 @@ export function drawHome(context: CanvasRenderingContext2D, scene: HomeScene, vi
 	for (let house = 0; house < HOUSES.width; house++) {
 		standing.push({
 			depth: depthOf(HOUSES.x + house + 0.5, HOUSES.y + 0.5),
-			draw: () => drawHouse(context, view, HOUSES.x + house, HOUSES.y, scene.timeMs, house)
+			draw: () =>
+				scaledAbout(
+					context,
+					view.project(HOUSES.x + house + 0.5, HOUSES.y + 0.9),
+					growthOf(scene.levelOf(`house-${house}`), 0.05),
+					() => drawHouse(context, view, HOUSES.x + house, HOUSES.y, scene.timeMs, house)
+				)
 		});
 	}
+	standing.push({
+		depth: depthOf(SAWMILL.x + 0.5, SAWMILL.y + 1),
+		draw: () =>
+			scaledAbout(
+				context,
+				view.project(SAWMILL.x + 0.5, SAWMILL.y + 1.5),
+				growthOf(scene.levelOf('sawmill'), 0.05),
+				() => drawSawmill(context, view, scene.levelOf('sawmill'), scene.timeMs)
+			)
+	});
 	standing.push({
 		depth: depthOf(QUARRY.x + QUARRY.width / 2, QUARRY.y + QUARRY.height / 2) - 0.6,
 		draw: () => drawQuarry(context, view, scene.timeMs)
@@ -1626,6 +1715,31 @@ export function drawHome(context: CanvasRenderingContext2D, scene: HomeScene, vi
 			at.y + size.height / 2,
 			heightOf(key, stage) * growthOf(scene.levelOf(key)) + 0.55,
 			`${scene.levelOf(key)}`,
+			selected ? EXPLOSION_YELLOW : PAPER,
+			selected
+		);
+	}
+	// The producers carry a level badge too, and a ring on the ground when they are selected
+	const producerSpots: { key: string; x: number; y: number; z: number }[] = [
+		...[0, 1, 2].map((house) => ({
+			key: `house-${house}`,
+			x: HOUSES.x + house + 0.5,
+			y: HOUSES.y + 0.5,
+			z: 1.5
+		})),
+		{ key: 'sawmill', x: SAWMILL.x + 0.5, y: SAWMILL.y + 1, z: 1.5 },
+		{ key: 'quarry', x: QUARRY.x + 1, y: QUARRY.y + 1, z: 1.4 },
+		{ key: 'mine', x: MOUNTAIN.x + 1, y: MOUNTAIN.y + 1, z: 2.3 }
+	];
+	for (const spot of producerSpots) {
+		const selected = scene.selected?.kind === 'building' && scene.selected.key === spot.key;
+		drawBadge(
+			context,
+			view,
+			spot.x,
+			spot.y,
+			spot.z,
+			`${scene.levelOf(spot.key)}`,
 			selected ? EXPLOSION_YELLOW : PAPER,
 			selected
 		);
@@ -1702,6 +1816,19 @@ export function pickHome(
 			if (x >= at.x && x < at.x + size.width && y >= at.y && y < at.y + size.height) {
 				return { kind: 'building', key };
 			}
+		}
+		const rects: [string, { x: number; y: number; width: number; height: number }][] = [
+			['sawmill', SAWMILL],
+			['quarry', QUARRY],
+			['mine', MOUNTAIN]
+		];
+		for (const [key, rect] of rects) {
+			if (x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height) {
+				return { kind: 'building', key };
+			}
+		}
+		if (y === HOUSES.y && x >= HOUSES.x && x < HOUSES.x + HOUSES.width) {
+			return { kind: 'building', key: `house-${x - HOUSES.x}` };
 		}
 		for (let index = 0; index < boatCount; index++) {
 			const dock = boatDock(index);

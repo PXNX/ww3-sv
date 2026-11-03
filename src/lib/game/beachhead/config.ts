@@ -671,6 +671,8 @@ export interface IslandBuilding {
 	kind: BuildingKind;
 	x: number;
 	y: number;
+	/** A multiplier on the building's health, for example from the level of a cottage */
+	hpScale?: number;
 	/** An overcharge crystal in the building's slot, with the level it has reached */
 	crystal?: { type: OverchargeCrystal; level: number };
 }

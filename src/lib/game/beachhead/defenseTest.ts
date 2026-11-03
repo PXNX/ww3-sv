@@ -9,6 +9,7 @@ import { BUILDINGS, COLUMNS, ROWS, SHORE_X, type Island, type IslandBuilding } f
 import {
 	BASE_COLS,
 	BASE_ROWS,
+	HOUSES,
 	footprintOf,
 	positionOf,
 	LAYOUT_KEYS,
@@ -24,6 +25,7 @@ interface Wanted {
 	y: number;
 	/** Where the overcharge crystal of this building is kept: a building key or defense:<id> */
 	target: string;
+	hpScale?: number;
 }
 
 function squeeze(cellX: number, cellY: number): { x: number; y: number } {
@@ -36,7 +38,8 @@ function squeeze(cellX: number, cellY: number): { x: number; y: number } {
 /** The island your base becomes when somebody attacks it */
 export function testIslandOf(
 	layout: BaseLayout,
-	crystalAt: (target: string) => IslandBuilding['crystal'] = () => undefined
+	crystalAt: (target: string) => IslandBuilding['crystal'] = () => undefined,
+	houseLevel: (index: number) => number = () => 1
 ): Island {
 	const wanted: Wanted[] = [];
 
@@ -50,6 +53,17 @@ export function testIslandOf(
 		const size = footprintOf(key);
 		const spot = squeeze(position.x + size.width / 2, position.y + size.height / 2);
 		wanted.push({ kind: 'depot', x: spot.x, y: spot.y, target: key });
+	}
+	// The cottages stand in your base too; the higher their level, the sturdier they are
+	for (let house = 0; house < HOUSES.width; house++) {
+		const spot = squeeze(HOUSES.x + house + 0.5, HOUSES.y + 0.5);
+		wanted.push({
+			kind: 'depot',
+			x: spot.x,
+			y: spot.y,
+			target: `house-${house}`,
+			hpScale: 1 + 0.25 * (houseLevel(house) - 1)
+		});
 	}
 	for (const mine of layout.mines) {
 		const spot = squeeze(mine.x + 0.5, mine.y + 0.5);
@@ -66,7 +80,13 @@ export function testIslandOf(
 			for (let dy = 0; dy < stats.height; dy++) taken.add(`${spot.x + dx},${spot.y + dy}`);
 		}
 		const crystal = crystalAt(item.target);
-		buildings.push({ kind: item.kind, x: spot.x, y: spot.y, ...(crystal ? { crystal } : {}) });
+		buildings.push({
+			kind: item.kind,
+			x: spot.x,
+			y: spot.y,
+			...(crystal ? { crystal } : {}),
+			...(item.hpScale && item.hpScale !== 1 ? { hpScale: item.hpScale } : {})
+		});
 	}
 	return { id: TEST_ISLAND_ID, buildings };
 }

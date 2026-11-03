@@ -81,3 +81,44 @@ describe('cutting a build with an advert', () => {
 		expect(late.builders[0].endsAt).toBe(task.endsAt);
 	});
 });
+
+describe('the producers', () => {
+	it('pay half as much again with every level', async () => {
+		const { HOME_PRODUCTION, homeProduction, levelOf } = await import('./campaign');
+		const save = newSave(0);
+		expect(homeProduction(save)).toEqual(HOME_PRODUCTION);
+		const grown = {
+			...save,
+			levels: {
+				...save.levels,
+				producers: { sawmill: 3, quarry: 2, mine: 5, 'house-0': 4 } as const
+			}
+		};
+		expect(levelOf(grown, 'sawmill')).toBe(3);
+		expect(homeProduction(grown).wood).toBeCloseTo(HOME_PRODUCTION.wood + 2 * 0.5 * 2, 5);
+		expect(homeProduction(grown).stone).toBeCloseTo(HOME_PRODUCTION.stone + 2 * 0.5, 5);
+		expect(homeProduction(grown).iron).toBeCloseTo(HOME_PRODUCTION.iron + 1 * 0.5 * 4, 5);
+		expect(homeProduction(grown).gold).toBeCloseTo(HOME_PRODUCTION.gold + 1 * 0.5 * 3, 5);
+	});
+
+	it('are upgraded like any building and make the cottage sturdier in the defence test', async () => {
+		const { finishBuilds, startUpgrade, levelOf, upgradeCost } = await import('./campaign');
+		const { testIslandOf } = await import('./defenseTest');
+		const { defaultLayout } = await import('./baseLayout');
+		const { createBattle } = await import('./battle');
+		let save = { ...newSave(0), resources: { wood: 999, stone: 999, iron: 999, gold: 99 } };
+		expect(upgradeCost(save, 'sawmill')).not.toBeNull();
+		save = startUpgrade(save, 'house-1', 0, 1)!;
+		save = finishBuilds(save, 24 * 3600 * 1000);
+		expect(levelOf(save, 'house-1')).toBe(2);
+		const plain = createBattle(testIslandOf(defaultLayout()));
+		const sturdy = createBattle(
+			testIslandOf(defaultLayout(), undefined, (house) =>
+				levelOf(save, `house-${house}` as 'house-0')
+			)
+		);
+		const hp = (state: typeof plain) =>
+			state.buildings.reduce((sum, building) => sum + building.maxHp, 0);
+		expect(hp(sturdy)).toBeGreaterThan(hp(plain));
+	});
+});

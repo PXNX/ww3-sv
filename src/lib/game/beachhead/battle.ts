@@ -341,7 +341,7 @@ export function createBattle(
 		buildings: island.buildings.map((spec, id) => {
 			const stats = BUILDINGS[spec.kind];
 			const crystal = overchargeEffect(spec.crystal?.type, spec.crystal?.level ?? 1);
-			const hp = Math.round(scaledHp(stats.hp) * crystal.hpMultiplier);
+			const hp = Math.round(scaledHp(stats.hp) * crystal.hpMultiplier * (spec.hpScale ?? 1));
 			return {
 				id,
 				kind: spec.kind,

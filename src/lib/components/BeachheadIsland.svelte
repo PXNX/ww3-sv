@@ -127,6 +127,18 @@
 				hint: m.beachhead_building_radar_hint({ count: game.chartedCount })
 			};
 		}
+		if (key.startsWith('house-')) {
+			return { name: m.beachhead_building_house(), hint: m.beachhead_building_house_hint() };
+		}
+		if (key === 'sawmill') {
+			return { name: m.beachhead_building_sawmill(), hint: m.beachhead_resource_wood() };
+		}
+		if (key === 'quarry') {
+			return { name: m.beachhead_building_quarry(), hint: m.beachhead_resource_stone() };
+		}
+		if (key === 'mine') {
+			return { name: m.beachhead_building_mine(), hint: m.beachhead_resource_iron() };
+		}
 		if (key === 'bunker') {
 			return {
 				name: m.beachhead_building_bunker(),
