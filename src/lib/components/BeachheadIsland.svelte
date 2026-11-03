@@ -13,7 +13,6 @@
 	import { drawHome, HOME_VIEW, pickHome, type HomeResource } from '#lib/game/beachhead/baseArt.js';
 	import {
 		DEFENSE_COST,
-		DEFENSE_KINDS,
 		GUARD_UNLOCK_HQ,
 		MAX_MINES,
 		defenseUnlocked,
@@ -54,7 +53,6 @@
 	import IconArrowDownRight from '~icons/lucide/arrow-down-right';
 	import IconArrowUpLeft from '~icons/lucide/arrow-up-left';
 	import IconArrowUpRight from '~icons/lucide/arrow-up-right';
-	import IconBomb from '~icons/lucide/bomb';
 	import IconCheck from '~icons/lucide/check';
 	import IconCircleArrowUp from '~icons/lucide/circle-arrow-up';
 	import IconCrosshair from '~icons/lucide/crosshair';
@@ -64,7 +62,6 @@
 	import IconGem from '~icons/lucide/gem';
 	import IconHammer from '~icons/lucide/hammer';
 	import IconInfo from '~icons/lucide/info';
-	import IconHourglass from '~icons/lucide/hourglass';
 	import IconLock from '~icons/lucide/lock';
 	import IconMove from '~icons/lucide/move';
 	import IconStore from '~icons/lucide/store';
@@ -74,7 +71,6 @@
 	import IconTrash from '~icons/lucide/trash-2';
 	import IconTrophy from '~icons/lucide/trophy';
 	import IconUsers from '~icons/lucide/users';
-	import IconZap from '~icons/lucide/zap';
 
 	let { game }: { game: BeachheadGame } = $props();
 
@@ -355,6 +351,8 @@
 		const boats = game.boats.filter((boat) => boat.unlocked).length;
 		const hit = pickHome(HOME_VIEW, game.layout, boats, point.x, point.y);
 		selected = hit;
+		// A tap on a building opens its detail sheet; while rearranging nothing about upgrades shows
+		if (hit?.kind === 'building' && !arranging) sheet = 'upgrade';
 		if (!hit || !arranging) return;
 		const ground = HOME_VIEW.unproject(point.x, point.y);
 		if (hit.kind === 'building') {
@@ -561,22 +559,17 @@
 		</button>
 	</div>
 
-	<!-- Bottom centre: the selected building or mine -->
+	<!-- Bottom centre: a small chip for what is selected; the details open in a bigger sheet -->
 	{#if panel}
 		<div
 			class="pointer-events-none absolute inset-x-0 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-20 flex justify-center px-[11rem] sm:px-[13rem]"
 		>
 			<div
-				class="sticker pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 px-3 py-1.5"
+				class="sticker pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-x-2 gap-y-1 px-3 py-1.5"
 				style:--tilt="0deg"
 			>
 				{#if panel.type === 'mine'}
 					<p class="flex items-center gap-1.5 font-bold" title={mineHint(panel.mine.kind)}>
-						{#if panel.mine.kind === 'mine-emp'}
-							<IconZap class="size-5" aria-hidden="true" />
-						{:else}
-							<IconBomb class="size-5" aria-hidden="true" />
-						{/if}
 						{mineName(panel.mine.kind)}
 					</p>
 					{#if isRemovable(panel.mine.kind)}
@@ -592,7 +585,7 @@
 					{/if}
 				{:else}
 					{@const row = panel.row}
-					<p class="flex items-center gap-2 leading-tight font-bold" title={panel.hint}>
+					<p class="flex items-center gap-2 leading-tight font-bold">
 						{panel.name}
 						<span
 							class="rounded-full border-2 border-ink bg-paper px-1.5 font-display text-xs tabular-nums"
@@ -601,93 +594,56 @@
 							{row.level}/{row.max}
 						</span>
 					</p>
-					<button
-						type="button"
-						class="btn-chunky flex size-9 items-center justify-center rounded-full p-0"
-						aria-label={m.beachhead_open_info()}
-						title={m.beachhead_open_info()}
-						onclick={() => (sheet = 'upgrade')}
-					>
-						<IconInfo class="size-5" aria-hidden="true" />
-					</button>
-					{#if panel.key === 'dojo'}
-						<button
-							type="button"
-							class="btn-chunky flex size-10 items-center justify-center rounded-full bg-explosion-yellow p-0"
-							aria-label={m.beachhead_open_hero()}
-							title={m.beachhead_open_hero()}
-							onclick={() => (sheet = 'hero')}
-						>
-							<IconCrown class="size-6" aria-hidden="true" />
-						</button>
-					{/if}
-					{#if panel.key === 'training'}
-						<button
-							type="button"
-							class="btn-chunky flex size-10 items-center justify-center rounded-full bg-explosion-yellow p-0"
-							aria-label={m.beachhead_open_training()}
-							title={m.beachhead_open_training()}
-							onclick={() => (sheet = 'training')}
-						>
-							<IconGraduationCap class="size-6" aria-hidden="true" />
-						</button>
-					{/if}
-					{#if row.remainingMs !== null}
-						<p class="flex items-center gap-1 font-display font-bold text-flag-blue tabular-nums">
-							<IconHammer class="size-4" aria-hidden="true" />
-							{timeLeft(row.remainingMs)}
-						</p>
-						{#if game.canCutBuild(row.key)}
+					<!-- While rearranging there is nothing about upgrades: only the buildings move -->
+					{#if !arranging}
+						{#if row.remainingMs !== null}
+							<p class="flex items-center gap-1 font-display font-bold text-flag-blue tabular-nums">
+								<IconHammer class="size-4" aria-hidden="true" />
+								{timeLeft(row.remainingMs)}
+							</p>
+							{#if game.canCutBuild(row.key)}
+								<button
+									type="button"
+									class="btn-chunky flex items-center gap-1 bg-explosion-yellow px-2 py-1 text-xs"
+									aria-label={m.beachhead_ad_cut()}
+									title={m.beachhead_ad_cut()}
+									onclick={() => (adFor = row.key)}
+								>
+									<IconTv class="size-4" aria-hidden="true" />
+									−10%
+								</button>
+							{/if}
+						{/if}
+						{#if panel.key === 'dojo'}
 							<button
 								type="button"
-								class="btn-chunky flex items-center gap-1 bg-explosion-yellow px-2 py-1 text-xs"
-								aria-label={m.beachhead_ad_cut()}
-								title={m.beachhead_ad_cut()}
-								onclick={() => (adFor = row.key)}
+								class="btn-chunky flex size-9 items-center justify-center rounded-full bg-explosion-yellow p-0"
+								aria-label={m.beachhead_open_hero()}
+								title={m.beachhead_open_hero()}
+								onclick={() => (sheet = 'hero')}
 							>
-								<IconTv class="size-4" aria-hidden="true" />
-								−10%
+								<IconCrown class="size-5" aria-hidden="true" />
 							</button>
 						{/if}
-					{:else if panel.boatLocked}
-						<p
-							class="flex items-center gap-1 text-sm font-bold"
-							title={m.beachhead_boat_locked({ level: panel.boatUnlockLevel })}
-						>
-							<IconLock class="size-4" aria-hidden="true" />
-							<IconFlag class="size-4" aria-hidden="true" />
-							{panel.boatUnlockLevel}
-						</p>
-					{:else if row.locked}
-						<p
-							class="flex items-center gap-1 text-sm font-bold"
-							title={m.beachhead_upgrade_locked()}
-						>
-							<IconLock class="size-4" aria-hidden="true" />
-							<IconFlag class="size-4" aria-hidden="true" />
-						</p>
-					{:else if row.cost === null}
-						<IconCheck class="size-5 text-khaki" aria-label={m.beachhead_upgrade_max()} />
-					{:else}
-						{@render costChips(row.cost)}
-						<span
-							class="flex items-center gap-1 rounded-full border-2 border-ink bg-paper px-1.5 font-display text-xs font-bold tabular-nums"
-							title={m.beachhead_build_time()}
-						>
-							<IconHourglass class="size-3.5" aria-hidden="true" />
-							{timeLeft(panel.duration)}
-						</span>
+						{#if panel.key === 'training'}
+							<button
+								type="button"
+								class="btn-chunky flex size-9 items-center justify-center rounded-full bg-explosion-yellow p-0"
+								aria-label={m.beachhead_open_training()}
+								title={m.beachhead_open_training()}
+								onclick={() => (sheet = 'training')}
+							>
+								<IconGraduationCap class="size-5" aria-hidden="true" />
+							</button>
+						{/if}
 						<button
 							type="button"
-							class="btn-chunky flex size-10 items-center justify-center rounded-full bg-khaki p-0 text-paper"
-							aria-label={m.beachhead_upgrade_button()}
-							title={game.buildersBusy >= game.builderSlots
-								? m.beachhead_builders_busy()
-								: m.beachhead_upgrade_button()}
-							disabled={!row.canStart}
-							onclick={() => game.upgrade(row.key)}
+							class="btn-chunky flex size-9 items-center justify-center rounded-full p-0"
+							aria-label={m.beachhead_open_info()}
+							title={m.beachhead_open_info()}
+							onclick={() => (sheet = 'upgrade')}
 						>
-							<IconCircleArrowUp class="size-6" aria-hidden="true" />
+							<IconInfo class="size-5" aria-hidden="true" />
 						</button>
 					{/if}
 				{/if}
