@@ -99,9 +99,9 @@ export const BUILDING_KEYS: readonly BuildingKey[] = [
 	...WAREHOUSE_KEYS
 ];
 
-export const STARTING_RESOURCES: Resources = { wood: 120, stone: 80, iron: 40, gold: 10 };
+export const STARTING_RESOURCES: Resources = { wood: 120, stone: 80, iron: 40, gold: 30 };
 /** What the home shore produces per minute on its own; the islands add their own lines */
-export const HOME_PRODUCTION: Resources = { wood: 1, stone: 0, iron: 0, gold: 0 };
+export const HOME_PRODUCTION: Resources = { wood: 1, stone: 0, iron: 0, gold: 1 };
 /** What each island adds to the tax income once controlled, in units per minute */
 export const ISLAND_PRODUCTION: readonly Resources[] = [
 	{ wood: 2, stone: 1, iron: 0, gold: 0 },
@@ -182,6 +182,8 @@ export interface BeachheadSave {
 	lastTakebackMs: number;
 	/** Where the buildings and mines stand on the home island; saves from before the grid have none */
 	layout?: BaseLayout;
+	/** Troops killed in attacks that still wait to be retrained with gold; older saves have none */
+	lost?: Partial<Army>;
 }
 
 /** Cost of the first upgrade of each building family; each later level grows by a factor */
@@ -542,6 +544,102 @@ export function changeTroop(save: BeachheadSave, kind: ArmyKind, delta: number):
 	return { ...save, army: { ...save.army, [kind]: next } };
 }
 
+/** What retraining one unit costs, in gold; the bigger the unit, the more it takes */
+export const RETRAIN_GOLD: Record<ArmyKind, number> = {
+	assault: 1,
+	demo: 2,
+	medic: 3,
+	mortar: 3,
+	drone: 3,
+	heavy: 4,
+	artillery: 5,
+	tank: 6,
+	apc: 8
+};
+
+/** A few volunteers turn up when a base has no troops and no gold, so a bad day is never the end */
+const VOLUNTEERS = 4;
+
+export function retrainCost(kind: ArmyKind): Resources {
+	return { wood: 0, stone: 0, iron: 0, gold: RETRAIN_GOLD[kind] };
+}
+
+/** The troops killed in attacks and not yet retrained, with a zero for every kind */
+export function lostOf(save: BeachheadSave): Army {
+	return fillArmy(save.lost ?? {});
+}
+
+export function lostCount(save: BeachheadSave): number {
+	return ARMY_KINDS.reduce((sum, kind) => sum + lostOf(save)[kind], 0);
+}
+
+/**
+ * Takes the troops an attack killed out of the army and lists them as lost. They come back only by
+ * retraining them with gold. Heroes and troops an APC dropped on the beach cost nothing.
+ */
+export function applyCasualties(
+	save: BeachheadSave,
+	casualties: Partial<Record<TroopKind, number>>
+): BeachheadSave {
+	const army = { ...save.army };
+	const lost = lostOf(save);
+	let any = false;
+	for (const kind of ARMY_KINDS) {
+		const dead = Math.min(army[kind], Math.max(0, Math.floor(casualties[kind] ?? 0)));
+		if (dead <= 0) continue;
+		army[kind] -= dead;
+		lost[kind] += dead;
+		any = true;
+	}
+	if (!any) return save;
+	let next: BeachheadSave = { ...save, army, lost };
+	// Nobody left to send and no gold to train anyone: a handful of volunteers fill the first boat
+	if (usedArmySpace(next) === 0 && next.resources.gold < RETRAIN_GOLD.assault) {
+		const room = Math.floor(armyCapacity(next) / TROOPS.assault.space);
+		next = { ...next, army: { ...army, assault: Math.min(VOLUNTEERS, room) } };
+	}
+	return next;
+}
+
+/** Trains one unit for gold when the boats have room; a unit that was lost comes off the lost list */
+export function recruitTroop(save: BeachheadSave, kind: ArmyKind): BeachheadSave | null {
+	if (!ARMY_KINDS.includes(kind)) return null;
+	const cost = retrainCost(kind);
+	if (!canAfford(save, cost)) return null;
+	const added = changeTroop(save, kind, 1);
+	if (added === save) return null;
+	const lost = lostOf(save);
+	lost[kind] = Math.max(0, lost[kind] - 1);
+	return { ...added, resources: payResources(save.resources, cost), lost };
+}
+
+/** Sends a unit home again; the gold comes back, so a misclick costs nothing */
+export function dismissTroop(save: BeachheadSave, kind: ArmyKind): BeachheadSave | null {
+	const removed = changeTroop(save, kind, -1);
+	if (removed === save) return null;
+	return addResources(removed, retrainCost(kind));
+}
+
+/** Retrains every lost unit it can pay for and fit, cheapest first so the most men come back */
+export function retrainAll(save: BeachheadSave): BeachheadSave {
+	let next = save;
+	const order = [...ARMY_KINDS].sort((a, b) => RETRAIN_GOLD[a] - RETRAIN_GOLD[b]);
+	for (const kind of order) {
+		while (lostOf(next)[kind] > 0) {
+			const trained = recruitTroop(next, kind);
+			if (!trained) break;
+			next = trained;
+		}
+	}
+	return next;
+}
+
+/** The gold it takes to bring every lost unit back */
+export function retrainAllCost(save: BeachheadSave): number {
+	const lost = lostOf(save);
+	return ARMY_KINDS.reduce((sum, kind) => sum + lost[kind] * RETRAIN_GOLD[kind], 0);
+}
+
 export function troopLevel(save: BeachheadSave, kind: TroopKind): number {
 	// The Azov commander grows through his cards, not through the training ground
 	if (kind === 'azov') return save.hero.level;
@@ -806,9 +904,9 @@ export function modifiersFor(save: BeachheadSave, islandId?: string): BattleModi
 	};
 }
 
-/** Every island under the player's flag gives three stars */
+/** Every island has been captured at least twice, so each one has been retaken after a takeback */
 export function allIslandsPerfect(save: BeachheadSave): boolean {
-	return ISLAND_IDS.every((islandId) => starsOf(save, islandId) === 3);
+	return ISLAND_IDS.every((islandId) => capturesOf(save, islandId) >= 2);
 }
 
 /** Headquarters, radar tower, training ground, dojo, every boat and every warehouse at the top */
@@ -929,7 +1027,7 @@ export function lootFor(index: number, firstControl: boolean): Resources {
 		wood: Math.round(40 * scale),
 		stone: Math.round(25 * scale),
 		iron: Math.round(12 * scale),
-		gold: Math.round(2 * scale)
+		gold: Math.round(6 * scale)
 	};
 }
 

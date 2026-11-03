@@ -345,7 +345,7 @@ describe('production', () => {
 			wood: STARTING_RESOURCES.wood + HOME_PRODUCTION.wood,
 			stone: STARTING_RESOURCES.stone,
 			iron: STARTING_RESOURCES.iron,
-			gold: STARTING_RESOURCES.gold
+			gold: STARTING_RESOURCES.gold + HOME_PRODUCTION.gold
 		});
 		expect(minute.lastIncomeMs).toBe(NOW + 60_000);
 	});

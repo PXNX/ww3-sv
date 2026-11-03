@@ -1,24 +1,28 @@
-<!-- Island-taken panel for Beachhead: stars, score, survivors, next island, and sharing on a new best -->
+<!--
+	Victory panel in the manner of a mobile base raid: a big title, the loot as four icons with
+	numbers, the troops that fell as red icons, new trophies and two round buttons. No stars, no
+	paragraphs.
+-->
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages.js';
-	import { achievementName } from '#lib/components/beachheadText.js';
+	import { achievementName, troopName } from '#lib/components/beachheadText.js';
+	import { TROOP_ICONS } from '#lib/components/beachheadIcons.js';
+	import ResourceIcon from '#lib/components/ResourceIcon.svelte';
 	import type { Resources } from '#lib/game/beachhead/campaign.js';
+	import type { TroopKind } from '#lib/game/beachhead/config.js';
 	import type { ScoreCard } from '#lib/services/share.js';
-	import BeachheadStars from './BeachheadStars.svelte';
 	import Confetti from './Confetti.svelte';
 	import ShareButton from './ShareButton.svelte';
 	import IconArrowRight from '~icons/lucide/arrow-right';
-	import IconList from '~icons/lucide/list';
+	import IconMap from '~icons/lucide/map';
+	import IconTrophy from '~icons/lucide/trophy';
 
 	let {
 		open,
 		score,
-		stars,
-		alive,
-		deployed,
 		loot,
+		lost,
 		islandName,
-		islandIncome,
 		newAchievements,
 		isNewBest,
 		hasNext,
@@ -29,17 +33,11 @@
 	}: {
 		open: boolean;
 		score: number;
-		stars: number;
-		/** Troops still standing when the headquarters fell */
-		alive: number;
-		/** Troops landed during the attack */
-		deployed: number;
 		/** Resources won in this battle */
 		loot: Resources;
-		/** The island just taken, for the control message */
+		/** Troops the attack killed, by kind */
+		lost: Partial<Record<TroopKind, number>>;
 		islandName: string;
-		/** What the island adds to the production per minute */
-		islandIncome: Resources;
 		/** Achievements unlocked by this victory */
 		newAchievements: string[];
 		isNewBest: boolean;
@@ -58,6 +56,11 @@
 		if (open && !dialog.open) dialog.showModal();
 		else if (!open && dialog.open) dialog.close();
 	});
+
+	const RESOURCE_KINDS = ['wood', 'stone', 'iron', 'gold'] as const;
+	const fallen = $derived(
+		(Object.entries(lost) as [TroopKind, number][]).filter(([, count]) => count > 0)
+	);
 </script>
 
 <dialog
@@ -74,57 +77,75 @@
 			<Confetti />
 		{/if}
 
-		<h2 id="beachhead-win-title" class="text-3xl font-bold">{m.beachhead_win_title()}</h2>
-		<BeachheadStars {stars} class="size-12" />
-
-		<div class="flex flex-col items-center">
-			<span class="text-sm font-bold uppercase">{m.gameover_final_score()}</span>
-			<span class="pop-in font-display text-5xl font-bold text-tie-red tabular-nums">{score}</span>
-			{#if isNewBest}
-				<span
-					class="pop-in mt-1 rotate-2 rounded-md border-2 border-ink bg-explosion-yellow px-2 font-bold"
-				>
-					{m.gameover_new_best()}
-				</span>
-			{/if}
+		<div>
+			<h2 id="beachhead-win-title" class="text-3xl font-bold">{m.beachhead_win_title()}</h2>
+			<p class="text-sm font-semibold">{islandName}</p>
 		</div>
 
-		<p class="font-semibold">
-			{m.beachhead_win_control({ island: islandName })}
-		</p>
-		<p class="flex flex-wrap items-center justify-center gap-2 text-sm font-bold">
-			<span class="rounded-md border-2 border-ink bg-paper px-2 py-0.5">
-				{m.beachhead_win_troops({ alive, total: deployed })}
-			</span>
-			<span class="rounded-md border-2 border-ink bg-explosion-yellow px-2 py-0.5">
-				{m.beachhead_victory_loot(loot)}
-			</span>
-		</p>
-		<p class="text-sm font-semibold">
-			{m.beachhead_island_tax(islandIncome)}
-		</p>
+		<ul class="flex flex-wrap justify-center gap-2" aria-label={m.beachhead_loot_title()}>
+			{#each RESOURCE_KINDS as resource (resource)}
+				<li
+					class="pop-in flex items-center gap-1.5 rounded-full border-3 border-ink bg-paper py-1 ps-1.5 pe-3 font-display text-xl font-bold tabular-nums shadow-[2px_2px_0_var(--color-ink)]"
+				>
+					<ResourceIcon kind={resource} class="size-8" />
+					+{loot[resource]}
+				</li>
+			{/each}
+		</ul>
+
+		{#if fallen.length > 0}
+			<ul class="flex flex-wrap justify-center gap-1.5" aria-label={m.beachhead_lost_troops()}>
+				{#each fallen as [kind, count] (kind)}
+					{@const TroopIcon = TROOP_ICONS[kind]}
+					<li
+						class="flex items-center gap-1 rounded-full border-2 border-ink bg-tie-red px-2 py-0.5 font-display text-sm font-bold text-paper tabular-nums"
+						title={troopName(kind)}
+					>
+						<TroopIcon class="size-4" aria-hidden="true" />
+						−{count}
+					</li>
+				{/each}
+			</ul>
+		{/if}
+
 		{#if newAchievements.length > 0}
-			<p class="rounded-md border-2 border-ink bg-explosion-yellow px-2 py-1 text-sm font-bold">
-				{m.beachhead_win_achievements({
-					names: newAchievements.map((id) => achievementName(id)).join(', ')
-				})}
+			<p
+				class="flex items-center gap-1 rounded-md border-2 border-ink bg-explosion-yellow px-2 py-1 text-sm font-bold"
+			>
+				<IconTrophy class="size-4" aria-hidden="true" />
+				{newAchievements.map((id) => achievementName(id)).join(', ')}
 			</p>
 		{/if}
 
-		{#if !hasNext}
-			<p class="font-semibold">{m.beachhead_all_cleared()}</p>
-		{/if}
+		<p class="font-display text-lg font-bold tabular-nums" title={m.gameover_final_score()}>
+			{score}
+			{#if isNewBest}
+				<span class="rotate-2 rounded-md border-2 border-ink bg-explosion-yellow px-1.5 text-sm">
+					{m.gameover_new_best()}
+				</span>
+			{/if}
+		</p>
 
 		<div class="flex flex-wrap items-center justify-center gap-3">
 			{#if hasNext}
-				<button type="button" class="btn-chunky bg-khaki text-lg" onclick={onNext}>
-					{m.beachhead_next_island()}
-					<IconArrowRight class="size-5 rtl:rotate-180" aria-hidden="true" />
+				<button
+					type="button"
+					class="btn-chunky flex items-center gap-2 bg-khaki text-lg"
+					aria-label={m.beachhead_next_island()}
+					title={m.beachhead_next_island()}
+					onclick={onNext}
+				>
+					<IconArrowRight class="size-6 rtl:rotate-180" aria-hidden="true" />
 				</button>
 			{/if}
-			<button type="button" class="btn-chunky" onclick={onIslands}>
-				<IconList class="size-5" aria-hidden="true" />
-				{m.beachhead_to_map()}
+			<button
+				type="button"
+				class="btn-chunky flex items-center gap-2 text-lg"
+				aria-label={m.beachhead_to_map()}
+				title={m.beachhead_to_map()}
+				onclick={onIslands}
+			>
+				<IconMap class="size-6" aria-hidden="true" />
 			</button>
 		</div>
 

@@ -269,6 +269,8 @@ export interface BattleState {
 	squads: SquadTroop[][];
 	/** Troops landed so far, for the survival share in the stars */
 	deployed: number;
+	/** Landing-party troops killed so far, by kind; the base has to retrain them with gold */
+	casualties: Partial<Record<TroopKind, number>>;
 	/** Total health that has landed, so a party of tanks is judged fairly */
 	deployedHp: number;
 	troops: Troop[];
@@ -312,6 +314,7 @@ export function createBattle(
 		squadsLeft: squads.length,
 		squads,
 		deployed: 0,
+		casualties: {},
 		deployedHp: 0,
 		troops: [],
 		buildings: island.buildings.map((spec, id) => {
@@ -1112,6 +1115,10 @@ export function stepBattle(state: BattleState, dtMs: number) {
 	for (const troop of state.troops) {
 		if (troop.hp > 0) continue;
 		state.events.push({ kind: 'troop-down', x: troop.x, y: troop.y });
+		// Heroes and troops an APC dropped on the beach cost the base nothing
+		if (troop.kind !== 'hero' && troop.kind !== 'azov' && troop.spawnedBy === undefined) {
+			state.casualties[troop.kind] = (state.casualties[troop.kind] ?? 0) + 1;
+		}
 	}
 	state.troops = state.troops.filter((troop) => troop.hp > 0);
 
