@@ -7,7 +7,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
+	import { HOME_PRODUCTION } from '#lib/game/beachhead/campaign.js';
 	import ResourceIcon from '#lib/components/ResourceIcon.svelte';
+	import IconFlag from '~icons/lucide/flag-triangle-right';
+	import IconHouse from '~icons/lucide/house';
+	import IconHourglass from '~icons/lucide/hourglass';
+	import IconWarehouse from '~icons/lucide/warehouse';
+	import IconX from '~icons/lucide/x';
 	import IconCrown from '~icons/lucide/crown';
 	import IconLock from '~icons/lucide/lock';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
@@ -22,6 +28,30 @@
 	] as const;
 
 	let now = $state(Date.now());
+	/** The resource whose production and storage are shown in detail */
+	let detail = $state<(typeof RESOURCES)[number]['kind'] | null>(null);
+
+	function detailOf(kind: (typeof RESOURCES)[number]['kind']) {
+		const multiplier = 1 + 0.25 * (game.levelOf('hq') - 1);
+		const total = game.income[kind];
+		const home = Math.round(HOME_PRODUCTION[kind] * multiplier * 10) / 10;
+		const capacity = game.storageCapacity(kind);
+		const room = Math.max(0, capacity - game.resources[kind]);
+		return {
+			total,
+			home,
+			islands: Math.round((total - home) * 10) / 10,
+			bonus: Math.round((multiplier - 1) * 100),
+			capacity,
+			// Minutes until the warehouses are full at the current rate
+			minutesToFull: total > 0 && room > 0 ? Math.ceil(room / total) : null,
+			warehouses: [0, 1].map((index) => game.levelOf(`warehouse-${kind}-${index}`))
+		};
+	}
+
+	function minutes(value: number): string {
+		return value >= 60 ? `${Math.floor(value / 60)}h ${value % 60}m` : `${value}m`;
+	}
 	/** Tapping a builder shows what Pro adds; it fades on its own */
 	let proHint = $state(false);
 	let hintTimer: ReturnType<typeof setTimeout> | undefined;
@@ -61,29 +91,118 @@
 	}
 </script>
 
-<div class="flex flex-col items-end gap-1.5">
+<div class="relative flex flex-col items-end gap-1.5">
+	{#if detail}
+		{@const info = detailOf(detail)}
+		{@const resource = RESOURCES.find((entry) => entry.kind === detail)!}
+		<div
+			class="detail-pop absolute top-0 right-[calc(100%+0.5rem)] z-50 flex w-60 flex-col gap-1.5 rounded-[14px] border-3 border-ink bg-paper p-2.5 shadow-[3px_3px_0_var(--color-ink)]"
+			role="dialog"
+			aria-label={resource.label()}
+		>
+			<div class="flex items-center justify-between gap-2">
+				<p class="flex items-center gap-2 font-bold">
+					<ResourceIcon kind={detail} class="size-8" />
+					{resource.label()}
+				</p>
+				<button
+					type="button"
+					class="btn-chunky size-7 rounded-full p-0"
+					aria-label={m.beachhead_tutorial_close()}
+					onclick={() => (detail = null)}
+				>
+					<IconX class="mx-auto size-4" aria-hidden="true" />
+				</button>
+			</div>
+			<div
+				class="relative h-4 overflow-hidden rounded-full border-2 border-ink bg-sand"
+				role="meter"
+				aria-valuemin={0}
+				aria-valuemax={info.capacity}
+				aria-valuenow={game.resources[detail]}
+				aria-label={m.beachhead_resource_capacity({ capacity: info.capacity })}
+			>
+				<div
+					class="h-full"
+					style:width="{Math.min(100, (game.resources[detail] / info.capacity) * 100)}%"
+					style:background={resource.color}
+				></div>
+			</div>
+			<p class="text-end font-display text-sm font-bold tabular-nums">
+				{game.resources[detail]} / {info.capacity}
+			</p>
+			<ul class="flex flex-col gap-1 font-display text-sm font-bold tabular-nums">
+				<li class="flex items-center justify-between gap-2" title={m.beachhead_home_base()}>
+					<span class="flex items-center gap-1.5"
+						><IconHouse class="size-4" aria-hidden="true" /></span
+					>
+					+{info.home}/min
+				</li>
+				<li
+					class="flex items-center justify-between gap-2"
+					title={m.beachhead_controlled_count({ count: game.controlled, total: game.islandCount })}
+				>
+					<span class="flex items-center gap-1.5">
+						<IconFlag class="size-4" aria-hidden="true" />
+						{game.controlled}
+					</span>
+					+{info.islands}/min
+				</li>
+				<li class="flex items-center justify-between gap-2 border-t-2 border-ink pt-1">
+					<span>{m.beachhead_upgrade_hq()} +{info.bonus}%</span>
+					<span>+{info.total}/min</span>
+				</li>
+				{#if info.minutesToFull !== null}
+					<li
+						class="flex items-center justify-between gap-2"
+						title={m.beachhead_resource_capacity({ capacity: info.capacity })}
+					>
+						<IconHourglass class="size-4" aria-hidden="true" />
+						{minutes(info.minutesToFull)}
+					</li>
+				{/if}
+			</ul>
+			<ul class="flex gap-1.5" aria-label={m.beachhead_warehouses_title()}>
+				{#each info.warehouses as level, index (index)}
+					<li
+						class="flex flex-1 items-center justify-between gap-1 rounded-full border-2 border-ink bg-sand px-2 py-0.5 font-display text-xs font-bold tabular-nums"
+						title={m.beachhead_warehouse_hint({ capacity: level * 500 })}
+					>
+						<IconWarehouse class="size-3.5" aria-hidden="true" />
+						{level}
+						<span class="opacity-70">{level * 500}</span>
+					</li>
+				{/each}
+			</ul>
+		</div>
+	{/if}
 	<ul class="flex flex-col gap-1">
 		{#each RESOURCES as resource (resource.kind)}
 			{@const capacity = game.storageCapacity(resource.kind)}
 			{@const full = game.isStorageFull(resource.kind)}
-			<li
-				class="relative flex min-w-[5.8rem] items-center gap-1.5 overflow-hidden rounded-full border-2 border-ink py-0.5 ps-0.5 pe-2.5 font-display text-sm font-bold tabular-nums shadow-[2px_2px_0_var(--color-ink)] {full
-					? 'bg-explosion-yellow'
-					: 'bg-paper'}"
-				title={`${resource.label()} — ${m.beachhead_resource_capacity({ capacity })} · ${m.beachhead_resource_rate({ amount: game.income[resource.kind] })}`}
-			>
-				<ResourceIcon kind={resource.kind} class="size-7 shrink-0" />
-				<span class="flex-1 text-end">{game.resources[resource.kind]}</span>
-				<span
-					class="absolute inset-x-1.5 bottom-0 h-[3px] rounded-full bg-ink/15"
-					aria-hidden="true"
+			<li class="relative">
+				<button
+					type="button"
+					onclick={() => (detail = detail === resource.kind ? null : resource.kind)}
+					aria-expanded={detail === resource.kind}
+					class="relative flex w-full min-w-[5.8rem] items-center gap-1.5 overflow-hidden rounded-full border-2 border-ink py-0.5 ps-0.5 pe-2.5 font-display text-sm font-bold tabular-nums shadow-[2px_2px_0_var(--color-ink)] {full
+						? 'bg-explosion-yellow'
+						: 'bg-paper'}"
+					title={`${resource.label()} — ${m.beachhead_resource_capacity({ capacity })} · ${m.beachhead_resource_rate({ amount: game.income[resource.kind] })}`}
 				>
+					<ResourceIcon kind={resource.kind} class="size-7 shrink-0" />
+					<span class="flex-1 text-end">{game.resources[resource.kind]}</span>
 					<span
-						class="block h-full rounded-full"
-						style:width="{Math.min(100, (game.resources[resource.kind] / capacity) * 100)}%"
-						style:background={resource.color}
-					></span>
-				</span>
+						class="absolute inset-x-1.5 bottom-0 h-[3px] rounded-full bg-ink/15"
+						aria-hidden="true"
+					>
+						<span
+							class="block h-full rounded-full"
+							style:width="{Math.min(100, (game.resources[resource.kind] / capacity) * 100)}%"
+							style:background={resource.color}
+						></span>
+					</span>
+				</button>
 			</li>
 		{/each}
 	</ul>
@@ -196,6 +315,17 @@
 </div>
 
 <style>
+	.detail-pop {
+		animation: detail-pop 160ms ease-out;
+	}
+
+	@keyframes detail-pop {
+		from {
+			transform: translateX(6px) scale(0.97);
+			opacity: 0;
+		}
+	}
+
 	.hint-pop {
 		animation: hint-pop 180ms ease-out;
 	}
