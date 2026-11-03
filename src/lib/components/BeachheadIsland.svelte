@@ -228,6 +228,7 @@
 			},
 			buildProgress,
 			boatCount: game.boats.filter((boat) => boat.unlocked).length,
+			boatUnits: (index) => game.boats[index]?.units ?? [],
 			timeMs,
 			arranging,
 			selected,

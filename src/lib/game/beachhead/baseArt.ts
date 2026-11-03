@@ -75,6 +75,26 @@ export function heightOf(key: LayoutKey, stage: number): number {
 	return 0.9 + stage * 0.2;
 }
 
+/** Every level makes a building a little bigger, so a base that has grown also looks it */
+export function growthOf(level: number, perLevel = 0.04): number {
+	return 1 + Math.min(12, Math.max(0, level - 1)) * perLevel;
+}
+
+/** Draws something scaled about a point on the ground, keeping its feet where they were */
+function scaledAbout(
+	context: CanvasRenderingContext2D,
+	pivot: { x: number; y: number },
+	factor: number,
+	draw: () => void
+) {
+	context.save();
+	context.translate(pivot.x, pivot.y);
+	context.scale(factor, factor);
+	context.translate(-pivot.x, -pivot.y);
+	draw();
+	context.restore();
+}
+
 export interface HomeScene {
 	layout: BaseLayout;
 	levelOf: (key: string) => number;
@@ -84,6 +104,8 @@ export interface HomeScene {
 	/** Progress 0 to 1 of a building that is being upgraded, or null */
 	buildProgress: (key: string) => number | null;
 	boatCount: number;
+	/** The troops sitting in the boat with this number, as troop kinds */
+	boatUnits: (index: number) => readonly string[];
 	timeMs: number;
 	/** Whether the grid and the move hints show */
 	arranging: boolean;
@@ -554,13 +576,49 @@ function drawWarehouse(
 	drawPile(context, view, x + 1.75, y + 1.75, resource, fill);
 }
 
+const UNIT_COLOR: Record<string, string> = {
+	assault: KHAKI,
+	tank: '#4d5b3a',
+	mortar: '#6b705a',
+	drone: BANNER_SLATE,
+	medic: PAPER,
+	artillery: STEEL,
+	apc: '#55603f',
+	demo: TIE_RED,
+	heavy: '#7a7f66',
+	hero: '#2f3338',
+	azov: '#1d1d1d'
+};
+const VEHICLES = new Set(['tank', 'apc', 'artillery']);
+
+/** One soldier or vehicle standing on a boat's deck, small enough that a full load is readable */
+function drawDeckUnit(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	x: number,
+	y: number,
+	z: number,
+	kind: string
+) {
+	const color = UNIT_COLOR[kind] ?? KHAKI;
+	if (VEHICLES.has(kind)) {
+		drawBox(context, view, x - 0.13, y - 0.17, 0.26, 0.34, z, z + 0.1, paletteOf(color), 0.03);
+		drawBlob(context, view, x, y, z + 0.14, 0.07, color, 0.03);
+		return;
+	}
+	drawBlob(context, view, x, y, z + 0.07, 0.075, color, 0.03);
+	drawBlob(context, view, x, y, z + 0.18, 0.05, '#f6c9a0', 0.025);
+	if (kind === 'medic') drawBlob(context, view, x, y, z + 0.07, 0.025, TIE_RED, 0);
+}
+
 function drawBoat(
 	context: CanvasRenderingContext2D,
 	view: IsoView,
 	index: number,
 	level: number,
 	max: number,
-	timeMs: number
+	timeMs: number,
+	units: readonly string[] = []
 ) {
 	const dock = boatDock(index);
 	const stage = stageOf(level, max);
@@ -591,9 +649,9 @@ function drawBoat(
 			context,
 			view,
 			x + 0.14,
-			y + 0.3,
+			y + 0.1,
 			0.37,
-			0.4,
+			0.32,
 			0.28 + bob,
 			0.55 + bob,
 			paletteOf(BANNER_SLATE)
@@ -601,23 +659,24 @@ function drawBoat(
 		drawBar(
 			context,
 			view,
-			{ x: x + 0.32, y: y + 0.5, z: 0.55 + bob },
-			{ x: x + 0.32, y: y + 0.5, z: 1.0 + bob },
+			{ x: x + 0.32, y: y + 0.26, z: 0.55 + bob },
+			{ x: x + 0.32, y: y + 0.26, z: 1.0 + bob },
 			STEEL,
 			0.05
 		);
 	}
-	if (stage >= 2) {
-		drawBox(
+	// The troops waiting for the attack, two abreast from the stern forwards
+	const shown = units.slice(0, 16);
+	for (let slot = shown.length - 1; slot >= 0; slot--) {
+		const row = Math.floor(slot / 2);
+		const col = slot % 2;
+		drawDeckUnit(
 			context,
 			view,
-			x + 0.14,
-			y + length - 0.55,
-			0.37,
-			0.3,
+			x + 0.22 + col * 0.21,
+			y + length - 0.16 - row * 0.15,
 			0.28 + bob,
-			0.46 + bob,
-			paletteOf(KHAKI)
+			shown[slot]
 		);
 	}
 	if (stage >= 3) {
@@ -631,9 +690,9 @@ function drawBoat(
 			0.4 + bob,
 			paletteOf(STEEL)
 		);
-		drawBlob(context, view, x + 0.32, y + 0.5, 1.02 + bob, 0.07, GOLD, 0.03);
+		drawBlob(context, view, x + 0.32, y + 0.26, 1.02 + bob, 0.07, GOLD, 0.03);
 	}
-	const flag = view.project(x + 0.32, y + 0.5, (stage >= 1 ? 1.0 : 0.5) + bob);
+	const flag = view.project(x + 0.32, y + 0.26, (stage >= 1 ? 1.0 : 0.5) + bob);
 	context.beginPath();
 	context.moveTo(flag.x, flag.y);
 	context.lineTo(flag.x + 0.3, flag.y + 0.05);
@@ -1063,7 +1122,12 @@ export function drawHome(context: CanvasRenderingContext2D, scene: HomeScene, vi
 		standing.push({
 			depth: depthOf(at.x + size.width / 2, at.y + size.height / 2),
 			draw: () => {
-				drawHomeBuilding(context, view, scene, key);
+				scaledAbout(
+					context,
+					view.project(at.x + size.width / 2, at.y + size.height / 2),
+					growthOf(scene.levelOf(key)),
+					() => drawHomeBuilding(context, view, scene, key)
+				);
 				const progress = scene.buildProgress(key);
 				if (progress !== null) {
 					drawConstruction(
@@ -1085,13 +1149,21 @@ export function drawHome(context: CanvasRenderingContext2D, scene: HomeScene, vi
 			depth: depthOf(dock.x + 0.4, dock.y + 0.6),
 			draw: () => {
 				if (index < scene.boatCount) {
-					drawBoat(
+					const level = scene.levelOf(`boat-${index}`);
+					scaledAbout(
 						context,
-						view,
-						index,
-						scene.levelOf(`boat-${index}`),
-						scene.maxOf(`boat-${index}`),
-						scene.timeMs
+						view.project(dock.x + 0.4, dock.y + 0.7),
+						growthOf(level, 0.05),
+						() =>
+							drawBoat(
+								context,
+								view,
+								index,
+								level,
+								scene.maxOf(`boat-${index}`),
+								scene.timeMs,
+								scene.boatUnits(index)
+							)
 					);
 					const progress = scene.buildProgress(`boat-${index}`);
 					if (progress !== null) {
@@ -1127,7 +1199,7 @@ export function drawHome(context: CanvasRenderingContext2D, scene: HomeScene, vi
 			view,
 			at.x + size.width / 2,
 			at.y + size.height / 2,
-			heightOf(key, stage) + 0.55,
+			heightOf(key, stage) * growthOf(scene.levelOf(key)) + 0.55,
 			`${scene.levelOf(key)}`,
 			selected ? EXPLOSION_YELLOW : PAPER,
 			selected
