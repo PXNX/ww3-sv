@@ -3742,6 +3742,7 @@
 	"beachhead_troop_demo": "خبير تفجير",
 	"beachhead_troop_heavy": "رشاش ثقيل متعدد",
 	"beachhead_troop_azov": "قائد آزوف",
+	"beachhead_build_time": "وقت البناء",
 	"beachhead_unlocks_at_hq": "يُفتح عند مستوى المقر {level}",
 	"beachhead_island_defences_title": "الدفاعات",
 	"beachhead_building_jammer": "جهاز التشويش",

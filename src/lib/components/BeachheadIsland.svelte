@@ -56,6 +56,7 @@
 	import IconGraduationCap from '~icons/lucide/graduation-cap';
 	import IconCrown from '~icons/lucide/crown';
 	import IconHammer from '~icons/lucide/hammer';
+	import IconHourglass from '~icons/lucide/hourglass';
 	import IconLock from '~icons/lucide/lock';
 	import IconMove from '~icons/lucide/move';
 	import IconShield from '~icons/lucide/shield';
@@ -172,6 +173,7 @@
 			type: 'building' as const,
 			key,
 			row: game.buildRowFor(key as BuildingKey),
+			duration: game.buildDuration(key as BuildingKey),
 			...describe(key),
 			movable: isLayoutKey(key),
 			boatLocked: boatIndex !== null && !(game.boats[boatIndex]?.unlocked ?? true),
@@ -596,6 +598,13 @@
 						<IconCheck class="size-5 text-khaki" aria-label={m.beachhead_upgrade_max()} />
 					{:else}
 						{@render costChips(row.cost)}
+						<span
+							class="flex items-center gap-1 rounded-full border-2 border-ink bg-paper px-1.5 font-display text-xs font-bold tabular-nums"
+							title={m.beachhead_build_time()}
+						>
+							<IconHourglass class="size-3.5" aria-hidden="true" />
+							{timeLeft(panel.duration)}
+						</span>
 						<button
 							type="button"
 							class="btn-chunky flex size-10 items-center justify-center rounded-full bg-khaki p-0 text-paper"
