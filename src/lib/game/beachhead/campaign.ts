@@ -8,11 +8,16 @@
  * amount, so the loadout is a small packing puzzle.
  */
 import {
+	AZOV_COMMAND,
 	BASE_CHARTED_ISLANDS,
 	BOAT_CAPACITY,
 	BOAT_COUNT,
+	HERO_CARD_DROP_CHANCE,
 	ISLAND_IDS,
 	MAX_BOAT_LEVEL,
+	MAX_DOJO_LEVEL,
+	MAX_HERO_LEVEL,
+	MAX_HERO_SKILL_LEVEL,
 	MAX_HQ_LEVEL,
 	MAX_RADAR_LEVEL,
 	MAX_TRAINING_LEVEL,
@@ -20,13 +25,14 @@ import {
 	MAX_WAREHOUSE_LEVEL,
 	STARTING_BOATS,
 	TROOPS,
+	type ArmyKind,
 	type Island,
 	type TroopKind
 } from './config.js';
 import type { BattleModifiers, SquadTroop } from './battle.js';
 
 export const SAVE_KEY = 'beachhead:save';
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 /** Longer absences stop earning at this point, so a save cannot grow forever */
 export const INCOME_CAP_MS = 8 * 60 * 60 * 1000;
 /** One controlled island is lost to the enemy on this rhythm */
@@ -49,9 +55,16 @@ export const STORAGE_PER_LEVEL = 350;
 
 export type BoatKey = `boat-${number}`;
 export type WarehouseKey = `warehouse-${ResourceKind}-${number}`;
-export type BuildingKey = 'hq' | 'training' | 'radar' | BoatKey | WarehouseKey;
-export type Army = Record<Exclude<TroopKind, 'hero'>, number>;
+export type BuildingKey = 'hq' | 'training' | 'radar' | 'dojo' | BoatKey | WarehouseKey;
+export type Army = Record<ArmyKind, number>;
 export type TroopLevels = Record<TroopKind, number>;
+
+/** The Azov commander: his own level, his command skill and the cards found on conquered bases */
+export interface HeroState {
+	level: number;
+	skill: number;
+	cards: number;
+}
 
 export const BOAT_KEYS: readonly BoatKey[] = Array.from(
 	{ length: BOAT_COUNT },
@@ -67,6 +80,7 @@ export const BUILDING_KEYS: readonly BuildingKey[] = [
 	'hq',
 	'training',
 	'radar',
+	'dojo',
 	...BOAT_KEYS,
 	...WAREHOUSE_KEYS
 ];
@@ -86,8 +100,8 @@ export const ISLAND_PRODUCTION: readonly Resources[] = [
 	{ wood: 4, stone: 4, iron: 5, gold: 3 },
 	{ wood: 5, stone: 5, iron: 6, gold: 4 }
 ];
-/** Troop kinds the player loads into boats; the hero always comes along and takes no space */
-export const ARMY_KINDS: readonly Exclude<TroopKind, 'hero'>[] = [
+/** Troop kinds the player loads into boats; the heroes always come along and take no space */
+export const ARMY_KINDS: readonly ArmyKind[] = [
 	'assault',
 	'tank',
 	'mortar',
@@ -104,6 +118,8 @@ export interface Levels {
 	training: number;
 	/** Radar tower level; each level charts one more island on the sea map */
 	radar: number;
+	/** Hero dojo level; it caps both the Azov commander's level and his skill level */
+	dojo: number;
 	/** One level per landing craft, in boarding order */
 	boats: number[];
 	/** One level per warehouse, in the order of WAREHOUSE_KEYS */
@@ -133,9 +149,11 @@ export interface CareerStats {
 }
 
 export interface BeachheadSave {
-	version: 5;
+	version: 6;
 	resources: Resources;
 	levels: Levels;
+	/** The Azov commander and the cards to upgrade him */
+	hero: HeroState;
 	troops: TroopLevels;
 	army: Army;
 	islands: Record<string, IslandControl>;
@@ -151,10 +169,14 @@ export interface BeachheadSave {
 }
 
 /** Cost of the first upgrade of each building family; each later level grows by a factor */
-const BUILDING_BASE_COST: Record<'hq' | 'training' | 'radar' | 'boat' | 'warehouse', Resources> = {
+const BUILDING_BASE_COST: Record<
+	'hq' | 'training' | 'radar' | 'dojo' | 'boat' | 'warehouse',
+	Resources
+> = {
 	hq: { wood: 160, stone: 120, iron: 50, gold: 10 },
 	training: { wood: 90, stone: 60, iron: 20, gold: 4 },
 	radar: { wood: 140, stone: 110, iron: 60, gold: 12 },
+	dojo: { wood: 320, stone: 260, iron: 140, gold: 40 },
 	boat: { wood: 50, stone: 30, iron: 10, gold: 2 },
 	warehouse: { wood: 70, stone: 50, iron: 15, gold: 2 }
 };
@@ -170,8 +192,13 @@ const TROOP_BASE_COST: Record<TroopKind, Resources> = {
 	artillery: { wood: 130, stone: 90, iron: 55, gold: 9 },
 	apc: { wood: 150, stone: 110, iron: 70, gold: 10 },
 	demo: { wood: 70, stone: 45, iron: 55, gold: 5 },
-	heavy: { wood: 120, stone: 85, iron: 65, gold: 8 }
+	heavy: { wood: 120, stone: 85, iron: 65, gold: 8 },
+	azov: { wood: 500, stone: 420, iron: 260, gold: 80 }
 };
+
+/** The Azov commander is paid for in cards as well as resources, and he is not cheap */
+const HERO_COST_GROWTH = 1.75;
+const SKILL_COST_GROWTH = 1.7;
 
 /** The army of a fresh base: a full first wave of riflemen */
 const STARTING_ARMY: Army = {
@@ -217,10 +244,11 @@ function fillTroopLevels(levels: Partial<TroopLevels>): TroopLevels {
 const TROOP_COST_GROWTH = 1.5;
 
 /** How long a building upgrade runs, before the level growth */
-const BUILD_BASE_MS: Record<'hq' | 'training' | 'radar' | 'boat' | 'warehouse', number> = {
+const BUILD_BASE_MS: Record<'hq' | 'training' | 'radar' | 'dojo' | 'boat' | 'warehouse', number> = {
 	hq: 30_000,
 	training: 20_000,
 	radar: 25_000,
+	dojo: 45_000,
 	boat: 10_000,
 	warehouse: 12_000
 };
@@ -234,9 +262,11 @@ export function newSave(nowMs: number): BeachheadSave {
 			hq: 1,
 			training: 1,
 			radar: 1,
+			dojo: 1,
 			boats: Array.from({ length: BOAT_COUNT }, () => 1),
 			warehouses: defaultWarehouseLevels()
 		},
+		hero: { level: 1, skill: 1, cards: 0 },
 		troops: defaultTroopLevels(),
 		army: { ...STARTING_ARMY },
 		islands: {},
@@ -257,8 +287,10 @@ function resourceCost(base: Resources, factor: number): Resources {
 	};
 }
 
-function buildingFamily(key: BuildingKey): 'hq' | 'training' | 'radar' | 'boat' | 'warehouse' {
-	if (key === 'hq' || key === 'training' || key === 'radar') return key;
+function buildingFamily(
+	key: BuildingKey
+): 'hq' | 'training' | 'radar' | 'dojo' | 'boat' | 'warehouse' {
+	if (key === 'hq' || key === 'training' || key === 'radar' || key === 'dojo') return key;
 	if (key.startsWith('warehouse-')) return 'warehouse';
 	return 'boat';
 }
@@ -284,6 +316,7 @@ export function levelOf(save: BeachheadSave, key: BuildingKey): number {
 	if (key === 'hq') return save.levels.hq;
 	if (key === 'training') return save.levels.training;
 	if (key === 'radar') return save.levels.radar;
+	if (key === 'dojo') return save.levels.dojo;
 	if (key.startsWith('warehouse-')) {
 		const index = WAREHOUSE_KEYS.indexOf(key as WarehouseKey);
 		return index >= 0 ? (save.levels.warehouses[index] ?? 1) : 1;
@@ -295,6 +328,7 @@ export function maxLevelOf(key: BuildingKey): number {
 	if (key === 'hq') return MAX_HQ_LEVEL;
 	if (key === 'training') return MAX_TRAINING_LEVEL;
 	if (key === 'radar') return MAX_RADAR_LEVEL;
+	if (key === 'dojo') return MAX_DOJO_LEVEL;
 	if (key.startsWith('warehouse-')) return MAX_WAREHOUSE_LEVEL;
 	return MAX_BOAT_LEVEL;
 }
@@ -431,6 +465,12 @@ function withBuildingLevel(save: BeachheadSave, key: BuildingKey): BeachheadSave
 			levels: { ...save.levels, radar: Math.min(MAX_RADAR_LEVEL, save.levels.radar + 1) }
 		};
 	}
+	if (key === 'dojo') {
+		return {
+			...save,
+			levels: { ...save.levels, dojo: Math.min(MAX_DOJO_LEVEL, save.levels.dojo + 1) }
+		};
+	}
 	if (key.startsWith('warehouse-')) {
 		const index = WAREHOUSE_KEYS.indexOf(key as WarehouseKey);
 		const warehouses = save.levels.warehouses.map((level, warehouse) =>
@@ -476,7 +516,7 @@ export function usedArmySpace(save: BeachheadSave): number {
 /** Adds or removes units; adding is refused when the boats have no space left */
 export function changeTroop(
 	save: BeachheadSave,
-	kind: Exclude<TroopKind, 'hero'>,
+	kind: ArmyKind,
 	delta: number
 ): BeachheadSave {
 	if (!ARMY_KINDS.includes(kind) || !Number.isFinite(delta) || delta === 0) return save;
@@ -491,15 +531,19 @@ export function changeTroop(
 }
 
 export function troopLevel(save: BeachheadSave, kind: TroopKind): number {
+	// The Azov commander grows through his cards, not through the training ground
+	if (kind === 'azov') return save.hero.level;
 	return save.troops[kind] ?? 1;
 }
 
 /** Training ground level gates troop levels: a troop can never be better trained than the ground */
 export function troopUpgradeLocked(save: BeachheadSave, kind: TroopKind): boolean {
+	if (kind === 'azov') return true;
 	return troopLevel(save, kind) >= Math.min(MAX_TROOP_LEVEL, save.levels.training);
 }
 
 export function troopUpgradeCost(save: BeachheadSave, kind: TroopKind): Resources | null {
+	if (kind === 'azov') return null;
 	const level = troopLevel(save, kind);
 	if (level >= MAX_TROOP_LEVEL) return null;
 	return resourceCost(TROOP_BASE_COST[kind], Math.pow(TROOP_COST_GROWTH, level - 1));
@@ -534,6 +578,121 @@ export function troopStatsForLevel(kind: TroopKind, level: number) {
 
 export function troopStats(save: BeachheadSave, kind: TroopKind) {
 	return troopStatsForLevel(kind, troopLevel(save, kind));
+}
+
+/** The command aura the Azov commander brings, growing with his skill level */
+export interface CommandAura {
+	radius: number;
+	/** Fraction of extra damage for nearby troops */
+	damage: number;
+	/** Fraction of extra movement speed for nearby troops */
+	speed: number;
+}
+
+export function azovCommand(save: BeachheadSave): CommandAura {
+	const skill = Math.max(1, Math.min(MAX_HERO_SKILL_LEVEL, save.hero.skill));
+	return {
+		radius: AZOV_COMMAND.radius,
+		damage: AZOV_COMMAND.damagePerLevel * skill,
+		speed: AZOV_COMMAND.speedPerLevel * skill
+	};
+}
+
+/** How many cards the next hero level costs, or null when he is maxed out */
+export function heroCardCost(save: BeachheadSave): number | null {
+	const level = save.hero.level;
+	if (level >= MAX_HERO_LEVEL) return null;
+	return level;
+}
+
+/** The hero can never grow past the dojo that trains him */
+export function heroUpgradeLocked(save: BeachheadSave): boolean {
+	return save.hero.level >= Math.min(MAX_HERO_LEVEL, save.levels.dojo);
+}
+
+export function heroUpgradeCost(save: BeachheadSave): Resources | null {
+	const level = save.hero.level;
+	if (level >= MAX_HERO_LEVEL) return null;
+	return resourceCost(TROOP_BASE_COST.azov, Math.pow(HERO_COST_GROWTH, level - 1));
+}
+
+export function canUpgradeHero(save: BeachheadSave): boolean {
+	const cost = heroUpgradeCost(save);
+	const cards = heroCardCost(save);
+	return (
+		cost !== null &&
+		cards !== null &&
+		!heroUpgradeLocked(save) &&
+		save.hero.cards >= cards &&
+		canAfford(save, cost)
+	);
+}
+
+/** Spends the resources and the cards at once and raises the commander by one level */
+export function applyHeroUpgrade(save: BeachheadSave): BeachheadSave {
+	if (!canUpgradeHero(save)) return save;
+	const cost = heroUpgradeCost(save) as Resources;
+	const cards = heroCardCost(save) as number;
+	return {
+		...save,
+		resources: payResources(save.resources, cost),
+		hero: { ...save.hero, level: save.hero.level + 1, cards: save.hero.cards - cards }
+	};
+}
+
+/** The command skill is gated by the same dojo as the hero himself */
+export function skillUpgradeLocked(save: BeachheadSave): boolean {
+	return save.hero.skill >= Math.min(MAX_HERO_SKILL_LEVEL, save.levels.dojo);
+}
+
+export function skillUpgradeCost(save: BeachheadSave): Resources | null {
+	const level = save.hero.skill;
+	if (level >= MAX_HERO_SKILL_LEVEL) return null;
+	return resourceCost(TROOP_BASE_COST.azov, Math.pow(SKILL_COST_GROWTH, level - 1) * 0.7);
+}
+
+export function skillCardCost(save: BeachheadSave): number | null {
+	const level = save.hero.skill;
+	if (level >= MAX_HERO_SKILL_LEVEL) return null;
+	return Math.max(1, level - 1);
+}
+
+export function canUpgradeSkill(save: BeachheadSave): boolean {
+	const cost = skillUpgradeCost(save);
+	const cards = skillCardCost(save);
+	return (
+		cost !== null &&
+		cards !== null &&
+		!skillUpgradeLocked(save) &&
+		save.hero.cards >= cards &&
+		canAfford(save, cost)
+	);
+}
+
+export function applySkillUpgrade(save: BeachheadSave): BeachheadSave {
+	if (!canUpgradeSkill(save)) return save;
+	const cost = skillUpgradeCost(save) as Resources;
+	const cards = skillCardCost(save) as number;
+	return {
+		...save,
+		resources: payResources(save.resources, cost),
+		hero: { ...save.hero, skill: save.hero.skill + 1, cards: save.hero.cards - cards }
+	};
+}
+
+/** Adds the cards found on a conquered base */
+export function grantHeroCards(save: BeachheadSave, count: number): BeachheadSave {
+	const gained = Math.max(0, Math.floor(count));
+	if (gained === 0) return save;
+	return { ...save, hero: { ...save.hero, cards: save.hero.cards + gained } };
+}
+
+/** How many cards a victory drops: usually none, rarely one and very rarely two */
+export function heroCardsForRoll(roll: number): number {
+	const safe = Number.isFinite(roll) ? Math.min(1, Math.max(0, roll)) : 1;
+	if (safe < HERO_CARD_DROP_CHANCE * 0.2) return 2;
+	if (safe < HERO_CARD_DROP_CHANCE) return 1;
+	return 0;
 }
 
 /** Boats in boarding order with their capacity and the units packed into them */
@@ -583,6 +742,7 @@ export function boatLoads(save: BeachheadSave): BoatLoad[] {
 
 function squadSpec(save: BeachheadSave, kind: TroopKind): SquadTroop {
 	const stats = troopStats(save, kind);
+	const command = kind === 'azov' ? azovCommand(save) : null;
 	return {
 		kind,
 		hp: stats.hp,
@@ -600,20 +760,23 @@ function squadSpec(save: BeachheadSave, kind: TroopKind): SquadTroop {
 		spawnCap: stats.spawnCap,
 		healRadius: stats.healRadius,
 		healAmount: stats.healAmount,
-		healEveryMs: stats.healEveryMs
+		healEveryMs: stats.healEveryMs,
+		commandRadius: command?.radius,
+		commandDamage: command?.damage,
+		commandSpeed: command?.speed
 	};
 }
 
-/** The squads in the order they land: one per non-empty boat, with the hero on the first */
+/** The squads in the order they land: one per non-empty boat, with both heroes on the first */
 export function landingPlan(save: BeachheadSave): SquadTroop[][] {
 	const squads: SquadTroop[][] = [];
 	for (const load of packArmy(save)) {
 		if (load.units.length === 0) continue;
 		squads.push(load.units.map((kind) => squadSpec(save, kind)));
 	}
-	const hero = squadSpec(save, 'hero');
-	if (squads.length === 0) squads.push([hero]);
-	else squads[0].push(hero);
+	const heroes = [squadSpec(save, 'hero'), squadSpec(save, 'azov')];
+	if (squads.length === 0) squads.push(heroes);
+	else squads[0].push(...heroes);
 	return squads;
 }
 
@@ -636,12 +799,13 @@ export function allIslandsPerfect(save: BeachheadSave): boolean {
 	return ISLAND_IDS.every((islandId) => starsOf(save, islandId) === 3);
 }
 
-/** Headquarters, radar tower, training ground, every boat and every warehouse at their top level */
+/** Headquarters, radar tower, training ground, dojo, every boat and every warehouse at the top */
 export function baseFullyMaxed(save: BeachheadSave): boolean {
 	return (
 		save.levels.hq >= MAX_HQ_LEVEL &&
 		save.levels.training >= MAX_TRAINING_LEVEL &&
 		save.levels.radar >= MAX_RADAR_LEVEL &&
+		save.levels.dojo >= MAX_DOJO_LEVEL &&
 		save.levels.boats.every((level) => level >= MAX_BOAT_LEVEL) &&
 		save.levels.warehouses.every((level) => level >= MAX_WAREHOUSE_LEVEL)
 	);
@@ -848,7 +1012,8 @@ export function isBeachheadSave(value: unknown): value is BeachheadSave {
 	if (
 		!isLevel(levels.hq, MAX_HQ_LEVEL) ||
 		!isLevel(levels.training, MAX_TRAINING_LEVEL) ||
-		!isLevel(levels.radar, MAX_RADAR_LEVEL)
+		!isLevel(levels.radar, MAX_RADAR_LEVEL) ||
+		!isLevel(levels.dojo, MAX_DOJO_LEVEL)
 	) {
 		return false;
 	}
@@ -870,6 +1035,16 @@ export function isBeachheadSave(value: unknown): value is BeachheadSave {
 	if (typeof troops !== 'object' || troops === null) return false;
 	if (
 		!(Object.keys(TROOPS) as TroopKind[]).every((kind) => isLevel(troops[kind], MAX_TROOP_LEVEL))
+	) {
+		return false;
+	}
+	const hero = candidate.hero;
+	if (typeof hero !== 'object' || hero === null) return false;
+	if (
+		!isLevel(hero.level, MAX_HERO_LEVEL) ||
+		!isLevel(hero.skill, MAX_HERO_SKILL_LEVEL) ||
+		!Number.isInteger(hero.cards) ||
+		hero.cards < 0
 	) {
 		return false;
 	}
@@ -897,6 +1072,7 @@ interface LegacyLevels {
 	hq: number;
 	training: number;
 	radar?: number;
+	dojo?: number;
 	boats: number[];
 	warehouses?: number[];
 }
@@ -989,6 +1165,11 @@ function resourcesFromSupplies(supplies: number): Resources {
 	};
 }
 
+/** Every save starts with the commander at level one, no cards and the first skill */
+function defaultHero(): HeroState {
+	return { level: 1, skill: 1, cards: 0 };
+}
+
 /** Version 3 knows the economy but not the radar tower, takebacks or capture counts */
 function upgradeV3Save(value: unknown): BeachheadSave | null {
 	if (typeof value !== 'object' || value === null) return null;
@@ -1003,7 +1184,8 @@ function upgradeV3Save(value: unknown): BeachheadSave | null {
 	const prepared = {
 		...candidate,
 		version: SAVE_VERSION,
-		levels: { ...levels, radar: 1, warehouses: defaultWarehouseLevels() },
+		levels: { ...levels, radar: 1, dojo: 1, warehouses: defaultWarehouseLevels() },
+		hero: defaultHero(),
 		islands: normalizeIslands(islands),
 		lastTakebackMs: lastIncomeMs
 	};
@@ -1020,17 +1202,37 @@ function upgradeV4Save(value: unknown): BeachheadSave | null {
 	const prepared = {
 		...candidate,
 		version: SAVE_VERSION,
-		levels: { ...levels, warehouses: defaultWarehouseLevels() }
+		levels: { ...levels, dojo: 1, warehouses: defaultWarehouseLevels() },
+		hero: defaultHero()
+	};
+	return isBeachheadSave(prepared) ? prepared : null;
+}
+
+/** Version 5 has multiple warehouses but no dojo, hero or hero cards yet */
+function upgradeV5Save(value: unknown): BeachheadSave | null {
+	if (typeof value !== 'object' || value === null) return null;
+	const candidate = value as Record<string, unknown>;
+	if (candidate.version !== 5) return null;
+	const levels = candidate.levels;
+	if (typeof levels !== 'object' || levels === null) return null;
+	const prepared = {
+		...candidate,
+		version: SAVE_VERSION,
+		levels: { ...levels, dojo: 1 },
+		hero: defaultHero()
 	};
 	return isBeachheadSave(prepared) ? prepared : null;
 }
 
 /**
  * Reads a stored save, upgrading the single-supply versions (three abstract upgrades, then the
- * first building-level save), the version-3 economy save and the version-4 save to warehouses.
+ * first building-level save), the version-3 economy save, the version-4 save and the version-5
+ * warehouse save to the hero dojo and the Azov commander.
  */
 export function parseSave(value: unknown): BeachheadSave | null {
 	if (isBeachheadSave(value)) return value;
+	const upgradedV5 = upgradeV5Save(value);
+	if (upgradedV5) return upgradedV5;
 	const upgradedV4 = upgradeV4Save(value);
 	if (upgradedV4) return upgradedV4;
 	const upgradedV3 = upgradeV3Save(value);
@@ -1043,6 +1245,7 @@ export function parseSave(value: unknown): BeachheadSave | null {
 					hq: legacy.levels.hq,
 					training: legacy.levels.training,
 					radar: legacy.levels.radar ?? 1,
+					dojo: legacy.levels.dojo ?? 1,
 					boats: [...legacy.levels.boats],
 					warehouses: defaultWarehouseLevels()
 				}
@@ -1050,6 +1253,7 @@ export function parseSave(value: unknown): BeachheadSave | null {
 					hq: legacy.upgrades?.hq ?? 1,
 					training: legacy.upgrades?.troops ?? 1,
 					radar: 1,
+					dojo: 1,
 					boats: Array.from({ length: BOAT_COUNT }, (_, index) =>
 						index < STARTING_BOATS ? (legacy.upgrades?.landing ?? 1) : 1
 					),
@@ -1063,6 +1267,7 @@ export function parseSave(value: unknown): BeachheadSave | null {
 		version: SAVE_VERSION,
 		resources: resourcesFromSupplies(legacy.supplies),
 		levels,
+		hero: defaultHero(),
 		troops,
 		army,
 		islands: normalizeIslands(legacy.islands),

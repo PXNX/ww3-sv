@@ -45,6 +45,10 @@ export interface SquadTroop {
 	healRadius?: number;
 	healAmount?: number;
 	healEveryMs?: number;
+	/** The Azov commander's aura radius and its damage and speed bonuses */
+	commandRadius?: number;
+	commandDamage?: number;
+	commandSpeed?: number;
 }
 
 /** What the player's shore base and army change about the landing party */
@@ -122,6 +126,10 @@ export interface Troop {
 	healRadius?: number;
 	healAmount?: number;
 	healEveryMs?: number;
+	/** The Azov commander lifts the damage and speed of every troop inside this radius */
+	commandRadius?: number;
+	commandDamage?: number;
+	commandSpeed?: number;
 	healCooldownMs: number;
 	cooldownMs: number;
 	targetId: number | null;
@@ -719,6 +727,9 @@ function spawnedTroop(state: BattleState, source: Troop, kind: TroopKind, index:
 		healRadius: stats.healRadius,
 		healAmount: stats.healAmount,
 		healEveryMs: stats.healEveryMs,
+		commandRadius: stats.commandRadius,
+		commandDamage: stats.commandDamage,
+		commandSpeed: stats.commandSpeed,
 		healCooldownMs: 0,
 		spawnCooldownMs: 0,
 		spawnedBy: source.id,
@@ -788,6 +799,22 @@ function stepTroopHealing(state: BattleState, frameMs: number) {
 	}
 }
 
+/** The strongest command aura covering a troop; the commander does not buff himself */
+function commandBonus(
+	state: BattleState,
+	troop: Troop
+): { damage: number; speed: number } {
+	let damage = 0;
+	let speed = 0;
+	for (const ally of state.troops) {
+		if (ally.id === troop.id || ally.hp <= 0 || !ally.commandRadius) continue;
+		if (Math.hypot(ally.x - troop.x, ally.y - troop.y) > ally.commandRadius) continue;
+		damage = Math.max(damage, ally.commandDamage ?? 0);
+		speed = Math.max(speed, ally.commandSpeed ?? 0);
+	}
+	return { damage, speed };
+}
+
 export function stepBattle(state: BattleState, dtMs: number) {
 	if (state.status !== 'playing' || dtMs <= 0) return;
 	const frameMs = Math.min(dtMs, 100);
@@ -812,6 +839,9 @@ export function stepBattle(state: BattleState, dtMs: number) {
 		solvePhysics(state, troop, dt);
 		if (troop.stunMs > 0) continue;
 
+		const command = commandBonus(state, troop);
+		const moveSpeed = troop.speed * (1 + command.speed);
+
 		// A flare is a movement order: walk to the marker, but still shoot anything in range
 		let marchingToFlare = false;
 		if (state.flare) {
@@ -819,7 +849,7 @@ export function stepBattle(state: BattleState, dtMs: number) {
 			const dy = state.flare.y - troop.y;
 			const length = Math.hypot(dx, dy);
 			if (length > 0.35) {
-				const step = Math.min(troop.speed * dt, length);
+				const step = Math.min(moveSpeed * dt, length);
 				troop.x += (dx / length) * step;
 				troop.y += (dy / length) * step;
 				troop.walkPhase += dt * 12;
@@ -843,7 +873,7 @@ export function stepBattle(state: BattleState, dtMs: number) {
 			const dx = point.x - troop.x;
 			const dy = point.y - troop.y;
 			const length = Math.hypot(dx, dy) || 1;
-			const step = Math.min(troop.speed * dt, Math.max(0, distance - troop.range));
+			const step = Math.min(moveSpeed * dt, Math.max(0, distance - troop.range));
 			troop.x += (dx / length) * step;
 			troop.y += (dy / length) * step;
 			troop.walkPhase += dt * 12;
@@ -869,6 +899,7 @@ export function stepBattle(state: BattleState, dtMs: number) {
 		if (distance <= troop.range + 0.01 && troop.cooldownMs <= 0) {
 			troop.cooldownMs = troop.attackMs;
 			troop.muzzleMs = TROOP.muzzleMs;
+			const shotDamage = Math.round(troop.damage * (1 + command.damage));
 			if (troop.projectile) {
 				// Inaccurate artillery lands around the aim point rather than on it
 				const scatter = troop.scatter ?? 0;
@@ -910,7 +941,7 @@ export function stepBattle(state: BattleState, dtMs: number) {
 					y: troop.y + troop.aimY * 0.22,
 					ageMs: 0,
 					flightMs,
-					damage: troop.damage,
+					damage: shotDamage,
 					splash: troop.splash ?? 0,
 					homing: troop.homing ?? false
 				});
@@ -926,7 +957,7 @@ export function stepBattle(state: BattleState, dtMs: number) {
 					flightMs
 				});
 			} else {
-				target.hp = Math.max(0, target.hp - troop.damage);
+				target.hp = Math.max(0, target.hp - shotDamage);
 				target.flashMs = 130;
 				state.events.push({
 					kind: 'troop-shot',

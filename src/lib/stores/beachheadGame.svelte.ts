@@ -33,13 +33,18 @@ import {
 	ACHIEVEMENTS,
 	SAVE_KEY,
 	addResources,
+	applyHeroUpgrade,
+	applySkillUpgrade,
 	applyTroopUpgrade,
 	armyCapacity as armyCapacityOf,
+	azovCommand,
 	boatLoads as boatLoadsOf,
 	buildDurationMs as buildDurationOf,
 	builderSlots as builderSlotsFor,
 	canAfford,
 	canUpgrade as canUpgradeBuilding,
+	canUpgradeHero,
+	canUpgradeSkill,
 	canUpgradeTroop as canUpgradeTroopAt,
 	changeTroop as changeTroopIn,
 	chartedCount as chartedCountOf,
@@ -52,6 +57,11 @@ import {
 	finishBuilds,
 	fortificationScale,
 	freeBuilderSlots as freeBuilderSlotsOf,
+	grantHeroCards,
+	heroCardCost,
+	heroCardsForRoll,
+	heroUpgradeCost,
+	heroUpgradeLocked,
 	incomeRate as incomeOf,
 	isCharted as isChartedIn,
 	isControlled,
@@ -65,6 +75,9 @@ import {
 	parseSave,
 	processTakebacks,
 	recordVictory,
+	skillCardCost,
+	skillUpgradeCost,
+	skillUpgradeLocked,
 	starsOf as saveStars,
 	startUpgrade as startUpgradeIn,
 	storageCapacities,
@@ -78,6 +91,7 @@ import {
 	upgradeLocked,
 	usedArmySpace as usedArmySpaceOf,
 	WAREHOUSE_KEYS,
+	type ArmyKind,
 	type BeachheadSave,
 	type BoatLoad,
 	type BuildingKey,
@@ -154,6 +168,8 @@ export class BeachheadGame {
 	loot = $state<Resources>({ wood: 0, stone: 0, iron: 0, gold: 0 });
 	/** Achievements earned by the last battle, shown on the result panel */
 	newAchievements = $state<string[]>([]);
+	/** Azov commander cards found in the last battle, shown on the result panel */
+	heroCardsFound = $state(0);
 	/** Islands the enemy took back while the player was away, until the notice is dismissed */
 	recentTakeovers = $state<string[]>([]);
 	isNewBest = $state(false);
@@ -273,6 +289,73 @@ export class BeachheadGame {
 
 	isStorageFull(kind: ResourceKind): boolean {
 		return this.campaign.resources[kind] >= this.storageCapacity(kind);
+	}
+
+	/** The Azov commander's current level, skill and cards, plus what the next level costs */
+	get heroLevel(): number {
+		return this.campaign.hero.level;
+	}
+
+	get heroSkill(): number {
+		return this.campaign.hero.skill;
+	}
+
+	get heroCards(): number {
+		return this.campaign.hero.cards;
+	}
+
+	get dojoLevel(): number {
+		return this.campaign.levels.dojo;
+	}
+
+	get heroAura() {
+		return azovCommand(this.campaign);
+	}
+
+	heroCardCost(): number | null {
+		return heroCardCost(this.campaign);
+	}
+
+	heroUpgradeCost(): Resources | null {
+		return heroUpgradeCost(this.campaign);
+	}
+
+	heroUpgradeLocked(): boolean {
+		return heroUpgradeLocked(this.campaign);
+	}
+
+	canUpgradeHero(): boolean {
+		return canUpgradeHero(this.campaign);
+	}
+
+	upgradeHero(): boolean {
+		const next = applyHeroUpgrade(this.campaign);
+		if (next === this.campaign) return false;
+		this.#commit(next, { announce: true });
+		return true;
+	}
+
+	skillCardCost(): number | null {
+		return skillCardCost(this.campaign);
+	}
+
+	skillUpgradeCost(): Resources | null {
+		return skillUpgradeCost(this.campaign);
+	}
+
+	skillUpgradeLocked(): boolean {
+		return skillUpgradeLocked(this.campaign);
+	}
+
+	canUpgradeSkill(): boolean {
+		return canUpgradeSkill(this.campaign);
+	}
+
+	upgradeSkill(): boolean {
+		const next = applySkillUpgrade(this.campaign);
+		if (next === this.campaign) return false;
+		this.#commit(next, { announce: true });
+		return true;
 	}
 
 	/** The production line of the island in play, with the headquarters bonus applied */
@@ -442,7 +525,7 @@ export class BeachheadGame {
 
 	/** Building cards on the base screen, with cost, lock and timer */
 	buildRows(): BuildRow[] {
-		const keys: BuildingKey[] = ['hq', 'training', 'radar'];
+		const keys: BuildingKey[] = ['hq', 'training', 'radar', 'dojo'];
 		for (let index = 0; index < this.campaign.levels.boats.length; index++) {
 			keys.push(`boat-${index}` as BuildingKey);
 		}
@@ -929,6 +1012,10 @@ export class BeachheadGame {
 				skillsUsed: this.battle.skillsUsed,
 				heroAlive
 			});
+			const roll = Math.random();
+			const cards = heroCardsForRoll(roll);
+			next = grantHeroCards(next, cards);
+			this.heroCardsFound = (this.heroCardsFound ?? 0) + cards;
 			this.loot = loot;
 			this.newAchievements = [];
 			this.#commit(next, { announce: true });

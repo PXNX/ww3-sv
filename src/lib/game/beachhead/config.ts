@@ -153,7 +153,11 @@ export type TroopKind =
 	| 'artillery'
 	| 'apc'
 	| 'demo'
-	| 'heavy';
+	| 'heavy'
+	| 'azov';
+
+/** Everything except the two heroes can be loaded into a boat; a hero always comes along */
+export type ArmyKind = Exclude<TroopKind, 'hero' | 'azov'>;
 
 export interface TroopStats {
 	hp: number;
@@ -178,6 +182,11 @@ export interface TroopStats {
 	healRadius?: number;
 	healAmount?: number;
 	healEveryMs?: number;
+	/** The Azov commander's aura: nearby troops hit harder and walk faster */
+	commandRadius?: number;
+	/** Damage and speed bonus of the aura are fractions, filled in from the skill level */
+	commandDamage?: number;
+	commandSpeed?: number;
 }
 
 export const TROOPS: Record<TroopKind, TroopStats> = {
@@ -290,8 +299,27 @@ export const TROOPS: Record<TroopKind, TroopStats> = {
 		attackMs: 110,
 		space: 4
 		// The minigun trades reach for a stream of bullets
+	},
+	azov: {
+		hp: 820,
+		damage: 74,
+		range: 1.25,
+		speed: 3.05,
+		attackMs: 900,
+		space: 0,
+		// The Azov commander: no support call, but his command aura lifts the whole landing party
+		commandRadius: 3
 	}
 };
+
+/** The Azov commander's command aura, growing with the skill level */
+export const AZOV_COMMAND = {
+	radius: 3,
+	/** Extra damage per skill level, as a fraction */
+	damagePerLevel: 0.04,
+	/** Extra movement speed per skill level, as a fraction */
+	speedPerLevel: 0.02
+} as const;
 
 /** The assault soldier, also the default troop used by the physics and battle tests */
 export const TROOP = {
@@ -319,6 +347,12 @@ export const MAX_HQ_LEVEL = 8;
 export const MAX_TRAINING_LEVEL = 8;
 export const MAX_TROOP_LEVEL = 8;
 export const MAX_WAREHOUSE_LEVEL = 6;
+/** The hero dojo, and the hero and skill levels it unlocks */
+export const MAX_DOJO_LEVEL = 6;
+export const MAX_HERO_LEVEL = 6;
+export const MAX_HERO_SKILL_LEVEL = 6;
+/** A conquered base drops Azov commander cards at this low rate */
+export const HERO_CARD_DROP_CHANCE = 0.1;
 /** The radar tower starts by charting six islands and reveals one more per level */
 export const MAX_RADAR_LEVEL = 4;
 export const BASE_CHARTED_ISLANDS = 6;

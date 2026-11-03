@@ -94,6 +94,8 @@ export function troopName(kind: TroopKind): string {
 			return m.beachhead_troop_demo();
 		case 'heavy':
 			return m.beachhead_troop_heavy();
+		case 'azov':
+			return m.beachhead_troop_azov();
 	}
 }
 

@@ -98,9 +98,11 @@ describe('the campaign save', () => {
 			hq: 1,
 			training: 1,
 			radar: 1,
+			dojo: 1,
 			boats: Array.from({ length: BOAT_COUNT }, () => 1),
 			warehouses: Array.from({ length: WAREHOUSE_KEYS.length }, () => 1)
 		});
+		expect(save.hero).toEqual({ level: 1, skill: 1, cards: 0 });
 		expect(save.builders).toEqual([]);
 		expect(save.achievements).toEqual([]);
 		expect(save.islands).toEqual({});
@@ -250,6 +252,7 @@ describe('migrating older saves', () => {
 			hq: 3,
 			training: 3,
 			radar: 1,
+			dojo: 1,
 			boats,
 			warehouses: Array.from({ length: WAREHOUSE_KEYS.length }, () => 1)
 		});
@@ -560,7 +563,7 @@ describe('boats and the landing party', () => {
 		};
 		// A tank takes six spaces, so each starting boat carries exactly one
 		const loads = boatLoads(save);
-		expect(loads[0].units).toEqual(['tank']);
+		expect(loads[0].units).toEqual(['tank', 'hero']);
 		expect(loads[1].units).toEqual(['tank']);
 		expect(loads[2].units).toEqual(['tank']);
 		expect(loads[3].units).toHaveLength(0);

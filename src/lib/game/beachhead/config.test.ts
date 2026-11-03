@@ -166,8 +166,8 @@ describe('the expanded landing party', () => {
 			expect(stats.space, kind).toBeGreaterThanOrEqual(0);
 			if (kind !== 'hero') expect(stats.space, kind).toBeLessThanOrEqual(BOAT_CAPACITY[1]);
 		}
-		// Only the hero rides along without taking up boat space
-		expect(Object.entries(TROOPS).filter(([, stats]) => stats.space === 0)).toHaveLength(1);
+		// Both heroes ride along without taking up boat space
+		expect(Object.entries(TROOPS).filter(([, stats]) => stats.space === 0)).toHaveLength(2);
 	});
 
 	it('has an area gun that cannot hit the same spot twice', () => {
