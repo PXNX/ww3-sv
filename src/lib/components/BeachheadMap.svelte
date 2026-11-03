@@ -28,9 +28,7 @@
 	import IconCrosshair from '~icons/lucide/crosshair';
 	import IconFlag from '~icons/lucide/flag-triangle-right';
 	import IconLock from '~icons/lucide/lock';
-	import IconShip from '~icons/lucide/ship';
 	import IconSkull from '~icons/lucide/skull';
-	import IconSwords from '~icons/lucide/swords';
 	import IconRadar from '~icons/lucide/radar';
 
 	let { game }: { game: BeachheadGame } = $props();
@@ -296,28 +294,57 @@
 		<div class="pointer-events-auto">
 			<BeachheadTakeoverNotice {game} />
 		</div>
-		<ul
-			class="pointer-events-auto flex max-w-56 flex-col gap-1 rounded-[12px] border-2 border-ink bg-paper/90 p-1.5 text-[0.7rem] leading-snug font-semibold shadow-[2px_2px_0_var(--color-ink)]"
-			aria-label={m.beachhead_log_title()}
-		>
+		<!-- Compact sea log: one small tappable chip per event, a logo and a word, coloured by what it means for you -->
+		<ul class="pointer-events-auto flex flex-col gap-1" aria-label={m.beachhead_log_title()}>
 			{#if retakeAt !== null}
-				<li class="flex items-start gap-1 font-bold text-tie-red">
-					<IconSkull class="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-					{m.beachhead_log_retake({ time: clock(retakeAt - now) })}
+				<li
+					class="flex w-fit items-center gap-1 rounded-full border-2 border-ink bg-tie-red px-2 py-0.5 font-display text-xs font-bold text-paper tabular-nums"
+					title={m.beachhead_log_retake({ time: clock(retakeAt - now) })}
+				>
+					<IconSkull class="size-3.5" aria-hidden="true" />
+					{clock(retakeAt - now)}
 				</li>
 			{/if}
 			{#each logEvents as event, index (index)}
-				<li class="flex items-start gap-1">
-					{#if event.kind === 'raiders'}
-						<IconShip class="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-						{m.beachhead_log_raiders({ island: islandName(event.island) })}
-					{:else if event.kind === 'attack'}
-						<IconSwords class="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-						{m.beachhead_log_attack({ player: event.player, island: islandName(event.island) })}
-					{:else}
-						<IconFlag class="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-						{m.beachhead_log_taken({ player: event.player, island: islandName(event.island) })}
-					{/if}
+				{@const mine = event.kind === 'raided' || event.kind === 'defended'}
+				{@const label =
+					event.kind === 'taken'
+						? m.beachhead_log_short_lost()
+						: event.kind === 'raided'
+							? m.beachhead_log_short_raided()
+							: event.kind === 'defended'
+								? m.beachhead_log_short_defended()
+								: event.kind === 'attack'
+									? m.beachhead_log_short_attack()
+									: m.beachhead_log_short_raiders()}
+				<li>
+					<button
+						type="button"
+						class="flex items-center gap-1 rounded-full border-2 border-ink py-0.5 ps-0.5 pe-2 text-[0.7rem] font-bold shadow-[1px_1px_0_var(--color-ink)] {event.kind ===
+							'taken' || event.kind === 'raided'
+							? 'bg-tie-red text-paper'
+							: event.kind === 'defended'
+								? 'bg-[#3fa65a] text-paper'
+								: 'bg-paper'}"
+						title={event.kind === 'raiders'
+							? m.beachhead_log_raiders({ island: islandName(event.island) })
+							: event.kind === 'taken'
+								? m.beachhead_log_taken({ player: event.player, island: islandName(event.island) })
+								: `${event.player} · ${label}`}
+						onclick={() => (mine ? game.goBase() : game.openIsland(event.island))}
+					>
+						<!-- The logo is the commander's avatar, or a skull when the raiders are not a player -->
+						<span
+							class="flex size-5 items-center justify-center rounded-full border-2 border-ink bg-explosion-yellow font-display text-[0.65rem] text-ink"
+						>
+							{#if event.kind === 'raiders'}
+								<IconSkull class="size-3" aria-hidden="true" />
+							{:else}
+								{event.player.charAt(0)}
+							{/if}
+						</span>
+						{label}
+					</button>
 				</li>
 			{/each}
 		</ul>

@@ -9,7 +9,11 @@ import { TAKEBACK_INTERVAL_MS } from './campaign.js';
 export type LogEvent =
 	| { kind: 'raiders'; island: number; atMs: number }
 	| { kind: 'attack'; player: string; island: number; atMs: number }
-	| { kind: 'taken'; player: string; island: number; atMs: number };
+	| { kind: 'taken'; player: string; island: number; atMs: number }
+	/** Another commander raided your own base and got away with part of the stock */
+	| { kind: 'raided'; player: string; island: number; atMs: number }
+	/** Another commander attacked your base and was beaten off */
+	| { kind: 'defended'; player: string; island: number; atMs: number };
 
 const PLAYERS = [
 	'Admiral K.',
@@ -46,14 +50,10 @@ export function ambientEvents(nowMs: number, islandCount: number, count = 5): Lo
 		if (atMs > nowMs) continue;
 		const island = (seed >>> 5) % Math.max(1, islandCount);
 		const player = PLAYERS[(seed >>> 9) % PLAYERS.length];
-		const roll = (seed >>> 13) % 3;
-		events.push(
-			roll === 0
-				? { kind: 'raiders', island, atMs }
-				: roll === 1
-					? { kind: 'attack', player, island, atMs }
-					: { kind: 'taken', player, island, atMs }
-		);
+		const roll = (seed >>> 13) % 5;
+		const kinds = ['raiders', 'attack', 'taken', 'raided', 'defended'] as const;
+		const kind = kinds[roll];
+		events.push(kind === 'raiders' ? { kind, island, atMs } : { kind, player, island, atMs });
 	}
 	return events.sort((a, b) => b.atMs - a.atMs);
 }
