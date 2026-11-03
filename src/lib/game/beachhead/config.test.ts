@@ -107,7 +107,10 @@ describe('beachhead tuning', () => {
 
 	it('uses every defensive structure somewhere in the campaign', () => {
 		const used = new Set(ISLANDS.flatMap((island) => island.buildings.map((b) => b.kind)));
+		// The home guard (HIMARS, Patriot, jammer) is only for your own base, never on an enemy island
+		const homeOnly: readonly BuildingKind[] = ['himars', 'patriot', 'jammer'];
 		for (const kind of Object.keys(BUILDINGS) as BuildingKind[]) {
+			if (homeOnly.includes(kind)) continue;
 			expect(used.has(kind), kind).toBe(true);
 		}
 	});

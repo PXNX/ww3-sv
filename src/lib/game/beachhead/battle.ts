@@ -260,6 +260,7 @@ export type BattleEvent =
 			y: number;
 			radius: number;
 	  }
+	| { kind: 'jammer-pulse'; x: number; y: number; radius: number; hits: number }
 	| { kind: 'troop-down'; x: number; y: number }
 	| { kind: 'won' }
 	| { kind: 'lost' };
@@ -1048,6 +1049,25 @@ export function stepBattle(state: BattleState, dtMs: number) {
 		building.recoilMs = Math.max(0, building.recoilMs - frameMs);
 		if (building.destroyed || building.hp <= 0) continue;
 		const stats = BUILDINGS[building.kind];
+		if (stats.pulse) {
+			// A jammer shakes everything near it on a rhythm, whether or not anything shoots
+			building.cooldownMs = Math.max(0, building.cooldownMs - frameMs);
+			if (building.cooldownMs > 0) continue;
+			const cx = building.x + 0.5;
+			const cy = building.y + 0.5;
+			let hits = 0;
+			for (const troop of state.troops) {
+				if (troop.hp <= 0 || Math.hypot(troop.x - cx, troop.y - cy) > stats.pulse.radius) continue;
+				troop.stunMs = Math.max(troop.stunMs, stats.pulse.stunMs);
+				hits += 1;
+			}
+			building.cooldownMs = stats.pulse.everyMs;
+			building.recoilMs = 170;
+			if (hits > 0) {
+				state.events.push({ kind: 'jammer-pulse', x: cx, y: cy, radius: stats.pulse.radius, hits });
+			}
+			continue;
+		}
 		if (building.damage <= 0) continue;
 		building.cooldownMs = Math.max(0, building.cooldownMs - frameMs);
 		if (building.cooldownMs > 0) continue;

@@ -29,6 +29,9 @@ export type BuildingKind =
 	| 'totem'
 	| 'sand-mortar'
 	| 'scorpion-nest'
+	| 'himars'
+	| 'patriot'
+	| 'jammer'
 	| MineKind;
 
 /** One-cell mines: they sit on the ground and go off when a troop walks over them */
@@ -67,6 +70,8 @@ export interface BuildingStats {
 	projectileSpeed?: number;
 	/** Rockets and drones follow a living target instead of flying to where it stood */
 	homing?: boolean;
+	/** A jammer pulses: every troop within the radius is shaken for a moment, whatever it is doing */
+	pulse?: { radius: number; stunMs: number; everyMs: number };
 	/** Score for destroying it */
 	score: number;
 }
@@ -254,6 +259,46 @@ export const BUILDINGS: Record<BuildingKind, BuildingStats> = {
 		reloadMs: 1100,
 		splash: 0,
 		targeting: 'weakest',
+		score: 300
+	},
+	// The home guard: guns from the other game modes, unlocked by the headquarters level
+	himars: {
+		width: 1,
+		height: 1,
+		hp: 520,
+		damage: 70,
+		range: 7.6,
+		reloadMs: 4200,
+		splash: 1.6,
+		minRange: 3,
+		targeting: 'farthest',
+		projectile: 'rocket',
+		projectileSpeed: 11,
+		score: 420
+	},
+	patriot: {
+		width: 1,
+		height: 1,
+		hp: 600,
+		damage: 26,
+		range: 7.4,
+		reloadMs: 800,
+		splash: 0.6,
+		targeting: 'weakest',
+		projectile: 'rocket',
+		projectileSpeed: 16,
+		homing: true,
+		score: 420
+	},
+	jammer: {
+		width: 1,
+		height: 1,
+		hp: 360,
+		damage: 0,
+		range: 0,
+		reloadMs: 0,
+		splash: 0,
+		pulse: { radius: 2.8, stunMs: 1100, everyMs: 4200 },
 		score: 300
 	},
 	// Mines are not shot at and score nothing; their effect lives in MINES

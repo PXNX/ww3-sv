@@ -6,10 +6,45 @@
  */
 import { MINE_KINDS, type MineKind } from './config.js';
 
+/** The guns from the other game modes that the headquarters unlocks for your own base */
+export type GuardKind =
+	'sniper' | 'flame' | 'mortar' | 'fpv-nest' | 'patriot' | 'himars' | 'jammer';
+export type DefenseKind = MineKind | GuardKind;
+export const GUARD_KINDS: readonly GuardKind[] = [
+	'sniper',
+	'flame',
+	'mortar',
+	'fpv-nest',
+	'patriot',
+	'himars',
+	'jammer'
+];
+export const DEFENSE_KINDS: readonly DefenseKind[] = [...MINE_KINDS, ...GUARD_KINDS];
+
+/** The headquarters level that unlocks each gun */
+export const GUARD_UNLOCK_HQ: Record<GuardKind, number> = {
+	sniper: 2,
+	flame: 3,
+	mortar: 3,
+	'fpv-nest': 4,
+	patriot: 5,
+	himars: 6,
+	jammer: 7
+};
+
+export function isGuard(kind: DefenseKind): kind is GuardKind {
+	return (GUARD_KINDS as readonly string[]).includes(kind);
+}
+
+/** Whether a headquarters of this level may buy the defence; mines are open from the start */
+export function defenseUnlocked(kind: DefenseKind, hqLevel: number): boolean {
+	return !isGuard(kind) || hqLevel >= GUARD_UNLOCK_HQ[kind];
+}
+
 export const BASE_COLS = 14;
 export const BASE_ROWS = 14;
-/** At most this many mines fit on the island, so the grid cannot be filled with them */
-export const MAX_MINES = 16;
+/** At most this many mines and guns fit on the island, so the grid cannot be filled with them */
+export const MAX_MINES = 24;
 
 type LayoutResource = 'wood' | 'stone' | 'iron' | 'gold';
 /** The buildings that stand on the grid; the boats are moored in the water instead */
@@ -28,7 +63,7 @@ export interface Footprint {
 
 export interface PlacedMine extends Cell {
 	id: number;
-	kind: MineKind;
+	kind: DefenseKind;
 }
 
 export interface BaseLayout {
@@ -65,7 +100,7 @@ export function isLayoutKey(key: string): key is LayoutKey {
 	return (LAYOUT_KEYS as readonly string[]).includes(key);
 }
 
-export function footprintOf(key: LayoutKey | MineKind): Footprint {
+export function footprintOf(key: LayoutKey | DefenseKind): Footprint {
 	if (key === 'hq') return { width: 5, height: 5 };
 	if (key === 'training' || key === 'dojo') return { width: 3, height: 3 };
 	if (key === 'radar' || key === 'bunker' || key.startsWith('warehouse-'))
@@ -108,8 +143,20 @@ export const MINE_COST: Record<MineKind, Record<LayoutResource, number>> = {
 	'mine-emp': { wood: 10, stone: 10, iron: 40, gold: 4 }
 };
 
-export function mineRefund(kind: MineKind): Record<LayoutResource, number> {
-	const cost = MINE_COST[kind];
+/** What every defence costs: the mines, and the guns that grow dearer with the headquarters level they need */
+export const DEFENSE_COST: Record<DefenseKind, Record<LayoutResource, number>> = {
+	...MINE_COST,
+	sniper: { wood: 60, stone: 40, iron: 60, gold: 4 },
+	flame: { wood: 70, stone: 50, iron: 80, gold: 6 },
+	mortar: { wood: 90, stone: 80, iron: 100, gold: 8 },
+	'fpv-nest': { wood: 100, stone: 60, iron: 140, gold: 12 },
+	patriot: { wood: 160, stone: 120, iron: 240, gold: 24 },
+	himars: { wood: 220, stone: 160, iron: 320, gold: 32 },
+	jammer: { wood: 180, stone: 140, iron: 280, gold: 36 }
+};
+
+export function mineRefund(kind: DefenseKind): Record<LayoutResource, number> {
+	const cost = DEFENSE_COST[kind];
 	return {
 		wood: Math.floor(cost.wood / 2),
 		stone: Math.floor(cost.stone / 2),
@@ -189,7 +236,7 @@ export function freeMineCell(layout: BaseLayout): Cell | null {
 	return null;
 }
 
-export function addMine(layout: BaseLayout, kind: MineKind, cell?: Cell): BaseLayout | null {
+export function addMine(layout: BaseLayout, kind: DefenseKind, cell?: Cell): BaseLayout | null {
 	if (layout.mines.length >= MAX_MINES) return null;
 	const at = cell ?? freeMineCell(layout);
 	if (!at || !canPlace(layout, { width: 1, height: 1 }, at)) return null;
@@ -266,13 +313,13 @@ export function normalizeLayout(value: unknown): BaseLayout {
 	for (const entry of mines) {
 		if (typeof entry !== 'object' || entry === null) continue;
 		const { id, kind, x, y } = entry as Record<string, unknown>;
-		if (typeof kind !== 'string' || !MINE_KINDS.includes(kind as MineKind)) continue;
+		if (typeof kind !== 'string' || !(DEFENSE_KINDS as readonly string[]).includes(kind)) continue;
 		if (typeof id !== 'number' || !Number.isInteger(id) || id < 1) continue;
 		if (typeof x !== 'number' || typeof y !== 'number') continue;
 		if (layout.mines.some((placed) => placed.id === id)) continue;
 		if (layout.mines.length >= MAX_MINES) break;
 		if (!fitsAmongPlaced(layout, { width: 1, height: 1 }, { x, y })) continue;
-		layout = { ...layout, mines: [...layout.mines, { id, kind: kind as MineKind, x, y }] };
+		layout = { ...layout, mines: [...layout.mines, { id, kind: kind as DefenseKind, x, y }] };
 		highest = Math.max(highest, id);
 	}
 	const storedNext = Number.isInteger(candidate.nextMineId) ? (candidate.nextMineId as number) : 0;

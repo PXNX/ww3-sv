@@ -4,7 +4,8 @@
  * building changes its look with its level in four steps, so a base that has grown is easy to tell
  * from a new one at a glance.
  */
-import { wallLeft, wallRight, drawFlag, drawMineArt } from './buildingArt.js';
+import { wallLeft, wallRight, drawEnemyBuilding, drawFlag, drawMineArt } from './buildingArt.js';
+import { isMine, type BuildingKind } from './config.js';
 import { drawResourceGlyph } from './resourceIcons.js';
 import {
 	BASE_COLS,
@@ -1062,6 +1063,23 @@ function drawBunker(
 	}
 }
 
+/** A defence from the other modes on a single cell of the home grid */
+function drawGuard(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	kind: BuildingKind,
+	x: number,
+	y: number,
+	timeMs: number
+) {
+	drawEnemyBuilding(
+		context,
+		view,
+		{ kind, x, y, width: 1, height: 1 } as Parameters<typeof drawEnemyBuilding>[2],
+		timeMs
+	);
+}
+
 function drawHomeBuilding(
 	context: CanvasRenderingContext2D,
 	view: IsoView,
@@ -1459,7 +1477,7 @@ export function drawHome(context: CanvasRenderingContext2D, scene: HomeScene, vi
 	// Mines are flat, so they go under the standing buildings
 	for (const mine of scene.layout.mines) {
 		if (dragging?.item.kind === 'mine' && dragging.item.id === mine.id) continue;
-		drawMineArt(context, view, mine.kind, mine.x, mine.y, scene.timeMs, 1);
+		if (isMine(mine.kind)) drawMineArt(context, view, mine.kind, mine.x, mine.y, scene.timeMs, 1);
 		if (scene.selected?.kind === 'mine' && scene.selected.id === mine.id) {
 			context.save();
 			footprintPath(context, view, mine.x, mine.y, 1, 1);
@@ -1471,6 +1489,15 @@ export function drawHome(context: CanvasRenderingContext2D, scene: HomeScene, vi
 	}
 
 	const standing: { depth: number; draw: () => void }[] = [];
+	// Guns stand like buildings; their barrels point at the beach on the lower left
+	for (const gun of scene.layout.mines) {
+		if (isMine(gun.kind)) continue;
+		if (dragging?.item.kind === 'mine' && dragging.item.id === gun.id) continue;
+		standing.push({
+			depth: depthOf(gun.x + 0.5, gun.y + 0.5),
+			draw: () => drawGuard(context, view, gun.kind as BuildingKind, gun.x, gun.y, scene.timeMs)
+		});
+	}
 	const keys = (Object.keys(scene.layout.positions) as LayoutKey[]).filter(
 		(key) => !(dragging?.item.kind === 'building' && dragging.item.key === key)
 	);
@@ -1635,8 +1662,17 @@ export function drawHome(context: CanvasRenderingContext2D, scene: HomeScene, vi
 			drawHomeBuilding(context, view, scene, item.key, dragging.cell);
 		} else {
 			const mine = scene.layout.mines.find((candidate) => candidate.id === item.id);
-			if (mine) {
+			if (mine && isMine(mine.kind)) {
 				drawMineArt(context, view, mine.kind, dragging.cell.x, dragging.cell.y, scene.timeMs, 1);
+			} else if (mine) {
+				drawGuard(
+					context,
+					view,
+					mine.kind as BuildingKind,
+					dragging.cell.x,
+					dragging.cell.y,
+					scene.timeMs
+				);
 			}
 		}
 		context.restore();

@@ -31,13 +31,13 @@ import {
 	TROOPS,
 	type ArmyKind,
 	type Island,
-	type MineKind,
 	type SkillId,
 	type TroopKind
 } from './config.js';
 import type { BattleModifiers, SquadTroop } from './battle.js';
 import {
-	MINE_COST,
+	DEFENSE_COST,
+	defenseUnlocked,
 	addMine,
 	defaultLayout,
 	isLayoutKey,
@@ -47,7 +47,8 @@ import {
 	normalizeLayout,
 	removeMine,
 	type BaseLayout,
-	type Cell
+	type Cell,
+	type DefenseKind
 } from './baseLayout.js';
 
 export const SAVE_KEY = 'beachhead:save';
@@ -1539,16 +1540,16 @@ export function moveBuildingTo(
 	return layout ? { ...save, layout } : null;
 }
 
-export function canAffordMine(save: BeachheadSave, kind: MineKind): boolean {
-	return canAfford(save, MINE_COST[kind]);
+export function canAffordMine(save: BeachheadSave, kind: DefenseKind): boolean {
+	return defenseUnlocked(kind, save.levels.hq) && canAfford(save, DEFENSE_COST[kind]);
 }
 
 /** Buys a mine and puts it on the first free cell; null when unaffordable or the island is full */
-export function buyMine(save: BeachheadSave, kind: MineKind): BeachheadSave | null {
+export function buyMine(save: BeachheadSave, kind: DefenseKind): BeachheadSave | null {
 	if (!canAffordMine(save, kind)) return null;
 	const layout = addMine(layoutOf(save), kind);
 	if (!layout) return null;
-	return { ...save, resources: payResources(save.resources, MINE_COST[kind]), layout };
+	return { ...save, resources: payResources(save.resources, DEFENSE_COST[kind]), layout };
 }
 
 export function moveMineTo(save: BeachheadSave, id: number, cell: Cell): BeachheadSave | null {

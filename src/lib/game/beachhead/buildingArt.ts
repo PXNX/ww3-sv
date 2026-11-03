@@ -737,6 +737,94 @@ function drawDesertHq(
 	drawFlag(context, view, x + w / 2, y + h / 2, 1.9, 0.6, '#e08a1e', timeMs);
 }
 
+function drawHimarsArt(context: CanvasRenderingContext2D, view: IsoView, b: Placement) {
+	const cx = b.x + 0.5;
+	const cy = b.y + 0.5;
+	// A truck bed with the rocket pod raised towards the beach
+	drawBox(context, view, b.x + 0.1, b.y + 0.15, 0.8, 0.7, 0.1, 0.3, paletteOf('#55603f'));
+	drawBox(context, view, b.x + 0.12, b.y + 0.12, 0.76, 0.26, 0.3, 0.5, paletteOf('#3f4a2f'));
+	for (const side of [-0.28, 0.28]) {
+		drawCylinder(context, view, cx + side, cy + 0.05, 0.14, 0, 0.14, paletteOf(STEEL));
+		drawCylinder(context, view, cx + side, cy + 0.4, 0.14, 0, 0.14, paletteOf(STEEL));
+	}
+	drawBox(context, view, cx - 0.22, cy - 0.15, 0.44, 0.34, 0.3, 0.5, paletteOf('#6b705a'));
+	for (const column of [-0.12, 0.12]) {
+		drawBar(
+			context,
+			view,
+			{ x: cx + column, y: cy - 0.05, z: 0.5 },
+			{ x: cx + column, y: cy + 0.55, z: 0.95 },
+			STEEL,
+			0.1
+		);
+		drawBlob(context, view, cx + column, cy + 0.58, 0.98, 0.06, TIE_RED, 0.025);
+	}
+}
+
+function drawPatriotArt(context: CanvasRenderingContext2D, view: IsoView, b: Placement) {
+	const cx = b.x + 0.5;
+	const cy = b.y + 0.5;
+	drawBox(context, view, b.x + 0.1, b.y + 0.1, 0.8, 0.8, 0, 0.22, paletteOf('#55603f'));
+	drawBox(context, view, cx - 0.3, cy - 0.3, 0.6, 0.6, 0.22, 0.36, paletteOf('#3f4a2f'));
+	// A rack of four canisters tilted up and towards the beach
+	for (const [dx, dz] of [
+		[-0.2, 0],
+		[-0.07, 0.08],
+		[0.07, 0],
+		[0.2, 0.08]
+	] as const) {
+		drawBar(
+			context,
+			view,
+			{ x: cx + dx, y: cy - 0.1, z: 0.36 + dz },
+			{ x: cx + dx, y: cy + 0.4, z: 1.0 + dz },
+			'#e8e2c8',
+			0.13
+		);
+		drawBlob(context, view, cx + dx, cy + 0.43, 1.03 + dz, 0.06, TIE_RED, 0.025);
+	}
+	drawBlob(context, view, cx - 0.32, cy - 0.32, 0.6, 0.07, EXPLOSION_YELLOW, 0.025);
+}
+
+function drawJammerArt(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	b: Placement,
+	timeMs: number
+) {
+	const cx = b.x + 0.5;
+	const cy = b.y + 0.5;
+	drawBox(context, view, b.x + 0.22, b.y + 0.22, 0.56, 0.56, 0, 0.3, paletteOf('#3b4048'));
+	drawBar(context, view, { x: cx, y: cy, z: 0.3 }, { x: cx, y: cy, z: 1.3 }, INK, 0.07);
+	// Little aerials around the mast and rings that pulse outwards
+	for (const [dx, dy, z] of [
+		[-0.22, 0, 0.7],
+		[0.22, 0, 0.9],
+		[0, -0.22, 1.1]
+	] as const) {
+		drawBar(
+			context,
+			view,
+			{ x: cx, y: cy, z },
+			{ x: cx + dx, y: cy + dy, z: z + 0.12 },
+			STEEL,
+			0.05
+		);
+	}
+	const top = view.project(cx, cy, 1.32);
+	for (let ring = 0; ring < 2; ring++) {
+		const t = (timeMs / 1600 + ring / 2) % 1;
+		context.globalAlpha = 0.7 * (1 - t);
+		context.beginPath();
+		context.ellipse(top.x, top.y, 0.15 + t * 0.7, (0.15 + t * 0.7) * 0.5, 0, 0, Math.PI * 2);
+		context.strokeStyle = '#7fd8ff';
+		context.lineWidth = 0.05;
+		context.stroke();
+	}
+	context.globalAlpha = 1;
+	drawBlob(context, view, cx, cy, 1.34, 0.07, '#7fd8ff', 0.025);
+}
+
 export function drawEnemyBuilding(
 	context: CanvasRenderingContext2D,
 	view: IsoView,
@@ -752,6 +840,15 @@ export function drawEnemyBuilding(
 			else if (theme === 'jungle') drawJungleHq(context, view, building, timeMs);
 			else if (theme === 'desert') drawDesertHq(context, view, building, timeMs);
 			else drawEnemyHq(context, view, building, timeMs);
+			break;
+		case 'himars':
+			drawHimarsArt(context, view, building);
+			break;
+		case 'patriot':
+			drawPatriotArt(context, view, building);
+			break;
+		case 'jammer':
+			drawJammerArt(context, view, building, timeMs);
 			break;
 		case 'ice-cannon':
 			drawIceCannonArt(context, view, building);

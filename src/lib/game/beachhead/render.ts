@@ -77,7 +77,9 @@ const BUILDING_MUZZLE = new Set<BuildingKind>([
 	'ice-spire',
 	'dart-hut',
 	'sand-mortar',
-	'scorpion-nest'
+	'scorpion-nest',
+	'himars',
+	'patriot'
 ]);
 
 /** How tall each building stands, for its health bar and damage smoke */
@@ -86,6 +88,9 @@ const BUILDING_TOP: Partial<Record<BuildingKind, number>> = {
 	catapult: 1.1,
 	'ice-spire': 1.7,
 	totem: 1.3,
+	jammer: 1.5,
+	patriot: 1.1,
+	himars: 1.0,
 	'dart-hut': 1.0,
 	sniper: 1.4,
 	'fpv-nest': 1.3,

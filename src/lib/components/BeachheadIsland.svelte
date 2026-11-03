@@ -12,16 +12,20 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { drawHome, HOME_VIEW, pickHome, type HomeResource } from '#lib/game/beachhead/baseArt.js';
 	import {
+		DEFENSE_COST,
+		DEFENSE_KINDS,
+		GUARD_UNLOCK_HQ,
 		MAX_MINES,
-		MINE_COST,
+		defenseUnlocked,
+		isGuard,
 		canPlace,
 		footprintOf,
 		isLayoutKey,
 		positionOf,
 		type Cell,
+		type DefenseKind,
 		type LayoutKey
 	} from '#lib/game/beachhead/baseLayout.js';
-	import { MINE_KINDS, type MineKind } from '#lib/game/beachhead/config.js';
 	import {
 		warehouseIndex,
 		warehouseResource,
@@ -29,7 +33,8 @@
 		type Resources,
 		type WarehouseKey
 	} from '#lib/game/beachhead/campaign.js';
-	import { achievementHint, achievementName } from '#lib/components/beachheadText.js';
+	import { achievementHint, achievementName, buildingName } from '#lib/components/beachheadText.js';
+	import type { BuildingKind } from '#lib/game/beachhead/config.js';
 	import BeachheadArmy from '#lib/components/BeachheadArmy.svelte';
 	import BeachheadHero from '#lib/components/BeachheadHero.svelte';
 	import BeachheadResources from '#lib/components/BeachheadResources.svelte';
@@ -52,6 +57,7 @@
 	import IconHammer from '~icons/lucide/hammer';
 	import IconLock from '~icons/lucide/lock';
 	import IconMove from '~icons/lucide/move';
+	import IconShield from '~icons/lucide/shield';
 	import IconShieldCheck from '~icons/lucide/shield-check';
 	import IconSkull from '~icons/lucide/skull';
 	import IconTrash from '~icons/lucide/trash-2';
@@ -83,18 +89,15 @@
 	let dragging = $state(false);
 	let clock = $state(0);
 
-	const mineName = (kind: MineKind): string =>
-		kind === 'mine-emp'
-			? m.beachhead_building_mine_emp()
-			: kind === 'mine-at'
-				? m.beachhead_building_mine_at()
-				: m.beachhead_building_mine_personnel();
-	const mineHint = (kind: MineKind): string =>
+	const mineName = (kind: DefenseKind): string => buildingName(kind as BuildingKind);
+	const mineHint = (kind: DefenseKind): string =>
 		kind === 'mine-emp'
 			? m.beachhead_mine_hint_emp()
 			: kind === 'mine-at'
 				? m.beachhead_mine_hint_at()
-				: m.beachhead_mine_hint_personnel();
+				: kind === 'mine-personnel'
+					? m.beachhead_mine_hint_personnel()
+					: '';
 
 	function describe(key: string): { name: string; hint: string } {
 		if (key === 'hq') {
@@ -195,8 +198,8 @@
 		},
 		{
 			id: 'mines',
-			label: m.beachhead_island_mines_title(),
-			icon: IconBomb,
+			label: m.beachhead_island_defences_title(),
+			icon: IconShield,
 			active: sheet === 'mines',
 			onclick: () => (sheet = 'mines')
 		},
@@ -381,7 +384,7 @@
 		if (mine) game.moveMine(mine.id, { x: mine.x + dx, y: mine.y + dy });
 	}
 
-	const costOf = (kind: MineKind): Resources => ({ ...MINE_COST[kind] });
+	const costOf = (kind: DefenseKind): Resources => ({ ...DEFENSE_COST[kind] });
 </script>
 
 {#snippet costChips(cost: Resources)}
@@ -670,37 +673,57 @@
 
 <BeachheadSheet
 	open={sheet === 'mines'}
-	title={m.beachhead_island_mines_title()}
+	title={m.beachhead_island_defences_title()}
 	onclose={() => (sheet = null)}
 >
 	<p class="text-sm font-semibold tabular-nums">
 		{m.beachhead_island_mines_count({ count: game.layout.mines.length, max: MAX_MINES })}
 	</p>
-	<ul class="grid grid-cols-3 gap-2">
-		{#each MINE_KINDS as kind (kind)}
-			<li class="flex flex-col items-center gap-1.5 rounded-[14px] border-2 border-ink bg-sand p-2">
+	<ul class="grid grid-cols-3 gap-2 sm:grid-cols-4">
+		{#each DEFENSE_KINDS as kind (kind)}
+			{@const unlocked = defenseUnlocked(kind, game.levelOf('hq'))}
+			<li
+				class="flex flex-col items-center gap-1.5 rounded-[14px] border-2 border-ink bg-sand p-2 {unlocked
+					? ''
+					: 'opacity-70'}"
+			>
 				<span
 					class="flex size-12 items-center justify-center rounded-full border-3 border-ink bg-paper shadow-[2px_2px_0_var(--color-ink)]"
 					title={mineHint(kind)}
 				>
-					{#if kind === 'mine-emp'}
+					{#if kind === 'mine-emp' || kind === 'jammer'}
 						<IconZap class="size-7" aria-hidden="true" />
+					{:else if isGuard(kind)}
+						<IconCrosshair class="size-7" aria-hidden="true" />
 					{:else}
 						<IconBomb class="size-7" aria-hidden="true" />
 					{/if}
 				</span>
 				<p class="text-center text-xs leading-tight font-bold">{mineName(kind)}</p>
-				<p class="text-center text-[0.7rem] leading-snug">{mineHint(kind)}</p>
-				{@render costChips(costOf(kind))}
-				<button
-					type="button"
-					class="btn-chunky flex size-9 items-center justify-center rounded-full p-0"
-					aria-label={m.beachhead_island_mine_buy()}
-					disabled={!game.canBuyMine(kind) || game.layout.mines.length >= MAX_MINES}
-					onclick={() => game.buyMine(kind)}
-				>
-					<IconCircleArrowUp class="size-5" aria-hidden="true" />
-				</button>
+				{#if mineHint(kind)}
+					<p class="text-center text-[0.7rem] leading-snug">{mineHint(kind)}</p>
+				{/if}
+				{#if unlocked}
+					{@render costChips(costOf(kind))}
+					<button
+						type="button"
+						class="btn-chunky flex size-9 items-center justify-center rounded-full p-0"
+						aria-label={m.beachhead_island_mine_buy()}
+						disabled={!game.canBuyMine(kind) || game.layout.mines.length >= MAX_MINES}
+						onclick={() => game.buyMine(kind)}
+					>
+						<IconCircleArrowUp class="size-5" aria-hidden="true" />
+					</button>
+				{:else if isGuard(kind)}
+					<p
+						class="flex items-center gap-1 font-display text-sm font-bold"
+						title={m.beachhead_unlocks_at_hq({ level: GUARD_UNLOCK_HQ[kind] })}
+					>
+						<IconLock class="size-4" aria-hidden="true" />
+						<IconFlag class="size-4" aria-hidden="true" />
+						{GUARD_UNLOCK_HQ[kind]}
+					</p>
+				{/if}
 			</li>
 		{/each}
 	</ul>

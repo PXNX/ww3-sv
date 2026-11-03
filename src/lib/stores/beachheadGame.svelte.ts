@@ -14,7 +14,6 @@ import {
 	type ArmyKind,
 	type BuildingKind,
 	type Island,
-	type MineKind,
 	type SkillId,
 	type TroopKind
 } from '#lib/game/beachhead/config.js';
@@ -123,7 +122,7 @@ import {
 	type ResourceKind,
 	type Resources
 } from '#lib/game/beachhead/campaign.js';
-import type { BaseLayout, Cell } from '#lib/game/beachhead/baseLayout.js';
+import type { BaseLayout, Cell, DefenseKind } from '#lib/game/beachhead/baseLayout.js';
 import { testIslandOf } from '#lib/game/beachhead/defenseTest.js';
 import { career } from '#lib/game/career/store.svelte.js';
 import { drawBattlePreview, type Effect, type SceneExtras } from '#lib/game/beachhead/render.js';
@@ -569,12 +568,12 @@ export class BeachheadGame {
 		return true;
 	}
 
-	canBuyMine(kind: MineKind): boolean {
+	canBuyMine(kind: DefenseKind): boolean {
 		return canAffordMine(this.campaign, kind);
 	}
 
 	/** Buys a mine and puts it on the first free cell of the island */
-	buyMine(kind: MineKind): boolean {
+	buyMine(kind: DefenseKind): boolean {
 		const next = buyMineIn(this.campaign, kind);
 		if (!next) {
 			this.#play('ui-error', 0.4);
@@ -1199,6 +1198,17 @@ export class BeachheadGame {
 				this.#shakeBy(event.big ? 0.42 : 0.16);
 				break;
 			}
+			case 'jammer-pulse':
+				this.#effect({
+					kind: 'ring',
+					x: event.x,
+					y: event.y,
+					radius: event.radius,
+					color: '#7fd8ff',
+					ageMs: 0,
+					durationMs: 600 * short + 60
+				});
+				break;
 			case 'mine-triggered': {
 				const emp = event.mine === 'mine-emp';
 				this.#effect({
