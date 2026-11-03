@@ -239,7 +239,9 @@ export interface IslandControl {
 /** A building upgrade that is running on a builder */
 /** A troop level being researched; it finishes on its own while the base is away */
 export interface TroopResearch {
-	kind: TroopKind;
+	/** The troop being researched, or a support skill when `skill` is set */
+	kind?: TroopKind;
+	skill?: SkillId;
 	startedAt: number;
 	endsAt: number;
 }
@@ -737,9 +739,15 @@ export function finishBuilds(save: BeachheadSave, nowMs: number): BeachheadSave 
 /** Total troop space the landing party can use with every unlocked boat */
 export function armyCapacity(save: BeachheadSave): number {
 	return save.levels.boats.reduce(
-		(sum, level, index) => sum + (boatUnlocked(save, index) ? boatCapacity(level) : 0),
+		(sum, level, index) =>
+			sum + (boatUnlocked(save, index) && !boatBusy(save, index) ? boatCapacity(level) : 0),
 		0
 	);
+}
+
+/** A boat that is being built or upgraded is in the yard: it carries nobody until it is done */
+export function boatBusy(save: BeachheadSave, index: number): boolean {
+	return constructionOf(save, `boat-${index}`) !== undefined;
 }
 
 export function armySpace(army: Army): number {
@@ -976,10 +984,42 @@ export function startTroopResearch(
 	};
 }
 
+/** Starts researching the next level of a support skill in the same lab, one thing at a time */
+export function startSkillResearch(
+	save: BeachheadSave,
+	skill: SkillId,
+	nowMs: number
+): BeachheadSave | null {
+	if (researchOf(save) || !canUpgradeSupportSkill(save, skill) || !Number.isFinite(nowMs)) {
+		return null;
+	}
+	const cost = supportSkillCost(save, skill) as Resources;
+	return {
+		...save,
+		resources: payResources(save.resources, cost),
+		research: {
+			skill,
+			startedAt: nowMs,
+			endsAt: nowMs + troopResearchMs(supportSkillLevel(save, skill))
+		}
+	};
+}
+
 /** Raises the level of a troop whose research is done; returns the same save when it is not */
 export function finishResearch(save: BeachheadSave, nowMs: number): BeachheadSave {
 	const research = researchOf(save);
 	if (!research || nowMs < research.endsAt) return save;
+	if (research.skill) {
+		return {
+			...save,
+			research: undefined,
+			skillLevels: {
+				...save.skillLevels,
+				[research.skill]: supportSkillLevel(save, research.skill) + 1
+			}
+		};
+	}
+	if (!research.kind) return { ...save, research: undefined };
 	return {
 		...save,
 		research: undefined,
@@ -1150,7 +1190,7 @@ function packArmy(save: BeachheadSave): BoatLoad[] {
 		const capacity = boatCapacity(level);
 		const unlocked = boatUnlocked(save, index);
 		const units: TroopKind[] = [];
-		if (unlocked) {
+		if (unlocked && !boatBusy(save, index)) {
 			let space = capacity;
 			for (const kind of order) {
 				while (remaining[kind] > 0 && space >= TROOPS[kind].space) {

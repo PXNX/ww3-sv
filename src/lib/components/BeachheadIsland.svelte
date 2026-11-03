@@ -879,6 +879,20 @@
 					{#if mineHint(kind)}
 						<p class="text-center text-[0.7rem] leading-snug">{mineHint(kind)}</p>
 					{/if}
+					{#if storeTab === 'obstacles' && game.allDefenseUpgrades(kind).ids.length > 0}
+						<!-- Every placed one of this kind goes up a level on a single builder -->
+						<button
+							type="button"
+							class="btn-chunky flex h-8 items-center gap-1 rounded-full bg-explosion-yellow px-2 py-0 font-display text-xs font-bold tabular-nums"
+							aria-label={m.beachhead_upgrade_all()}
+							title={m.beachhead_upgrade_all()}
+							disabled={game.buildersBusy >= game.builderSlots}
+							onclick={() => game.upgradeAllDefenses(kind)}
+						>
+							<IconCircleArrowUp class="size-4" aria-hidden="true" />
+							×{game.allDefenseUpgrades(kind).ids.length}
+						</button>
+					{/if}
 					{#if unlocked}
 						{@render costChips(costOf(kind))}
 						<button

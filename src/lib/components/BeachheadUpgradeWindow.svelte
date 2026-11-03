@@ -14,6 +14,7 @@
 	} from '#lib/game/beachhead/campaign.js';
 	import {
 		DEFENSE_LEVEL_GAIN,
+		buildingHpScale,
 		GUARD_KINDS,
 		GUARD_UNLOCK_HQ,
 		MAX_DEFENSE_LEVEL,
@@ -44,11 +45,6 @@
 	/** A placed mine, gun or hedgehog being looked at instead of a building */
 	const defense = $derived(
 		defenseId === undefined ? null : (game.layout.mines.find((d) => d.id === defenseId) ?? null)
-	);
-	const defenseAll = $derived(
-		defense
-			? game.allDefenseUpgrades(defense.kind)
-			: { ids: [], ms: 0, cost: { wood: 0, stone: 0, iron: 0, gold: 0 } }
 	);
 	/** A ticking clock for the countdown while a builder raises this defence */
 	let now = $state(Date.now());
@@ -115,6 +111,15 @@
 	/** The numbers an upgrade changes, as a list of "from → to" rows */
 	const stats = $derived.by(() => {
 		const rows: { label: string; from: string; to: string }[] = [];
+		// Every building gets sturdier with its level
+		const baseHp = key === 'hq' ? BUILDINGS.hq.hp : BUILDINGS.depot.hp;
+		if (!key.startsWith('boat-')) {
+			rows.push({
+				label: m.beachhead_hero_stat_hp(),
+				from: `${Math.round(baseHp * buildingHpScale(Math.max(1, level)))}`,
+				to: `${Math.round(baseHp * buildingHpScale(next))}`
+			});
+		}
 		if (key === 'hq') {
 			rows.push({
 				label: m.beachhead_stat_income(),
@@ -272,35 +277,6 @@
 					</button>
 				{/if}
 			</div>
-			{#if defenseAll.ids.length > 1}
-				<!-- Every defence of this kind that can be raised, in one tap -->
-				<div class="flex flex-wrap items-center justify-between gap-2">
-					<span class="flex flex-wrap items-center gap-1 font-display text-xs font-bold">
-						{#each RESOURCE_KINDS as resource (resource)}
-							{#if defenseAll.cost[resource] > 0}
-								<span
-									class="inline-flex items-center gap-0.5 rounded-full border-2 border-ink bg-paper py-px ps-0.5 pe-1.5"
-								>
-									<ResourceIcon kind={resource} class="size-4" />
-									{defenseAll.cost[resource]}
-								</span>
-							{/if}
-						{/each}
-					</span>
-					<button
-						type="button"
-						class="btn-chunky flex h-11 items-center gap-1.5 rounded-full bg-explosion-yellow px-4 py-0 font-display text-sm font-bold tabular-nums"
-						aria-label={m.beachhead_upgrade_all()}
-						title={m.beachhead_upgrade_all()}
-						onclick={() => defense && game.upgradeAllDefenses(defense.kind)}
-					>
-						<IconCircleArrowUp class="size-5" aria-hidden="true" />
-						×{defenseAll.ids.length}
-						<IconHourglass class="size-4" aria-hidden="true" />
-						{timeText(defenseAll.ms)}
-					</button>
-				</div>
-			{/if}
 		{/if}
 	{/if}
 

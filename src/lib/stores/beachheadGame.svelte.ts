@@ -40,7 +40,6 @@ import {
 	addResources,
 	applyCasualties,
 	applyHeroUpgrade,
-	applySupportSkillUpgrade,
 	applySkillUpgrade,
 	applyTroopUpgrade,
 	armyCapacity as armyCapacityOf,
@@ -69,6 +68,7 @@ import {
 	capturesOf,
 	finishBuilds,
 	finishResearch,
+	startSkillResearch,
 	researchOf,
 	startTroopResearch,
 	troopResearchMs,
@@ -834,16 +834,24 @@ export class BeachheadGame {
 	}
 
 	canUpgradeSupportSkill(skill: SkillId): boolean {
-		return canUpgradeSupportSkill(this.campaign, skill);
+		return this.research === null && canUpgradeSupportSkill(this.campaign, skill);
 	}
 
-	/** Trains a support skill one level; paid at once and needs no builder */
+	/** Researches the next level of a support skill in the lab, like a troop: paid now, done after a while */
 	upgradeSupportSkill(skill: SkillId): boolean {
-		const next = applySupportSkillUpgrade(this.campaign, skill);
-		if (next === this.campaign) return false;
+		const next = startSkillResearch(this.campaign, skill, this.#now());
+		if (!next) {
+			this.#play('ui-error', 0.4);
+			return false;
+		}
 		this.#commit(next, { claim: false });
 		this.#play('chime', 0.6);
 		return true;
+	}
+
+	/** How long the next level of a skill takes to research */
+	skillResearchMs(skill: SkillId): number {
+		return troopResearchMs(this.supportSkillLevel(skill));
 	}
 
 	/** The crystals: loose stock and levels, the slots on buildings and the base's own slots */
@@ -1035,7 +1043,7 @@ export class BeachheadGame {
 					return type ? { type, level: crystalLevel(this.campaign, type) } : undefined;
 				},
 				(house) => this.levelOf(`house-${house}` as BuildingKey),
-				(key) => this.levelOf(key as BuildingKey) >= 1
+				(key) => this.levelOf(key as BuildingKey)
 			),
 			{
 				...modifiersFor(this.campaign),

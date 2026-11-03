@@ -43,6 +43,12 @@ export const GUARD_UNLOCK_HQ: Record<GuardKind, number> = {
 	jammer: 7
 };
 
+/** Every level makes a home building this much sturdier: more health for the same base building */
+export const BUILDING_HP_PER_LEVEL = 0.2;
+export function buildingHpScale(level: number): number {
+	return 1 + BUILDING_HP_PER_LEVEL * (Math.max(1, level) - 1);
+}
+
 /** The highest level a placed defence can reach, and what each level adds */
 export const MAX_DEFENSE_LEVEL = 6;
 export const DEFENSE_LEVEL_GAIN = { hp: 0.25, damage: 0.2 } as const;

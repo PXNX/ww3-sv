@@ -10,6 +10,7 @@ import {
 	BASE_COLS,
 	BASE_ROWS,
 	DEFENSE_LEVEL_GAIN,
+	buildingHpScale,
 	HOUSES,
 	defenseLevel,
 	footprintOf,
@@ -45,20 +46,32 @@ export function testIslandOf(
 	layout: BaseLayout,
 	crystalAt: (target: string) => IslandBuilding['crystal'] = () => undefined,
 	houseLevel: (index: number) => number = () => 1,
-	isBuilt: (key: string) => boolean = () => true
+	levelOf: (key: string) => number = () => 1
 ): Island {
 	const wanted: Wanted[] = [];
 
 	const hq = positionOf(layout, 'hq');
 	const hqSize = footprintOf('hq');
 	const at = squeeze(hq.x + hqSize.width / 2, hq.y + hqSize.height / 2);
-	wanted.push({ kind: 'hq', x: at.x - 1, y: at.y - 1, target: 'hq' });
+	wanted.push({
+		kind: 'hq',
+		x: at.x - 1,
+		y: at.y - 1,
+		target: 'hq',
+		hpScale: buildingHpScale(levelOf('hq'))
+	});
 	for (const key of LAYOUT_KEYS) {
-		if (key === 'hq' || !isBuilt(key)) continue;
+		if (key === 'hq' || levelOf(key) < 1) continue;
 		const position = positionOf(layout, key);
 		const size = footprintOf(key);
 		const spot = squeeze(position.x + size.width / 2, position.y + size.height / 2);
-		wanted.push({ kind: 'depot', x: spot.x, y: spot.y, target: key });
+		wanted.push({
+			kind: 'depot',
+			x: spot.x,
+			y: spot.y,
+			target: key,
+			hpScale: buildingHpScale(levelOf(key))
+		});
 	}
 	// The cottages stand in your base too; the higher their level, the sturdier they are
 	for (let house = 0; house < HOUSES.width; house++) {
