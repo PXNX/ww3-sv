@@ -32,8 +32,6 @@
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
 	import IconArrowRight from '~icons/lucide/arrow-right';
 	import IconCircleArrowUp from '~icons/lucide/circle-arrow-up';
-	import IconCrosshair from '~icons/lucide/crosshair';
-	import IconHeart from '~icons/lucide/heart';
 	import IconHourglass from '~icons/lucide/hourglass';
 	import IconShip from '~icons/lucide/ship';
 	import IconStar from '~icons/lucide/star';
@@ -45,6 +43,11 @@
 	/** A placed mine, gun or hedgehog being looked at instead of a building */
 	const defense = $derived(
 		defenseId === undefined ? null : (game.layout.mines.find((d) => d.id === defenseId) ?? null)
+	);
+	const defenseAll = $derived(
+		defense
+			? game.allDefenseUpgrades(defense.kind)
+			: { ids: [], cost: { wood: 0, stone: 0, iron: 0, gold: 0 } }
 	);
 	const defenseNow = $derived(defense ? defenseLevel(defense) : 1);
 	const defenseNext = $derived(Math.min(MAX_DEFENSE_LEVEL, defenseNow + 1));
@@ -69,6 +72,14 @@
 				from: `${damage(defenseNow)}`,
 				to: `${damage(defenseNext)}`
 			});
+		}
+		// What an upgrade leaves alone is listed too, so the page shows the whole defence
+		if (base.range > 0) {
+			rows.push({ label: m.beachhead_stat_range(), from: `${base.range}`, to: `${base.range}` });
+		}
+		if (base.reloadMs > 0) {
+			const rate = `${Math.round(10000 / base.reloadMs) / 10}`;
+			rows.push({ label: m.beachhead_stat_rate(), from: rate, to: rate });
 		}
 		return rows;
 	});
@@ -104,11 +115,21 @@
 				from: `${level + 1}`,
 				to: `${next + 1}`
 			});
+			rows.push({
+				label: m.beachhead_stat_boats(),
+				from: `${boatsAtHq(level)}`,
+				to: `${boatsAtHq(next)}`
+			});
 		} else if (key.startsWith('warehouse-')) {
 			rows.push({
 				label: m.beachhead_stat_capacity(),
 				from: `${level * 500}`,
 				to: `${next * 500}`
+			});
+			rows.push({
+				label: m.beachhead_stat_secured(),
+				from: `${Math.round(game.securedShare * 100)}%`,
+				to: `${Math.round(game.securedShare * 100)}%`
 			});
 		} else if (key.startsWith('boat-')) {
 			rows.push({
@@ -142,12 +163,25 @@
 			guns: GUARD_KINDS.filter((kind) => GUARD_UNLOCK_HQ[kind] === next)
 		};
 	});
-
-	function gunStats(kind: BuildingKind) {
-		const stats = BUILDINGS[kind];
-		return { hp: stats.hp, damage: stats.damage, range: stats.range };
-	}
 </script>
+
+{#snippet statRow(stat: { label: string; from: string; to: string })}
+	<li class="flex items-center justify-between gap-2 font-display text-sm font-bold tabular-nums">
+		<span class="flex items-center gap-1.5">
+			<IconTrendingUp class="size-4" aria-hidden="true" />
+			{stat.label}
+		</span>
+		{#if stat.from === stat.to}
+			<span class="opacity-70">{stat.from}</span>
+		{:else}
+			<span>
+				{stat.from}
+				<IconArrowRight class="inline size-3.5 rtl:rotate-180" aria-hidden="true" />
+				<span class="text-[#2f8a49]">{stat.to}</span>
+			</span>
+		{/if}
+	</li>
+{/snippet}
 
 <div class="flex flex-col gap-3">
 	<!-- Only the next level is shown: what the building will look like once it is upgraded -->
@@ -159,7 +193,7 @@
 			<span
 				class="rounded-full border-2 border-ink bg-explosion-yellow px-2 font-display text-lg font-bold tabular-nums"
 			>
-				{defenseNow < MAX_DEFENSE_LEVEL ? `${defenseNow} → ${defenseNext}` : defenseNow}
+				{defenseNext}
 			</span>
 		{:else if isLayoutKey(key)}
 			<div class="rounded-[18px] bg-explosion-yellow/40 p-1 ring-4 ring-explosion-yellow/60">
@@ -168,12 +202,12 @@
 			<span
 				class="rounded-full border-2 border-ink bg-explosion-yellow px-2 font-display text-lg font-bold tabular-nums"
 			>
-				{level < max ? `${level} → ${next}` : level}
+				{next}
 			</span>
 		{:else}
 			<IconShip class="size-12" aria-hidden="true" />
 			<span class="font-display text-xl font-bold tabular-nums">
-				{level < max ? `${level} → ${next}` : level}
+				{next}
 			</span>
 		{/if}
 	</div>
@@ -181,19 +215,7 @@
 	{#if defense}
 		<ul class="flex flex-col gap-1 rounded-[14px] border-2 border-ink bg-sand p-2">
 			{#each defenseStats as stat (stat.label)}
-				<li
-					class="flex items-center justify-between gap-2 font-display text-sm font-bold tabular-nums"
-				>
-					<span class="flex items-center gap-1.5">
-						<IconTrendingUp class="size-4" aria-hidden="true" />
-						{stat.label}
-					</span>
-					<span>
-						{stat.from}
-						<IconArrowRight class="inline size-3.5 rtl:rotate-180" aria-hidden="true" />
-						<span class="text-[#2f8a49]">{stat.to}</span>
-					</span>
-				</li>
+				{@render statRow(stat)}
 			{/each}
 		</ul>
 		{#if defenseCost === null}
@@ -228,25 +250,40 @@
 					<IconCircleArrowUp class="size-6" aria-hidden="true" />
 				</button>
 			</div>
+			{#if defenseAll.ids.length > 1}
+				<!-- Every defence of this kind that can be raised, in one tap -->
+				<div class="flex flex-wrap items-center justify-between gap-2">
+					<span class="flex flex-wrap items-center gap-1 font-display text-xs font-bold">
+						{#each RESOURCE_KINDS as resource (resource)}
+							{#if defenseAll.cost[resource] > 0}
+								<span
+									class="inline-flex items-center gap-0.5 rounded-full border-2 border-ink bg-paper py-px ps-0.5 pe-1.5"
+								>
+									<ResourceIcon kind={resource} class="size-4" />
+									{defenseAll.cost[resource]}
+								</span>
+							{/if}
+						{/each}
+					</span>
+					<button
+						type="button"
+						class="btn-chunky flex h-11 items-center gap-1.5 rounded-full bg-explosion-yellow px-4 py-0 font-display text-sm font-bold tabular-nums"
+						aria-label={m.beachhead_upgrade_all()}
+						title={m.beachhead_upgrade_all()}
+						onclick={() => defense && game.upgradeAllDefenses(defense.kind)}
+					>
+						<IconCircleArrowUp class="size-5" aria-hidden="true" />
+						×{defenseAll.ids.length}
+					</button>
+				</div>
+			{/if}
 		{/if}
 	{/if}
 
 	{#if !defense && stats.length > 0}
 		<ul class="flex flex-col gap-1 rounded-[14px] border-2 border-ink bg-sand p-2">
 			{#each stats as stat (stat.label)}
-				<li
-					class="flex items-center justify-between gap-2 font-display text-sm font-bold tabular-nums"
-				>
-					<span class="flex items-center gap-1.5">
-						<IconTrendingUp class="size-4" aria-hidden="true" />
-						{stat.label}
-					</span>
-					<span>
-						{stat.from}
-						<IconArrowRight class="inline size-3.5 rtl:rotate-180" aria-hidden="true" />
-						<span class="text-[#2f8a49]">{stat.to}</span>
-					</span>
-				</li>
+				{@render statRow(stat)}
 			{/each}
 		</ul>
 	{/if}
@@ -260,25 +297,12 @@
 						class="flex items-center gap-2 rounded-[14px] border-2 border-ink bg-paper px-2 py-1"
 						title={m.beachhead_building_boat({ index: unlocks.boat })}
 					>
-						<IconShip class="size-8" aria-hidden="true" />
-						<span class="font-display text-sm font-bold tabular-nums">#{unlocks.boat}</span>
+						<IconShip class="size-10" aria-hidden="true" />
 					</li>
 				{/if}
 				{#each unlocks.guns as kind (kind)}
-					{@const info = gunStats(kind)}
-					<li class="flex items-center gap-2 rounded-[14px] border-2 border-ink bg-paper px-2 py-1">
-						<BeachheadPortrait type="defense" {kind} size={56} />
-						<div class="flex flex-col font-display text-xs font-bold tabular-nums">
-							<span class="font-body text-sm">{buildingName(kind)}</span>
-							<span class="flex items-center gap-1"
-								><IconHeart class="size-3.5" aria-hidden="true" />{info.hp}</span
-							>
-							{#if info.damage > 0}
-								<span class="flex items-center gap-1">
-									<IconCrosshair class="size-3.5" aria-hidden="true" />{info.damage} · {info.range}
-								</span>
-							{/if}
-						</div>
+					<li class="rounded-[14px] border-2 border-ink bg-paper p-1" title={buildingName(kind)}>
+						<BeachheadPortrait type="defense" {kind} size={60} />
 					</li>
 				{/each}
 			</ul>
@@ -302,21 +326,16 @@
 					{/if}
 				{/each}
 			</span>
-			<span
-				class="flex items-center gap-1 font-display text-sm font-bold tabular-nums"
-				title={m.beachhead_build_time()}
-			>
-				<IconHourglass class="size-4" aria-hidden="true" />
-				{timeText(game.buildDuration(key))}
-			</span>
 			<button
 				type="button"
-				class="btn-chunky flex size-11 items-center justify-center rounded-full bg-khaki p-0 text-paper"
+				class="btn-chunky flex h-11 items-center gap-1.5 rounded-full bg-khaki px-4 py-0 font-display text-sm font-bold text-paper tabular-nums"
 				aria-label={m.beachhead_upgrade_button()}
 				disabled={!row.canStart}
 				onclick={() => game.upgrade(key)}
 			>
-				<IconCircleArrowUp class="size-6" aria-hidden="true" />
+				<IconCircleArrowUp class="size-5" aria-hidden="true" />
+				<IconHourglass class="size-4" aria-hidden="true" />
+				{timeText(game.buildDuration(key))}
 			</button>
 		</div>
 	{/if}
