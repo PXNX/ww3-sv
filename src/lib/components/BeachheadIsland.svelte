@@ -31,6 +31,7 @@
 	} from '#lib/game/beachhead/campaign.js';
 	import { achievementHint, achievementName } from '#lib/components/beachheadText.js';
 	import BeachheadArmy from '#lib/components/BeachheadArmy.svelte';
+	import BeachheadHero from '#lib/components/BeachheadHero.svelte';
 	import BeachheadResources from '#lib/components/BeachheadResources.svelte';
 	import BeachheadSheet from '#lib/components/BeachheadSheet.svelte';
 	import BeachheadTraining from '#lib/components/BeachheadTraining.svelte';
@@ -47,6 +48,7 @@
 	import IconCrosshair from '~icons/lucide/crosshair';
 	import IconFlag from '~icons/lucide/flag-triangle-right';
 	import IconGraduationCap from '~icons/lucide/graduation-cap';
+	import IconCrown from '~icons/lucide/crown';
 	import IconHammer from '~icons/lucide/hammer';
 	import IconLock from '~icons/lucide/lock';
 	import IconMove from '~icons/lucide/move';
@@ -66,7 +68,7 @@
 		cell: Cell;
 		valid: boolean;
 	};
-	type Sheet = 'army' | 'training' | 'mines' | 'trophies';
+	type Sheet = 'army' | 'training' | 'hero' | 'mines' | 'trophies';
 
 	let stage: HTMLDivElement | undefined = $state();
 	let canvas: HTMLCanvasElement | undefined = $state();
@@ -504,6 +506,17 @@
 							{row.level}/{row.max}
 						</span>
 					</p>
+					{#if panel.key === 'dojo'}
+						<button
+							type="button"
+							class="btn-chunky flex size-10 items-center justify-center rounded-full bg-explosion-yellow p-0"
+							aria-label={m.beachhead_open_hero()}
+							title={m.beachhead_open_hero()}
+							onclick={() => (sheet = 'hero')}
+						>
+							<IconCrown class="size-6" aria-hidden="true" />
+						</button>
+					{/if}
 					{#if panel.key === 'training'}
 						<button
 							type="button"
@@ -610,6 +623,14 @@
 	onclose={() => (sheet = null)}
 >
 	<BeachheadTraining {game} />
+</BeachheadSheet>
+
+<BeachheadSheet
+	open={sheet === 'hero'}
+	title={m.beachhead_hero_title()}
+	onclose={() => (sheet = null)}
+>
+	<BeachheadHero {game} />
 </BeachheadSheet>
 
 <BeachheadSheet
