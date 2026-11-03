@@ -318,6 +318,7 @@ export const MAX_BOAT_LEVEL = 8;
 export const MAX_HQ_LEVEL = 8;
 export const MAX_TRAINING_LEVEL = 8;
 export const MAX_TROOP_LEVEL = 8;
+export const MAX_WAREHOUSE_LEVEL = 6;
 /** The radar tower starts by charting six islands and reveals one more per level */
 export const MAX_RADAR_LEVEL = 4;
 export const BASE_CHARTED_ISLANDS = 6;

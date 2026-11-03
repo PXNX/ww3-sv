@@ -8,6 +8,7 @@ import {
 	MAX_HQ_LEVEL,
 	MAX_RADAR_LEVEL,
 	MAX_TRAINING_LEVEL,
+	MAX_WAREHOUSE_LEVEL,
 	STARTING_BOATS,
 	TROOPS
 } from './config';
@@ -20,6 +21,10 @@ import {
 	SAVE_VERSION,
 	STARTING_RESOURCES,
 	TAKEBACK_INTERVAL_MS,
+	WAREHOUSE_KEYS,
+	WAREHOUSES_PER_RESOURCE,
+	STORAGE_BASE,
+	STORAGE_PER_LEVEL,
 	addResources,
 	applyTroopUpgrade,
 	armyCapacity,
@@ -57,13 +62,16 @@ import {
 	recordVictory,
 	startUpgrade,
 	starsOf,
+	storageCapacity,
 	totalStars,
 	troopStatsForLevel,
 	troopUpgradeCost,
 	troopUpgradeLocked,
 	upgradeCost,
 	upgradeLocked,
-	usedArmySpace
+	usedArmySpace,
+	warehouseIndex,
+	warehouseResource
 } from './campaign';
 
 const NOW = Date.UTC(2026, 10, 2, 12, 0, 0);
@@ -90,7 +98,8 @@ describe('the campaign save', () => {
 			hq: 1,
 			training: 1,
 			radar: 1,
-			boats: Array.from({ length: BOAT_COUNT }, () => 1)
+			boats: Array.from({ length: BOAT_COUNT }, () => 1),
+			warehouses: Array.from({ length: WAREHOUSE_KEYS.length }, () => 1)
 		});
 		expect(save.builders).toEqual([]);
 		expect(save.achievements).toEqual([]);
@@ -237,7 +246,13 @@ describe('migrating older saves', () => {
 			lastIncomeMs: NOW
 		});
 		expect(migrated).not.toBeNull();
-		expect(migrated!.levels).toEqual({ hq: 3, training: 3, radar: 1, boats });
+		expect(migrated!.levels).toEqual({
+			hq: 3,
+			training: 3,
+			radar: 1,
+			boats,
+			warehouses: Array.from({ length: WAREHOUSE_KEYS.length }, () => 1)
+		});
 		expect(migrated!.troops.tank).toBe(2);
 		expect(migrated!.army.assault).toBe(6);
 		expect(migrated!.resources.wood).toBe(50);
@@ -269,10 +284,29 @@ describe('migrating older saves', () => {
 		expect(migrated!.islands[ISLAND_IDS[1]].captures).toBe(1);
 	});
 
+	it('adds warehouses to a version 4 save', () => {
+		const current = newSave(NOW);
+		const legacyV4 = {
+			...current,
+			version: 4,
+			levels: {
+				hq: current.levels.hq,
+				training: current.levels.training,
+				radar: current.levels.radar,
+				boats: current.levels.boats
+			}
+		} as Record<string, unknown>;
+		const migrated = parseSave(legacyV4);
+		expect(migrated).not.toBeNull();
+		expect(migrated!.version).toBe(SAVE_VERSION);
+		expect(migrated!.levels.warehouses).toHaveLength(WAREHOUSE_KEYS.length);
+		expect(migrated!.levels.warehouses.every((level) => level === 1)).toBe(true);
+	});
+
 	it('returns null for anything that is neither a current nor a known old save', () => {
 		expect(parseSave(null)).toBeNull();
 		expect(parseSave({ version: 1 })).toBeNull();
-		expect(parseSave({ version: 5, resources: STARTING_RESOURCES })).toBeNull();
+		expect(parseSave({ version: 6, resources: STARTING_RESOURCES })).toBeNull();
 	});
 });
 
@@ -326,6 +360,80 @@ describe('production', () => {
 		const save = addResources(newSave(NOW), { wood: 85, stone: 3, iron: 2, gold: 1 });
 		expect(save.resources.wood).toBe(STARTING_RESOURCES.wood + 85);
 		expect(save.resources.gold).toBe(STARTING_RESOURCES.gold + 1);
+	});
+
+	it('stops a stockpile at the warehouse capacity', () => {
+		const save = richSave();
+		const full = { ...save, resources: { wood: 0, stone: 0, iron: 0, gold: 0 } };
+		const loot = addResources(full, {
+			wood: 1_000_000,
+			stone: 1_000_000,
+			iron: 1_000_000,
+			gold: 1_000_000
+		});
+		for (const kind of ['wood', 'stone', 'iron', 'gold'] as const) {
+			expect(loot.resources[kind]).toBe(storageCapacity(full, kind));
+		}
+	});
+});
+
+describe('warehouses', () => {
+	it('gives every resource two warehouses', () => {
+		expect(WAREHOUSE_KEYS).toHaveLength(WAREHOUSES_PER_RESOURCE * 4);
+		for (const key of WAREHOUSE_KEYS) {
+			expect(warehouseIndex(key)).toBeGreaterThanOrEqual(0);
+			expect(warehouseIndex(key)).toBeLessThan(WAREHOUSES_PER_RESOURCE);
+			expect(['wood', 'stone', 'iron', 'gold']).toContain(warehouseResource(key));
+		}
+		const save = newSave(NOW);
+		expect(save.levels.warehouses).toHaveLength(WAREHOUSE_KEYS.length);
+		expect(levelOf(save, WAREHOUSE_KEYS[0])).toBe(1);
+	});
+
+	it('starts with room for the first upgrade and grows with every warehouse level', () => {
+		const save = newSave(NOW);
+		const base = STORAGE_BASE + WAREHOUSES_PER_RESOURCE * STORAGE_PER_LEVEL;
+		expect(storageCapacity(save, 'wood')).toBe(base);
+		const raised = {
+			...save,
+			levels: {
+				...save.levels,
+				warehouses: save.levels.warehouses.map((level, index) => (index === 0 ? level + 1 : level))
+			}
+		};
+		expect(storageCapacity(raised, 'wood')).toBe(base + STORAGE_PER_LEVEL);
+		expect(storageCapacity(raised, 'stone')).toBe(base);
+	});
+
+	it('upgrades one warehouse at a time on a builder', () => {
+		const save = richSave();
+		const key = WAREHOUSE_KEYS[0];
+		expect(canUpgrade(save, key)).toBe(true);
+		const started = startUpgrade(save, key, NOW, 1)!;
+		expect(started).not.toBeNull();
+		expect(started.builders[0].key).toBe(key);
+		const finished = finishBuilds(started, started.builders[0].endsAt);
+		expect(levelOf(finished, key)).toBe(2);
+		expect(storageCapacity(finished, warehouseResource(key))).toBeGreaterThan(
+			storageCapacity(save, warehouseResource(key))
+		);
+	});
+
+	it('stops at the maximum warehouse level', () => {
+		const save = richSave();
+		const key = WAREHOUSE_KEYS[0];
+		const maxed = {
+			...save,
+			levels: {
+				...save.levels,
+				hq: MAX_HQ_LEVEL,
+				warehouses: save.levels.warehouses.map((level, index) =>
+					index === 0 ? MAX_WAREHOUSE_LEVEL : level
+				)
+			}
+		};
+		expect(upgradeCost(maxed, key)).toBeNull();
+		expect(canUpgrade(maxed, key)).toBe(false);
 	});
 });
 
@@ -391,7 +499,8 @@ describe('buildings and builders', () => {
 				hq: MAX_HQ_LEVEL,
 				training: MAX_TRAINING_LEVEL,
 				radar: MAX_RADAR_LEVEL,
-				boats: Array.from({ length: BOAT_COUNT }, () => MAX_BOAT_LEVEL)
+				boats: Array.from({ length: BOAT_COUNT }, () => MAX_BOAT_LEVEL),
+				warehouses: Array.from({ length: WAREHOUSE_KEYS.length }, () => MAX_WAREHOUSE_LEVEL)
 			}
 		};
 		for (const key of BUILDING_KEYS) {
@@ -598,7 +707,8 @@ describe('achievements', () => {
 				hq: MAX_HQ_LEVEL,
 				training: MAX_TRAINING_LEVEL,
 				radar: MAX_RADAR_LEVEL,
-				boats: Array.from({ length: BOAT_COUNT }, () => MAX_BOAT_LEVEL)
+				boats: Array.from({ length: BOAT_COUNT }, () => MAX_BOAT_LEVEL),
+				warehouses: Array.from({ length: WAREHOUSE_KEYS.length }, () => MAX_WAREHOUSE_LEVEL)
 			}
 		};
 		expect(ACHIEVEMENTS.find((a) => a.id === 'fortress')!.check(maxed)).toBe(true);

@@ -8,7 +8,14 @@
 	import type { Component } from 'svelte';
 	import type { SvelteHTMLElements } from 'svelte/elements';
 	import { m } from '#lib/paraglide/messages.js';
-	import { ARMY_KINDS, type BuildingKey, type Resources } from '#lib/game/beachhead/campaign.js';
+	import {
+		ARMY_KINDS,
+		warehouseIndex,
+		warehouseResource,
+		type BuildingKey,
+		type Resources,
+		type WarehouseKey
+	} from '#lib/game/beachhead/campaign.js';
 	import { MAX_TROOP_LEVEL, TROOPS, type TroopKind } from '#lib/game/beachhead/config.js';
 	import { achievementHint, achievementName, troopName } from '#lib/components/beachheadText.js';
 	import BeachheadTakeoverNotice from '#lib/components/BeachheadTakeoverNotice.svelte';
@@ -37,6 +44,7 @@
 	import IconTreePalm from '~icons/lucide/tree-palm';
 	import IconTrophy from '~icons/lucide/trophy';
 	import IconUsers from '~icons/lucide/users';
+	import IconWarehouse from '~icons/lucide/warehouse';
 	import IconWrench from '~icons/lucide/wrench';
 
 	let { game }: { game: BeachheadGame } = $props();
@@ -148,6 +156,25 @@
 		});
 	});
 
+	const warehouseCards = $derived.by(() => {
+		void clock;
+		return game.warehouseRows().map((row) => {
+			const kind = warehouseResource(row.key as WarehouseKey);
+			const resource = RESOURCES.find((entry) => entry.kind === kind) ?? RESOURCES[0];
+			return {
+				...row,
+				kind,
+				icon: IconWarehouse,
+				resourceIcon: resource.icon,
+				name: m.beachhead_warehouse_name({
+					resource: resource.label(),
+					index: warehouseIndex(row.key as WarehouseKey) + 1
+				}),
+				capacity: game.storageCapacity(kind)
+			};
+		});
+	});
+
 	const boatCards = $derived.by(() => {
 		void clock;
 		return game.boats.map((boat) => ({
@@ -191,11 +218,20 @@
 				{#each RESOURCES as resource (resource.kind)}
 					{@const Icon = resource.icon}
 					<li
-						class="flex items-center gap-1 rounded-md border-2 border-ink bg-paper px-2 py-0.5 tabular-nums"
-						title={resource.label()}
+						class="flex items-center gap-1 rounded-md border-2 border-ink px-2 py-0.5 tabular-nums {game.isStorageFull(
+							resource.kind
+						)
+							? 'bg-explosion-yellow'
+							: 'bg-paper'}"
+						title={`${resource.label()} — ${m.beachhead_resource_capacity({
+							capacity: game.storageCapacity(resource.kind)
+						})}`}
 					>
 						<Icon class="size-4" aria-hidden="true" />
 						{game.resources[resource.kind]}
+						<span class="text-smoke text-xs font-semibold">
+							{m.beachhead_resource_capacity({ capacity: game.storageCapacity(resource.kind) })}
+						</span>
 						<span class="text-smoke text-xs font-semibold">
 							{m.beachhead_resource_rate({ amount: game.income[resource.kind] })}
 						</span>
@@ -255,6 +291,68 @@
 			{/each}
 		</span>
 	{/snippet}
+
+	<h3 class="text-xl font-bold">{m.beachhead_warehouses_title()}</h3>
+	<p class="text-sm font-semibold">{m.beachhead_warehouses_intro()}</p>
+	<ul class="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+		{#each warehouseCards as card (card.key)}
+			{@const ResourceIcon = card.resourceIcon}
+			<li>
+				<div class="sticker flex h-full flex-col gap-1.5 p-2.5" style:--tilt="0.6deg">
+					<div class="flex items-center gap-1.5">
+						<IconWarehouse class="size-5 shrink-0" aria-hidden="true" />
+						<div class="min-w-0 leading-tight">
+							<p class="truncate text-sm font-bold">{card.name}</p>
+							{#key card.level}
+								<p class="pop-in text-xs font-semibold">
+									{m.beachhead_upgrade_level({ level: card.level, max: card.max })}
+								</p>
+							{/key}
+						</div>
+						<span
+							class="ml-auto flex shrink-0 items-center gap-0.5 text-xs font-bold tabular-nums"
+							title={m.beachhead_warehouse_hint({ capacity: card.capacity })}
+						>
+							<ResourceIcon class="size-3.5" aria-hidden="true" />
+							{card.capacity}
+						</span>
+					</div>
+					<div class="flex gap-0.5" aria-hidden="true">
+						{#each Array.from({ length: card.max }, (_, index) => index + 1) as pip (pip)}
+							<span
+								class="h-1.5 flex-1 rounded-sm border-2 border-ink {pip <= card.level
+									? 'bg-khaki'
+									: 'bg-paper'}"
+							></span>
+						{/each}
+					</div>
+					{#if card.remainingMs !== null}
+						<p class="flex items-center gap-1 text-xs font-bold text-flag-blue">
+							<IconWrench class="size-3.5" aria-hidden="true" />
+							{m.beachhead_building_remaining({ time: timeLeft(card.remainingMs) })}
+						</p>
+					{:else if card.locked}
+						<p class="flex items-center gap-1 text-xs font-semibold">
+							<IconLock class="size-3.5" aria-hidden="true" />
+							{m.beachhead_upgrade_locked()}
+						</p>
+					{:else if card.cost === null}
+						<p class="text-center text-xs font-bold">{m.beachhead_upgrade_max()}</p>
+					{:else}
+						{@render costChips(card.cost)}
+						<button
+							type="button"
+							class="btn-chunky mt-auto w-full px-2 py-0.5 text-xs"
+							disabled={!card.canStart}
+							onclick={() => game.upgrade(card.key as BuildingKey)}
+						>
+							{m.beachhead_upgrade_button()}
+						</button>
+					{/if}
+				</div>
+			</li>
+		{/each}
+	</ul>
 
 	<h3 class="text-xl font-bold">{m.beachhead_buildings_title()}</h3>
 	{#if game.buildersBusy >= game.builderSlots}

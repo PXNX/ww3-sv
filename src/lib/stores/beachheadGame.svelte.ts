@@ -67,6 +67,8 @@ import {
 	recordVictory,
 	starsOf as saveStars,
 	startUpgrade as startUpgradeIn,
+	storageCapacities,
+	storageCapacity,
 	totalStars,
 	troopLevel,
 	troopStats,
@@ -75,10 +77,12 @@ import {
 	upgradeCost as upgradeCostOf,
 	upgradeLocked,
 	usedArmySpace as usedArmySpaceOf,
+	WAREHOUSE_KEYS,
 	type BeachheadSave,
 	type BoatLoad,
 	type BuildingKey,
 	type CareerStats,
+	type ResourceKind,
 	type Resources
 } from '#lib/game/beachhead/campaign.js';
 import { career } from '#lib/game/career/store.svelte.js';
@@ -258,6 +262,19 @@ export class BeachheadGame {
 		return this.campaign.resources;
 	}
 
+	/** How much of each resource the warehouses can hold */
+	get capacity(): Resources {
+		return storageCapacities(this.campaign);
+	}
+
+	storageCapacity(kind: ResourceKind): number {
+		return storageCapacity(this.campaign, kind);
+	}
+
+	isStorageFull(kind: ResourceKind): boolean {
+		return this.campaign.resources[kind] >= this.storageCapacity(kind);
+	}
+
 	/** The production line of the island in play, with the headquarters bonus applied */
 	get islandIncome(): Resources {
 		return islandProduction(this.campaign, this.islandIndex);
@@ -423,13 +440,22 @@ export class BeachheadGame {
 		return true;
 	}
 
-	/** Building cards for the base screen, with cost, lock and timer */
+	/** Building cards on the base screen, with cost, lock and timer */
 	buildRows(): BuildRow[] {
 		const keys: BuildingKey[] = ['hq', 'training', 'radar'];
 		for (let index = 0; index < this.campaign.levels.boats.length; index++) {
 			keys.push(`boat-${index}` as BuildingKey);
 		}
-		return keys.map((key) => ({
+		return keys.map((key) => this.#buildRow(key));
+	}
+
+	/** The warehouse cards, grouped in the order of WAREHOUSE_KEYS */
+	warehouseRows(): BuildRow[] {
+		return WAREHOUSE_KEYS.map((key) => this.#buildRow(key));
+	}
+
+	#buildRow(key: BuildingKey): BuildRow {
+		return {
 			key,
 			level: this.levelOf(key),
 			max: this.maxLevelOf(key),
@@ -437,7 +463,7 @@ export class BeachheadGame {
 			locked: this.upgradeLocked(key),
 			remainingMs: this.buildRemaining(key),
 			canStart: this.canUpgrade(key)
-		}));
+		};
 	}
 
 	troopLevel(kind: TroopKind): number {

@@ -17,6 +17,7 @@ import {
 	MAX_RADAR_LEVEL,
 	MAX_TRAINING_LEVEL,
 	MAX_TROOP_LEVEL,
+	MAX_WAREHOUSE_LEVEL,
 	STARTING_BOATS,
 	TROOPS,
 	type Island,
@@ -25,7 +26,7 @@ import {
 import type { BattleModifiers, SquadTroop } from './battle.js';
 
 export const SAVE_KEY = 'beachhead:save';
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 /** Longer absences stop earning at this point, so a save cannot grow forever */
 export const INCOME_CAP_MS = 8 * 60 * 60 * 1000;
 /** One controlled island is lost to the enemy on this rhythm */
@@ -39,6 +40,36 @@ const MAX_TAKEBACK_STEPS = 500;
 export type ResourceKind = 'wood' | 'stone' | 'iron' | 'gold';
 export type Resources = Record<ResourceKind, number>;
 export const RESOURCE_KINDS: readonly ResourceKind[] = ['wood', 'stone', 'iron', 'gold'];
+
+/** Every resource has two warehouses, and each of them can be leveled up on its own */
+export const WAREHOUSES_PER_RESOURCE = 2;
+/** A stockpile starts here and every warehouse level adds room for more */
+export const STORAGE_BASE = 600;
+export const STORAGE_PER_LEVEL = 350;
+
+export type BoatKey = `boat-${number}`;
+export type WarehouseKey = `warehouse-${ResourceKind}-${number}`;
+export type BuildingKey = 'hq' | 'training' | 'radar' | BoatKey | WarehouseKey;
+export type Army = Record<Exclude<TroopKind, 'hero'>, number>;
+export type TroopLevels = Record<TroopKind, number>;
+
+export const BOAT_KEYS: readonly BoatKey[] = Array.from(
+	{ length: BOAT_COUNT },
+	(_, index) => `boat-${index}` as BoatKey
+);
+export const WAREHOUSE_KEYS: readonly WarehouseKey[] = RESOURCE_KINDS.flatMap((kind) =>
+	Array.from(
+		{ length: WAREHOUSES_PER_RESOURCE },
+		(_, index) => `warehouse-${kind}-${index}` as WarehouseKey
+	)
+);
+export const BUILDING_KEYS: readonly BuildingKey[] = [
+	'hq',
+	'training',
+	'radar',
+	...BOAT_KEYS,
+	...WAREHOUSE_KEYS
+];
 
 export const STARTING_RESOURCES: Resources = { wood: 120, stone: 80, iron: 40, gold: 10 };
 /** What the home shore produces per minute on its own; the islands add their own lines */
@@ -55,17 +86,6 @@ export const ISLAND_PRODUCTION: readonly Resources[] = [
 	{ wood: 4, stone: 4, iron: 5, gold: 3 },
 	{ wood: 5, stone: 5, iron: 6, gold: 4 }
 ];
-
-export type BoatKey = `boat-${number}`;
-export type BuildingKey = 'hq' | 'training' | 'radar' | BoatKey;
-export type Army = Record<Exclude<TroopKind, 'hero'>, number>;
-export type TroopLevels = Record<TroopKind, number>;
-
-export const BOAT_KEYS: readonly BoatKey[] = Array.from(
-	{ length: BOAT_COUNT },
-	(_, index) => `boat-${index}` as BoatKey
-);
-export const BUILDING_KEYS: readonly BuildingKey[] = ['hq', 'training', 'radar', ...BOAT_KEYS];
 /** Troop kinds the player loads into boats; the hero always comes along and takes no space */
 export const ARMY_KINDS: readonly Exclude<TroopKind, 'hero'>[] = [
 	'assault',
@@ -86,6 +106,8 @@ export interface Levels {
 	radar: number;
 	/** One level per landing craft, in boarding order */
 	boats: number[];
+	/** One level per warehouse, in the order of WAREHOUSE_KEYS */
+	warehouses: number[];
 }
 
 export interface IslandControl {
@@ -111,7 +133,7 @@ export interface CareerStats {
 }
 
 export interface BeachheadSave {
-	version: 4;
+	version: 5;
 	resources: Resources;
 	levels: Levels;
 	troops: TroopLevels;
@@ -129,11 +151,12 @@ export interface BeachheadSave {
 }
 
 /** Cost of the first upgrade of each building family; each later level grows by a factor */
-const BUILDING_BASE_COST: Record<'hq' | 'training' | 'radar' | 'boat', Resources> = {
+const BUILDING_BASE_COST: Record<'hq' | 'training' | 'radar' | 'boat' | 'warehouse', Resources> = {
 	hq: { wood: 160, stone: 120, iron: 50, gold: 10 },
 	training: { wood: 90, stone: 60, iron: 20, gold: 4 },
 	radar: { wood: 140, stone: 110, iron: 60, gold: 12 },
-	boat: { wood: 50, stone: 30, iron: 10, gold: 2 }
+	boat: { wood: 50, stone: 30, iron: 10, gold: 2 },
+	warehouse: { wood: 70, stone: 50, iron: 15, gold: 2 }
 };
 const BUILDING_COST_GROWTH = 1.55;
 
@@ -168,6 +191,11 @@ function defaultTroopLevels(): TroopLevels {
 	return Object.fromEntries(Object.keys(TROOPS).map((kind) => [kind, 1])) as TroopLevels;
 }
 
+/** Both warehouses of every resource exist from the start, at level one */
+function defaultWarehouseLevels(): number[] {
+	return Array.from({ length: WAREHOUSE_KEYS.length }, () => 1);
+}
+
 /** Fills in troop kinds an older save did not know about */
 function fillArmy(army: Partial<Army>): Army {
 	return Object.fromEntries(
@@ -189,11 +217,12 @@ function fillTroopLevels(levels: Partial<TroopLevels>): TroopLevels {
 const TROOP_COST_GROWTH = 1.5;
 
 /** How long a building upgrade runs, before the level growth */
-const BUILD_BASE_MS: Record<'hq' | 'training' | 'radar' | 'boat', number> = {
+const BUILD_BASE_MS: Record<'hq' | 'training' | 'radar' | 'boat' | 'warehouse', number> = {
 	hq: 30_000,
 	training: 20_000,
 	radar: 25_000,
-	boat: 10_000
+	boat: 10_000,
+	warehouse: 12_000
 };
 const BUILD_TIME_GROWTH = 1.45;
 
@@ -205,7 +234,8 @@ export function newSave(nowMs: number): BeachheadSave {
 			hq: 1,
 			training: 1,
 			radar: 1,
-			boats: Array.from({ length: BOAT_COUNT }, () => 1)
+			boats: Array.from({ length: BOAT_COUNT }, () => 1),
+			warehouses: defaultWarehouseLevels()
 		},
 		troops: defaultTroopLevels(),
 		army: { ...STARTING_ARMY },
@@ -227,8 +257,9 @@ function resourceCost(base: Resources, factor: number): Resources {
 	};
 }
 
-function buildingFamily(key: BuildingKey): 'hq' | 'training' | 'radar' | 'boat' {
+function buildingFamily(key: BuildingKey): 'hq' | 'training' | 'radar' | 'boat' | 'warehouse' {
 	if (key === 'hq' || key === 'training' || key === 'radar') return key;
+	if (key.startsWith('warehouse-')) return 'warehouse';
 	return 'boat';
 }
 
@@ -253,6 +284,10 @@ export function levelOf(save: BeachheadSave, key: BuildingKey): number {
 	if (key === 'hq') return save.levels.hq;
 	if (key === 'training') return save.levels.training;
 	if (key === 'radar') return save.levels.radar;
+	if (key.startsWith('warehouse-')) {
+		const index = WAREHOUSE_KEYS.indexOf(key as WarehouseKey);
+		return index >= 0 ? (save.levels.warehouses[index] ?? 1) : 1;
+	}
 	return lookupBoatLevel(save, Number(key.slice('boat-'.length))) ?? 1;
 }
 
@@ -260,7 +295,20 @@ export function maxLevelOf(key: BuildingKey): number {
 	if (key === 'hq') return MAX_HQ_LEVEL;
 	if (key === 'training') return MAX_TRAINING_LEVEL;
 	if (key === 'radar') return MAX_RADAR_LEVEL;
+	if (key.startsWith('warehouse-')) return MAX_WAREHOUSE_LEVEL;
 	return MAX_BOAT_LEVEL;
+}
+
+/** The resource a warehouse key belongs to */
+export function warehouseResource(key: WarehouseKey): ResourceKind {
+	const resource = key.split('-')[1];
+	return RESOURCE_KINDS.includes(resource as ResourceKind) ? (resource as ResourceKind) : 'wood';
+}
+
+/** The zero-based number of a warehouse within its resource, for labels */
+export function warehouseIndex(key: WarehouseKey): number {
+	const index = WAREHOUSE_KEYS.indexOf(key);
+	return index < 0 ? 0 : index % WAREHOUSES_PER_RESOURCE;
 }
 
 /** The cost of the next level, or null when the building is already maxed out */
@@ -281,6 +329,28 @@ export function upgradeLocked(save: BeachheadSave, key: BuildingKey): boolean {
 		if (!boatUnlocked(save, index)) return true;
 	}
 	return levelOf(save, key) + 1 > Math.min(maxLevelOf(key), save.levels.hq + 1);
+}
+
+/** How much of one resource the stockpile holds: the base plus every warehouse level of that kind */
+export function storageCapacity(save: BeachheadSave, kind: ResourceKind): number {
+	let levels = 0;
+	for (const key of WAREHOUSE_KEYS) {
+		if (warehouseResource(key) === kind) levels += levelOf(save, key);
+	}
+	return STORAGE_BASE + levels * STORAGE_PER_LEVEL;
+}
+
+export function storageCapacities(save: BeachheadSave): Resources {
+	return {
+		wood: storageCapacity(save, 'wood'),
+		stone: storageCapacity(save, 'stone'),
+		iron: storageCapacity(save, 'iron'),
+		gold: storageCapacity(save, 'gold')
+	};
+}
+
+export function isStorageFull(save: BeachheadSave, kind: ResourceKind): boolean {
+	return save.resources[kind] >= storageCapacity(save, kind);
 }
 
 export function canAfford(save: BeachheadSave, cost: Resources): boolean {
@@ -360,6 +430,13 @@ function withBuildingLevel(save: BeachheadSave, key: BuildingKey): BeachheadSave
 			...save,
 			levels: { ...save.levels, radar: Math.min(MAX_RADAR_LEVEL, save.levels.radar + 1) }
 		};
+	}
+	if (key.startsWith('warehouse-')) {
+		const index = WAREHOUSE_KEYS.indexOf(key as WarehouseKey);
+		const warehouses = save.levels.warehouses.map((level, warehouse) =>
+			warehouse === index ? Math.min(MAX_WAREHOUSE_LEVEL, level + 1) : level
+		);
+		return { ...save, levels: { ...save.levels, warehouses } };
 	}
 	const index = Number(key.slice('boat-'.length));
 	const boats = save.levels.boats.map((level, boat) =>
@@ -559,13 +636,14 @@ export function allIslandsPerfect(save: BeachheadSave): boolean {
 	return ISLAND_IDS.every((islandId) => starsOf(save, islandId) === 3);
 }
 
-/** Headquarters, radar tower, training ground and all eight boats at their top level */
+/** Headquarters, radar tower, training ground, every boat and every warehouse at their top level */
 export function baseFullyMaxed(save: BeachheadSave): boolean {
 	return (
 		save.levels.hq >= MAX_HQ_LEVEL &&
 		save.levels.training >= MAX_TRAINING_LEVEL &&
 		save.levels.radar >= MAX_RADAR_LEVEL &&
-		save.levels.boats.every((level) => level >= MAX_BOAT_LEVEL)
+		save.levels.boats.every((level) => level >= MAX_BOAT_LEVEL) &&
+		save.levels.warehouses.every((level) => level >= MAX_WAREHOUSE_LEVEL)
 	);
 }
 
@@ -781,6 +859,13 @@ export function isBeachheadSave(value: unknown): value is BeachheadSave {
 	) {
 		return false;
 	}
+	if (
+		!Array.isArray(levels.warehouses) ||
+		levels.warehouses.length !== WAREHOUSE_KEYS.length ||
+		!levels.warehouses.every((level) => isLevel(level, MAX_WAREHOUSE_LEVEL))
+	) {
+		return false;
+	}
 	const troops = candidate.troops;
 	if (typeof troops !== 'object' || troops === null) return false;
 	if (
@@ -813,6 +898,7 @@ interface LegacyLevels {
 	training: number;
 	radar?: number;
 	boats: number[];
+	warehouses?: number[];
 }
 
 interface LegacyIslandControl {
@@ -917,21 +1003,38 @@ function upgradeV3Save(value: unknown): BeachheadSave | null {
 	const prepared = {
 		...candidate,
 		version: SAVE_VERSION,
-		levels: { ...levels, radar: 1 },
+		levels: { ...levels, radar: 1, warehouses: defaultWarehouseLevels() },
 		islands: normalizeIslands(islands),
 		lastTakebackMs: lastIncomeMs
 	};
 	return isBeachheadSave(prepared) ? prepared : null;
 }
 
+/** Version 4 has the radar and takebacks but still only one warehouse per resource */
+function upgradeV4Save(value: unknown): BeachheadSave | null {
+	if (typeof value !== 'object' || value === null) return null;
+	const candidate = value as Record<string, unknown>;
+	if (candidate.version !== 4) return null;
+	const levels = candidate.levels;
+	if (typeof levels !== 'object' || levels === null) return null;
+	const prepared = {
+		...candidate,
+		version: SAVE_VERSION,
+		levels: { ...levels, warehouses: defaultWarehouseLevels() }
+	};
+	return isBeachheadSave(prepared) ? prepared : null;
+}
+
 /**
  * Reads a stored save, upgrading the single-supply versions (three abstract upgrades, then the
- * first building-level save) and the version-3 economy save to radar, takebacks and captures.
+ * first building-level save), the version-3 economy save and the version-4 save to warehouses.
  */
 export function parseSave(value: unknown): BeachheadSave | null {
 	if (isBeachheadSave(value)) return value;
-	const upgraded = upgradeV3Save(value);
-	if (upgraded) return upgraded;
+	const upgradedV4 = upgradeV4Save(value);
+	if (upgradedV4) return upgradedV4;
+	const upgradedV3 = upgradeV3Save(value);
+	if (upgradedV3) return upgradedV3;
 	if (!isLegacySave(value)) return null;
 	const legacy = value;
 	const levels: Levels =
@@ -940,7 +1043,8 @@ export function parseSave(value: unknown): BeachheadSave | null {
 					hq: legacy.levels.hq,
 					training: legacy.levels.training,
 					radar: legacy.levels.radar ?? 1,
-					boats: [...legacy.levels.boats]
+					boats: [...legacy.levels.boats],
+					warehouses: defaultWarehouseLevels()
 				}
 			: {
 					hq: legacy.upgrades?.hq ?? 1,
@@ -948,7 +1052,8 @@ export function parseSave(value: unknown): BeachheadSave | null {
 					radar: 1,
 					boats: Array.from({ length: BOAT_COUNT }, (_, index) =>
 						index < STARTING_BOATS ? (legacy.upgrades?.landing ?? 1) : 1
-					)
+					),
+					warehouses: defaultWarehouseLevels()
 				};
 	const troops: TroopLevels =
 		legacy.version === 2 && legacy.troops ? fillTroopLevels(legacy.troops) : defaultTroopLevels();
@@ -1084,11 +1189,16 @@ export function claimIncome(
 	const minutes = Math.floor(capped / 60_000);
 	if (minutes <= 0) return save;
 	const rate = incomeRate(save, islandIds);
+	const capacities = storageCapacities(save);
+	const stock = (kind: ResourceKind, gain: number): number =>
+		save.resources[kind] >= capacities[kind]
+			? save.resources[kind]
+			: Math.min(capacities[kind], save.resources[kind] + gain);
 	const resources: Resources = {
-		wood: save.resources.wood + Math.floor(rate.wood * minutes),
-		stone: save.resources.stone + Math.floor(rate.stone * minutes),
-		iron: save.resources.iron + Math.floor(rate.iron * minutes),
-		gold: save.resources.gold + Math.floor(rate.gold * minutes)
+		wood: stock('wood', Math.floor(rate.wood * minutes)),
+		stone: stock('stone', Math.floor(rate.stone * minutes)),
+		iron: stock('iron', Math.floor(rate.iron * minutes)),
+		gold: stock('gold', Math.floor(rate.gold * minutes))
 	};
 	return {
 		...save,
@@ -1100,11 +1210,16 @@ export function claimIncome(
 }
 
 export function addResources(save: BeachheadSave, loot: Resources): BeachheadSave {
+	const capacities = storageCapacities(save);
+	const stock = (kind: ResourceKind, gain: number): number =>
+		save.resources[kind] >= capacities[kind]
+			? save.resources[kind]
+			: Math.min(capacities[kind], save.resources[kind] + Math.max(0, Math.floor(gain)));
 	const resources: Resources = {
-		wood: save.resources.wood + Math.max(0, Math.floor(loot.wood)),
-		stone: save.resources.stone + Math.max(0, Math.floor(loot.stone)),
-		iron: save.resources.iron + Math.max(0, Math.floor(loot.iron)),
-		gold: save.resources.gold + Math.max(0, Math.floor(loot.gold))
+		wood: stock('wood', loot.wood),
+		stone: stock('stone', loot.stone),
+		iron: stock('iron', loot.iron),
+		gold: stock('gold', loot.gold)
 	};
 	return { ...save, resources };
 }
