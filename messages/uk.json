@@ -3903,5 +3903,15 @@
 	"beachhead_map_legend_held": "Твій острів",
 	"beachhead_map_legend_attack": "Можна атакувати",
 	"beachhead_map_legend_locked": "Зачинено",
-	"beachhead_map_legend_uncharted": "Не на карті"
+	"beachhead_map_legend_uncharted": "Не на карті",
+	"hackers_boot_proxies": "[ OK ] тунель через 3 проксі",
+	"hackers_boot_dampener": "[ OK ] глушник трасування активовано",
+	"hackers_boot_handshake": "> рукостискання готове. Щасти.",
+	"hackers_trace_critical": "!! ТРАСУВАННЯ КРИТИЧНЕ !!",
+	"hackers_flash_granted": "ДОСТУП НАДАНО",
+	"hackers_flash_denied": "ДОСТУП ВІДХИЛЕНО",
+	"hackers_flash_traced": "ВИЯВЛЕНО",
+	"hackers_dogelite": "DogeLite {amount}",
+	"hackers_lives": "Серця: {count}",
+	"hackers_term_run": "Виконати команду"
 }

@@ -8,7 +8,7 @@
 
 	let { game }: { game: HackersGame } = $props();
 
-	const cell = $derived(game.panelSize >= 5 ? '3rem' : '3.5rem');
+	const cell = $derived(game.panelSize >= 5 ? '3rem' : '3.75rem');
 </script>
 
 <div class="flex flex-col items-center gap-3">
@@ -24,7 +24,7 @@
 		{#each game.panel as lit, i (i)}
 			<button
 				type="button"
-				class="rounded border-2 transition-colors {lit
+				class="rounded border-2 transition-colors motion-reduce:transition-none {lit
 					? 'border-[#ff8a8e] bg-[#e5484d] shadow-[0_0_12px_#e5484d]'
 					: 'border-[#39ff6a]/60 bg-[#0b2a14]'}"
 				style:height={cell}

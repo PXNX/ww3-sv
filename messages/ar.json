@@ -3903,5 +3903,15 @@
 	"beachhead_map_legend_held": "جزيرتك",
 	"beachhead_map_legend_attack": "متاحة للهجوم",
 	"beachhead_map_legend_locked": "مقفلة",
-	"beachhead_map_legend_uncharted": "غير مرسومة"
+	"beachhead_map_legend_uncharted": "غير مرسومة",
+	"hackers_boot_proxies": "[ OK ] نفق عبر 3 وكلاء",
+	"hackers_boot_dampener": "[ OK ] مخمّد التتبع جاهز",
+	"hackers_boot_handshake": "> المصافحة جاهزة. بالتوفيق.",
+	"hackers_trace_critical": "!! التتبع في مرحلة حرجة !!",
+	"hackers_flash_granted": "تم منح الوصول",
+	"hackers_flash_denied": "تم رفض الوصول",
+	"hackers_flash_traced": "تم تتبعك",
+	"hackers_dogelite": "دوج لايت {amount}",
+	"hackers_lives": "القلوب: {count}",
+	"hackers_term_run": "تنفيذ الأمر"
 }

@@ -3903,5 +3903,15 @@
 	"beachhead_map_legend_held": "Твой остров",
 	"beachhead_map_legend_attack": "Можно атаковать",
 	"beachhead_map_legend_locked": "Закрыто",
-	"beachhead_map_legend_uncharted": "Не на карте"
+	"beachhead_map_legend_uncharted": "Не на карте",
+	"hackers_boot_proxies": "[ OK ] туннель через 3 прокси",
+	"hackers_boot_dampener": "[ OK ] глушитель трассировки активирован",
+	"hackers_boot_handshake": "> рукопожатие готово. Удачи.",
+	"hackers_trace_critical": "!! ТРАССИРОВКА КРИТИЧНА !!",
+	"hackers_flash_granted": "ДОСТУП РАЗРЕШЁН",
+	"hackers_flash_denied": "ДОСТУП ЗАПРЕЩЁН",
+	"hackers_flash_traced": "ВЫЧИСЛЕН",
+	"hackers_dogelite": "DogeLite {amount}",
+	"hackers_lives": "Сердца: {count}",
+	"hackers_term_run": "Выполнить команду"
 }

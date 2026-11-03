@@ -5,6 +5,7 @@
 	and `neofetch` prints what the rig is made of. Everything shown here is fictional.
 -->
 <script lang="ts">
+	import { onMount, tick } from 'svelte';
 	import { TARGETS } from '#lib/game/hackers/config.js';
 	import {
 		HARDWARE_SPECS,
@@ -17,6 +18,7 @@
 	} from '#lib/game/hackers/hardware.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import type { HackersGame } from '#lib/stores/hackersGame.svelte.js';
+	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import IconStar from '~icons/lucide/star';
 
 	let { game }: { game: HackersGame } = $props();
@@ -40,7 +42,12 @@
 		cable: () => 'Cable'
 	};
 
-	let lines = $state.raw<string[]>([...BOOT]);
+	/** Lines already on the screen; `queue` holds what is still being printed */
+	let lines = $state.raw<string[]>([]);
+	let queue: string[] = [...BOOT];
+	let printTimer: ReturnType<typeof setInterval> | undefined;
+	let screen: HTMLDivElement | undefined = $state();
+	let input: HTMLInputElement | undefined = $state();
 	let command = $state('');
 	let program = $state<Program>('none');
 	let sessionMs = $state(0);
@@ -55,9 +62,52 @@
 		)
 	);
 
+	const LINE_MS = 55;
+	const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+	/** Queues lines; they print one at a time like output scrolling in (all at once for reduced motion) */
 	function say(...added: string[]) {
-		lines = [...lines, ...added];
+		queue.push(...added);
+		if (reducedMotion()) {
+			flush();
+			return;
+		}
+		printTimer ??= setInterval(printNext, LINE_MS);
 	}
+
+	function flush() {
+		lines = [...lines, ...queue.splice(0)];
+		void scrollDown();
+	}
+
+	function printNext() {
+		const next = queue.shift();
+		if (next === undefined) {
+			clearInterval(printTimer);
+			printTimer = undefined;
+			return;
+		}
+		lines = [...lines, next];
+		if (next.trim() !== '') soundManager().play('term-type', 0.4);
+		void scrollDown();
+	}
+
+	async function scrollDown() {
+		await tick();
+		screen?.scrollTo({ top: screen.scrollHeight });
+	}
+
+	onMount(() => {
+		// The boot text starts printing right away; a hardware keyboard can type at once
+		if (reducedMotion()) flush();
+		else printTimer = setInterval(printNext, LINE_MS);
+		if (window.matchMedia?.('(pointer: fine)').matches) input?.focus();
+		const clock = setInterval(() => (sessionMs += 1000), 1000);
+		return () => {
+			clearInterval(printTimer);
+			clearInterval(clock);
+		};
+	});
 
 	function help() {
 		say(
@@ -144,6 +194,7 @@
 				break;
 			case 'clear':
 				lines = [];
+				queue = [];
 				program = 'none';
 				break;
 			case 'logoff':
@@ -181,116 +232,111 @@
 	}
 </script>
 
-<section
-	class="flex h-screen w-screen flex-col overflow-hidden bg-[#021208] p-2 font-mono text-[#39ff6a] shadow-inner [text-shadow:0_0_6px_rgba(57,255,106,0.5)]"
-	aria-label={m.hackers_term_aria()}
->
+<section class="flex min-h-0 flex-1 flex-col gap-2" dir="ltr" aria-label={m.hackers_term_aria()}>
 	<div
-		class="pointer-events-none absolute inset-0 z-10 bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.22)_0_1px,transparent_1px_3px)]"
-		aria-hidden="true"
-	></div>
-
-	<div class="relative z-0 flex flex-col gap-2" dir="ltr">
-		<div
-			class="flex flex-wrap items-baseline justify-between gap-x-3 text-[10px] uppercase opacity-70"
-		>
-			<span>hermit-shell</span>
-			<span>{m.hackers_term_bank({ amount: game.bank })}</span>
-		</div>
-
-		<div class="max-h-[24rem] overflow-y-auto text-xs leading-relaxed" aria-live="polite">
-			<pre class="font-mono whitespace-pre-wrap">{lines.join('\n')}</pre>
-
-			{#if program === 'targets'}
-				<div class="mt-2 border-t border-[#39ff6a]/30 pt-2">
-					<p class="text-[11px] font-bold tracking-wide">{m.hackers_term_targets_title()}</p>
-					<p class="mb-1 text-[10px] opacity-70">{m.hackers_term_targets_hint()}</p>
-					<ul class="flex flex-col gap-1">
-						{#each targets as target (target.ip)}
-							{@const favorite = game.favorites.includes(target.ip)}
-							<li class="flex items-center gap-1.5 text-[11px]">
-								<button
-									type="button"
-									class="shrink-0 rounded border border-[#39ff6a]/50 p-0.5 transition hover:border-[#39ff6a] {favorite
-										? 'text-[#e8b923]'
-										: 'opacity-60'}"
-									aria-pressed={favorite}
-									aria-label={favorite
-										? m.hackers_term_unstar({ ip: target.ip })
-										: m.hackers_term_star({ ip: target.ip })}
-									onclick={() => game.toggleFavorite(target.ip)}
-								>
-									<IconStar class="size-3.5 {favorite ? 'fill-current' : ''}" aria-hidden="true" />
-								</button>
-								<span class="w-[104px] shrink-0 tabular-nums">{target.ip}</span>
-								<span class="min-w-0 flex-1 truncate opacity-80">{target.system}</span>
-								<button
-									type="button"
-									class="shrink-0 rounded border border-[#39ff6a] px-1.5 py-0.5 text-[10px] font-bold transition hover:bg-[#39ff6a] hover:text-[#021208]"
-									onclick={() => game.start(target.index)}
-								>
-									{m.hackers_term_hack()}
-								</button>
-							</li>
-						{/each}
-					</ul>
-				</div>
-			{:else if program === 'hardware'}
-				<div class="mt-2 border-t border-[#39ff6a]/30 pt-2">
-					<p class="text-[11px] font-bold tracking-wide">{m.hackers_term_hardware_title()}</p>
-					<p class="mb-1 text-[10px] opacity-70">{m.hackers_term_hardware_hint()}</p>
-					<ul class="flex flex-col gap-1">
-						{#each HARDWARE_SPECS as part (part.id)}
-							{@const level = game.hardware[part.id]}
-							{@const cost = hardwareCost(part.id, level)}
-							<li class="flex items-center gap-1.5 text-[11px]">
-								<span class="w-8 shrink-0 font-bold">{HW_NAMES[part.id]()}</span>
-								<span class="w-14 shrink-0 opacity-80">
-									{m.hackers_shop_level({ level, max: part.maxLevel })}
-								</span>
-								<span class="min-w-0 flex-1 truncate opacity-80">
-									{level === 0 ? m.hackers_hw_stock() : effect(part.id)}
-								</span>
-								<button
-									type="button"
-									class="shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-bold tabular-nums transition disabled:opacity-40 {cost !==
-										null && game.bank >= cost
-										? 'border-[#39ff6a] hover:bg-[#39ff6a] hover:text-[#021208]'
-										: 'border-[#39ff6a]/40'}"
-									disabled={cost === null || game.bank < cost}
-									onclick={() => buy(part.id)}
-								>
-									{#if cost === null}
-										{m.hackers_shop_max()}
-									{:else}
-										{m.hackers_shop_buy({ cost })}
-									{/if}
-								</button>
-							</li>
-						{/each}
-					</ul>
-				</div>
-			{/if}
-		</div>
-
-		<form
-			class="flex items-center gap-1.5 border-t border-[#39ff6a]/30 pt-2 text-xs"
-			onsubmit={(event) => {
-				event.preventDefault();
-				run();
-			}}
-		>
-			<label class="sr-only" for="hackers-command">{m.hackers_term_input()}</label>
-			<span class="shrink-0">root@hermit:~$</span>
-			<input
-				id="hackers-command"
-				bind:value={command}
-				class="min-w-0 flex-1 bg-transparent text-xs text-[#39ff6a] caret-[#39ff6a] outline-none placeholder:text-[#39ff6a]/40"
-				placeholder={m.hackers_term_hint()}
-				autocomplete="off"
-				autocapitalize="off"
-				spellcheck="false"
-			/>
-		</form>
+		class="flex flex-wrap items-baseline justify-between gap-x-3 text-[11px] uppercase opacity-70"
+	>
+		<span>hermit-shell</span>
+		<span>{m.hackers_term_bank({ amount: game.bank })}</span>
 	</div>
+
+	<div
+		bind:this={screen}
+		class="min-h-0 flex-1 overflow-y-auto text-sm leading-relaxed"
+		aria-live="polite"
+	>
+		<pre class="font-mono whitespace-pre-wrap">{lines.join('\n')}</pre>
+
+		{#if program === 'targets'}
+			<div class="hk-rule mt-2 pt-2">
+				<p class="text-xs font-bold tracking-wide">{m.hackers_term_targets_title()}</p>
+				<p class="mb-1 text-[11px] opacity-70">{m.hackers_term_targets_hint()}</p>
+				<ul class="flex flex-col gap-1.5">
+					{#each targets as target (target.ip)}
+						{@const favorite = game.favorites.includes(target.ip)}
+						<li class="flex items-center gap-2 text-xs">
+							<button
+								type="button"
+								class="hk-btn shrink-0 {favorite ? 'text-(--hk-amber)' : 'opacity-70'}"
+								aria-pressed={favorite}
+								aria-label={favorite
+									? m.hackers_term_unstar({ ip: target.ip })
+									: m.hackers_term_star({ ip: target.ip })}
+								onclick={() => game.toggleFavorite(target.ip)}
+							>
+								<IconStar class="size-4 {favorite ? 'fill-current' : ''}" aria-hidden="true" />
+							</button>
+							<span class="w-[7.5rem] shrink-0 tabular-nums">{target.ip}</span>
+							<span class="min-w-0 flex-1 truncate opacity-80">{target.system}</span>
+							<button
+								type="button"
+								class="hk-btn hk-btn-sm shrink-0 text-xs"
+								onclick={() => game.start(target.index)}
+							>
+								{m.hackers_term_hack()}
+							</button>
+						</li>
+					{/each}
+				</ul>
+			</div>
+		{:else if program === 'hardware'}
+			<div class="hk-rule mt-2 pt-2">
+				<p class="text-xs font-bold tracking-wide">{m.hackers_term_hardware_title()}</p>
+				<p class="mb-1 text-[11px] opacity-70">{m.hackers_term_hardware_hint()}</p>
+				<ul class="flex flex-col gap-1.5">
+					{#each HARDWARE_SPECS as part (part.id)}
+						{@const level = game.hardware[part.id]}
+						{@const cost = hardwareCost(part.id, level)}
+						<li class="flex items-center gap-2 text-xs">
+							<span class="w-9 shrink-0 font-bold">{HW_NAMES[part.id]()}</span>
+							<span class="w-16 shrink-0 opacity-80">
+								{m.hackers_shop_level({ level, max: part.maxLevel })}
+							</span>
+							<span class="min-w-0 flex-1 truncate opacity-80">
+								{level === 0 ? m.hackers_hw_stock() : effect(part.id)}
+							</span>
+							<button
+								type="button"
+								class="hk-btn hk-btn-sm shrink-0 text-xs tabular-nums"
+								class:hk-btn-solid={cost !== null && game.bank >= cost}
+								disabled={cost === null || game.bank < cost}
+								onclick={() => buy(part.id)}
+							>
+								{#if cost === null}
+									{m.hackers_shop_max()}
+								{:else}
+									{m.hackers_shop_buy({ cost })}
+								{/if}
+							</button>
+						</li>
+					{/each}
+				</ul>
+			</div>
+		{/if}
+	</div>
+
+	<form
+		class="hk-rule flex items-center gap-2 pt-2"
+		onsubmit={(event) => {
+			event.preventDefault();
+			run();
+		}}
+	>
+		<label class="sr-only" for="hackers-command">{m.hackers_term_input()}</label>
+		<span class="shrink-0 text-sm">root@hermit:~$</span>
+		<input
+			id="hackers-command"
+			bind:this={input}
+			bind:value={command}
+			class="min-h-11 min-w-0 flex-1 rounded-sm border border-(--hk-green-faint) bg-transparent px-2 text-base text-(--hk-green) caret-(--hk-green) outline-none placeholder:text-(--hk-green)/40 focus:border-(--hk-green) focus:shadow-[0_0_8px_rgb(57_255_106/0.4)]"
+			placeholder={m.hackers_term_hint()}
+			autocomplete="off"
+			autocapitalize="off"
+			spellcheck="false"
+			enterkeyhint="go"
+		/>
+		<button type="submit" class="hk-btn shrink-0" aria-label={m.hackers_term_run()}>
+			<span aria-hidden="true">&#9166;</span>
+		</button>
+	</form>
 </section>

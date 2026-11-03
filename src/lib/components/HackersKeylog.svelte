@@ -49,7 +49,7 @@
 		{#each game.chips as chip (chip.id)}
 			<button
 				type="button"
-				class="absolute flex size-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded border-2 text-lg font-bold uppercase {chip.real
+				class="absolute flex size-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded border-2 text-lg font-bold uppercase {chip.real
 					? 'border-[#39ff6a] bg-[#39ff6a] text-[#021208] shadow-[0_0_10px_#39ff6a]'
 					: 'border-[#e5484d] bg-[#5a1216] text-[#ffb3b6]'}"
 				style:left="{6 + chip.x * 88}%"

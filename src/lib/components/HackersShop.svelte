@@ -59,14 +59,14 @@
 	}
 </script>
 
-<section
-	class="flex flex-col gap-2 rounded-[14px_8px_16px_10px] border-3 border-ink bg-paper p-2 shadow-[4px_4px_0_var(--color-ink)]"
-	aria-label={m.hackers_shop_title()}
->
+<section class="hk-panel flex flex-col gap-2 p-2.5" aria-label={m.hackers_shop_title()}>
 	<div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-		<h2 class="font-display text-sm font-bold tracking-wide uppercase">{m.hackers_shop_title()}</h2>
-		<span class="font-display text-xs font-bold tabular-nums">
-			{m.hackers_income_rate({ rate: game.incomePerSecond })}
+		<h2 class="text-sm font-bold tracking-wide uppercase">{m.hackers_shop_title()}</h2>
+		<span class="text-xs font-bold tabular-nums">
+			{m.hackers_dogelite({ amount: game.score })}
+			{#if game.incomePerSecond > 0}
+				<span class="opacity-80">{m.hackers_income_rate({ rate: game.incomePerSecond })}</span>
+			{/if}
 		</span>
 	</div>
 
@@ -89,9 +89,9 @@
 		{#each TOOL_SPECS as tool (tool.id)}
 			{@const level = game.upgrades[tool.id]}
 			{@const cost = upgradeCost(tool.id, level)}
-			<li class="flex flex-col gap-1 rounded-[8px_4px_10px_6px] border-2 border-ink bg-sand p-1.5">
+			<li class="flex flex-col gap-1 rounded border border-(--hk-green-dim) bg-(--hk-bg) p-2">
 				<div class="flex items-baseline justify-between gap-2">
-					<span class="font-display text-sm leading-tight font-bold">{TOOL_NAMES[tool.id]()}</span>
+					<span class="text-sm leading-tight font-bold">{TOOL_NAMES[tool.id]()}</span>
 					<span class="shrink-0 text-[10px] font-bold opacity-70">
 						{m.hackers_shop_level({ level, max: tool.maxLevel })}
 					</span>
@@ -99,9 +99,8 @@
 				<p class="flex-1 text-[11px] leading-snug">{effect(tool.id)}</p>
 				<button
 					type="button"
-					class="w-full rounded border-2 border-ink px-2 py-1 text-xs font-bold tabular-nums shadow-[2px_2px_0_var(--color-ink)] transition active:translate-y-px active:shadow-none disabled:opacity-40"
-					class:bg-explosion-yellow={cost !== null && game.score >= cost}
-					class:bg-paper={cost === null || game.score < cost}
+					class="hk-btn hk-btn-sm w-full text-xs tabular-nums"
+					class:hk-btn-solid={cost !== null && game.score >= cost}
 					disabled={cost === null || game.score < cost}
 					onclick={() => game.buy(tool.id)}
 				>

@@ -3903,5 +3903,15 @@
 	"beachhead_map_legend_held": "Deine Insel",
 	"beachhead_map_legend_attack": "Angreifbar",
 	"beachhead_map_legend_locked": "Gesperrt",
-	"beachhead_map_legend_uncharted": "Unkartiert"
+	"beachhead_map_legend_uncharted": "Unkartiert",
+	"hackers_boot_proxies": "[ OK ] Tunnel über 3 Proxys",
+	"hackers_boot_dampener": "[ OK ] Trace-Dämpfer scharf",
+	"hackers_boot_handshake": "> Handshake bereit. Viel Glück.",
+	"hackers_trace_critical": "!! TRACE KRITISCH !!",
+	"hackers_flash_granted": "ZUGRIFF GEWÄHRT",
+	"hackers_flash_denied": "ZUGRIFF VERWEIGERT",
+	"hackers_flash_traced": "ENTTARNT",
+	"hackers_dogelite": "DogeLite {amount}",
+	"hackers_lives": "Herzen: {count}",
+	"hackers_term_run": "Befehl ausführen"
 }

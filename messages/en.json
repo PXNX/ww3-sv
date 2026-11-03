@@ -3894,5 +3894,15 @@
 	"beachhead_map_legend_held": "Your island",
 	"beachhead_map_legend_attack": "Open to attack",
 	"beachhead_map_legend_locked": "Locked",
-	"beachhead_map_legend_uncharted": "Uncharted"
+	"beachhead_map_legend_uncharted": "Uncharted",
+	"hackers_boot_proxies": "[ OK ] tunnelling through 3 proxies",
+	"hackers_boot_dampener": "[ OK ] trace dampener armed",
+	"hackers_boot_handshake": "> handshake ready. good luck.",
+	"hackers_trace_critical": "!! TRACE CRITICAL !!",
+	"hackers_flash_granted": "ACCESS GRANTED",
+	"hackers_flash_denied": "ACCESS DENIED",
+	"hackers_flash_traced": "TRACED",
+	"hackers_dogelite": "DogeLite {amount}",
+	"hackers_lives": "Hearts: {count}",
+	"hackers_term_run": "Run command"
 }

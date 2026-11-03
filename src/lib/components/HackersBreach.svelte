@@ -35,7 +35,7 @@
 			<li class="flex items-center gap-1.5">
 				{#each guess.symbols as symbol, i (i)}
 					<span
-						class="flex size-9 items-center justify-center rounded border border-[#39ff6a]/60 text-lg font-bold {MARK_CLASS[
+						class="flex size-10 items-center justify-center rounded border border-[#39ff6a]/60 text-lg font-bold {MARK_CLASS[
 							guess.marks[i]
 						]}"
 					>
@@ -47,12 +47,18 @@
 		<li class="flex items-center gap-1.5">
 			{#each { length: game.codeLength }, i (i)}
 				<span
-					class="flex size-9 items-center justify-center rounded border-2 border-dashed border-[#39ff6a] text-lg font-bold {game
+					class="flex size-10 items-center justify-center rounded border-2 border-dashed border-[#39ff6a] text-lg font-bold {game
 						.input[i] !== undefined
 						? 'bg-[#39ff6a]/15'
 						: ''}"
 				>
-					{game.input[i] !== undefined ? GLYPHS[game.input[i]] : '_'}
+					{#if game.input[i] !== undefined}
+						{GLYPHS[game.input[i]]}
+					{:else if i === game.input.length}
+						<span class="hk-cursor" aria-hidden="true"></span>
+					{:else}
+						_
+					{/if}
 				</span>
 			{/each}
 			<span class="ms-2 text-xs opacity-80"
@@ -65,7 +71,7 @@
 		{#each GLYPHS.slice(0, game.symbols) as glyph, i (glyph)}
 			<button
 				type="button"
-				class="relative flex h-11 items-center justify-center rounded border-2 border-[#39ff6a] bg-[#0b2a14] text-xl font-bold hover:bg-[#12401f] active:bg-[#39ff6a] active:text-[#021208]"
+				class="hk-btn relative h-12 text-xl"
 				disabled={game.input.length >= game.codeLength}
 				onclick={() => game.pushSymbol(i)}
 			>
@@ -83,7 +89,7 @@
 	<div class="flex gap-2">
 		<button
 			type="button"
-			class="h-10 flex-1 rounded border-2 border-[#39ff6a] bg-[#0b2a14] font-bold hover:bg-[#12401f] disabled:opacity-40"
+			class="hk-btn h-12 flex-1"
 			disabled={game.input.length === 0}
 			onclick={() => game.popSymbol()}
 		>
@@ -91,7 +97,7 @@
 		</button>
 		<button
 			type="button"
-			class="h-10 flex-[2] rounded border-2 border-[#39ff6a] bg-[#39ff6a] font-bold text-[#021208] hover:bg-[#7dff9b] disabled:opacity-40"
+			class="hk-btn hk-btn-solid h-12 flex-[2]"
 			disabled={!filled}
 			onclick={() => game.submit()}
 		>
