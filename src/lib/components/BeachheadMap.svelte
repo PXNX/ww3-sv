@@ -14,6 +14,7 @@
 		ISLAND_MAP_POSITIONS,
 		ORC_LANDS_FROM_INDEX
 	} from '#lib/game/beachhead/config.js';
+	import { ambientEvents, nextRetakeAt } from '#lib/game/beachhead/mapLog.js';
 	import { createBattle } from '#lib/game/beachhead/battle.js';
 	import { BATTLE_VIEW, drawScene } from '#lib/game/beachhead/render.js';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
@@ -28,10 +29,27 @@
 	import IconCrosshair from '~icons/lucide/crosshair';
 	import IconFlag from '~icons/lucide/flag-triangle-right';
 	import IconLock from '~icons/lucide/lock';
+	import IconShip from '~icons/lucide/ship';
+	import IconSkull from '~icons/lucide/skull';
+	import IconSwords from '~icons/lucide/swords';
 	import IconRadar from '~icons/lucide/radar';
 
 	let { game }: { game: BeachheadGame } = $props();
 	let expeditionOpen = $state(false);
+	let now = $state(Date.now());
+	$effect(() => {
+		const timer = setInterval(() => (now = Date.now()), 30_000);
+		return () => clearInterval(timer);
+	});
+
+	const retakeAt = $derived(nextRetakeAt(game.campaign.lastTakebackMs, game.controlled));
+	const logEvents = $derived(ambientEvents(now, game.islandCount, 4));
+	const clock = (ms: number): string => {
+		const total = Math.max(0, Math.ceil(ms / 1000));
+		const hours = Math.floor(total / 3600);
+		const minutes = Math.floor((total % 3600) / 60);
+		return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+	};
 
 	const HOME = HOME_MAP_POSITION;
 	/** The chart is about 16:9, so sideways distances count a little more than upward ones */
@@ -306,6 +324,31 @@
 		<div class="pointer-events-auto">
 			<BeachheadTakeoverNotice {game} />
 		</div>
+		<ul
+			class="pointer-events-auto flex max-w-56 flex-col gap-1 rounded-[12px] border-2 border-ink bg-paper/90 p-1.5 text-[0.7rem] leading-snug font-semibold shadow-[2px_2px_0_var(--color-ink)]"
+			aria-label={m.beachhead_log_title()}
+		>
+			{#if retakeAt !== null}
+				<li class="flex items-start gap-1 font-bold text-tie-red">
+					<IconSkull class="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+					{m.beachhead_log_retake({ time: clock(retakeAt - now) })}
+				</li>
+			{/if}
+			{#each logEvents as event, index (index)}
+				<li class="flex items-start gap-1">
+					{#if event.kind === 'raiders'}
+						<IconShip class="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+						{m.beachhead_log_raiders({ island: islandName(event.island) })}
+					{:else if event.kind === 'attack'}
+						<IconSwords class="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+						{m.beachhead_log_attack({ player: event.player, island: islandName(event.island) })}
+					{:else}
+						<IconFlag class="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+						{m.beachhead_log_taken({ player: event.player, island: islandName(event.island) })}
+					{/if}
+				</li>
+			{/each}
+		</ul>
 	</div>
 	<div
 		class="pointer-events-none absolute right-(--hud-right) bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40"
