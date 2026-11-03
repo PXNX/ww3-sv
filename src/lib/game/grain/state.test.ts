@@ -7,8 +7,11 @@ import {
 	INVULN_MS,
 	MILESTONE_M,
 	MINE_RADIUS,
-	NEAR_MISS,
 	POINTS_BUOY,
+	POINTS_DELIVERY,
+	POINTS_SWEEP,
+	SHIPS,
+	STAR_PORTS,
 	POINTS_CRATE,
 	POINTS_MILESTONE,
 	POINTS_NEAR,
@@ -27,6 +30,10 @@ import {
 	multiplier,
 	nudge,
 	spawnInterval,
+	starsFor,
+	sweep,
+	waveAt,
+	waveThreat,
 	speedAt,
 	steerTo,
 	step,
@@ -299,5 +306,155 @@ describe('grain corridor', () => {
 		expect(finalScore(state)).toBe(123);
 		state.score = -5;
 		expect(finalScore(state)).toBe(0);
+	});
+});
+
+describe('grain corridor: ships, ports and waves', () => {
+	it('gives each ship its own hearts, hold and speed', () => {
+		const coaster = createGame('coaster');
+		const bulker = createGame('bulker');
+		expect(coaster.lives).toBe(SHIPS.coaster.lives);
+		expect(bulker.lives).toBe(SHIPS.bulker.lives);
+		expect(bulker.sweepers).toBe(0);
+		step(coaster, 1000, random);
+		step(bulker, 1000, random);
+		expect(coaster.distance).toBeGreaterThan(bulker.distance);
+	});
+
+	it('uses the ship radius for collisions', () => {
+		const slim = createGame('coaster');
+		slim.spawnMs = 1e9;
+		const wide = createGame('bulker');
+		wide.spawnMs = 1e9;
+		const gap = MINE_RADIUS + SHIPS.coaster.radius + 4;
+		addAt(slim, 'mine', slim.shipX + gap, SHIP_Y);
+		addAt(wide, 'mine', wide.shipX + gap, SHIP_Y);
+		expect(hitOnce(slim)).toBeUndefined();
+		expect(hitOnce(wide)).toBeDefined();
+	});
+
+	it('buoys heal up to the ship maximum', () => {
+		const state = createGame('bulker');
+		state.spawnMs = 1e9;
+		state.lives = SHIPS.bulker.lives - 1;
+		addAt(state, 'buoy', state.shipX, SHIP_Y);
+		step(state, 16, random);
+		expect(state.lives).toBe(SHIPS.bulker.lives);
+	});
+
+	it('fills the hold with crates up to its capacity', () => {
+		const state = quiet();
+		const capacity = SHIPS.freighter.hold;
+		for (let i = 0; i < capacity + 3; i++) {
+			addAt(state, 'crate', state.shipX, SHIP_Y);
+			step(state, 16, random);
+		}
+		expect(state.hold).toBe(capacity);
+		expect(state.crates).toBe(capacity + 3);
+	});
+
+	it('spills half the hold when a hazard hits', () => {
+		const state = quiet();
+		state.hold = 7;
+		addAt(state, 'mine', state.shipX, SHIP_Y);
+		const hit = hitOnce(state);
+		expect(hit).toMatchObject({ type: 'hit', spilled: 4 });
+		expect(state.hold).toBe(3);
+	});
+
+	it('delivers the hold at a port, restocks a sweeper and starts the next wave', () => {
+		const state = quiet();
+		state.hold = 5;
+		state.sweepers = 0;
+		state.distance = MILESTONE_M - 20;
+		const events = step(state, 1000, random);
+		const delivery = events.find((event) => event.type === 'delivery');
+		expect(delivery).toMatchObject({
+			crates: 5,
+			points: Math.round(5 * POINTS_DELIVERY * SHIPS.freighter.cargoMul)
+		});
+		expect(state.hold).toBe(0);
+		expect(state.delivered).toBe(5);
+		expect(state.ports).toBe(1);
+		expect(state.sweepers).toBe(1);
+		expect(events).toContainEqual({ type: 'wave', wave: 2, threat: 'drift' });
+	});
+
+	it('maps distance to waves and stars to ports', () => {
+		expect(waveAt(0)).toBe(1);
+		expect(waveAt(MILESTONE_M)).toBe(2);
+		expect(waveThreat(1)).toBe('mines');
+		expect(waveThreat(3)).toBe('patrol');
+		expect(waveThreat(9)).toBe('storm');
+		expect(starsFor(0)).toBe(0);
+		expect(starsFor(STAR_PORTS[0])).toBe(1);
+		expect(starsFor(STAR_PORTS[2])).toBe(3);
+	});
+
+	it('a minesweeper clears the mines ahead and pays for each, then runs out', () => {
+		const state = quiet();
+		addAt(state, 'mine', state.shipX + 30, SHIP_Y - 120);
+		addAt(state, 'mine', state.shipX - 40, SHIP_Y - 200);
+		const far = addAt(state, 'mine', state.shipX + 400, SHIP_Y - 100);
+		const drone = addAt(state, 'drone', state.shipX, SHIP_Y - 100);
+		const events = sweep(state);
+		expect(events).toHaveLength(1);
+		expect(events[0]).toMatchObject({ type: 'sweep', points: POINTS_SWEEP * 2 });
+		expect(state.sweepers).toBe(0);
+		expect(state.swept).toBe(2);
+		expect(state.entities.map((entity) => entity.id).sort()).toEqual([far.id, drone.id].sort());
+		expect(sweep(state)).toEqual([]);
+	});
+
+	it('does not spend a sweeper when no mine is in range', () => {
+		const state = quiet();
+		expect(sweep(state)).toEqual([]);
+		expect(state.sweepers).toBe(SHIPS.freighter.sweepers);
+	});
+
+	it('a patrol boat warns first, then sweeps across and hits', () => {
+		const state = quiet();
+		const boat = addAt(state, 'patrol', -26, SHIP_Y);
+		boat.warnMs = 500;
+		boat.vx = 400;
+		state.shipX = state.targetX = 100;
+		step(state, 100, random);
+		expect(boat.x).toBe(-26);
+		expect(state.lives).toBe(SHIPS.freighter.lives);
+		for (let i = 0; i < 60 && state.lives === SHIPS.freighter.lives; i++) {
+			step(state, 16, random);
+		}
+		expect(state.lives).toBe(SHIPS.freighter.lives - 1);
+	});
+
+	it('drifting mines turn at the banks', () => {
+		const state = quiet();
+		const { left } = corridor(0);
+		const mine = addAt(state, 'mine', left + MINE_RADIUS + 1, 50);
+		mine.vx = -200;
+		step(state, 100, random);
+		step(state, 100, random);
+		expect(mine.vx).toBeGreaterThan(0);
+	});
+
+	it('brings the later threats only in later waves', () => {
+		const kinds = (distance: number) => {
+			const state = createGame();
+			state.lives = 999;
+			state.distance = distance;
+			state.nextMilestone = distance + 1e9;
+			const rng = createRandom(5);
+			const seen = new Set<string>();
+			for (let i = 0; i < 6000; i++) {
+				step(state, 1000 / 60, rng);
+				state.distance = distance;
+				for (const entity of state.entities) seen.add(entity.kind);
+			}
+			return seen;
+		};
+		expect(kinds(100).has('patrol')).toBe(false);
+		expect(kinds(100).has('sweeper')).toBe(false);
+		expect(kinds(MILESTONE_M * 2).has('patrol')).toBe(true);
+		expect(kinds(MILESTONE_M * 2).has('sweeper')).toBe(true);
 	});
 });
