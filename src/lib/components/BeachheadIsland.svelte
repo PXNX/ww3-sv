@@ -37,6 +37,8 @@
 	import type { BuildingKind } from '#lib/game/beachhead/config.js';
 	import { zoomPan } from '#lib/components/zoomPan.js';
 	import BeachheadArmy from '#lib/components/BeachheadArmy.svelte';
+	import BeachheadPortrait from '#lib/components/BeachheadPortrait.svelte';
+	import BeachheadUpgradeWindow from '#lib/components/BeachheadUpgradeWindow.svelte';
 	import BeachheadHero from '#lib/components/BeachheadHero.svelte';
 	import BeachheadResources from '#lib/components/BeachheadResources.svelte';
 	import BeachheadSheet from '#lib/components/BeachheadSheet.svelte';
@@ -56,6 +58,7 @@
 	import IconGraduationCap from '~icons/lucide/graduation-cap';
 	import IconCrown from '~icons/lucide/crown';
 	import IconHammer from '~icons/lucide/hammer';
+	import IconInfo from '~icons/lucide/info';
 	import IconHourglass from '~icons/lucide/hourglass';
 	import IconLock from '~icons/lucide/lock';
 	import IconMove from '~icons/lucide/move';
@@ -78,7 +81,7 @@
 		cell: Cell;
 		valid: boolean;
 	};
-	type Sheet = 'army' | 'training' | 'hero' | 'mines' | 'trophies';
+	type Sheet = 'army' | 'training' | 'hero' | 'upgrade' | 'mines' | 'trophies';
 
 	let stage: HTMLDivElement | undefined = $state();
 	let canvas: HTMLCanvasElement | undefined = $state();
@@ -550,6 +553,15 @@
 							{row.level}/{row.max}
 						</span>
 					</p>
+					<button
+						type="button"
+						class="btn-chunky flex size-9 items-center justify-center rounded-full p-0"
+						aria-label={m.beachhead_open_info()}
+						title={m.beachhead_open_info()}
+						onclick={() => (sheet = 'upgrade')}
+					>
+						<IconInfo class="size-5" aria-hidden="true" />
+					</button>
 					{#if panel.key === 'dojo'}
 						<button
 							type="button"
@@ -677,6 +689,16 @@
 </BeachheadSheet>
 
 <BeachheadSheet
+	open={sheet === 'upgrade' && selected?.kind === 'building'}
+	title={panel && panel.type === 'building' ? panel.name : m.beachhead_open_info()}
+	onclose={() => (sheet = null)}
+>
+	{#if selected?.kind === 'building'}
+		<BeachheadUpgradeWindow {game} building={selected.key} />
+	{/if}
+</BeachheadSheet>
+
+<BeachheadSheet
 	open={sheet === 'hero'}
 	title={m.beachhead_hero_title()}
 	onclose={() => (sheet = null)}
@@ -704,13 +726,7 @@
 					class="flex size-12 items-center justify-center rounded-full border-3 border-ink bg-paper shadow-[2px_2px_0_var(--color-ink)]"
 					title={mineHint(kind)}
 				>
-					{#if kind === 'mine-emp' || kind === 'jammer'}
-						<IconZap class="size-7" aria-hidden="true" />
-					{:else if isGuard(kind)}
-						<IconCrosshair class="size-7" aria-hidden="true" />
-					{:else}
-						<IconBomb class="size-7" aria-hidden="true" />
-					{/if}
+					<BeachheadPortrait type="defense" kind={kind as BuildingKind} size={46} />
 				</span>
 				<p class="text-center text-xs leading-tight font-bold">{mineName(kind)}</p>
 				{#if mineHint(kind)}

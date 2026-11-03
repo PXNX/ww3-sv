@@ -8,7 +8,7 @@
 	import { ARMY_KINDS } from '#lib/game/beachhead/campaign.js';
 	import { TROOPS, type ArmyKind, type TroopKind } from '#lib/game/beachhead/config.js';
 	import { troopName } from '#lib/components/beachheadText.js';
-	import { TROOP_ICONS } from '#lib/components/beachheadIcons.js';
+	import BeachheadPortrait from '#lib/components/BeachheadPortrait.svelte';
 	import ResourceIcon from '#lib/components/ResourceIcon.svelte';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
 	import IconLock from '~icons/lucide/lock';
@@ -81,7 +81,6 @@
 
 <ul class="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
 	{#each kinds as kind (kind)}
-		{@const TroopIcon = TROOP_ICONS[kind]}
 		<li
 			class="relative flex flex-col items-center gap-1 rounded-[14px] border-2 border-ink bg-sand p-2"
 		>
@@ -96,7 +95,7 @@
 			<span
 				class="flex size-12 items-center justify-center rounded-full border-3 border-ink bg-paper shadow-[2px_2px_0_var(--color-ink)]"
 			>
-				<TroopIcon class="size-7" aria-hidden="true" />
+				<BeachheadPortrait type="troop" {kind} level={game.troopLevel(kind)} size={48} />
 			</span>
 			<p class="text-center text-xs leading-tight font-bold">{troopName(kind)}</p>
 			{#if isArmy(kind)}

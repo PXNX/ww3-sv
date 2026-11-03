@@ -12,10 +12,12 @@ import {
 	ROWS,
 	SHORE_X,
 	TROOP,
+	TROOPS,
 	VEHICLE_TROOPS,
 	isMine,
 	type BuildingKind,
-	type IslandTheme
+	type IslandTheme,
+	type TroopKind
 } from './config.js';
 import { drawResourceGlyph, type ResourceId } from './resourceIcons.js';
 import { drawEnemyBuilding, drawHitFlash, drawMineArt, drawRubbleArt } from './buildingArt.js';
@@ -1667,5 +1669,85 @@ export function drawBattlePreview(
 	context.translate(x, y + (size - BATTLE_VIEW.height * scale) / 2);
 	context.scale(scale, scale);
 	drawScene(context, state, { effects: [], timeMs: 0 });
+	context.restore();
+}
+
+/** A troop on its own, as a small picture for the army and training sheets; rank chevrons show its level */
+export function drawTroopPortrait(
+	context: CanvasRenderingContext2D,
+	kind: TroopKind,
+	level: number,
+	size: number
+) {
+	const view = BATTLE_VIEW;
+	const at = view.project(6, 4);
+	const scale = size / 2.3;
+	context.save();
+	context.translate(size / 2 - at.x * scale, size * 0.62 - at.y * scale);
+	context.scale(scale, scale);
+	const stats = TROOPS[kind];
+	const troop = {
+		id: 1,
+		kind,
+		x: 6,
+		y: 4,
+		hp: stats.hp,
+		maxHp: stats.hp,
+		aimX: 1,
+		aimY: 1,
+		moving: false,
+		walkPhase: 0,
+		stunMs: 0,
+		flashMs: 0,
+		muzzleMs: 0,
+		cooldownMs: 0,
+		attackMs: stats.attackMs,
+		healCooldownMs: 0,
+		healEveryMs: stats.healEveryMs,
+		vx: 0,
+		vy: 0
+	} as unknown as Troop;
+	drawTroop(context, view, troop, 0);
+	context.restore();
+	// Rank chevrons: one per two levels, in the colour of the tier
+	const chevrons = Math.min(4, Math.ceil(level / 2));
+	context.save();
+	context.lineJoin = 'round';
+	context.lineCap = 'round';
+	for (let index = 0; index < chevrons; index++) {
+		const y = size * 0.1 + index * size * 0.075;
+		context.beginPath();
+		context.moveTo(size * 0.06, y);
+		context.lineTo(size * 0.14, y + size * 0.05);
+		context.lineTo(size * 0.22, y);
+		context.lineWidth = size * 0.06;
+		context.strokeStyle = INK;
+		context.stroke();
+		context.lineWidth = size * 0.03;
+		context.strokeStyle = level >= 7 ? '#f5c83a' : level >= 4 ? '#c0c8d2' : '#cd7f32';
+		context.stroke();
+	}
+	context.restore();
+}
+
+/** A mine or a gun of the home guard as a small picture, drawn the way it stands on the home island */
+export function drawDefensePortrait(
+	context: CanvasRenderingContext2D,
+	kind: BuildingKind,
+	size: number,
+	timeMs = 0
+) {
+	const view = createShoreView(2, 2, { pad: 0, headroom: 1.4, depth: 0.2 });
+	const scale = size / view.width;
+	context.save();
+	context.scale(scale, scale);
+	const offset = (view.width * scale - size) / 2;
+	context.translate(-offset / scale, (size / scale - view.height) / 2);
+	if (isMine(kind)) {
+		drawMineArt(context, view, kind, 0.5, 0.5, timeMs);
+	} else {
+		const placement = view.gridPlacement({ x: 0.5, y: 0.5, width: 1, height: 1 });
+		drawEnemyBuilding(context, view.grid, { kind, ...placement } as unknown as Building, timeMs);
+	}
 	context.restore();
 }

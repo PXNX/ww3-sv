@@ -15,6 +15,7 @@ import {
 	MOUNTAIN,
 	QUARRY,
 	boatDock,
+	defaultLayout,
 	footprintOf,
 	positionOf,
 	type BaseLayout,
@@ -1715,4 +1716,43 @@ export function pickHome(
 		}
 	}
 	return null;
+}
+
+/** One home building at a given level on its own, for the upgrade window; returns the picture's size in view units */
+export function previewSize(key: LayoutKey): { width: number; height: number } {
+	const size = footprintOf(key);
+	const view = createIsoView(size.width, size.height, { pad: 0.3, headroom: 2.6, depth: 0.3 });
+	return { width: view.width, height: view.height };
+}
+
+export function drawBuildingPreview(
+	context: CanvasRenderingContext2D,
+	key: LayoutKey,
+	level: number,
+	max: number,
+	pixelsWide: number
+) {
+	const size = footprintOf(key);
+	const view = createIsoView(size.width, size.height, { pad: 0.3, headroom: 2.6, depth: 0.3 });
+	const scale = pixelsWide / view.width;
+	const scene: HomeScene = {
+		layout: defaultLayout(),
+		levelOf: () => level,
+		maxOf: () => max,
+		fillOf: () => 0.6,
+		buildProgress: () => null,
+		boatCount: 0,
+		boatUnits: () => [],
+		timeMs: 0,
+		arranging: false,
+		selected: null,
+		drag: null
+	};
+	context.save();
+	context.scale(scale, scale);
+	const pivot = view.project(size.width / 2, size.height / 2);
+	scaledAbout(context, pivot, growthOf(level), () =>
+		drawHomeBuilding(context, view, scene, key, { x: 0, y: 0 })
+	);
+	context.restore();
 }

@@ -13,8 +13,9 @@
 		type SkillId,
 		type TroopKind
 	} from '#lib/game/beachhead/config.js';
-	import { SKILL_ICONS, TROOP_ICONS } from '#lib/components/beachheadIcons.js';
+	import { SKILL_ICONS } from '#lib/components/beachheadIcons.js';
 	import { troopName } from '#lib/components/beachheadText.js';
+	import BeachheadPortrait from '#lib/components/BeachheadPortrait.svelte';
 	import ResourceIcon from '#lib/components/ResourceIcon.svelte';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
 	import IconCircleArrowUp from '~icons/lucide/circle-arrow-up';
@@ -81,7 +82,6 @@
 <h4 class="text-sm font-bold">{m.beachhead_training_title()}</h4>
 <ul class="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
 	{#each troops as kind (kind)}
-		{@const TroopIcon = TROOP_ICONS[kind]}
 		{@const level = game.troopLevel(kind)}
 		{@const cost = game.troopUpgradeCost(kind)}
 		{@const stats = game.troopStats(kind)}
@@ -90,7 +90,7 @@
 				class="flex size-12 items-center justify-center rounded-full border-3 border-ink bg-paper shadow-[2px_2px_0_var(--color-ink)]"
 				title={m.beachhead_troop_stats({ hp: stats.hp, damage: stats.damage })}
 			>
-				<TroopIcon class="size-7" aria-hidden="true" />
+				<BeachheadPortrait type="troop" {kind} {level} size={48} />
 			</span>
 			<p class="text-center text-xs leading-tight font-bold">{troopName(kind)}</p>
 			{@render pips(level, MAX_TROOP_LEVEL)}
