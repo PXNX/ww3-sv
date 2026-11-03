@@ -133,3 +133,42 @@ describe('BeachheadGame skills', () => {
 		expect(game.selectedSkill).toBe('flare');
 	});
 });
+
+describe('BeachheadGame defence test', () => {
+	it('attacks your own base without costing troops, loot or progress', () => {
+		const game = newGame();
+		game.load();
+		const before = JSON.stringify({
+			army: game.campaign.army,
+			resources: game.campaign.resources,
+			islands: game.campaign.islands
+		});
+		expect(game.startDefenseTest()).toBe(true);
+		expect(game.screen).toBe('play');
+		expect(game.testing).toBe(true);
+		game.tap(1, 3);
+		for (let step = 0; step < 60 * 90 && game.testing; step++) game.update(STEP);
+		for (let step = 0; step < 60 * 5 && game.testing; step++) game.update(STEP);
+		expect(game.testing).toBe(false);
+		expect(game.screen).toBe('base');
+		expect(game.testResult).not.toBeNull();
+		expect(
+			JSON.stringify({
+				army: game.campaign.army,
+				resources: game.campaign.resources,
+				islands: game.campaign.islands
+			})
+		).toBe(before);
+	});
+
+	it('refuses to start without any troops', () => {
+		const game = newGame();
+		game.load();
+		game.campaign = {
+			...game.campaign,
+			army: { ...game.campaign.army, assault: 0 }
+		};
+		expect(game.startDefenseTest()).toBe(false);
+		expect(game.screen).toBe('base');
+	});
+});

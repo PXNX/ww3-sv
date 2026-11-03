@@ -52,6 +52,8 @@
 	import IconHammer from '~icons/lucide/hammer';
 	import IconLock from '~icons/lucide/lock';
 	import IconMove from '~icons/lucide/move';
+	import IconShieldCheck from '~icons/lucide/shield-check';
+	import IconSkull from '~icons/lucide/skull';
 	import IconTrash from '~icons/lucide/trash-2';
 	import IconTrophy from '~icons/lucide/trophy';
 	import IconUsers from '~icons/lucide/users';
@@ -198,6 +200,15 @@
 			icon: IconTrophy,
 			active: sheet === 'trophies',
 			onclick: () => (sheet = 'trophies')
+		},
+		{
+			id: 'test',
+			label: m.beachhead_test_start(),
+			icon: IconShieldCheck,
+			active: false,
+			onclick: () => {
+				game.startDefenseTest();
+			}
 		},
 		{
 			id: 'arrange',
@@ -417,6 +428,24 @@
 			<BeachheadTakeoverNotice {game} />
 		</div>
 	</div>
+
+	{#if game.testResult}
+		<p
+			class="pop-in absolute top-(--hud-top) left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full border-2 border-ink px-3 py-1 font-display text-sm font-bold shadow-[2px_2px_0_var(--color-ink)] {game
+				.testResult.fell
+				? 'bg-tie-red text-paper'
+				: 'bg-[#3fa65a] text-paper'}"
+			role="status"
+		>
+			{#if game.testResult.fell}
+				<IconSkull class="size-4" aria-hidden="true" />
+				{m.beachhead_test_fell({ seconds: game.testResult.seconds })}
+			{:else}
+				<IconShieldCheck class="size-4" aria-hidden="true" />
+				{m.beachhead_test_held()}
+			{/if}
+		</p>
+	{/if}
 
 	<!-- Top right: resources and builders -->
 	<div class="pointer-events-none absolute top-(--hud-top) right-(--hud-right) z-20">

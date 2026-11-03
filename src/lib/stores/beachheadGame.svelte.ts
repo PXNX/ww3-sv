@@ -121,6 +121,7 @@ import {
 	type Resources
 } from '#lib/game/beachhead/campaign.js';
 import type { BaseLayout, Cell } from '#lib/game/beachhead/baseLayout.js';
+import { testIslandOf } from '#lib/game/beachhead/defenseTest.js';
 import { career } from '#lib/game/career/store.svelte.js';
 import { drawBattlePreview, type Effect, type SceneExtras } from '#lib/game/beachhead/render.js';
 import { highscores, type Highscores } from '#lib/services/highscore.js';
@@ -200,6 +201,10 @@ export class BeachheadGame {
 	heroCardsFound = $state(0);
 	/** Islands the enemy took back while the player was away, until the notice is dismissed */
 	recentTakeovers = $state<string[]>([]);
+	/** True while the player attacks their own base to try out its layout; nothing is won or lost */
+	testing = $state(false);
+	/** How the last defence test ended: true if the attackers took the headquarters */
+	testResult = $state<{ fell: boolean; seconds: number } | null>(null);
 	isNewBest = $state(false);
 	best = $state<number | null>(null);
 	campaign = $state<BeachheadSave>(newSave(0));
@@ -755,8 +760,40 @@ export class BeachheadGame {
 	}
 
 	/** Starts an island; locked islands stay shut and controlled islands are not replayed */
+	/** Attacks your own base with your own army; no casualties, no loot, nothing is saved */
+	startDefenseTest(): boolean {
+		this.tick();
+		if (usedArmySpaceOf(this.campaign) <= 0) {
+			this.#play('ui-error', 0.4);
+			return false;
+		}
+		this.#retreat();
+		this.battle = createBattle(testIslandOf(this.layout), {
+			...modifiersFor(this.campaign),
+			defenseScale: 1
+		});
+		this.testing = true;
+		this.testResult = null;
+		this.effects = [];
+		this.shake = 0;
+		this.timeMs = 0;
+		this.#finishMs = 0;
+		this.#settled = true;
+		this.lastCasualties = {};
+		this.lootCollected = { wood: 0, stone: 0, iron: 0, gold: 0 };
+		this.stars = 0;
+		this.focusKind = null;
+		this.selectedSkill = null;
+		this.best = null;
+		this.screen = 'play';
+		this.status = 'playing';
+		this.#sync();
+		return true;
+	}
+
 	openIsland(index: number) {
 		this.#retreat();
+		this.testing = false;
 		if (!this.isUnlocked(index) || index < 0 || index >= ISLAND_IDS.length) return;
 		if (this.isControlled(ISLAND_IDS[index])) return;
 		this.islandIndex = index;
@@ -1203,6 +1240,7 @@ export class BeachheadGame {
 
 	/** Sends the loot out of the enemy headquarters and depots towards the player's stockpile */
 	#startLootFlight() {
+		if (this.testing) return;
 		const first = !isControlled(this.campaign, this.islandId);
 		this.#plannedLoot = lootFor(this.islandIndex, first);
 		this.lootCollected = { wood: 0, stone: 0, iron: 0, gold: 0 };
@@ -1257,6 +1295,20 @@ export class BeachheadGame {
 
 	#finish() {
 		if (this.status !== 'playing') return;
+
+		if (this.testing) {
+			this.testResult = {
+				fell: this.battle.status === 'won',
+				seconds: Math.round(this.battle.timeMs / 1000)
+			};
+			this.testing = false;
+			this.goBase();
+			const shown = this.testResult;
+			setTimeout(() => {
+				if (this.testResult === shown) this.testResult = null;
+			}, 7000);
+			return;
+		}
 
 		if (this.battle.status === 'won') {
 			this.stars = 0;

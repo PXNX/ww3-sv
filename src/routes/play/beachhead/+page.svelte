@@ -77,7 +77,11 @@
 
 	const playing = $derived(game.screen === 'play');
 	const running = $derived(game.status === 'playing' || game.status === 'paused');
-	const title = $derived(playing ? `${modeName} · ${islandName(game.islandIndex)}` : modeName);
+	const title = $derived(
+		playing
+			? `${modeName} · ${game.testing ? m.beachhead_test_title() : islandName(game.islandIndex)}`
+			: modeName
+	);
 	const lootTotal = $derived(
 		game.lootCollected.wood +
 			game.lootCollected.stone +
@@ -94,7 +98,11 @@
 	score={playing ? game.score : undefined}
 	best={playing ? game.best : undefined}
 	confirmLeave={playing && running}
-	backTo={playing ? () => game.goMap() : game.screen === 'map' ? () => game.goBase() : undefined}
+	backTo={playing
+		? () => (game.testing ? game.goBase() : game.goMap())
+		: game.screen === 'map'
+			? () => game.goBase()
+			: undefined}
 	immersive
 	landscape
 >
