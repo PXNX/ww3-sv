@@ -1024,14 +1024,24 @@ function drawTroop(
 	if (vehicle) {
 		// Tanks, personnel carriers and guns lie on the ground as top-down models, turned the way they drive
 		const angle = Math.atan2(troop.aimY, troop.aimX);
-		onGround(context, view, () => {
+		// The flat model is stacked in a few darker layers, so the hull gets visible sides and height
+		const heights = troop.kind === 'artillery' ? [0, 0.05] : [0, 0.06, 0.12, 0.18];
+		const supportsFilter = typeof context.filter === 'string';
+		heights.forEach((lift, index) => {
+			const top = index === heights.length - 1;
 			context.save();
-			context.translate(troop.x, troop.y);
-			context.rotate(angle);
-			context.scale(1.25, 1.25);
-			if (troop.kind === 'tank') drawTank(context, troop);
-			else if (troop.kind === 'apc') drawApc(context, troop);
-			else drawArtillery(context, troop);
+			context.translate(0, -lift - bob);
+			if (!top && supportsFilter) context.filter = `brightness(${0.5 + index * 0.08})`;
+			onGround(context, view, () => {
+				context.save();
+				context.translate(troop.x, troop.y);
+				context.rotate(angle);
+				context.scale(1.25, 1.25);
+				if (troop.kind === 'tank') drawTank(context, troop);
+				else if (troop.kind === 'apc') drawApc(context, troop);
+				else drawArtillery(context, troop);
+				context.restore();
+			});
 			context.restore();
 		});
 	} else {
