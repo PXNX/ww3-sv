@@ -54,6 +54,9 @@ export const HACKERS_BEST_KEY = ['hackers', 'score'] as const;
 
 const LOG_LINES = 7;
 
+/** The trace level at which the screen starts to glitch and warns */
+export const TRACE_WARN = 80;
+
 const TOOL_NAMES: Record<ToolId, () => string> = {
 	breach: m.hackers_tool_breach,
 	keylog: m.hackers_tool_keylog,
@@ -90,6 +93,11 @@ export class HackersGame {
 	log = $state.raw<string[]>([]);
 	/** Counts up on every trace-out, so the page can flash */
 	hurtCount = $state(0);
+	/** Counts every line written to the log, so the page can type out the newest one */
+	logSeq = $state(0);
+	/** The last success or failure, for a full-screen flash; `flashSeq` counts up so it replays */
+	flashKind = $state<'ok' | 'fail'>('ok');
+	flashSeq = $state(0);
 	best = $state<number | null>(null);
 	isNewBest = $state(false);
 	/** Software bought in this run */
@@ -114,6 +122,8 @@ export class HackersGame {
 	/** Rules state, deliberately not reactive */
 	state: HackersState;
 
+	/** Set once the trace has crossed the warning line, until it falls well below it again */
+	#warned = false;
 	#random: Random = createRandom(1);
 	#scores: () => Highscores;
 	#store: () => Store;
@@ -150,6 +160,8 @@ export class HackersGame {
 		this.input = [];
 		this.isNewBest = false;
 		this.hurtCount = 0;
+		this.flashSeq = 0;
+		this.#warned = false;
 		this.#sync();
 		this.status = 'playing';
 		this.#apply([openingEvent(this.state)]);
@@ -164,6 +176,8 @@ export class HackersGame {
 		this.input = [];
 		this.isNewBest = false;
 		this.hurtCount = 0;
+		this.flashSeq = 0;
+		this.#warned = false;
 		this.#sync();
 		this.status = 'ready';
 	}
@@ -188,12 +202,14 @@ export class HackersGame {
 		if (this.input.length >= spec.codeLength || symbol < 0 || symbol >= spec.symbols) return;
 		this.input = [...this.input, symbol];
 		this.#play('ui-tap', 0.5);
+		haptic().play(0.1);
 	}
 
 	popSymbol() {
 		if (this.status !== 'playing' || this.input.length === 0) return;
 		this.input = this.input.slice(0, -1);
 		this.#play('ui-tap', 0.4);
+		haptic().play(0.08);
 	}
 
 	/** Tries the typed code; it needs every slot filled */
@@ -306,16 +322,21 @@ export class HackersGame {
 				const hits = event.marks.filter((mark) => mark === 'hit').length;
 				this.#say(m.hackers_log_guess({ hits, total: event.marks.length }));
 				this.#play(hits > 0 ? 'click' : 'ui-error', 0.6);
+				haptic().play(hits > 0 ? 0.2 : 0.35);
+				if (hits === 0) this.#flash('fail');
 				break;
 			}
 			case 'cracked':
 				this.#say(m.hackers_log_cracked());
-				this.#play('chime', 0.9);
+				this.#play('term-granted', 0.9);
 				haptic().play(0.3);
+				this.#flash('ok');
 				break;
 			case 'rotated':
 				this.#say(m.hackers_log_rotated());
 				this.#play('alarm', 0.6);
+				haptic().play(0.4);
+				this.#flash('fail');
 				break;
 			case 'key':
 				this.#say(m.hackers_log_key({ letter: event.letter.toUpperCase() }));
@@ -326,22 +347,28 @@ export class HackersGame {
 				this.#say(m.hackers_log_wrong());
 				this.#play('ui-error', 0.9);
 				haptic().play(0.4);
+				this.#flash('fail');
 				break;
 			case 'missed':
 				this.#say(m.hackers_log_missed());
 				this.#play('thud', 0.5);
+				haptic().play(0.25);
 				break;
 			case 'keys-done':
 				this.#say(m.hackers_log_keys());
 				this.#play('chime-big', 0.8);
+				haptic().play(0.3);
+				this.#flash('ok');
 				break;
 			case 'relay':
 				this.#play('ui-toggle', 0.6);
+				haptic().play(0.1);
 				break;
 			case 'contract-done':
 				this.#say(m.hackers_log_done({ coins: event.points }));
 				this.#play('sparkle', 0.9);
 				haptic().play(0.4);
+				this.#flash('ok');
 				break;
 			case 'upgrade':
 				this.#say(
@@ -363,6 +390,7 @@ export class HackersGame {
 				this.#say(m.hackers_log_traced());
 				this.#play('alarm', 1);
 				haptic().play(0.7);
+				this.#flash('fail');
 				break;
 			case 'game-over':
 				break;
@@ -371,6 +399,12 @@ export class HackersGame {
 
 	#say(line: string) {
 		this.log = [...this.log, line].slice(-LOG_LINES);
+		this.logSeq += 1;
+	}
+
+	#flash(kind: 'ok' | 'fail') {
+		this.flashKind = kind;
+		this.flashSeq += 1;
 	}
 
 	#play(id: SoundId, intensity: number) {
@@ -383,6 +417,16 @@ export class HackersGame {
 		this.score = state.score;
 		this.lives = state.lives;
 		this.trace = Math.min(TRACE_MAX, state.trace);
+		// One warning each time the trace climbs into the danger zone
+		if (this.status === 'playing') {
+			if (this.trace >= TRACE_WARN && !this.#warned) {
+				this.#warned = true;
+				this.#play('term-warn', 0.8);
+				haptic().play(0.5);
+			} else if (this.trace < TRACE_WARN - 15) {
+				this.#warned = false;
+			}
+		}
 		this.stage = contract.stage;
 		this.contractNumber = contract.n;
 		this.completed = state.completed;

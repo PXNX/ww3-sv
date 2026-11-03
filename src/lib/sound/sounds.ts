@@ -18,6 +18,9 @@ export type SoundId =
 	| 'ui-tap'
 	| 'ui-toggle'
 	| 'ui-error'
+	| 'term-type'
+	| 'term-granted'
+	| 'term-warn'
 	| 'game-over'
 	| 'new-best'
 	| 'fire'
@@ -97,6 +100,24 @@ export const SOUNDS: Record<SoundId, SoundEffect> = {
 	// A short, low buzz for a blocked or invalid action
 	'ui-error': (ctx, dest) =>
 		tone(ctx, dest, { frequency: 180, glideTo: 120, duration: 0.16, type: 'square', gain: 0.16 }),
+
+	// A tiny terminal tick for typed-out text
+	'term-type': (ctx, dest) =>
+		tone(ctx, dest, { frequency: 1500, duration: 0.018, type: 'square', gain: 0.05 }),
+
+	// Three quick rising blips for access granted
+	'term-granted': (ctx, dest) =>
+		sequence(ctx, dest, [
+			{ frequency: 660, duration: 0.06, type: 'square', gain: 0.1 },
+			{ frequency: 880, duration: 0.06, type: 'square', gain: 0.1, delay: 0.07 },
+			{ frequency: 1320, duration: 0.12, type: 'square', gain: 0.1, delay: 0.14 }
+		]),
+
+	// A static burst under a low buzz when the trace turns critical
+	'term-warn': (ctx, dest) => {
+		noise(ctx, dest, { duration: 0.25, filterType: 'bandpass', filterFrequency: 1800, gain: 0.12 });
+		tone(ctx, dest, { frequency: 140, glideTo: 90, duration: 0.25, type: 'sawtooth', gain: 0.12 });
+	},
 
 	// A gentle downward phrase for a run that ends without a new best
 	'game-over': (ctx, dest) =>
