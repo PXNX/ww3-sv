@@ -11,7 +11,14 @@ import {
 import { BUILDINGS, TROOPS, type TroopKind } from './config';
 import { createBattle, deploy, stepBattle } from './battle';
 import { testIslandOf } from './defenseTest';
-import { buyMine, canAffordMine, layoutOf, newSave } from './campaign';
+import {
+	allDefenseUpgrades,
+	buyMine,
+	canAffordMine,
+	layoutOf,
+	newSave,
+	upgradeAllDefensesOf
+} from './campaign';
 
 const rich = (hq: number) => {
 	const save = newSave(0);
@@ -118,5 +125,26 @@ describe('what can be taken away again', () => {
 		expect(sellMine(save, gun.id)).toBeNull();
 		expect(sellMine(save, mine.id)).not.toBeNull();
 		expect(sellMine(save, hedgehog.id)).not.toBeNull();
+	});
+});
+
+describe('upgrading defences', () => {
+	it('raises every mine of a kind in one go, never past the headquarters level', () => {
+		let save = rich(2);
+		for (let index = 0; index < 3; index++) save = buyMine(save, 'mine-at')!;
+		save = buyMine(save, 'mine-emp')!;
+		const all = allDefenseUpgrades(save, 'mine-at');
+		expect(all.ids).toHaveLength(3);
+		expect(all.cost.iron).toBeGreaterThan(0);
+		const raised = upgradeAllDefensesOf(save, 'mine-at')!;
+		const levels = layoutOf(raised).mines.map((mine) => [mine.kind, mine.level ?? 1]);
+		expect(levels.filter(([kind, level]) => kind === 'mine-at' && level === 2)).toHaveLength(3);
+		expect(levels.find(([kind]) => kind === 'mine-emp')?.[1]).toBe(1);
+		// The headquarters is level two, so a second round is refused
+		expect(upgradeAllDefensesOf(raised, 'mine-at')).toBeNull();
+	});
+
+	it('makes mines dearer than before', () => {
+		expect(DEFENSE_COST['mine-personnel'].wood).toBeGreaterThanOrEqual(30);
 	});
 });

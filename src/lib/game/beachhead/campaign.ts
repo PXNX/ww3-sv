@@ -1735,6 +1735,41 @@ export function defenseUpgradeCostOf(save: BeachheadSave, id: number): Resources
 	return cost ? { ...cost } : null;
 }
 
+/** The placed defences of one kind that can still be raised, cheapest first, with what raising them all costs */
+export function allDefenseUpgrades(
+	save: BeachheadSave,
+	kind: string
+): { ids: number[]; cost: Resources } {
+	const total: Resources = { wood: 0, stone: 0, iron: 0, gold: 0 };
+	const ids: number[] = [];
+	let current = save;
+	const same = layoutOf(save)
+		.mines.filter((candidate) => candidate.kind === kind)
+		.sort((a, b) => defenseLevel(a) - defenseLevel(b));
+	for (const defense of same) {
+		const cost = defenseUpgradeCostOf(current, defense.id);
+		const next = upgradeDefenseOf(current, defense.id);
+		if (!cost || !next) continue;
+		current = next;
+		ids.push(defense.id);
+		for (const key of ['wood', 'stone', 'iron', 'gold'] as const) total[key] += cost[key];
+	}
+	return { ids, cost: total };
+}
+
+/** Raises every defence of the kind one level in one go, as far as the stock and the headquarters allow */
+export function upgradeAllDefensesOf(save: BeachheadSave, kind: string): BeachheadSave | null {
+	let current = save;
+	let any = false;
+	for (const id of allDefenseUpgrades(save, kind).ids) {
+		const next = upgradeDefenseOf(current, id);
+		if (!next) continue;
+		current = next;
+		any = true;
+	}
+	return any ? current : null;
+}
+
 /** A defence cannot outgrow the headquarters; the gun or mine is raised at once for resources */
 export function upgradeDefenseOf(save: BeachheadSave, id: number): BeachheadSave | null {
 	const defense = layoutOf(save).mines.find((candidate) => candidate.id === id);

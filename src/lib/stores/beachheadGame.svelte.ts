@@ -109,6 +109,8 @@ import {
 	startUpgrade as startUpgradeIn,
 	defenseUpgradeCostOf,
 	exposedStock,
+	allDefenseUpgrades,
+	upgradeAllDefensesOf,
 	upgradeDefenseOf,
 	securedShare,
 	storageCapacities,
@@ -644,6 +646,22 @@ export class BeachheadGame {
 
 	defenseUpgradeCost(id: number): Resources | null {
 		return defenseUpgradeCostOf(this.campaign, id);
+	}
+
+	/** How many placed defences of this kind can be raised right now, and what that costs in all */
+	allDefenseUpgrades(kind: string) {
+		return allDefenseUpgrades(this.campaign, kind);
+	}
+
+	upgradeAllDefenses(kind: string): boolean {
+		const next = upgradeAllDefensesOf(this.campaign, kind);
+		if (!next) {
+			this.#play('ui-error', 0.4);
+			return false;
+		}
+		this.#commit(next, { claim: false });
+		this.#play('chime-big', 0.7);
+		return true;
 	}
 
 	canUpgradeDefense(id: number): boolean {

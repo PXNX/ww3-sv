@@ -179,9 +179,9 @@ export function positionOf(layout: BaseLayout, key: LayoutKey): Cell {
 
 /** What one mine of each kind costs; a sold mine pays back half */
 export const MINE_COST: Record<MineKind, Record<LayoutResource, number>> = {
-	'mine-personnel': { wood: 10, stone: 8, iron: 12, gold: 0 },
-	'mine-at': { wood: 12, stone: 10, iron: 30, gold: 1 },
-	'mine-emp': { wood: 10, stone: 10, iron: 40, gold: 4 }
+	'mine-personnel': { wood: 30, stone: 24, iron: 36, gold: 0 },
+	'mine-at': { wood: 36, stone: 30, iron: 90, gold: 3 },
+	'mine-emp': { wood: 30, stone: 30, iron: 120, gold: 12 }
 };
 
 /** What every defence costs: the mines, and the guns that grow dearer with the headquarters level they need */

@@ -3742,6 +3742,8 @@
 	"beachhead_troop_demo": "Sprengmeister",
 	"beachhead_troop_heavy": "Minigun-Schwerer",
 	"beachhead_troop_azov": "Azov-Kommandeur",
+	"beachhead_upgrade_all": "Alle verbessern",
+	"beachhead_stat_boats": "Landungsboote",
 	"beachhead_store_buildings": "Gebäude",
 	"beachhead_store_resources": "Rohstoffe",
 	"beachhead_log_short_raiders": "Plünderer",
