@@ -74,12 +74,12 @@ export interface BaseLayout {
 }
 
 /** Ground the island keeps for itself: a forest that gives wood and a little mountain with an iron mine */
-export const FOREST: Footprint & Cell = { x: 4, y: 0, width: 5, height: 2 };
-export const MOUNTAIN: Footprint & Cell = { x: 12, y: 12, width: 2, height: 2 };
+export const FOREST: Footprint & Cell = { x: 5, y: 0, width: 4, height: 2 };
+export const MOUNTAIN: Footprint & Cell = { x: 0, y: 0, width: 2, height: 2 };
 
 /** Three cottages whose families pay taxes in gold, and the quarry ditch dug beside the mountain */
 export const HOUSES: Footprint & Cell = { x: 1, y: 4, width: 3, height: 1 };
-export const QUARRY: Footprint & Cell = { x: 10, y: 12, width: 2, height: 2 };
+export const QUARRY: Footprint & Cell = { x: 0, y: 2, width: 2, height: 2 };
 
 export function touchesNature(cell: Cell, footprint: Footprint): boolean {
 	return [FOREST, MOUNTAIN, HOUSES, QUARRY].some((rect) => overlaps(cell, footprint, rect, rect));
@@ -110,7 +110,7 @@ export function footprintOf(key: LayoutKey | DefenseKind): Footprint {
 
 const DEFAULT_POSITIONS: Record<LayoutKey, Cell> = {
 	hq: { x: 5, y: 3 },
-	training: { x: 1, y: 1 },
+	training: { x: 2, y: 1 },
 	dojo: { x: 10, y: 1 },
 	radar: { x: 11, y: 5 },
 	bunker: { x: 3, y: 7 },

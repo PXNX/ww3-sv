@@ -81,26 +81,26 @@ describe('the cottages and the quarry', () => {
 	it('are ground nobody can build on', () => {
 		const layout = defaultLayout();
 		expect(canPlace(layout, { width: 1, height: 1 }, { x: 2, y: 4 })).toBe(false);
-		expect(canPlace(layout, { width: 1, height: 1 }, { x: 10, y: 13 })).toBe(false);
-		expect(moveBuilding(layout, 'radar', { x: 10, y: 12 })).toBeNull();
+		expect(canPlace(layout, { width: 1, height: 1 }, { x: 1, y: 3 })).toBe(false);
+		expect(moveBuilding(layout, 'radar', { x: 0, y: 2 })).toBeNull();
 	});
 });
 
 describe('the forest and the mountain', () => {
 	it('are not building land: nothing can stand or be mined there', () => {
 		const layout = defaultLayout();
-		expect(canPlace(layout, { width: 1, height: 1 }, { x: 5, y: 0 })).toBe(false);
-		expect(canPlace(layout, { width: 1, height: 1 }, { x: 13, y: 13 })).toBe(false);
-		expect(moveBuilding(layout, 'training', { x: 4, y: 0 })).toBeNull();
-		expect(moveBuilding(layout, 'radar', { x: 12, y: 12 })).toBeNull();
-		expect(addMine(layout, 'mine-at', { x: 12, y: 12 })).toBeNull();
+		expect(canPlace(layout, { width: 1, height: 1 }, { x: 6, y: 0 })).toBe(false);
+		expect(canPlace(layout, { width: 1, height: 1 }, { x: 1, y: 1 })).toBe(false);
+		expect(moveBuilding(layout, 'training', { x: 5, y: 0 })).toBeNull();
+		expect(moveBuilding(layout, 'radar', { x: 0, y: 0 })).toBeNull();
+		expect(addMine(layout, 'mine-at', { x: 1, y: 1 })).toBeNull();
 	});
 
 	it('are never taken by the default arrangement or by a mine bought on the first free cell', () => {
 		const layout = addMine(defaultLayout(), 'mine-emp')!;
 		const mine = layout.mines[0];
 		expect(canPlace(defaultLayout(), { width: 1, height: 1 }, { x: mine.x, y: mine.y })).toBe(true);
-		expect(mine.x < 12 || mine.y < 12).toBe(true);
+		expect(mine.y).toBeGreaterThan(3);
 	});
 });
 
@@ -111,7 +111,7 @@ describe('moving buildings', () => {
 		expect(positionOf(moved, 'training')).toEqual({ x: 0, y: 9 });
 		expect(positionOf(moved, 'hq')).toEqual(positionOf(layout, 'hq'));
 		// The original is not touched
-		expect(positionOf(layout, 'training')).toEqual({ x: 1, y: 1 });
+		expect(positionOf(layout, 'training')).toEqual({ x: 2, y: 1 });
 	});
 
 	it('lets a building slide over its own old cells', () => {
@@ -195,7 +195,7 @@ describe('reading a stored layout', () => {
 		messy.positions.dojo = { x: 99, y: -4 };
 		const fixed = normalizeLayout(messy);
 		expect(positionOf(fixed, 'hq')).toEqual({ x: 5, y: 3 });
-		expect(positionOf(fixed, 'training')).toEqual({ x: 1, y: 1 });
+		expect(positionOf(fixed, 'training')).toEqual({ x: 2, y: 1 });
 		expect(positionOf(fixed, 'dojo')).toEqual({ x: 10, y: 1 });
 	});
 
