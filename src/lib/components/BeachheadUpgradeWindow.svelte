@@ -11,10 +11,19 @@
 		type BuildingKey,
 		type Resources
 	} from '#lib/game/beachhead/campaign.js';
-	import { GUARD_KINDS, GUARD_UNLOCK_HQ, isLayoutKey } from '#lib/game/beachhead/baseLayout.js';
+	import {
+		DEFENSE_LEVEL_GAIN,
+		GUARD_KINDS,
+		GUARD_UNLOCK_HQ,
+		MAX_DEFENSE_LEVEL,
+		defenseLevel,
+		isLayoutKey
+	} from '#lib/game/beachhead/baseLayout.js';
 	import {
 		BASE_CHARTED_ISLANDS,
 		BUILDINGS,
+		MINES,
+		isMine,
 		type BuildingKind
 	} from '#lib/game/beachhead/config.js';
 	import { buildingName } from '#lib/components/beachheadText.js';
@@ -27,9 +36,42 @@
 	import IconHeart from '~icons/lucide/heart';
 	import IconHourglass from '~icons/lucide/hourglass';
 	import IconShip from '~icons/lucide/ship';
+	import IconStar from '~icons/lucide/star';
 	import IconTrendingUp from '~icons/lucide/trending-up';
 
-	let { game, building }: { game: BeachheadGame; building: string } = $props();
+	let { game, building, defenseId }: { game: BeachheadGame; building: string; defenseId?: number } =
+		$props();
+
+	/** A placed mine, gun or hedgehog being looked at instead of a building */
+	const defense = $derived(
+		defenseId === undefined ? null : (game.layout.mines.find((d) => d.id === defenseId) ?? null)
+	);
+	const defenseNow = $derived(defense ? defenseLevel(defense) : 1);
+	const defenseNext = $derived(Math.min(MAX_DEFENSE_LEVEL, defenseNow + 1));
+	const defenseCost = $derived(defense ? game.defenseUpgradeCost(defense.id) : null);
+	const defenseStats = $derived.by(() => {
+		const rows: { label: string; from: string; to: string }[] = [];
+		if (!defense) return rows;
+		const kind = defense.kind as BuildingKind;
+		const base = BUILDINGS[kind];
+		const hp = (level: number) => Math.round(base.hp * (1 + DEFENSE_LEVEL_GAIN.hp * (level - 1)));
+		const raw = isMine(kind) ? MINES[kind].damage : base.damage;
+		const damage = (level: number) =>
+			Math.round(raw * (1 + DEFENSE_LEVEL_GAIN.damage * (level - 1)));
+		rows.push({
+			label: m.beachhead_hero_stat_hp(),
+			from: `${hp(defenseNow)}`,
+			to: `${hp(defenseNext)}`
+		});
+		if (raw > 0) {
+			rows.push({
+				label: m.beachhead_hero_stat_damage(),
+				from: `${damage(defenseNow)}`,
+				to: `${damage(defenseNext)}`
+			});
+		}
+		return rows;
+	});
 
 	const RESOURCE_KINDS = ['wood', 'stone', 'iron', 'gold'] as const;
 	const key = $derived(building as BuildingKey);
@@ -108,40 +150,88 @@
 </script>
 
 <div class="flex flex-col gap-3">
-	<div class="flex items-center justify-center gap-3 sm:gap-6">
-		{#if isLayoutKey(key)}
-			<div class="flex flex-col items-center gap-1">
-				<BeachheadPortrait type="building" kind={key} {level} {max} size={150} />
-				<span
-					class="rounded-full border-2 border-ink bg-paper px-2 font-display text-sm font-bold tabular-nums"
-				>
-					{level}
-				</span>
+	<!-- Only the next level is shown: what the building will look like once it is upgraded -->
+	<div class="flex items-center justify-center gap-3">
+		{#if defense}
+			<div class="rounded-[18px] bg-explosion-yellow/40 p-1 ring-4 ring-explosion-yellow/60">
+				<BeachheadPortrait type="defense" kind={defense.kind as BuildingKind} size={96} />
 			</div>
-			{#if level < max}
-				<IconArrowRight class="size-8 shrink-0 rtl:rotate-180" aria-hidden="true" />
-				<div class="flex flex-col items-center gap-1">
-					<div class="rounded-[18px] bg-explosion-yellow/40 p-1 ring-4 ring-explosion-yellow/60">
-						<BeachheadPortrait type="building" kind={key} level={next} {max} size={150} />
-					</div>
-					<span
-						class="rounded-full border-2 border-ink bg-explosion-yellow px-2 font-display text-sm font-bold tabular-nums"
-					>
-						{next}
-					</span>
-				</div>
-			{/if}
+			<span
+				class="rounded-full border-2 border-ink bg-explosion-yellow px-2 font-display text-lg font-bold tabular-nums"
+			>
+				{defenseNow < MAX_DEFENSE_LEVEL ? `${defenseNow} → ${defenseNext}` : defenseNow}
+			</span>
+		{:else if isLayoutKey(key)}
+			<div class="rounded-[18px] bg-explosion-yellow/40 p-1 ring-4 ring-explosion-yellow/60">
+				<BeachheadPortrait type="building" kind={key} level={next} {max} size={104} />
+			</div>
+			<span
+				class="rounded-full border-2 border-ink bg-explosion-yellow px-2 font-display text-lg font-bold tabular-nums"
+			>
+				{level < max ? `${level} → ${next}` : level}
+			</span>
 		{:else}
-			<IconShip class="size-16" aria-hidden="true" />
-			<span class="font-display text-2xl font-bold tabular-nums">{level}</span>
-			{#if level < max}
-				<IconArrowRight class="size-8 rtl:rotate-180" aria-hidden="true" />
-				<span class="font-display text-2xl font-bold text-khaki tabular-nums">{next}</span>
-			{/if}
+			<IconShip class="size-12" aria-hidden="true" />
+			<span class="font-display text-xl font-bold tabular-nums">
+				{level < max ? `${level} → ${next}` : level}
+			</span>
 		{/if}
 	</div>
 
-	{#if stats.length > 0}
+	{#if defense}
+		<ul class="flex flex-col gap-1 rounded-[14px] border-2 border-ink bg-sand p-2">
+			{#each defenseStats as stat (stat.label)}
+				<li
+					class="flex items-center justify-between gap-2 font-display text-sm font-bold tabular-nums"
+				>
+					<span class="flex items-center gap-1.5">
+						<IconTrendingUp class="size-4" aria-hidden="true" />
+						{stat.label}
+					</span>
+					<span>
+						{stat.from}
+						<IconArrowRight class="inline size-3.5 rtl:rotate-180" aria-hidden="true" />
+						<span class="text-[#2f8a49]">{stat.to}</span>
+					</span>
+				</li>
+			{/each}
+		</ul>
+		{#if defenseCost === null}
+			<IconStar
+				class="mx-auto size-6 text-explosion-yellow"
+				aria-label={m.beachhead_upgrade_max()}
+			/>
+		{:else}
+			<div class="flex flex-wrap items-center justify-between gap-2">
+				<span class="flex flex-wrap items-center gap-1 font-display text-xs font-bold">
+					{#each RESOURCE_KINDS as resource (resource)}
+						{#if defenseCost[resource] > 0}
+							<span
+								class="inline-flex items-center gap-0.5 rounded-full border-2 border-ink py-px ps-0.5 pe-1.5 {game
+									.resources[resource] >= defenseCost[resource]
+									? 'bg-paper'
+									: 'bg-tie-red text-paper'}"
+							>
+								<ResourceIcon kind={resource} class="size-4" />
+								{defenseCost[resource]}
+							</span>
+						{/if}
+					{/each}
+				</span>
+				<button
+					type="button"
+					class="btn-chunky flex size-11 items-center justify-center rounded-full bg-khaki p-0 text-paper"
+					aria-label={m.beachhead_upgrade_button()}
+					disabled={!game.canUpgradeDefense(defense.id)}
+					onclick={() => game.upgradeDefense(defense.id)}
+				>
+					<IconCircleArrowUp class="size-6" aria-hidden="true" />
+				</button>
+			</div>
+		{/if}
+	{/if}
+
+	{#if !defense && stats.length > 0}
 		<ul class="flex flex-col gap-1 rounded-[14px] border-2 border-ink bg-sand p-2">
 			{#each stats as stat (stat.label)}
 				<li
@@ -161,7 +251,7 @@
 		</ul>
 	{/if}
 
-	{#if unlocks && (unlocks.boat !== null || unlocks.guns.length > 0)}
+	{#if !defense && unlocks && (unlocks.boat !== null || unlocks.guns.length > 0)}
 		<div class="flex flex-col gap-1.5">
 			<h4 class="text-sm font-bold">{m.beachhead_unlocks_title()}</h4>
 			<ul class="flex flex-wrap gap-2">
@@ -195,7 +285,7 @@
 		</div>
 	{/if}
 
-	{#if cost !== null && row.remainingMs === null}
+	{#if !defense && cost !== null && row.remainingMs === null}
 		<div class="flex flex-wrap items-center justify-between gap-2">
 			<span class="flex flex-wrap items-center gap-1 font-display text-xs font-bold">
 				{#each RESOURCE_KINDS as resource (resource)}

@@ -352,7 +352,7 @@
 		const hit = pickHome(HOME_VIEW, game.layout, boats, point.x, point.y);
 		selected = hit;
 		// A tap on a building opens its detail sheet; while rearranging nothing about upgrades shows
-		if (hit?.kind === 'building' && !arranging) sheet = 'upgrade';
+		if (hit && !arranging) sheet = 'upgrade';
 		if (!hit || !arranging) return;
 		const ground = HOME_VIEW.unproject(point.x, point.y);
 		if (hit.kind === 'building') {
@@ -715,12 +715,18 @@
 </BeachheadSheet>
 
 <BeachheadSheet
-	open={sheet === 'upgrade' && selected?.kind === 'building'}
-	title={panel && panel.type === 'building' ? panel.name : m.beachhead_open_info()}
+	open={sheet === 'upgrade' && selected !== null}
+	title={panel
+		? panel.type === 'building'
+			? panel.name
+			: mineName(panel.mine.kind)
+		: m.beachhead_open_info()}
 	onclose={() => (sheet = null)}
 >
 	{#if selected?.kind === 'building'}
 		<BeachheadUpgradeWindow {game} building={selected.key} />
+	{:else if selected?.kind === 'mine'}
+		<BeachheadUpgradeWindow {game} building="" defenseId={selected.id} />
 	{/if}
 </BeachheadSheet>
 
