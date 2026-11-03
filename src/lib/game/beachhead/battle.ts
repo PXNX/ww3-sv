@@ -356,7 +356,7 @@ export function createBattle(
 				maxHp: hp,
 				// Stagger the first volley a little so the guns do not all fire on the same frame
 				cooldownMs: (stats.reloadMs * (id % 3)) / 3,
-				damage: scaledDamage(stats.damage),
+				damage: Math.round(scaledDamage(stats.damage) * (spec.damageScale ?? 1)),
 				reloadMs: Math.round(stats.reloadMs * crystal.reloadMultiplier),
 				skillResist: crystal.skillResist,
 				regenPerSecond: crystal.regenPerSecond,

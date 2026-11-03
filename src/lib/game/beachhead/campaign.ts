@@ -39,7 +39,10 @@ import { baseEffects, normalizeCrystals, type CrystalState } from './crystals.js
 import type { ExpeditionState } from './expedition.js';
 import {
 	DEFENSE_COST,
+	defenseLevel,
 	defenseUnlocked,
+	defenseUpgradeCost,
+	levelUpDefense,
 	isRemovable,
 	addMine,
 	defaultLayout,
@@ -1722,6 +1725,24 @@ export function buyMine(save: BeachheadSave, kind: DefenseKind): BeachheadSave |
 	const layout = addMine(layoutOf(save), kind);
 	if (!layout) return null;
 	return { ...save, resources: payResources(save.resources, DEFENSE_COST[kind]), layout };
+}
+
+/** What raising a placed defence one level costs, or null at the top */
+export function defenseUpgradeCostOf(save: BeachheadSave, id: number): Resources | null {
+	const defense = layoutOf(save).mines.find((candidate) => candidate.id === id);
+	if (!defense) return null;
+	const cost = defenseUpgradeCost(defense.kind, defenseLevel(defense));
+	return cost ? { ...cost } : null;
+}
+
+/** A defence cannot outgrow the headquarters; the gun or mine is raised at once for resources */
+export function upgradeDefenseOf(save: BeachheadSave, id: number): BeachheadSave | null {
+	const defense = layoutOf(save).mines.find((candidate) => candidate.id === id);
+	const cost = defenseUpgradeCostOf(save, id);
+	if (!defense || !cost || !canAfford(save, cost)) return null;
+	if (defenseLevel(defense) + 1 > save.levels.hq) return null;
+	const layout = levelUpDefense(layoutOf(save), id);
+	return layout ? { ...save, resources: payResources(save.resources, cost), layout } : null;
 }
 
 export function moveMineTo(save: BeachheadSave, id: number, cell: Cell): BeachheadSave | null {

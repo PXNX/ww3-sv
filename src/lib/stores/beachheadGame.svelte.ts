@@ -106,7 +106,9 @@ import {
 	skillUpgradeLocked,
 	starsOf as saveStars,
 	startUpgrade as startUpgradeIn,
+	defenseUpgradeCostOf,
 	exposedStock,
+	upgradeDefenseOf,
 	securedShare,
 	storageCapacities,
 	storageCapacity,
@@ -636,6 +638,26 @@ export class BeachheadGame {
 		if (!next) return false;
 		this.#commit(next, { claim: false });
 		this.#play('click', 0.5);
+		return true;
+	}
+
+	defenseUpgradeCost(id: number): Resources | null {
+		return defenseUpgradeCostOf(this.campaign, id);
+	}
+
+	canUpgradeDefense(id: number): boolean {
+		return upgradeDefenseOf(this.campaign, id) !== null;
+	}
+
+	/** Raises a placed mine, gun or hedgehog one level; limited by the headquarters level */
+	upgradeDefense(id: number): boolean {
+		const next = upgradeDefenseOf(this.campaign, id);
+		if (!next) {
+			this.#play('ui-error', 0.4);
+			return false;
+		}
+		this.#commit(next, { claim: false });
+		this.#play('chime', 0.6);
 		return true;
 	}
 

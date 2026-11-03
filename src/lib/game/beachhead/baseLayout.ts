@@ -44,6 +44,30 @@ export const GUARD_UNLOCK_HQ: Record<GuardKind, number> = {
 	jammer: 7
 };
 
+/** The highest level a placed defence can reach, and what each level adds */
+export const MAX_DEFENSE_LEVEL = 6;
+export const DEFENSE_LEVEL_GAIN = { hp: 0.25, damage: 0.2 } as const;
+
+export function defenseLevel(defense: { level?: number }): number {
+	return Math.min(MAX_DEFENSE_LEVEL, Math.max(1, Math.floor(defense.level ?? 1)));
+}
+
+/** What the next level of a placed defence costs: its price, a little more with every level */
+export function defenseUpgradeCost(
+	kind: DefenseKind,
+	level: number
+): Record<LayoutResource, number> | null {
+	if (level >= MAX_DEFENSE_LEVEL) return null;
+	const factor = 1.5 * Math.pow(1.6, level - 1);
+	const base = DEFENSE_COST[kind];
+	return {
+		wood: Math.round(base.wood * factor),
+		stone: Math.round(base.stone * factor),
+		iron: Math.round(base.iron * factor),
+		gold: Math.round(base.gold * factor)
+	};
+}
+
 export function isGuard(kind: DefenseKind): kind is GuardKind {
 	return (GUARD_KINDS as readonly string[]).includes(kind);
 }
@@ -76,6 +100,8 @@ export interface Footprint {
 export interface PlacedMine extends Cell {
 	id: number;
 	kind: DefenseKind;
+	/** Upgrade level of this one defence, from one; older saves have none */
+	level?: number;
 }
 
 export interface BaseLayout {
@@ -276,6 +302,18 @@ export function moveMine(layout: BaseLayout, id: number, cell: Cell): BaseLayout
 	};
 }
 
+/** Raises one placed defence a level; the layout only changes the number, the save pays for it */
+export function levelUpDefense(layout: BaseLayout, id: number): BaseLayout | null {
+	const defense = layout.mines.find((candidate) => candidate.id === id);
+	if (!defense || defenseLevel(defense) >= MAX_DEFENSE_LEVEL) return null;
+	return {
+		...layout,
+		mines: layout.mines.map((candidate) =>
+			candidate.id === id ? { ...candidate, level: defenseLevel(candidate) + 1 } : candidate
+		)
+	};
+}
+
 export function removeMine(layout: BaseLayout, id: number): BaseLayout | null {
 	if (!layout.mines.some((mine) => mine.id === id)) return null;
 	return { ...layout, mines: layout.mines.filter((mine) => mine.id !== id) };
@@ -329,14 +367,24 @@ export function normalizeLayout(value: unknown): BaseLayout {
 	let highest = 0;
 	for (const entry of mines) {
 		if (typeof entry !== 'object' || entry === null) continue;
-		const { id, kind, x, y } = entry as Record<string, unknown>;
+		const { id, kind, x, y, level } = entry as Record<string, unknown>;
 		if (typeof kind !== 'string' || !(DEFENSE_KINDS as readonly string[]).includes(kind)) continue;
 		if (typeof id !== 'number' || !Number.isInteger(id) || id < 1) continue;
 		if (typeof x !== 'number' || typeof y !== 'number') continue;
 		if (layout.mines.some((placed) => placed.id === id)) continue;
 		if (layout.mines.length >= MAX_MINES) break;
 		if (!fitsAmongPlaced(layout, { width: 1, height: 1 }, { x, y })) continue;
-		layout = { ...layout, mines: [...layout.mines, { id, kind: kind as DefenseKind, x, y }] };
+		const stored =
+			typeof level === 'number' &&
+			Number.isInteger(level) &&
+			level >= 2 &&
+			level <= MAX_DEFENSE_LEVEL
+				? { level }
+				: {};
+		layout = {
+			...layout,
+			mines: [...layout.mines, { id, kind: kind as DefenseKind, x, y, ...stored }]
+		};
 		highest = Math.max(highest, id);
 	}
 	const storedNext = Number.isInteger(candidate.nextMineId) ? (candidate.nextMineId as number) : 0;

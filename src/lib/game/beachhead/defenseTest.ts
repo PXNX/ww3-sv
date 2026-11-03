@@ -9,7 +9,9 @@ import { BUILDINGS, COLUMNS, ROWS, SHORE_X, type Island, type IslandBuilding } f
 import {
 	BASE_COLS,
 	BASE_ROWS,
+	DEFENSE_LEVEL_GAIN,
 	HOUSES,
+	defenseLevel,
 	footprintOf,
 	positionOf,
 	LAYOUT_KEYS,
@@ -26,6 +28,7 @@ interface Wanted {
 	/** Where the overcharge crystal of this building is kept: a building key or defense:<id> */
 	target: string;
 	hpScale?: number;
+	damageScale?: number;
 }
 
 function squeeze(cellX: number, cellY: number): { x: number; y: number } {
@@ -69,7 +72,15 @@ export function testIslandOf(
 	}
 	for (const mine of layout.mines) {
 		const spot = squeeze(mine.x + 0.5, mine.y + 0.5);
-		wanted.push({ kind: mine.kind, x: spot.x, y: spot.y, target: `defense:${mine.id}` });
+		const level = defenseLevel(mine);
+		wanted.push({
+			kind: mine.kind,
+			x: spot.x,
+			y: spot.y,
+			target: `defense:${mine.id}`,
+			hpScale: 1 + DEFENSE_LEVEL_GAIN.hp * (level - 1),
+			damageScale: 1 + DEFENSE_LEVEL_GAIN.damage * (level - 1)
+		});
 	}
 
 	const taken = new Set<string>();
@@ -87,7 +98,8 @@ export function testIslandOf(
 			x: spot.x,
 			y: spot.y,
 			...(crystal ? { crystal } : {}),
-			...(item.hpScale && item.hpScale !== 1 ? { hpScale: item.hpScale } : {})
+			...(item.hpScale && item.hpScale !== 1 ? { hpScale: item.hpScale } : {}),
+			...(item.damageScale && item.damageScale !== 1 ? { damageScale: item.damageScale } : {})
 		});
 	}
 	return { id: TEST_ISLAND_ID, buildings };
