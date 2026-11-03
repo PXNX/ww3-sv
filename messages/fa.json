@@ -3742,6 +3742,7 @@
 	"beachhead_troop_demo": "معدن‌کار",
 	"beachhead_troop_heavy": "مسلسل‌چی سنگین مینی‌گان",
 	"beachhead_troop_azov": "فرمانده آزوف",
+	"beachhead_win_time": "مدت حمله",
 	"beachhead_build_time": "زمان ساخت",
 	"beachhead_unlocks_at_hq": "از سطح {level} مقر باز می‌شود",
 	"beachhead_island_defences_title": "دفاع",

@@ -3742,6 +3742,7 @@
 	"beachhead_troop_demo": "Подрывник",
 	"beachhead_troop_heavy": "Пулемётчик с миниганом",
 	"beachhead_troop_azov": "Командир «Азова»",
+	"beachhead_win_time": "Длительность атаки",
 	"beachhead_build_time": "Время строительства",
 	"beachhead_unlocks_at_hq": "Открывается на уровне штаба {level}",
 	"beachhead_island_defences_title": "Оборона",

@@ -14,6 +14,7 @@
 	import Confetti from './Confetti.svelte';
 	import ShareButton from './ShareButton.svelte';
 	import IconArrowRight from '~icons/lucide/arrow-right';
+	import IconTimer from '~icons/lucide/timer';
 	import IconGem from '~icons/lucide/gem';
 	import IconMap from '~icons/lucide/map';
 	import IconTrophy from '~icons/lucide/trophy';
@@ -24,6 +25,7 @@
 		loot,
 		lost,
 		shards,
+		seconds,
 		islandName,
 		newAchievements,
 		isNewBest,
@@ -41,6 +43,8 @@
 		lost: Partial<Record<TroopKind, number>>;
 		/** Hero shards this victory dropped */
 		shards: number;
+		/** How long the attack took */
+		seconds: number;
 		islandName: string;
 		/** Achievements unlocked by this victory */
 		newAchievements: string[];
@@ -77,13 +81,27 @@
 		class="sticker relative modal-box flex max-h-[92dvh] flex-col items-center gap-3 overflow-y-auto border-3 border-ink p-5 text-center"
 		style:--tilt="1deg"
 	>
-		{#if isNewBest}
-			<Confetti />
-		{/if}
+		<Confetti />
 
-		<div>
-			<h2 id="beachhead-win-title" class="text-3xl font-bold">{m.beachhead_win_title()}</h2>
-			<p class="text-sm font-semibold">{islandName}</p>
+		<div
+			class="-mx-5 -mt-5 flex w-[calc(100%+2.5rem)] flex-col items-center gap-1 px-5 pt-5 pb-3"
+			style:background="repeating-conic-gradient(from 0deg at 50% 100%, color-mix(in srgb,
+			var(--color-explosion-yellow) 38%, transparent) 0deg 9deg, transparent 9deg 18deg)"
+		>
+			<h2
+				id="beachhead-win-title"
+				class="victory-ribbon -rotate-2 rounded-[10px] border-3 border-ink bg-tie-red px-6 py-1 text-4xl font-bold tracking-wide text-paper uppercase shadow-[3px_3px_0_var(--color-ink)]"
+			>
+				{m.beachhead_win_title()}
+			</h2>
+			<p class="font-display text-sm font-bold">{islandName}</p>
+			<p
+				class="flex items-center gap-1.5 rounded-full border-2 border-ink bg-paper px-3 py-0.5 font-display text-lg font-bold tabular-nums"
+				title={m.beachhead_win_time()}
+			>
+				<IconTimer class="size-5" aria-hidden="true" />
+				{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}
+			</p>
 		</div>
 
 		<ul class="flex flex-wrap justify-center gap-2" aria-label={m.beachhead_loot_title()}>
@@ -168,3 +186,22 @@
 		{/if}
 	</div>
 </dialog>
+
+<style>
+	.victory-ribbon {
+		animation: ribbon-in 420ms cubic-bezier(0.2, 1.4, 0.4, 1);
+	}
+
+	@keyframes ribbon-in {
+		from {
+			transform: rotate(-2deg) scale(0.4);
+			opacity: 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.victory-ribbon {
+			animation: none;
+		}
+	}
+</style>

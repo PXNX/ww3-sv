@@ -3742,6 +3742,7 @@
 	"beachhead_troop_demo": "Підривник",
 	"beachhead_troop_heavy": "Кулеметник з мініганом",
 	"beachhead_troop_azov": "Командир «Азову»",
+	"beachhead_win_time": "Тривалість атаки",
 	"beachhead_build_time": "Час будівництва",
 	"beachhead_unlocks_at_hq": "Відкривається на рівні штабу {level}",
 	"beachhead_island_defences_title": "Оборона",

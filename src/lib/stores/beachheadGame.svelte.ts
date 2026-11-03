@@ -196,6 +196,8 @@ export class BeachheadGame {
 	/** Resources won in the last battle, shown on the result panel */
 	loot = $state<Resources>({ wood: 0, stone: 0, iron: 0, gold: 0 });
 	/** Troops the last attack killed, shown on the result panel until they are retrained */
+	/** How many seconds the last attack took */
+	lastSeconds = $state(0);
 	lastCasualties = $state<Partial<Record<TroopKind, number>>>({});
 	/** Loot that has reached the stockpile so far during the win animation */
 	lootCollected = $state<Resources>({ wood: 0, stone: 0, iron: 0, gold: 0 });
@@ -1338,6 +1340,7 @@ export class BeachheadGame {
 
 		if (this.battle.status === 'won') {
 			this.stars = 0;
+			this.lastSeconds = Math.round(this.battle.timeMs / 1000);
 			const loot = this.#plannedLoot;
 			let next = controlIsland(this.campaign, this.islandId, 1);
 			next = addResources(next, loot);
