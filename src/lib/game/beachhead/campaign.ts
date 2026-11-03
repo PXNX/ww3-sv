@@ -20,6 +20,7 @@ import {
 	MAX_HERO_SKILL_LEVEL,
 	MAX_HQ_LEVEL,
 	MAX_RADAR_LEVEL,
+	MAX_SUPPORT_SKILL_LEVEL,
 	MAX_TRAINING_LEVEL,
 	MAX_TROOP_LEVEL,
 	MAX_WAREHOUSE_LEVEL,
@@ -28,6 +29,7 @@ import {
 	type ArmyKind,
 	type Island,
 	type MineKind,
+	type SkillId,
 	type TroopKind
 } from './config.js';
 import type { BattleModifiers, SquadTroop } from './battle.js';
@@ -184,6 +186,8 @@ export interface BeachheadSave {
 	layout?: BaseLayout;
 	/** Troops killed in attacks that still wait to be retrained with gold; older saves have none */
 	lost?: Partial<Army>;
+	/** Training level of the support skills; a skill missing here is at level one */
+	skillLevels?: Partial<Record<SkillId, number>>;
 }
 
 /** Cost of the first upgrade of each building family; each later level grows by a factor */
@@ -640,6 +644,52 @@ export function retrainAllCost(save: BeachheadSave): number {
 	return ARMY_KINDS.reduce((sum, kind) => sum + lost[kind] * RETRAIN_GOLD[kind], 0);
 }
 
+/** The support skills the training ground can improve, in the order of the skill bar */
+export const SUPPORT_SKILLS: readonly SkillId[] = ['flamingo', 'barrage', 'flare', 'smoke', 'heal'];
+
+const SKILL_BASE_COST: Record<SkillId, Resources> = {
+	flamingo: { wood: 220, stone: 160, iron: 120, gold: 16 },
+	barrage: { wood: 200, stone: 150, iron: 140, gold: 14 },
+	flare: { wood: 120, stone: 90, iron: 50, gold: 8 },
+	smoke: { wood: 130, stone: 100, iron: 60, gold: 8 },
+	heal: { wood: 180, stone: 130, iron: 90, gold: 14 }
+};
+const SKILL_COST_FACTOR = 1.6;
+
+export function supportSkillLevel(save: BeachheadSave, skill: SkillId): number {
+	const level = save.skillLevels?.[skill];
+	return Number.isInteger(level) && (level as number) >= 1
+		? Math.min(MAX_SUPPORT_SKILL_LEVEL, level as number)
+		: 1;
+}
+
+/** The cost of the next level of a support skill, or null at the top */
+export function supportSkillCost(save: BeachheadSave, skill: SkillId): Resources | null {
+	const level = supportSkillLevel(save, skill);
+	if (level >= MAX_SUPPORT_SKILL_LEVEL) return null;
+	return resourceCost(SKILL_BASE_COST[skill], Math.pow(SKILL_COST_FACTOR, level - 1));
+}
+
+/** A skill cannot be trained past the level of the training ground */
+export function supportSkillLocked(save: BeachheadSave, skill: SkillId): boolean {
+	return supportSkillLevel(save, skill) + 1 > save.levels.training;
+}
+
+export function canUpgradeSupportSkill(save: BeachheadSave, skill: SkillId): boolean {
+	const cost = supportSkillCost(save, skill);
+	return cost !== null && !supportSkillLocked(save, skill) && canAfford(save, cost);
+}
+
+export function applySupportSkillUpgrade(save: BeachheadSave, skill: SkillId): BeachheadSave {
+	const cost = supportSkillCost(save, skill);
+	if (!cost || supportSkillLocked(save, skill) || !canAfford(save, cost)) return save;
+	return {
+		...save,
+		resources: payResources(save.resources, cost),
+		skillLevels: { ...save.skillLevels, [skill]: supportSkillLevel(save, skill) + 1 }
+	};
+}
+
 export function troopLevel(save: BeachheadSave, kind: TroopKind): number {
 	// The Azov commander grows through his cards, not through the training ground
 	if (kind === 'azov') return save.hero.level;
@@ -900,7 +950,8 @@ export function fortificationScale(captures: number): number {
 export function modifiersFor(save: BeachheadSave, islandId?: string): BattleModifiers {
 	return {
 		squads: landingPlan(save),
-		defenseScale: islandId ? fortificationScale(islandControl(save, islandId).captures) : 1
+		defenseScale: islandId ? fortificationScale(islandControl(save, islandId).captures) : 1,
+		skillLevels: Object.fromEntries(SUPPORT_SKILLS.map((id) => [id, supportSkillLevel(save, id)]))
 	};
 }
 

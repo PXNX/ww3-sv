@@ -10,7 +10,7 @@ import {
 	MINES,
 	PAR_SECONDS,
 	ROWS,
-	SKILLS,
+	skillStatsAt,
 	SKILL_ENERGY,
 	SQUADS,
 	TROOP,
@@ -60,6 +60,8 @@ export interface BattleModifiers {
 	squads: readonly (readonly SquadTroop[])[];
 	/** Enemy fortification from earlier captures; multiplies building health and damage */
 	defenseScale?: number;
+	/** Training level of every support skill; a skill missing here is at level one */
+	skillLevels?: Partial<Record<SkillId, number>>;
 }
 
 const RIFLEMAN: SquadTroop = {
@@ -279,6 +281,8 @@ export interface BattleState {
 	projectiles: Projectile[];
 	/** Missiles and barrage shells still on their way down */
 	strikes: SkillStrike[];
+	/** Training level of every support skill, from the base's training ground */
+	skillLevels: Partial<Record<SkillId, number>>;
 	/** Energy for support skills; every call makes the next one more expensive */
 	energy: number;
 	skillsUsed: number;
@@ -340,6 +344,7 @@ export function createBattle(
 		}),
 		projectiles: [],
 		strikes: [],
+		skillLevels: { ...modifiers.skillLevels },
 		energy: SKILL_ENERGY.start,
 		skillsUsed: 0,
 		flare: null,
@@ -386,7 +391,7 @@ function skillZone(x: number, y: number, radius: number, durationMs: number): Sk
  */
 export function castSkill(state: BattleState, skill: SkillId, x: number, y: number): boolean {
 	if (!canCastSkill(state)) return false;
-	const stats = SKILLS[skill];
+	const stats = skillStatsAt(skill, state.skillLevels[skill] ?? 1);
 	if (!stats) return false;
 	const cost = skillCost(state);
 	const aimX = clamp(Number.isFinite(x) ? x : 0, 0, COLUMNS);
@@ -705,7 +710,8 @@ function stepSkillZones(state: BattleState, frameMs: number) {
 	state.heal = tick(state.heal);
 
 	if (!state.heal) return;
-	const healing = (SKILLS.heal.healPerSecond ?? 0) * (frameMs / 1000);
+	const healing =
+		(skillStatsAt('heal', state.skillLevels.heal ?? 1).healPerSecond ?? 0) * (frameMs / 1000);
 	if (healing <= 0) return;
 	for (const troop of state.troops) {
 		if (troop.hp <= 0 || !insideZone(state.heal, troop.x, troop.y)) continue;

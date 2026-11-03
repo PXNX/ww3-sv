@@ -38,6 +38,7 @@ import {
 	addResources,
 	applyCasualties,
 	applyHeroUpgrade,
+	applySupportSkillUpgrade,
 	applySkillUpgrade,
 	applyTroopUpgrade,
 	armyCapacity as armyCapacityOf,
@@ -50,6 +51,7 @@ import {
 	canAffordMine,
 	canUpgrade as canUpgradeBuilding,
 	canUpgradeHero,
+	canUpgradeSupportSkill,
 	canUpgradeSkill,
 	canUpgradeTroop as canUpgradeTroopAt,
 	changeTroop as changeTroopIn,
@@ -99,6 +101,9 @@ import {
 	startUpgrade as startUpgradeIn,
 	storageCapacities,
 	storageCapacity,
+	supportSkillCost,
+	supportSkillLevel,
+	supportSkillLocked,
 	totalStars,
 	troopLevel,
 	troopStats,
@@ -664,6 +669,32 @@ export class BeachheadGame {
 		}
 		this.#commit(next, { claim: false });
 		this.#play(delta > 0 ? 'chime' : 'click', 0.4);
+		return true;
+	}
+
+	/** Training level of a support skill, set at the training ground */
+	supportSkillLevel(skill: SkillId): number {
+		return supportSkillLevel(this.campaign, skill);
+	}
+
+	supportSkillCost(skill: SkillId): Resources | null {
+		return supportSkillCost(this.campaign, skill);
+	}
+
+	supportSkillLocked(skill: SkillId): boolean {
+		return supportSkillLocked(this.campaign, skill);
+	}
+
+	canUpgradeSupportSkill(skill: SkillId): boolean {
+		return canUpgradeSupportSkill(this.campaign, skill);
+	}
+
+	/** Trains a support skill one level; paid at once and needs no builder */
+	upgradeSupportSkill(skill: SkillId): boolean {
+		const next = applySupportSkillUpgrade(this.campaign, skill);
+		if (next === this.campaign) return false;
+		this.#commit(next, { claim: false });
+		this.#play('chime', 0.6);
 		return true;
 	}
 

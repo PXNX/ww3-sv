@@ -478,6 +478,34 @@ export const SKILLS: Record<SkillId, SkillStats> = {
 	heal: { radius: 2.2, damage: 0, delayMs: 0, durationMs: 7000, healPerSecond: 16 }
 };
 
+/** The support skills are trained at the training ground; every level makes them hit harder and last longer */
+export const MAX_SUPPORT_SKILL_LEVEL = 6;
+export const SUPPORT_SKILL_PER_LEVEL = {
+	damage: 0.14,
+	radius: 0.05,
+	duration: 0.1,
+	heal: 0.12
+} as const;
+
+/** A skill's tuning at a trained level; level one is the table above */
+export function skillStatsAt(skill: SkillId, level: number): SkillStats {
+	const base = SKILLS[skill];
+	const steps = Math.max(0, Math.min(MAX_SUPPORT_SKILL_LEVEL, Math.round(level)) - 1);
+	return {
+		...base,
+		radius: base.radius * (1 + SUPPORT_SKILL_PER_LEVEL.radius * steps),
+		damage: Math.round(base.damage * (1 + SUPPORT_SKILL_PER_LEVEL.damage * steps)),
+		durationMs:
+			base.durationMs === undefined
+				? undefined
+				: Math.round(base.durationMs * (1 + SUPPORT_SKILL_PER_LEVEL.duration * steps)),
+		healPerSecond:
+			base.healPerSecond === undefined
+				? undefined
+				: base.healPerSecond * (1 + SUPPORT_SKILL_PER_LEVEL.heal * steps)
+	};
+}
+
 /** Every skill use costs more than the last; destroyed buildings give a little energy back */
 export const SKILL_ENERGY = {
 	start: 150,
