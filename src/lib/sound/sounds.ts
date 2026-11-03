@@ -51,6 +51,7 @@ export type SoundId =
 	| 'sling-draw'
 	| 'sling-release'
 	| 'impact-wood'
+	| 'hammer'
 	| 'impact-stone'
 	| 'impact-ice'
 	| 'impact-dome'
@@ -363,6 +364,35 @@ export const SOUNDS: Record<SoundId, SoundEffect> = {
 	},
 
 	// A dull knock of a bird against a wooden block
+	// A builder's hammer: a dry wooden knock with a short metallic ring on top; the pitch varies a little
+	// so several builders do not sound like one repeated sample
+	hammer: (ctx, dest, intensity) => {
+		const strength = 0.45 + Math.min(1, Math.max(0, intensity)) * 0.55;
+		const pitch = 0.92 + Math.random() * 0.16;
+		noise(ctx, dest, {
+			duration: 0.06,
+			filterType: 'bandpass',
+			filterFrequency: 900 * pitch,
+			filterTo: 380,
+			q: 1.1,
+			gain: 0.2 * strength
+		});
+		tone(ctx, dest, {
+			frequency: 190 * pitch,
+			glideTo: 110,
+			duration: 0.07,
+			type: 'triangle',
+			gain: 0.2 * strength
+		});
+		tone(ctx, dest, {
+			frequency: 2350 * pitch,
+			duration: 0.12,
+			type: 'sine',
+			gain: 0.05 * strength,
+			delay: 0.012
+		});
+	},
+
 	'impact-wood': (ctx, dest, intensity) => {
 		const strength = 0.5 + intensity * 0.5;
 		noise(ctx, dest, {

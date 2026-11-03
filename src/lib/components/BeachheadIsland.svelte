@@ -7,6 +7,7 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import type { Component } from 'svelte';
 	import type { SvelteHTMLElements } from 'svelte/elements';
 	import { m } from '#lib/paraglide/messages.js';
@@ -346,6 +347,13 @@
 		canvas.height = Math.round(HOME_VIEW.height * scale * ratio);
 		draw(performance.now());
 	}
+
+	// While a builder is at work the hammer knocks in time with the swing, quietly so it stays a backdrop
+	$effect(() => {
+		if (game.buildersBusy === 0 || sheet !== null) return;
+		const timer = setInterval(() => soundManager().play('hammer', 0.35), 1320);
+		return () => clearInterval(timer);
+	});
 
 	onMount(() => {
 		if (!stage || !canvas) return;
