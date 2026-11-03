@@ -116,6 +116,34 @@ Done: **1.3** the older pause overlays (convoy, minefield, pipeline, fury, flami
 - [ ] Offer the group leaderboards for the other modes as well. Per mode: register a game with @BotFather under the mode id as its short name (`/newgame`, with a 640×360 picture), add the mode to `GAMES` in `mn/ptb-ww3/tgcloud/lib/games.js` and to `GROUP_GAME_ROUTES` in `src/lib/services/telegram.ts`, and check that the score its result sheet shows is "higher is better", because Telegram only ranks that way. Modes that end on the shared result sheet only need those steps; `beltroad`, `fleethunt`, `maze`, `parking`, `tycoon` and `wordle` have their own end screens and first need to call `telegram().reportGroupScore(mode, score)` there. Scores of the modes with difficulty levels or variants (`minefield`, `pipeline`, `fury`) mix all levels on one board unless each level becomes its own game.
 - [ ] Wire up the open monetization TODOs in the code: the rewarded ad before the bonus shots in Black Sea Fleet Hunt (`fleethunt`), and moving its points into a shared wallet so they can be spent as currency in other games.
 
+## 8. Beachhead (game mode `beachhead`)
+
+State: everything below is built and committed locally on `main`, nothing pushed. Nothing of it was played on a real device; the visual checks were done in headless Edge only.
+
+### Not built yet
+
+- [ ] **Real multiplayer.** The sea log (lost, raided, defended, attacks, raiders) is simulated from the clock in `mapLog.ts`. Missing: a backend (the Telegram Serverless one, see section 7) that every 24 h lets another player take a random island, lets the attacker earn 50% of the victim's exposed stock (the bunker already secures a share), takes that stock from the victim and writes real log entries for both.
+- [ ] **Defence test with real art.** `defenseTest.ts` maps the HQ, warehouses, bunker, training ground, radar, dojo and cottages to generic `depot` buildings. They should be drawn as the real home buildings.
+- [ ] **Tests that were failing before this work** (5 in `campaign.test.ts`: maximum level of every building, packing big units first, packing the heavy units, hero alone on an empty boat, the fortress reward), plus type errors in `render.ts` (`case 'orc'`), `campaign.ts` (Azov in `Army`) and test typing. They need fixing or deleting.
+- [ ] **Lint errors that were already there:** unused imports in `beachheadGame.svelte.ts` and `baseArt.ts`, a `Set` that should be a `SvelteSet`.
+- [ ] **Check by eye on a phone:** the solid-built tanks, personnel carriers and howitzers (barrel directions in a real attack), the narrow upgrade popup, the store tabs, the chest opening animation, the compact sea log, the skill detail page.
+- [ ] **Measure the zoom lag.** The battle and island canvases now stay within a fixed pixel budget (`PIXEL_BUDGET` in `BeachheadCanvas.svelte` and `BeachheadIsland.svelte`); nobody timed the frames. Tune the budget if it is still slow on a weak phone or too blurry.
+- [ ] **Sound.** Only existing sound ids are used (click, chime, ui-error, explosion). Missing ones: chest opening, hammering builders, boat horn, skill research done.
+- [ ] **Translations.** All new `beachhead_*` keys in fa, ar, uk and ru were written by the agent and need a native speaker.
+
+### Ideas, not decided
+
+- Upgrades could use the builders' hammering as sound and let a builder visibly walk to the defence being upgraded.
+- Show defence levels on the island (small badge like the buildings have).
+- A "shop" for hero shards and crystals with Fake News.
+- A leaderboard of islands held, or a weekly event island (needs the backend above).
+- Allied or clan bases that can send troops to defend yours.
+- Seasonal biomes (winter north spreading south).
+- Daily expedition quests and expedition tiers that unlock with the radar level.
+- Let defences be dragged between "slots" of crystals like buildings (overcharge crystals on guns).
+- Show the troop research and skill research queue in the HUD next to the builders.
+- A tutorial for the new built-from-the-store flow (warehouses, bunker, extra cottages, boats), since new saves start with almost nothing built.
+
 # ww3-sv: open items (as of 2026-10-15)
 
 Full specs for every mode: `C:\dev\OLD\ww3-new-modes-plan.md`.
