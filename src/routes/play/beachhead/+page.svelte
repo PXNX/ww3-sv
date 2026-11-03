@@ -4,15 +4,14 @@
 	import BeachheadIsland from '#lib/components/BeachheadIsland.svelte';
 	import BeachheadMap from '#lib/components/BeachheadMap.svelte';
 	import BeachheadWinPanel from '#lib/components/BeachheadWinPanel.svelte';
-	import GameOverModal from '#lib/components/GameOverModal.svelte';
+	import BeachheadLostPanel from '#lib/components/BeachheadLostPanel.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import PauseOverlay from '#lib/components/PauseOverlay.svelte';
 	import ResourceIcon from '#lib/components/ResourceIcon.svelte';
 	import RotateHint from '#lib/components/RotateHint.svelte';
 	import TutorialModal from '#lib/components/TutorialModal.svelte';
-	import { TROOP_ICONS } from '#lib/components/beachheadIcons.js';
-	import { buildingName, islandName, troopName } from '#lib/components/beachheadText.js';
-	import type { SkillId, TroopKind } from '#lib/game/beachhead/config.js';
+	import { buildingName, islandName } from '#lib/components/beachheadText.js';
+	import type { SkillId } from '#lib/game/beachhead/config.js';
 	import {
 		fullscreenAvailable,
 		isFullscreen,
@@ -28,6 +27,7 @@
 	import IconCrown from '~icons/lucide/crown';
 	import IconFastForward from '~icons/lucide/fast-forward';
 	import IconTimer from '~icons/lucide/timer';
+	import IconFlag from '~icons/lucide/flag-triangle-right';
 	import IconCrosshair from '~icons/lucide/crosshair';
 	import IconFlameKindling from '~icons/lucide/flame-kindling';
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
@@ -97,15 +97,10 @@
 			game.lootCollected.iron +
 			game.lootCollected.gold
 	);
-	const fallen = $derived(
-		(Object.entries(game.lastCasualties) as [TroopKind, number][]).filter(([, count]) => count > 0)
-	);
 </script>
 
 <GameShell
 	{title}
-	score={playing ? game.score : undefined}
-	best={playing ? game.best : undefined}
 	confirmLeave={playing && running}
 	backTo={playing
 		? () => (game.testing ? game.goBase() : game.goMap())
@@ -126,6 +121,17 @@
 			<IconHelp class="size-4" aria-hidden="true" />
 		</button>
 		{#if playing && running}
+			{#if game.status === 'playing' && !game.retreating}
+				<button
+					type="button"
+					class="btn-chunky px-2 py-1 text-sm"
+					aria-label={m.beachhead_give_up()}
+					title={m.beachhead_give_up()}
+					onclick={() => game.giveUp()}
+				>
+					<IconFlag class="size-4" aria-hidden="true" />
+				</button>
+			{/if}
 			{#if canFullscreen}
 				<button
 					type="button"
@@ -185,30 +191,6 @@
 					<IconTimer class="size-4" aria-hidden="true" />
 					{clockText(game.timeLeft)}
 				</span>
-				<span
-					class="flex items-center gap-1 rounded-full border-2 border-ink bg-paper px-2.5 py-0.5 tabular-nums {game.squadsLeft ===
-					0
-						? 'opacity-50'
-						: ''}"
-					title={m.beachhead_squads({ count: game.squadsLeft })}
-				>
-					<IconShip class="size-4" aria-hidden="true" />
-					{game.squadsLeft}
-				</span>
-				<span
-					class="flex items-center gap-1 rounded-full border-2 border-ink bg-paper px-2.5 py-0.5 tabular-nums"
-					title={m.beachhead_troops({ count: game.troops })}
-				>
-					<IconUsers class="size-4" aria-hidden="true" />
-					{game.troops}
-				</span>
-				<span
-					class="flex items-center gap-1 rounded-full border-2 border-ink bg-paper px-2.5 py-0.5 tabular-nums"
-					title={m.beachhead_skill_energy({ energy: game.energy })}
-				>
-					<IconZap class="size-4" aria-hidden="true" />
-					{game.energy}
-				</span>
 				<button
 					type="button"
 					class="pointer-events-auto flex items-center gap-1 rounded-full border-2 border-ink px-2.5 py-0.5 tabular-nums {game.speed >
@@ -233,6 +215,35 @@
 						{m.beachhead_speed_pro()}
 					</span>
 				{/if}
+			</div>
+
+			<div
+				class="pointer-events-none absolute bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-(--hud-left) z-30 flex flex-col items-start gap-1 font-display text-sm font-bold"
+			>
+				<span
+					class="flex items-center gap-1 rounded-full border-2 border-ink bg-paper px-2.5 py-0.5 tabular-nums {game.squadsLeft ===
+					0
+						? 'opacity-50'
+						: ''}"
+					title={m.beachhead_squads({ count: game.squadsLeft })}
+				>
+					<IconShip class="size-4" aria-hidden="true" />
+					{game.squadsLeft}
+				</span>
+				<span
+					class="flex items-center gap-1 rounded-full border-2 border-ink bg-paper px-2.5 py-0.5 tabular-nums"
+					title={m.beachhead_troops({ count: game.troops })}
+				>
+					<IconUsers class="size-4" aria-hidden="true" />
+					{game.troops}
+				</span>
+				<span
+					class="flex items-center gap-1 rounded-full border-2 border-ink bg-paper px-2.5 py-0.5 tabular-nums"
+					title={m.beachhead_skill_energy({ energy: game.energy })}
+				>
+					<IconZap class="size-4" aria-hidden="true" />
+					{game.energy}
+				</span>
 				{#if game.focusKind}
 					<span
 						class="flex items-center gap-1 rounded-full border-2 border-ink bg-explosion-yellow px-2.5 py-0.5"
@@ -245,7 +256,7 @@
 
 			{#if lootTotal > 0}
 				<ul
-					class="pointer-events-none absolute top-(--hud-top) right-(--hud-right) z-30 flex flex-col gap-1"
+					class="pointer-events-none absolute top-(--hud-top) left-(--hud-left) z-30 flex flex-col gap-1"
 				>
 					{#each ['wood', 'stone', 'iron', 'gold'] as const as kind (kind)}
 						{#if game.lootCollected[kind] > 0}
@@ -336,7 +347,6 @@
 
 	<BeachheadWinPanel
 		open={game.status === 'won'}
-		score={game.score}
 		loot={game.loot}
 		lost={game.lastCasualties}
 		shards={game.heroCardsFound}
@@ -344,47 +354,14 @@
 		seconds={game.lastSeconds}
 		islandName={islandName(game.islandIndex)}
 		newAchievements={game.newAchievements}
-		isNewBest={game.isNewBest}
-		hasNext={game.hasNextIsland}
-		{modeName}
-		drawBoard={game.drawBoard}
-		onNext={() => game.openNextIsland()}
 		onIslands={() => game.goMap()}
 	/>
 
-	<GameOverModal
+	<BeachheadLostPanel
 		open={game.status === 'over'}
-		score={game.score}
-		mode="beachhead"
-		outcome="lost"
-		{modeName}
-		isNewBest={game.isNewBest}
-		title={m.beachhead_lost_title()}
-		drawBoard={game.drawBoard}
+		lost={game.lastCasualties}
+		seconds={game.lastSeconds}
 		onRetry={() => game.retry()}
-	>
-		<div class="flex flex-col items-center gap-2">
-			<ul class="flex flex-wrap justify-center gap-1.5" aria-label={m.beachhead_lost_troops()}>
-				{#each fallen as [kind, count] (kind)}
-					{@const LostIcon = TROOP_ICONS[kind]}
-					<li
-						class="flex items-center gap-1 rounded-full border-2 border-ink bg-tie-red px-2 py-0.5 font-display text-sm font-bold text-paper tabular-nums"
-						title={troopName(kind)}
-					>
-						<LostIcon class="size-4" aria-hidden="true" />
-						−{count}
-					</li>
-				{/each}
-			</ul>
-			<button
-				type="button"
-				class="btn-chunky"
-				aria-label={m.beachhead_to_map()}
-				title={m.beachhead_to_map()}
-				onclick={() => game.goMap()}
-			>
-				<IconList class="size-5" aria-hidden="true" />
-			</button>
-		</div>
-	</GameOverModal>
+		onIslands={() => game.goMap()}
+	/>
 </GameShell>

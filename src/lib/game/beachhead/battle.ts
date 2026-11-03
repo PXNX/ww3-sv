@@ -276,6 +276,7 @@ export type BattleEvent =
 			cause: 'stepped' | 'skill';
 	  }
 	| { kind: 'jammer-pulse'; x: number; y: number; radius: number; hits: number }
+	| { kind: 'troop-escaped'; x: number; y: number }
 	| { kind: 'troop-down'; x: number; y: number }
 	| { kind: 'won' }
 	| { kind: 'lost' };
@@ -310,6 +311,8 @@ export interface BattleState {
 	/** A building tapped by the player, which every troop heads for until it falls */
 	focusId: number | null;
 	status: BattleStatus;
+	/** The attack has been given up: the troops run back to the shore and nobody else lands */
+	retreating: boolean;
 	events: BattleEvent[];
 }
 
@@ -374,6 +377,7 @@ export function createBattle(
 		heal: null,
 		focusId: null,
 		status: 'playing',
+		retreating: false,
 		events: []
 	};
 }
@@ -390,7 +394,7 @@ export function skillCost(state: BattleState): number {
 }
 
 export function canCastSkill(state: BattleState): boolean {
-	return state.status === 'playing' && state.energy >= skillCost(state);
+	return state.status === 'playing' && !state.retreating && state.energy >= skillCost(state);
 }
 
 /** A small fixed pattern, so a barrage always covers the aim point the same way in tests */
@@ -481,8 +485,18 @@ function insideZone(zone: SkillZone | null, x: number, y: number): boolean {
 }
 
 /** Lands the next boat on a beach row; false when there is no craft left or the row is off the map */
+/** Gives the attack up: the squads still on the boats stay there and the landed troops run for the shore */
+export function giveUp(state: BattleState) {
+	if (state.status !== 'playing' || state.retreating) return;
+	state.retreating = true;
+	state.squads = [];
+	state.squadsLeft = 0;
+	state.focusId = null;
+	state.flare = null;
+}
+
 export function deploy(state: BattleState, row: number): boolean {
-	if (state.status !== 'playing' || state.squadsLeft <= 0) return false;
+	if (state.status !== 'playing' || state.retreating || state.squadsLeft <= 0) return false;
 	if (!Number.isInteger(row) || row < 0 || row >= ROWS) return false;
 	const squad = state.squads.shift();
 	if (!squad || squad.length === 0) return false;
@@ -951,6 +965,7 @@ export function stepBattle(state: BattleState, dtMs: number) {
 	stepProjectiles(state, frameMs);
 
 	const buildings = new Map(state.buildings.map((building) => [building.id, building]));
+	const escaped = new Set<number>();
 
 	for (const troop of state.troops) {
 		if (troop.hp <= 0) continue;
@@ -963,6 +978,24 @@ export function stepBattle(state: BattleState, dtMs: number) {
 		// Blast velocity moves the soldier even while stunned, then the drag takes over
 		solvePhysics(state, troop, dt);
 		if (troop.stunMs > 0) continue;
+
+		// A retreating troop runs for the beach, ignores every target and can still be hit on the way
+		if (state.retreating) {
+			const dx = LANDING_X - 0.3 - troop.x;
+			const dy = 0;
+			const length = Math.hypot(dx, dy);
+			troop.moving = true;
+			troop.walkPhase += dt * 12;
+			aimAt(troop, troop.x + dx, troop.y + dy);
+			const run = troop.speed * 1.15 * dt;
+			if (length <= run) {
+				escaped.add(troop.id);
+				state.events.push({ kind: 'troop-escaped', x: troop.x, y: troop.y });
+			} else {
+				troop.x += (dx / length) * run;
+			}
+			continue;
+		}
 
 		const command = commandBonus(state, troop);
 		// Vehicles crawl past a Czech hedgehog; infantry steps over it
@@ -1108,6 +1141,7 @@ export function stepBattle(state: BattleState, dtMs: number) {
 		}
 	}
 
+	if (escaped.size > 0) state.troops = state.troops.filter((troop) => !escaped.has(troop.id));
 	stepMines(state);
 	stepTroopSpawning(state, frameMs);
 	stepTroopHealing(state, frameMs);

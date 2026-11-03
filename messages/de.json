@@ -3742,6 +3742,7 @@
 	"beachhead_troop_demo": "Sprengmeister",
 	"beachhead_troop_heavy": "Minigun-Schwerer",
 	"beachhead_troop_azov": "Azov-Kommandeur",
+	"beachhead_give_up": "Angriff aufgeben",
 	"beachhead_hero_stat_heal": "Heilimpuls",
 	"beachhead_log_taken": "{player} hat {island} eingenommen",
 	"beachhead_log_attack": "{player} hat {island} angegriffen",

@@ -3733,6 +3733,7 @@
 	"beachhead_troop_demo": "Demolitionist",
 	"beachhead_troop_heavy": "Minigun heavy",
 	"beachhead_troop_azov": "Azov commander",
+	"beachhead_give_up": "Give up the attack",
 	"beachhead_hero_stat_heal": "Healing pulse",
 	"beachhead_log_taken": "{player} took {island}",
 	"beachhead_log_attack": "{player} attacked {island}",

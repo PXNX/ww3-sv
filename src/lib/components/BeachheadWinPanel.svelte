@@ -13,10 +13,7 @@
 	import type { CrystalType } from '#lib/game/beachhead/crystals.js';
 	import CrystalIcon from '#lib/components/CrystalIcon.svelte';
 	import { crystalName } from '#lib/components/beachheadText.js';
-	import type { ScoreCard } from '#lib/services/share.js';
 	import Confetti from './Confetti.svelte';
-	import ShareButton from './ShareButton.svelte';
-	import IconArrowRight from '~icons/lucide/arrow-right';
 	import IconTimer from '~icons/lucide/timer';
 	import IconGem from '~icons/lucide/gem';
 	import IconMap from '~icons/lucide/map';
@@ -24,7 +21,6 @@
 
 	let {
 		open,
-		score,
 		loot,
 		lost,
 		shards,
@@ -32,15 +28,9 @@
 		seconds,
 		islandName,
 		newAchievements,
-		isNewBest,
-		hasNext,
-		modeName,
-		drawBoard,
-		onNext,
 		onIslands
 	}: {
 		open: boolean;
-		score: number;
 		/** Resources won in this battle */
 		loot: Resources;
 		/** Troops the attack killed, by kind */
@@ -54,12 +44,6 @@
 		islandName: string;
 		/** Achievements unlocked by this victory */
 		newAchievements: string[];
-		isNewBest: boolean;
-		/** Another island follows this one */
-		hasNext: boolean;
-		modeName: string;
-		drawBoard?: ScoreCard['drawBoard'];
-		onNext: () => void;
 		onIslands: () => void;
 	} = $props();
 
@@ -163,27 +147,7 @@
 			</p>
 		{/if}
 
-		<p class="font-display text-lg font-bold tabular-nums" title={m.gameover_final_score()}>
-			{score}
-			{#if isNewBest}
-				<span class="rotate-2 rounded-md border-2 border-ink bg-explosion-yellow px-1.5 text-sm">
-					{m.gameover_new_best()}
-				</span>
-			{/if}
-		</p>
-
 		<div class="flex flex-wrap items-center justify-center gap-3">
-			{#if hasNext}
-				<button
-					type="button"
-					class="btn-chunky flex items-center gap-2 bg-khaki text-lg"
-					aria-label={m.beachhead_next_island()}
-					title={m.beachhead_next_island()}
-					onclick={onNext}
-				>
-					<IconArrowRight class="size-6 rtl:rotate-180" aria-hidden="true" />
-				</button>
-			{/if}
 			<button
 				type="button"
 				class="btn-chunky flex items-center gap-2 text-lg"
@@ -194,10 +158,6 @@
 				<IconMap class="size-6" aria-hidden="true" />
 			</button>
 		</div>
-
-		{#if isNewBest}
-			<ShareButton {modeName} {score} {drawBoard} />
-		{/if}
 	</div>
 </dialog>
 

@@ -13,6 +13,7 @@ import {
 import {
 	createBattle,
 	deploy,
+	giveUp,
 	scoreOf,
 	setFocus,
 	starsOf,
@@ -286,5 +287,39 @@ describe('the time limit', () => {
 		expect(timeLeftMs(state)).toBe(180_000);
 		state.timeMs = 100_000;
 		expect(timeLeftMs(state)).toBe(80_000);
+	});
+});
+
+describe('giving up', () => {
+	it('sends the troops back to the shore, where they escape, and ends the attack', () => {
+		const state = createBattle(OPEN_ISLAND);
+		deploy(state, 3);
+		for (const troop of state.troops) troop.x = 5;
+		giveUp(state);
+		expect(state.squadsLeft).toBe(0);
+		expect(deploy(state, 4)).toBe(false);
+		const start = state.troops.map((troop) => troop.x);
+		stepBattle(state, 100);
+		state.troops.forEach((troop, index) => expect(troop.x).toBeLessThan(start[index]));
+		for (let step = 0; step < 100 && state.status === 'playing'; step++) stepBattle(state, 100);
+		expect(state.troops).toHaveLength(0);
+		expect(state.status).toBe('lost');
+		expect(state.events.some((event) => event.kind === 'troop-escaped')).toBe(true);
+		// Whoever ran away is not counted as killed
+		expect(Object.keys(state.casualties)).toHaveLength(0);
+	});
+
+	it('leaves the runners open to the defenders', () => {
+		const state = createBattle(GUARDED_ISLAND);
+		deploy(state, 4);
+		for (const troop of state.troops) {
+			troop.x = 3.5;
+			troop.y = 4.5;
+		}
+		giveUp(state);
+		const before = state.troops.reduce((sum, troop) => sum + troop.hp, 0);
+		for (let step = 0; step < 15; step++) stepBattle(state, 100);
+		const after = state.troops.reduce((sum, troop) => sum + troop.hp, 0);
+		expect(after).toBeLessThan(before);
 	});
 });

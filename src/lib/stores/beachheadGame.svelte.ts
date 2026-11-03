@@ -22,6 +22,7 @@ import {
 	castSkill,
 	createBattle,
 	deploy,
+	giveUp,
 	scoreOf,
 	setFocus,
 	skillCost,
@@ -243,6 +244,8 @@ export class BeachheadGame {
 	recentTakeovers = $state<string[]>([]);
 	/** True while the player attacks their own base to try out its layout; nothing is won or lost */
 	testing = $state(false);
+	/** True once the attack has been given up and the troops are running for the beach */
+	retreating = $state(false);
 	/** How fast an attack runs: normal, double, or four times as fast for Pro */
 	speed = $state<1 | 2 | 4>(1);
 	/** Shown for a few seconds after a free player reaches for the fourfold speed */
@@ -967,6 +970,7 @@ export class BeachheadGame {
 			}
 		);
 		this.testing = true;
+		this.retreating = false;
 		this.speed = 1;
 		this.testResult = null;
 		this.effects = [];
@@ -991,6 +995,7 @@ export class BeachheadGame {
 	openIsland(index: number) {
 		this.#retreat();
 		this.testing = false;
+		this.retreating = false;
 		this.speed = 1;
 		if (!this.isUnlocked(index) || index < 0 || index >= ISLAND_IDS.length) return;
 		if (this.isControlled(ISLAND_IDS[index])) return;
@@ -1115,6 +1120,18 @@ export class BeachheadGame {
 			this.speed = 1;
 		}
 		this.#play('click', 0.4);
+	}
+
+	/** Gives the attack up: the landed troops run back to the shore, still under fire */
+	giveUp() {
+		if (this.screen !== 'play' || this.status !== 'playing' || this.battle.status !== 'playing')
+			return;
+		giveUp(this.battle);
+		this.retreating = true;
+		this.selectedSkill = null;
+		this.focusKind = null;
+		this.#play('ui-toggle', 0.5);
+		this.#sync();
 	}
 
 	cancelSkill() {
@@ -1505,6 +1522,15 @@ export class BeachheadGame {
 				}
 				break;
 			}
+			case 'troop-escaped':
+				this.#effect({
+					kind: 'splash',
+					x: event.x,
+					y: event.y,
+					ageMs: 0,
+					durationMs: 420 * short + 60
+				});
+				break;
 			case 'troop-down':
 				this.#effect({
 					kind: 'down',
@@ -1631,17 +1657,12 @@ export class BeachheadGame {
 			this.loot = loot;
 			this.newAchievements = [];
 			this.#commit(next, { announce: true });
-			const result = this.#scores().submit(highscoreParts(this.islandId), scoreOf(this.battle));
-			this.isNewBest = result.isNewBest;
-			this.best = result.best;
 			this.status = 'won';
 			return;
 		}
 
 		this.#commit(this.#settleCasualties(this.campaign), { claim: false });
-		const result = this.#scores().submit(highscoreParts(this.islandId), scoreOf(this.battle));
-		this.isNewBest = result.isNewBest;
-		this.best = result.best;
+		this.lastSeconds = Math.round(this.battle.timeMs / 1000);
 		this.status = 'over';
 	}
 

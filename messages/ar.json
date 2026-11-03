@@ -3742,6 +3742,7 @@
 	"beachhead_troop_demo": "خبير تفجير",
 	"beachhead_troop_heavy": "رشاش ثقيل متعدد",
 	"beachhead_troop_azov": "قائد آزوف",
+	"beachhead_give_up": "استسلم",
 	"beachhead_hero_stat_heal": "نبضة الشفاء",
 	"beachhead_log_taken": "استولى {player} على {island}",
 	"beachhead_log_attack": "هاجم {player} {island}",
