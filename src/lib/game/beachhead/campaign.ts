@@ -64,8 +64,8 @@ export const RESOURCE_KINDS: readonly ResourceKind[] = ['wood', 'stone', 'iron',
 /** Every resource has two warehouses, and each of them can be leveled up on its own */
 export const WAREHOUSES_PER_RESOURCE = 2;
 /** A stockpile starts here and every warehouse level adds room for more */
-export const STORAGE_BASE = 600;
-export const STORAGE_PER_LEVEL = 350;
+export const STORAGE_BASE = 0;
+export const STORAGE_PER_LEVEL = 500;
 
 export type BoatKey = `boat-${number}`;
 export type WarehouseKey = `warehouse-${ResourceKind}-${number}`;
@@ -1341,8 +1341,17 @@ function upgradeV5Save(value: unknown): BeachheadSave | null {
  */
 export function parseSave(value: unknown): BeachheadSave | null {
 	const parsed = parseSaveVersions(value);
-	if (parsed?.layout === undefined) return parsed;
-	return { ...parsed, layout: normalizeLayout(parsed.layout) };
+	if (!parsed) return parsed;
+	// Nothing can be stored beyond what the warehouses hold, whatever an older save says
+	const capacities = storageCapacities(parsed);
+	const resources: Resources = {
+		wood: Math.min(parsed.resources.wood, capacities.wood),
+		stone: Math.min(parsed.resources.stone, capacities.stone),
+		iron: Math.min(parsed.resources.iron, capacities.iron),
+		gold: Math.min(parsed.resources.gold, capacities.gold)
+	};
+	const next = { ...parsed, resources };
+	return next.layout === undefined ? next : { ...next, layout: normalizeLayout(next.layout) };
 }
 
 function parseSaveVersions(value: unknown): BeachheadSave | null {
