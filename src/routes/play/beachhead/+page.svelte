@@ -246,8 +246,6 @@
 				</div>
 			{/if}
 
-			<RotateHint />
-
 			{#if game.status === 'paused'}
 				<PauseOverlay onResume={() => game.resume()} cover>
 					<button
@@ -276,6 +274,9 @@
 	{:else}
 		<BeachheadMap {game} />
 	{/if}
+
+	<!-- The whole mode is played sideways: held upright, a card covers every screen and the game waits -->
+	<RotateHint onportrait={(portrait) => portrait && game.pause()} />
 
 	<TutorialModal
 		open={showTutorial}
