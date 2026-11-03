@@ -23,6 +23,12 @@ export type BuildingKind =
 	| 'depot'
 	| 'catapult'
 	| 'ballista'
+	| 'ice-cannon'
+	| 'ice-spire'
+	| 'dart-hut'
+	| 'totem'
+	| 'sand-mortar'
+	| 'scorpion-nest'
 	| MineKind;
 
 /** One-cell mines: they sit on the ground and go off when a troop walks over them */
@@ -173,6 +179,79 @@ export const BUILDINGS: Record<BuildingKind, BuildingStats> = {
 		damage: 34,
 		range: 6,
 		reloadMs: 1500,
+		splash: 0,
+		targeting: 'weakest',
+		score: 300
+	},
+	// The frozen north: a frost cannon that lobs ice and a spire that picks off the weakest from afar
+	'ice-cannon': {
+		width: 1,
+		height: 1,
+		hp: 540,
+		damage: 50,
+		range: 5.8,
+		reloadMs: 2800,
+		splash: 1.2,
+		minRange: 2,
+		targeting: 'farthest',
+		projectile: 'shell',
+		projectileSpeed: 7,
+		score: 360
+	},
+	'ice-spire': {
+		width: 1,
+		height: 1,
+		hp: 360,
+		damage: 22,
+		range: 6.8,
+		reloadMs: 900,
+		splash: 0,
+		targeting: 'weakest',
+		score: 320
+	},
+	// The jungle: a hut of blowpipes that spits darts all day and a totem that shocks everyone close
+	'dart-hut': {
+		width: 1,
+		height: 1,
+		hp: 320,
+		damage: 5,
+		range: 3,
+		reloadMs: 140,
+		splash: 0,
+		score: 260
+	},
+	totem: {
+		width: 1,
+		height: 1,
+		hp: 480,
+		damage: 12,
+		range: 2.6,
+		reloadMs: 500,
+		splash: 0.8,
+		score: 300
+	},
+	// The desert: a mortar dug into the dunes and a scorpion nest that stings the weakest
+	'sand-mortar': {
+		width: 1,
+		height: 1,
+		hp: 400,
+		damage: 54,
+		range: 6.2,
+		reloadMs: 2900,
+		splash: 1.3,
+		minRange: 1.8,
+		targeting: 'farthest',
+		projectile: 'shell',
+		projectileSpeed: 7.5,
+		score: 340
+	},
+	'scorpion-nest': {
+		width: 1,
+		height: 1,
+		hp: 380,
+		damage: 30,
+		range: 4.2,
+		reloadMs: 1100,
 		splash: 0,
 		targeting: 'weakest',
 		score: 300
@@ -447,8 +526,8 @@ export const MAX_HERO_LEVEL = 6;
 export const MAX_HERO_SKILL_LEVEL = 6;
 /** A conquered base drops Azov commander cards at this low rate */
 export const HERO_CARD_DROP_CHANCE = 0.1;
-/** The radar tower starts by charting six islands and reveals one more per level */
-export const MAX_RADAR_LEVEL = 4;
+/** The radar tower starts by charting six islands and reveals three more per level */
+export const MAX_RADAR_LEVEL = 8;
 export const BASE_CHARTED_ISLANDS = 6;
 
 /** The support skills the player can call in during an assault */
@@ -527,10 +606,14 @@ export interface IslandBuilding {
 	y: number;
 }
 
+export type IslandTheme = 'orc' | 'ice' | 'jungle' | 'desert';
+
 export interface Island {
 	id: string;
-	/** The orc lands in the north are drawn and defended differently */
-	theme?: 'orc';
+	/** Where the island lies decides how it looks and what defends it */
+	theme?: IslandTheme;
+	/** How icy the island is, 0 to 1; the further inland in the frozen north, the more */
+	frost?: number;
 	buildings: readonly IslandBuilding[];
 }
 
@@ -539,10 +622,89 @@ export interface Island {
  * land a squad on it. Every island adds a different defensive structure, from field cannons and
  * machine guns to mortars, drone nests, air defence batteries and flamethrowers.
  */
-export const ISLANDS: readonly Island[] = [
+/** A small deterministic random sequence, so a generated island is the same on every device */
+function sequence(seed: number): () => number {
+	let state = seed >>> 0;
+	return () => {
+		state = (state + 0x6d2b79f5) >>> 0;
+		let t = state;
+		t = Math.imul(t ^ (t >>> 15), t | 1);
+		t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+	};
+}
+
+const THEME_GUNS: Record<'ice' | 'jungle' | 'desert', readonly BuildingKind[]> = {
+	ice: ['ice-cannon', 'ice-spire'],
+	jungle: ['dart-hut', 'totem'],
+	desert: ['sand-mortar', 'scorpion-nest']
+};
+const COMMON_GUNS: readonly BuildingKind[] = [
+	'field-cannon',
+	'mortar',
+	'sniper',
+	'mg',
+	'fpv-nest',
+	'air-defence',
+	'flame'
+];
+const MINE_ROTATION: readonly BuildingKind[] = ['mine-personnel', 'mine-at', 'mine-emp'];
+
+/**
+ * An island of a biome with a defence that fits it. Later steps carry more guns and mines, and the
+ * themed defences always make up a good share of the guns.
+ */
+function generatedIsland(
+	id: string,
+	theme: 'ice' | 'jungle' | 'desert',
+	step: number,
+	seed: number
+): Island {
+	const random = sequence(seed);
+	const hqY = 2 + (step % 3);
+	const buildings: IslandBuilding[] = [{ kind: 'hq', x: 9, y: hqY }];
+	// Free cells for the guns: the sand in front of the headquarters, shuffled by the island's seed
+	const cells: { x: number; y: number }[] = [];
+	for (let x = 4; x <= 8; x++) for (let y = 0; y < ROWS; y++) cells.push({ x, y });
+	for (let index = cells.length - 1; index > 0; index--) {
+		const other = Math.floor(random() * (index + 1));
+		[cells[index], cells[other]] = [cells[other], cells[index]];
+	}
+	const themed = THEME_GUNS[theme];
+	const guns = 12 + Math.floor(step / 3);
+	for (let gun = 0; gun < guns; gun++) {
+		const cell = cells.pop();
+		if (!cell) break;
+		// Every third gun belongs to the biome; the rest is the usual mix
+		const kind =
+			gun % 3 === 0
+				? themed[(gun / 3) % themed.length]
+				: COMMON_GUNS[Math.floor(random() * COMMON_GUNS.length)];
+		buildings.push({ kind, x: cell.x, y: cell.y });
+	}
+	for (let depot = 0; depot < 2; depot++) {
+		const cell = cells.pop();
+		if (cell) buildings.push({ kind: 'depot', x: cell.x, y: cell.y });
+	}
+	// Mines wait on the beach side, three kinds in rotation
+	const mines = 3 + Math.floor(step / 2);
+	const mineCells: { x: number; y: number }[] = [];
+	for (let x = 3; x <= 3; x++) for (let y = 0; y < ROWS; y++) mineCells.push({ x, y });
+	for (let mine = 0; mine < Math.min(mines, mineCells.length); mine++) {
+		const cell = mineCells[(mine * 3 + step) % mineCells.length];
+		if (buildings.some((b) => b.x === cell.x && b.y === cell.y)) continue;
+		buildings.push({ kind: MINE_ROTATION[mine % MINE_ROTATION.length], x: cell.x, y: cell.y });
+	}
+	return { id, theme, buildings };
+}
+
+/** The first nine islands are drawn by hand; the rest are built from a theme and a step of difficulty */
+const CORE_ISLANDS: readonly Island[] = [
 	{
 		id: 'palm-key',
+		theme: 'jungle',
 		buildings: [
+			{ kind: 'dart-hut', x: 4, y: 6 },
 			{ kind: 'hq', x: 9, y: 3 },
 			{ kind: 'field-cannon', x: 6, y: 2 },
 			{ kind: 'mg', x: 7, y: 5 },
@@ -551,7 +713,9 @@ export const ISLANDS: readonly Island[] = [
 	},
 	{
 		id: 'coral-battery',
+		theme: 'desert',
 		buildings: [
+			{ kind: 'scorpion-nest', x: 6, y: 6 },
 			{ kind: 'hq', x: 9, y: 3 },
 			{ kind: 'field-cannon', x: 5, y: 2 },
 			{ kind: 'sniper', x: 7, y: 5 },
@@ -703,7 +867,26 @@ export const ISLAND_MAP_POSITIONS: readonly { x: number; y: number }[] = [
 	// The orc lands: a broad landmass along the north edge, each stronghold on its own headland
 	{ x: 24, y: 17 },
 	{ x: 50, y: 12 },
-	{ x: 76, y: 17 }
+	{ x: 76, y: 17 },
+	// The frozen north, around the orc lands
+	{ x: 8, y: 30 },
+	{ x: 38, y: 27 },
+	{ x: 62, y: 27 },
+	{ x: 92, y: 30 },
+	{ x: 36, y: 6 },
+	{ x: 64, y: 6 },
+	// The jungle in the south-west
+	{ x: 10, y: 74 },
+	{ x: 20, y: 90 },
+	{ x: 42, y: 88 },
+	{ x: 8, y: 60 },
+	{ x: 40, y: 66 },
+	// The desert in the south-east
+	{ x: 90, y: 78 },
+	{ x: 62, y: 90 },
+	{ x: 80, y: 66 },
+	{ x: 94, y: 56 },
+	{ x: 82, y: 92 }
 ];
 
 /** Where your own base lies on the sea chart, as a percentage of its width and height */
@@ -711,6 +894,34 @@ export const HOME_MAP_POSITION = { x: 50, y: 58 } as const;
 
 /** The landmass of the orc lands: where the islands from this index on stand */
 export const ORC_LANDS_FROM_INDEX = 6;
+
+const EXTRA_THEMES: readonly ('ice' | 'jungle' | 'desert')[] = [
+	...Array.from({ length: 6 }, () => 'ice' as const),
+	...Array.from({ length: 5 }, () => 'jungle' as const),
+	...Array.from({ length: 5 }, () => 'desert' as const)
+];
+const EXTRA_NAMES: Record<'ice' | 'jungle' | 'desert', string> = {
+	ice: 'frostbite',
+	jungle: 'jungle-key',
+	desert: 'dune-outpost'
+};
+
+const EXTRA_ISLANDS: readonly Island[] = EXTRA_THEMES.map((theme, index) =>
+	generatedIsland(`${EXTRA_NAMES[theme]}-${index + 1}`, theme, index, 7919 * (index + 3))
+);
+
+/** The north gets icier the further inland an island lies: orc and frozen islands carry a frost value */
+function withFrost(island: Island, index: number): Island {
+	if (island.theme !== 'orc' && island.theme !== 'ice') return island;
+	const y = ISLAND_MAP_POSITIONS[index]?.y ?? 50;
+	const frost = Math.max(0, Math.min(1, (34 - y) / 30));
+	return {
+		...island,
+		frost: Math.round(Math.max(island.theme === 'ice' ? 0.55 : 0.1, frost) * 100) / 100
+	};
+}
+
+export const ISLANDS: readonly Island[] = [...CORE_ISLANDS, ...EXTRA_ISLANDS].map(withFrost);
 
 export const ISLAND_IDS: readonly string[] = ISLANDS.map((island) => island.id);
 

@@ -3,7 +3,7 @@
  * files, so every language can name them for itself.
  */
 import { m } from '#lib/paraglide/messages.js';
-import type { BuildingKind, TroopKind } from '#lib/game/beachhead/config.js';
+import { ISLANDS, type BuildingKind, type TroopKind } from '#lib/game/beachhead/config.js';
 
 const ISLAND_NAMES = [
 	m.beachhead_island_1_name,
@@ -19,7 +19,22 @@ const ISLAND_NAMES = [
 
 export function islandName(index: number): string {
 	const name = ISLAND_NAMES[index];
-	return name ? name() : m.beachhead_island_label({ index: index + 1 });
+	if (name) return name();
+	// The islands beyond the hand-made ones are named after their biome and counted within it
+	const island = ISLANDS[index];
+	const sameBiome = ISLANDS.slice(0, index + 1).filter(
+		(other) => other.theme === island?.theme
+	).length;
+	switch (island?.theme) {
+		case 'ice':
+			return m.beachhead_island_name_ice({ number: sameBiome });
+		case 'jungle':
+			return m.beachhead_island_name_jungle({ number: sameBiome });
+		case 'desert':
+			return m.beachhead_island_name_desert({ number: sameBiome });
+		default:
+			return m.beachhead_island_label({ index: index + 1 });
+	}
 }
 
 export function achievementName(id: string): string {
@@ -119,6 +134,18 @@ export function buildingName(kind: BuildingKind): string {
 			return m.beachhead_building_flame();
 		case 'depot':
 			return m.beachhead_building_depot();
+		case 'ice-cannon':
+			return m.beachhead_building_ice_cannon();
+		case 'ice-spire':
+			return m.beachhead_building_ice_spire();
+		case 'dart-hut':
+			return m.beachhead_building_dart_hut();
+		case 'totem':
+			return m.beachhead_building_totem();
+		case 'sand-mortar':
+			return m.beachhead_building_sand_mortar();
+		case 'scorpion-nest':
+			return m.beachhead_building_scorpion_nest();
 		case 'catapult':
 			return m.beachhead_building_catapult();
 		case 'ballista':

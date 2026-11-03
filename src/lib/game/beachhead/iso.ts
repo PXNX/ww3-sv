@@ -149,6 +149,14 @@ export function shade(hex: string, amount: number): string {
 	return `rgb(${mix(r)},${mix(g)},${mix(b)})`;
 }
 
+/** A colour part of the way from one #rrggbb to another, as an rgb() string */
+export function mix(from: string, to: string, amount: number): string {
+	const [r1, g1, b1] = hexToRgb(from);
+	const [r2, g2, b2] = hexToRgb(to);
+	const t = Math.min(1, Math.max(0, amount));
+	return `rgb(${Math.round(r1 + (r2 - r1) * t)},${Math.round(g1 + (g2 - g1) * t)},${Math.round(b1 + (b2 - b1) * t)})`;
+}
+
 export interface SolidPalette {
 	top: string;
 	left: string;

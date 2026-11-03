@@ -105,7 +105,7 @@ export const STARTING_RESOURCES: Resources = { wood: 300, stone: 220, iron: 100,
 /** What the home shore produces per minute on its own: the forest's logs, the mountain's ore and a trickle of gold; the islands add their own lines */
 export const HOME_PRODUCTION: Resources = { wood: 3, stone: 0, iron: 1, gold: 1 };
 /** What each island adds to the tax income once controlled, in units per minute */
-export const ISLAND_PRODUCTION: readonly Resources[] = [
+const HAND_MADE_PRODUCTION: readonly Resources[] = [
 	{ wood: 2, stone: 1, iron: 0, gold: 0 },
 	{ wood: 2, stone: 1, iron: 1, gold: 0 },
 	{ wood: 3, stone: 2, iron: 1, gold: 0 },
@@ -115,6 +115,20 @@ export const ISLAND_PRODUCTION: readonly Resources[] = [
 	{ wood: 4, stone: 3, iron: 4, gold: 2 },
 	{ wood: 4, stone: 4, iron: 5, gold: 3 },
 	{ wood: 5, stone: 5, iron: 6, gold: 4 }
+];
+/** Later islands pay a little more than the last, so the far ends of the chart are worth the trip */
+export const ISLAND_PRODUCTION: readonly Resources[] = [
+	...HAND_MADE_PRODUCTION,
+	...Array.from({ length: 24 }, (_, step): Resources => {
+		const last = HAND_MADE_PRODUCTION[HAND_MADE_PRODUCTION.length - 1];
+		const growth = 1 + (step + 1) * 0.08;
+		return {
+			wood: Math.round(last.wood * growth),
+			stone: Math.round(last.stone * growth),
+			iron: Math.round(last.iron * growth),
+			gold: Math.round(last.gold * growth)
+		};
+	})
 ];
 /** Troop kinds the player loads into boats; the heroes always come along and take no space */
 export const ARMY_KINDS: readonly ArmyKind[] = [
@@ -1527,7 +1541,7 @@ export function everCaptured(save: BeachheadSave, islandId: string): boolean {
 
 /** How many islands the radar tower has charted on the sea map */
 export function chartedCount(save: BeachheadSave, total: number = ISLAND_IDS.length): number {
-	return Math.min(total, BASE_CHARTED_ISLANDS + save.levels.radar - 1);
+	return Math.min(total, BASE_CHARTED_ISLANDS + (save.levels.radar - 1) * 3);
 }
 
 export function isCharted(save: BeachheadSave, index: number): boolean {

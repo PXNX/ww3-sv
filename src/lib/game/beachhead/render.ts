@@ -14,12 +14,14 @@ import {
 	TROOP,
 	VEHICLE_TROOPS,
 	isMine,
-	type BuildingKind
+	type BuildingKind,
+	type IslandTheme
 } from './config.js';
 import { drawResourceGlyph, type ResourceId } from './resourceIcons.js';
 import { drawEnemyBuilding, drawHitFlash, drawMineArt, drawRubbleArt } from './buildingArt.js';
 import {
 	createShoreView,
+	mix,
 	drawBlob,
 	drawBox,
 	onGround,
@@ -70,13 +72,21 @@ const BUILDING_MUZZLE = new Set<BuildingKind>([
 	'air-defence',
 	'fpv-nest',
 	'catapult',
-	'ballista'
+	'ballista',
+	'ice-cannon',
+	'ice-spire',
+	'dart-hut',
+	'sand-mortar',
+	'scorpion-nest'
 ]);
 
 /** How tall each building stands, for its health bar and damage smoke */
 const BUILDING_TOP: Partial<Record<BuildingKind, number>> = {
 	hq: 1.9,
 	catapult: 1.1,
+	'ice-spire': 1.7,
+	totem: 1.3,
+	'dart-hut': 1.0,
 	sniper: 1.4,
 	'fpv-nest': 1.3,
 	'air-defence': 1.1,
@@ -288,12 +298,41 @@ function drawLandingCraft(
 	}
 }
 
+interface Ground {
+	sand: string;
+	earth: string;
+	patch: string;
+}
+
+/** The ground of each biome; frost whitens the north the further inland an island lies */
+function groundOf(theme: IslandTheme | undefined, frost = 0): Ground {
+	const base: Ground =
+		theme === 'orc'
+			? { sand: '#8a8f6a', earth: '#6b5a48', patch: '#6f7456' }
+			: theme === 'ice'
+				? { sand: '#dcebf3', earth: '#8fb3c6', patch: '#bcd6e4' }
+				: theme === 'jungle'
+					? { sand: '#a9c47a', earth: '#5b6b3a', patch: '#5f9a49' }
+					: theme === 'desert'
+						? { sand: '#ecd49a', earth: '#c9a35a', patch: '#d8bb7a' }
+						: { sand: SAND, earth: DIRT, patch: SAND_DARK };
+	if (frost <= 0) return base;
+	const snow = '#f1f8fc';
+	return {
+		sand: mix(base.sand, snow, frost * 0.85),
+		earth: mix(base.earth, '#9fc0d2', frost * 0.7),
+		patch: mix(base.patch, '#ffffff', frost * 0.8)
+	};
+}
+
 function drawIsland(
 	context: CanvasRenderingContext2D,
 	view: ShoreView,
 	timeMs: number,
-	theme?: 'orc'
+	theme?: IslandTheme,
+	frost = 0
 ) {
+	const ground = groundOf(theme, frost);
 	const shore = SHORE_X - 0.15;
 	const thickness = 0.55;
 	const p = view.project;
@@ -313,7 +352,7 @@ function drawIsland(
 		context.stroke();
 	};
 	// The two edges that face the camera are the shore (left) and the far-right side of the island
-	const earth = theme === 'orc' ? '#6b5a48' : DIRT;
+	const earth = ground.earth;
 	wall([shore, 0], [shore, ROWS], shade(earth, -0.2));
 	wall([shore, ROWS], [COLUMNS, ROWS], earth);
 
@@ -327,7 +366,7 @@ function drawIsland(
 		context.lineTo(COLUMNS, ROWS);
 		context.lineTo(COLUMNS, 0);
 		context.closePath();
-		context.fillStyle = theme === 'orc' ? '#8a8f6a' : SAND;
+		context.fillStyle = ground.sand;
 		context.fill();
 		context.lineWidth = 0.05;
 		context.strokeStyle = INK;
@@ -343,7 +382,7 @@ function drawIsland(
 		context.stroke();
 
 		// A few patches of dry grass, kept out of the way of the buildings
-		context.fillStyle = theme === 'orc' ? '#6f7456' : SAND_DARK;
+		context.fillStyle = ground.patch;
 		for (const patch of [
 			{ x: 3.1, y: 2.2 },
 			{ x: 3.4, y: 5.6 },
@@ -355,6 +394,75 @@ function drawIsland(
 			context.fill();
 		}
 	});
+}
+
+/** More palms on the jungle islands, a few anywhere else; cacti and crystals take their place in the desert and the north */
+const JUNGLE_PALMS: readonly { x: number; y: number }[] = [
+	...PALMS,
+	{ x: 3.4, y: 3.4 },
+	{ x: 6.6, y: 0.4 },
+	{ x: 6.2, y: 7.3 },
+	{ x: 9.6, y: 4.6 },
+	{ x: 4.4, y: 6.6 },
+	{ x: 8.2, y: 2.4 }
+];
+
+function decorFor(theme?: IslandTheme): readonly { x: number; y: number }[] {
+	return theme === 'jungle' ? JUNGLE_PALMS : PALMS;
+}
+
+function drawCactus(context: CanvasRenderingContext2D) {
+	context.lineJoin = 'round';
+	context.lineCap = 'round';
+	for (const [width, color] of [
+		[0.2, INK],
+		[0.13, '#4f9a4a']
+	] as const) {
+		context.strokeStyle = color;
+		context.lineWidth = width;
+		context.beginPath();
+		context.moveTo(0, 0);
+		context.lineTo(0, -0.6);
+		context.moveTo(0, -0.28);
+		context.lineTo(-0.2, -0.28);
+		context.lineTo(-0.2, -0.46);
+		context.moveTo(0, -0.18);
+		context.lineTo(0.2, -0.18);
+		context.lineTo(0.2, -0.34);
+		context.stroke();
+	}
+}
+
+/** Shards of ice standing out of the snow; icier islands grow bigger ones, and the rocky orc lands dead bare trees */
+function drawCrystals(context: CanvasRenderingContext2D, frost: number, seed: number) {
+	context.lineJoin = 'round';
+	const size = 0.55 + frost * 0.7;
+	const shards = [
+		{ x: -0.16, h: size * 0.8, w: 0.14 },
+		{ x: 0.02, h: size, w: 0.18 },
+		{ x: 0.2, h: size * 0.6, w: 0.12 }
+	];
+	for (const shard of shards) {
+		context.beginPath();
+		context.moveTo(shard.x - shard.w, 0);
+		context.lineTo(shard.x, -shard.h);
+		context.lineTo(shard.x + shard.w, 0);
+		context.closePath();
+		context.fillStyle = frost > 0.25 ? '#c9e7f5' : '#8d8f7a';
+		context.fill();
+		context.lineWidth = 0.04;
+		context.strokeStyle = INK;
+		context.stroke();
+		if (frost > 0.25) {
+			context.beginPath();
+			context.moveTo(shard.x - shard.w * 0.2, -shard.h * 0.25);
+			context.lineTo(shard.x, -shard.h * 0.9);
+			context.strokeStyle = 'rgba(255,255,255,0.85)';
+			context.lineWidth = 0.04;
+			context.stroke();
+		}
+	}
+	void seed;
 }
 
 /** The crater a mine leaves, flat on the sand */
@@ -401,7 +509,7 @@ function drawBuilding(
 	view: ShoreView,
 	building: Building,
 	timeMs: number,
-	theme?: 'orc'
+	theme?: IslandTheme
 ) {
 	if (building.destroyed) {
 		drawRubbleArt(context, view.grid, view.gridPlacement(building), timeMs);
@@ -1467,7 +1575,7 @@ export function drawScene(
 		drawSea(context, view, timeMs);
 		drawLandingCraft(context, view, state.squadsLeft, timeMs);
 	}
-	drawIsland(context, view, timeMs, state.island.theme);
+	drawIsland(context, view, timeMs, state.island.theme, state.island.frost);
 	drawGroundZones(context, view, state, timeMs);
 
 	// Mines lie flat on the sand, so they go under everything that stands up
@@ -1479,15 +1587,26 @@ export function drawScene(
 
 	// Palms, buildings and troops share one painter's order: the further down the screen, the later
 	const standing: { depth: number; draw: () => void }[] = [];
-	for (const palm of PALMS) {
+	for (const palm of decorFor(state.island.theme)) {
 		standing.push({
 			depth: shoreDepth(palm.x, palm.y + 0.55),
 			draw: () => {
 				const at = view.project(palm.x, palm.y + 0.55);
 				context.save();
 				context.translate(at.x, at.y);
-				context.scale(1.6, 1.6);
-				drawPalm(context, 0, -0.55, timeMs);
+				if (state.island.theme === 'desert') {
+					context.scale(1.4, 1.4);
+					drawCactus(context);
+				} else if (state.island.theme === 'ice' || state.island.theme === 'orc') {
+					context.scale(1.4, 1.4);
+					drawCrystals(context, state.island.frost ?? 0, palm.x);
+				} else {
+					context.scale(
+						state.island.theme === 'jungle' ? 2 : 1.6,
+						state.island.theme === 'jungle' ? 2 : 1.6
+					);
+					drawPalm(context, 0, -0.55, timeMs);
+				}
 				context.restore();
 			}
 		});

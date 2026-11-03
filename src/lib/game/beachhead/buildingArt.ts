@@ -4,7 +4,7 @@
  * zoom. A building is described by its footprint in grid cells; the picture rises above it.
  */
 import type { Building } from './battle.js';
-import type { BuildingKind } from './config.js';
+import type { BuildingKind, IslandTheme } from './config.js';
 import {
 	drawBar,
 	drawBlob,
@@ -521,18 +521,255 @@ function drawBallistaArt(context: CanvasRenderingContext2D, view: IsoView, b: Pl
 	drawBlob(context, view, cx, cy + 0.58, 0.5, 0.06, STEEL);
 }
 
+const ICE = '#bcd9e6';
+const ICE_DARK = '#7fa9c0';
+const THATCH = '#b89a4a';
+const SANDSTONE = '#d8b878';
+
+function drawIceCannonArt(context: CanvasRenderingContext2D, view: IsoView, b: Placement) {
+	const cx = b.x + 0.5;
+	const cy = b.y + 0.5;
+	drawBox(context, view, b.x + 0.1, b.y + 0.1, 0.8, 0.8, 0, 0.28, paletteOf(ICE));
+	drawCylinder(context, view, cx, cy, 0.24, 0.28, 0.46, paletteOf(ICE_DARK));
+	drawBar(
+		context,
+		view,
+		{ x: cx, y: cy, z: 0.42 },
+		{ x: cx, y: cy + 0.62, z: 0.5 },
+		'#e6f4fb',
+		0.13
+	);
+	drawBlob(context, view, cx, cy + 0.66, 0.52, 0.08, '#9fe3ff');
+	drawRoof(context, view, cx - 0.14, cy - 0.34, 0.28, 0.28, 0.28, 0.35, paletteOf('#e6f4fb'), 0.03);
+}
+
+function drawIceSpireArt(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	b: Placement,
+	timeMs: number
+) {
+	const cx = b.x + 0.5;
+	const cy = b.y + 0.5;
+	drawBox(context, view, b.x + 0.2, b.y + 0.2, 0.6, 0.6, 0, 0.2, paletteOf(ICE_DARK));
+	drawRoof(context, view, b.x + 0.22, b.y + 0.22, 0.56, 0.56, 0.2, 0.9, paletteOf(ICE));
+	drawRoof(context, view, b.x + 0.3, b.y + 0.3, 0.4, 0.4, 0.75, 0.75, paletteOf('#e6f4fb'));
+	const glow = 0.5 + Math.sin(timeMs / 400) * 0.25;
+	drawBlob(context, view, cx, cy, 1.55, 0.07 + glow * 0.04, '#9fe3ff', 0.02);
+}
+
+function drawDartHutArt(context: CanvasRenderingContext2D, view: IsoView, b: Placement) {
+	const cx = b.x + 0.5;
+	const cy = b.y + 0.5;
+	for (const [dx, dy] of [
+		[-0.28, -0.28],
+		[0.28, -0.28],
+		[-0.28, 0.28],
+		[0.28, 0.28]
+	] as const) {
+		drawBar(
+			context,
+			view,
+			{ x: cx + dx, y: cy + dy, z: 0 },
+			{ x: cx + dx, y: cy + dy, z: 0.42 },
+			'#6b4526',
+			0.08
+		);
+	}
+	drawBox(context, view, b.x + 0.12, b.y + 0.12, 0.76, 0.76, 0.4, 0.5, paletteOf('#8a5a2b'));
+	drawBox(context, view, b.x + 0.25, b.y + 0.25, 0.5, 0.5, 0.5, 0.78, paletteOf('#a8793c'));
+	drawRoof(context, view, b.x + 0.08, b.y + 0.08, 0.84, 0.84, 0.78, 0.5, paletteOf(THATCH));
+	drawBar(
+		context,
+		view,
+		{ x: cx, y: cy + 0.1, z: 0.64 },
+		{ x: cx, y: cy + 0.62, z: 0.7 },
+		INK,
+		0.05
+	);
+}
+
+function drawTotemArt(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	b: Placement,
+	timeMs: number
+) {
+	const cx = b.x + 0.5;
+	const cy = b.y + 0.5;
+	drawCylinder(context, view, cx, cy, 0.2, 0, 0.45, paletteOf('#7a4e26'));
+	drawCylinder(context, view, cx, cy, 0.17, 0.45, 0.85, paletteOf('#c0392b'));
+	drawCylinder(context, view, cx, cy, 0.15, 0.85, 1.2, paletteOf('#3f9a4a'));
+	const eye = view.project(cx, cy + 0.15, 1.02);
+	context.fillStyle = PAPER;
+	context.beginPath();
+	context.arc(eye.x - 0.05, eye.y, 0.04, 0, Math.PI * 2);
+	context.arc(eye.x + 0.07, eye.y, 0.04, 0, Math.PI * 2);
+	context.fill();
+	const glow = 0.5 + Math.sin(timeMs / 300) * 0.5;
+	drawBlob(context, view, cx, cy, 1.32, 0.1 + glow * 0.03, EXPLOSION_YELLOW);
+}
+
+function drawSandMortarArt(context: CanvasRenderingContext2D, view: IsoView, b: Placement) {
+	const cx = b.x + 0.5;
+	const cy = b.y + 0.5;
+	drawCylinder(context, view, cx, cy, 0.3, 0, 0.12, paletteOf('#c9a35a'));
+	drawBar(
+		context,
+		view,
+		{ x: cx, y: cy - 0.04, z: 0.1 },
+		{ x: cx, y: cy + 0.14, z: 0.82 },
+		'#8a6a2b',
+		0.17
+	);
+	drawBlob(context, view, cx, cy + 0.14, 0.84, 0.09, INK);
+	sandbags(context, view, cx, cy - 0.12, 0.4, 7);
+}
+
+function drawScorpionArt(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	b: Placement,
+	timeMs: number
+) {
+	const cx = b.x + 0.5;
+	const cy = b.y + 0.5;
+	drawRoof(context, view, b.x + 0.1, b.y + 0.1, 0.8, 0.8, 0, 0.32, paletteOf('#c9a35a'));
+	drawBlob(context, view, cx, cy, 0.38, 0.17, '#4a2a1e');
+	for (const side of [-0.18, 0.18]) {
+		drawBar(
+			context,
+			view,
+			{ x: cx + side, y: cy + 0.05, z: 0.38 },
+			{ x: cx + side * 1.8, y: cy + 0.3, z: 0.42 },
+			'#4a2a1e',
+			0.06
+		);
+		drawBlob(context, view, cx + side * 1.9, cy + 0.32, 0.43, 0.06, '#6b3a28', 0.025);
+	}
+	// A tail that arches over its back and twitches
+	const sway = Math.sin(timeMs / 350) * 0.06;
+	drawBar(
+		context,
+		view,
+		{ x: cx, y: cy - 0.12, z: 0.4 },
+		{ x: cx + sway, y: cy - 0.32, z: 0.78 },
+		'#4a2a1e',
+		0.07
+	);
+	drawBar(
+		context,
+		view,
+		{ x: cx + sway, y: cy - 0.32, z: 0.78 },
+		{ x: cx + sway, y: cy - 0.08, z: 0.98 },
+		'#4a2a1e',
+		0.06
+	);
+	drawBlob(context, view, cx + sway, cy - 0.06, 1.0, 0.05, TIE_RED, 0.02);
+}
+
+function drawIceHq(context: CanvasRenderingContext2D, view: IsoView, b: Placement, timeMs: number) {
+	const { x, y, width: w, height: h } = b;
+	drawBox(context, view, x + 0.06, y + 0.06, w - 0.12, h - 0.12, 0, 0.8, paletteOf(ICE));
+	wallLeft(context, view, x + w * 0.4, x + w * 0.4 + 0.3, y + h - 0.06, 0, 0.4, INK);
+	drawBox(context, view, x + 0.4, y + 0.4, w - 0.8, h - 0.8, 0.8, 1.2, paletteOf('#e6f4fb'));
+	drawRoof(context, view, x + 0.3, y + 0.3, w - 0.6, h - 0.6, 1.2, 0.8, paletteOf(ICE_DARK));
+	drawRoof(context, view, x + 0.02, y + 0.02, 0.4, 0.4, 0.8, 0.9, paletteOf('#e6f4fb'), 0.03);
+	drawRoof(
+		context,
+		view,
+		x + w - 0.42,
+		y + h - 0.42,
+		0.4,
+		0.4,
+		0.8,
+		0.9,
+		paletteOf('#e6f4fb'),
+		0.03
+	);
+	drawFlag(context, view, x + w / 2, y + h / 2, 2.0, 0.7, '#4fa8d8', timeMs);
+}
+
+function drawJungleHq(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	b: Placement,
+	timeMs: number
+) {
+	const { x, y, width: w, height: h } = b;
+	for (const [dx, dy] of [
+		[0.2, 0.2],
+		[w - 0.2, 0.2],
+		[0.2, h - 0.2],
+		[w - 0.2, h - 0.2]
+	] as const) {
+		drawBar(
+			context,
+			view,
+			{ x: x + dx, y: y + dy, z: 0 },
+			{ x: x + dx, y: y + dy, z: 0.5 },
+			'#6b4526',
+			0.1
+		);
+	}
+	drawBox(context, view, x + 0.05, y + 0.05, w - 0.1, h - 0.1, 0.45, 0.6, paletteOf('#8a5a2b'));
+	drawBox(context, view, x + 0.3, y + 0.3, w - 0.6, h - 0.6, 0.6, 1.2, paletteOf('#a8793c'));
+	wallLeft(context, view, x + w * 0.38, x + w * 0.38 + 0.3, y + h - 0.3, 0.6, 1.0, INK);
+	drawRoof(context, view, x + 0.1, y + 0.1, w - 0.2, h - 0.2, 1.2, 0.8, paletteOf(THATCH));
+	drawFlag(context, view, x + w / 2, y + h / 2, 1.9, 0.7, '#3f9a4a', timeMs);
+}
+
+function drawDesertHq(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	b: Placement,
+	timeMs: number
+) {
+	const { x, y, width: w, height: h } = b;
+	drawBox(context, view, x + 0.06, y + 0.06, w - 0.12, h - 0.12, 0, 0.85, paletteOf(SANDSTONE));
+	wallLeft(context, view, x + w * 0.4, x + w * 0.4 + 0.3, y + h - 0.06, 0, 0.45, INK);
+	for (const t of [0.2, 0.6]) {
+		wallLeft(context, view, x + w * t, x + w * t + 0.22, y + h - 0.06, 0.52, 0.72, '#7a5a2b');
+	}
+	drawBox(context, view, x + 0.45, y + 0.45, w - 0.9, h - 0.9, 0.85, 1.2, paletteOf('#e8cf95'));
+	drawCylinder(context, view, x + w / 2, y + h / 2, 0.38, 1.2, 1.5, paletteOf('#e8cf95'));
+	drawBlob(context, view, x + w / 2, y + h / 2, 1.66, 0.3, '#d9a441', 0.04);
+	drawFlag(context, view, x + w / 2, y + h / 2, 1.9, 0.6, '#e08a1e', timeMs);
+}
+
 export function drawEnemyBuilding(
 	context: CanvasRenderingContext2D,
 	view: IsoView,
 	building: Building,
 	timeMs: number,
-	theme?: 'orc'
+	theme?: IslandTheme
 ) {
 	drawShadow(context, view, building.x, building.y, building.width, building.height);
 	switch (building.kind) {
 		case 'hq':
 			if (theme === 'orc') drawOrcHq(context, view, building, timeMs);
+			else if (theme === 'ice') drawIceHq(context, view, building, timeMs);
+			else if (theme === 'jungle') drawJungleHq(context, view, building, timeMs);
+			else if (theme === 'desert') drawDesertHq(context, view, building, timeMs);
 			else drawEnemyHq(context, view, building, timeMs);
+			break;
+		case 'ice-cannon':
+			drawIceCannonArt(context, view, building);
+			break;
+		case 'ice-spire':
+			drawIceSpireArt(context, view, building, timeMs);
+			break;
+		case 'dart-hut':
+			drawDartHutArt(context, view, building);
+			break;
+		case 'totem':
+			drawTotemArt(context, view, building, timeMs);
+			break;
+		case 'sand-mortar':
+			drawSandMortarArt(context, view, building);
+			break;
+		case 'scorpion-nest':
+			drawScorpionArt(context, view, building, timeMs);
 			break;
 		case 'catapult':
 			drawCatapultArt(context, view, building);
