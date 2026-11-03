@@ -3742,6 +3742,7 @@
 	"beachhead_troop_demo": "Підривник",
 	"beachhead_troop_heavy": "Кулеметник з мініганом",
 	"beachhead_troop_azov": "Командир «Азову»",
+	"beachhead_hero_stat_heal": "Імпульс зцілення",
 	"beachhead_log_taken": "{player} захопив {island}",
 	"beachhead_log_attack": "{player} атакував {island}",
 	"beachhead_log_raiders": "Рейдери висадилися на {island}",

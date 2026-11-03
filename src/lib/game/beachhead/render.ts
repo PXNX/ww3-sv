@@ -1677,7 +1677,8 @@ export function drawTroopPortrait(
 	context: CanvasRenderingContext2D,
 	kind: TroopKind,
 	level: number,
-	size: number
+	size: number,
+	timeMs = 0
 ) {
 	const view = BATTLE_VIEW;
 	const at = view.project(6, 4);
@@ -1707,7 +1708,27 @@ export function drawTroopPortrait(
 		vx: 0,
 		vy: 0
 	} as unknown as Troop;
-	drawTroop(context, view, troop, 0);
+	// With a clock the troop acts out its attack over and over: swings, flashes, pulses its ability
+	if (timeMs > 0) {
+		const phase = (timeMs % 1800) / 1800;
+		troop.cooldownMs = stats.attackMs * (1 - phase);
+		troop.muzzleMs = phase < 0.1 ? TROOP.muzzleMs * (1 - phase / 0.1) : 0;
+		troop.healCooldownMs = phase > 0.8 ? 0 : 999;
+		const radius = stats.commandRadius ?? stats.healRadius;
+		if (radius) {
+			const ring = ((timeMs % 2400) / 2400) * 1;
+			onGround(context, view, () => {
+				context.globalAlpha = 0.55 * (1 - ring);
+				context.beginPath();
+				context.arc(6, 4, radius * (0.35 + ring * 0.65), 0, Math.PI * 2);
+				context.strokeStyle = stats.commandRadius ? '#f5c83a' : HEAL_GREEN;
+				context.lineWidth = 0.08;
+				context.stroke();
+				context.globalAlpha = 1;
+			});
+		}
+	}
+	drawTroop(context, view, troop, timeMs);
 	context.restore();
 	// Rank chevrons: one per two levels, in the colour of the tier
 	const chevrons = Math.min(4, Math.ceil(level / 2));

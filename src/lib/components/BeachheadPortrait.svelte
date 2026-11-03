@@ -11,6 +11,7 @@
 		level = 1,
 		max = 1,
 		size = 64,
+		animated = false,
 		class: className = ''
 	}: {
 		type: 'troop' | 'defense' | 'building';
@@ -18,12 +19,27 @@
 		level?: number;
 		max?: number;
 		size?: number;
+		/** Troops act out their attack and ability in a loop, like the weapon detail of a shooter */
+		animated?: boolean;
 		class?: string;
 	} = $props();
 	let canvas: HTMLCanvasElement | undefined = $state();
 
+	let clock = $state(0);
+	$effect(() => {
+		if (!animated || type !== 'troop') return;
+		let frame = 0;
+		const tick = (now: number) => {
+			clock = now;
+			frame = requestAnimationFrame(tick);
+		};
+		frame = requestAnimationFrame(tick);
+		return () => cancelAnimationFrame(frame);
+	});
+
 	$effect(() => {
 		if (!canvas) return;
+		const time = animated ? clock : 0;
 		const ratio = Math.min(2, window.devicePixelRatio || 1);
 		const width = size;
 		let height = size;
@@ -39,7 +55,7 @@
 		if (!context) return;
 		context.setTransform(ratio, 0, 0, ratio, 0, 0);
 		context.clearRect(0, 0, width, height);
-		if (type === 'troop') drawTroopPortrait(context, kind as TroopKind, level, size);
+		if (type === 'troop') drawTroopPortrait(context, kind as TroopKind, level, size, time);
 		else if (type === 'defense') drawDefensePortrait(context, kind as BuildingKind, size);
 		else drawBuildingPreview(context, kind as LayoutKey, level, max, size);
 	});

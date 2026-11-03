@@ -92,7 +92,7 @@
 				class="flex size-12 items-center justify-center rounded-full border-3 border-ink bg-paper shadow-[2px_2px_0_var(--color-ink)]"
 				title={m.beachhead_troop_stats({ hp: stats.hp, damage: stats.damage })}
 			>
-				<BeachheadPortrait type="troop" {kind} {level} size={48} />
+				<BeachheadPortrait type="troop" {kind} {level} size={48} animated />
 			</span>
 			<p class="text-center text-xs leading-tight font-bold">{troopName(kind)}</p>
 			{@render pips(level, MAX_TROOP_LEVEL)}

@@ -3742,6 +3742,7 @@
 	"beachhead_troop_demo": "معدن‌کار",
 	"beachhead_troop_heavy": "مسلسل‌چی سنگین مینی‌گان",
 	"beachhead_troop_azov": "فرمانده آزوف",
+	"beachhead_hero_stat_heal": "پالس درمان",
 	"beachhead_log_taken": "{player} {island} را گرفت",
 	"beachhead_log_attack": "{player} به {island} حمله کرد",
 	"beachhead_log_raiders": "غارتگران در {island} فرود آمدند",
