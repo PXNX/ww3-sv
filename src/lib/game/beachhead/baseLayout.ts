@@ -38,6 +38,14 @@ export interface BaseLayout {
 	nextMineId: number;
 }
 
+/** Ground the island keeps for itself: a forest that gives wood and a little mountain with an iron mine */
+export const FOREST: Footprint & Cell = { x: 4, y: 0, width: 5, height: 2 };
+export const MOUNTAIN: Footprint & Cell = { x: 12, y: 12, width: 2, height: 2 };
+
+export function touchesNature(cell: Cell, footprint: Footprint): boolean {
+	return [FOREST, MOUNTAIN].some((rect) => overlaps(cell, footprint, rect, rect));
+}
+
 export const LAYOUT_KEYS: readonly LayoutKey[] = [
 	'hq',
 	'training',
@@ -144,7 +152,7 @@ export function canPlace(
 	cell: Cell,
 	ignore?: { key?: LayoutKey; mineId?: number }
 ): boolean {
-	if (!isInside(cell, footprint)) return false;
+	if (!isInside(cell, footprint) || touchesNature(cell, footprint)) return false;
 	for (const key of LAYOUT_KEYS) {
 		if (key === ignore?.key) continue;
 		if (overlaps(cell, footprint, positionOf(layout, key), footprintOf(key))) return false;
@@ -204,7 +212,7 @@ export function removeMine(layout: BaseLayout, id: number): BaseLayout | null {
 
 /** Like canPlace, but only against what the layout actually holds so far, not against default spots */
 function fitsAmongPlaced(layout: BaseLayout, footprint: Footprint, cell: Cell): boolean {
-	if (!isInside(cell, footprint)) return false;
+	if (!isInside(cell, footprint) || touchesNature(cell, footprint)) return false;
 	for (const key of LAYOUT_KEYS) {
 		const at = layout.positions[key];
 		if (at && overlaps(cell, footprint, at, footprintOf(key))) return false;

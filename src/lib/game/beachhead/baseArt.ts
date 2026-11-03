@@ -8,6 +8,8 @@ import { wallLeft, wallRight, drawFlag, drawMineArt } from './buildingArt.js';
 import {
 	BASE_COLS,
 	BASE_ROWS,
+	FOREST,
+	MOUNTAIN,
 	boatDock,
 	footprintOf,
 	positionOf,
@@ -715,6 +717,156 @@ function drawEmptyBerth(context: CanvasRenderingContext2D, view: IsoView, index:
 	context.restore();
 }
 
+const LEAF = '#3f7a3a';
+
+/** One fir: a trunk and three stacked cones that shrink towards the top */
+function drawTree(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	x: number,
+	y: number,
+	size: number,
+	timeMs: number
+) {
+	const sway = Math.sin(timeMs / 1300 + x * 2 + y) * 0.015;
+	drawBar(context, view, { x, y, z: 0 }, { x, y, z: 0.3 * size }, '#6b4526', 0.1);
+	for (let tier = 0; tier < 3; tier++) {
+		const width = (0.78 - tier * 0.2) * size;
+		drawRoof(
+			context,
+			view,
+			x - width / 2 + sway * tier,
+			y - width / 2,
+			width,
+			width,
+			(0.2 + tier * 0.34) * size,
+			0.5 * size,
+			paletteOf(tier % 2 === 0 ? LEAF : '#2f6a35'),
+			0.04
+		);
+	}
+}
+
+/** Fir trees spread over the forest's ground, some close, some far, never in a line */
+function forestTrees(): { x: number; y: number; size: number }[] {
+	const trees: { x: number; y: number; size: number }[] = [];
+	for (let column = 0; column < 7; column++) {
+		for (let row = 0; row < 3; row++) {
+			const jitterX = Math.sin(column * 12.9 + row * 78.2) * 0.5;
+			const jitterY = Math.sin(column * 39.3 + row * 11.1) * 0.5;
+			trees.push({
+				x: FOREST.x + 0.45 + column * (FOREST.width / 7) + jitterX * 0.25,
+				y: FOREST.y + 0.4 + row * (FOREST.height / 2.6) + jitterY * 0.2,
+				size: 0.85 + (Math.sin(column * 5.7 + row * 3.3) + 1) * 0.2
+			});
+		}
+	}
+	return trees;
+}
+
+/** The little mountain: grey rock with a snow cap, a timbered mine mouth and a cart of iron ore */
+function drawMountain(context: CanvasRenderingContext2D, view: IsoView) {
+	const { x, y, width: w, height: h } = MOUNTAIN;
+	drawShadow(context, view, x, y, w, h);
+	drawRoof(context, view, x - 0.25, y - 0.2, w + 0.5, h + 0.4, 0, 1.7, paletteOf('#8d8f93'));
+	drawRoof(context, view, x - 0.9, y + 0.5, 1.3, 1.5, 0, 0.9, paletteOf('#a0a2a7'));
+	drawRoof(
+		context,
+		view,
+		x + w / 2 - 0.3,
+		y + h / 2 - 0.3,
+		0.6,
+		0.6,
+		1.1,
+		0.6,
+		paletteOf('#f4f6f8'),
+		0.04
+	);
+	// The tunnel mouth in the south-west face, framed by two posts and a beam
+	wallLeft(context, view, x + 0.55, x + 1.15, y + h + 0.2, 0, 0.42, INK);
+	drawBar(
+		context,
+		view,
+		{ x: x + 0.5, y: y + h + 0.2, z: 0 },
+		{ x: x + 0.5, y: y + h + 0.2, z: 0.5 },
+		WOOD,
+		0.07
+	);
+	drawBar(
+		context,
+		view,
+		{ x: x + 1.2, y: y + h + 0.2, z: 0 },
+		{ x: x + 1.2, y: y + h + 0.2, z: 0.5 },
+		WOOD,
+		0.07
+	);
+	drawBar(
+		context,
+		view,
+		{ x: x + 0.45, y: y + h + 0.2, z: 0.5 },
+		{ x: x + 1.25, y: y + h + 0.2, z: 0.5 },
+		WOOD,
+		0.08
+	);
+	// A cart of ore on a short rail
+	drawBar(
+		context,
+		view,
+		{ x: x + 0.85, y: y + h + 0.3, z: 0.02 },
+		{ x: x + 0.85, y: y + h + 1.1, z: 0.02 },
+		'#5d6470',
+		0.04
+	);
+	drawBox(
+		context,
+		view,
+		x + 0.62,
+		y + h + 0.75,
+		0.46,
+		0.34,
+		0.06,
+		0.26,
+		paletteOf('#6f7b88'),
+		0.035
+	);
+	for (const [dx, dy] of [
+		[0.7, 0.85],
+		[0.85, 0.92],
+		[0.95, 0.82]
+	] as const) {
+		drawBlob(context, view, x + dx, y + h + dy, 0.32, 0.06, '#c4ccd6', 0.025);
+	}
+}
+
+/** Bushes and flowers on the lawn, so the island is not bare grass */
+const GREENERY: { x: number; y: number; flower?: string }[] = [
+	{ x: 0.7, y: 0.5 },
+	{ x: 3.1, y: 0.7, flower: '#e5484d' },
+	{ x: 9.6, y: 0.4 },
+	{ x: 13.3, y: 0.8, flower: '#f5c83a' },
+	{ x: 0.5, y: 3.6, flower: '#fff' },
+	{ x: 4.2, y: 8.7 },
+	{ x: 9.8, y: 8.9, flower: '#e5484d' },
+	{ x: 13.4, y: 4.2 },
+	{ x: 2.6, y: 12.9, flower: '#f5c83a' },
+	{ x: 8.8, y: 13.3 },
+	{ x: 10.6, y: 12.6 },
+	{ x: 0.5, y: 9.9 }
+];
+
+function drawBush(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	spot: { x: number; y: number; flower?: string }
+) {
+	drawBlob(context, view, spot.x - 0.12, spot.y + 0.04, 0.12, 0.2, '#4c8a3f', 0.04);
+	drawBlob(context, view, spot.x + 0.12, spot.y - 0.02, 0.16, 0.22, '#5b9a49', 0.04);
+	if (spot.flower) {
+		drawBlob(context, view, spot.x + 0.04, spot.y + 0.1, 0.3, 0.06, spot.flower, 0.02);
+		drawBlob(context, view, spot.x + 0.2, spot.y - 0.04, 0.34, 0.05, spot.flower, 0.02);
+	}
+}
+
 function drawHomeBuilding(
 	context: CanvasRenderingContext2D,
 	view: IsoView,
@@ -1184,6 +1336,19 @@ export function drawHome(context: CanvasRenderingContext2D, scene: HomeScene, vi
 				}
 			}
 		});
+	}
+	for (const tree of forestTrees()) {
+		standing.push({
+			depth: depthOf(tree.x, tree.y),
+			draw: () => drawTree(context, view, tree.x, tree.y, tree.size, scene.timeMs)
+		});
+	}
+	standing.push({
+		depth: depthOf(MOUNTAIN.x + MOUNTAIN.width / 2, MOUNTAIN.y + MOUNTAIN.height / 2),
+		draw: () => drawMountain(context, view)
+	});
+	for (const spot of GREENERY) {
+		standing.push({ depth: depthOf(spot.x, spot.y), draw: () => drawBush(context, view, spot) });
 	}
 	standing.sort((a, b) => a.depth - b.depth);
 	for (const item of standing) item.draw();

@@ -77,6 +77,24 @@ describe('the default island', () => {
 	});
 });
 
+describe('the forest and the mountain', () => {
+	it('are not building land: nothing can stand or be mined there', () => {
+		const layout = defaultLayout();
+		expect(canPlace(layout, { width: 1, height: 1 }, { x: 5, y: 0 })).toBe(false);
+		expect(canPlace(layout, { width: 1, height: 1 }, { x: 13, y: 13 })).toBe(false);
+		expect(moveBuilding(layout, 'training', { x: 4, y: 0 })).toBeNull();
+		expect(moveBuilding(layout, 'radar', { x: 12, y: 12 })).toBeNull();
+		expect(addMine(layout, 'mine-at', { x: 12, y: 12 })).toBeNull();
+	});
+
+	it('are never taken by the default arrangement or by a mine bought on the first free cell', () => {
+		const layout = addMine(defaultLayout(), 'mine-emp')!;
+		const mine = layout.mines[0];
+		expect(canPlace(defaultLayout(), { width: 1, height: 1 }, { x: mine.x, y: mine.y })).toBe(true);
+		expect(mine.x < 12 || mine.y < 12).toBe(true);
+	});
+});
+
 describe('moving buildings', () => {
 	it('moves a building to a free spot and keeps the rest where they were', () => {
 		const layout = defaultLayout();
@@ -157,7 +175,7 @@ describe('reading a stored layout', () => {
 	});
 
 	it('keeps a valid arrangement', () => {
-		const moved = moveBuilding(defaultLayout(), 'radar', { x: 12, y: 12 })!;
+		const moved = moveBuilding(defaultLayout(), 'radar', { x: 9, y: 12 })!;
 		const withMine = addMine(moved, 'mine-emp', { x: 4, y: 4 })!;
 		expect(normalizeLayout(JSON.parse(JSON.stringify(withMine)))).toEqual(withMine);
 	});

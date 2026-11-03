@@ -100,8 +100,8 @@ export const BUILDING_KEYS: readonly BuildingKey[] = [
 ];
 
 export const STARTING_RESOURCES: Resources = { wood: 300, stone: 220, iron: 100, gold: 30 };
-/** What the home shore produces per minute on its own; the islands add their own lines */
-export const HOME_PRODUCTION: Resources = { wood: 1, stone: 0, iron: 0, gold: 1 };
+/** What the home shore produces per minute on its own: the forest's logs, the mountain's ore and a trickle of gold; the islands add their own lines */
+export const HOME_PRODUCTION: Resources = { wood: 3, stone: 0, iron: 1, gold: 1 };
 /** What each island adds to the tax income once controlled, in units per minute */
 export const ISLAND_PRODUCTION: readonly Resources[] = [
 	{ wood: 2, stone: 1, iron: 0, gold: 0 },

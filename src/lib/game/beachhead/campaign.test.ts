@@ -333,7 +333,10 @@ describe('production', () => {
 		let save = saveWithControlled(0);
 		save = { ...save, levels: { ...save.levels, hq: 2 } };
 		// 1.25 times the home wood and the first island's line
-		expect(incomeRate(save, ISLAND_IDS).wood).toBe(3.8);
+		expect(incomeRate(save, ISLAND_IDS).wood).toBeCloseTo(
+			Math.round(1.25 * (HOME_PRODUCTION.wood + ISLAND_PRODUCTION[0].wood) * 10) / 10,
+			5
+		);
 		expect(islandProduction(save, 0).stone).toBe(1.3);
 	});
 
@@ -344,7 +347,7 @@ describe('production', () => {
 		expect(minute.resources).toEqual({
 			wood: STARTING_RESOURCES.wood + HOME_PRODUCTION.wood,
 			stone: STARTING_RESOURCES.stone,
-			iron: STARTING_RESOURCES.iron,
+			iron: STARTING_RESOURCES.iron + HOME_PRODUCTION.iron,
 			gold: STARTING_RESOURCES.gold + HOME_PRODUCTION.gold
 		});
 		expect(minute.lastIncomeMs).toBe(NOW + 60_000);
@@ -354,7 +357,10 @@ describe('production', () => {
 		const save = newSave(NOW);
 		const capped = claimIncome(save, ISLAND_IDS, NOW + INCOME_CAP_MS * 3);
 		expect(capped.resources.wood).toBe(
-			STARTING_RESOURCES.wood + HOME_PRODUCTION.wood * (INCOME_CAP_MS / 60_000)
+			Math.min(
+				storageCapacity(save, 'wood'),
+				STARTING_RESOURCES.wood + HOME_PRODUCTION.wood * (INCOME_CAP_MS / 60_000)
+			)
 		);
 		expect(capped.lastIncomeMs).toBe(NOW + INCOME_CAP_MS * 3);
 	});
