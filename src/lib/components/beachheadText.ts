@@ -4,6 +4,7 @@
  */
 import { m } from '#lib/paraglide/messages.js';
 import { ISLANDS, type BuildingKind, type TroopKind } from '#lib/game/beachhead/config.js';
+import type { CrystalType } from '#lib/game/beachhead/crystals.js';
 
 const ISLAND_NAMES = [
 	m.beachhead_island_1_name,
@@ -162,5 +163,63 @@ export function buildingName(kind: BuildingKind): string {
 			return m.beachhead_building_mine_at();
 		case 'mine-emp':
 			return m.beachhead_building_mine_emp();
+	}
+}
+
+export function crystalName(type: CrystalType): string {
+	switch (type) {
+		case 'aegis':
+			return m.beachhead_crystal_aegis();
+		case 'regen':
+			return m.beachhead_crystal_regen();
+		case 'reach':
+			return m.beachhead_crystal_reach();
+		case 'haste':
+			return m.beachhead_crystal_haste();
+		case 'fortify':
+			return m.beachhead_crystal_fortify();
+		case 'might':
+			return m.beachhead_crystal_might();
+		case 'vigor':
+			return m.beachhead_crystal_vigor();
+		case 'power':
+			return m.beachhead_crystal_power();
+		case 'bulwark':
+			return m.beachhead_crystal_bulwark();
+		case 'fortune':
+			return m.beachhead_crystal_fortune();
+		case 'plunder':
+			return m.beachhead_crystal_plunder();
+		case 'industry':
+			return m.beachhead_crystal_industry();
+	}
+}
+
+export function crystalHint(type: CrystalType): string {
+	switch (type) {
+		case 'aegis':
+			return m.beachhead_crystal_aegis_hint();
+		case 'regen':
+			return m.beachhead_crystal_regen_hint();
+		case 'reach':
+			return m.beachhead_crystal_reach_hint();
+		case 'haste':
+			return m.beachhead_crystal_haste_hint();
+		case 'fortify':
+			return m.beachhead_crystal_fortify_hint();
+		case 'might':
+			return m.beachhead_crystal_might_hint();
+		case 'vigor':
+			return m.beachhead_crystal_vigor_hint();
+		case 'power':
+			return m.beachhead_crystal_power_hint();
+		case 'bulwark':
+			return m.beachhead_crystal_bulwark_hint();
+		case 'fortune':
+			return m.beachhead_crystal_fortune_hint();
+		case 'plunder':
+			return m.beachhead_crystal_plunder_hint();
+		case 'industry':
+			return m.beachhead_crystal_industry_hint();
 	}
 }

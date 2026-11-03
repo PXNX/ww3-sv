@@ -313,6 +313,7 @@
 		loot={game.loot}
 		lost={game.lastCasualties}
 		shards={game.heroCardsFound}
+		crystal={game.crystalFound}
 		seconds={game.lastSeconds}
 		islandName={islandName(game.islandIndex)}
 		newAchievements={game.newAchievements}

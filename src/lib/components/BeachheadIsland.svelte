@@ -37,6 +37,7 @@
 	import type { BuildingKind } from '#lib/game/beachhead/config.js';
 	import { zoomPan } from '#lib/components/zoomPan.js';
 	import BeachheadArmy from '#lib/components/BeachheadArmy.svelte';
+	import BeachheadCrystals from '#lib/components/BeachheadCrystals.svelte';
 	import BeachheadPortrait from '#lib/components/BeachheadPortrait.svelte';
 	import BeachheadUpgradeWindow from '#lib/components/BeachheadUpgradeWindow.svelte';
 	import BeachheadHero from '#lib/components/BeachheadHero.svelte';
@@ -57,6 +58,7 @@
 	import IconFlag from '~icons/lucide/flag-triangle-right';
 	import IconGraduationCap from '~icons/lucide/graduation-cap';
 	import IconCrown from '~icons/lucide/crown';
+	import IconGem from '~icons/lucide/gem';
 	import IconHammer from '~icons/lucide/hammer';
 	import IconInfo from '~icons/lucide/info';
 	import IconHourglass from '~icons/lucide/hourglass';
@@ -81,7 +83,7 @@
 		cell: Cell;
 		valid: boolean;
 	};
-	type Sheet = 'army' | 'training' | 'hero' | 'upgrade' | 'mines' | 'trophies';
+	type Sheet = 'army' | 'training' | 'hero' | 'upgrade' | 'mines' | 'crystals' | 'trophies';
 
 	let stage: HTMLDivElement | undefined = $state();
 	let canvas: HTMLCanvasElement | undefined = $state();
@@ -208,6 +210,13 @@
 			icon: IconShield,
 			active: sheet === 'mines',
 			onclick: () => (sheet = 'mines')
+		},
+		{
+			id: 'crystals',
+			label: m.beachhead_crystals_title(),
+			icon: IconGem,
+			active: sheet === 'crystals',
+			onclick: () => (sheet = 'crystals')
 		},
 		{
 			id: 'trophies',
@@ -696,6 +705,14 @@
 	{#if selected?.kind === 'building'}
 		<BeachheadUpgradeWindow {game} building={selected.key} />
 	{/if}
+</BeachheadSheet>
+
+<BeachheadSheet
+	open={sheet === 'crystals'}
+	title={m.beachhead_crystals_title()}
+	onclose={() => (sheet = null)}
+>
+	<BeachheadCrystals {game} />
 </BeachheadSheet>
 
 <BeachheadSheet

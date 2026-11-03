@@ -10,6 +10,9 @@
 	import ResourceIcon from '#lib/components/ResourceIcon.svelte';
 	import type { Resources } from '#lib/game/beachhead/campaign.js';
 	import type { TroopKind } from '#lib/game/beachhead/config.js';
+	import type { CrystalType } from '#lib/game/beachhead/crystals.js';
+	import CrystalIcon from '#lib/components/CrystalIcon.svelte';
+	import { crystalName } from '#lib/components/beachheadText.js';
 	import type { ScoreCard } from '#lib/services/share.js';
 	import Confetti from './Confetti.svelte';
 	import ShareButton from './ShareButton.svelte';
@@ -25,6 +28,7 @@
 		loot,
 		lost,
 		shards,
+		crystal,
 		seconds,
 		islandName,
 		newAchievements,
@@ -43,6 +47,8 @@
 		lost: Partial<Record<TroopKind, number>>;
 		/** Hero shards this victory dropped */
 		shards: number;
+		/** The crystal this victory dropped, if any */
+		crystal: { type: CrystalType; count: number } | null;
 		/** How long the attack took */
 		seconds: number;
 		islandName: string;
@@ -120,6 +126,16 @@
 			>
 				<IconGem class="size-8" aria-hidden="true" />
 				+{shards}
+			</p>
+		{/if}
+
+		{#if crystal}
+			<p
+				class="pop-in flex items-center gap-1.5 rounded-full border-3 border-ink bg-paper py-1 ps-1.5 pe-3 font-display text-xl font-bold tabular-nums shadow-[2px_2px_0_var(--color-ink)]"
+				title={`${m.beachhead_crystals_found()}: ${crystalName(crystal.type)}`}
+			>
+				<CrystalIcon type={crystal.type} class="size-8" />
+				+{crystal.count}
 			</p>
 		{/if}
 
