@@ -4,15 +4,16 @@
 	the chest lists what was inside: resources, crystals, hero shards and Fake News.
 -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
-	import { crystalName } from '#lib/components/beachheadText.js';
 	import CrystalIcon from '#lib/components/CrystalIcon.svelte';
 	import ResourceIcon from '#lib/components/ResourceIcon.svelte';
+	import type { CrystalType } from '#lib/game/beachhead/crystals.js';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
 	import IconCoins from '~icons/lucide/coins';
 	import IconGem from '~icons/lucide/gem';
 	import IconHourglass from '~icons/lucide/hourglass';
+	import IconPackage from '~icons/lucide/package';
 	import IconPackageOpen from '~icons/lucide/package-open';
 	import IconPlay from '~icons/lucide/play';
 	import IconShip from '~icons/lucide/ship';
@@ -38,6 +39,43 @@
 	);
 	const back = $derived(expedition !== null && left <= 0);
 
+	type Reward =
+		| { kind: 'resource'; resource: (typeof RESOURCE_KINDS)[number]; amount: number }
+		| { kind: 'crystal'; type: CrystalType; amount: number }
+		| { kind: 'shards'; amount: number }
+		| { kind: 'coins'; amount: number };
+
+	/** The chest's contents in the order they come out; nothing of it is known before the taps */
+	const rewards = $derived.by((): Reward[] => {
+		const chest = game.chest;
+		if (!chest) return [];
+		const list: Reward[] = [];
+		for (const resource of RESOURCE_KINDS) {
+			if (chest.resources[resource] > 0) {
+				list.push({ kind: 'resource', resource, amount: chest.resources[resource] });
+			}
+		}
+		for (const entry of chest.crystals) {
+			list.push({ kind: 'crystal', type: entry.type, amount: entry.count });
+		}
+		if (chest.shards > 0) list.push({ kind: 'shards', amount: chest.shards });
+		if (chest.coins > 0) list.push({ kind: 'coins', amount: chest.coins });
+		return list;
+	});
+	let taps = $state(0);
+	const latest = $derived(taps > 0 ? (rewards[taps - 1] ?? null) : null);
+	const done = $derived(taps >= rewards.length);
+
+	function reveal() {
+		if (taps < rewards.length) taps += 1;
+		if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate?.(12);
+	}
+
+	// A new chest starts closed again
+	$effect(() => {
+		if (game.chest) untrack(() => (taps = 0));
+	});
+
 	const clock = (ms: number): string => {
 		const total = Math.ceil(ms / 1000);
 		const hours = Math.floor(total / 3600);
@@ -46,46 +84,69 @@
 	};
 </script>
 
+{#snippet pill(reward: Reward)}
+	<span
+		class="flex items-center gap-1.5 rounded-full border-3 border-ink py-1 ps-1.5 pe-3 font-display text-lg font-bold tabular-nums shadow-[2px_2px_0_var(--color-ink)] {reward.kind ===
+		'shards'
+			? 'bg-[#b48cf0]'
+			: reward.kind === 'coins'
+				? 'bg-explosion-yellow'
+				: 'bg-paper'}"
+	>
+		{#if reward.kind === 'resource'}
+			<ResourceIcon kind={reward.resource} class="size-7" />
+		{:else if reward.kind === 'crystal'}
+			<CrystalIcon type={reward.type} class="size-7" />
+		{:else if reward.kind === 'shards'}
+			<IconGem class="size-7" aria-hidden="true" />
+		{:else}
+			<IconCoins class="size-7" aria-hidden="true" />
+		{/if}
+		+{reward.amount}
+	</span>
+{/snippet}
+
 {#if game.chest}
-	{@const chest = game.chest}
 	<div class="flex flex-col items-center gap-3 text-center">
-		<IconPackageOpen class="chest-open size-16" aria-hidden="true" />
+		<!-- The chest opens a little with every tap and throws out the next reward -->
+		<div class="relative flex h-28 w-full items-end justify-center">
+			{#key taps}
+				<button
+					type="button"
+					class="chest-tap btn-chunky relative flex size-20 items-center justify-center rounded-full bg-explosion-yellow p-0"
+					aria-label={m.beachhead_expedition_open()}
+					title={m.beachhead_expedition_open()}
+					disabled={done}
+					onclick={reveal}
+				>
+					{#if taps === 0}
+						<IconPackage class="size-10" aria-hidden="true" />
+					{:else}
+						<IconPackageOpen class="size-10" aria-hidden="true" />
+					{/if}
+				</button>
+			{/key}
+			{#if latest}
+				{#key taps}
+					<span class="reward-fly absolute bottom-10 flex items-center" aria-hidden="true">
+						{@render pill(latest)}
+					</span>
+				{/key}
+			{/if}
+		</div>
 		<ul class="flex flex-wrap justify-center gap-2">
-			{#each RESOURCE_KINDS as kind (kind)}
-				<li
-					class="pop-in flex items-center gap-1.5 rounded-full border-3 border-ink bg-paper py-1 ps-1.5 pe-3 font-display text-lg font-bold tabular-nums shadow-[2px_2px_0_var(--color-ink)]"
-				>
-					<ResourceIcon {kind} class="size-7" />
-					+{chest.resources[kind]}
-				</li>
+			{#each rewards.slice(0, Math.max(0, taps - 1)) as reward, index (index)}
+				<li>{@render pill(reward)}</li>
 			{/each}
-			{#each chest.crystals as entry (entry.type)}
-				<li
-					class="pop-in flex items-center gap-1.5 rounded-full border-3 border-ink bg-paper py-1 ps-1.5 pe-3 font-display text-lg font-bold tabular-nums shadow-[2px_2px_0_var(--color-ink)]"
-					title={crystalName(entry.type)}
-				>
-					<CrystalIcon type={entry.type} class="size-7" />
-					+{entry.count}
-				</li>
-			{/each}
-			<li
-				class="pop-in flex items-center gap-1.5 rounded-full border-3 border-ink bg-[#b48cf0] py-1 ps-1.5 pe-3 font-display text-lg font-bold tabular-nums shadow-[2px_2px_0_var(--color-ink)]"
-				title={m.beachhead_hero_cards({ cards: chest.shards })}
-			>
-				<IconGem class="size-7" aria-hidden="true" />
-				+{chest.shards}
-			</li>
-			<li
-				class="pop-in flex items-center gap-1.5 rounded-full border-3 border-ink bg-explosion-yellow py-1 ps-1.5 pe-3 font-display text-lg font-bold tabular-nums shadow-[2px_2px_0_var(--color-ink)]"
-				title={m.beachhead_expedition_coins()}
-			>
-				<IconCoins class="size-7" aria-hidden="true" />
-				+{chest.coins}
-			</li>
+			{#if taps > 0}
+				<li class="settle">{@render pill(rewards[taps - 1])}</li>
+			{/if}
 		</ul>
-		<button type="button" class="btn-chunky" onclick={() => (game.chest = null)}>
-			<IconShip class="size-5" aria-hidden="true" />
-		</button>
+		{#if done}
+			<button type="button" class="btn-chunky" onclick={() => (game.chest = null)}>
+				<IconShip class="size-5" aria-hidden="true" />
+			</button>
+		{/if}
 	</div>
 {:else if expedition}
 	<div class="flex flex-col items-center gap-3">
@@ -155,6 +216,61 @@
 {/if}
 
 <style>
+	.chest-tap {
+		animation: chest-shake 360ms ease-out;
+	}
+
+	@keyframes chest-shake {
+		0% {
+			transform: scale(1);
+		}
+		25% {
+			transform: scale(0.85) rotate(-8deg);
+		}
+		60% {
+			transform: scale(1.15) rotate(6deg);
+		}
+		100% {
+			transform: scale(1);
+		}
+	}
+
+	/* The reward shoots out of the chest, hangs for a moment, then settles into the list below */
+	.reward-fly {
+		animation: reward-fly 900ms cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+		pointer-events: none;
+	}
+
+	@keyframes reward-fly {
+		0% {
+			transform: translateY(40px) scale(0.2);
+			opacity: 0;
+		}
+		35% {
+			transform: translateY(-34px) scale(1.25);
+			opacity: 1;
+		}
+		70% {
+			transform: translateY(-26px) scale(1.1);
+			opacity: 1;
+		}
+		100% {
+			transform: translateY(30px) scale(0.9);
+			opacity: 0;
+		}
+	}
+
+	.settle {
+		animation: settle 500ms 650ms backwards;
+	}
+
+	@keyframes settle {
+		from {
+			transform: scale(0);
+			opacity: 0;
+		}
+	}
+
 	.chest-wobble {
 		animation: chest-wobble 1.1s ease-in-out infinite;
 	}
@@ -181,6 +297,9 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
+		.chest-tap,
+		.reward-fly,
+		.settle,
 		.chest-wobble,
 		:global(.chest-open) {
 			animation: none;
