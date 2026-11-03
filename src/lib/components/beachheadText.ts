@@ -119,6 +119,10 @@ export function buildingName(kind: BuildingKind): string {
 			return m.beachhead_building_flame();
 		case 'depot':
 			return m.beachhead_building_depot();
+		case 'catapult':
+			return m.beachhead_building_catapult();
+		case 'ballista':
+			return m.beachhead_building_ballista();
 		case 'mine-personnel':
 			return m.beachhead_building_mine_personnel();
 		case 'mine-at':

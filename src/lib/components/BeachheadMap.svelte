@@ -1,29 +1,36 @@
 <!--
-	The sea chart: the home shore and every island, drawn where it lies on the water instead of in a
-	list of levels. Dashed sailing routes lead out from the home shore, the radar tower charts new
-	waters, and the enemy retakes one controlled island every six hours.
+	The sea chart, full screen and sideways: your home bay in the south-west, a string of enemy bases
+	on small islands across the middle, and the orc lands, a broad dark landmass along the north
+	edge. Every island is a little isometric picture of the base you will land on. The whole chart is
+	buried in clouds; the radar tower clears them area by area, so the north only shows once the radar
+	reaches it. Icons say what you can do, the words are in tooltips.
 -->
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages.js';
-	import { ISLAND_IDS, ISLAND_MAP_POSITIONS } from '#lib/game/beachhead/config.js';
+	import {
+		ISLANDS,
+		ISLAND_IDS,
+		ISLAND_MAP_POSITIONS,
+		ORC_LANDS_FROM_INDEX
+	} from '#lib/game/beachhead/config.js';
+	import { createBattle } from '#lib/game/beachhead/battle.js';
+	import { BATTLE_VIEW, drawScene } from '#lib/game/beachhead/render.js';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
 	import { islandName } from './beachheadText';
-	import BeachheadStars from './BeachheadStars.svelte';
+	import BeachheadResources from './BeachheadResources.svelte';
 	import BeachheadTakeoverNotice from './BeachheadTakeoverNotice.svelte';
 	import IconAnchor from '~icons/lucide/anchor';
-	import IconCloudFog from '~icons/lucide/cloud-fog';
-	import IconCompass from '~icons/lucide/compass';
 	import IconCrosshair from '~icons/lucide/crosshair';
 	import IconFlag from '~icons/lucide/flag-triangle-right';
 	import IconLock from '~icons/lucide/lock';
 	import IconRadar from '~icons/lucide/radar';
-	import IconTreePalm from '~icons/lucide/tree-palm';
-	import IconWaves from '~icons/lucide/waves';
+	import IconShield from '~icons/lucide/shield';
 
 	let { game }: { game: BeachheadGame } = $props();
 
-	const TILTS = [-1.4, 1.1, -0.7, 1.6, -1.2, 0.9, -1.8, 0.6, 1.4];
-	const HOME = { x: 9, y: 83 };
+	const HOME = { x: 11, y: 85 };
+	/** The chart is about 16:9, so sideways distances count a little more than upward ones */
+	const ASPECT = 1.78;
 
 	/** The sailing route from the home shore through every charted island */
 	const route = $derived.by(() => {
@@ -33,245 +40,264 @@
 			.join(' ');
 	});
 
+	function noise(seed: number): number {
+		const value = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
+		return value - Math.floor(value);
+	}
+
+	/** A fixed bank of cloud puffs over the whole chart */
+	const PUFFS = Array.from({ length: 17 * 10 }, (_, index) => {
+		const col = index % 17;
+		const row = Math.floor(index / 17);
+		return {
+			x: ((col + 0.5 + (noise(index) - 0.5) * 0.9) / 17) * 100,
+			y: ((row + 0.5 + (noise(index + 900) - 0.5) * 0.9) / 10) * 100,
+			size: 10 + noise(index + 31) * 7,
+			drift: 14 + noise(index + 77) * 16,
+			flip: noise(index + 5) > 0.5
+		};
+	});
+
+	/** Where the radar has cleared the sky: the home bay and every island it has charted */
+	const clearings = $derived([
+		{ x: HOME.x, y: HOME.y, r: 34 },
+		...ISLAND_MAP_POSITIONS.slice(0, game.chartedCount).map((point, index) => ({
+			...point,
+			r: index >= ORC_LANDS_FROM_INDEX ? 38 : 32
+		}))
+	]);
+
+	function distance(a: { x: number; y: number }, b: { x: number; y: number }): number {
+		return Math.hypot((a.x - b.x) * ASPECT, a.y - b.y);
+	}
+
+	const clouds = $derived(
+		PUFFS.map((puff) => {
+			const border = puff.x < 3 || puff.x > 97 || puff.y > 97 || puff.y < 2;
+			let nearest = Number.POSITIVE_INFINITY;
+			let reach = 1;
+			for (const clearing of clearings) {
+				const gap = distance(puff, clearing) / clearing.r;
+				if (gap < nearest) {
+					nearest = gap;
+					reach = clearing.r;
+				}
+			}
+			return {
+				...puff,
+				cleared: !border && nearest < 1,
+				// The cloud nearest the radar's new reach melts first, the rest follow like a wave
+				delay: Math.round(nearest * reach * 28)
+			};
+		})
+	);
+
+	/** Draws the little isometric picture of an island's base once it is on the page */
+	function miniature(node: HTMLCanvasElement, index: number) {
+		const width = 180;
+		const height = Math.round((width * BATTLE_VIEW.height) / BATTLE_VIEW.width);
+		const ratio = Math.min(2, window.devicePixelRatio || 1);
+		node.width = width * ratio;
+		node.height = height * ratio;
+		const context = node.getContext('2d');
+		if (!context) return;
+		const scale = (width * ratio) / BATTLE_VIEW.width;
+		context.setTransform(scale, 0, 0, scale, 0, 0);
+		drawScene(
+			context,
+			createBattle(ISLANDS[index]),
+			{ effects: [], timeMs: 0, map: true },
+			BATTLE_VIEW
+		);
+	}
+
 	const islandAria = (index: number, islandId: string): string => {
 		const name = islandName(index);
-		if (!game.isCharted(index)) {
-			return `${m.beachhead_island_label({ index: index + 1 })}, ${name}, ${m.beachhead_island_uncharted()}`;
-		}
 		if (game.isControlled(islandId)) {
 			return `${name}, ${m.beachhead_island_controlled()}, ${m.beachhead_island_tax(game.incomeFor(index))}`;
 		}
-		if (game.isUnlocked(index)) {
-			return `${name}, ${m.beachhead_attack_island()}, ${m.beachhead_island_stars({ stars: game.starsFor(islandId) })}`;
-		}
+		if (game.isUnlocked(index)) return `${name}, ${m.beachhead_attack_island()}`;
 		return `${name}, ${m.beachhead_island_locked()}`;
 	};
 </script>
 
-<section class="flex flex-col gap-4" aria-labelledby="beachhead-map-title">
-	<div class="flex flex-wrap items-end justify-between gap-2">
-		<div class="flex items-center gap-3">
-			<span
-				class="island-bob flex size-14 shrink-0 items-center justify-center rounded-[14px_8px_16px_10px] border-3 border-ink bg-flag-blue text-paper shadow-[3px_3px_0_var(--color-ink)]"
-			>
-				<IconTreePalm class="size-8" aria-hidden="true" />
-			</span>
-			<div>
-				<h2 id="beachhead-map-title" class="text-2xl font-bold">{m.beachhead_map_title()}</h2>
-				<p>{m.beachhead_map_intro()}</p>
-			</div>
-		</div>
-		<div class="flex flex-wrap items-center gap-2 font-display font-bold">
-			<p class="rounded-md border-2 border-ink bg-explosion-yellow px-2 py-0.5">
-				{m.beachhead_income_summary(game.income)}
-			</p>
-			<p class="rounded-md border-2 border-ink bg-paper px-2 py-0.5">
-				{m.beachhead_controlled_count({ count: game.controlled, total: game.islandCount })}
-			</p>
-			<p class="flex items-center gap-1 rounded-md border-2 border-ink bg-sand px-2 py-0.5">
-				<IconRadar class="size-4" aria-hidden="true" />
-				{m.beachhead_radar_summary({ count: game.chartedCount, total: game.islandCount })}
-			</p>
-		</div>
-	</div>
+<div class="map-sea absolute inset-0 overflow-hidden">
+	<div class="sea-depth absolute inset-0" aria-hidden="true"></div>
 
-	<BeachheadTakeoverNotice {game} />
+	<!-- The orc lands: a broad, jagged landmass along the north edge -->
+	<svg
+		class="pointer-events-none absolute inset-x-0 top-0 h-[40%] w-full"
+		viewBox="0 0 100 100"
+		preserveAspectRatio="none"
+		aria-hidden="true"
+	>
+		<path
+			d="M0 0H100V52L96 60 91 50 86 64 80 52 74 66 68 50 61 62 55 46 49 64 42 50 36 66 30 52 23 64 17 50 10 62 5 52 0 62Z"
+			fill="#f1e9c8"
+			stroke="#111"
+			stroke-width="1.2"
+			vector-effect="non-scaling-stroke"
+			transform="translate(0 4)"
+		/>
+		<path
+			d="M0 0H100V46L96 54 91 44 86 58 80 46 74 60 68 44 61 56 55 40 49 58 42 44 36 60 30 46 23 58 17 44 10 56 5 46 0 56Z"
+			fill="#64704a"
+			stroke="#111"
+			stroke-width="1.2"
+			vector-effect="non-scaling-stroke"
+		/>
+		<!-- Ridges, dead trees and a smoking crater -->
+		<g fill="#3d3a33" stroke="#111" stroke-width="0.8" vector-effect="non-scaling-stroke">
+			<path d="M8 28L14 8 20 28Z" />
+			<path d="M36 22L43 4 50 22Z" />
+			<path d="M60 26L67 6 74 26Z" />
+			<path d="M84 24L90 8 96 24Z" />
+		</g>
+		<g fill="#8a8f6a" opacity="0.55">
+			<ellipse cx="27" cy="30" rx="6" ry="3" />
+			<ellipse cx="55" cy="34" rx="7" ry="3" />
+			<ellipse cx="80" cy="36" rx="6" ry="3" />
+		</g>
+	</svg>
 
+	<svg
+		class="pointer-events-none absolute inset-0 size-full"
+		viewBox="0 0 100 100"
+		preserveAspectRatio="none"
+		aria-hidden="true"
+	>
+		<path
+			d={route}
+			fill="none"
+			stroke="var(--color-paper)"
+			stroke-width="2.5"
+			stroke-dasharray="2.5 5"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			opacity="0.55"
+			vector-effect="non-scaling-stroke"
+		/>
+	</svg>
+
+	<!-- Home bay -->
 	<button
 		type="button"
-		class="sticker sticker-interactive flex w-full flex-wrap items-center justify-between gap-2 p-3 text-start"
-		style:--tilt="-0.6deg"
+		class="home-marker btn-chunky absolute z-30 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-khaki p-0 text-paper sm:size-20"
+		style:left="{HOME.x}%"
+		style:top="{HOME.y}%"
+		aria-label={m.beachhead_home_base()}
+		title={m.beachhead_home_base()}
 		onclick={() => game.goBase()}
 	>
-		<span class="flex items-center gap-3">
-			<IconAnchor class="size-8 shrink-0" aria-hidden="true" />
-			<span class="flex flex-col leading-tight">
-				<span class="text-lg font-bold">{m.beachhead_home_base()}</span>
-				<span class="text-sm font-semibold">{m.beachhead_income_summary(game.income)}</span>
-			</span>
-		</span>
-		<span class="rounded-md border-2 border-ink bg-sand px-2 py-0.5 text-sm font-bold">
-			{m.beachhead_to_base()}
-		</span>
+		<IconAnchor class="size-8 sm:size-10" aria-hidden="true" />
 	</button>
 
-	<div class="-mx-1 overflow-x-auto px-1 pb-1">
-		<div
-			class="sea-chart relative mx-auto h-[27rem] w-full min-w-[36rem] overflow-hidden rounded-[22px_14px_26px_16px] border-3 border-ink shadow-[5px_5px_0_var(--color-ink)] sm:h-[34rem] sm:min-w-0"
-			role="group"
-			aria-label={m.beachhead_map_title()}
-		>
-			<div class="sea-depth absolute inset-0" aria-hidden="true"></div>
-			<IconWaves
-				class="pointer-events-none absolute -right-6 -bottom-8 size-48 text-paper/15"
-				aria-hidden="true"
-			/>
-
-			<svg
-				class="pointer-events-none absolute inset-0 size-full"
-				viewBox="0 0 100 100"
-				preserveAspectRatio="none"
-				aria-hidden="true"
+	<!-- The enemy bases, each a little picture of the island you will land on -->
+	<ol class="absolute inset-0 m-0 list-none p-0">
+		{#each ISLAND_IDS as islandId, index (islandId)}
+			{@const position = ISLAND_MAP_POSITIONS[index] ?? { x: 50, y: 50 }}
+			{@const charted = game.isCharted(index)}
+			{@const unlocked = charted && game.isUnlocked(index)}
+			{@const controlled = game.isControlled(islandId)}
+			{@const attackable = unlocked && !controlled}
+			{@const defense = game.defensePercent(islandId)}
+			<li
+				class="absolute z-30 -translate-x-1/2 -translate-y-1/2 transition-opacity duration-[1800ms]"
+				class:opacity-0={!charted}
+				class:pointer-events-none={!charted}
+				style:left="{position.x}%"
+				style:top="{position.y}%"
 			>
-				<path
-					d={route}
-					fill="none"
-					stroke="var(--color-paper)"
-					stroke-width="2.5"
-					stroke-dasharray="2.5 5"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					opacity="0.55"
-					vector-effect="non-scaling-stroke"
-				/>
-			</svg>
-
-			<span
-				class="pointer-events-none absolute top-3 right-3 flex size-11 items-center justify-center rounded-full border-2 border-ink bg-paper/85 text-flag-blue shadow-[2px_2px_0_var(--color-ink)]"
-				aria-hidden="true"
-			>
-				<IconCompass class="size-7" />
-			</span>
-
-			<!-- The home shore, where the boats and the builders live -->
-			<button
-				type="button"
-				class="map-marker sticker sticker-interactive absolute z-10 flex w-[6.2rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1 p-1.5 text-center"
-				style:--tilt="-2deg"
-				style:left="{HOME.x}%"
-				style:top="{HOME.y}%"
-				aria-label={m.beachhead_home_base()}
-				onclick={() => game.goBase()}
-			>
-				<span
-					class="flex size-11 items-center justify-center rounded-[46%_54%_52%_48%] border-2 border-ink bg-khaki text-paper shadow-[2px_2px_0_var(--color-ink)]"
+				<button
+					type="button"
+					class="island-marker group relative flex w-[clamp(6.5rem,15vw,11rem)] flex-col items-center disabled:cursor-not-allowed"
+					class:island-locked={charted && !unlocked}
+					class:island-held={controlled}
+					disabled={!attackable}
+					aria-label={islandAria(index, islandId)}
+					title={islandName(index)}
+					onclick={() => game.openIsland(index)}
 				>
-					<IconAnchor class="size-6" aria-hidden="true" />
-				</span>
-				<span class="text-[0.7rem] leading-tight font-bold">{m.beachhead_home_base()}</span>
-			</button>
+					<canvas use:miniature={index} class="block h-auto w-full" aria-hidden="true"></canvas>
 
-			<ol class="absolute inset-0 m-0 list-none p-0">
-				{#each ISLAND_IDS as islandId, index (islandId)}
-					{@const position = ISLAND_MAP_POSITIONS[index] ?? { x: 50, y: 50 }}
-					{@const charted = game.isCharted(index)}
-					{@const unlocked = charted && game.isUnlocked(index)}
-					{@const controlled = game.isControlled(islandId)}
-					{@const attackable = unlocked && !controlled}
-					{@const stars = game.starsFor(islandId)}
-					{@const defense = game.defensePercent(islandId)}
-					<li
-						class="absolute z-10 -translate-x-1/2 -translate-y-1/2"
-						style:left="{position.x}%"
-						style:top="{position.y}%"
+					<span
+						class="absolute -end-1 top-0 flex size-8 items-center justify-center rounded-full border-2 border-ink shadow-[2px_2px_0_var(--color-ink)] {controlled
+							? 'bg-khaki text-paper'
+							: attackable
+								? 'attack-ping bg-tie-red text-paper'
+								: 'bg-sand text-ink'}"
 					>
-						<button
-							type="button"
-							class="map-marker flex w-[7rem] flex-col items-center gap-1 text-center disabled:cursor-not-allowed"
-							class:fogged={!charted}
-							style:--tilt="{TILTS[index % TILTS.length]}deg"
-							disabled={!attackable}
-							aria-label={islandAria(index, islandId)}
-							onclick={() => game.openIsland(index)}
+						{#if controlled}
+							<IconFlag class="size-4" aria-hidden="true" />
+						{:else if attackable}
+							<IconCrosshair class="size-5" aria-hidden="true" />
+						{:else}
+							<IconLock class="size-4" aria-hidden="true" />
+						{/if}
+					</span>
+
+					{#if defense > 0}
+						<span
+							class="absolute -start-1 bottom-5 flex items-center gap-0.5 rounded-full border-2 border-ink bg-explosion-yellow px-1.5 font-display text-[0.7rem] leading-4 font-bold tabular-nums"
+							title={m.beachhead_island_defense({ percent: defense })}
 						>
-							<span
-								class="island-shape relative flex size-12 items-center justify-center border-2 border-ink shadow-[2px_2px_0_var(--color-ink)] sm:size-14"
-								class:island-held={controlled}
-								class:island-ready={attackable}
-								class:island-locked={charted && !unlocked}
-								class:island-fog={!charted}
-							>
-								{#if !charted}
-									<IconCloudFog class="size-7 text-paper" aria-hidden="true" />
-								{:else if controlled}
-									<IconFlag class="size-7 text-paper" aria-hidden="true" />
-								{:else if attackable}
-									<IconCrosshair class="size-7 text-ink" aria-hidden="true" />
-								{:else}
-									<IconLock class="size-6 text-ink/70" aria-hidden="true" />
-								{/if}
-							</span>
+							<IconShield class="size-3" aria-hidden="true" />
+							{defense}%
+						</span>
+					{/if}
 
-							<span
-								dir="auto"
-								class="rounded-md border-2 border-ink bg-paper/95 px-1.5 py-0.5 text-[0.7rem] leading-tight font-bold sm:text-xs"
-								class:opacity-70={!charted}
-							>
-								{#if charted}
-									{islandName(index)}
-								{:else}
-									{m.beachhead_island_uncharted_short()}
-								{/if}
-							</span>
+					<span
+						dir="auto"
+						class="-mt-1 rounded-full border-2 border-ink bg-paper/95 px-2 py-px text-[0.68rem] leading-tight font-bold sm:text-xs"
+					>
+						{islandName(index)}
+					</span>
+				</button>
+			</li>
+		{/each}
+	</ol>
 
-							{#if charted && (controlled || attackable || stars > 0)}
-								<span
-									class="flex flex-wrap items-center justify-center gap-1 text-[0.65rem] leading-none font-bold"
-								>
-									{#if controlled}
-										<span class="rounded border-2 border-ink bg-khaki px-1 py-0.5 text-paper">
-											{m.beachhead_island_controlled()}
-										</span>
-									{:else if attackable}
-										<span
-											class="rounded border-2 border-ink bg-explosion-yellow px-1 py-0.5 text-ink"
-										>
-											{m.beachhead_attack_island()}
-										</span>
-									{/if}
-									{#if stars > 0}
-										<span class="rounded border-2 border-ink bg-paper px-1 py-0.5">
-											<BeachheadStars {stars} class="size-3" />
-										</span>
-									{/if}
-									{#if defense > 0}
-										<span class="rounded border-2 border-ink bg-tie-red px-1 py-0.5 text-paper">
-											{m.beachhead_island_defense({ percent: defense })}
-										</span>
-									{/if}
-								</span>
-							{:else if charted && !unlocked}
-								<span class="text-[0.65rem] leading-tight font-semibold">
-									{m.beachhead_island_locked()}
-								</span>
-							{/if}
-						</button>
-					</li>
-				{/each}
-			</ol>
-		</div>
+	<!-- Clouds over everything the radar has not reached yet -->
+	<div class="pointer-events-none absolute inset-0 z-20" aria-hidden="true">
+		{#each clouds as cloud, index (index)}
+			<span
+				class="cloud absolute"
+				class:cloud-gone={cloud.cleared}
+				style:left="{cloud.x}%"
+				style:top="{cloud.y}%"
+				style:width="{cloud.size}%"
+				style:--delay="{cloud.cleared ? cloud.delay : 0}ms"
+				style:--drift="{cloud.drift}s"
+				style:--flip={cloud.flip ? -1 : 1}
+			></span>
+		{/each}
 	</div>
 
-	<ul class="flex flex-wrap gap-2 text-xs font-semibold">
-		<li class="flex items-center gap-1 rounded-md border-2 border-ink bg-paper px-2 py-0.5">
-			<span class="size-3 rounded-full border-2 border-ink bg-khaki"></span>
-			{m.beachhead_map_legend_held()}
-		</li>
-		<li class="flex items-center gap-1 rounded-md border-2 border-ink bg-paper px-2 py-0.5">
-			<span class="size-3 rounded-full border-2 border-ink bg-explosion-yellow"></span>
-			{m.beachhead_map_legend_attack()}
-		</li>
-		<li class="flex items-center gap-1 rounded-md border-2 border-ink bg-paper px-2 py-0.5">
-			<span class="size-3 rounded-full border-2 border-ink bg-sand"></span>
-			{m.beachhead_map_legend_locked()}
-		</li>
-		<li class="flex items-center gap-1 rounded-md border-2 border-ink bg-paper px-2 py-0.5">
-			<span class="bg-smoke size-3 rounded-full border-2 border-ink"></span>
-			{m.beachhead_map_legend_uncharted()}
-		</li>
-		<li class="text-smoke flex items-center gap-1">
-			<IconRadar class="size-3.5" aria-hidden="true" />
-			{m.beachhead_takeback_rhythm()}
-		</li>
-	</ul>
-</section>
+	<!-- The HUD sits above the clouds -->
+	<div
+		class="pointer-events-none absolute top-(--hud-top) left-(--hud-left) z-40 flex max-w-[55%] flex-col items-start gap-1.5"
+	>
+		<p
+			class="pointer-events-auto flex items-center gap-1.5 rounded-full border-2 border-ink bg-paper px-2.5 py-0.5 font-display text-sm font-bold tabular-nums shadow-[2px_2px_0_var(--color-ink)]"
+			title={m.beachhead_radar_summary({ count: game.chartedCount, total: game.islandCount })}
+		>
+			<IconRadar class="size-4" aria-hidden="true" />
+			{game.chartedCount}/{game.islandCount}
+		</p>
+		<div class="pointer-events-auto">
+			<BeachheadTakeoverNotice {game} />
+		</div>
+	</div>
+	<div class="pointer-events-none absolute top-(--hud-top) right-(--hud-right) z-40">
+		<div class="pointer-events-auto">
+			<BeachheadResources {game} />
+		</div>
+	</div>
+</div>
 
 <style>
-	.sea-chart {
-		background:
-			radial-gradient(circle at 18% 20%, #8fd0df 0 18%, transparent 19%),
-			radial-gradient(circle at 76% 74%, #79c2d4 0 22%, transparent 23%),
-			linear-gradient(150deg, #3f8fae 0%, #2e7595 46%, #1f5a78 100%);
+	.map-sea {
+		background: linear-gradient(150deg, #3f8fae 0%, #2e7595 46%, #1f5a78 100%);
 	}
 
 	.sea-depth {
@@ -280,56 +306,29 @@
 			repeating-linear-gradient(25deg, #0000000c 0 1px, transparent 1px 16px);
 	}
 
-	.map-marker {
-		filter: drop-shadow(0 2px 0 #00000022);
+	.island-marker {
+		filter: drop-shadow(0 3px 0 #00000030);
+		transition: transform 160ms ease;
 	}
 
-	.island-shape {
-		border-radius: 46% 54% 52% 48% / 52% 46% 54% 48%;
-		background: var(--color-sand);
-		transition:
-			transform 160ms ease,
-			background-color 160ms ease;
+	.island-marker:not(:disabled):hover,
+	.island-marker:not(:disabled):focus-visible {
+		transform: translateY(-3px) scale(1.06);
 	}
 
-	.map-marker:not(:disabled):hover .island-shape,
-	.map-marker:not(:disabled):focus-visible .island-shape {
-		transform: translateY(-2px) rotate(2deg) scale(1.06);
+	.island-locked canvas {
+		filter: grayscale(0.7) brightness(0.9);
 	}
 
-	.island-held {
-		background: var(--color-khaki);
+	.island-held canvas {
+		filter: saturate(0.85);
 	}
 
-	.island-ready {
-		background: color-mix(in srgb, var(--color-explosion-yellow) 55%, var(--color-sand));
-		animation: attack-glow 2.2s ease-in-out infinite;
+	.attack-ping {
+		animation: attack-ping 2s ease-in-out infinite;
 	}
 
-	.island-locked {
-		background: color-mix(in srgb, var(--color-sand) 55%, #9aa6a8);
-	}
-
-	.island-fog {
-		background: color-mix(in srgb, #6b7f88 70%, #b7c4c8);
-		opacity: 0.85;
-	}
-
-	.fogged {
-		filter: saturate(0.5);
-	}
-
-	@keyframes island-bob {
-		0%,
-		100% {
-			transform: translateY(0) rotate(-2deg);
-		}
-		50% {
-			transform: translateY(-3px) rotate(2deg);
-		}
-	}
-
-	@keyframes attack-glow {
+	@keyframes attack-ping {
 		0%,
 		100% {
 			box-shadow: 2px 2px 0 var(--color-ink);
@@ -337,21 +336,50 @@
 		50% {
 			box-shadow:
 				2px 2px 0 var(--color-ink),
-				0 0 0 4px color-mix(in srgb, var(--color-explosion-yellow) 55%, transparent);
+				0 0 0 5px color-mix(in srgb, var(--color-tie-red) 45%, transparent);
 		}
 	}
 
-	.island-bob {
-		animation: island-bob 3.4s ease-in-out infinite;
+	/* A cloud is a soft white bank of three overlapping blobs; it drifts a little and melts away */
+	.cloud {
+		aspect-ratio: 1.7;
+		transform: translate(-50%, -50%) scaleX(var(--flip, 1));
+		background:
+			radial-gradient(ellipse at 30% 60%, #fff 0 38%, transparent 40%),
+			radial-gradient(ellipse at 55% 42%, #fff 0 42%, transparent 44%),
+			radial-gradient(ellipse at 74% 62%, #f1f6fa 0 36%, transparent 38%);
+		filter: drop-shadow(0 4px 0 #9fb8c755);
+		opacity: 0.97;
+		transition:
+			opacity 2.4s ease var(--delay, 0ms),
+			scale 2.4s ease var(--delay, 0ms),
+			translate 2.4s ease var(--delay, 0ms);
+		animation: cloud-drift var(--drift, 20s) ease-in-out infinite alternate;
+	}
+
+	.cloud-gone {
+		opacity: 0;
+		scale: 1.5;
+		translate: 0 -12%;
+	}
+
+	@keyframes cloud-drift {
+		from {
+			margin-left: -0.8%;
+		}
+		to {
+			margin-left: 0.8%;
+		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.island-bob,
-		.island-ready,
-		.map-marker:not(:disabled):hover .island-shape,
-		.map-marker:not(:disabled):focus-visible .island-shape {
+		.attack-ping,
+		.cloud {
 			animation: none;
-			transform: none;
+		}
+
+		.cloud {
+			transition-duration: 0.01ms;
 		}
 	}
 </style>

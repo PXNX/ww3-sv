@@ -21,6 +21,8 @@ export type BuildingKind =
 	| 'mg'
 	| 'flame'
 	| 'depot'
+	| 'catapult'
+	| 'ballista'
 	| MineKind;
 
 /** One-cell mines: they sit on the ground and go off when a troop walks over them */
@@ -149,6 +151,32 @@ export const BUILDINGS: Record<BuildingKind, BuildingStats> = {
 		score: 280
 	},
 	depot: { width: 1, height: 1, hp: 220, damage: 0, range: 0, reloadMs: 0, splash: 0, score: 150 },
+	// The orc lands in the north: a lobbing catapult and a long ballista that picks off the weakest
+	catapult: {
+		width: 1,
+		height: 1,
+		hp: 520,
+		damage: 58,
+		range: 6.4,
+		reloadMs: 3400,
+		splash: 1.4,
+		minRange: 2.2,
+		targeting: 'farthest',
+		projectile: 'shell',
+		projectileSpeed: 6.5,
+		score: 360
+	},
+	ballista: {
+		width: 1,
+		height: 1,
+		hp: 340,
+		damage: 34,
+		range: 6,
+		reloadMs: 1500,
+		splash: 0,
+		targeting: 'weakest',
+		score: 300
+	},
 	// Mines are not shot at and score nothing; their effect lives in MINES
 	'mine-personnel': {
 		width: 1,
@@ -473,6 +501,8 @@ export interface IslandBuilding {
 
 export interface Island {
 	id: string;
+	/** The orc lands in the north are drawn and defended differently */
+	theme?: 'orc';
 	buildings: readonly IslandBuilding[];
 }
 
@@ -565,12 +595,13 @@ export const ISLANDS: readonly Island[] = [
 	},
 	{
 		id: 'black-reef',
+		theme: 'orc',
 		buildings: [
 			{ kind: 'hq', x: 9, y: 3 },
-			{ kind: 'field-cannon', x: 5, y: 1 },
+			{ kind: 'catapult', x: 5, y: 1 },
 			{ kind: 'field-cannon', x: 5, y: 5 },
 			{ kind: 'mortar', x: 7, y: 1 },
-			{ kind: 'mortar', x: 7, y: 6 },
+			{ kind: 'ballista', x: 7, y: 6 },
 			{ kind: 'sniper', x: 6, y: 3 },
 			{ kind: 'mg', x: 8, y: 1 },
 			{ kind: 'mg', x: 8, y: 6 },
@@ -585,13 +616,14 @@ export const ISLANDS: readonly Island[] = [
 	},
 	{
 		id: 'iron-bay',
+		theme: 'orc',
 		buildings: [
 			{ kind: 'hq', x: 9, y: 3 },
 			{ kind: 'field-cannon', x: 4, y: 1 },
-			{ kind: 'field-cannon', x: 4, y: 5 },
+			{ kind: 'catapult', x: 4, y: 5 },
 			{ kind: 'mortar', x: 6, y: 1 },
-			{ kind: 'mortar', x: 6, y: 6 },
-			{ kind: 'sniper', x: 8, y: 0 },
+			{ kind: 'catapult', x: 6, y: 6 },
+			{ kind: 'ballista', x: 8, y: 0 },
 			{ kind: 'sniper', x: 7, y: 3 },
 			{ kind: 'mg', x: 8, y: 6 },
 			{ kind: 'mg', x: 10, y: 6 },
@@ -606,14 +638,15 @@ export const ISLANDS: readonly Island[] = [
 	},
 	{
 		id: 'dragons-teeth',
+		theme: 'orc',
 		buildings: [
 			{ kind: 'hq', x: 9, y: 3 },
-			{ kind: 'field-cannon', x: 4, y: 1 },
-			{ kind: 'field-cannon', x: 4, y: 6 },
+			{ kind: 'catapult', x: 4, y: 1 },
+			{ kind: 'catapult', x: 4, y: 6 },
 			{ kind: 'mortar', x: 6, y: 1 },
 			{ kind: 'mortar', x: 6, y: 6 },
-			{ kind: 'sniper', x: 8, y: 0 },
-			{ kind: 'sniper', x: 7, y: 3 },
+			{ kind: 'ballista', x: 8, y: 0 },
+			{ kind: 'ballista', x: 7, y: 3 },
 			{ kind: 'mg', x: 8, y: 6 },
 			{ kind: 'mg', x: 10, y: 6 },
 			{ kind: 'fpv-nest', x: 5, y: 3 },
@@ -632,16 +665,20 @@ export const ISLANDS: readonly Island[] = [
 
 /** Where each island sits on the sea chart, as a percentage of the chart's width and height */
 export const ISLAND_MAP_POSITIONS: readonly { x: number; y: number }[] = [
-	{ x: 23, y: 72 },
-	{ x: 37, y: 49 },
-	{ x: 50, y: 76 },
-	{ x: 63, y: 39 },
-	{ x: 76, y: 62 },
-	{ x: 88, y: 30 },
-	{ x: 32, y: 24 },
-	{ x: 70, y: 84 },
-	{ x: 89, y: 76 }
+	{ x: 24, y: 74 },
+	{ x: 40, y: 56 },
+	{ x: 56, y: 78 },
+	{ x: 68, y: 52 },
+	{ x: 82, y: 72 },
+	{ x: 86, y: 44 },
+	// The orc lands: a broad landmass along the north edge, each stronghold on its own headland
+	{ x: 24, y: 20 },
+	{ x: 50, y: 14 },
+	{ x: 76, y: 20 }
 ];
+
+/** The landmass of the orc lands: where the islands from this index on stand */
+export const ORC_LANDS_FROM_INDEX = 6;
 
 export const ISLAND_IDS: readonly string[] = ISLANDS.map((island) => island.id);
 
