@@ -8,6 +8,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import CrystalIcon from '#lib/components/CrystalIcon.svelte';
 	import ResourceIcon from '#lib/components/ResourceIcon.svelte';
+	import { haptic } from '#lib/haptic/haptic.svelte.js';
 	import type { CrystalType } from '#lib/game/beachhead/crystals.js';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
 	import IconCoins from '~icons/lucide/coins';
@@ -68,7 +69,7 @@
 
 	function reveal() {
 		if (taps < rewards.length) taps += 1;
-		if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate?.(12);
+		haptic().play(0.15);
 	}
 
 	// A new chest starts closed again

@@ -3,6 +3,7 @@
  * locally stored campaign. The battle is a plain object the canvas reads every frame; only the
  * values the page chrome shows (squads, troops, score, resources, status) are reactive.
  */
+import { haptic } from '#lib/haptic/haptic.svelte.js';
 import {
 	BUILDINGS,
 	ISLANDS,
@@ -1232,6 +1233,12 @@ export class BeachheadGame {
 
 	#play(id: SoundId, intensity = 1, pan = 0) {
 		soundManager().play(id, intensity, pan);
+		// A touch of vibration on the sounds that mark a decision or a hit; shots stay silent to the hand
+		if (this.reducedMotion) return;
+		if (id === 'click') haptic().play(0.1);
+		else if (id === 'ui-error') haptic().play(0.3);
+		else if (id === 'chime' || id === 'chime-big') haptic().play(id === 'chime' ? 0.2 : 0.5);
+		else if (id.startsWith('explosion')) haptic().play(Math.min(0.6, intensity * 0.5));
 	}
 
 	#effect(effect: Effect) {
