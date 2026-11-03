@@ -124,6 +124,25 @@ import {
 } from '#lib/game/beachhead/campaign.js';
 import type { BaseLayout, Cell, DefenseKind } from '#lib/game/beachhead/baseLayout.js';
 import { testIslandOf } from '#lib/game/beachhead/defenseTest.js';
+import {
+	addCrystals,
+	baseEffects,
+	baseSlots,
+	canMergeCrystal,
+	crystalDrop,
+	crystalLevel,
+	crystalStock,
+	crystalsOf,
+	mergeCost,
+	mergeCrystal,
+	overchargeSlots,
+	setBaseCrystal,
+	setOvercharge,
+	usedOverchargeSlots,
+	type BaseCrystal,
+	type CrystalType,
+	type OverchargeCrystal
+} from '#lib/game/beachhead/crystals.js';
 import { career } from '#lib/game/career/store.svelte.js';
 import { drawBattlePreview, type Effect, type SceneExtras } from '#lib/game/beachhead/render.js';
 import { highscores, type Highscores } from '#lib/services/highscore.js';
@@ -196,6 +215,8 @@ export class BeachheadGame {
 	/** Resources won in the last battle, shown on the result panel */
 	loot = $state<Resources>({ wood: 0, stone: 0, iron: 0, gold: 0 });
 	/** Troops the last attack killed, shown on the result panel until they are retrained */
+	/** The crystal the last victory dropped, if any */
+	crystalFound = $state<{ type: CrystalType; count: number } | null>(null);
 	/** How many seconds the last attack took */
 	lastSeconds = $state(0);
 	lastCasualties = $state<Partial<Record<TroopKind, number>>>({});
@@ -719,6 +740,77 @@ export class BeachheadGame {
 		return true;
 	}
 
+	/** The crystals: loose stock and levels, the slots on buildings and the base's own slots */
+	get crystals() {
+		return crystalsOf(this.campaign);
+	}
+
+	get baseEffects() {
+		return baseEffects(this.campaign);
+	}
+
+	get overchargeSlotsTotal(): number {
+		return overchargeSlots(this.campaign.levels.hq);
+	}
+
+	get overchargeSlotsUsed(): number {
+		return usedOverchargeSlots(this.campaign);
+	}
+
+	get baseSlotsTotal(): number {
+		return baseSlots(this.campaign.levels.hq);
+	}
+
+	crystalLevel(type: CrystalType): number {
+		return crystalLevel(this.campaign, type);
+	}
+
+	crystalStock(type: CrystalType): number {
+		return crystalStock(this.campaign, type);
+	}
+
+	crystalMergeCost(type: CrystalType): number | null {
+		return mergeCost(crystalLevel(this.campaign, type));
+	}
+
+	canMergeCrystal(type: CrystalType): boolean {
+		return canMergeCrystal(this.campaign, type);
+	}
+
+	/** Merges n² loose crystals of a type into one level */
+	mergeCrystal(type: CrystalType): boolean {
+		const next = mergeCrystal(this.campaign, type);
+		if (!next) {
+			this.#play('ui-error', 0.4);
+			return false;
+		}
+		this.#commit(next, { claim: false });
+		this.#play('chime', 0.8);
+		return true;
+	}
+
+	setOvercharge(target: string, type: OverchargeCrystal | null): boolean {
+		const next = setOvercharge(this.campaign, target, type);
+		if (!next) {
+			this.#play('ui-error', 0.4);
+			return false;
+		}
+		this.#commit(next, { claim: false });
+		this.#play('click', 0.5);
+		return true;
+	}
+
+	setBaseCrystal(index: number, type: BaseCrystal | null): boolean {
+		const next = setBaseCrystal(this.campaign, index, type);
+		if (!next) {
+			this.#play('ui-error', 0.4);
+			return false;
+		}
+		this.#commit(next, { claim: false });
+		this.#play('click', 0.5);
+		return true;
+	}
+
 	/** Troops killed in attacks that wait to be retrained, by kind */
 	get lost() {
 		return lostOf(this.campaign);
@@ -784,10 +876,18 @@ export class BeachheadGame {
 			return false;
 		}
 		this.#retreat();
-		this.battle = createBattle(testIslandOf(this.layout), {
-			...modifiersFor(this.campaign),
-			defenseScale: 1
-		});
+		const slots = crystalsOf(this.campaign).slots;
+		this.battle = createBattle(
+			testIslandOf(this.layout, (target) => {
+				const type = slots[target];
+				return type ? { type, level: crystalLevel(this.campaign, type) } : undefined;
+			}),
+			{
+				...modifiersFor(this.campaign),
+				// The bulwark crystal toughens everything in your own base
+				defenseScale: 1 + baseEffects(this.campaign).defense
+			}
+		);
 		this.testing = true;
 		this.testResult = null;
 		this.effects = [];
@@ -797,6 +897,7 @@ export class BeachheadGame {
 		this.#settled = true;
 		this.lastCasualties = {};
 		this.heroCardsFound = 0;
+		this.crystalFound = null;
 		this.lootCollected = { wood: 0, stone: 0, iron: 0, gold: 0 };
 		this.stars = 0;
 		this.focusKind = null;
@@ -1270,7 +1371,14 @@ export class BeachheadGame {
 	#startLootFlight() {
 		if (this.testing) return;
 		const first = !isControlled(this.campaign, this.islandId);
-		this.#plannedLoot = lootFor(this.islandIndex, first);
+		const base = lootFor(this.islandIndex, first);
+		const bonus = 1 + baseEffects(this.campaign).loot;
+		this.#plannedLoot = {
+			wood: Math.round(base.wood * bonus),
+			stone: Math.round(base.stone * bonus),
+			iron: Math.round(base.iron * bonus),
+			gold: Math.round(base.gold * bonus)
+		};
 		this.lootCollected = { wood: 0, stone: 0, iron: 0, gold: 0 };
 		const sources = this.battle.buildings.filter(
 			(building) => building.kind === 'hq' || building.kind === 'depot'
@@ -1351,6 +1459,14 @@ export class BeachheadGame {
 			});
 			const cards = shardsForWin(this.islandIndex, Math.random());
 			next = grantHeroCards(next, cards);
+			const drop = crystalDrop(
+				this.islandIndex,
+				Math.random(),
+				Math.random(),
+				baseEffects(this.campaign).dropRate
+			);
+			this.crystalFound = drop;
+			if (drop) next = addCrystals(next, drop.type, drop.count);
 			next = this.#settleCasualties(next);
 			this.heroCardsFound = cards;
 			this.loot = loot;

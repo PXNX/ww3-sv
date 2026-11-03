@@ -3,6 +3,8 @@
  * Everything here is a plain number or list so the rules stay testable and easy to balance.
  */
 
+import type { OverchargeCrystal } from './crystals.js';
+
 export const COLUMNS = 12;
 export const ROWS = 8;
 
@@ -656,6 +658,8 @@ export interface IslandBuilding {
 	kind: BuildingKind;
 	x: number;
 	y: number;
+	/** An overcharge crystal in the building's slot, with the level it has reached */
+	crystal?: { type: OverchargeCrystal; level: number };
 }
 
 export type IslandTheme = 'orc' | 'ice' | 'jungle' | 'desert';

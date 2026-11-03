@@ -3,6 +3,7 @@
  * when it is in range, and the surviving guns shoot back. The state is a plain object, so a whole
  * attack can be simulated in a test without a canvas or a browser.
  */
+import { overchargeEffect } from './crystals.js';
 import {
 	ATTACK_TIME_LIMIT_MS,
 	BUILDINGS,
@@ -63,6 +64,8 @@ export interface BattleModifiers {
 	defenseScale?: number;
 	/** Training level of every support skill; a skill missing here is at level one */
 	skillLevels?: Partial<Record<SkillId, number>>;
+	/** Extra energy at the start of the attack, from the power crystal */
+	energyBonus?: number;
 }
 
 const RIFLEMAN: SquadTroop = {
@@ -95,6 +98,12 @@ export interface Building {
 	damage: number;
 	/** Milliseconds between two shots */
 	reloadMs: number;
+	/** Share of a support skill's damage this building shrugs off, from an aegis crystal */
+	skillResist: number;
+	/** Share of its health the building mends every second, from a regen crystal */
+	regenPerSecond: number;
+	/** How much further than usual the building shoots, from a reach crystal */
+	rangeMultiplier: number;
 	destroyed: boolean;
 	/** Counts down after a hit, for the hit flash */
 	flashMs: number;
@@ -325,7 +334,8 @@ export function createBattle(
 		troops: [],
 		buildings: island.buildings.map((spec, id) => {
 			const stats = BUILDINGS[spec.kind];
-			const hp = scaledHp(stats.hp);
+			const crystal = overchargeEffect(spec.crystal?.type, spec.crystal?.level ?? 1);
+			const hp = Math.round(scaledHp(stats.hp) * crystal.hpMultiplier);
 			return {
 				id,
 				kind: spec.kind,
@@ -338,7 +348,10 @@ export function createBattle(
 				// Stagger the first volley a little so the guns do not all fire on the same frame
 				cooldownMs: (stats.reloadMs * (id % 3)) / 3,
 				damage: scaledDamage(stats.damage),
-				reloadMs: stats.reloadMs,
+				reloadMs: Math.round(stats.reloadMs * crystal.reloadMultiplier),
+				skillResist: crystal.skillResist,
+				regenPerSecond: crystal.regenPerSecond,
+				rangeMultiplier: crystal.rangeMultiplier,
 				destroyed: false,
 				flashMs: 0,
 				recoilMs: 0
@@ -347,7 +360,7 @@ export function createBattle(
 		projectiles: [],
 		strikes: [],
 		skillLevels: { ...modifiers.skillLevels },
-		energy: SKILL_ENERGY.start,
+		energy: SKILL_ENERGY.start + Math.max(0, modifiers.energyBonus ?? 0),
 		skillsUsed: 0,
 		flare: null,
 		smoke: null,
@@ -685,7 +698,10 @@ function stepSkillStrikes(state: BattleState, frameMs: number) {
 		for (const building of state.buildings) {
 			if (building.destroyed || building.hp <= 0 || isMine(building.kind)) continue;
 			if (rectDistance(strike.x, strike.y, building) > strike.radius) continue;
-			building.hp = Math.max(0, building.hp - Math.round(strike.damage));
+			building.hp = Math.max(
+				0,
+				building.hp - Math.round(strike.damage * (1 - building.skillResist))
+			);
 			building.flashMs = 130;
 			hits += 1;
 		}
@@ -1048,6 +1064,12 @@ export function stepBattle(state: BattleState, dtMs: number) {
 		building.flashMs = Math.max(0, building.flashMs - frameMs);
 		building.recoilMs = Math.max(0, building.recoilMs - frameMs);
 		if (building.destroyed || building.hp <= 0) continue;
+		if (building.regenPerSecond > 0) {
+			building.hp = Math.min(
+				building.maxHp,
+				building.hp + building.maxHp * building.regenPerSecond * (frameMs / 1000)
+			);
+		}
 		const stats = BUILDINGS[building.kind];
 		if (stats.pulse) {
 			// A jammer shakes everything near it on a rhythm, whether or not anything shoots
@@ -1082,7 +1104,7 @@ export function stepBattle(state: BattleState, dtMs: number) {
 			// A smoke screen hides every soldier inside it from the defenders
 			if (insideZone(state.smoke, troop.x, troop.y)) continue;
 			const distance = rectDistance(troop.x, troop.y, building);
-			if (distance > stats.range || distance < minRange) continue;
+			if (distance > stats.range * building.rangeMultiplier || distance < minRange) continue;
 			const value = targeting === 'weakest' ? troop.hp : distance;
 			const better = targeting === 'farthest' ? value > bestValue + 1e-9 : value < bestValue - 1e-9;
 			if (better) {

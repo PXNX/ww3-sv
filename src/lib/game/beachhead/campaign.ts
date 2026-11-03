@@ -35,6 +35,7 @@ import {
 	type TroopKind
 } from './config.js';
 import type { BattleModifiers, SquadTroop } from './battle.js';
+import { baseEffects, normalizeCrystals, type CrystalState } from './crystals.js';
 import {
 	DEFENSE_COST,
 	defenseUnlocked,
@@ -216,6 +217,8 @@ export interface BeachheadSave {
 	layout?: BaseLayout;
 	/** Troops killed in attacks that still wait to be retrained with gold; older saves have none */
 	lost?: Partial<Army>;
+	/** Crystals: loose stock, levels and the slots on buildings and on the base itself */
+	crystals?: CrystalState;
 	/** Training level of the support skills; a skill missing here is at level one */
 	skillLevels?: Partial<Record<SkillId, number>>;
 }
@@ -1012,10 +1015,20 @@ export function fortificationScale(captures: number): number {
 
 /** What the shore-base upgrades and the army change about the landing party */
 export function modifiersFor(save: BeachheadSave, islandId?: string): BattleModifiers {
+	const effects = baseEffects(save);
+	// The might and vigor crystals strengthen every troop that lands
+	const boosted = landingPlan(save).map((squad) =>
+		squad.map((troop) => ({
+			...troop,
+			hp: Math.round(troop.hp * (1 + effects.troopHealth)),
+			damage: Math.round(troop.damage * (1 + effects.troopDamage))
+		}))
+	);
 	return {
-		squads: landingPlan(save),
+		squads: boosted,
 		defenseScale: islandId ? fortificationScale(islandControl(save, islandId).captures) : 1,
-		skillLevels: Object.fromEntries(SUPPORT_SKILLS.map((id) => [id, supportSkillLevel(save, id)]))
+		skillLevels: Object.fromEntries(SUPPORT_SKILLS.map((id) => [id, supportSkillLevel(save, id)])),
+		energyBonus: effects.energy
 	};
 }
 
@@ -1465,8 +1478,13 @@ export function parseSave(value: unknown): BeachheadSave | null {
 		iron: Math.min(parsed.resources.iron, capacities.iron),
 		gold: Math.min(parsed.resources.gold, capacities.gold)
 	};
-	const next = { ...parsed, resources };
-	return next.layout === undefined ? next : { ...next, layout: normalizeLayout(next.layout) };
+	const withCrystals =
+		parsed.crystals === undefined
+			? { ...parsed, resources }
+			: { ...parsed, resources, crystals: normalizeCrystals(parsed.crystals) };
+	return withCrystals.layout === undefined
+		? withCrystals
+		: { ...withCrystals, layout: normalizeLayout(withCrystals.layout) };
 }
 
 function parseSaveVersions(value: unknown): BeachheadSave | null {
@@ -1634,6 +1652,17 @@ export function islandProduction(save: BeachheadSave, index: number): Resources 
 
 /** Production per minute: the home shore plus every controlled island, raised by the headquarters */
 export function incomeRate(save: BeachheadSave, islandIds: readonly string[]): Resources {
+	const boost = 1 + baseEffects(save).production;
+	const raw = incomeRateRaw(save, islandIds);
+	return {
+		wood: Math.round(raw.wood * boost * 10) / 10,
+		stone: Math.round(raw.stone * boost * 10) / 10,
+		iron: Math.round(raw.iron * boost * 10) / 10,
+		gold: Math.round(raw.gold * boost * 10) / 10
+	};
+}
+
+function incomeRateRaw(save: BeachheadSave, islandIds: readonly string[]): Resources {
 	const total: Resources = { ...HOME_PRODUCTION };
 	for (const [index, islandId] of islandIds.entries()) {
 		if (!isControlled(save, islandId)) continue;

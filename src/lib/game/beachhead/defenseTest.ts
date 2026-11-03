@@ -22,6 +22,8 @@ interface Wanted {
 	kind: IslandBuilding['kind'];
 	x: number;
 	y: number;
+	/** Where the overcharge crystal of this building is kept: a building key or defense:<id> */
+	target: string;
 }
 
 function squeeze(cellX: number, cellY: number): { x: number; y: number } {
@@ -32,23 +34,26 @@ function squeeze(cellX: number, cellY: number): { x: number; y: number } {
 }
 
 /** The island your base becomes when somebody attacks it */
-export function testIslandOf(layout: BaseLayout): Island {
+export function testIslandOf(
+	layout: BaseLayout,
+	crystalAt: (target: string) => IslandBuilding['crystal'] = () => undefined
+): Island {
 	const wanted: Wanted[] = [];
 
 	const hq = positionOf(layout, 'hq');
 	const hqSize = footprintOf('hq');
 	const at = squeeze(hq.x + hqSize.width / 2, hq.y + hqSize.height / 2);
-	wanted.push({ kind: 'hq', x: at.x - 1, y: at.y - 1 });
+	wanted.push({ kind: 'hq', x: at.x - 1, y: at.y - 1, target: 'hq' });
 	for (const key of LAYOUT_KEYS) {
 		if (key === 'hq') continue;
 		const position = positionOf(layout, key);
 		const size = footprintOf(key);
 		const spot = squeeze(position.x + size.width / 2, position.y + size.height / 2);
-		wanted.push({ kind: 'depot', x: spot.x, y: spot.y });
+		wanted.push({ kind: 'depot', x: spot.x, y: spot.y, target: key });
 	}
 	for (const mine of layout.mines) {
 		const spot = squeeze(mine.x + 0.5, mine.y + 0.5);
-		wanted.push({ kind: mine.kind, x: spot.x, y: spot.y });
+		wanted.push({ kind: mine.kind, x: spot.x, y: spot.y, target: `defense:${mine.id}` });
 	}
 
 	const taken = new Set<string>();
@@ -60,7 +65,8 @@ export function testIslandOf(layout: BaseLayout): Island {
 		for (let dx = 0; dx < stats.width; dx++) {
 			for (let dy = 0; dy < stats.height; dy++) taken.add(`${spot.x + dx},${spot.y + dy}`);
 		}
-		buildings.push({ kind: item.kind, x: spot.x, y: spot.y });
+		const crystal = crystalAt(item.target);
+		buildings.push({ kind: item.kind, x: spot.x, y: spot.y, ...(crystal ? { crystal } : {}) });
 	}
 	return { id: TEST_ISLAND_ID, buildings };
 }
