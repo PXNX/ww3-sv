@@ -25,6 +25,8 @@
 	import { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
 	import IconBomb from '~icons/lucide/bomb';
 	import IconCloud from '~icons/lucide/cloud';
+	import IconCrown from '~icons/lucide/crown';
+	import IconFastForward from '~icons/lucide/fast-forward';
 	import IconTimer from '~icons/lucide/timer';
 	import IconCrosshair from '~icons/lucide/crosshair';
 	import IconFlameKindling from '~icons/lucide/flame-kindling';
@@ -206,6 +208,30 @@
 					<IconZap class="size-4" aria-hidden="true" />
 					{game.energy}
 				</span>
+				<button
+					type="button"
+					class="pointer-events-auto flex items-center gap-1 rounded-full border-2 border-ink px-2.5 py-0.5 tabular-nums {game.speed >
+					1
+						? 'bg-explosion-yellow'
+						: 'bg-paper'}"
+					aria-label={m.beachhead_speed()}
+					title={game.speedProHint ? m.beachhead_speed_pro() : m.beachhead_speed()}
+					onclick={() => game.cycleSpeed()}
+				>
+					<IconFastForward class="size-4" aria-hidden="true" />
+					{game.speed}x
+					{#if game.speedProHint}
+						<IconCrown class="size-3.5" aria-hidden="true" />
+					{/if}
+				</button>
+				{#if game.speedProHint}
+					<span
+						class="pop-in rounded-full border-2 border-ink bg-explosion-yellow px-2.5 py-0.5 text-xs"
+						role="status"
+					>
+						{m.beachhead_speed_pro()}
+					</span>
+				{/if}
 				{#if game.focusKind}
 					<span
 						class="flex items-center gap-1 rounded-full border-2 border-ink bg-explosion-yellow px-2.5 py-0.5"

@@ -230,6 +230,10 @@ export class BeachheadGame {
 	recentTakeovers = $state<string[]>([]);
 	/** True while the player attacks their own base to try out its layout; nothing is won or lost */
 	testing = $state(false);
+	/** How fast an attack runs: normal, double, or four times as fast for Pro */
+	speed = $state<1 | 2 | 4>(1);
+	/** Shown for a few seconds after a free player reaches for the fourfold speed */
+	speedProHint = $state(false);
 	/** How the last defence test ended: true if the attackers took the headquarters */
 	testResult = $state<{ fell: boolean; seconds: number } | null>(null);
 	isNewBest = $state(false);
@@ -889,6 +893,7 @@ export class BeachheadGame {
 			}
 		);
 		this.testing = true;
+		this.speed = 1;
 		this.testResult = null;
 		this.effects = [];
 		this.shake = 0;
@@ -912,6 +917,7 @@ export class BeachheadGame {
 	openIsland(index: number) {
 		this.#retreat();
 		this.testing = false;
+		this.speed = 1;
 		if (!this.isUnlocked(index) || index < 0 || index >= ISLAND_IDS.length) return;
 		if (this.isControlled(ISLAND_IDS[index])) return;
 		this.islandIndex = index;
@@ -1023,12 +1029,27 @@ export class BeachheadGame {
 		this.#play('click', 0.4);
 	}
 
+	/** Cycles the attack speed; the fourfold step is only for Pro subscribers */
+	cycleSpeed() {
+		if (this.speed === 1) this.speed = 2;
+		else if (this.speed === 2 && this.isPro) this.speed = 4;
+		else {
+			if (this.speed === 2) {
+				this.speedProHint = true;
+				setTimeout(() => (this.speedProHint = false), 3500);
+			}
+			this.speed = 1;
+		}
+		this.#play('click', 0.4);
+	}
+
 	cancelSkill() {
 		this.selectedSkill = null;
 	}
 
 	/** One fixed step: called by the canvas game loop */
-	update(dtMs: number) {
+	update(realMs: number) {
+		const dtMs = realMs * (this.screen === 'play' ? this.speed : 1);
 		this.timeMs += dtMs;
 		this.#shotSound = Math.max(0, this.#shotSound - dtMs);
 		this.shake = Math.max(0, this.shake - dtMs * 0.0015);

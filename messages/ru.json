@@ -3742,6 +3742,8 @@
 	"beachhead_troop_demo": "Подрывник",
 	"beachhead_troop_heavy": "Пулемётчик с миниганом",
 	"beachhead_troop_azov": "Командир «Азова»",
+	"beachhead_speed_pro": "Скорость 4x только для Pro",
+	"beachhead_speed": "Скорость атаки",
 	"beachhead_crystals_empty_slot": "Пустой слот",
 	"beachhead_crystals_found": "Найден кристалл",
 	"beachhead_crystals_merge": "Слить",

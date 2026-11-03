@@ -172,3 +172,39 @@ describe('BeachheadGame defence test', () => {
 		expect(game.screen).toBe('base');
 	});
 });
+
+describe('BeachheadGame attack speed', () => {
+	it('runs a double-speed attack twice as fast and keeps fourfold for Pro', () => {
+		const slow = startedGame();
+		const quick = startedGame();
+		slow.tap(1, 3);
+		quick.tap(1, 3);
+		quick.cycleSpeed();
+		expect(quick.speed).toBe(2);
+		for (let step = 0; step < 60; step++) {
+			slow.update(STEP);
+			quick.update(STEP);
+		}
+		expect(quick.battle.timeMs).toBeGreaterThan(slow.battle.timeMs * 1.8);
+		// Without Pro the next press goes back to normal and shows the hint
+		quick.cycleSpeed();
+		expect(quick.speed).toBe(1);
+		expect(quick.speedProHint).toBe(true);
+	});
+
+	it('lets a Pro player reach four times', () => {
+		const store = createStore(memoryStorage());
+		const game = new BeachheadGame({
+			scores: () => createHighscores(store),
+			store: () => store,
+			now: () => 1_000_000,
+			pro: () => true
+		});
+		game.load();
+		game.cycleSpeed();
+		game.cycleSpeed();
+		expect(game.speed).toBe(4);
+		game.cycleSpeed();
+		expect(game.speed).toBe(1);
+	});
+});
