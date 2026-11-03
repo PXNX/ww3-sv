@@ -11,12 +11,14 @@ import {
 import { BUILDINGS, TROOPS, type TroopKind } from './config';
 import { createBattle, deploy, stepBattle } from './battle';
 import { testIslandOf } from './defenseTest';
+import { setOvercharge, usedOverchargeSlots } from './crystals';
 import {
 	allDefenseUpgrades,
 	buyMine,
 	canAffordMine,
 	layoutOf,
 	newSave,
+	sellMine,
 	finishBuilds,
 	startDefenseUpgrade
 } from './campaign';
@@ -157,5 +159,16 @@ describe('upgrading defences', () => {
 
 	it('makes mines dearer than before', () => {
 		expect(DEFENSE_COST['mine-personnel'].wood).toBeGreaterThanOrEqual(30);
+	});
+});
+
+describe('crystals on defences', () => {
+	it('free their slot when the mine is sold', () => {
+		let save = buyMine(rich(3), 'mine-emp')!;
+		const id = layoutOf(save).mines[0].id;
+		save = setOvercharge(save, `defense:${id}`, 'aegis')!;
+		expect(usedOverchargeSlots(save)).toBe(1);
+		const sold = sellMine(save, id)!;
+		expect(usedOverchargeSlots(sold)).toBe(0);
 	});
 });

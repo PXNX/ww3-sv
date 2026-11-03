@@ -5,6 +5,9 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { OVERCHARGE_CRYSTALS, type OverchargeCrystal } from '#lib/game/beachhead/crystals.js';
+	import { crystalName } from '#lib/components/beachheadText.js';
+	import CrystalIcon from '#lib/components/CrystalIcon.svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import {
 		boatCapacity,
@@ -56,6 +59,21 @@
 		void now;
 		return defense ? game.defenseRemaining(defense.id) : null;
 	});
+	/** The overcharge slot of what the popup shows; every main building and every defence has one */
+	const crystalTarget = $derived(
+		defense
+			? `defense:${defense.id}`
+			: ['hq', 'bunker', 'training', 'dojo', 'radar'].includes(building)
+				? building
+				: null
+	);
+	const crystalHere = $derived(crystalTarget ? (game.crystals.slots[crystalTarget] ?? null) : null);
+	function cycleCrystal() {
+		if (!crystalTarget) return;
+		const choices: (OverchargeCrystal | null)[] = [...OVERCHARGE_CRYSTALS, null];
+		const at = choices.indexOf(crystalHere);
+		game.setOvercharge(crystalTarget, choices[(at + 1) % choices.length]);
+	}
 	const defenseNow = $derived(defense ? defenseLevel(defense) : 1);
 	const defenseNext = $derived(Math.min(MAX_DEFENSE_LEVEL, defenseNow + 1));
 	const defenseCost = $derived(defense ? game.defenseUpgradeCost(defense.id) : null);
@@ -227,6 +245,28 @@
 			</span>
 		{/if}
 	</div>
+
+	{#if crystalTarget}
+		<!-- The overcharge crystal: tap to cycle through the types and back to empty -->
+		<button
+			type="button"
+			class="flex items-center justify-between gap-2 rounded-[14px] border-2 border-ink bg-sand px-2 py-1 text-start"
+			title={crystalHere ? crystalName(crystalHere) : m.beachhead_crystals_empty_slot()}
+			disabled={!crystalHere && game.overchargeSlotsUsed >= game.overchargeSlotsTotal}
+			onclick={cycleCrystal}
+		>
+			<span class="text-sm font-bold">
+				{crystalHere ? crystalName(crystalHere) : m.beachhead_crystals_empty_slot()}
+			</span>
+			<span
+				class="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-paper"
+			>
+				{#if crystalHere}
+					<CrystalIcon type={crystalHere} class="size-7" />
+				{/if}
+			</span>
+		</button>
+	{/if}
 
 	{#if defense}
 		<ul class="flex flex-col gap-1 rounded-[14px] border-2 border-ink bg-sand p-2">

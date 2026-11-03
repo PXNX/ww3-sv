@@ -314,6 +314,15 @@
 				return capacity > 0 ? Math.min(1, game.resources[resource] / capacity) : 0;
 			},
 			buildProgress,
+			crystalAt: (target) => game.crystals.slots[target],
+			defenseProgress: (id) => {
+				const task = game.campaign.builders.find((entry) => entry.defenseIds?.includes(id));
+				if (!task) return null;
+				return Math.min(
+					1,
+					Math.max(0, (Date.now() - task.startedAt) / Math.max(1, task.endsAt - task.startedAt))
+				);
+			},
 			boatCount: game.boats.filter((boat) => boat.unlocked).length,
 			boatUnits: (index) => game.boats[index]?.units ?? [],
 			timeMs,

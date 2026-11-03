@@ -6,6 +6,7 @@
  */
 import { wallLeft, wallRight, drawEnemyBuilding, drawFlag, drawMineArt } from './buildingArt.js';
 import { isMine, type BuildingKind } from './config.js';
+import { CRYSTAL_COLORS, type CrystalType } from './crystals.js';
 import { drawResourceGlyph } from './resourceIcons.js';
 import {
 	BASE_COLS,
@@ -112,6 +113,10 @@ export interface HomeScene {
 	fillOf: (resource: HomeResource) => number;
 	/** Progress 0 to 1 of a building that is being upgraded, or null */
 	buildProgress: (key: string) => number | null;
+	/** Progress 0 to 1 of a placed mine, gun or obstacle that a builder is raising a level, or null */
+	defenseProgress?: (id: number) => number | null;
+	/** The overcharge crystal socketed into a building (`hq`, `bunker`...) or a defence (`defense:<id>`), if any */
+	crystalAt?: (target: string) => CrystalType | undefined;
 	boatCount: number;
 	/** The troops sitting in the boat with this number, as troop kinds */
 	boatUnits: (index: number) => readonly string[];
@@ -1543,6 +1548,37 @@ function drawGround(context: CanvasRenderingContext2D, view: IsoView, scene: Hom
 }
 
 /** Draws the whole island; the context is already scaled so a unit is one view unit */
+function drawGem(
+	context: CanvasRenderingContext2D,
+	at: { x: number; y: number },
+	color: string,
+	timeMs: number
+) {
+	const spin = Math.abs(Math.cos(timeMs / 900));
+	context.save();
+	context.translate(at.x, at.y);
+	context.lineJoin = 'round';
+	context.lineWidth = 0.05;
+	context.strokeStyle = INK;
+	context.fillStyle = color;
+	context.beginPath();
+	context.moveTo(0, -0.26);
+	context.lineTo(0.17 * (0.4 + spin * 0.6), 0);
+	context.lineTo(0, 0.26);
+	context.lineTo(-0.17 * (0.4 + spin * 0.6), 0);
+	context.closePath();
+	context.fill();
+	context.stroke();
+	context.fillStyle = 'rgba(255,255,255,0.55)';
+	context.beginPath();
+	context.moveTo(0, -0.2);
+	context.lineTo(0.07, -0.02);
+	context.lineTo(0, -0.02);
+	context.closePath();
+	context.fill();
+	context.restore();
+}
+
 export function drawHome(context: CanvasRenderingContext2D, input: HomeScene, view = HOME_VIEW) {
 	// A building that is not built yet is not drawn, except while its first level is going up
 	const shown = (key: string) => input.levelOf(key) >= 1 || input.buildProgress(key) !== null;
@@ -1573,6 +1609,27 @@ export function drawHome(context: CanvasRenderingContext2D, input: HomeScene, vi
 		standing.push({
 			depth: depthOf(gun.x + 0.5, gun.y + 0.5),
 			draw: () => drawGuard(context, view, gun.kind as BuildingKind, gun.x, gun.y, scene.timeMs)
+		});
+	}
+	// A builder works beside every defence that is being raised a level, with a bar over it
+	for (const defense of scene.layout.mines) {
+		const progress = scene.defenseProgress?.(defense.id) ?? null;
+		if (progress === null) continue;
+		standing.push({
+			depth: depthOf(defense.x + 0.5, defense.y + 1.3),
+			draw: () => {
+				const bar = view.project(defense.x + 0.5, defense.y + 0.5, 1.2);
+				context.fillStyle = INK;
+				context.fillRect(bar.x - 0.4, bar.y - 0.09, 0.8, 0.18);
+				context.fillStyle = EXPLOSION_YELLOW;
+				context.fillRect(bar.x - 0.37, bar.y - 0.06, 0.74 * progress, 0.12);
+				drawBuilder(
+					context,
+					view.project(defense.x + 0.15, defense.y + 1.25),
+					scene.timeMs,
+					defense.id * 7
+				);
+			}
 		});
 	}
 	const keys = (Object.keys(scene.layout.positions) as LayoutKey[]).filter(
@@ -1706,6 +1763,31 @@ export function drawHome(context: CanvasRenderingContext2D, input: HomeScene, vi
 	standing.sort((a, b) => a.depth - b.depth);
 	for (const item of standing) item.draw();
 
+	// A socketed overcharge crystal floats above its building or defence and turns slowly
+	const gem = (target: string, x: number, y: number, z: number) => {
+		const type = scene.crystalAt?.(target);
+		if (!type) return;
+		const point = view.project(x, y, z + Math.sin(scene.timeMs / 500 + x) * 0.06);
+		drawGem(context, point, CRYSTAL_COLORS[type], scene.timeMs);
+	};
+	for (const key of keys) {
+		const at = positionOf(scene.layout, key);
+		const size = footprintOf(key);
+		gem(
+			key,
+			at.x + size.width / 2,
+			at.y + size.height / 2,
+			heightOf(key, stageOf(scene.levelOf(key), scene.maxOf(key))) + 0.35
+		);
+	}
+	for (const defense of scene.layout.mines) {
+		gem(
+			`defense:${defense.id}`,
+			defense.x + 0.5,
+			defense.y + 0.5,
+			isMine(defense.kind) ? 0.55 : 1.5
+		);
+	}
 	// Level badges float above the buildings; the selected one is ringed
 	for (const key of keys) {
 		const at = positionOf(scene.layout, key);

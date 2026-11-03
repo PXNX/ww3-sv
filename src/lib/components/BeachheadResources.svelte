@@ -16,6 +16,7 @@
 	import IconWarehouse from '~icons/lucide/warehouse';
 	import IconX from '~icons/lucide/x';
 	import IconCrown from '~icons/lucide/crown';
+	import IconGraduationCap from '~icons/lucide/graduation-cap';
 	import IconLock from '~icons/lucide/lock';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
 
@@ -83,6 +84,17 @@
 			};
 		})
 	);
+
+	/** The research in the lab, if any */
+	const lab = $derived.by(() => {
+		const research = game.research;
+		if (!research) return null;
+		const span = Math.max(1, research.endsAt - research.startedAt);
+		return {
+			progress: Math.min(1, Math.max(0, (now - research.startedAt) / span)),
+			left: Math.max(0, research.endsAt - now)
+		};
+	});
 
 	function short(ms: number): string {
 		const total = Math.ceil(ms / 1000);
@@ -294,6 +306,40 @@
 				</button>
 			</li>
 		{/each}
+		<!-- The lab: the troop or skill being researched, with its ring and time left -->
+		<li class="relative">
+			<span
+				class="relative flex size-12 items-center justify-center rounded-full border-3 border-ink shadow-[2px_2px_0_var(--color-ink)] {lab
+					? 'bg-sand'
+					: 'bg-paper'}"
+				title={lab
+					? m.beachhead_building_remaining({ time: short(lab.left) })
+					: m.beachhead_building_training()}
+			>
+				{#if lab}
+					<span
+						class="absolute inset-0.5 rounded-full"
+						style:background="conic-gradient(var(--color-flag-blue) {lab.progress * 360}deg,
+						transparent 0)"
+						aria-hidden="true"
+					></span>
+					<span class="absolute inset-[5px] rounded-full bg-sand" aria-hidden="true"></span>
+				{/if}
+				<IconGraduationCap class="relative size-6" aria-hidden="true" />
+				{#if lab}
+					<span
+						class="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full border-2 border-ink bg-paper px-1 font-display text-[0.62rem] leading-3.5 font-bold tabular-nums"
+					>
+						{short(lab.left)}
+					</span>
+				{:else}
+					<span
+						class="absolute -right-0.5 -bottom-0.5 size-3.5 rounded-full border-2 border-ink bg-[#3fa65a]"
+						aria-hidden="true"
+					></span>
+				{/if}
+			</span>
+		</li>
 		{#if !game.isPro}
 			<li class="relative">
 				<button

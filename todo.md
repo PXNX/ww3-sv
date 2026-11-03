@@ -133,15 +133,13 @@ State: everything below is built and committed locally on `main`, nothing pushed
 
 ### Ideas, not decided
 
-- Upgrades could use the builders' hammering as sound and let a builder visibly walk to the defence being upgraded.
+- A hammering sound for the builders, and let the builder walk to the defence instead of standing there.
 - Show defence levels on the island (small badge like the buildings have).
 - A "shop" for hero shards and crystals with Fake News.
 - A leaderboard of islands held, or a weekly event island (needs the backend above).
 - Allied or clan bases that can send troops to defend yours.
 - Seasonal biomes (winter north spreading south).
 - Daily expedition quests and expedition tiers that unlock with the radar level.
-- Let defences be dragged between "slots" of crystals like buildings (overcharge crystals on guns).
-- Show the troop research and skill research queue in the HUD next to the builders.
 - A tutorial for the new built-from-the-store flow (warehouses, bunker, extra cottages, boats), since new saves start with almost nothing built.
 
 # ww3-sv: open items (as of 2026-10-15)

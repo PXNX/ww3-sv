@@ -1929,6 +1929,14 @@ export function sellMine(save: BeachheadSave, id: number): BeachheadSave | null 
 	if (!mine || !layout) return null;
 	const refund = mineRefund(mine.kind);
 	const refunded = addResources(save, refund);
+	// The slot of a defence that is gone frees up, so it does not stay counted against the base
+	const slot = `defense:${id}`;
+	const state = refunded.crystals;
+	if (state && slot in state.slots) {
+		const slots = { ...state.slots };
+		delete slots[slot];
+		return { ...refunded, layout, crystals: { ...state, slots } };
+	}
 	return { ...refunded, layout };
 }
 
