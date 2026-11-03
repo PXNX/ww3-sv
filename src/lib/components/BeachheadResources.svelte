@@ -8,6 +8,8 @@
 	import { onMount } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import ResourceIcon from '#lib/components/ResourceIcon.svelte';
+	import IconCrown from '~icons/lucide/crown';
+	import IconLock from '~icons/lucide/lock';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
 
 	let { game }: { game: BeachheadGame } = $props();
@@ -20,9 +22,22 @@
 	] as const;
 
 	let now = $state(Date.now());
+	/** Tapping a builder shows what Pro adds; it fades on its own */
+	let proHint = $state(false);
+	let hintTimer: ReturnType<typeof setTimeout> | undefined;
+
+	function showProHint() {
+		if (game.isPro) return;
+		proHint = true;
+		clearTimeout(hintTimer);
+		hintTimer = setTimeout(() => (proHint = false), 4500);
+	}
 	onMount(() => {
 		const timer = setInterval(() => (now = Date.now()), 1000);
-		return () => clearInterval(timer);
+		return () => {
+			clearInterval(timer);
+			clearTimeout(hintTimer);
+		};
 	});
 
 	const slots = $derived(
@@ -78,77 +93,120 @@
 		aria-label={m.beachhead_builders({ busy: game.buildersBusy, total: game.builderSlots })}
 	>
 		{#each slots as slot, index (index)}
-			<li
-				class="relative flex size-12 items-center justify-center rounded-full border-3 border-ink shadow-[2px_2px_0_var(--color-ink)] {slot.busy
-					? 'bg-sand'
-					: 'bg-paper'}"
-				title={slot.busy
-					? m.beachhead_building_remaining({ time: short(slot.left) })
-					: m.beachhead_builders({ busy: game.buildersBusy, total: game.builderSlots })}
-			>
-				{#if slot.busy}
-					<span
-						class="absolute inset-0.5 rounded-full"
-						style:background="conic-gradient(var(--color-khaki) {slot.progress * 360}deg,
-						transparent 0)"
-						aria-hidden="true"
-					></span>
-					<span class="absolute inset-[5px] rounded-full bg-sand" aria-hidden="true"></span>
-				{/if}
-				<!-- A worker in a yellow hard hat -->
-				<svg
-					viewBox="0 0 32 32"
-					class="relative size-9"
-					class:builder-work={slot.busy}
-					aria-hidden="true"
+			<li class="relative">
+				<button
+					type="button"
+					onclick={showProHint}
+					class="relative flex size-12 items-center justify-center rounded-full border-3 border-ink shadow-[2px_2px_0_var(--color-ink)] {slot.busy
+						? 'bg-sand'
+						: 'bg-paper'}"
+					title={slot.busy
+						? m.beachhead_building_remaining({ time: short(slot.left) })
+						: m.beachhead_builders({ busy: game.buildersBusy, total: game.builderSlots })}
 				>
-					<circle cx="16" cy="19" r="8" fill="#f6c9a0" stroke="#111" stroke-width="1.6" />
-					<path
-						d="M7 17a9 9 0 0 1 18 0z"
-						fill="#f5c83a"
-						stroke="#111"
-						stroke-width="1.6"
-						stroke-linejoin="round"
-					/>
-					<rect
-						x="5"
-						y="16"
-						width="22"
-						height="3"
-						rx="1.5"
-						fill="#e0a91c"
-						stroke="#111"
-						stroke-width="1.4"
-					/>
-					<path d="M16 8v8" stroke="#111" stroke-width="1.4" />
-					<circle cx="13" cy="21" r="1.1" fill="#111" />
-					<circle cx="19" cy="21" r="1.1" fill="#111" />
-					<path
-						d="M13 24.2q3 2 6 0"
-						fill="none"
-						stroke="#111"
-						stroke-width="1.3"
-						stroke-linecap="round"
-					/>
-				</svg>
-				{#if slot.busy}
-					<span
-						class="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full border-2 border-ink bg-paper px-1 font-display text-[0.62rem] leading-3.5 font-bold tabular-nums"
-					>
-						{short(slot.left)}
-					</span>
-				{:else}
-					<span
-						class="absolute -right-0.5 -bottom-0.5 size-3.5 rounded-full border-2 border-ink bg-[#3fa65a]"
+					{#if slot.busy}
+						<span
+							class="absolute inset-0.5 rounded-full"
+							style:background="conic-gradient(var(--color-khaki) {slot.progress * 360}deg,
+							transparent 0)"
+							aria-hidden="true"
+						></span>
+						<span class="absolute inset-[5px] rounded-full bg-sand" aria-hidden="true"></span>
+					{/if}
+					<!-- A worker in a yellow hard hat -->
+					<svg
+						viewBox="0 0 32 32"
+						class="relative size-9"
+						class:builder-work={slot.busy}
 						aria-hidden="true"
-					></span>
-				{/if}
+					>
+						<circle cx="16" cy="19" r="8" fill="#f6c9a0" stroke="#111" stroke-width="1.6" />
+						<path
+							d="M7 17a9 9 0 0 1 18 0z"
+							fill="#f5c83a"
+							stroke="#111"
+							stroke-width="1.6"
+							stroke-linejoin="round"
+						/>
+						<rect
+							x="5"
+							y="16"
+							width="22"
+							height="3"
+							rx="1.5"
+							fill="#e0a91c"
+							stroke="#111"
+							stroke-width="1.4"
+						/>
+						<path d="M16 8v8" stroke="#111" stroke-width="1.4" />
+						<circle cx="13" cy="21" r="1.1" fill="#111" />
+						<circle cx="19" cy="21" r="1.1" fill="#111" />
+						<path
+							d="M13 24.2q3 2 6 0"
+							fill="none"
+							stroke="#111"
+							stroke-width="1.3"
+							stroke-linecap="round"
+						/>
+					</svg>
+					{#if slot.busy}
+						<span
+							class="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full border-2 border-ink bg-paper px-1 font-display text-[0.62rem] leading-3.5 font-bold tabular-nums"
+						>
+							{short(slot.left)}
+						</span>
+					{:else}
+						<span
+							class="absolute -right-0.5 -bottom-0.5 size-3.5 rounded-full border-2 border-ink bg-[#3fa65a]"
+							aria-hidden="true"
+						></span>
+					{/if}
+				</button>
 			</li>
 		{/each}
+		{#if !game.isPro}
+			<li class="relative">
+				<button
+					type="button"
+					onclick={showProHint}
+					class="relative flex size-12 items-center justify-center rounded-full border-3 border-dashed border-ink bg-sand/70 opacity-80"
+					aria-label={m.beachhead_builders_pro()}
+					title={m.beachhead_builders_pro()}
+				>
+					<IconLock class="size-5" aria-hidden="true" />
+					<span
+						class="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full border-2 border-ink bg-explosion-yellow"
+						aria-hidden="true"
+					>
+						<IconCrown class="size-3" />
+					</span>
+				</button>
+			</li>
+		{/if}
 	</ul>
+	{#if proHint && !game.isPro}
+		<p
+			class="hint-pop flex max-w-52 items-start gap-1.5 rounded-[12px] border-2 border-ink bg-explosion-yellow px-2 py-1 text-xs font-bold shadow-[2px_2px_0_var(--color-ink)]"
+			role="status"
+		>
+			<IconCrown class="mt-px size-4 shrink-0" aria-hidden="true" />
+			{m.beachhead_builders_pro()}
+		</p>
+	{/if}
 </div>
 
 <style>
+	.hint-pop {
+		animation: hint-pop 180ms ease-out;
+	}
+
+	@keyframes hint-pop {
+		from {
+			transform: translateY(-4px) scale(0.96);
+			opacity: 0;
+		}
+	}
+
 	.builder-work {
 		animation: builder-bob 0.9s ease-in-out infinite;
 		transform-origin: 50% 90%;
