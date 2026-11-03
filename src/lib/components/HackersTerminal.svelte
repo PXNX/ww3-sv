@@ -153,7 +153,8 @@
 				break;
 			case 'time':
 				say(`> Session time: ${Math.round(sessionMs / 1000)}s`);
-				if (hackStartMs > 0) say(`> Last hack started ${Math.round((Date.now() - hackStartMs) / 1000)}s ago`);
+				if (hackStartMs > 0)
+					say(`> Last hack started ${Math.round((Date.now() - hackStartMs) / 1000)}s ago`);
 				break;
 			default:
 				say(m.hackers_term_unknown({ cmd: name }));
@@ -174,14 +175,14 @@
 				});
 			case 'gpu':
 				return m.hackers_hw_gpu_effect({ pct: Math.round(effects.siphonBonus * 100) });
-		case 'cable':
-			return '';
+			case 'cable':
+				return '';
 		}
 	}
 </script>
 
 <section
-	class="h-screen w-screen overflow-hidden bg-[#021208] p-2 font-mono text-[#39ff6a] shadow-inner [text-shadow:0_0_6px_rgba(57,255,106,0.5)] flex flex-col"
+	class="flex h-screen w-screen flex-col overflow-hidden bg-[#021208] p-2 font-mono text-[#39ff6a] shadow-inner [text-shadow:0_0_6px_rgba(57,255,106,0.5)]"
 	aria-label={m.hackers_term_aria()}
 >
 	<div
@@ -190,7 +191,9 @@
 	></div>
 
 	<div class="relative z-0 flex flex-col gap-2" dir="ltr">
-		<div class="flex flex-wrap items-baseline justify-between gap-x-3 text-[10px] uppercase opacity-70">
+		<div
+			class="flex flex-wrap items-baseline justify-between gap-x-3 text-[10px] uppercase opacity-70"
+		>
 			<span>hermit-shell</span>
 			<span>{m.hackers_term_bank({ amount: game.bank })}</span>
 		</div>
@@ -217,10 +220,7 @@
 										: m.hackers_term_star({ ip: target.ip })}
 									onclick={() => game.toggleFavorite(target.ip)}
 								>
-									<IconStar
-										class="size-3.5 {favorite ? 'fill-current' : ''}"
-										aria-hidden="true"
-									/>
+									<IconStar class="size-3.5 {favorite ? 'fill-current' : ''}" aria-hidden="true" />
 								</button>
 								<span class="w-[104px] shrink-0 tabular-nums">{target.ip}</span>
 								<span class="min-w-0 flex-1 truncate opacity-80">{target.system}</span>

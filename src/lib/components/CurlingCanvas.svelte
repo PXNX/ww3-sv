@@ -11,7 +11,13 @@
 	import { onMount, type Snippet } from 'svelte';
 	import { createFixedLoop, onAppHidden } from '#lib/game/loop.js';
 	import { stepCurl } from '#lib/game/curling/state.js';
-	import { drawIceSheet, drawHouse, drawStone, drawSeal, drawPenguin } from '#lib/game/curling/render.js';
+	import {
+		drawIceSheet,
+		drawHouse,
+		drawStone,
+		drawSeal,
+		drawPenguin
+	} from '#lib/game/curling/render.js';
 	import { createRandom, seedFromString } from '#lib/game/random.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { haptic } from '#lib/haptic/haptic.svelte.js';
@@ -35,23 +41,28 @@
 
 		drawIceSheet(context, canvas.width, canvas.height);
 		drawHouse(context, canvas.width, canvas.height);
-		
+
 		drawStone(context, game.state, canvas.width, canvas.height);
-		
+
 		for (let i = 0; i < game.state.sealsHit; i++) {
 			const x = game.sealPositions[i]?.x ?? 0.5 + (Math.random() - 0.5) * 0.3;
 			const y = game.sealPositions[i]?.y ?? 0.3 + (Math.random() - 0.5) * 0.1;
 			drawSeal(context, x, y, canvas.width, canvas.height);
 		}
-		
+
 		drawPenguin(context, 0.1, 0.3, canvas.width, canvas.height, game.state.penguinLost);
-		
+
 		drawScoreCounter(context, game.state, canvas.width, canvas.height);
-		
+
 		drawPowerIndicator(context, game.power, canvas.width, canvas.height);
 	}
 
-	function drawPowerIndicator(context: CanvasRenderingContext2D, power: number, width: number, height: number) {
+	function drawPowerIndicator(
+		context: CanvasRenderingContext2D,
+		power: number,
+		width: number,
+		height: number
+	) {
 		if (game.cState !== 'aiming') return;
 		context.save();
 		context.fillStyle = 'rgba(0,0,0,0.6)';
@@ -67,7 +78,12 @@
 		context.restore();
 	}
 
-	function drawScoreCounter(context: CanvasRenderingContext2D, state: any, width: number, height: number) {
+	function drawScoreCounter(
+		context: CanvasRenderingContext2D,
+		state: any,
+		width: number,
+		height: number
+	) {
 		context.fillStyle = 'rgba(0,0,0,0.8)';
 		context.font = 'bold 24px system-ui, sans-serif';
 		context.textAlign = 'center';
@@ -124,7 +140,7 @@
 	function onDown(event: PointerEvent) {
 		if (game.status !== 'playing') return;
 		const point = worldPoint(event);
-		
+
 		if (game.cState === 'aiming' && !game.sweeping) {
 			dragging = true;
 			dragStartX = point.x;
@@ -173,7 +189,7 @@
 		if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) return;
 		event.preventDefault();
 		if (game.status !== 'playing') return;
-		
+
 		if (event.code === 'KeyR' && game.cState === 'aiming') {
 			dragging = true;
 			dragStartX = 640 / 2;
@@ -204,7 +220,7 @@
 		onpointercancel={() => (dragging = false)}
 		oncontextmenu={(event) => event.preventDefault()}
 	></canvas>
-	
+
 	{#if game.fenceArmed && game.status === 'playing'}
 		<p
 			class="pointer-events-none absolute inset-x-0 bottom-3 mx-auto w-fit rounded-md border-2 border-ink bg-explosion-yellow px-2 py-0.5 font-display text-sm font-bold"

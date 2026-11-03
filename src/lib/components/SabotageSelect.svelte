@@ -76,7 +76,7 @@
 							{#each [0, 1, 2] as star (star)}
 								<IconStar
 									class="size-4 {stars !== null && star < stars
-										? '[&_path]:fill-explosion-yellow text-ink'
+										? 'text-ink [&_path]:fill-explosion-yellow'
 										: 'text-ink/30'}"
 								/>
 							{/each}

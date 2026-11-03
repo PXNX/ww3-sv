@@ -8,6 +8,7 @@
 	import { onMount } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { BATTLE_VIEW, drawScene } from '#lib/game/beachhead/render.js';
+	import { zoomPan } from '#lib/components/zoomPan.js';
 	import { createFixedLoop, onAppHidden } from '#lib/game/loop.js';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
 
@@ -66,8 +67,18 @@
 		draw();
 	});
 
+	let pressed: { x: number; y: number } | null = null;
+
 	function onPointerDown(event: PointerEvent) {
 		if (event.pointerType === 'mouse' && event.button !== 0) return;
+		pressed = { x: event.clientX, y: event.clientY };
+	}
+
+	// A tap lands on release, so a pinch or a pan that ends the touch never lands a boat
+	function onPointerUp(event: PointerEvent) {
+		const start = pressed;
+		pressed = null;
+		if (!start || Math.hypot(event.clientX - start.x, event.clientY - start.y) > 10) return;
 		const rect = canvas?.getBoundingClientRect();
 		if (!rect || rect.width === 0 || rect.height === 0) return;
 		event.preventDefault();
@@ -109,13 +120,16 @@
 
 <div
 	bind:this={stage}
+	use:zoomPan={{ max: 3 }}
 	class="relative flex min-h-0 flex-1 touch-none items-center justify-center overflow-hidden px-2 pt-[calc(var(--hud-top)+0.5rem)] pb-[calc(3.5rem+env(safe-area-inset-bottom))] select-none"
 >
 	<canvas
 		bind:this={canvas}
+		data-zoom
 		class="block touch-none rounded-[10px] shadow-[4px_4px_0_var(--color-ink)]"
 		aria-label={m.beachhead_tap_beach()}
 		onpointerdown={onPointerDown}
+		onpointerup={onPointerUp}
 		oncontextmenu={(event) => event.preventDefault()}
 	></canvas>
 </div>

@@ -5,11 +5,17 @@
 	export let label: string = '';
 </script>
 
-<div class="relative flex flex-col items-center gap-2 rounded-2xl border-3 border-ink bg-paper p-4 shadow-[3px_3px_0_var(--color-ink)] w-32">
+<div
+	class="relative flex w-32 flex-col items-center gap-2 rounded-2xl border-3 border-ink bg-paper p-4 shadow-[3px_3px_0_var(--color-ink)]"
+>
 	{#if unlocked}
-		<div class="absolute -top-3 -right-3 rounded-full bg-chartreuse border-2 border-ink px-2 py-0.5 text-xs font-display font-bold shadow-sm">New</div>
+		<div
+			class="bg-chartreuse absolute -top-3 -right-3 rounded-full border-2 border-ink px-2 py-0.5 font-display text-xs font-bold shadow-sm"
+		>
+			New
+		</div>
 	{/if}
-	<div class="text-4xl leading-none" aria-label="{label || part}">
+	<div class="text-4xl leading-none" aria-label={label || part}>
 		{#if part === 'hat'}
 			🎩
 		{:else if part === 'facial'}
@@ -22,10 +28,10 @@
 			👔
 		{/if}
 	</div>
-	<p class="font-display text-xs font-bold text-center truncate w-full">{label || value}</p>
+	<p class="w-full truncate text-center font-display text-xs font-bold">{label || value}</p>
 	{#if unlocked}
-		<p class="font-display text-[10px] font-bold uppercase tracking-wide text-ink/60">Unlocked</p>
+		<p class="font-display text-[10px] font-bold tracking-wide text-ink/60 uppercase">Unlocked</p>
 	{:else}
-		<p class="font-display text-[10px] font-bold uppercase tracking-wide text-ink/30">Locked</p>
+		<p class="font-display text-[10px] font-bold tracking-wide text-ink/30 uppercase">Locked</p>
 	{/if}
 </div>

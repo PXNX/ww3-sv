@@ -18,6 +18,7 @@
 	import { BATTLE_VIEW, drawScene } from '#lib/game/beachhead/render.js';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
 	import { islandName } from './beachheadText';
+	import { zoomPan } from './zoomPan';
 	import BeachheadResources from './BeachheadResources.svelte';
 	import BeachheadTakeoverNotice from './BeachheadTakeoverNotice.svelte';
 	import IconAnchor from '~icons/lucide/anchor';
@@ -121,147 +122,149 @@
 	};
 </script>
 
-<div class="map-sea absolute inset-0 overflow-hidden">
-	<div class="sea-depth absolute inset-0" aria-hidden="true"></div>
+<div class="map-sea absolute inset-0 overflow-hidden" use:zoomPan={{ max: 3 }}>
+	<div data-zoom class="absolute inset-0">
+		<div class="sea-depth absolute inset-0" aria-hidden="true"></div>
 
-	<!-- The orc lands: a broad, jagged landmass along the north edge -->
-	<svg
-		class="pointer-events-none absolute inset-x-0 top-0 h-[40%] w-full"
-		viewBox="0 0 100 100"
-		preserveAspectRatio="none"
-		aria-hidden="true"
-	>
-		<path
-			d="M0 0H100V52L96 60 91 50 86 64 80 52 74 66 68 50 61 62 55 46 49 64 42 50 36 66 30 52 23 64 17 50 10 62 5 52 0 62Z"
-			fill="#f1e9c8"
-			stroke="#111"
-			stroke-width="1.2"
-			vector-effect="non-scaling-stroke"
-			transform="translate(0 4)"
-		/>
-		<path
-			d="M0 0H100V46L96 54 91 44 86 58 80 46 74 60 68 44 61 56 55 40 49 58 42 44 36 60 30 46 23 58 17 44 10 56 5 46 0 56Z"
-			fill="#64704a"
-			stroke="#111"
-			stroke-width="1.2"
-			vector-effect="non-scaling-stroke"
-		/>
-		<!-- Ridges, dead trees and a smoking crater -->
-		<g fill="#3d3a33" stroke="#111" stroke-width="0.8" vector-effect="non-scaling-stroke">
-			<path d="M8 28L14 8 20 28Z" />
-			<path d="M36 22L43 4 50 22Z" />
-			<path d="M60 26L67 6 74 26Z" />
-			<path d="M84 24L90 8 96 24Z" />
-		</g>
-		<g fill="#8a8f6a" opacity="0.55">
-			<ellipse cx="27" cy="30" rx="6" ry="3" />
-			<ellipse cx="55" cy="34" rx="7" ry="3" />
-			<ellipse cx="80" cy="36" rx="6" ry="3" />
-		</g>
-	</svg>
+		<!-- The orc lands: a broad, jagged landmass along the north edge -->
+		<svg
+			class="pointer-events-none absolute inset-x-0 top-0 h-[40%] w-full"
+			viewBox="0 0 100 100"
+			preserveAspectRatio="none"
+			aria-hidden="true"
+		>
+			<path
+				d="M0 0H100V52L96 60 91 50 86 64 80 52 74 66 68 50 61 62 55 46 49 64 42 50 36 66 30 52 23 64 17 50 10 62 5 52 0 62Z"
+				fill="#f1e9c8"
+				stroke="#111"
+				stroke-width="1.2"
+				vector-effect="non-scaling-stroke"
+				transform="translate(0 4)"
+			/>
+			<path
+				d="M0 0H100V46L96 54 91 44 86 58 80 46 74 60 68 44 61 56 55 40 49 58 42 44 36 60 30 46 23 58 17 44 10 56 5 46 0 56Z"
+				fill="#64704a"
+				stroke="#111"
+				stroke-width="1.2"
+				vector-effect="non-scaling-stroke"
+			/>
+			<!-- Ridges, dead trees and a smoking crater -->
+			<g fill="#3d3a33" stroke="#111" stroke-width="0.8" vector-effect="non-scaling-stroke">
+				<path d="M8 28L14 8 20 28Z" />
+				<path d="M36 22L43 4 50 22Z" />
+				<path d="M60 26L67 6 74 26Z" />
+				<path d="M84 24L90 8 96 24Z" />
+			</g>
+			<g fill="#8a8f6a" opacity="0.55">
+				<ellipse cx="27" cy="30" rx="6" ry="3" />
+				<ellipse cx="55" cy="34" rx="7" ry="3" />
+				<ellipse cx="80" cy="36" rx="6" ry="3" />
+			</g>
+		</svg>
 
-	<svg
-		class="pointer-events-none absolute inset-0 size-full"
-		viewBox="0 0 100 100"
-		preserveAspectRatio="none"
-		aria-hidden="true"
-	>
-		<path
-			d={route}
-			fill="none"
-			stroke="var(--color-paper)"
-			stroke-width="2.5"
-			stroke-dasharray="2.5 5"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			opacity="0.55"
-			vector-effect="non-scaling-stroke"
-		/>
-	</svg>
+		<svg
+			class="pointer-events-none absolute inset-0 size-full"
+			viewBox="0 0 100 100"
+			preserveAspectRatio="none"
+			aria-hidden="true"
+		>
+			<path
+				d={route}
+				fill="none"
+				stroke="var(--color-paper)"
+				stroke-width="2.5"
+				stroke-dasharray="2.5 5"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				opacity="0.55"
+				vector-effect="non-scaling-stroke"
+			/>
+		</svg>
 
-	<!-- Home bay -->
-	<button
-		type="button"
-		class="home-marker btn-chunky absolute z-30 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-khaki p-0 text-paper sm:size-20"
-		style:left="{HOME.x}%"
-		style:top="{HOME.y}%"
-		aria-label={m.beachhead_home_base()}
-		title={m.beachhead_home_base()}
-		onclick={() => game.goBase()}
-	>
-		<IconAnchor class="size-8 sm:size-10" aria-hidden="true" />
-	</button>
+		<!-- Home bay -->
+		<button
+			type="button"
+			class="home-marker btn-chunky absolute z-30 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-khaki p-0 text-paper sm:size-20"
+			style:left="{HOME.x}%"
+			style:top="{HOME.y}%"
+			aria-label={m.beachhead_home_base()}
+			title={m.beachhead_home_base()}
+			onclick={() => game.goBase()}
+		>
+			<IconAnchor class="size-8 sm:size-10" aria-hidden="true" />
+		</button>
 
-	<!-- The enemy bases, each a little picture of the island you will land on -->
-	<ol class="absolute inset-0 m-0 list-none p-0">
-		{#each ISLAND_IDS as islandId, index (islandId)}
-			{@const position = ISLAND_MAP_POSITIONS[index] ?? { x: 50, y: 50 }}
-			{@const charted = game.isCharted(index)}
-			{@const unlocked = charted && game.isUnlocked(index)}
-			{@const controlled = game.isControlled(islandId)}
-			{@const attackable = unlocked && !controlled}
-			<li
-				class="absolute z-30 -translate-x-1/2 -translate-y-1/2 transition-opacity duration-[1800ms]"
-				class:opacity-0={!charted}
-				class:pointer-events-none={!charted}
-				style:left="{position.x}%"
-				style:top="{position.y}%"
-			>
-				<button
-					type="button"
-					class="island-marker group relative flex w-[clamp(6.5rem,15vw,11rem)] flex-col items-center disabled:cursor-not-allowed"
-					class:island-locked={charted && !unlocked}
-					class:island-held={controlled}
-					disabled={!attackable}
-					aria-label={islandAria(index, islandId)}
-					title={islandName(index)}
-					onclick={() => game.openIsland(index)}
+		<!-- The enemy bases, each a little picture of the island you will land on -->
+		<ol class="absolute inset-0 m-0 list-none p-0">
+			{#each ISLAND_IDS as islandId, index (islandId)}
+				{@const position = ISLAND_MAP_POSITIONS[index] ?? { x: 50, y: 50 }}
+				{@const charted = game.isCharted(index)}
+				{@const unlocked = charted && game.isUnlocked(index)}
+				{@const controlled = game.isControlled(islandId)}
+				{@const attackable = unlocked && !controlled}
+				<li
+					class="absolute z-30 -translate-x-1/2 -translate-y-1/2 transition-opacity duration-[1800ms]"
+					class:opacity-0={!charted}
+					class:pointer-events-none={!charted}
+					style:left="{position.x}%"
+					style:top="{position.y}%"
 				>
-					<canvas use:miniature={index} class="block h-auto w-full" aria-hidden="true"></canvas>
-
-					<span
-						class="absolute -end-1 top-0 flex size-8 items-center justify-center rounded-full border-2 border-ink shadow-[2px_2px_0_var(--color-ink)] {controlled
-							? 'bg-khaki text-paper'
-							: attackable
-								? 'attack-ping bg-tie-red text-paper'
-								: 'bg-sand text-ink'}"
+					<button
+						type="button"
+						class="island-marker group relative flex w-[clamp(6.5rem,15vw,11rem)] flex-col items-center disabled:cursor-not-allowed"
+						class:island-locked={charted && !unlocked}
+						class:island-held={controlled}
+						disabled={!attackable}
+						aria-label={islandAria(index, islandId)}
+						title={islandName(index)}
+						onclick={() => game.openIsland(index)}
 					>
-						{#if controlled}
-							<IconFlag class="size-3.5" aria-hidden="true" />
-						{:else if attackable}
-							<IconCrosshair class="size-4" aria-hidden="true" />
-						{:else}
-							<IconLock class="size-3" aria-hidden="true" />
-						{/if}
-					</span>
+						<canvas use:miniature={index} class="block h-auto w-full" aria-hidden="true"></canvas>
 
-					<span
-						dir="auto"
-						class="label -mt-1 rounded-full border-2 border-ink bg-paper/95 px-2 py-px text-[0.68rem] leading-tight font-bold transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 sm:text-xs {attackable
-							? 'opacity-100'
-							: 'opacity-0'}"
-					>
-						{islandName(index)}
-					</span>
-				</button>
-			</li>
-		{/each}
-	</ol>
+						<span
+							class="absolute -end-1 top-0 flex size-8 items-center justify-center rounded-full border-2 border-ink shadow-[2px_2px_0_var(--color-ink)] {controlled
+								? 'bg-khaki text-paper'
+								: attackable
+									? 'attack-ping bg-tie-red text-paper'
+									: 'bg-sand text-ink'}"
+						>
+							{#if controlled}
+								<IconFlag class="size-3.5" aria-hidden="true" />
+							{:else if attackable}
+								<IconCrosshair class="size-4" aria-hidden="true" />
+							{:else}
+								<IconLock class="size-3" aria-hidden="true" />
+							{/if}
+						</span>
 
-	<!-- Clouds over everything the radar has not reached yet -->
-	<div class="pointer-events-none absolute inset-0 z-20" aria-hidden="true">
-		{#each clouds as cloud, index (index)}
-			<span
-				class="cloud absolute"
-				class:cloud-gone={cloud.cleared}
-				style:left="{cloud.x}%"
-				style:top="{cloud.y}%"
-				style:width="{cloud.size}%"
-				style:--delay="{cloud.cleared ? cloud.delay : 0}ms"
-				style:--drift="{cloud.drift}s"
-				style:--flip={cloud.flip ? -1 : 1}
-			></span>
-		{/each}
+						<span
+							dir="auto"
+							class="label -mt-1 rounded-full border-2 border-ink bg-paper/95 px-2 py-px text-[0.68rem] leading-tight font-bold transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 sm:text-xs {attackable
+								? 'opacity-100'
+								: 'opacity-0'}"
+						>
+							{islandName(index)}
+						</span>
+					</button>
+				</li>
+			{/each}
+		</ol>
+
+		<!-- Clouds over everything the radar has not reached yet -->
+		<div class="pointer-events-none absolute inset-0 z-20" aria-hidden="true">
+			{#each clouds as cloud, index (index)}
+				<span
+					class="cloud absolute"
+					class:cloud-gone={cloud.cleared}
+					style:left="{cloud.x}%"
+					style:top="{cloud.y}%"
+					style:width="{cloud.size}%"
+					style:--delay="{cloud.cleared ? cloud.delay : 0}ms"
+					style:--drift="{cloud.drift}s"
+					style:--flip={cloud.flip ? -1 : 1}
+				></span>
+			{/each}
+		</div>
 	</div>
 
 	<!-- The HUD sits above the clouds -->

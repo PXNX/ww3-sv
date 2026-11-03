@@ -51,9 +51,7 @@
 			!maxed &&
 			game.barrels >= producerCost(def, owned, Math.max(1, nextTier - owned), game.pricing)
 	);
-	const hitsTier = $derived(
-		nextTier !== null && owned + count >= nextTier
-	);
+	const hitsTier = $derived(nextTier !== null && owned + count >= nextTier);
 	const name = $derived(producerName(id));
 	const cycle = $derived(game.cycles[id]);
 	// What one cycle pays: for all owned units, or for the first one before any is bought
@@ -76,8 +74,10 @@
 		class:ring-success={upgradeReady}
 	>
 		{#if upgradeReady}
-			<div class="absolute inset-0 pointer-events-none" aria-hidden="true">
-				<div class="absolute top-0 left-[-100%] w-[200%] h-full bg-gradient-to-r from-transparent via-chartreuse/40 to-transparent animate-[glowWave_1.8s_ease-in-out_infinite]"></div>
+			<div class="pointer-events-none absolute inset-0" aria-hidden="true">
+				<div
+					class="via-chartreuse/40 absolute top-0 left-[-100%] h-full w-[200%] animate-[glowWave_1.8s_ease-in-out_infinite] bg-gradient-to-r from-transparent to-transparent"
+				></div>
 			</div>
 		{/if}
 		<span class="relative shrink-0">
@@ -139,10 +139,14 @@
 
 		<button
 			type="button"
-			class="btn-chunky shrink-0 flex-col gap-0 px-3 py-1.5 leading-tight {maxed ? 'bg-paper' : hitsTier ? 'bg-explosion-yellow' : 'bg-paper'}"
-		class:opacity-40={!affordable}
-		class:btn-disabled={!affordable}
-		disabled={!affordable}
+			class="btn-chunky shrink-0 flex-col gap-0 px-3 py-1.5 leading-tight {maxed
+				? 'bg-paper'
+				: hitsTier
+					? 'bg-explosion-yellow'
+					: 'bg-paper'}"
+			class:opacity-40={!affordable}
+			class:btn-disabled={!affordable}
+			disabled={!affordable}
 			aria-label={maxed
 				? `${name}: ${m.tycoon_perk_maxed()}`
 				: m.tycoon_buy_label({ count, name, cost: formatBig(cost, locale) })}
@@ -165,8 +169,14 @@
 		contain-intrinsic-size: auto 84px;
 	}
 	@keyframes glowWave {
-		0% { transform: translateX(0); }
-		50% { transform: translateX(50%); }
-		100% { transform: translateX(0); }
+		0% {
+			transform: translateX(0);
+		}
+		50% {
+			transform: translateX(50%);
+		}
+		100% {
+			transform: translateX(0);
+		}
 	}
 </style>

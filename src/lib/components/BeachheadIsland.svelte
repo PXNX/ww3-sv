@@ -35,6 +35,7 @@
 	} from '#lib/game/beachhead/campaign.js';
 	import { achievementHint, achievementName, buildingName } from '#lib/components/beachheadText.js';
 	import type { BuildingKind } from '#lib/game/beachhead/config.js';
+	import { zoomPan } from '#lib/components/zoomPan.js';
 	import BeachheadArmy from '#lib/components/BeachheadArmy.svelte';
 	import BeachheadHero from '#lib/components/BeachheadHero.svelte';
 	import BeachheadResources from '#lib/components/BeachheadResources.svelte';
@@ -405,8 +406,11 @@
 	</span>
 {/snippet}
 
-<div class="relative h-full w-full overflow-hidden bg-[#4fa8d8]">
-	<div bind:this={stage} class="absolute inset-0 flex items-center justify-center">
+<div
+	class="relative h-full w-full overflow-hidden bg-[#4fa8d8]"
+	use:zoomPan={{ max: 3.5, singlePan: () => !arranging }}
+>
+	<div bind:this={stage} data-zoom class="absolute inset-0 flex items-center justify-center">
 		<canvas
 			bind:this={canvas}
 			class="block shrink-0 select-none"
