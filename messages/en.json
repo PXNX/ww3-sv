@@ -3733,6 +3733,8 @@
 	"beachhead_troop_demo": "Demolitionist",
 	"beachhead_troop_heavy": "Minigun heavy",
 	"beachhead_troop_azov": "Azov commander",
+	"beachhead_store_buildings": "Buildings",
+	"beachhead_store_resources": "Resources",
 	"beachhead_log_short_raiders": "Raiders",
 	"beachhead_log_short_attack": "Attack",
 	"beachhead_log_short_defended": "Defended",

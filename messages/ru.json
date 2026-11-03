@@ -3742,6 +3742,8 @@
 	"beachhead_troop_demo": "Подрывник",
 	"beachhead_troop_heavy": "Пулемётчик с миниганом",
 	"beachhead_troop_azov": "Командир «Азова»",
+	"beachhead_store_buildings": "Здания",
+	"beachhead_store_resources": "Ресурсы",
 	"beachhead_log_short_raiders": "Рейдеры",
 	"beachhead_log_short_attack": "Атака",
 	"beachhead_log_short_defended": "Отбито",

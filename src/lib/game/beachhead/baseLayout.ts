@@ -27,10 +27,9 @@ export function isRemovable(kind: DefenseKind): boolean {
 }
 
 /** The store's tabs: the kinds of each category */
-export const STORE_CATEGORIES: Record<'mines' | 'guns' | 'obstacles', readonly DefenseKind[]> = {
-	mines: MINE_KINDS,
+export const STORE_CATEGORIES: Record<'guns' | 'obstacles', readonly DefenseKind[]> = {
 	guns: GUARD_KINDS,
-	obstacles: ['hedgehog']
+	obstacles: [...MINE_KINDS, 'hedgehog']
 };
 
 /** The headquarters level that unlocks each gun */

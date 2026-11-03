@@ -28,6 +28,8 @@
 		type LayoutKey
 	} from '#lib/game/beachhead/baseLayout.js';
 	import {
+		BOAT_KEYS,
+		WAREHOUSE_KEYS,
 		warehouseIndex,
 		warehouseResource,
 		type BuildingKey,
@@ -68,6 +70,7 @@
 	import IconShieldCheck from '~icons/lucide/shield-check';
 	import IconSkull from '~icons/lucide/skull';
 	import IconTv from '~icons/lucide/tv';
+	import IconShip from '~icons/lucide/ship';
 	import IconTrash from '~icons/lucide/trash-2';
 	import IconTrophy from '~icons/lucide/trophy';
 	import IconUsers from '~icons/lucide/users';
@@ -101,7 +104,26 @@
 	let dragging = $state(false);
 	let clock = $state(0);
 	/** The category tab open in the store */
-	let storeTab = $state<keyof typeof STORE_CATEGORIES>('mines');
+	type StoreTab = 'resources' | 'guns' | 'obstacles' | 'buildings';
+	const STORE_TABS: readonly StoreTab[] = ['resources', 'guns', 'obstacles', 'buildings'];
+	let storeTab = $state<StoreTab>('resources');
+	/** The buildings the store lists by tab; tapping one opens its upgrade page */
+	const STORE_BUILDINGS: Record<'resources' | 'buildings', readonly BuildingKey[]> = {
+		resources: [
+			...WAREHOUSE_KEYS,
+			'bunker',
+			'house-0',
+			'house-1',
+			'house-2',
+			'sawmill',
+			'quarry',
+			'mine'
+		] as BuildingKey[],
+		buildings: ['hq', 'training', 'radar', 'dojo', ...BOAT_KEYS]
+	};
+	const storeDefences = $derived(
+		storeTab === 'guns' || storeTab === 'obstacles' ? STORE_CATEGORIES[storeTab] : []
+	);
 	/** The building whose build time an advert is about to cut */
 	let adFor = $state<string | null>(null);
 
@@ -755,64 +777,104 @@
 		{m.beachhead_island_mines_count({ count: game.layout.mines.length, max: MAX_MINES })}
 	</p>
 	<div class="flex gap-1.5" role="tablist">
-		{#each Object.keys(STORE_CATEGORIES) as tab (tab)}
+		{#each STORE_TABS as tab (tab)}
 			<button
 				type="button"
 				role="tab"
 				aria-selected={storeTab === tab}
 				class="btn-chunky px-3 py-1 text-sm {storeTab === tab ? 'bg-explosion-yellow' : ''}"
-				onclick={() => (storeTab = tab as keyof typeof STORE_CATEGORIES)}
+				onclick={() => (storeTab = tab)}
 			>
-				{tab === 'mines'
-					? m.beachhead_island_mines_title()
+				{tab === 'resources'
+					? m.beachhead_store_resources()
 					: tab === 'guns'
 						? m.beachhead_store_guns()
-						: m.beachhead_store_obstacles()}
+						: tab === 'obstacles'
+							? m.beachhead_store_obstacles()
+							: m.beachhead_store_buildings()}
 			</button>
 		{/each}
 	</div>
-	<ul class="flex gap-2 overflow-x-auto pb-2">
-		{#each STORE_CATEGORIES[storeTab] as kind (kind)}
-			{@const unlocked = defenseUnlocked(kind, game.levelOf('hq'))}
-			<li
-				class="flex w-40 shrink-0 flex-col items-center gap-1.5 rounded-[14px] border-2 border-ink bg-sand p-2 {unlocked
-					? ''
-					: 'opacity-70'}"
-			>
-				<span
-					class="flex size-12 items-center justify-center rounded-full border-3 border-ink bg-paper shadow-[2px_2px_0_var(--color-ink)]"
-					title={mineHint(kind)}
-				>
-					<BeachheadPortrait type="defense" kind={kind as BuildingKind} size={46} />
-				</span>
-				<p class="text-center text-xs leading-tight font-bold">{mineName(kind)}</p>
-				{#if mineHint(kind)}
-					<p class="text-center text-[0.7rem] leading-snug">{mineHint(kind)}</p>
-				{/if}
-				{#if unlocked}
-					{@render costChips(costOf(kind))}
+	{#if storeTab === 'resources' || storeTab === 'buildings'}
+		<ul class="flex gap-2 overflow-x-auto pb-2">
+			{#each STORE_BUILDINGS[storeTab] as key (key)}
+				{@const level = game.levelOf(key)}
+				<li class="shrink-0">
 					<button
 						type="button"
-						class="btn-chunky flex size-9 items-center justify-center rounded-full p-0"
-						aria-label={m.beachhead_island_mine_buy()}
-						disabled={!game.canBuyMine(kind) || game.layout.mines.length >= MAX_MINES}
-						onclick={() => game.buyMine(kind)}
+						class="flex w-28 flex-col items-center gap-1 rounded-[14px] border-2 border-ink bg-sand p-2"
+						onclick={() => {
+							selected = { kind: 'building', key };
+							sheet = 'upgrade';
+						}}
 					>
-						<IconCircleArrowUp class="size-5" aria-hidden="true" />
+						<span
+							class="flex size-12 items-center justify-center rounded-full border-3 border-ink bg-paper shadow-[2px_2px_0_var(--color-ink)]"
+						>
+							{#if isLayoutKey(key)}
+								<BeachheadPortrait
+									type="building"
+									kind={key}
+									{level}
+									max={game.maxLevelOf(key)}
+									size={46}
+								/>
+							{:else}
+								<IconShip class="size-7" aria-hidden="true" />
+							{/if}
+						</span>
+						<span class="text-center text-xs leading-tight font-bold">{describe(key).name}</span>
+						<span class="font-display text-xs font-bold tabular-nums">
+							{level}/{game.maxLevelOf(key)}
+						</span>
 					</button>
-				{:else if isGuard(kind)}
-					<p
-						class="flex items-center gap-1 font-display text-sm font-bold"
-						title={m.beachhead_unlocks_at_hq({ level: GUARD_UNLOCK_HQ[kind] })}
+				</li>
+			{/each}
+		</ul>
+	{:else}
+		<ul class="flex gap-2 overflow-x-auto pb-2">
+			{#each storeDefences as kind (kind)}
+				{@const unlocked = defenseUnlocked(kind, game.levelOf('hq'))}
+				<li
+					class="flex w-40 shrink-0 flex-col items-center gap-1.5 rounded-[14px] border-2 border-ink bg-sand p-2 {unlocked
+						? ''
+						: 'opacity-70'}"
+				>
+					<span
+						class="flex size-12 items-center justify-center rounded-full border-3 border-ink bg-paper shadow-[2px_2px_0_var(--color-ink)]"
+						title={mineHint(kind)}
 					>
-						<IconLock class="size-4" aria-hidden="true" />
-						<IconFlag class="size-4" aria-hidden="true" />
-						{GUARD_UNLOCK_HQ[kind]}
-					</p>
-				{/if}
-			</li>
-		{/each}
-	</ul>
+						<BeachheadPortrait type="defense" kind={kind as BuildingKind} size={46} />
+					</span>
+					<p class="text-center text-xs leading-tight font-bold">{mineName(kind)}</p>
+					{#if mineHint(kind)}
+						<p class="text-center text-[0.7rem] leading-snug">{mineHint(kind)}</p>
+					{/if}
+					{#if unlocked}
+						{@render costChips(costOf(kind))}
+						<button
+							type="button"
+							class="btn-chunky flex size-9 items-center justify-center rounded-full p-0"
+							aria-label={m.beachhead_island_mine_buy()}
+							disabled={!game.canBuyMine(kind) || game.layout.mines.length >= MAX_MINES}
+							onclick={() => game.buyMine(kind)}
+						>
+							<IconCircleArrowUp class="size-5" aria-hidden="true" />
+						</button>
+					{:else if isGuard(kind)}
+						<p
+							class="flex items-center gap-1 font-display text-sm font-bold"
+							title={m.beachhead_unlocks_at_hq({ level: GUARD_UNLOCK_HQ[kind] })}
+						>
+							<IconLock class="size-4" aria-hidden="true" />
+							<IconFlag class="size-4" aria-hidden="true" />
+							{GUARD_UNLOCK_HQ[kind]}
+						</p>
+					{/if}
+				</li>
+			{/each}
+		</ul>
+	{/if}
 </BeachheadSheet>
 
 <BeachheadSheet
