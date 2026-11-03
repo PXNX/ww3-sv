@@ -1185,7 +1185,33 @@ function drawGround(context: CanvasRenderingContext2D, view: IsoView, scene: Hom
 		context.strokeStyle = INK;
 		context.stroke();
 	};
-	wall([lo, hi], [hi, hi], DIRT);
+	// The side facing the beach where attackers land slopes gently into the water instead of ending in a cliff
+	const slope = 1.6;
+	context.beginPath();
+	context.moveTo(p(lo, hi).x, p(lo, hi).y);
+	context.lineTo(p(hi, hi).x, p(hi, hi).y);
+	context.lineTo(p(hi, hi + slope, -thickness).x, p(hi, hi + slope, -thickness).y);
+	context.lineTo(p(lo, hi + slope, -thickness).x, p(lo, hi + slope, -thickness).y);
+	context.closePath();
+	context.fillStyle = shade(SAND, -0.06);
+	context.fill();
+	context.lineWidth = 0.08;
+	context.lineJoin = 'round';
+	context.strokeStyle = INK;
+	context.stroke();
+	// Wet sand near the waterline and a line of foam where the waves wash up it
+	context.beginPath();
+	context.moveTo(
+		p(lo, hi + slope * 0.7, -thickness * 0.7).x,
+		p(lo, hi + slope * 0.7, -thickness * 0.7).y
+	);
+	context.lineTo(
+		p(hi, hi + slope * 0.7, -thickness * 0.7).x,
+		p(hi, hi + slope * 0.7, -thickness * 0.7).y
+	);
+	context.strokeStyle = 'rgba(255,255,255,0.8)';
+	context.lineWidth = 0.1;
+	context.stroke();
 	wall([hi, lo], [hi, hi], shade(DIRT, -0.2));
 
 	onGround(context, view, () => {
