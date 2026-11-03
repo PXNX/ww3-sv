@@ -84,9 +84,7 @@
 		<Confetti />
 
 		<div
-			class="-mx-5 -mt-5 flex w-[calc(100%+2.5rem)] flex-col items-center gap-1 px-5 pt-5 pb-3"
-			style:background="repeating-conic-gradient(from 0deg at 50% 100%, color-mix(in srgb,
-			var(--color-explosion-yellow) 38%, transparent) 0deg 9deg, transparent 9deg 18deg)"
+			class="sunburst -mx-5 -mt-5 flex w-[calc(100%+2.5rem)] flex-col items-center gap-1 px-5 pt-5 pb-3"
 		>
 			<h2
 				id="beachhead-win-title"
@@ -188,6 +186,14 @@
 </dialog>
 
 <style>
+	.sunburst {
+		background: repeating-conic-gradient(
+			from 0deg at 50% 100%,
+			color-mix(in srgb, var(--color-explosion-yellow) 38%, transparent) 0deg 9deg,
+			transparent 9deg 18deg
+		);
+	}
+
 	.victory-ribbon {
 		animation: ribbon-in 420ms cubic-bezier(0.2, 1.4, 0.4, 1);
 	}
