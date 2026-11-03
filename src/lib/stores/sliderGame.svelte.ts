@@ -65,7 +65,9 @@ export class SliderGame {
 				this.icons.push(correct);
 			} else {
 				let w;
-				do { w = opts[Math.floor(Math.random() * opts.length)]; } while (w === correct);
+				do {
+					w = opts[Math.floor(Math.random() * opts.length)];
+				} while (w === correct);
 				this.icons.push(w);
 			}
 		}

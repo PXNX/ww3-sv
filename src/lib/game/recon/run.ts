@@ -421,7 +421,10 @@ export function stepRun(run: Run, dt: number) {
 		// Some hostile contacts move toward nearest civilian car
 		if (kind === 'tank' || kind === 'truck') {
 			const car = run.tracks.find(
-				(tr) => tr.status === 'open' && tr.contact.role === 'civilian' && (tr.contact.kind === 'car' || tr.contact.kind === 'bus')
+				(tr) =>
+					tr.status === 'open' &&
+					tr.contact.role === 'civilian' &&
+					(tr.contact.kind === 'car' || tr.contact.kind === 'bus')
 			);
 			if (car) {
 				const dx = car.contact.x - t.contact.x;

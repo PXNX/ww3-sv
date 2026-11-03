@@ -185,7 +185,10 @@ export function upgradeEffect(upgrade: UpgradeDef): string {
 				percent: formatCount(upgrade.value * 100, locale)
 			});
 		case 'producer': {
-			return m.tycoon_upgrade_effect_producer({ producer: producerName(upgrade.producer!) }) + ' — Double production';
+			return (
+				m.tycoon_upgrade_effect_producer({ producer: producerName(upgrade.producer!) }) +
+				' — Double production'
+			);
 		}
 		case 'global':
 			return m.tycoon_upgrade_effect_global({ mult: formatMultiplier(upgrade.value, locale) });

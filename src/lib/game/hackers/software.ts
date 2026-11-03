@@ -12,7 +12,16 @@ import type { ContractSpec } from './config';
 import { contractSpec, TRACE_WRONG_GUESS } from './config';
 import { emptyHardware, hardwareEffects, type Hardware } from './hardware';
 
-export type ToolId = 'breach' | 'keylog' | 'relays' | 'miner' | 'siphon' | 'bruteforce' | 'worm' | 'rootkit' | 'backdoor';
+export type ToolId =
+	| 'breach'
+	| 'keylog'
+	| 'relays'
+	| 'miner'
+	| 'siphon'
+	| 'bruteforce'
+	| 'worm'
+	| 'rootkit'
+	| 'backdoor';
 
 export type Upgrades = Record<ToolId, number>;
 
@@ -46,7 +55,17 @@ export function toolSpec(id: ToolId): ToolSpec {
 }
 
 export function emptyUpgrades(): Upgrades {
-	return { breach: 0, keylog: 0, relays: 0, miner: 0, siphon: 0, bruteforce: 0, worm: 0, rootkit: 0, backdoor: 0 };
+	return {
+		breach: 0,
+		keylog: 0,
+		relays: 0,
+		miner: 0,
+		siphon: 0,
+		bruteforce: 0,
+		worm: 0,
+		rootkit: 0,
+		backdoor: 0
+	};
 }
 
 /** What the next level of a tool costs; null once it is maxed */
@@ -158,7 +177,10 @@ export const SIPHON_DAY_MS = 20000;
 /** The share of the target's wallet the siphon takes per day */
 export function siphonShare(upgrades: Upgrades, hardware: Hardware = emptyHardware()): number {
 	if (upgrades.siphon <= 0) return 0;
-	return Math.min(1, 0.15 + 0.1 * upgrades.siphon + hardwareEffects(hardware).siphonBonus + backdoorShare(upgrades));
+	return Math.min(
+		1,
+		0.15 + 0.1 * upgrades.siphon + hardwareEffects(hardware).siphonBonus + backdoorShare(upgrades)
+	);
 }
 
 /** What a target's wallet holds on the contract of that number */

@@ -40,7 +40,9 @@ export function isProfile(value: unknown): value is HackersProfile {
 		isFiniteNumber(profile.bank) &&
 		profile.bank >= 0 &&
 		isHardware(profile.hardware) &&
-		(profile.botnet === undefined || (typeof profile.botnet === 'object' && typeof (profile.botnet as Record<string, unknown>).nodes === 'number')) &&
+		(profile.botnet === undefined ||
+			(typeof profile.botnet === 'object' &&
+				typeof (profile.botnet as Record<string, unknown>).nodes === 'number')) &&
 		Array.isArray(profile.favorites) &&
 		profile.favorites.every((ip) => typeof ip === 'string')
 	);
@@ -82,7 +84,11 @@ export function addBotnetNode(profile: HackersProfile, dataCost: number): Hacker
 	if (profile.botnet.data < dataCost) return null;
 	return {
 		...profile,
-		botnet: { ...profile.botnet, nodes: profile.botnet.nodes + 1, data: profile.botnet.data - dataCost }
+		botnet: {
+			...profile.botnet,
+			nodes: profile.botnet.nodes + 1,
+			data: profile.botnet.data - dataCost
+		}
 	};
 }
 

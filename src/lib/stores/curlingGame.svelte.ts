@@ -21,7 +21,7 @@ export class CurlingGame {
 	power = $state(50);
 	angle = $state(-45);
 	sweeping = $state(false);
-	
+
 	#scores: Highscores;
 	#random = createRandom(randomSeed());
 	#timer?: ReturnType<typeof setInterval>;

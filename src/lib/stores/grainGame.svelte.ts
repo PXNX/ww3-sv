@@ -26,7 +26,7 @@ export class GrainGame {
 	distance = $state(0);
 	mines = $state<Mine[]>([]);
 	hearts = $state(3);
-	
+
 	#scores: Highscores;
 	#timer?: ReturnType<typeof setInterval>;
 	#mineId = 0;
@@ -71,7 +71,7 @@ export class GrainGame {
 				m.y = 200; // remove
 			}
 		}
-		this.mines = this.mines.filter(m => m.y < 110);
+		this.mines = this.mines.filter((m) => m.y < 110);
 		if (this.distance > 2000) this.#endGame(true);
 	}
 

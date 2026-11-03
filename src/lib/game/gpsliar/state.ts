@@ -47,7 +47,7 @@ export interface GameState {
 	invulnerable: number;
 	/** Submarine is on attack: it will reach the tanker within ATTACK_TIME seconds unless diverted */
 	subAttack: boolean;
-	subTimer: number;     // seconds until submarine attacks if not diverted
+	subTimer: number; // seconds until submarine attacks if not diverted
 	subDiverted: boolean;
 	/** Harbours unloaded so far; the next one to visit is level.stops[delivered] */
 	delivered: number;

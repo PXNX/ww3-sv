@@ -211,10 +211,7 @@ describe('production cycles', () => {
 		expect(state.barrels).toBe(0);
 		expect(state.pending.refinery).toBeGreaterThan(0);
 		const paid = runCycles(state, 1);
-		expect(paid).toBeCloseTo(
-			(2 * producerDef('refinery').baseCps * cycle) / 1000,
-			9
-		);
+		expect(paid).toBeCloseTo((2 * producerDef('refinery').baseCps * cycle) / 1000, 9);
 		expect(state.barrels).toBeCloseTo(paid, 9);
 		expect(state.progress.refinery).toBe(0);
 		expect(state.pending.refinery).toBe(0);

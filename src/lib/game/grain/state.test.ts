@@ -263,9 +263,9 @@ describe('grain corridor', () => {
 
 		expect(state.entities.length).toBeGreaterThan(0);
 		expect(state.entities.some((entity) => entity.kind === 'crate')).toBe(true);
-		expect(
-			state.entities.some((entity) => entity.kind === 'mine' || entity.kind === 'drone')
-		).toBe(true);
+		expect(state.entities.some((entity) => entity.kind === 'mine' || entity.kind === 'drone')).toBe(
+			true
+		);
 		for (const entity of state.entities) {
 			expect(entity.y).toBeGreaterThanOrEqual(-30);
 			expect(entity.y).toBeLessThanOrEqual(WORLD_HEIGHT + 50);

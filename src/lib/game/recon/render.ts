@@ -239,7 +239,10 @@ function drawTerrain(c: CanvasRenderingContext2D, terrain: Terrain, sensor: Sens
 	// Building blocks near soldiers become highlighted targets
 	for (const b of (terrain as any).blocks ?? []) {
 		const nearSoldier = run.tracks.some(
-			t => t.status === 'open' && t.contact.role === 'hostile' && Math.hypot(t.contact.x - b.x, t.contact.y - b.y) < 70
+			(t) =>
+				t.status === 'open' &&
+				t.contact.role === 'hostile' &&
+				Math.hypot(t.contact.x - b.x, t.contact.y - b.y) < 70
 		);
 		if (nearSoldier) {
 			c.strokeStyle = '#e5484d';
@@ -435,8 +438,11 @@ function drawSprite(c: CanvasRenderingContext2D, contact: Contact, look: Look, t
 			c.strokeStyle = look.dark;
 			c.lineWidth = 1.5;
 			c.beginPath();
-			c.moveTo(-10, -5); c.lineTo(0, -10); c.lineTo(10, -5);
-			c.lineTo(0, 0); c.lineTo(-10, -5);
+			c.moveTo(-10, -5);
+			c.lineTo(0, -10);
+			c.lineTo(10, -5);
+			c.lineTo(0, 0);
+			c.lineTo(-10, -5);
 			c.stroke();
 			break;
 		case 'mortar':

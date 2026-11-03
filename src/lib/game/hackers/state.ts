@@ -344,14 +344,14 @@ function passiveIncome(state: HackersState, dtMs: number): HackersEvent[] {
 
 	// Botnet nodes earn data continuously
 	const dataRate = botnetIncome(state.botnet);
-	state.data += dataRate * dtMs / 1000;
+	state.data += (dataRate * dtMs) / 1000;
 
 	// Automatic bruteforcer: progresses toward cracking the breach stage
 	if (state.contract.stage === 'breach' && state.upgrades.bruteforce > 0) {
 		const cableBonus = downloadSpeed(state.hardware);
 		const nodeBonus = 1 + 0.2 * state.botnet.nodes;
-		const rate = (0.015 * state.upgrades.bruteforce) * cableBonus * nodeBonus; // progress per second
-		state.bruteforceProgress = Math.min(1, state.bruteforceProgress + rate * dtMs / 1000);
+		const rate = 0.015 * state.upgrades.bruteforce * cableBonus * nodeBonus; // progress per second
+		state.bruteforceProgress = Math.min(1, state.bruteforceProgress + (rate * dtMs) / 1000);
 		if (state.bruteforceProgress >= 1) {
 			state.contract.stage = 'keylog';
 			state.bruteforceProgress = 0;
@@ -366,10 +366,7 @@ function passiveIncome(state: HackersState, dtMs: number): HackersEvent[] {
 	state.siphonMs += dtMs;
 	while (state.siphonMs >= SIPHON_DAY_MS && contract.wallet > 0) {
 		state.siphonMs -= SIPHON_DAY_MS;
-		const drained = Math.min(
-			contract.wallet,
-			Math.max(1, Math.round(contract.wallet * share))
-		);
+		const drained = Math.min(contract.wallet, Math.max(1, Math.round(contract.wallet * share)));
 		contract.wallet -= drained;
 		state.score += drained;
 		state.siphoned += drained;

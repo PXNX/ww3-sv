@@ -18,15 +18,24 @@ export function botnetIncome(botnet: Botnet): number {
 /** Time to download an item before cable speed shrinks it */
 export function rawDownloadTime(kind: string): number {
 	switch (kind) {
-		case 'bruteforce-lv1': return 20_000;
-		case 'bruteforce-lv2': return 20_000;
-		case 'bruteforce-lv3': return 20_000;
-		case 'bruteforce-lv4': return 20_000;
-		case 'bruteforce-lv5': return 20_000;
-		case 'software-common': return 30_000;
-		case 'software-uncommon': return 30_000;
-		case 'software-rare': return 30_000;
-		default: return 30_000;
+		case 'bruteforce-lv1':
+			return 20_000;
+		case 'bruteforce-lv2':
+			return 20_000;
+		case 'bruteforce-lv3':
+			return 20_000;
+		case 'bruteforce-lv4':
+			return 20_000;
+		case 'bruteforce-lv5':
+			return 20_000;
+		case 'software-common':
+			return 30_000;
+		case 'software-uncommon':
+			return 30_000;
+		case 'software-rare':
+			return 30_000;
+		default:
+			return 30_000;
 	}
 }
 
@@ -50,11 +59,41 @@ export interface Downloadable {
 }
 
 export const DOWNLOADABLES: readonly Downloadable[] = [
-	{ id: 'bruteforce-lv1', kind: 'bruteforce', toolId: 'bruteforce', costData: 100, label: () => 'Brute‑force Lv 1' },
-	{ id: 'bruteforce-lv2', kind: 'bruteforce', toolId: 'bruteforce', costData: 250, label: () => 'Brute‑force Lv 2' },
-	{ id: 'bruteforce-lv3', kind: 'bruteforce', toolId: 'bruteforce', costData: 500, label: () => 'Brute‑force Lv 3' },
-	{ id: 'bruteforce-lv4', kind: 'bruteforce', toolId: 'bruteforce', costData: 1_000, label: () => 'Brute‑force Lv 4' },
-	{ id: 'bruteforce-lv5', kind: 'bruteforce', toolId: 'bruteforce', costData: 2_000, label: () => 'Brute‑force Lv 5' },
+	{
+		id: 'bruteforce-lv1',
+		kind: 'bruteforce',
+		toolId: 'bruteforce',
+		costData: 100,
+		label: () => 'Brute‑force Lv 1'
+	},
+	{
+		id: 'bruteforce-lv2',
+		kind: 'bruteforce',
+		toolId: 'bruteforce',
+		costData: 250,
+		label: () => 'Brute‑force Lv 2'
+	},
+	{
+		id: 'bruteforce-lv3',
+		kind: 'bruteforce',
+		toolId: 'bruteforce',
+		costData: 500,
+		label: () => 'Brute‑force Lv 3'
+	},
+	{
+		id: 'bruteforce-lv4',
+		kind: 'bruteforce',
+		toolId: 'bruteforce',
+		costData: 1_000,
+		label: () => 'Brute‑force Lv 4'
+	},
+	{
+		id: 'bruteforce-lv5',
+		kind: 'bruteforce',
+		toolId: 'bruteforce',
+		costData: 2_000,
+		label: () => 'Brute‑force Lv 5'
+	},
 	{ id: 'botnet-node', kind: 'node', costData: 80, label: () => 'Botnet node' },
 	{ id: 'worm', kind: 'software', toolId: 'worm', costData: 600, label: () => 'Worm' },
 	{ id: 'rootkit', kind: 'software', toolId: 'rootkit', costData: 800, label: () => 'Rootkit' },

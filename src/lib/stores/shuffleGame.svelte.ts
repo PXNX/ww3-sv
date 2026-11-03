@@ -7,7 +7,8 @@ import { soundManager } from '#lib/sound/soundManager.svelte.js';
 
 export const SHUFFLE_BEST_KEY = ['shuffle', 'score'] as const;
 
-export type ShuffleState = 'intro' | 'showing' | 'shuffling' | 'guessing' | 'correct' | 'wrong' | 'over';
+export type ShuffleState =
+	'intro' | 'showing' | 'shuffling' | 'guessing' | 'correct' | 'wrong' | 'over';
 
 export interface Card {
 	id: number;
@@ -64,7 +65,7 @@ export class ShuffleGame {
 	#setupCards(count: number) {
 		this.cards = [];
 		const spacing = 110;
-		const startX = (count - 1) * (-spacing) / 2;
+		const startX = ((count - 1) * -spacing) / 2;
 		for (let i = 0; i < count; i++) {
 			this.cards.push({
 				id: i,

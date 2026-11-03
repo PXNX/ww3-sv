@@ -14,7 +14,8 @@ export interface PendingEvent {
 	remainingMs: number;
 }
 
-export type EffectId = 'boom' | 'crash' | 'sanctioned' | 'maintenance' | 'leak' | 'protest' | 'critchance' | 'strike';
+export type EffectId =
+	'boom' | 'crash' | 'sanctioned' | 'maintenance' | 'leak' | 'protest' | 'critchance' | 'strike';
 
 /** A temporary effect of a crisis */
 export interface ActiveEffect {

@@ -8,11 +8,7 @@
 import { haptic } from '#lib/haptic/haptic.svelte.js';
 import { STARTING_LIVES, TRACE_MAX } from '#lib/game/hackers/config.js';
 import type { Chip } from '#lib/game/hackers/keylog.js';
-import {
-	emptyHardware,
-	type Hardware,
-	type HardwareId
-} from '#lib/game/hackers/hardware.js';
+import { emptyHardware, type Hardware, type HardwareId } from '#lib/game/hackers/hardware.js';
 import {
 	bankRun,
 	buyHardware as buyHardwareLevel,

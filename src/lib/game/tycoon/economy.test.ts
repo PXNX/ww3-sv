@@ -109,10 +109,7 @@ describe('production', () => {
 		expect(productionPerSecond(state)).toBe(0);
 		state.owned.pumpjack = 10;
 		state.owned.tanker = 2;
-		expect(productionPerSecond(state)).toBeCloseTo(
-			10 * pumpjack.baseCps + 2 * tanker.baseCps,
-			9
-		);
+		expect(productionPerSecond(state)).toBeCloseTo(10 * pumpjack.baseCps + 2 * tanker.baseCps, 9);
 	});
 
 	it('doubles a producer with each of its tier upgrades', () => {
@@ -136,10 +133,7 @@ describe('production', () => {
 		state.upgrades.push('global_regulator');
 		const expected = 1.5 * 1.05 * (1 + 2 * perkValue('output')) * 1.25;
 		expect(globalMultiplier(state)).toBeCloseTo(expected, 9);
-		expect(productionPerSecond(state)).toBeCloseTo(
-			10 * pumpjack.baseCps * expected * 0.98,
-			9
-		);
+		expect(productionPerSecond(state)).toBeCloseTo(10 * pumpjack.baseCps * expected * 0.98, 9);
 	});
 
 	it('pays 5% more overall production once a producer reaches its last level', () => {
@@ -172,10 +166,7 @@ describe('production', () => {
 			clickMult: 1
 		});
 		expect(productionPerSecond(state)).toBeCloseTo(10 * pumpjack.baseCps * 0.5, 9);
-		expect(calmProduction(state)).toBeCloseTo(
-			10 * pumpjack.baseCps + 10 * tanker.baseCps,
-			9
-		);
+		expect(calmProduction(state)).toBeCloseTo(10 * pumpjack.baseCps + 10 * tanker.baseCps, 9);
 	});
 
 	it('turns a tap into more with click upgrades, a share of output and no crisis block', () => {

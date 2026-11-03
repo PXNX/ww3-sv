@@ -39,7 +39,12 @@ export function drawHouse(context: CanvasRenderingContext2D, width: number, heig
 	context.restore();
 }
 
-export function drawStone(context: CanvasRenderingContext2D, state: CurlStateType, width: number, height: number) {
+export function drawStone(
+	context: CanvasRenderingContext2D,
+	state: CurlStateType,
+	width: number,
+	height: number
+) {
 	const x = state.stone.x * width;
 	const y = state.stone.y * height;
 	const radius = 12;
@@ -66,7 +71,13 @@ export function drawStone(context: CanvasRenderingContext2D, state: CurlStateTyp
 	context.restore();
 }
 
-export function drawSeal(context: CanvasRenderingContext2D, x: number, y: number, width: number, height: number) {
+export function drawSeal(
+	context: CanvasRenderingContext2D,
+	x: number,
+	y: number,
+	width: number,
+	height: number
+) {
 	const px = x * width;
 	const py = y * height;
 	const size = 16;
@@ -83,7 +94,14 @@ export function drawSeal(context: CanvasRenderingContext2D, x: number, y: number
 	context.restore();
 }
 
-export function drawPenguin(context: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, lost: boolean) {
+export function drawPenguin(
+	context: CanvasRenderingContext2D,
+	x: number,
+	y: number,
+	width: number,
+	height: number,
+	lost: boolean
+) {
 	const px = x * width;
 	const py = y * height;
 	const size = 20;
@@ -109,7 +127,12 @@ export function drawPenguin(context: CanvasRenderingContext2D, x: number, y: num
 	context.restore();
 }
 
-export function drawScoreCounter(context: CanvasRenderingContext2D, state: CurlStateType, width: number, height: number) {
+export function drawScoreCounter(
+	context: CanvasRenderingContext2D,
+	state: CurlStateType,
+	width: number,
+	height: number
+) {
 	context.fillStyle = TEXT_COLOR;
 	context.font = 'bold 24px system-ui, sans-serif';
 	context.textAlign = 'center';

@@ -110,10 +110,7 @@ export function spawnInterval(distance: number): number {
 
 /** The safe channel at a given distance: the two walls close in over the run */
 export function corridor(distance: number): { left: number; right: number } {
-	const squeeze = Math.min(
-		CORRIDOR_SQUEEZE,
-		Math.max(0, distance) * CORRIDOR_SQUEEZE_PER_M
-	);
+	const squeeze = Math.min(CORRIDOR_SQUEEZE, Math.max(0, distance) * CORRIDOR_SQUEEZE_PER_M);
 	return {
 		left: CORRIDOR_MARGIN + squeeze,
 		right: WORLD_WIDTH - CORRIDOR_MARGIN - squeeze
@@ -224,8 +221,7 @@ function spawnWave(state: GrainState, random: Random) {
 		return;
 	}
 
-	const kind: HazardKind =
-		state.distance > 350 && random() < 0.32 ? 'drone' : 'mine';
+	const kind: HazardKind = state.distance > 350 && random() < 0.32 ? 'drone' : 'mine';
 	const first = spawnX(state, random, radius);
 	addEntity(state, kind, first, -30, random);
 
@@ -363,12 +359,7 @@ export function step(state: GrainState, dtMs: number, random: Random): GrainEven
 }
 
 /** Puts a hazard or pickup straight into the game, bypassing the spawner (tests and effects) */
-export function addAt(
-	state: GrainState,
-	kind: EntityKind,
-	x: number,
-	y: number
-): Entity {
+export function addAt(state: GrainState, kind: EntityKind, x: number, y: number): Entity {
 	const entity: Entity = {
 		id: state.nextId++,
 		kind,

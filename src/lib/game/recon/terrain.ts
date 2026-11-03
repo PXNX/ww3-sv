@@ -209,8 +209,20 @@ export function generateTerrain(random: Random): Terrain {
 
 	const warehouses: Warehouse[] = [];
 	const bunkers: Warehouse[] = [];
-	for (let i = 0; i < randomInt(random, 2, 5); i++) warehouses.push({ x: range(random, 60, MAP_W - 60), y: range(random, 60, MAP_H - 60), w: range(random, 30, 50), h: range(random, 16, 30) });
-	for (let i = 0; i < randomInt(random, 0, 2); i++) bunkers.push({ x: range(random, 100, MAP_W - 100), y: range(random, 120, MAP_H - 120), w: range(random, 20, 35), h: range(random, 10, 20) });
+	for (let i = 0; i < randomInt(random, 2, 5); i++)
+		warehouses.push({
+			x: range(random, 60, MAP_W - 60),
+			y: range(random, 60, MAP_H - 60),
+			w: range(random, 30, 50),
+			h: range(random, 16, 30)
+		});
+	for (let i = 0; i < randomInt(random, 0, 2); i++)
+		bunkers.push({
+			x: range(random, 100, MAP_W - 100),
+			y: range(random, 120, MAP_H - 120),
+			w: range(random, 20, 35),
+			h: range(random, 10, 20)
+		});
 
 	const river: Point[] = [];
 	if (random() < 0.5) {
@@ -219,9 +231,35 @@ export function generateTerrain(random: Random): Terrain {
 	}
 
 	const blocks: Block[] = [];
-	for (let i = 0; i < randomInt(random, 1, 3); i++) blocks.push({ x: range(random, 50, MAP_W - 150), y: range(random, 50, MAP_H - 150), w: range(random, 120, 200), h: range(random, 120, 200) });
+	for (let i = 0; i < randomInt(random, 1, 3); i++)
+		blocks.push({
+			x: range(random, 50, MAP_W - 150),
+			y: range(random, 50, MAP_H - 150),
+			w: range(random, 120, 200),
+			h: range(random, 120, 200)
+		});
 	const substations: Warehouse[] = [];
-	for (let i = 0; i < randomInt(random, 1, 2); i++) substations.push({ x: range(random, 150, MAP_W - 150), y: range(random, 150, MAP_H - 150), w: range(random, 18, 28), h: range(random, 14, 20) });
+	for (let i = 0; i < randomInt(random, 1, 2); i++)
+		substations.push({
+			x: range(random, 150, MAP_W - 150),
+			y: range(random, 150, MAP_H - 150),
+			w: range(random, 18, 28),
+			h: range(random, 14, 20)
+		});
 
-	return { fields, woods, roads, villages, houses, barns, pylons, bridges, warehouses, bunkers, river, blocks, substations };
+	return {
+		fields,
+		woods,
+		roads,
+		villages,
+		houses,
+		barns,
+		pylons,
+		bridges,
+		warehouses,
+		bunkers,
+		river,
+		blocks,
+		substations
+	};
 }

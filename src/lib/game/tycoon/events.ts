@@ -41,7 +41,15 @@ import type {
 	TycoonState
 } from './types.js';
 
-export const EVENT_KINDS: readonly EventKind[] = ['spike', 'sanctions', 'pipeline', 'protest', 'strike', 'leak', 'bonus'];
+export const EVENT_KINDS: readonly EventKind[] = [
+	'spike',
+	'sanctions',
+	'pipeline',
+	'protest',
+	'strike',
+	'leak',
+	'bonus'
+];
 
 /** Quiet time before the very first crisis of a run */
 export function firstEventDelay(random: Random): number {

@@ -119,15 +119,13 @@ export class RunComradeGame {
 		if (this.status === 'paused') this.status = 'playing';
 	}
 
-	togglePause() {
-	}
+	togglePause() {}
 
 	/** The back link during a run: ends it as a loss */
 	forfeit() {
 		if (this.status !== 'playing' && this.status !== 'paused') return;
 		this.#finish();
 	}
-
 
 	/** A swipe, tap or key press: change lane, jump or duck */
 	command(action: Command) {

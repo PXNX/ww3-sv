@@ -378,7 +378,9 @@ describe('wallet siphon', () => {
 		const events = step(state, 1, random);
 		const paid = events.find((event) => event.type === 'siphon');
 		expect(paid).toBeDefined();
-		expect(state.contract.wallet).toBe(wallet - Math.max(1, Math.round(wallet * siphonShare(state.upgrades))));
+		expect(state.contract.wallet).toBe(
+			wallet - Math.max(1, Math.round(wallet * siphonShare(state.upgrades)))
+		);
 		expect(state.score).toBeGreaterThan(before);
 		expect(state.siphoned).toBeGreaterThan(0);
 	});

@@ -6,7 +6,7 @@
 export const CARD_COUNT = 3;
 export interface ShuffleState {
 	positions: number[]; // card index -> visual position 0..2
-	tankerIdx: number;   // which card is the tanker
+	tankerIdx: number; // which card is the tanker
 	shuffles: number;
 	streak: number;
 	score: number;
@@ -14,7 +14,15 @@ export interface ShuffleState {
 	lastTapped: number | null;
 }
 export function createShuffle(): ShuffleState {
-	return { positions: [0,1,2], tankerIdx: 1, shuffles: 0, streak: 0, score: 0, over: false, lastTapped: null };
+	return {
+		positions: [0, 1, 2],
+		tankerIdx: 1,
+		shuffles: 0,
+		streak: 0,
+		score: 0,
+		over: false,
+		lastTapped: null
+	};
 }
 export function shuffle(s: ShuffleState): ShuffleState {
 	if (s.over) return s;
@@ -36,7 +44,10 @@ export function tap(s: ShuffleState, idx: number): number {
 	if (idx === s.tankerIdx) {
 		s.streak += 1;
 		s.score += 50 + 20 * s.streak;
-		if (s.streak >= 5) { s.over = true; s.score += 200; }
+		if (s.streak >= 5) {
+			s.over = true;
+			s.score += 200;
+		}
 	} else {
 		s.streak = 0;
 		s.score = Math.max(0, s.score - 30);

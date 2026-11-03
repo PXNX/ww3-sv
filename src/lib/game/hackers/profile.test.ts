@@ -63,9 +63,9 @@ describe('hackers profile', () => {
 
 	it('guards what comes out of local storage', () => {
 		expect(isProfile(defaultProfile())).toBe(true);
-		expect(isProfile({ bank: 5, hardware: { cpu: 1, ram: 0, gpu: 0 }, favorites: ['1.2.3.4'] })).toBe(
-			true
-		);
+		expect(
+			isProfile({ bank: 5, hardware: { cpu: 1, ram: 0, gpu: 0 }, favorites: ['1.2.3.4'] })
+		).toBe(true);
 		expect(isProfile({ bank: -1, hardware: emptyHardware(), favorites: [] })).toBe(false);
 		expect(isProfile({ bank: 5, hardware: { cpu: 1 }, favorites: [] })).toBe(false);
 		expect(isProfile({ bank: 5, hardware: emptyHardware(), favorites: [7] })).toBe(false);

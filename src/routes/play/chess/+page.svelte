@@ -94,7 +94,7 @@
 	title={m.mode_chess_name()}
 	score={game.score}
 	best={game.best}
- onQuit={() => game.forfeit()}
+	onQuit={() => game.forfeit()}
 	confirmLeave={!game.over && game.moveCount > 0}
 >
 	{#snippet actions()}

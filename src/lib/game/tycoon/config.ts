@@ -119,7 +119,7 @@ export const PRODUCERS: readonly ProducerDef[] = [
 	{ id: 'yottaplatform', baseCost: 5.49e49, baseCps: 1.74e46, cycleMs: 410_000 }, // pays for itself in 3150s
 	{ id: 'ultraplatform', baseCost: 6.58e50, baseCps: 1.95e47, cycleMs: 420_000 }, // pays for itself in 3371s
 	{ id: 'infinityplatform', baseCost: 7.9e51, baseCps: 2.19e48, cycleMs: 430_000 }, // pays for itself in 3607s
-	{ id: 'eternityplatform', baseCost: 9.48e52, baseCps: 2.46e49, cycleMs: 440_000 }, // pays for itself in 3859s
+	{ id: 'eternityplatform', baseCost: 9.48e52, baseCps: 2.46e49, cycleMs: 440_000 } // pays for itself in 3859s
 ];
 
 /** No speed bonus makes a cycle shorter than this */
@@ -290,10 +290,34 @@ const CLICK_UPGRADES: readonly UpgradeDef[] = [
 	{ id: 'click_crane', kind: 'click', cost: 250_000_000, requires: { type: 'none' }, value: 4 },
 	{ id: 'click_titan', kind: 'click', cost: 2_500_000_000, requires: { type: 'none' }, value: 5 },
 	{ id: 'click_nitro', kind: 'click', cost: 100_000_000_000, requires: { type: 'none' }, value: 3 },
-	{ id: 'click_megatap', kind: 'click', cost: 500_000_000_000, requires: { type: 'total', count: 500 }, value: 6 },
-	{ id: 'click_god', kind: 'click', cost: 5_000_000_000_000, requires: { type: 'total', count: 2000 }, value: 10 },
-	{ id: 'click_ultimate', kind: 'click', cost: 500_000_000_000_000, requires: { type: 'total', count: 5000 }, value: 20 },
-	{ id: 'click_eternal', kind: 'click', cost: 50_000_000_000_000_000, requires: { type: 'total', count: 10_000 }, value: 30 },
+	{
+		id: 'click_megatap',
+		kind: 'click',
+		cost: 500_000_000_000,
+		requires: { type: 'total', count: 500 },
+		value: 6
+	},
+	{
+		id: 'click_god',
+		kind: 'click',
+		cost: 5_000_000_000_000,
+		requires: { type: 'total', count: 2000 },
+		value: 10
+	},
+	{
+		id: 'click_ultimate',
+		kind: 'click',
+		cost: 500_000_000_000_000,
+		requires: { type: 'total', count: 5000 },
+		value: 20
+	},
+	{
+		id: 'click_eternal',
+		kind: 'click',
+		cost: 50_000_000_000_000_000,
+		requires: { type: 'total', count: 10_000 },
+		value: 30
+	},
 	{ id: 'event_boost', kind: 'events', cost: 500_000, requires: { type: 'none' }, value: 1.25 },
 	{ id: 'event_master', kind: 'events', cost: 50_000_000, requires: { type: 'none' }, value: 1.5 },
 	{
@@ -421,14 +445,56 @@ const PRODUCER_UPGRADES: readonly UpgradeDef[] = PRODUCERS.flatMap((producer) =>
 const EXTRA_UPGRADES: readonly UpgradeDef[] = [
 	{ id: 'click_augment', kind: 'click', cost: 500_000, requires: { type: 'none' }, value: 3 },
 	{ id: 'click_telegraph', kind: 'click', cost: 5_000_000, requires: { type: 'none' }, value: 4 },
-	{ id: 'click_neural', kind: 'click', cost: 50_000_000, requires: { type: 'total', count: 50 }, value: 6 },
-	{ id: 'click_rocket', kind: 'click', cost: 1_000_000_000, requires: { type: 'total', count: 500 }, value: 8 },
-	{ id: 'global_solo', kind: 'global', cost: 10_000_000, requires: { type: 'total', count: 30 }, value: 2.25 },
-	{ id: 'global_legislature', kind: 'global', cost: 100_000_000, requires: { type: 'total', count: 150 }, value: 3 },
-	{ id: 'global_pivot', kind: 'global', cost: 2_500_000_000, requires: { type: 'total', count: 400 }, value: 4.5 },
-	{ id: 'global_reinforcement', kind: 'global', cost: 5_000_000_000, requires: { type: 'total', count: 800 }, value: 6 },
+	{
+		id: 'click_neural',
+		kind: 'click',
+		cost: 50_000_000,
+		requires: { type: 'total', count: 50 },
+		value: 6
+	},
+	{
+		id: 'click_rocket',
+		kind: 'click',
+		cost: 1_000_000_000,
+		requires: { type: 'total', count: 500 },
+		value: 8
+	},
+	{
+		id: 'global_solo',
+		kind: 'global',
+		cost: 10_000_000,
+		requires: { type: 'total', count: 30 },
+		value: 2.25
+	},
+	{
+		id: 'global_legislature',
+		kind: 'global',
+		cost: 100_000_000,
+		requires: { type: 'total', count: 150 },
+		value: 3
+	},
+	{
+		id: 'global_pivot',
+		kind: 'global',
+		cost: 2_500_000_000,
+		requires: { type: 'total', count: 400 },
+		value: 4.5
+	},
+	{
+		id: 'global_reinforcement',
+		kind: 'global',
+		cost: 5_000_000_000,
+		requires: { type: 'total', count: 800 },
+		value: 6
+	},
 	{ id: 'event_backing', kind: 'events', cost: 2_000_000, requires: { type: 'none' }, value: 1.4 },
-	{ id: 'clickcps_share', kind: 'clickCps', cost: 5_000_000, requires: { type: 'total', count: 50 }, value: 0.03 },
+	{
+		id: 'clickcps_share',
+		kind: 'clickCps',
+		cost: 5_000_000,
+		requires: { type: 'total', count: 50 },
+		value: 0.03
+	}
 ];
 
 export const UPGRADES: readonly UpgradeDef[] = [
@@ -517,7 +583,12 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
 	{ id: 'state_owned', kind: 'prestige', threshold: 10, reward: { kind: 'speed', value: 0.1 } },
 	{ id: 'investor', kind: 'perks', threshold: 10, reward: { kind: 'tap', value: 0.25 } },
 	{ id: 'magnate', kind: 'perks', threshold: 30, reward: { kind: 'output', value: 0.1 } },
-	{ id: 'tycoon_king', kind: 'prestige', threshold: 25, clothing: { part: 'hat', value: 'cylinder' } },
+	{
+		id: 'tycoon_king',
+		kind: 'prestige',
+		threshold: 25,
+		clothing: { part: 'hat', value: 'cylinder' }
+	},
 	{ id: 'oil_barbarian', kind: 'taps', threshold: 100_000, reward: { kind: 'tap', value: 0.3 } },
 	{ id: 'drill_master', kind: 'owned', threshold: 500, reward: { kind: 'discount', value: 0.08 } },
 	{

@@ -247,7 +247,7 @@
 	title={m.mode_blocks_name()}
 	score={game.score}
 	best={game.best}
- onQuit={() => game.forfeit()}
+	onQuit={() => game.forfeit()}
 	confirmLeave={!game.over && game.score > 0}
 	compact
 	back={!groupGame}
