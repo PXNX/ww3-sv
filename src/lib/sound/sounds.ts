@@ -75,7 +75,10 @@ export type SoundId =
 	| 'draft'
 	| 'candle-snuff'
 	| 'ritual-line'
-	| 'ritual-burst';
+	| 'ritual-burst'
+	| 'link-snap'
+	| 'wave-horn'
+	| 'energy-empty';
 
 /** Intensity runs from 0 to 1 and lets one sound scale (louder, higher) with how hard something happened */
 type SoundEffect = (ctx: AudioContext, dest: AudioNode, intensity: number) => void;
@@ -851,5 +854,33 @@ export const SOUNDS: Record<SoundId, SoundEffect> = {
 				delay: 0.08 + index * 0.05
 			})
 		);
-	}
+	},
+
+	// A satellite link being cut: a crackle and a quick falling blip
+	'link-snap': (ctx, dest, intensity) => {
+		noise(ctx, dest, {
+			duration: 0.09,
+			filterType: 'highpass',
+			filterFrequency: 2600,
+			gain: 0.14 + intensity * 0.06
+		});
+		tone(ctx, dest, {
+			frequency: 1100 + intensity * 500,
+			glideTo: 260,
+			duration: 0.12,
+			type: 'square',
+			gain: 0.13
+		});
+	},
+
+	// A low two-note horn announcing the next wave
+	'wave-horn': (ctx, dest) =>
+		sequence(ctx, dest, [
+			{ frequency: 196, duration: 0.22, type: 'sawtooth', gain: 0.16 },
+			{ frequency: 262, duration: 0.34, type: 'sawtooth', gain: 0.17, delay: 0.2 }
+		]),
+
+	// A dull, short click for an action that is not ready yet
+	'energy-empty': (ctx, dest) =>
+		tone(ctx, dest, { frequency: 140, glideTo: 90, duration: 0.09, type: 'triangle', gain: 0.18 })
 };
