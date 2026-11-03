@@ -869,6 +869,12 @@ export function heroCardsForRoll(roll: number): number {
 	return 0;
 }
 
+/** Every conquest drops hero shards: one at least, more on the far islands and sometimes a bonus one */
+export function shardsForWin(islandIndex: number, roll: number): number {
+	const safe = Number.isFinite(roll) ? Math.min(1, Math.max(0, roll)) : 1;
+	return 1 + Math.floor(Math.max(0, islandIndex) / 6) + (safe < 0.3 ? 1 : 0);
+}
+
 /** Boats in boarding order with their capacity and the units packed into them */
 export interface BoatLoad {
 	index: number;

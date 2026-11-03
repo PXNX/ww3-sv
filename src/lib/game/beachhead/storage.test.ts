@@ -21,3 +21,13 @@ describe('warehouse capacity', () => {
 		expect(loaded.resources.stone).toBe(5);
 	});
 });
+
+describe('hero shards', () => {
+	it('drop on every conquest, more on far islands and with a lucky roll', async () => {
+		const { shardsForWin } = await import('./campaign');
+		expect(shardsForWin(0, 0.9)).toBe(1);
+		expect(shardsForWin(0, 0.1)).toBe(2);
+		expect(shardsForWin(12, 0.9)).toBeGreaterThan(shardsForWin(0, 0.9));
+		expect(shardsForWin(-3, Number.NaN)).toBe(1);
+	});
+});

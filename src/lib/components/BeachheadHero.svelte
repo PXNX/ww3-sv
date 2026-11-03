@@ -19,7 +19,7 @@
 	import IconCircleDashed from '~icons/lucide/circle-dashed';
 	import IconFlame from '~icons/lucide/flame';
 	import IconHeart from '~icons/lucide/heart';
-	import IconLayers from '~icons/lucide/layers';
+	import IconGem from '~icons/lucide/gem';
 	import IconLock from '~icons/lucide/lock';
 	import IconStar from '~icons/lucide/star';
 	import IconSwords from '~icons/lucide/swords';
@@ -150,7 +150,7 @@
 			class="flex items-center gap-1 rounded-full border-2 border-ink bg-paper px-2 font-display text-sm font-bold tabular-nums"
 			title={m.beachhead_hero_cards({ cards: game.heroCards })}
 		>
-			<IconLayers class="size-4" aria-hidden="true" />
+			<IconGem class="size-4" aria-hidden="true" />
 			{game.heroCards}
 		</p>
 	</div>
@@ -219,7 +219,7 @@
 								: 'bg-tie-red text-paper'}"
 							title={m.beachhead_hero_next_level({ cards: entry.cards })}
 						>
-							<IconLayers class="size-3.5" aria-hidden="true" />
+							<IconGem class="size-3.5" aria-hidden="true" />
 							{entry.cards}
 						</span>
 						{#if entry.locked}

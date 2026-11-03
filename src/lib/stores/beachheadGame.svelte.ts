@@ -69,7 +69,7 @@ import {
 	freeBuilderSlots as freeBuilderSlotsOf,
 	grantHeroCards,
 	heroCardCost,
-	heroCardsForRoll,
+	shardsForWin,
 	heroUpgradeCost,
 	heroUpgradeLocked,
 	incomeRate as incomeOf,
@@ -783,6 +783,7 @@ export class BeachheadGame {
 		this.#finishMs = 0;
 		this.#settled = true;
 		this.lastCasualties = {};
+		this.heroCardsFound = 0;
 		this.lootCollected = { wood: 0, stone: 0, iron: 0, gold: 0 };
 		this.stars = 0;
 		this.focusKind = null;
@@ -1323,10 +1324,10 @@ export class BeachheadGame {
 				skillsUsed: this.battle.skillsUsed,
 				heroAlive: this.battle.troops.some((troop) => troop.kind === 'hero' && troop.hp > 0)
 			});
-			const cards = heroCardsForRoll(Math.random());
+			const cards = shardsForWin(this.islandIndex, Math.random());
 			next = grantHeroCards(next, cards);
 			next = this.#settleCasualties(next);
-			this.heroCardsFound = (this.heroCardsFound ?? 0) + cards;
+			this.heroCardsFound = cards;
 			this.loot = loot;
 			this.newAchievements = [];
 			this.#commit(next, { announce: true });

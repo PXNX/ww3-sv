@@ -14,6 +14,7 @@
 	import Confetti from './Confetti.svelte';
 	import ShareButton from './ShareButton.svelte';
 	import IconArrowRight from '~icons/lucide/arrow-right';
+	import IconGem from '~icons/lucide/gem';
 	import IconMap from '~icons/lucide/map';
 	import IconTrophy from '~icons/lucide/trophy';
 
@@ -22,6 +23,7 @@
 		score,
 		loot,
 		lost,
+		shards,
 		islandName,
 		newAchievements,
 		isNewBest,
@@ -37,6 +39,8 @@
 		loot: Resources;
 		/** Troops the attack killed, by kind */
 		lost: Partial<Record<TroopKind, number>>;
+		/** Hero shards this victory dropped */
+		shards: number;
 		islandName: string;
 		/** Achievements unlocked by this victory */
 		newAchievements: string[];
@@ -92,6 +96,16 @@
 				</li>
 			{/each}
 		</ul>
+
+		{#if shards > 0}
+			<p
+				class="pop-in flex items-center gap-1.5 rounded-full border-3 border-ink bg-[#b48cf0] py-1 ps-1.5 pe-3 font-display text-xl font-bold tabular-nums shadow-[2px_2px_0_var(--color-ink)]"
+				title={m.beachhead_hero_cards({ cards: shards })}
+			>
+				<IconGem class="size-8" aria-hidden="true" />
+				+{shards}
+			</p>
+		{/if}
 
 		{#if fallen.length > 0}
 			<ul class="flex flex-wrap justify-center gap-1.5" aria-label={m.beachhead_lost_troops()}>
