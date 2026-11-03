@@ -25,7 +25,6 @@
 	import IconFlag from '~icons/lucide/flag-triangle-right';
 	import IconLock from '~icons/lucide/lock';
 	import IconRadar from '~icons/lucide/radar';
-	import IconShield from '~icons/lucide/shield';
 
 	let { game }: { game: BeachheadGame } = $props();
 
@@ -201,7 +200,6 @@
 			{@const unlocked = charted && game.isUnlocked(index)}
 			{@const controlled = game.isControlled(islandId)}
 			{@const attackable = unlocked && !controlled}
-			{@const defense = game.defensePercent(islandId)}
 			<li
 				class="absolute z-30 -translate-x-1/2 -translate-y-1/2 transition-opacity duration-[1800ms]"
 				class:opacity-0={!charted}
@@ -229,27 +227,19 @@
 								: 'bg-sand text-ink'}"
 					>
 						{#if controlled}
-							<IconFlag class="size-4" aria-hidden="true" />
+							<IconFlag class="size-3.5" aria-hidden="true" />
 						{:else if attackable}
-							<IconCrosshair class="size-5" aria-hidden="true" />
+							<IconCrosshair class="size-4" aria-hidden="true" />
 						{:else}
-							<IconLock class="size-4" aria-hidden="true" />
+							<IconLock class="size-3" aria-hidden="true" />
 						{/if}
 					</span>
 
-					{#if defense > 0}
-						<span
-							class="absolute -start-1 bottom-5 flex items-center gap-0.5 rounded-full border-2 border-ink bg-explosion-yellow px-1.5 font-display text-[0.7rem] leading-4 font-bold tabular-nums"
-							title={m.beachhead_island_defense({ percent: defense })}
-						>
-							<IconShield class="size-3" aria-hidden="true" />
-							{defense}%
-						</span>
-					{/if}
-
 					<span
 						dir="auto"
-						class="-mt-1 rounded-full border-2 border-ink bg-paper/95 px-2 py-px text-[0.68rem] leading-tight font-bold sm:text-xs"
+						class="label -mt-1 rounded-full border-2 border-ink bg-paper/95 px-2 py-px text-[0.68rem] leading-tight font-bold transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 sm:text-xs {attackable
+							? 'opacity-100'
+							: 'opacity-0'}"
 					>
 						{islandName(index)}
 					</span>
