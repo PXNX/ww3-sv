@@ -17,7 +17,8 @@ import {
 	canAffordMine,
 	layoutOf,
 	newSave,
-	upgradeAllDefensesOf
+	finishBuilds,
+	startDefenseUpgrade
 } from './campaign';
 
 const rich = (hq: number) => {
@@ -129,19 +130,29 @@ describe('what can be taken away again', () => {
 });
 
 describe('upgrading defences', () => {
-	it('raises every mine of a kind in one go, never past the headquarters level', () => {
+	it('raises every mine of a kind on one builder, taking the time of the slowest, never past the headquarters level', () => {
 		let save = rich(2);
 		for (let index = 0; index < 3; index++) save = buyMine(save, 'mine-at')!;
 		save = buyMine(save, 'mine-emp')!;
-		const all = allDefenseUpgrades(save, 'mine-at');
-		expect(all.ids).toHaveLength(3);
-		expect(all.cost.iron).toBeGreaterThan(0);
-		const raised = upgradeAllDefensesOf(save, 'mine-at')!;
+		const plan = allDefenseUpgrades(save, 'mine-at');
+		expect(plan.ids).toHaveLength(3);
+		expect(plan.cost.iron).toBeGreaterThan(0);
+		expect(plan.ms).toBeGreaterThan(0);
+		const started = startDefenseUpgrade(save, plan, 1000, 1)!;
+		// Nothing changes until the builder is done, and the defences cannot be started twice
+		expect(layoutOf(started).mines.every((mine) => (mine.level ?? 1) === 1)).toBe(true);
+		expect(allDefenseUpgrades(started, 'mine-at').ids).toHaveLength(0);
+		expect(
+			startDefenseUpgrade(started, allDefenseUpgrades(started, 'mine-emp'), 1000, 1)
+		).toBeNull();
+		const early = finishBuilds(started, 1000 + plan.ms - 1);
+		expect(layoutOf(early).mines.every((mine) => (mine.level ?? 1) === 1)).toBe(true);
+		const raised = finishBuilds(started, 1000 + plan.ms);
 		const levels = layoutOf(raised).mines.map((mine) => [mine.kind, mine.level ?? 1]);
 		expect(levels.filter(([kind, level]) => kind === 'mine-at' && level === 2)).toHaveLength(3);
 		expect(levels.find(([kind]) => kind === 'mine-emp')?.[1]).toBe(1);
 		// The headquarters is level two, so a second round is refused
-		expect(upgradeAllDefensesOf(raised, 'mine-at')).toBeNull();
+		expect(allDefenseUpgrades(raised, 'mine-at').ids).toHaveLength(0);
 	});
 
 	it('makes mines dearer than before', () => {

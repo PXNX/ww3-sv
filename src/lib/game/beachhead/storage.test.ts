@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { newSave, parseSave, storageCapacity } from './campaign';
+import {
+	finishBuilds,
+	homeProduction,
+	isBuilt,
+	newSave as freshSave,
+	parseSave,
+	securedShare,
+	startUpgrade,
+	storageCapacity,
+	withEverythingBuilt
+} from './campaign';
+
+const newSave = (now: number) => withEverythingBuilt(freshSave(now));
 
 describe('warehouse capacity', () => {
 	it('is only what the warehouses of a resource hold, and grows with their levels', () => {
@@ -143,5 +155,39 @@ describe('troop research', () => {
 		expect(troopLevel(done, 'assault')).toBe(2);
 		expect(researchOf(done)).toBeNull();
 		expect(startTroopResearch(done, 'tank', 10 * 60_000)).not.toBeNull();
+	});
+});
+
+describe('a fresh base', () => {
+	it('stores only what the headquarters holds, secures nothing and pays one cottage until they are built', () => {
+		const save = freshSave(0);
+		expect(storageCapacity(save, 'wood')).toBe(300);
+		expect(securedShare(save)).toBe(0);
+		expect(isBuilt(save, 'warehouse-wood-0')).toBe(false);
+		expect(isBuilt(save, 'house-0')).toBe(true);
+		expect(isBuilt(save, 'house-1')).toBe(false);
+		expect(homeProduction(save).gold).toBe(2);
+	});
+
+	it('builds a warehouse from nothing, which adds room and takes a builder', () => {
+		const save = {
+			...freshSave(0),
+			resources: { wood: 5000, stone: 5000, iron: 5000, gold: 5000 }
+		};
+		const started = startUpgrade(save, 'warehouse-wood-0', 0, 1)!;
+		expect(started.builders).toHaveLength(1);
+		const done = finishBuilds(started, started.builders[0].endsAt);
+		expect(isBuilt(done, 'warehouse-wood-0')).toBe(true);
+		expect(storageCapacity(done, 'wood')).toBe(800);
+	});
+
+	it('only allows a boat once the headquarters is high enough for it', () => {
+		const save = {
+			...freshSave(0),
+			resources: { wood: 9999, stone: 9999, iron: 9999, gold: 9999 }
+		};
+		expect(startUpgrade(save, 'boat-3', 0, 1)).toBeNull();
+		const higher = { ...save, levels: { ...save.levels, hq: 2 } };
+		expect(startUpgrade(higher, 'boat-3', 0, 1)).not.toBeNull();
 	});
 });

@@ -383,7 +383,14 @@
 		const point = viewPoint(event);
 		if (!point) return;
 		const boats = game.boats.filter((boat) => boat.unlocked).length;
-		const hit = pickHome(HOME_VIEW, game.layout, boats, point.x, point.y);
+		const hit = pickHome(
+			HOME_VIEW,
+			game.layout,
+			boats,
+			point.x,
+			point.y,
+			(key) => game.levelOf(key as BuildingKey) >= 1
+		);
 		selected = hit;
 		// A tap on a building opens its detail sheet; while rearranging nothing about upgrades shows
 		if (hit && !arranging) sheet = 'upgrade';
@@ -750,6 +757,7 @@
 
 <BeachheadSheet
 	open={sheet === 'upgrade' && selected !== null}
+	narrow
 	title={panel
 		? panel.type === 'building'
 			? panel.name
@@ -827,7 +835,7 @@
 								<BeachheadPortrait
 									type="building"
 									kind={key}
-									{level}
+									level={Math.max(1, level)}
 									max={game.maxLevelOf(key)}
 									size={46}
 								/>
@@ -836,9 +844,18 @@
 							{/if}
 						</span>
 						<span class="text-center text-xs leading-tight font-bold">{describe(key).name}</span>
-						<span class="font-display text-xs font-bold tabular-nums">
-							{level}/{game.maxLevelOf(key)}
-						</span>
+						{#if level === 0}
+							<!-- Not built yet: it costs a builder and some resources, and the headquarters must be high enough -->
+							{#if game.upgradeLocked(key)}
+								<IconLock class="size-5" aria-hidden="true" />
+							{:else if game.upgradeCost(key)}
+								{@render costChips(game.upgradeCost(key) as Resources)}
+							{/if}
+						{:else}
+							<span class="font-display text-xs font-bold tabular-nums">
+								{level}/{game.maxLevelOf(key)}
+							</span>
+						{/if}
 					</button>
 				</li>
 			{/each}

@@ -110,8 +110,10 @@ import {
 	defenseUpgradeCostOf,
 	exposedStock,
 	allDefenseUpgrades,
-	upgradeAllDefensesOf,
-	upgradeDefenseOf,
+	defenseBusy,
+	defenseUpgradeTimeOf,
+	singleDefenseUpgrade,
+	startDefenseUpgrade,
 	securedShare,
 	storageCapacities,
 	storageCapacity,
@@ -648,29 +650,42 @@ export class BeachheadGame {
 		return defenseUpgradeCostOf(this.campaign, id);
 	}
 
-	/** How many placed defences of this kind can be raised right now, and what that costs in all */
+	/** The placed defences of this kind that can be raised right now, what that costs and how long it takes */
 	allDefenseUpgrades(kind: string) {
 		return allDefenseUpgrades(this.campaign, kind);
 	}
 
-	upgradeAllDefenses(kind: string): boolean {
-		const next = upgradeAllDefensesOf(this.campaign, kind);
-		if (!next) {
-			this.#play('ui-error', 0.4);
-			return false;
-		}
-		this.#commit(next, { claim: false });
-		this.#play('chime-big', 0.7);
-		return true;
+	defenseBusy(id: number): boolean {
+		return defenseBusy(this.campaign, id);
+	}
+
+	defenseUpgradeTime(id: number): number | null {
+		return defenseUpgradeTimeOf(this.campaign, id);
+	}
+
+	/** Milliseconds left on the builder raising this defence, or null when none is */
+	defenseRemaining(id: number): number | null {
+		const task = this.campaign.builders.find((entry) => entry.defenseIds?.includes(id));
+		return task ? Math.max(0, task.endsAt - this.#now()) : null;
 	}
 
 	canUpgradeDefense(id: number): boolean {
-		return upgradeDefenseOf(this.campaign, id) !== null;
+		const plan = singleDefenseUpgrade(this.campaign, id);
+		return plan.ids.length > 0 && this.campaign.builders.length < this.builderSlots;
 	}
 
-	/** Raises a placed mine, gun or hedgehog one level; limited by the headquarters level */
+	/** Raises one placed mine, gun or hedgehog a level on a builder; limited by the headquarters level */
 	upgradeDefense(id: number): boolean {
-		const next = upgradeDefenseOf(this.campaign, id);
+		return this.#startDefenses(singleDefenseUpgrade(this.campaign, id));
+	}
+
+	/** Raises every placed defence of a kind a level on one builder */
+	upgradeAllDefenses(kind: string): boolean {
+		return this.#startDefenses(allDefenseUpgrades(this.campaign, kind));
+	}
+
+	#startDefenses(plan: ReturnType<typeof allDefenseUpgrades>): boolean {
+		const next = startDefenseUpgrade(this.campaign, plan, this.#now(), this.builderSlots);
 		if (!next) {
 			this.#play('ui-error', 0.4);
 			return false;
@@ -1019,7 +1034,8 @@ export class BeachheadGame {
 					const type = slots[target];
 					return type ? { type, level: crystalLevel(this.campaign, type) } : undefined;
 				},
-				(house) => this.levelOf(`house-${house}` as BuildingKey)
+				(house) => this.levelOf(`house-${house}` as BuildingKey),
+				(key) => this.levelOf(key as BuildingKey) >= 1
 			),
 			{
 				...modifiersFor(this.campaign),

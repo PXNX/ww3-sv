@@ -4,6 +4,7 @@
 	headquarters everything it unlocks. The price, the build time and the button are at the bottom.
 -->
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import {
 		boatCapacity,
@@ -47,8 +48,18 @@
 	const defenseAll = $derived(
 		defense
 			? game.allDefenseUpgrades(defense.kind)
-			: { ids: [], cost: { wood: 0, stone: 0, iron: 0, gold: 0 } }
+			: { ids: [], ms: 0, cost: { wood: 0, stone: 0, iron: 0, gold: 0 } }
 	);
+	/** A ticking clock for the countdown while a builder raises this defence */
+	let now = $state(Date.now());
+	onMount(() => {
+		const timer = setInterval(() => (now = Date.now()), 1000);
+		return () => clearInterval(timer);
+	});
+	const defenseLeft = $derived.by(() => {
+		void now;
+		return defense ? game.defenseRemaining(defense.id) : null;
+	});
 	const defenseNow = $derived(defense ? defenseLevel(defense) : 1);
 	const defenseNext = $derived(Math.min(MAX_DEFENSE_LEVEL, defenseNow + 1));
 	const defenseCost = $derived(defense ? game.defenseUpgradeCost(defense.id) : null);
@@ -240,15 +251,26 @@
 						{/if}
 					{/each}
 				</span>
-				<button
-					type="button"
-					class="btn-chunky flex size-11 items-center justify-center rounded-full bg-khaki p-0 text-paper"
-					aria-label={m.beachhead_upgrade_button()}
-					disabled={!game.canUpgradeDefense(defense.id)}
-					onclick={() => game.upgradeDefense(defense.id)}
-				>
-					<IconCircleArrowUp class="size-6" aria-hidden="true" />
-				</button>
+				{#if defenseLeft !== null}
+					<span
+						class="flex items-center gap-1 font-display text-sm font-bold text-flag-blue tabular-nums"
+					>
+						<IconHourglass class="size-4" aria-hidden="true" />
+						{timeText(defenseLeft)}
+					</span>
+				{:else}
+					<button
+						type="button"
+						class="btn-chunky flex h-11 items-center gap-1.5 rounded-full bg-khaki px-4 py-0 font-display text-sm font-bold text-paper tabular-nums"
+						aria-label={m.beachhead_upgrade_button()}
+						disabled={!game.canUpgradeDefense(defense.id)}
+						onclick={() => game.upgradeDefense(defense.id)}
+					>
+						<IconCircleArrowUp class="size-5" aria-hidden="true" />
+						<IconHourglass class="size-4" aria-hidden="true" />
+						{timeText(game.defenseUpgradeTime(defense.id) ?? 0)}
+					</button>
+				{/if}
 			</div>
 			{#if defenseAll.ids.length > 1}
 				<!-- Every defence of this kind that can be raised, in one tap -->
@@ -274,6 +296,8 @@
 					>
 						<IconCircleArrowUp class="size-5" aria-hidden="true" />
 						×{defenseAll.ids.length}
+						<IconHourglass class="size-4" aria-hidden="true" />
+						{timeText(defenseAll.ms)}
 					</button>
 				</div>
 			{/if}

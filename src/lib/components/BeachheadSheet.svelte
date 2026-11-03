@@ -11,8 +11,16 @@
 		open,
 		title,
 		onclose,
+		narrow = false,
 		children
-	}: { open: boolean; title: string; onclose: () => void; children: Snippet } = $props();
+	}: {
+		open: boolean;
+		title: string;
+		onclose: () => void;
+		/** A slim panel for a single item, such as an upgrade page */
+		narrow?: boolean;
+		children: Snippet;
+	} = $props();
 </script>
 
 <svelte:window onkeydown={(event) => open && event.key === 'Escape' && onclose()} />
@@ -27,7 +35,9 @@
 			tabindex="-1"
 		></button>
 		<div
-			class="sheet-in relative flex max-h-[85dvh] w-full max-w-3xl flex-col gap-2 overflow-y-auto rounded-t-[22px] border-3 border-ink bg-paper p-3 shadow-[0_-4px_0_var(--color-ink)] sm:rounded-[22px]"
+			class="sheet-in relative flex max-h-[85dvh] w-full {narrow
+				? 'max-w-sm'
+				: 'max-w-3xl'} flex-col gap-2 overflow-y-auto rounded-t-[22px] border-3 border-ink bg-paper p-3 shadow-[0_-4px_0_var(--color-ink)] sm:rounded-[22px]"
 			role="dialog"
 			aria-modal="true"
 			aria-label={title}

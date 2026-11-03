@@ -39,6 +39,7 @@ import { baseEffects, normalizeCrystals, type CrystalState } from './crystals.js
 import type { ExpeditionState } from './expedition.js';
 import {
 	DEFENSE_COST,
+	MAX_DEFENSE_LEVEL,
 	defenseLevel,
 	defenseUnlocked,
 	defenseUpgradeCost,
@@ -76,7 +77,9 @@ export const RESOURCE_KINDS: readonly ResourceKind[] = ['wood', 'stone', 'iron',
 /** Every resource has two warehouses, and each of them can be leveled up on its own */
 export const WAREHOUSES_PER_RESOURCE = 2;
 /** A stockpile starts here and every warehouse level adds room for more */
-export const STORAGE_BASE = 0;
+/** The headquarters keeps a little of every resource itself; the rest needs warehouses */
+export const STORAGE_BASE = 300;
+export const HQ_STORAGE_PER_LEVEL = 150;
 export const STORAGE_PER_LEVEL = 500;
 
 export type BoatKey = `boat-${number}`;
@@ -151,6 +154,11 @@ export const PRODUCER_OUTPUT: Record<ProducerKey, Partial<Resources>> = {
 export function homeProduction(save: BeachheadSave): Resources {
 	const total: Resources = { ...HOME_PRODUCTION };
 	for (const key of PRODUCER_KEYS) {
+		// A cottage that is not built yet pays no taxes
+		if (levelOf(save, key) < 1) {
+			if (key.startsWith('house-')) total.gold -= HOUSE_TAX;
+			continue;
+		}
 		const gain = 0.5 * (levelOf(save, key) - 1);
 		for (const kind of RESOURCE_KINDS) total[kind] += (PRODUCER_OUTPUT[key][kind] ?? 0) * gain;
 	}
@@ -237,7 +245,10 @@ export interface TroopResearch {
 }
 
 export interface BuildTask {
-	key: BuildingKey;
+	/** The building being upgraded, or `defense-<id>` for placed mines, guns and obstacles */
+	key: BuildingKey | `defense-${number}`;
+	/** The placed defences this task raises; several can ride on one builder */
+	defenseIds?: number[];
 	startedAt: number;
 	endsAt: number;
 	/** How many adverts have already cut this build's time */
@@ -335,6 +346,11 @@ function defaultTroopLevels(): TroopLevels {
 	return Object.fromEntries(Object.keys(TROOPS).map((kind) => [kind, 1])) as TroopLevels;
 }
 
+/** A new base has no warehouses: each one is built from the store */
+function emptyWarehouseLevels(): number[] {
+	return Array.from({ length: WAREHOUSE_KEYS.length }, () => 0);
+}
+
 /** Both warehouses of every resource exist from the start, at level one */
 function defaultWarehouseLevels(): number[] {
 	return Array.from({ length: WAREHOUSE_KEYS.length }, () => 1);
@@ -385,9 +401,11 @@ export function newSave(nowMs: number): BeachheadSave {
 			training: 1,
 			radar: 1,
 			dojo: 1,
-			bunker: 1,
-			boats: Array.from({ length: BOAT_COUNT }, () => 1),
-			warehouses: defaultWarehouseLevels()
+			// The bunker, the warehouses, two of the cottages and the boats beyond the first few are built from the store
+			bunker: 0,
+			boats: Array.from({ length: BOAT_COUNT }, (_, index) => (index < STARTING_BOATS ? 1 : 0)),
+			warehouses: emptyWarehouseLevels(),
+			producers: { 'house-1': 0, 'house-2': 0 }
 		},
 		hero: { level: 1, skill: 1, cards: 0 },
 		troops: defaultTroopLevels(),
@@ -426,8 +444,32 @@ export function boatsAtHq(hq: number): number {
 	return Math.min(BOAT_COUNT, STARTING_BOATS + Math.max(0, hq - 1));
 }
 
+/** A landing craft is in the water once it is built and the headquarters is high enough for it */
 export function boatUnlocked(save: BeachheadSave, index: number): boolean {
-	return index >= 0 && index < boatsAtHq(save.levels.hq) && lookupBoatLevel(save, index) !== null;
+	return (
+		index >= 0 && index < boatsAtHq(save.levels.hq) && (lookupBoatLevel(save, index) ?? 0) >= 1
+	);
+}
+
+/** A save with every building already built, the way bases were before the store; handy for tests and tools */
+export function withEverythingBuilt(save: BeachheadSave): BeachheadSave {
+	return {
+		...save,
+		levels: {
+			...save.levels,
+			bunker: Math.max(1, save.levels.bunker ?? 1),
+			boats: save.levels.boats.map((level) => Math.max(1, level)),
+			warehouses: save.levels.warehouses.map((level) => Math.max(1, level)),
+			producers: Object.fromEntries(
+				PRODUCER_KEYS.map((key) => [key, Math.max(1, save.levels.producers?.[key] ?? 1)])
+			)
+		}
+	};
+}
+
+/** Whether a building stands on the island; a level of zero means it still has to be built */
+export function isBuilt(save: BeachheadSave, key: BuildingKey): boolean {
+	return levelOf(save, key) >= 1;
 }
 
 function lookupBoatLevel(save: BeachheadSave, index: number): number | null {
@@ -477,7 +519,9 @@ export function warehouseIndex(key: WarehouseKey): number {
 
 /** The share of every stockpile the bunker keeps out of reach of raiders, 0 to 1 */
 export function securedShare(save: BeachheadSave): number {
-	const level = Math.min(MAX_BUNKER_LEVEL, Math.max(1, save.levels.bunker ?? 1));
+	const built = save.levels.bunker ?? 1;
+	if (built < 1) return 0;
+	const level = Math.min(MAX_BUNKER_LEVEL, built);
 	return Math.min(0.8, BUNKER_BASE_SECURED + (level - 1) * BUNKER_SECURED_PER_LEVEL);
 }
 
@@ -493,7 +537,7 @@ export function upgradeCost(save: BeachheadSave, key: BuildingKey): Resources | 
 	if (level >= maxLevelOf(key)) return null;
 	return resourceCost(
 		BUILDING_BASE_COST[buildingFamily(key)],
-		Math.pow(BUILDING_COST_GROWTH, level - 1)
+		Math.pow(BUILDING_COST_GROWTH, Math.max(0, level - 1))
 	);
 }
 
@@ -501,8 +545,9 @@ export function upgradeCost(save: BeachheadSave, key: BuildingKey): Resources | 
 export function upgradeLocked(save: BeachheadSave, key: BuildingKey): boolean {
 	if (key === 'hq') return false;
 	if (key.startsWith('boat-')) {
+		// A new boat can be built once the headquarters has reached the level that allows it
 		const index = Number(key.slice('boat-'.length));
-		if (!boatUnlocked(save, index)) return true;
+		if (index >= boatsAtHq(save.levels.hq)) return true;
 	}
 	return levelOf(save, key) + 1 > Math.min(maxLevelOf(key), save.levels.hq + 1);
 }
@@ -513,7 +558,7 @@ export function storageCapacity(save: BeachheadSave, kind: ResourceKind): number
 	for (const key of WAREHOUSE_KEYS) {
 		if (warehouseResource(key) === kind) levels += levelOf(save, key);
 	}
-	return STORAGE_BASE + levels * STORAGE_PER_LEVEL;
+	return STORAGE_BASE + (save.levels.hq - 1) * HQ_STORAGE_PER_LEVEL + levels * STORAGE_PER_LEVEL;
 }
 
 export function storageCapacities(save: BeachheadSave): Resources {
@@ -553,7 +598,7 @@ export function buildDurationMs(key: BuildingKey, level: number): number {
 	return Math.round(BUILD_BASE_MS[family] * Math.pow(BUILD_TIME_GROWTH, Math.max(0, level - 1)));
 }
 
-export function constructionOf(save: BeachheadSave, key: BuildingKey): BuildTask | undefined {
+export function constructionOf(save: BeachheadSave, key: string): BuildTask | undefined {
 	return save.builders.find((task) => task.key === key);
 }
 
@@ -677,7 +722,15 @@ export function finishBuilds(save: BeachheadSave, nowMs: number): BeachheadSave 
 		...save,
 		builders: save.builders.filter((task) => nowMs < task.endsAt)
 	};
-	for (const task of done) next = withBuildingLevel(next, task.key);
+	for (const task of done) {
+		if (task.defenseIds) {
+			let layout = layoutOf(next);
+			for (const id of task.defenseIds) layout = levelUpDefense(layout, id) ?? layout;
+			next = { ...next, layout };
+		} else {
+			next = withBuildingLevel(next, task.key as BuildingKey);
+		}
+	}
 	return next;
 }
 
@@ -1350,7 +1403,10 @@ function isBuildTask(value: unknown): value is BuildTask {
 	const task = value as Partial<BuildTask>;
 	return (
 		typeof task.key === 'string' &&
-		BUILDING_KEYS.includes(task.key as BuildingKey) &&
+		(BUILDING_KEYS.includes(task.key as BuildingKey) ||
+			(task.key.startsWith('defense-') &&
+				Array.isArray(task.defenseIds) &&
+				task.defenseIds.every((id) => Number.isInteger(id)))) &&
 		typeof task.startedAt === 'number' &&
 		Number.isFinite(task.startedAt) &&
 		typeof task.endsAt === 'number' &&
@@ -1406,14 +1462,14 @@ export function isBeachheadSave(value: unknown): value is BeachheadSave {
 	if (
 		!Array.isArray(levels.boats) ||
 		levels.boats.length !== BOAT_COUNT ||
-		!levels.boats.every((level) => isLevel(level, MAX_BOAT_LEVEL))
+		!levels.boats.every((level) => level === 0 || isLevel(level, MAX_BOAT_LEVEL))
 	) {
 		return false;
 	}
 	if (
 		!Array.isArray(levels.warehouses) ||
 		levels.warehouses.length !== WAREHOUSE_KEYS.length ||
-		!levels.warehouses.every((level) => isLevel(level, MAX_WAREHOUSE_LEVEL))
+		!levels.warehouses.every((level) => level === 0 || isLevel(level, MAX_WAREHOUSE_LEVEL))
 	) {
 		return false;
 	}
@@ -1735,49 +1791,88 @@ export function defenseUpgradeCostOf(save: BeachheadSave, id: number): Resources
 	return cost ? { ...cost } : null;
 }
 
-/** The placed defences of one kind that can still be raised, cheapest first, with what raising them all costs */
-export function allDefenseUpgrades(
+/** How long raising a placed defence takes on a builder: guns take longest, obstacles are quick */
+export function defenseUpgradeMs(kind: string, level: number): number {
+	const base = kind === 'hedgehog' ? 30_000 : kind.startsWith('mine-') ? 45_000 : 150_000;
+	return Math.round(base * Math.pow(1.6, Math.max(0, level - 1)));
+}
+
+/** Whether a builder is already raising this defence */
+export function defenseBusy(save: BeachheadSave, id: number): boolean {
+	return save.builders.some((task) => task.defenseIds?.includes(id));
+}
+
+/** How long the next level of one placed defence takes, or null at the top */
+export function defenseUpgradeTimeOf(save: BeachheadSave, id: number): number | null {
+	const defense = layoutOf(save).mines.find((candidate) => candidate.id === id);
+	if (!defense || defenseLevel(defense) >= MAX_DEFENSE_LEVEL) return null;
+	return defenseUpgradeMs(defense.kind, defenseLevel(defense));
+}
+
+/**
+ * The placed defences of one kind (or just the given ones) that can be raised right now, cheapest
+ * first, with what raising them together costs and how long it takes: they work side by side on one
+ * builder, so the time is that of the slowest.
+ */
+function planDefenseUpgrades(
 	save: BeachheadSave,
-	kind: string
-): { ids: number[]; cost: Resources } {
+	candidates: { id: number; kind: string; level?: number }[]
+): { ids: number[]; cost: Resources; ms: number } {
 	const total: Resources = { wood: 0, stone: 0, iron: 0, gold: 0 };
 	const ids: number[] = [];
-	let current = save;
-	const same = layoutOf(save)
-		.mines.filter((candidate) => candidate.kind === kind)
-		.sort((a, b) => defenseLevel(a) - defenseLevel(b));
-	for (const defense of same) {
-		const cost = defenseUpgradeCostOf(current, defense.id);
-		const next = upgradeDefenseOf(current, defense.id);
-		if (!cost || !next) continue;
-		current = next;
+	let ms = 0;
+	const sorted = [...candidates].sort((a, b) => defenseLevel(a) - defenseLevel(b));
+	for (const defense of sorted) {
+		if (defenseBusy(save, defense.id)) continue;
+		const cost = defenseUpgradeCostOf(save, defense.id);
+		if (!cost || defenseLevel(defense) + 1 > save.levels.hq) continue;
+		const sum = { ...total };
+		for (const key of RESOURCE_KINDS) sum[key] += cost[key];
+		if (!canAfford(save, sum)) continue;
+		for (const key of RESOURCE_KINDS) total[key] = sum[key];
 		ids.push(defense.id);
-		for (const key of ['wood', 'stone', 'iron', 'gold'] as const) total[key] += cost[key];
+		ms = Math.max(ms, defenseUpgradeMs(defense.kind, defenseLevel(defense)));
 	}
-	return { ids, cost: total };
+	return { ids, cost: total, ms };
 }
 
-/** Raises every defence of the kind one level in one go, as far as the stock and the headquarters allow */
-export function upgradeAllDefensesOf(save: BeachheadSave, kind: string): BeachheadSave | null {
-	let current = save;
-	let any = false;
-	for (const id of allDefenseUpgrades(save, kind).ids) {
-		const next = upgradeDefenseOf(current, id);
-		if (!next) continue;
-		current = next;
-		any = true;
-	}
-	return any ? current : null;
+export function allDefenseUpgrades(save: BeachheadSave, kind: string) {
+	return planDefenseUpgrades(
+		save,
+		layoutOf(save).mines.filter((candidate) => candidate.kind === kind)
+	);
 }
 
-/** A defence cannot outgrow the headquarters; the gun or mine is raised at once for resources */
-export function upgradeDefenseOf(save: BeachheadSave, id: number): BeachheadSave | null {
-	const defense = layoutOf(save).mines.find((candidate) => candidate.id === id);
-	const cost = defenseUpgradeCostOf(save, id);
-	if (!defense || !cost || !canAfford(save, cost)) return null;
-	if (defenseLevel(defense) + 1 > save.levels.hq) return null;
-	const layout = levelUpDefense(layoutOf(save), id);
-	return layout ? { ...save, resources: payResources(save.resources, cost), layout } : null;
+export function singleDefenseUpgrade(save: BeachheadSave, id: number) {
+	return planDefenseUpgrades(
+		save,
+		layoutOf(save).mines.filter((candidate) => candidate.id === id)
+	);
+}
+
+/** Puts the defences on a builder; the cost is paid now and the levels arrive when the time is up */
+export function startDefenseUpgrade(
+	save: BeachheadSave,
+	plan: { ids: number[]; cost: Resources; ms: number },
+	nowMs: number,
+	slots: number
+): BeachheadSave | null {
+	if (plan.ids.length === 0 || !Number.isFinite(nowMs) || save.builders.length >= slots)
+		return null;
+	if (!canAfford(save, plan.cost)) return null;
+	return {
+		...save,
+		resources: payResources(save.resources, plan.cost),
+		builders: [
+			...save.builders,
+			{
+				key: `defense-${plan.ids[0]}`,
+				defenseIds: plan.ids,
+				startedAt: nowMs,
+				endsAt: nowMs + plan.ms
+			}
+		]
+	};
 }
 
 export function moveMineTo(save: BeachheadSave, id: number, cell: Cell): BeachheadSave | null {

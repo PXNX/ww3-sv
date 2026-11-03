@@ -56,7 +56,8 @@ import {
 	lootFor,
 	maxLevelOf,
 	modifiersFor,
-	newSave,
+	newSave as freshSave,
+	withEverythingBuilt,
 	parseSave,
 	processTakebacks,
 	recordVictory,
@@ -82,6 +83,8 @@ function saveWithControlled(...indexes: number[]) {
 	return save;
 }
 
+const newSave = (now: number) => withEverythingBuilt(freshSave(now));
+
 function richSave() {
 	return {
 		...newSave(NOW),
@@ -91,7 +94,7 @@ function richSave() {
 
 describe('the campaign save', () => {
 	it('starts with a small stock, level one everywhere and only the first island open', () => {
-		const save = newSave(NOW);
+		const save = freshSave(NOW);
 		expect(save.version).toBe(SAVE_VERSION);
 		expect(save.resources).toEqual(STARTING_RESOURCES);
 		expect(save.levels).toEqual({
@@ -99,9 +102,11 @@ describe('the campaign save', () => {
 			training: 1,
 			radar: 1,
 			dojo: 1,
-			bunker: 1,
-			boats: Array.from({ length: BOAT_COUNT }, () => 1),
-			warehouses: Array.from({ length: WAREHOUSE_KEYS.length }, () => 1)
+			// Nothing but the headquarters and the first boats stands yet: the rest is built from the store
+			bunker: 0,
+			boats: Array.from({ length: BOAT_COUNT }, (_, index) => (index < STARTING_BOATS ? 1 : 0)),
+			warehouses: Array.from({ length: WAREHOUSE_KEYS.length }, () => 0),
+			producers: { 'house-1': 0, 'house-2': 0 }
 		});
 		expect(save.hero).toEqual({ level: 1, skill: 1, cards: 0 });
 		expect(save.builders).toEqual([]);

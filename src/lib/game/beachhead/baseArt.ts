@@ -1543,7 +1543,10 @@ function drawGround(context: CanvasRenderingContext2D, view: IsoView, scene: Hom
 }
 
 /** Draws the whole island; the context is already scaled so a unit is one view unit */
-export function drawHome(context: CanvasRenderingContext2D, scene: HomeScene, view = HOME_VIEW) {
+export function drawHome(context: CanvasRenderingContext2D, input: HomeScene, view = HOME_VIEW) {
+	// A building that is not built yet is not drawn, except while its first level is going up
+	const shown = (key: string) => input.levelOf(key) >= 1 || input.buildProgress(key) !== null;
+	const scene: HomeScene = { ...input, levelOf: (key) => Math.max(1, input.levelOf(key)) };
 	drawGround(context, view, scene);
 
 	const dragging = scene.drag;
@@ -1573,7 +1576,7 @@ export function drawHome(context: CanvasRenderingContext2D, scene: HomeScene, vi
 		});
 	}
 	const keys = (Object.keys(scene.layout.positions) as LayoutKey[]).filter(
-		(key) => !(dragging?.item.kind === 'building' && dragging.item.key === key)
+		(key) => shown(key) && !(dragging?.item.kind === 'building' && dragging.item.key === key)
 	);
 	// The ring of the selected building lies on the ground, under everything that stands on it
 	for (const key of keys) {
@@ -1667,6 +1670,7 @@ export function drawHome(context: CanvasRenderingContext2D, scene: HomeScene, vi
 		});
 	}
 	for (let house = 0; house < HOUSES.width; house++) {
+		if (!shown(`house-${house}`)) continue;
 		standing.push({
 			depth: depthOf(HOUSES.x + house + 0.5, HOUSES.y + 0.5),
 			draw: () =>
@@ -1731,7 +1735,7 @@ export function drawHome(context: CanvasRenderingContext2D, scene: HomeScene, vi
 		{ key: 'quarry', x: QUARRY.x + 1, y: QUARRY.y + 1, z: 1.4 },
 		{ key: 'mine', x: MOUNTAIN.x + 1, y: MOUNTAIN.y + 1, z: 2.3 }
 	];
-	for (const spot of producerSpots) {
+	for (const spot of producerSpots.filter((candidate) => shown(candidate.key))) {
 		const selected = scene.selected?.kind === 'building' && scene.selected.key === spot.key;
 		drawBadge(
 			context,
@@ -1800,7 +1804,8 @@ export function pickHome(
 	layout: BaseLayout,
 	boatCount: number,
 	sx: number,
-	sy: number
+	sy: number,
+	built: (key: string) => boolean = () => true
 ): { kind: 'building'; key: string } | { kind: 'mine'; id: number } | null {
 	// Walls rise above their footprint, so look at the ground under the tap and a little behind it
 	for (const lift of [0, 0.5, 1.0, 1.6, 2.2]) {
@@ -1813,6 +1818,7 @@ export function pickHome(
 		for (const key of Object.keys(layout.positions) as LayoutKey[]) {
 			const at = positionOf(layout, key);
 			const size = footprintOf(key);
+			if (!built(key)) continue;
 			if (x >= at.x && x < at.x + size.width && y >= at.y && y < at.y + size.height) {
 				return { kind: 'building', key };
 			}
@@ -1827,7 +1833,12 @@ export function pickHome(
 				return { kind: 'building', key };
 			}
 		}
-		if (y === HOUSES.y && x >= HOUSES.x && x < HOUSES.x + HOUSES.width) {
+		if (
+			y === HOUSES.y &&
+			x >= HOUSES.x &&
+			x < HOUSES.x + HOUSES.width &&
+			built(`house-${x - HOUSES.x}`)
+		) {
 			return { kind: 'building', key: `house-${x - HOUSES.x}` };
 		}
 		for (let index = 0; index < boatCount; index++) {
