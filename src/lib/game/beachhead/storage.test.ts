@@ -122,3 +122,26 @@ describe('the producers', () => {
 		expect(hp(sturdy)).toBeGreaterThan(hp(plain));
 	});
 });
+
+describe('troop research', () => {
+	it('takes minutes at first and hours later, one troop at a time, and finishes on its own', async () => {
+		const { finishResearch, researchOf, startTroopResearch, troopResearchMs, troopLevel } =
+			await import('./campaign');
+		expect(troopResearchMs(1)).toBe(10 * 60_000);
+		expect(troopResearchMs(7)).toBeGreaterThan(3 * 3_600_000);
+		const save = {
+			...newSave(0),
+			levels: { ...newSave(0).levels, training: 8 },
+			resources: { wood: 99_999, stone: 99_999, iron: 99_999, gold: 9_999 }
+		};
+		const started = startTroopResearch(save, 'assault', 0)!;
+		expect(started.resources.wood).toBeLessThan(save.resources.wood);
+		expect(researchOf(started)!.endsAt).toBe(10 * 60_000);
+		expect(startTroopResearch(started, 'tank', 1)).toBeNull();
+		expect(finishResearch(started, 5 * 60_000)).toBe(started);
+		const done = finishResearch(started, 10 * 60_000);
+		expect(troopLevel(done, 'assault')).toBe(2);
+		expect(researchOf(done)).toBeNull();
+		expect(startTroopResearch(done, 'tank', 10 * 60_000)).not.toBeNull();
+	});
+});

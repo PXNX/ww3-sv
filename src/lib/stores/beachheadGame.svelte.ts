@@ -67,6 +67,10 @@ import {
 	dismissTroop,
 	capturesOf,
 	finishBuilds,
+	finishResearch,
+	researchOf,
+	startTroopResearch,
+	troopResearchMs,
 	fortificationScale,
 	freeBuilderSlots as freeBuilderSlotsOf,
 	grantHeroCards,
@@ -505,7 +509,7 @@ export class BeachheadGame {
 	load() {
 		const stored = parseSave(this.#store().read<unknown>(SAVE_KEY, null));
 		const base = stored ?? newSave(this.#now());
-		const finished = finishBuilds(base, this.#now());
+		const finished = finishResearch(finishBuilds(base, this.#now()), this.#now());
 		const claimed = claimIncome(finished, ISLAND_IDS, this.#now());
 		const takebacks = this.#applyTakebacks(claimed);
 		this.campaign = takebacks;
@@ -514,7 +518,7 @@ export class BeachheadGame {
 
 	/** Finishes any due build and banks production; called often by the base screen */
 	tick() {
-		const finished = finishBuilds(this.campaign, this.#now());
+		const finished = finishResearch(finishBuilds(this.campaign, this.#now()), this.#now());
 		const claimed = claimIncome(finished, ISLAND_IDS, this.#now());
 		const takebacks = this.#applyTakebacks(claimed);
 		if (takebacks !== this.campaign) this.#commit(takebacks, { write: true });
@@ -723,16 +727,29 @@ export class BeachheadGame {
 	}
 
 	canUpgradeTroop(kind: TroopKind): boolean {
-		return canUpgradeTroopAt(this.campaign, kind);
+		return this.research === null && canUpgradeTroopAt(this.campaign, kind);
 	}
 
-	/** Trains a troop level at the training ground; it is paid at once and needs no builder */
+	/** Starts researching the next troop level at the training ground; paid at once, one troop at a time */
 	upgradeTroop(kind: TroopKind): boolean {
-		const next = applyTroopUpgrade(this.campaign, kind);
-		if (next === this.campaign) return false;
+		const next = startTroopResearch(this.campaign, kind, this.#now());
+		if (!next) {
+			this.#play('ui-error', 0.4);
+			return false;
+		}
 		this.#commit(next);
 		this.#play('chime', 0.6);
 		return true;
+	}
+
+	/** The troop being researched, with when it is done */
+	get research() {
+		return researchOf(this.campaign);
+	}
+
+	/** How long the next level of a troop takes to research */
+	troopResearchMs(kind: TroopKind): number {
+		return troopResearchMs(this.troopLevel(kind));
 	}
 
 	/** Trains one unit for gold (plus) or sends one home for a refund (minus) */

@@ -226,6 +226,13 @@ export interface IslandControl {
 }
 
 /** A building upgrade that is running on a builder */
+/** A troop level being researched; it finishes on its own while the base is away */
+export interface TroopResearch {
+	kind: TroopKind;
+	startedAt: number;
+	endsAt: number;
+}
+
 export interface BuildTask {
 	key: BuildingKey;
 	startedAt: number;
@@ -263,6 +270,8 @@ export interface BeachheadSave {
 	layout?: BaseLayout;
 	/** Troops killed in attacks that still wait to be retrained with gold; older saves have none */
 	lost?: Partial<Army>;
+	/** The troop level that is being researched at the training ground, one at a time */
+	research?: TroopResearch;
 	/** The expedition that is out at sea, if any */
 	expedition?: ExpeditionState;
 	/** Crystals: loose stock, levels and the slots on buildings and on the base itself */
@@ -880,6 +889,45 @@ export function applyTroopUpgrade(save: BeachheadSave, kind: TroopKind): Beachhe
 		...save,
 		resources: payResources(save.resources, cost),
 		troops: { ...save.troops, [kind]: troopLevel(save, kind) + 1 }
+	};
+}
+
+/** How long the next level of a troop takes to research: ten minutes, and seventy percent more for every level */
+export function troopResearchMs(level: number): number {
+	return Math.round(10 * 60_000 * Math.pow(1.7, Math.max(0, level - 1)));
+}
+
+export function researchOf(save: BeachheadSave): TroopResearch | null {
+	return save.research ?? null;
+}
+
+/** Starts researching the next level of a troop; paid at once, one troop at a time */
+export function startTroopResearch(
+	save: BeachheadSave,
+	kind: TroopKind,
+	nowMs: number
+): BeachheadSave | null {
+	if (researchOf(save) || !canUpgradeTroop(save, kind) || !Number.isFinite(nowMs)) return null;
+	const cost = troopUpgradeCost(save, kind) as Resources;
+	return {
+		...save,
+		resources: payResources(save.resources, cost),
+		research: {
+			kind,
+			startedAt: nowMs,
+			endsAt: nowMs + troopResearchMs(troopLevel(save, kind))
+		}
+	};
+}
+
+/** Raises the level of a troop whose research is done; returns the same save when it is not */
+export function finishResearch(save: BeachheadSave, nowMs: number): BeachheadSave {
+	const research = researchOf(save);
+	if (!research || nowMs < research.endsAt) return save;
+	return {
+		...save,
+		research: undefined,
+		troops: { ...save.troops, [research.kind]: troopLevel(save, research.kind) + 1 }
 	};
 }
 
