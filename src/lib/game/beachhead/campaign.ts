@@ -125,7 +125,7 @@ export const BUILDING_KEYS: readonly BuildingKey[] = [
 	...WAREHOUSE_KEYS
 ];
 
-export const STARTING_RESOURCES: Resources = { wood: 300, stone: 220, iron: 100, gold: 30 };
+export const STARTING_RESOURCES: Resources = { wood: 300, stone: 220, iron: 100, gold: 120 };
 /** What the home shore produces per minute on its own: the forest's logs, the mountain's ore and a trickle of gold; the islands add their own lines */
 /** Every cottage on the island pays this much gold per minute in taxes */
 export const HOUSE_TAX = 1;
@@ -700,15 +700,15 @@ export function changeTroop(save: BeachheadSave, kind: ArmyKind, delta: number):
 
 /** What retraining one unit costs, in gold; the bigger the unit, the more it takes */
 export const RETRAIN_GOLD: Record<ArmyKind, number> = {
-	assault: 1,
-	demo: 2,
-	medic: 3,
-	mortar: 3,
-	drone: 3,
-	heavy: 4,
-	artillery: 5,
-	tank: 6,
-	apc: 8
+	assault: 5,
+	demo: 10,
+	medic: 15,
+	mortar: 15,
+	drone: 15,
+	heavy: 20,
+	artillery: 25,
+	tank: 30,
+	apc: 40
 };
 
 /** A few volunteers turn up when a base has no troops and no gold, so a bad day is never the end */
@@ -1252,7 +1252,7 @@ export function lootFor(index: number, firstControl: boolean): Resources {
 		wood: Math.round(40 * scale),
 		stone: Math.round(25 * scale),
 		iron: Math.round(12 * scale),
-		gold: Math.round(6 * scale)
+		gold: Math.round(20 * scale)
 	};
 }
 
