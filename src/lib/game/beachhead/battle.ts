@@ -268,6 +268,8 @@ export type BattleEvent =
 			x: number;
 			y: number;
 			radius: number;
+			/** A troop stepped on it, or a missile or shell landed close enough to set it off */
+			cause: 'stepped' | 'skill';
 	  }
 	| { kind: 'jammer-pulse'; x: number; y: number; radius: number; hits: number }
 	| { kind: 'troop-down'; x: number; y: number }
@@ -695,6 +697,11 @@ function stepSkillStrikes(state: BattleState, frameMs: number) {
 			continue;
 		}
 		let hits = 0;
+		// A missile or a shell that lands near a mine sets it off
+		for (const mine of state.buildings) {
+			if (mine.destroyed || !isMine(mine.kind)) continue;
+			if (rectDistance(strike.x, strike.y, mine) <= strike.radius) blastMine(state, mine, 'skill');
+		}
 		for (const building of state.buildings) {
 			if (building.destroyed || building.hp <= 0 || isMine(building.kind)) continue;
 			if (rectDistance(strike.x, strike.y, building) > strike.radius) continue;
@@ -875,27 +882,36 @@ function stepMines(state: BattleState) {
 				setsOffMine(mine.kind, troop.kind) &&
 				Math.hypot(troop.x - x, troop.y - y) <= stats.triggerRadius
 		);
-		if (!stepped) continue;
-		mine.destroyed = true;
-		mine.hp = 0;
-		for (const troop of state.troops) {
-			if (troop.hp <= 0 || Math.hypot(troop.x - x, troop.y - y) > stats.radius) continue;
-			const built = stats.triggeredBy === 'any' || setsOffMine(mine.kind, troop.kind);
-			const share = built ? 1 : stats.otherDamageShare;
-			troop.hp = Math.max(0, troop.hp - Math.round(stats.damage * share));
-			troop.flashMs = 130;
-			if (mine.kind !== 'mine-emp') applyBlast(troop, x, y);
-			troop.stunMs = Math.max(troop.stunMs, stats.stunMs);
-		}
-		state.events.push({
-			kind: 'mine-triggered',
-			buildingId: mine.id,
-			mine: mine.kind,
-			x,
-			y,
-			radius: stats.radius
-		});
+		if (stepped) blastMine(state, mine, 'stepped');
 	}
+}
+
+/** Sets a mine off: it hurts the troops it was built for, shakes everyone nearby and leaves a crater */
+function blastMine(state: BattleState, mine: Building, cause: 'stepped' | 'skill') {
+	if (mine.destroyed || !isMine(mine.kind)) return;
+	const stats = MINES[mine.kind];
+	const x = mine.x + 0.5;
+	const y = mine.y + 0.5;
+	mine.destroyed = true;
+	mine.hp = 0;
+	for (const troop of state.troops) {
+		if (troop.hp <= 0 || Math.hypot(troop.x - x, troop.y - y) > stats.radius) continue;
+		const built = stats.triggeredBy === 'any' || setsOffMine(mine.kind, troop.kind);
+		const share = built ? 1 : stats.otherDamageShare;
+		troop.hp = Math.max(0, troop.hp - Math.round(stats.damage * share));
+		troop.flashMs = 130;
+		if (mine.kind !== 'mine-emp') applyBlast(troop, x, y);
+		troop.stunMs = Math.max(troop.stunMs, stats.stunMs);
+	}
+	state.events.push({
+		kind: 'mine-triggered',
+		buildingId: mine.id,
+		mine: mine.kind,
+		x,
+		y,
+		radius: stats.radius,
+		cause
+	});
 }
 
 export function stepBattle(state: BattleState, dtMs: number) {

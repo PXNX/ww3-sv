@@ -601,7 +601,7 @@ export interface SkillStats {
 }
 
 export const SKILLS: Record<SkillId, SkillStats> = {
-	flamingo: { radius: 2.2, damage: 360, delayMs: 850 },
+	flamingo: { radius: 1.4, damage: 360, delayMs: 850 },
 	barrage: { radius: 1.1, damage: 90, delayMs: 550, shells: 6, scatter: 1.5 },
 	flare: { radius: 0.35, damage: 0, delayMs: 0, durationMs: 9000 },
 	smoke: { radius: 2.3, damage: 0, delayMs: 0, durationMs: 9000 },

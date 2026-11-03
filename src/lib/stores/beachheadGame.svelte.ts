@@ -1313,37 +1313,78 @@ export class BeachheadGame {
 				});
 				break;
 			case 'mine-triggered': {
-				const emp = event.mine === 'mine-emp';
-				this.#effect({
-					kind: 'explosion',
-					x: event.x,
-					y: event.y,
-					size: emp ? 0.3 : 0.5,
-					ageMs: 0,
-					durationMs: 420 * short + 60
-				});
-				this.#effect({
-					kind: 'ring',
-					x: event.x,
-					y: event.y,
-					radius: event.radius,
-					color: emp ? '#7fd8ff' : '#f5c83a',
-					ageMs: 0,
-					durationMs: 520 * short + 60
-				});
-				if (!emp) {
+				// Every mine goes off its own way: shrapnel and a flash, a fireball and a column of smoke,
+				// or a pulse of lightning that crackles outwards
+				const kind = event.mine;
+				const base = { x: event.x, y: event.y, ageMs: 0 };
+				if (kind === 'mine-emp') {
+					for (let ring = 0; ring < 3; ring++) {
+						this.#effect({
+							...base,
+							kind: 'ring',
+							radius: event.radius * (0.5 + ring * 0.25),
+							color: ring % 2 === 0 ? '#7fd8ff' : '#e8f8ff',
+							durationMs: (420 + ring * 160) * short + 60
+						});
+					}
+					this.#effect({ ...base, kind: 'explosion', size: 0.4, durationMs: 320 * short + 60 });
 					this.#effect({
+						...base,
 						kind: 'debris',
-						x: event.x,
-						y: event.y,
-						size: 0.7,
+						size: 0.5,
 						seed: event.buildingId * 2.3,
-						ageMs: 0,
+						durationMs: 500 * short + 60
+					});
+					this.#play('explosion-small', 0.35);
+					this.#shakeBy(0.05);
+				} else if (kind === 'mine-at') {
+					this.#effect({ ...base, kind: 'explosion', size: 1.0, durationMs: 700 * short + 60 });
+					this.#effect({ ...base, kind: 'explosion', size: 0.6, durationMs: 420 * short + 60 });
+					this.#effect({
+						...base,
+						kind: 'ring',
+						radius: event.radius,
+						color: '#f28c28',
 						durationMs: 600 * short + 60
 					});
+					for (let piece = 0; piece < 2; piece++) {
+						this.#effect({
+							...base,
+							kind: 'debris',
+							size: 1.3,
+							seed: event.buildingId * 2.3 + piece,
+							durationMs: 800 * short + 60
+						});
+					}
+					this.#effect({ ...base, kind: 'down', durationMs: 900 * short + 60 });
+					this.#play('explosion-big', 0.8);
+					this.#shakeBy(0.34);
+				} else {
+					this.#effect({ ...base, kind: 'explosion', size: 0.55, durationMs: 420 * short + 60 });
+					this.#effect({
+						...base,
+						kind: 'ring',
+						radius: event.radius,
+						color: '#f5c83a',
+						durationMs: 480 * short + 60
+					});
+					this.#effect({
+						...base,
+						kind: 'debris',
+						size: 0.8,
+						seed: event.buildingId * 2.3,
+						durationMs: 600 * short + 60
+					});
+					this.#effect({
+						...base,
+						kind: 'debris',
+						size: 0.5,
+						seed: event.buildingId * 4.1,
+						durationMs: 500 * short + 60
+					});
+					this.#play('explosion-small', 0.7);
+					this.#shakeBy(0.2);
 				}
-				this.#play('explosion-small', emp ? 0.35 : 0.7);
-				this.#shakeBy(emp ? 0.05 : 0.2);
 				break;
 			}
 			case 'troop-down':

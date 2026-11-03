@@ -11,7 +11,15 @@ import {
 	type MineKind,
 	type TroopKind
 } from './config';
-import { createBattle, deploy, scoreOf, setFocus, stepBattle, type BattleState } from './battle';
+import {
+	castSkill,
+	createBattle,
+	deploy,
+	scoreOf,
+	setFocus,
+	stepBattle,
+	type BattleState
+} from './battle';
 
 function unit(kind: TroopKind) {
 	const stats = TROOPS[kind];
@@ -167,5 +175,36 @@ describe('mines', () => {
 			}
 		}
 		for (const kind of MINE_KINDS) expect(used.has(kind), kind).toBe(true);
+	});
+});
+
+describe('missiles and shells over mines', () => {
+	it('set off every mine they land near, even before a troop steps on it', () => {
+		for (const skill of ['flamingo', 'barrage'] as const) {
+			const state = createBattle(islandWith('mine-at'));
+			castSkill(state, skill, 5.5, 3.5);
+			for (let step = 0; step < 40; step++) stepBattle(state, 100);
+			const mine = state.buildings.find((building) => building.kind === 'mine-at')!;
+			expect(mine.destroyed, skill).toBe(true);
+			const events = state.events.filter((event) => event.kind === 'mine-triggered');
+			expect(events.length, skill).toBeGreaterThan(0);
+			expect(events[0], skill).toMatchObject({ cause: 'skill' });
+		}
+	});
+
+	it('leave a mine alone that is far from the impact', () => {
+		const state = createBattle(islandWith('mine-personnel'));
+		castSkill(state, 'flamingo', 2.2, 7.5);
+		for (let step = 0; step < 40; step++) stepBattle(state, 100);
+		expect(state.buildings.find((building) => building.kind === 'mine-personnel')!.destroyed).toBe(
+			false
+		);
+	});
+
+	it('reports a mine a troop stepped on as stepped', () => {
+		const state = troopOnMine('mine-emp', 'assault');
+		expect(state.events.find((event) => event.kind === 'mine-triggered')).toMatchObject({
+			cause: 'stepped'
+		});
 	});
 });
