@@ -8,7 +8,6 @@
 	import { SUPPORT_SKILLS, type Resources } from '#lib/game/beachhead/campaign.js';
 	import {
 		MAX_SUPPORT_SKILL_LEVEL,
-		MAX_TROOP_LEVEL,
 		TROOPS,
 		type SkillId,
 		type TroopKind
