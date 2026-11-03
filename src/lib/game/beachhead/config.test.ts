@@ -15,6 +15,7 @@ import {
 	TROOP,
 	TROOPS,
 	TROOPS_PER_SQUAD,
+	isMine,
 	type BuildingKind,
 	type SkillId
 } from './config';
@@ -47,7 +48,9 @@ describe('beachhead tuning', () => {
 			expect(stats.width, kind).toBeGreaterThan(0);
 			expect(stats.height, kind).toBeGreaterThan(0);
 			expect(stats.hp, kind).toBeGreaterThan(0);
-			expect(stats.score, kind).toBeGreaterThan(0);
+			// Mines are scenery that bites back: they are not objectives, so they score nothing
+			if (isMine(kind as BuildingKind)) expect(stats.score, kind).toBe(0);
+			else expect(stats.score, kind).toBeGreaterThan(0);
 		}
 	});
 

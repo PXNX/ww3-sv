@@ -10,8 +10,10 @@ import {
 	ROWS,
 	SHORE_X,
 	SKILL_ENERGY,
+	isMine,
 	type BuildingKind,
 	type Island,
+	type MineKind,
 	type SkillId,
 	type TroopKind
 } from '#lib/game/beachhead/config.js';
@@ -39,9 +41,11 @@ import {
 	armyCapacity as armyCapacityOf,
 	azovCommand,
 	boatLoads as boatLoadsOf,
+	buyMine as buyMineIn,
 	buildDurationMs as buildDurationOf,
 	builderSlots as builderSlotsFor,
 	canAfford,
+	canAffordMine,
 	canUpgrade as canUpgradeBuilding,
 	canUpgradeHero,
 	canUpgradeSkill,
@@ -67,14 +71,18 @@ import {
 	isControlled,
 	islandProduction,
 	isUnlocked,
+	layoutOf,
 	levelOf,
 	lootFor,
 	maxLevelOf,
 	modifiersFor,
+	moveBuildingTo,
+	moveMineTo,
 	newSave,
 	parseSave,
 	processTakebacks,
 	recordVictory,
+	sellMine as sellMineIn,
 	skillCardCost,
 	skillUpgradeCost,
 	skillUpgradeLocked,
@@ -99,6 +107,7 @@ import {
 	type ResourceKind,
 	type Resources
 } from '#lib/game/beachhead/campaign.js';
+import type { BaseLayout, Cell } from '#lib/game/beachhead/baseLayout.js';
 import { career } from '#lib/game/career/store.svelte.js';
 import { drawBattlePreview, type Effect, type SceneExtras } from '#lib/game/beachhead/render.js';
 import { highscores, type Highscores } from '#lib/services/highscore.js';
@@ -499,6 +508,57 @@ export class BeachheadGame {
 		return constructionOf(this.campaign, key);
 	}
 
+	/** Where everything stands on the home island grid */
+	get layout(): BaseLayout {
+		return layoutOf(this.campaign);
+	}
+
+	/** The card data of one building, for the island panel */
+	buildRowFor(key: BuildingKey): BuildRow {
+		return this.#buildRow(key);
+	}
+
+	/** Moves a building to a new top-left cell of the island grid; false when it does not fit */
+	moveBuilding(key: BuildingKey, cell: Cell): boolean {
+		const next = moveBuildingTo(this.campaign, key, cell);
+		if (!next) return false;
+		this.#commit(next, { claim: false });
+		this.#play('click', 0.5);
+		return true;
+	}
+
+	canBuyMine(kind: MineKind): boolean {
+		return canAffordMine(this.campaign, kind);
+	}
+
+	/** Buys a mine and puts it on the first free cell of the island */
+	buyMine(kind: MineKind): boolean {
+		const next = buyMineIn(this.campaign, kind);
+		if (!next) {
+			this.#play('ui-error', 0.4);
+			return false;
+		}
+		this.#commit(next, { claim: false });
+		this.#play('chime', 0.5);
+		return true;
+	}
+
+	moveMine(id: number, cell: Cell): boolean {
+		const next = moveMineTo(this.campaign, id, cell);
+		if (!next) return false;
+		this.#commit(next, { claim: false });
+		this.#play('click', 0.5);
+		return true;
+	}
+
+	sellMine(id: number): boolean {
+		const next = sellMineIn(this.campaign, id);
+		if (!next) return false;
+		this.#commit(next, { claim: false });
+		this.#play('click', 0.5);
+		return true;
+	}
+
 	/** Milliseconds left on a build, or null when that building is not being built */
 	buildRemaining(key: BuildingKey): number | null {
 		const task = this.constructionOf(key);
@@ -657,7 +717,7 @@ export class BeachheadGame {
 	}
 
 	/** A tap on the beach lands the next boat there; a tap on a building focuses the troops */
-	tap(worldX: number, worldY: number) {
+	tap(worldX: number, worldY: number, raised: readonly { x: number; y: number }[] = []) {
 		if (this.screen !== 'play' || this.status !== 'playing') return;
 		if (this.battle.status !== 'playing') return;
 
@@ -679,14 +739,20 @@ export class BeachheadGame {
 			return;
 		}
 
-		const building = this.battle.buildings.find(
-			(candidate) =>
-				!candidate.destroyed &&
-				worldX >= candidate.x &&
-				worldX <= candidate.x + candidate.width &&
-				worldY >= candidate.y &&
-				worldY <= candidate.y + candidate.height
-		);
+		// In the isometric view a tall building is tapped on its wall, which lies above its footprint;
+		// the canvas also hands over where the tap would land if it were higher up
+		const hits = (point: { x: number; y: number }) =>
+			this.battle.buildings.find(
+				(candidate) =>
+					!candidate.destroyed &&
+					!isMine(candidate.kind) &&
+					point.x >= candidate.x &&
+					point.x <= candidate.x + candidate.width &&
+					point.y >= candidate.y &&
+					point.y <= candidate.y + candidate.height
+			);
+		let building = hits({ x: worldX, y: worldY });
+		for (const point of raised) building ??= hits(point);
 		this.setFocus(building?.id ?? null);
 		if (building) this.#play('click', 0.5);
 	}
@@ -977,6 +1043,40 @@ export class BeachheadGame {
 				this.#shakeBy(event.big ? 0.42 : 0.16);
 				break;
 			}
+			case 'mine-triggered': {
+				const emp = event.mine === 'mine-emp';
+				this.#effect({
+					kind: 'explosion',
+					x: event.x,
+					y: event.y,
+					size: emp ? 0.3 : 0.5,
+					ageMs: 0,
+					durationMs: 420 * short + 60
+				});
+				this.#effect({
+					kind: 'ring',
+					x: event.x,
+					y: event.y,
+					radius: event.radius,
+					color: emp ? '#7fd8ff' : '#f5c83a',
+					ageMs: 0,
+					durationMs: 520 * short + 60
+				});
+				if (!emp) {
+					this.#effect({
+						kind: 'debris',
+						x: event.x,
+						y: event.y,
+						size: 0.7,
+						seed: event.buildingId * 2.3,
+						ageMs: 0,
+						durationMs: 600 * short + 60
+					});
+				}
+				this.#play('explosion-small', emp ? 0.35 : 0.7);
+				this.#shakeBy(emp ? 0.05 : 0.2);
+				break;
+			}
 			case 'troop-down':
 				this.#effect({
 					kind: 'down',
@@ -1037,8 +1137,10 @@ export class BeachheadGame {
 		this.squadsLeft = battle.squadsLeft;
 		this.troops = troopsAlive(battle);
 		this.deployed = battle.deployed;
-		this.buildingsLeft = battle.buildings.filter((building) => !building.destroyed).length;
-		this.buildingsTotal = battle.buildings.length;
+		// Mines are scenery that bites back; only real structures count towards the objective list
+		const structures = battle.buildings.filter((building) => !isMine(building.kind));
+		this.buildingsLeft = structures.filter((building) => !building.destroyed).length;
+		this.buildingsTotal = structures.length;
 		this.score = scoreOf(battle);
 		this.energy = battle.energy;
 		this.skillsUsed = battle.skillsUsed;

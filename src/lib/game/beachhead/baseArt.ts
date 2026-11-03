@@ -1,0 +1,1023 @@
+/*
+ * The shore base in isometric view: the island slab with its grid, the headquarters, training ground,
+ * dojo, radar tower and eight warehouses, the mines and the landing craft moored at the pier. Every
+ * building changes its look with its level in four steps, so a base that has grown is easy to tell
+ * from a new one at a glance.
+ */
+import { wallLeft, wallRight, drawFlag, drawMineArt } from './buildingArt.js';
+import {
+	BASE_COLS,
+	BASE_ROWS,
+	boatDock,
+	footprintOf,
+	positionOf,
+	type BaseLayout,
+	type Cell,
+	type LayoutKey
+} from './baseLayout.js';
+import {
+	createIsoView,
+	depthOf,
+	drawBar,
+	drawBlob,
+	drawBox,
+	drawCylinder,
+	drawRoof,
+	drawShadow,
+	footprintPath,
+	onGround,
+	paletteOf,
+	shade,
+	type IsoView
+} from './iso.js';
+import {
+	BANNER_SLATE,
+	DIRT,
+	DISPLAY_FONT,
+	EXPLOSION_YELLOW,
+	GOLD,
+	INK,
+	IRON,
+	KHAKI,
+	MUSTARD,
+	PAPER,
+	SAND,
+	SAND_DARK,
+	SEA,
+	SEA_DARK,
+	STEEL,
+	STONE,
+	TIE_RED,
+	WOOD
+} from './palette.js';
+
+export type HomeResource = 'wood' | 'stone' | 'iron' | 'gold';
+
+/** The home island seen from the south, with water on every side and the pier on the right */
+export const HOME_VIEW: IsoView = createIsoView(BASE_COLS, BASE_ROWS, {
+	pad: 1.6,
+	headroom: 2.4,
+	depth: 1.1
+});
+
+/** The picture changes in four steps over a building's levels */
+export function stageOf(level: number, max: number): 0 | 1 | 2 | 3 {
+	const stage = Math.floor(((Math.max(1, level) - 1) / Math.max(1, max)) * 4);
+	return Math.min(3, Math.max(0, stage)) as 0 | 1 | 2 | 3;
+}
+
+/** How tall each building stands, for badges and bars above it */
+export function heightOf(key: LayoutKey, stage: number): number {
+	if (key === 'hq') return 2.1 + stage * 0.35;
+	if (key === 'dojo') return 0.9 + stage * 0.6;
+	if (key === 'radar') return 1.4 + stage * 0.5;
+	if (key === 'training') return 1.0 + stage * 0.1;
+	return 0.9 + stage * 0.2;
+}
+
+export interface HomeScene {
+	layout: BaseLayout;
+	levelOf: (key: string) => number;
+	maxOf: (key: string) => number;
+	/** Fill of the warehouse stock of a resource, 0 to 1 */
+	fillOf: (resource: HomeResource) => number;
+	/** Progress 0 to 1 of a building that is being upgraded, or null */
+	buildProgress: (key: string) => number | null;
+	boatCount: number;
+	timeMs: number;
+	/** Whether the grid and the move hints show */
+	arranging: boolean;
+	selected: { kind: 'building'; key: string } | { kind: 'mine'; id: number } | null;
+	/** A building or mine being dragged, and the cell it would land on */
+	drag: {
+		item: { kind: 'building'; key: LayoutKey } | { kind: 'mine'; id: number };
+		cell: Cell;
+		valid: boolean;
+	} | null;
+}
+
+const RESOURCE_COLOR: Record<HomeResource, string> = {
+	wood: WOOD,
+	stone: STONE,
+	iron: IRON,
+	gold: GOLD
+};
+const ROOF_COLOR: Record<HomeResource, string> = {
+	wood: '#6b4526',
+	stone: '#5b6572',
+	iron: '#3b4048',
+	gold: '#b8891a'
+};
+
+function resourceOf(key: LayoutKey): HomeResource {
+	return (key.split('-')[1] as HomeResource) ?? 'wood';
+}
+
+/** Rows of small windows across one wall, evenly spaced */
+function windowsLeft(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	x: number,
+	width: number,
+	yPlane: number,
+	z0: number,
+	z1: number,
+	count: number,
+	fill = '#cfe6f5'
+) {
+	const pitch = width / count;
+	for (let index = 0; index < count; index++) {
+		const x0 = x + pitch * index + pitch * 0.25;
+		wallLeft(context, view, x0, x0 + pitch * 0.5, yPlane, z0, z1, fill);
+	}
+}
+
+function windowsRight(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	xPlane: number,
+	y: number,
+	depth: number,
+	z0: number,
+	z1: number,
+	count: number,
+	fill = '#cfe6f5'
+) {
+	const pitch = depth / count;
+	for (let index = 0; index < count; index++) {
+		const y0 = y + pitch * index + pitch * 0.25;
+		wallRight(context, view, xPlane, y0, y0 + pitch * 0.5, z0, z1, fill);
+	}
+}
+
+function tower(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	x: number,
+	y: number,
+	size: number,
+	height: number,
+	wall: string,
+	roof: string
+) {
+	drawBox(context, view, x, y, size, size, 0, height, paletteOf(wall));
+	drawRoof(
+		context,
+		view,
+		x - 0.08,
+		y - 0.08,
+		size + 0.16,
+		size + 0.16,
+		height,
+		0.5,
+		paletteOf(roof)
+	);
+}
+
+function drawHq(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	at: Cell,
+	stage: number,
+	timeMs: number
+) {
+	const { x, y } = at;
+	// A paved yard under everything, so the 5 × 5 footprint reads even when the building is smaller
+	drawBox(context, view, x, y, 5, 5, 0, 0.06, paletteOf(SAND_DARK), 0.04);
+	const wall = [WOOD, STONE, '#b7b2a6', '#f1ead8'][stage];
+	const roof = ['#6b4526', TIE_RED, '#b0383d', GOLD][stage];
+	const floors = [1, 2, 2, 3][stage];
+	const body = [3.2, 3.4, 3.4, 3.4][stage];
+	const inset = (5 - body) / 2;
+	const floorHeight = 0.78;
+	const top = floors * floorHeight;
+
+	if (stage >= 2) tower(context, view, x + 0.15, y + 0.15, 0.85, top + 0.7, wall, roof);
+	drawBox(context, view, x + inset, y + inset, body, body, 0.06, top, paletteOf(wall));
+	for (let floor = 0; floor < floors; floor++) {
+		const z0 = 0.2 + floor * floorHeight;
+		windowsLeft(context, view, x + inset + 0.2, body - 0.4, y + inset + body, z0, z0 + 0.4, 3);
+		windowsRight(context, view, x + inset + body, y + inset + 0.2, body - 0.4, z0, z0 + 0.4, 3);
+	}
+	// The door, centred on the south-west wall
+	wallLeft(
+		context,
+		view,
+		x + inset + body / 2 - 0.25,
+		x + inset + body / 2 + 0.25,
+		y + inset + body,
+		0.06,
+		0.62,
+		stage === 3 ? GOLD : INK
+	);
+	drawRoof(
+		context,
+		view,
+		x + inset - 0.12,
+		y + inset - 0.12,
+		body + 0.24,
+		body + 0.24,
+		top,
+		0.55 + stage * 0.1,
+		paletteOf(roof)
+	);
+	if (stage >= 2) {
+		tower(context, view, x + 4.0, y + 0.15, 0.85, top + 0.7, wall, roof);
+		tower(context, view, x + 0.15, y + 4.0, 0.85, top + 0.7, wall, roof);
+		tower(context, view, x + 4.0, y + 4.0, 0.85, top + 0.7, wall, roof);
+	}
+	// A spire and one banner per stage, so the top of a grown headquarters is busy
+	const centre = { x: x + 2.5, y: y + 2.5 };
+	const apex = top + 0.55 + stage * 0.1;
+	drawFlag(
+		context,
+		view,
+		centre.x,
+		centre.y,
+		apex,
+		0.9 + stage * 0.15,
+		TIE_RED,
+		timeMs,
+		1 + stage * 0.15
+	);
+	if (stage >= 1)
+		drawFlag(context, view, x + 0.45, y + 4.55, 0.06, 1.1, BANNER_SLATE, timeMs + 400);
+	if (stage >= 3) {
+		drawBlob(context, view, centre.x, centre.y, apex + 0.05, 0.16, GOLD);
+		drawFlag(context, view, x + 4.55, y + 4.55, 0.06, 1.1, EXPLOSION_YELLOW, timeMs + 900);
+	}
+}
+
+function drawTraining(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	at: Cell,
+	stage: number,
+	timeMs: number
+) {
+	const { x, y } = at;
+	drawBox(context, view, x, y, 3, 3, 0, 0.05, paletteOf(SAND_DARK), 0.04);
+	const length = [1.5, 1.8, 2.2, 2.4][stage];
+	const height = [0.5, 0.6, 0.78, 0.92][stage];
+	drawBox(context, view, x + 0.15, y + 0.15, length, 1.1, 0.05, height, paletteOf(KHAKI));
+	windowsLeft(
+		context,
+		view,
+		x + 0.25,
+		length - 0.2,
+		y + 1.25,
+		0.2,
+		height - 0.12,
+		Math.max(2, Math.round(length))
+	);
+	drawRoof(context, view, x + 0.1, y + 0.1, length + 0.1, 1.2, height, 0.3, paletteOf(STEEL));
+	if (stage >= 2) {
+		drawBox(
+			context,
+			view,
+			x + 0.15 + length + 0.1,
+			y + 0.15,
+			0.55,
+			0.9,
+			0.05,
+			height - 0.15,
+			paletteOf(BANNER_SLATE)
+		);
+	}
+	// Target posts out on the yard, one more with every step
+	for (let post = 0; post < 2 + stage; post++) {
+		const px = x + 0.5 + post * 0.6;
+		const py = y + 2.35;
+		drawBar(context, view, { x: px, y: py, z: 0.05 }, { x: px, y: py, z: 0.6 }, WOOD, 0.06);
+		drawBlob(context, view, px, py, 0.62, 0.15, post % 2 === 0 ? TIE_RED : PAPER, 0.03);
+		drawBlob(context, view, px, py, 0.62, 0.06, TIE_RED, 0);
+	}
+	if (stage >= 1) {
+		for (let bag = 0; bag < 3 + stage; bag++) {
+			drawBlob(
+				context,
+				view,
+				x + 2.4 + (bag % 2) * 0.2,
+				y + 0.5 + bag * 0.3,
+				0.12,
+				0.17,
+				KHAKI,
+				0.03
+			);
+		}
+	}
+	if (stage >= 3) drawFlag(context, view, x + 2.7, y + 0.35, 0.05, 1.3, TIE_RED, timeMs);
+}
+
+function drawDojo(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	at: Cell,
+	stage: number,
+	timeMs: number
+) {
+	const { x, y } = at;
+	drawBox(context, view, x, y, 3, 3, 0, 0.14, paletteOf(STONE), 0.04);
+	const tiers = stage + 1;
+	let z = 0.14;
+	for (let tier = 0; tier < tiers; tier++) {
+		const size = 2.2 - tier * 0.4;
+		const inset = (3 - size) / 2;
+		const height = 0.5;
+		drawBox(context, view, x + inset, y + inset, size, size, z, z + height, paletteOf('#f1ead8'));
+		windowsLeft(
+			context,
+			view,
+			x + inset + 0.15,
+			size - 0.3,
+			y + inset + size,
+			z + 0.14,
+			z + 0.38,
+			2,
+			INK
+		);
+		drawRoof(
+			context,
+			view,
+			x + inset - 0.22,
+			y + inset - 0.22,
+			size + 0.44,
+			size + 0.44,
+			z + height,
+			0.3,
+			paletteOf(stage >= 3 ? GOLD : TIE_RED)
+		);
+		z += height + 0.18;
+	}
+	drawBlob(context, view, x + 1.5, y + 1.5, z + 0.1, 0.12, EXPLOSION_YELLOW);
+	// Paper lanterns by the steps
+	for (const lantern of [0.25, 2.55]) {
+		drawBar(
+			context,
+			view,
+			{ x: x + lantern, y: y + 2.75, z: 0.14 },
+			{ x: x + lantern, y: y + 2.75, z: 0.55 },
+			WOOD,
+			0.05
+		);
+		drawBlob(
+			context,
+			view,
+			x + lantern,
+			y + 2.75,
+			0.6,
+			0.11,
+			stage >= 1 ? EXPLOSION_YELLOW : PAPER,
+			0.03
+		);
+	}
+	if (stage >= 2) drawFlag(context, view, x + 2.7, y + 0.3, 0.14, 1.2, TIE_RED, timeMs);
+}
+
+function drawRadar(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	at: Cell,
+	stage: number,
+	timeMs: number
+) {
+	const { x, y } = at;
+	drawBox(context, view, x, y, 2, 2, 0, 0.06, paletteOf(SAND_DARK), 0.04);
+	drawBox(context, view, x + 0.3, y + 0.5, 1.0, 1.0, 0.06, 0.45, paletteOf(KHAKI));
+	const mastHeight = 1.3 + stage * 0.5;
+	// A lattice mast of four legs that tighten towards the top
+	const cx = x + 1.45;
+	const cy = y + 0.8;
+	for (const [dx, dy] of [
+		[-0.2, -0.2],
+		[0.2, -0.2],
+		[-0.2, 0.2],
+		[0.2, 0.2]
+	] as const) {
+		drawBar(
+			context,
+			view,
+			{ x: cx + dx, y: cy + dy, z: 0.06 },
+			{ x: cx + dx * 0.4, y: cy + dy * 0.4, z: mastHeight },
+			STEEL,
+			0.05
+		);
+	}
+	const top = view.project(cx, cy, mastHeight);
+	// The dish turns slowly; bigger at each step, with a second small one from the third
+	const turn = timeMs / 900;
+	const dishes = stage >= 2 ? 2 : 1;
+	for (let dish = 0; dish < dishes; dish++) {
+		const size = (dish === 0 ? 0.42 : 0.28) + stage * 0.05;
+		const dx = dish === 0 ? 0 : -0.35;
+		const dy = dish === 0 ? 0 : 0.4;
+		context.save();
+		context.translate(top.x + dx, top.y + dy);
+		context.rotate(Math.sin(turn + dish) * 0.5 - 0.5);
+		context.beginPath();
+		context.ellipse(0, 0, size, size * 0.55, 0, 0, Math.PI * 2);
+		context.fillStyle = '#e9eef2';
+		context.fill();
+		context.lineWidth = 0.05;
+		context.strokeStyle = INK;
+		context.stroke();
+		context.beginPath();
+		context.arc(0, 0, size * 0.18, 0, Math.PI * 2);
+		context.fillStyle = TIE_RED;
+		context.fill();
+		context.restore();
+	}
+	if (stage >= 3) {
+		const blink = Math.sin(timeMs / 300) > 0 ? TIE_RED : '#7a1a1a';
+		drawBlob(context, view, cx, cy, mastHeight + 0.1, 0.09, blink, 0.03);
+	}
+}
+
+/** A little heap of whatever the warehouse holds, growing with the stock */
+function drawPile(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	x: number,
+	y: number,
+	resource: HomeResource,
+	size: number
+) {
+	const count = 1 + Math.round(size * 3);
+	for (let item = 0; item < count; item++) {
+		const px = x + (item % 2) * 0.3;
+		const py = y - Math.floor(item / 2) * 0.28 + (item % 2) * 0.1;
+		const lift = Math.floor(item / 2) * 0.06;
+		if (resource === 'wood') {
+			drawCylinder(context, view, px, py, 0.14, lift, lift + 0.32, paletteOf(WOOD), 0.035);
+		} else if (resource === 'stone') {
+			drawBox(
+				context,
+				view,
+				px - 0.14,
+				py - 0.14,
+				0.28,
+				0.28,
+				lift,
+				lift + 0.22,
+				paletteOf(STONE),
+				0.035
+			);
+		} else if (resource === 'iron') {
+			drawBox(
+				context,
+				view,
+				px - 0.17,
+				py - 0.1,
+				0.34,
+				0.2,
+				lift,
+				lift + 0.16,
+				paletteOf(IRON),
+				0.035
+			);
+		} else {
+			drawCylinder(context, view, px, py, 0.14, lift, lift + 0.08, paletteOf(GOLD), 0.03);
+		}
+	}
+}
+
+function drawWarehouse(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	at: Cell,
+	key: LayoutKey,
+	stage: number,
+	fill: number
+) {
+	const { x, y } = at;
+	const resource = resourceOf(key);
+	drawBox(context, view, x, y, 2, 2, 0, 0.05, paletteOf(SAND_DARK), 0.04);
+	const colour = RESOURCE_COLOR[resource];
+	const size = [1.3, 1.45, 1.45, 1.55][stage];
+	const height = [0.55, 0.65, 0.72, 0.8][stage];
+	const inset = 0.15;
+	drawBox(context, view, x + inset, y + inset, size, size, 0.05, height, paletteOf(colour));
+	// Planks across the front, a door and a roof in the colour of the stock
+	wallLeft(
+		context,
+		view,
+		x + inset + size * 0.32,
+		x + inset + size * 0.68,
+		y + inset + size,
+		0.05,
+		height * 0.7,
+		INK
+	);
+	if (stage >= 1) {
+		wallLeft(
+			context,
+			view,
+			x + inset + 0.08,
+			x + inset + size - 0.08,
+			y + inset + size,
+			height - 0.1,
+			height - 0.05,
+			shade(colour, -0.3)
+		);
+	}
+	drawRoof(
+		context,
+		view,
+		x + inset - 0.06,
+		y + inset - 0.06,
+		size + 0.12,
+		size + 0.12,
+		height,
+		0.25 + stage * 0.07,
+		paletteOf(ROOF_COLOR[resource])
+	);
+	if (stage >= 2) {
+		// A second storey bay on top
+		drawBox(
+			context,
+			view,
+			x + 0.45,
+			y + 0.45,
+			0.7,
+			0.7,
+			height + 0.2,
+			height + 0.55,
+			paletteOf(shade(colour, 0.1))
+		);
+	}
+	if (stage >= 3) {
+		drawCylinder(
+			context,
+			view,
+			x + 0.35,
+			y + 0.35,
+			0.22,
+			0.05,
+			height + 0.9,
+			paletteOf(shade(colour, 0.15))
+		);
+	}
+	drawPile(context, view, x + 1.75, y + 1.75, resource, fill);
+}
+
+function drawBoat(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	index: number,
+	level: number,
+	max: number,
+	timeMs: number
+) {
+	const dock = boatDock(index);
+	const stage = stageOf(level, max);
+	const bob = Math.sin(timeMs / 650 + index * 1.7) * 0.04;
+	const length = 1.2 + stage * 0.12;
+	const x = dock.x + 0.1;
+	const y = dock.y;
+	const at = view.project(x + 0.3, y + length / 2, bob);
+	context.strokeStyle = 'rgba(255,255,255,0.55)';
+	context.lineWidth = 0.05;
+	context.beginPath();
+	context.ellipse(at.x, at.y + 0.12, 0.8, 0.3, 0, 0, Math.PI * 2);
+	context.stroke();
+	drawBox(context, view, x, y, 0.65, length, bob, 0.22 + bob, paletteOf(STEEL));
+	drawBox(
+		context,
+		view,
+		x + 0.08,
+		y + 0.15,
+		0.49,
+		length - 0.3,
+		0.22 + bob,
+		0.28 + bob,
+		paletteOf(KHAKI)
+	);
+	if (stage >= 1) {
+		drawBox(
+			context,
+			view,
+			x + 0.14,
+			y + 0.3,
+			0.37,
+			0.4,
+			0.28 + bob,
+			0.55 + bob,
+			paletteOf(BANNER_SLATE)
+		);
+		drawBar(
+			context,
+			view,
+			{ x: x + 0.32, y: y + 0.5, z: 0.55 + bob },
+			{ x: x + 0.32, y: y + 0.5, z: 1.0 + bob },
+			STEEL,
+			0.05
+		);
+	}
+	if (stage >= 2) {
+		drawBox(
+			context,
+			view,
+			x + 0.14,
+			y + length - 0.55,
+			0.37,
+			0.3,
+			0.28 + bob,
+			0.46 + bob,
+			paletteOf(KHAKI)
+		);
+	}
+	if (stage >= 3) {
+		drawCylinder(
+			context,
+			view,
+			x + 0.32,
+			y + length - 0.15,
+			0.12,
+			0.28 + bob,
+			0.4 + bob,
+			paletteOf(STEEL)
+		);
+		drawBlob(context, view, x + 0.32, y + 0.5, 1.02 + bob, 0.07, GOLD, 0.03);
+	}
+	const flag = view.project(x + 0.32, y + 0.5, (stage >= 1 ? 1.0 : 0.5) + bob);
+	context.beginPath();
+	context.moveTo(flag.x, flag.y);
+	context.lineTo(flag.x + 0.3, flag.y + 0.05);
+	context.lineTo(flag.x, flag.y + 0.14);
+	context.closePath();
+	context.fillStyle = TIE_RED;
+	context.fill();
+}
+
+/** An empty mooring where a landing craft will join at a later headquarters level */
+function drawEmptyBerth(context: CanvasRenderingContext2D, view: IsoView, index: number) {
+	const dock = boatDock(index);
+	context.save();
+	context.globalAlpha = 0.5;
+	context.setLineDash([0.12, 0.1]);
+	context.strokeStyle = PAPER;
+	context.lineWidth = 0.05;
+	footprintPath(context, view, dock.x + 0.1, dock.y, 0.65, 1.2);
+	context.stroke();
+	context.restore();
+}
+
+function drawHomeBuilding(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	scene: HomeScene,
+	key: LayoutKey,
+	ghostAt?: Cell
+) {
+	const at = ghostAt ?? positionOf(scene.layout, key);
+	const stage = stageOf(scene.levelOf(key), scene.maxOf(key));
+	const size = footprintOf(key);
+	drawShadow(context, view, at.x, at.y, size.width, size.height);
+	if (key === 'hq') drawHq(context, view, at, stage, scene.timeMs);
+	else if (key === 'training') drawTraining(context, view, at, stage, scene.timeMs);
+	else if (key === 'dojo') drawDojo(context, view, at, stage, scene.timeMs);
+	else if (key === 'radar') drawRadar(context, view, at, stage, scene.timeMs);
+	else drawWarehouse(context, view, at, key, stage, scene.fillOf(resourceOf(key)));
+}
+
+function drawBadge(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	x: number,
+	y: number,
+	z: number,
+	text: string,
+	fill: string,
+	selected: boolean
+) {
+	const at = view.project(x, y, z);
+	context.font = `bold 0.4px ${DISPLAY_FONT}`;
+	const width = Math.max(0.62, context.measureText(text).width + 0.3);
+	const height = 0.52;
+	context.beginPath();
+	context.roundRect(at.x - width / 2, at.y - height / 2, width, height, 0.14);
+	context.fillStyle = fill;
+	context.fill();
+	context.lineWidth = selected ? 0.1 : 0.06;
+	context.strokeStyle = selected ? EXPLOSION_YELLOW : INK;
+	context.stroke();
+	context.fillStyle = INK;
+	context.textAlign = 'center';
+	context.textBaseline = 'middle';
+	context.fillText(text, at.x, at.y + 0.02);
+}
+
+function drawConstruction(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	at: Cell,
+	size: { width: number; height: number },
+	progress: number,
+	top: number,
+	timeMs: number
+) {
+	// Scaffold poles on the corners and a progress bar floating above
+	const corners = [
+		[at.x, at.y + size.height],
+		[at.x + size.width, at.y + size.height],
+		[at.x + size.width, at.y]
+	] as const;
+	for (const [cx, cy] of corners) {
+		drawBar(context, view, { x: cx, y: cy, z: 0 }, { x: cx, y: cy, z: top }, MUSTARD, 0.07);
+	}
+	const a = view.project(at.x, at.y + size.height, top);
+	const b = view.project(at.x + size.width, at.y + size.height, top);
+	const c = view.project(at.x + size.width, at.y, top);
+	context.strokeStyle = MUSTARD;
+	context.lineWidth = 0.07;
+	context.beginPath();
+	context.moveTo(a.x, a.y);
+	context.lineTo(b.x, b.y);
+	context.lineTo(c.x, c.y);
+	context.stroke();
+	const centre = view.project(at.x + size.width / 2, at.y + size.height / 2, top + 0.9);
+	const width = 1.5;
+	context.fillStyle = INK;
+	context.fillRect(centre.x - width / 2 - 0.04, centre.y - 0.12, width + 0.08, 0.24);
+	context.fillStyle = EXPLOSION_YELLOW;
+	context.fillRect(
+		centre.x - width / 2,
+		centre.y - 0.08,
+		width * Math.min(1, Math.max(0, progress)),
+		0.16
+	);
+	// A hammer taps while the builders work
+	const tap = Math.sin(timeMs / 140) * 0.1;
+	context.strokeStyle = INK;
+	context.lineWidth = 0.07;
+	context.beginPath();
+	context.moveTo(centre.x + width / 2 + 0.25, centre.y + 0.12);
+	context.lineTo(centre.x + width / 2 + 0.25 + tap, centre.y - 0.2);
+	context.stroke();
+}
+
+function drawGround(context: CanvasRenderingContext2D, view: IsoView, scene: HomeScene) {
+	context.fillStyle = SEA;
+	context.fillRect(0, 0, view.width, view.height);
+	onGround(context, view, () => {
+		context.strokeStyle = SEA_DARK;
+		context.lineWidth = 0.06;
+		for (let row = -8; row < BASE_ROWS + 8; row += 2) {
+			context.beginPath();
+			const y = row + 0.7;
+			for (let x = -8; x <= BASE_COLS + 8; x += 0.3) {
+				const wave = Math.sin(x * 2 + scene.timeMs / 700 + row) * 0.09;
+				if (x === -8) context.moveTo(x, y + wave);
+				else context.lineTo(x, y + wave);
+			}
+			context.stroke();
+		}
+	});
+
+	const edge = 0.7;
+	const lo = -edge;
+	const hi = BASE_COLS + edge;
+	const p = view.project;
+	const thickness = 0.8;
+	const wall = (from: [number, number], to: [number, number], fill: string) => {
+		context.beginPath();
+		context.moveTo(p(from[0], from[1]).x, p(from[0], from[1]).y);
+		context.lineTo(p(to[0], to[1]).x, p(to[0], to[1]).y);
+		context.lineTo(p(to[0], to[1], -thickness).x, p(to[0], to[1], -thickness).y);
+		context.lineTo(p(from[0], from[1], -thickness).x, p(from[0], from[1], -thickness).y);
+		context.closePath();
+		context.fillStyle = fill;
+		context.fill();
+		context.lineWidth = 0.08;
+		context.lineJoin = 'round';
+		context.strokeStyle = INK;
+		context.stroke();
+	};
+	wall([lo, hi], [hi, hi], DIRT);
+	wall([hi, lo], [hi, hi], shade(DIRT, -0.2));
+
+	onGround(context, view, () => {
+		context.fillStyle = SAND;
+		context.fillRect(lo, lo, hi - lo, hi - lo);
+		context.lineWidth = 0.06;
+		context.strokeStyle = INK;
+		context.strokeRect(lo, lo, hi - lo, hi - lo);
+		// The grass inside the beach
+		context.fillStyle = shade(KHAKI, 0.5);
+		context.fillRect(0, 0, BASE_COLS, BASE_ROWS);
+		// Foam along the two near shores
+		context.strokeStyle = PAPER;
+		context.lineWidth = 0.12;
+		context.beginPath();
+		context.moveTo(lo, hi + 0.12);
+		context.lineTo(hi + 0.12, hi + 0.12);
+		context.lineTo(hi + 0.12, lo);
+		context.stroke();
+		// A path from the headquarters to the pier and the grid, faint unless the player is arranging
+		context.globalAlpha = scene.arranging ? 0.55 : 0.12;
+		context.strokeStyle = INK;
+		context.lineWidth = 0.03;
+		for (let line = 0; line <= BASE_COLS; line++) {
+			context.beginPath();
+			context.moveTo(line, 0);
+			context.lineTo(line, BASE_ROWS);
+			context.moveTo(0, line);
+			context.lineTo(BASE_COLS, line);
+			context.stroke();
+		}
+		context.globalAlpha = 1;
+	});
+
+	// The pier the landing craft are moored at
+	drawBox(context, view, hi, lo, 0.8, hi - lo, 0, 0.12, paletteOf(WOOD), 0.05);
+	for (let post = 0; post < 8; post++) {
+		const y = lo + 0.4 + post * ((hi - lo) / 8);
+		drawBlob(context, view, hi + 0.7, y, 0.14, 0.08, STEEL, 0.03);
+	}
+}
+
+/** Draws the whole island; the context is already scaled so a unit is one view unit */
+export function drawHome(context: CanvasRenderingContext2D, scene: HomeScene, view = HOME_VIEW) {
+	drawGround(context, view, scene);
+
+	const dragging = scene.drag;
+
+	// Mines are flat, so they go under the standing buildings
+	for (const mine of scene.layout.mines) {
+		if (dragging?.item.kind === 'mine' && dragging.item.id === mine.id) continue;
+		drawMineArt(context, view, mine.kind, mine.x, mine.y, scene.timeMs, 1);
+		if (scene.selected?.kind === 'mine' && scene.selected.id === mine.id) {
+			context.save();
+			footprintPath(context, view, mine.x, mine.y, 1, 1);
+			context.lineWidth = 0.09;
+			context.strokeStyle = EXPLOSION_YELLOW;
+			context.stroke();
+			context.restore();
+		}
+	}
+
+	const standing: { depth: number; draw: () => void }[] = [];
+	const keys = (Object.keys(scene.layout.positions) as LayoutKey[]).filter(
+		(key) => !(dragging?.item.kind === 'building' && dragging.item.key === key)
+	);
+	for (const key of keys) {
+		const at = positionOf(scene.layout, key);
+		const size = footprintOf(key);
+		const stage = stageOf(scene.levelOf(key), scene.maxOf(key));
+		standing.push({
+			depth: depthOf(at.x + size.width / 2, at.y + size.height / 2),
+			draw: () => {
+				drawHomeBuilding(context, view, scene, key);
+				const progress = scene.buildProgress(key);
+				if (progress !== null) {
+					drawConstruction(
+						context,
+						view,
+						at,
+						size,
+						progress,
+						heightOf(key, stage) + 0.3,
+						scene.timeMs
+					);
+				}
+			}
+		});
+	}
+	for (let index = 0; index < 8; index++) {
+		const dock = boatDock(index);
+		standing.push({
+			depth: depthOf(dock.x + 0.4, dock.y + 0.6),
+			draw: () => {
+				if (index < scene.boatCount) {
+					drawBoat(
+						context,
+						view,
+						index,
+						scene.levelOf(`boat-${index}`),
+						scene.maxOf(`boat-${index}`),
+						scene.timeMs
+					);
+					const progress = scene.buildProgress(`boat-${index}`);
+					if (progress !== null) {
+						const spot = view.project(dock.x + 0.4, dock.y + 0.6, 1.5);
+						context.fillStyle = INK;
+						context.fillRect(spot.x - 0.5, spot.y - 0.1, 1, 0.2);
+						context.fillStyle = EXPLOSION_YELLOW;
+						context.fillRect(spot.x - 0.46, spot.y - 0.06, 0.92 * progress, 0.12);
+					}
+				} else {
+					drawEmptyBerth(context, view, index);
+				}
+			}
+		});
+	}
+	standing.sort((a, b) => a.depth - b.depth);
+	for (const item of standing) item.draw();
+
+	// Level badges float above the buildings; the selected one is ringed
+	for (const key of keys) {
+		const at = positionOf(scene.layout, key);
+		const size = footprintOf(key);
+		const stage = stageOf(scene.levelOf(key), scene.maxOf(key));
+		const selected = scene.selected?.kind === 'building' && scene.selected.key === key;
+		if (selected) {
+			context.save();
+			footprintPath(context, view, at.x - 0.05, at.y - 0.05, size.width + 0.1, size.height + 0.1);
+			context.lineWidth = 0.1;
+			context.strokeStyle = EXPLOSION_YELLOW;
+			context.setLineDash([0.22, 0.14]);
+			context.stroke();
+			context.restore();
+		}
+		drawBadge(
+			context,
+			view,
+			at.x + size.width / 2,
+			at.y + size.height / 2,
+			heightOf(key, stage) + 0.55,
+			`${scene.levelOf(key)}`,
+			selected ? EXPLOSION_YELLOW : PAPER,
+			selected
+		);
+	}
+	for (let index = 0; index < scene.boatCount; index++) {
+		const dock = boatDock(index);
+		const selected = scene.selected?.kind === 'building' && scene.selected.key === `boat-${index}`;
+		drawBadge(
+			context,
+			view,
+			dock.x + 0.4,
+			dock.y + 0.6,
+			1.4,
+			`${scene.levelOf(`boat-${index}`)}`,
+			selected ? EXPLOSION_YELLOW : PAPER,
+			selected
+		);
+	}
+
+	// The thing being dragged: a green or red footprint on the grid and the building over it
+	if (dragging) {
+		const item = dragging.item;
+		const size = item.kind === 'building' ? footprintOf(item.key) : { width: 1, height: 1 };
+		context.save();
+		footprintPath(context, view, dragging.cell.x, dragging.cell.y, size.width, size.height);
+		context.fillStyle = dragging.valid ? 'rgba(63,166,90,0.55)' : 'rgba(229,72,77,0.55)';
+		context.fill();
+		context.lineWidth = 0.09;
+		context.strokeStyle = dragging.valid ? '#3fa65a' : TIE_RED;
+		context.stroke();
+		context.restore();
+		context.save();
+		context.globalAlpha = 0.85;
+		if (item.kind === 'building') {
+			drawHomeBuilding(context, view, scene, item.key, dragging.cell);
+		} else {
+			const mine = scene.layout.mines.find((candidate) => candidate.id === item.id);
+			if (mine) {
+				drawMineArt(context, view, mine.kind, dragging.cell.x, dragging.cell.y, scene.timeMs, 1);
+			}
+		}
+		context.restore();
+	}
+	context.lineWidth = 0.1;
+	context.strokeStyle = INK;
+	context.strokeRect(0.05, 0.05, view.width - 0.1, view.height - 0.1);
+}
+
+/** Which building or mine stands under a point on the screen, for taps and drags */
+export function pickHome(
+	view: IsoView,
+	layout: BaseLayout,
+	boatCount: number,
+	sx: number,
+	sy: number
+): { kind: 'building'; key: string } | { kind: 'mine'; id: number } | null {
+	// Walls rise above their footprint, so look at the ground under the tap and a little behind it
+	for (const lift of [0, 0.5, 1.0, 1.6, 2.2]) {
+		const ground = view.unproject(sx, sy + lift);
+		const x = Math.floor(ground.x);
+		const y = Math.floor(ground.y);
+		for (const mine of layout.mines) {
+			if (lift === 0 && mine.x === x && mine.y === y) return { kind: 'mine', id: mine.id };
+		}
+		for (const key of Object.keys(layout.positions) as LayoutKey[]) {
+			const at = positionOf(layout, key);
+			const size = footprintOf(key);
+			if (x >= at.x && x < at.x + size.width && y >= at.y && y < at.y + size.height) {
+				return { kind: 'building', key };
+			}
+		}
+		for (let index = 0; index < boatCount; index++) {
+			const dock = boatDock(index);
+			if (
+				ground.x >= dock.x - 0.1 &&
+				ground.x <= dock.x + 1 &&
+				ground.y >= dock.y - 0.1 &&
+				ground.y <= dock.y + 1.6
+			) {
+				return { kind: 'building', key: `boat-${index}` };
+			}
+		}
+	}
+	return null;
+}

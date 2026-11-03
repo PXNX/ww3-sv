@@ -27,9 +27,23 @@ import {
 	TROOPS,
 	type ArmyKind,
 	type Island,
+	type MineKind,
 	type TroopKind
 } from './config.js';
 import type { BattleModifiers, SquadTroop } from './battle.js';
+import {
+	MINE_COST,
+	addMine,
+	defaultLayout,
+	isLayoutKey,
+	mineRefund,
+	moveBuilding,
+	moveMine,
+	normalizeLayout,
+	removeMine,
+	type BaseLayout,
+	type Cell
+} from './baseLayout.js';
 
 export const SAVE_KEY = 'beachhead:save';
 export const SAVE_VERSION = 6;
@@ -166,6 +180,8 @@ export interface BeachheadSave {
 	lastIncomeMs: number;
 	/** Unix milliseconds of the last enemy takeback check */
 	lastTakebackMs: number;
+	/** Where the buildings and mines stand on the home island; saves from before the grid have none */
+	layout?: BaseLayout;
 }
 
 /** Cost of the first upgrade of each building family; each later level grows by a factor */
@@ -514,11 +530,7 @@ export function usedArmySpace(save: BeachheadSave): number {
 }
 
 /** Adds or removes units; adding is refused when the boats have no space left */
-export function changeTroop(
-	save: BeachheadSave,
-	kind: ArmyKind,
-	delta: number
-): BeachheadSave {
+export function changeTroop(save: BeachheadSave, kind: ArmyKind, delta: number): BeachheadSave {
 	if (!ARMY_KINDS.includes(kind) || !Number.isFinite(delta) || delta === 0) return save;
 	const current = save.army[kind];
 	const next = Math.max(0, Math.round(current + delta));
@@ -1230,6 +1242,12 @@ function upgradeV5Save(value: unknown): BeachheadSave | null {
  * warehouse save to the hero dojo and the Azov commander.
  */
 export function parseSave(value: unknown): BeachheadSave | null {
+	const parsed = parseSaveVersions(value);
+	if (parsed?.layout === undefined) return parsed;
+	return { ...parsed, layout: normalizeLayout(parsed.layout) };
+}
+
+function parseSaveVersions(value: unknown): BeachheadSave | null {
 	if (isBeachheadSave(value)) return value;
 	const upgradedV5 = upgradeV5Save(value);
 	if (upgradedV5) return upgradedV5;
@@ -1282,6 +1300,49 @@ export function parseSave(value: unknown): BeachheadSave | null {
 		return { ...save, army: { ...STARTING_ARMY, assault: armyCapacity(save) } };
 	}
 	return save;
+}
+
+/** The island grid of a save, with the default arrangement for saves from before it existed */
+export function layoutOf(save: BeachheadSave): BaseLayout {
+	return save.layout ?? defaultLayout();
+}
+
+/** Moves a building on the home island grid; null when the spot is taken, off the grid or unchanged */
+export function moveBuildingTo(
+	save: BeachheadSave,
+	key: BuildingKey,
+	cell: Cell
+): BeachheadSave | null {
+	if (!isLayoutKey(key)) return null;
+	const layout = moveBuilding(layoutOf(save), key, cell);
+	return layout ? { ...save, layout } : null;
+}
+
+export function canAffordMine(save: BeachheadSave, kind: MineKind): boolean {
+	return canAfford(save, MINE_COST[kind]);
+}
+
+/** Buys a mine and puts it on the first free cell; null when unaffordable or the island is full */
+export function buyMine(save: BeachheadSave, kind: MineKind): BeachheadSave | null {
+	if (!canAffordMine(save, kind)) return null;
+	const layout = addMine(layoutOf(save), kind);
+	if (!layout) return null;
+	return { ...save, resources: payResources(save.resources, MINE_COST[kind]), layout };
+}
+
+export function moveMineTo(save: BeachheadSave, id: number, cell: Cell): BeachheadSave | null {
+	const layout = moveMine(layoutOf(save), id, cell);
+	return layout ? { ...save, layout } : null;
+}
+
+/** Takes a mine away again and pays half of it back, up to what the warehouses can hold */
+export function sellMine(save: BeachheadSave, id: number): BeachheadSave | null {
+	const mine = layoutOf(save).mines.find((candidate) => candidate.id === id);
+	const layout = mine ? removeMine(layoutOf(save), id) : null;
+	if (!mine || !layout) return null;
+	const refund = mineRefund(mine.kind);
+	const refunded = addResources(save, refund);
+	return { ...refunded, layout };
 }
 
 export function islandControl(save: BeachheadSave, islandId: string): IslandControl {

@@ -1,14 +1,13 @@
 <!--
 	Beachhead playfield: the island drawn on a crisp high-DPI canvas that fits the available space
-	without scrolling (the water shows on the sides where the screen is wider than 12:8). A tap on
-	the water or sand lands the next squad on that row; a tap on a building focuses the troops on
+	without scrolling, drawn in isometric view. A tap on the water or sand lands the next squad on
+	that row; a tap on a building focuses the troops on
 	it. Number keys 1 to 8 land a squad on that row, Escape or P pauses.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
-	import { COLUMNS, ROWS } from '#lib/game/beachhead/config.js';
-	import { drawScene } from '#lib/game/beachhead/render.js';
+	import { BATTLE_VIEW, drawScene } from '#lib/game/beachhead/render.js';
 	import { createFixedLoop, onAppHidden } from '#lib/game/loop.js';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
 
@@ -17,28 +16,28 @@
 	let stage: HTMLDivElement | undefined = $state();
 	let canvas: HTMLCanvasElement | undefined = $state();
 	let context: CanvasRenderingContext2D | null = null;
-	/** CSS pixels per grid cell */
+	/** CSS pixels per unit of the isometric view */
 	let scale = 1;
 
 	function draw() {
 		if (!canvas || !context) return;
 		const ratio = window.devicePixelRatio || 1;
 		context.setTransform(scale * ratio, 0, 0, scale * ratio, 0, 0);
-		drawScene(context, game.battle, game.sceneExtras());
+		drawScene(context, game.battle, game.sceneExtras(), BATTLE_VIEW);
 	}
 
-	// The island is 12 by 8 cells; whatever does not fit is left as a calm border, never cropped
+	// The isometric island has a fixed shape; whatever does not fit is left as a calm border, never cropped
 	function resize() {
 		if (!stage || !canvas) return;
 		const width = stage.clientWidth;
 		const height = stage.clientHeight;
 		if (width === 0 || height === 0) return;
-		scale = Math.min(width / COLUMNS, height / ROWS);
+		scale = Math.min(width / BATTLE_VIEW.width, height / BATTLE_VIEW.height);
 		const ratio = window.devicePixelRatio || 1;
-		canvas.style.width = `${COLUMNS * scale}px`;
-		canvas.style.height = `${ROWS * scale}px`;
-		canvas.width = Math.round(COLUMNS * scale * ratio);
-		canvas.height = Math.round(ROWS * scale * ratio);
+		canvas.style.width = `${BATTLE_VIEW.width * scale}px`;
+		canvas.style.height = `${BATTLE_VIEW.height * scale}px`;
+		canvas.width = Math.round(BATTLE_VIEW.width * scale * ratio);
+		canvas.height = Math.round(BATTLE_VIEW.height * scale * ratio);
 		draw();
 	}
 
@@ -72,10 +71,15 @@
 		const rect = canvas?.getBoundingClientRect();
 		if (!rect || rect.width === 0 || rect.height === 0) return;
 		event.preventDefault();
-		game.tap(
-			((event.clientX - rect.left) / rect.width) * COLUMNS,
-			((event.clientY - rect.top) / rect.height) * ROWS
-		);
+		// Screen position in view units, then back down onto the grid; a tall building is tapped on
+		// its wall, so the game also gets the grid spots just above the tapped one
+		const sx = ((event.clientX - rect.left) / rect.width) * BATTLE_VIEW.width;
+		const sy = ((event.clientY - rect.top) / rect.height) * BATTLE_VIEW.height;
+		const ground = BATTLE_VIEW.unproject(sx, sy);
+		game.tap(ground.x, ground.y, [
+			BATTLE_VIEW.unproject(sx, sy + 0.6),
+			BATTLE_VIEW.unproject(sx, sy + 1.2)
+		]);
 	}
 
 	const isInteractive = (target: EventTarget | null) =>

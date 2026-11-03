@@ -8,16 +8,10 @@
 	import type { Component } from 'svelte';
 	import type { SvelteHTMLElements } from 'svelte/elements';
 	import { m } from '#lib/paraglide/messages.js';
-	import {
-		ARMY_KINDS,
-		warehouseIndex,
-		warehouseResource,
-		type BuildingKey,
-		type Resources,
-		type WarehouseKey
-	} from '#lib/game/beachhead/campaign.js';
+	import { ARMY_KINDS, type Resources } from '#lib/game/beachhead/campaign.js';
 	import { MAX_TROOP_LEVEL, TROOPS, type TroopKind } from '#lib/game/beachhead/config.js';
 	import { achievementHint, achievementName, troopName } from '#lib/components/beachheadText.js';
+	import BeachheadIsland from '#lib/components/BeachheadIsland.svelte';
 	import BeachheadTakeoverNotice from '#lib/components/BeachheadTakeoverNotice.svelte';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
 	import IconAnvil from '~icons/lucide/anvil';
@@ -28,15 +22,12 @@
 	import IconTruck from '~icons/lucide/truck';
 	import IconCheck from '~icons/lucide/check';
 	import IconCoins from '~icons/lucide/coins';
-	import IconDumbbell from '~icons/lucide/dumbbell';
-	import IconFlag from '~icons/lucide/flag-triangle-right';
 	import IconGavel from '~icons/lucide/gavel';
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
 	import IconLeaf from '~icons/lucide/leaf';
 	import IconLock from '~icons/lucide/lock';
 	import IconMinus from '~icons/lucide/minus';
 	import IconPlus from '~icons/lucide/plus';
-	import IconRadar from '~icons/lucide/radar';
 	import IconSend from '~icons/lucide/send';
 	import IconShield from '~icons/lucide/shield';
 	import IconShip from '~icons/lucide/ship';
@@ -44,7 +35,6 @@
 	import IconTreePalm from '~icons/lucide/tree-palm';
 	import IconTrophy from '~icons/lucide/trophy';
 	import IconUsers from '~icons/lucide/users';
-	import IconWarehouse from '~icons/lucide/warehouse';
 	import IconWrench from '~icons/lucide/wrench';
 
 	let { game }: { game: BeachheadGame } = $props();
@@ -73,16 +63,6 @@
 		heavy: IconFlame
 	};
 
-	const BUILD_ICONS: Record<
-		'hq' | 'training' | 'radar' | 'boat',
-		Component<SvelteHTMLElements['svg']>
-	> = {
-		hq: IconFlag,
-		training: IconDumbbell,
-		radar: IconRadar,
-		boat: IconShip
-	};
-
 	let clock = $state(0);
 
 	// Supplies tick in whole minutes and builds finish over time; checking often keeps both close
@@ -92,52 +72,6 @@
 			game.tick();
 		}, 5_000);
 		return () => clearInterval(timer);
-	});
-
-	const timeLeft = (ms: number): string => {
-		const total = Math.max(0, Math.ceil(ms / 1000));
-		const minutes = Math.floor(total / 60);
-		const seconds = total % 60;
-		return `${minutes}:${String(seconds).padStart(2, '0')}`;
-	};
-
-	const buildCards = $derived.by(() => {
-		void clock;
-		return game.buildRows().map((row) => {
-			const boatIndex = row.key.startsWith('boat-') ? Number(row.key.slice('boat-'.length)) : null;
-			const boat = boatIndex === null ? null : game.boats[boatIndex];
-			return {
-				...row,
-				boatIndex,
-				unlocked: boat?.unlocked ?? true,
-				capacity: boat?.capacity ?? 0,
-				name:
-					row.key === 'hq'
-						? m.beachhead_upgrade_hq()
-						: row.key === 'training'
-							? m.beachhead_building_training()
-							: row.key === 'radar'
-								? m.beachhead_building_radar()
-								: m.beachhead_building_boat({ index: (boatIndex ?? 0) + 1 }),
-				hint:
-					row.key === 'hq'
-						? m.beachhead_building_hq_hint()
-						: row.key === 'training'
-							? m.beachhead_building_training_hint()
-							: row.key === 'radar'
-								? m.beachhead_building_radar_hint({ count: game.chartedCount })
-								: m.beachhead_building_boat_hint({ space: boat?.capacity ?? 0 }),
-				icon:
-					row.key === 'hq'
-						? BUILD_ICONS.hq
-						: row.key === 'training'
-							? BUILD_ICONS.training
-							: row.key === 'radar'
-								? BUILD_ICONS.radar
-								: BUILD_ICONS.boat,
-				unlockLevel: boatIndex === null ? 0 : boatIndex - 1
-			};
-		});
 	});
 
 	const troopCards = $derived.by(() => {
@@ -152,25 +86,6 @@
 				cost: game.troopUpgradeCost(kind),
 				locked: game.troopUpgradeLocked(kind),
 				canTrain: game.canUpgradeTroop(kind)
-			};
-		});
-	});
-
-	const warehouseCards = $derived.by(() => {
-		void clock;
-		return game.warehouseRows().map((row) => {
-			const kind = warehouseResource(row.key as WarehouseKey);
-			const resource = RESOURCES.find((entry) => entry.kind === kind) ?? RESOURCES[0];
-			return {
-				...row,
-				kind,
-				icon: IconWarehouse,
-				resourceIcon: resource.icon,
-				name: m.beachhead_warehouse_name({
-					resource: resource.label(),
-					index: warehouseIndex(row.key as WarehouseKey) + 1
-				}),
-				capacity: game.storageCapacity(kind)
 			};
 		});
 	});
@@ -292,130 +207,7 @@
 		</span>
 	{/snippet}
 
-	<h3 class="text-xl font-bold">{m.beachhead_warehouses_title()}</h3>
-	<p class="text-sm font-semibold">{m.beachhead_warehouses_intro()}</p>
-	<ul class="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-		{#each warehouseCards as card (card.key)}
-			{@const ResourceIcon = card.resourceIcon}
-			<li>
-				<div class="sticker flex h-full flex-col gap-1.5 p-2.5" style:--tilt="0.6deg">
-					<div class="flex items-center gap-1.5">
-						<IconWarehouse class="size-5 shrink-0" aria-hidden="true" />
-						<div class="min-w-0 leading-tight">
-							<p class="truncate text-sm font-bold">{card.name}</p>
-							{#key card.level}
-								<p class="pop-in text-xs font-semibold">
-									{m.beachhead_upgrade_level({ level: card.level, max: card.max })}
-								</p>
-							{/key}
-						</div>
-						<span
-							class="ml-auto flex shrink-0 items-center gap-0.5 text-xs font-bold tabular-nums"
-							title={m.beachhead_warehouse_hint({ capacity: card.capacity })}
-						>
-							<ResourceIcon class="size-3.5" aria-hidden="true" />
-							{card.capacity}
-						</span>
-					</div>
-					<div class="flex gap-0.5" aria-hidden="true">
-						{#each Array.from({ length: card.max }, (_, index) => index + 1) as pip (pip)}
-							<span
-								class="h-1.5 flex-1 rounded-sm border-2 border-ink {pip <= card.level
-									? 'bg-khaki'
-									: 'bg-paper'}"
-							></span>
-						{/each}
-					</div>
-					{#if card.remainingMs !== null}
-						<p class="flex items-center gap-1 text-xs font-bold text-flag-blue">
-							<IconWrench class="size-3.5" aria-hidden="true" />
-							{m.beachhead_building_remaining({ time: timeLeft(card.remainingMs) })}
-						</p>
-					{:else if card.locked}
-						<p class="flex items-center gap-1 text-xs font-semibold">
-							<IconLock class="size-3.5" aria-hidden="true" />
-							{m.beachhead_upgrade_locked()}
-						</p>
-					{:else if card.cost === null}
-						<p class="text-center text-xs font-bold">{m.beachhead_upgrade_max()}</p>
-					{:else}
-						{@render costChips(card.cost)}
-						<button
-							type="button"
-							class="btn-chunky mt-auto w-full px-2 py-0.5 text-xs"
-							disabled={!card.canStart}
-							onclick={() => game.upgrade(card.key as BuildingKey)}
-						>
-							{m.beachhead_upgrade_button()}
-						</button>
-					{/if}
-				</div>
-			</li>
-		{/each}
-	</ul>
-
-	<h3 class="text-xl font-bold">{m.beachhead_buildings_title()}</h3>
-	{#if game.buildersBusy >= game.builderSlots}
-		<p class="text-sm font-semibold text-tie-red">{m.beachhead_builders_busy()}</p>
-	{/if}
-	<ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-		{#each buildCards as card (card.key)}
-			{@const Icon = card.icon}
-			<li>
-				<div class="sticker flex h-full flex-col gap-2 p-3" style:--tilt="-0.8deg">
-					<div class="flex items-center gap-2">
-						<Icon class="size-6 shrink-0" aria-hidden="true" />
-						<div class="leading-tight">
-							<p class="font-bold">{card.name}</p>
-							{#key card.level}
-								<p class="pop-in text-xs font-semibold">
-									{m.beachhead_upgrade_level({ level: card.level, max: card.max })}
-								</p>
-							{/key}
-						</div>
-					</div>
-					<p class="text-sm leading-snug">{card.hint}</p>
-					<div class="flex gap-1" aria-hidden="true">
-						{#each Array.from({ length: card.max }, (_, index) => index + 1) as pip (pip)}
-							<span
-								class="h-2 flex-1 rounded-sm border-2 border-ink {pip <= card.level
-									? 'bg-khaki'
-									: 'bg-paper'}"
-							></span>
-						{/each}
-					</div>
-					{#if card.remainingMs !== null}
-						<p class="flex items-center gap-1 text-sm font-bold text-flag-blue">
-							<IconWrench class="size-4" aria-hidden="true" />
-							{m.beachhead_building_remaining({ time: timeLeft(card.remainingMs) })}
-						</p>
-					{:else if !card.unlocked}
-						<p class="flex items-center gap-1 text-sm font-semibold">
-							<IconLock class="size-4" aria-hidden="true" />
-							{m.beachhead_boat_locked({ level: card.unlockLevel })}
-						</p>
-					{:else if card.locked}
-						<p class="flex items-center gap-1 text-sm font-semibold">
-							<IconLock class="size-4" aria-hidden="true" />
-							{m.beachhead_upgrade_locked()}
-						</p>
-					{:else if card.cost === null}
-						<p class="mt-auto text-center text-sm font-bold">{m.beachhead_upgrade_max()}</p>
-					{:else}
-						{@render costChips(card.cost)}
-						<button
-							type="button"
-							class="btn-chunky mt-auto w-full text-sm"
-							disabled={!card.canStart}
-							onclick={() => game.upgrade(card.key as BuildingKey)}
-						>
-							{m.beachhead_upgrade_button()}
-						</button>
-					{/if}
-				</div>
-			</li>
-		{/each}
-	</ul>
+	<BeachheadIsland {game} />
 
 	<h3 class="text-xl font-bold">{m.beachhead_training_title()}</h3>
 	<p class="text-sm font-semibold">{m.beachhead_training_intro()}</p>

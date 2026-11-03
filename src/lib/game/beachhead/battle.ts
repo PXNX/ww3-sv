@@ -7,6 +7,7 @@ import {
 	BUILDINGS,
 	COLUMNS,
 	LANDING_X,
+	MINES,
 	PAR_SECONDS,
 	ROWS,
 	SKILLS,
@@ -15,6 +16,8 @@ import {
 	TROOP,
 	TROOPS,
 	TROOPS_PER_SQUAD,
+	VEHICLE_TROOPS,
+	isMine,
 	type BuildingKind,
 	type Island,
 	type ProjectileKind,
@@ -246,6 +249,14 @@ export type BattleEvent =
 			hits: number;
 	  }
 	| { kind: 'building-destroyed'; buildingId: number; x: number; y: number; big: boolean }
+	| {
+			kind: 'mine-triggered';
+			buildingId: number;
+			mine: BuildingKind;
+			x: number;
+			y: number;
+			radius: number;
+	  }
 	| { kind: 'troop-down'; x: number; y: number }
 	| { kind: 'won' }
 	| { kind: 'lost' };
@@ -340,7 +351,7 @@ export function createBattle(
 /** Taps a building to focus the landing party on it; tapping nothing clears the focus */
 export function setFocus(state: BattleState, buildingId: number | null) {
 	const building = state.buildings.find((candidate) => candidate.id === buildingId);
-	state.focusId = building && !building.destroyed ? building.id : null;
+	state.focusId = building && !building.destroyed && !isMine(building.kind) ? building.id : null;
 }
 
 /** What the next support skill costs; every call raises the price for the rest of the attack */
@@ -498,7 +509,7 @@ function settleTroop(state: BattleState, troop: Troop) {
 	troop.x = clamp(troop.x, 0.35, COLUMNS - 0.2);
 	troop.y = clamp(troop.y, 0.2, ROWS - 0.2);
 	for (const building of state.buildings) {
-		if (building.destroyed) continue;
+		if (building.destroyed || isMine(building.kind)) continue;
 		const left = building.x - TROOP.body;
 		const right = building.x + building.width + TROOP.body;
 		const top = building.y - TROOP.body;
@@ -540,7 +551,7 @@ function chooseTarget(state: BattleState, troop: Troop): number | null {
 	let best: Building | null = null;
 	let bestDistance = Number.POSITIVE_INFINITY;
 	for (const building of state.buildings) {
-		if (building.destroyed) continue;
+		if (building.destroyed || isMine(building.kind)) continue;
 		const distance = rectDistance(troop.x, troop.y, building);
 		if (distance < bestDistance - 1e-9) {
 			best = building;
@@ -585,7 +596,7 @@ function landProjectile(state: BattleState, projectile: Projectile) {
 		// A tank shell, mortar bomb or drone strike: damage the buildings around the impact
 		let hits = 0;
 		for (const building of state.buildings) {
-			if (building.destroyed || building.hp <= 0) continue;
+			if (building.destroyed || building.hp <= 0 || isMine(building.kind)) continue;
 			const primary = building.id === projectile.targetId;
 			if (
 				rectDistance(projectile.x, projectile.y, building) > (primary ? radius : projectile.splash)
@@ -662,7 +673,7 @@ function stepSkillStrikes(state: BattleState, frameMs: number) {
 		}
 		let hits = 0;
 		for (const building of state.buildings) {
-			if (building.destroyed || building.hp <= 0) continue;
+			if (building.destroyed || building.hp <= 0 || isMine(building.kind)) continue;
 			if (rectDistance(strike.x, strike.y, building) > strike.radius) continue;
 			building.hp = Math.max(0, building.hp - Math.round(strike.damage));
 			building.flashMs = 130;
@@ -800,10 +811,7 @@ function stepTroopHealing(state: BattleState, frameMs: number) {
 }
 
 /** The strongest command aura covering a troop; the commander does not buff himself */
-function commandBonus(
-	state: BattleState,
-	troop: Troop
-): { damage: number; speed: number } {
+function commandBonus(state: BattleState, troop: Troop): { damage: number; speed: number } {
 	let damage = 0;
 	let speed = 0;
 	for (const ally of state.troops) {
@@ -813,6 +821,54 @@ function commandBonus(
 		speed = Math.max(speed, ally.commandSpeed ?? 0);
 	}
 	return { damage, speed };
+}
+
+/** Whether a troop is the kind of target a mine is built for */
+function setsOffMine(kind: BuildingKind, troopKind: TroopKind): boolean {
+	const stats = isMine(kind) ? MINES[kind] : null;
+	if (!stats) return false;
+	const vehicle = VEHICLE_TROOPS.includes(troopKind);
+	if (stats.triggeredBy === 'any') return true;
+	return stats.triggeredBy === 'vehicle' ? vehicle : !vehicle;
+}
+
+/**
+ * Mines wait on the ground until a troop of the right kind walks over them, then go off once:
+ * the blast hurts the troops it was built for, shakes everyone nearby and leaves a crater.
+ */
+function stepMines(state: BattleState) {
+	for (const mine of state.buildings) {
+		if (mine.destroyed || !isMine(mine.kind)) continue;
+		const stats = MINES[mine.kind];
+		const x = mine.x + 0.5;
+		const y = mine.y + 0.5;
+		const stepped = state.troops.some(
+			(troop) =>
+				troop.hp > 0 &&
+				setsOffMine(mine.kind, troop.kind) &&
+				Math.hypot(troop.x - x, troop.y - y) <= stats.triggerRadius
+		);
+		if (!stepped) continue;
+		mine.destroyed = true;
+		mine.hp = 0;
+		for (const troop of state.troops) {
+			if (troop.hp <= 0 || Math.hypot(troop.x - x, troop.y - y) > stats.radius) continue;
+			const built = stats.triggeredBy === 'any' || setsOffMine(mine.kind, troop.kind);
+			const share = built ? 1 : stats.otherDamageShare;
+			troop.hp = Math.max(0, troop.hp - Math.round(stats.damage * share));
+			troop.flashMs = 130;
+			if (mine.kind !== 'mine-emp') applyBlast(troop, x, y);
+			troop.stunMs = Math.max(troop.stunMs, stats.stunMs);
+		}
+		state.events.push({
+			kind: 'mine-triggered',
+			buildingId: mine.id,
+			mine: mine.kind,
+			x,
+			y,
+			radius: stats.radius
+		});
+	}
 }
 
 export function stepBattle(state: BattleState, dtMs: number) {
@@ -885,7 +941,7 @@ export function stepBattle(state: BattleState, dtMs: number) {
 
 		// Whatever building the troop walks into is shot first: no soldier shoots through a wall
 		for (const building of state.buildings) {
-			if (building.destroyed || building.id === target.id) continue;
+			if (building.destroyed || building.id === target.id || isMine(building.kind)) continue;
 			if (rectDistance(troop.x, troop.y, building) <= TROOP.body) {
 				troop.targetId = building.id;
 				target = building;
@@ -973,6 +1029,7 @@ export function stepBattle(state: BattleState, dtMs: number) {
 		}
 	}
 
+	stepMines(state);
 	stepTroopSpawning(state, frameMs);
 	stepTroopHealing(state, frameMs);
 
@@ -1059,7 +1116,7 @@ export function stepBattle(state: BattleState, dtMs: number) {
 	state.troops = state.troops.filter((troop) => troop.hp > 0);
 
 	for (const building of state.buildings) {
-		if (building.destroyed || building.hp > 0) continue;
+		if (building.destroyed || building.hp > 0 || isMine(building.kind)) continue;
 		building.destroyed = true;
 		// Wrecking a structure recharges the support skills a little, so a long assault can keep going
 		state.energy = Math.min(SKILL_ENERGY.max, state.energy + SKILL_ENERGY.rewardPerBuilding);

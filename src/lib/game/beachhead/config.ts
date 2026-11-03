@@ -20,7 +20,16 @@ export type BuildingKind =
 	| 'sniper'
 	| 'mg'
 	| 'flame'
-	| 'depot';
+	| 'depot'
+	| MineKind;
+
+/** One-cell mines: they sit on the ground and go off when a troop walks over them */
+export type MineKind = 'mine-emp' | 'mine-personnel' | 'mine-at';
+export const MINE_KINDS: readonly MineKind[] = ['mine-personnel', 'mine-at', 'mine-emp'];
+
+export function isMine(kind: BuildingKind): kind is MineKind {
+	return kind === 'mine-emp' || kind === 'mine-personnel' || kind === 'mine-at';
+}
 
 /** Which troop a gun picks when several are in range */
 export type Targeting = 'nearest' | 'weakest' | 'farthest';
@@ -139,7 +148,64 @@ export const BUILDINGS: Record<BuildingKind, BuildingStats> = {
 		splash: 0.45,
 		score: 280
 	},
-	depot: { width: 1, height: 1, hp: 220, damage: 0, range: 0, reloadMs: 0, splash: 0, score: 150 }
+	depot: { width: 1, height: 1, hp: 220, damage: 0, range: 0, reloadMs: 0, splash: 0, score: 150 },
+	// Mines are not shot at and score nothing; their effect lives in MINES
+	'mine-personnel': {
+		width: 1,
+		height: 1,
+		hp: 40,
+		damage: 0,
+		range: 0,
+		reloadMs: 0,
+		splash: 0,
+		score: 0
+	},
+	'mine-at': { width: 1, height: 1, hp: 40, damage: 0, range: 0, reloadMs: 0, splash: 0, score: 0 },
+	'mine-emp': { width: 1, height: 1, hp: 40, damage: 0, range: 0, reloadMs: 0, splash: 0, score: 0 }
+};
+
+/** Vehicles take the full hit from anti-tank mines and shrug off personnel mines */
+export const VEHICLE_TROOPS: readonly TroopKind[] = ['tank', 'apc', 'artillery'];
+
+export interface MineStats {
+	/** Which troops set the mine off by stepping on it */
+	triggeredBy: 'infantry' | 'vehicle' | 'any';
+	/** Distance in cells from the mine at which a troop sets it off */
+	triggerRadius: number;
+	/** Blast radius in cells */
+	radius: number;
+	/** Damage to the troops of the kind the mine is built for; others take the share below */
+	damage: number;
+	otherDamageShare: number;
+	/** Milliseconds every troop in the blast is too shaken to move or shoot */
+	stunMs: number;
+}
+
+export const MINES: Record<MineKind, MineStats> = {
+	'mine-personnel': {
+		triggeredBy: 'infantry',
+		triggerRadius: 0.4,
+		radius: 1.1,
+		damage: 75,
+		otherDamageShare: 0.15,
+		stunMs: 350
+	},
+	'mine-at': {
+		triggeredBy: 'vehicle',
+		triggerRadius: 0.5,
+		radius: 1.2,
+		damage: 280,
+		otherDamageShare: 0.1,
+		stunMs: 500
+	},
+	'mine-emp': {
+		triggeredBy: 'any',
+		triggerRadius: 0.4,
+		radius: 1.9,
+		damage: 12,
+		otherDamageShare: 1,
+		stunMs: 2600
+	}
 };
 
 /** The units the player can load into the landing craft */
@@ -432,7 +498,8 @@ export const ISLANDS: readonly Island[] = [
 			{ kind: 'field-cannon', x: 5, y: 2 },
 			{ kind: 'sniper', x: 7, y: 5 },
 			{ kind: 'mg', x: 4, y: 5 },
-			{ kind: 'depot', x: 6, y: 4 }
+			{ kind: 'depot', x: 6, y: 4 },
+			{ kind: 'mine-personnel', x: 3, y: 4 }
 		]
 	},
 	{
@@ -443,7 +510,8 @@ export const ISLANDS: readonly Island[] = [
 			{ kind: 'mortar', x: 6, y: 4 },
 			{ kind: 'sniper', x: 8, y: 6 },
 			{ kind: 'mg', x: 4, y: 6 },
-			{ kind: 'depot', x: 4, y: 3 }
+			{ kind: 'depot', x: 4, y: 3 },
+			{ kind: 'mine-personnel', x: 3, y: 4 }
 		]
 	},
 	{
@@ -457,7 +525,9 @@ export const ISLANDS: readonly Island[] = [
 			{ kind: 'mg', x: 7, y: 6 },
 			{ kind: 'flame', x: 8, y: 5 },
 			{ kind: 'depot', x: 4, y: 3 },
-			{ kind: 'depot', x: 6, y: 6 }
+			{ kind: 'depot', x: 6, y: 6 },
+			{ kind: 'mine-personnel', x: 3, y: 2 },
+			{ kind: 'mine-personnel', x: 3, y: 5 }
 		]
 	},
 	{
@@ -470,7 +540,9 @@ export const ISLANDS: readonly Island[] = [
 			{ kind: 'field-cannon', x: 6, y: 5 },
 			{ kind: 'fpv-nest', x: 8, y: 0 },
 			{ kind: 'mg', x: 8, y: 6 },
-			{ kind: 'depot', x: 7, y: 3 }
+			{ kind: 'depot', x: 7, y: 3 },
+			{ kind: 'mine-at', x: 5, y: 3 },
+			{ kind: 'mine-personnel', x: 3, y: 3 }
 		]
 	},
 	{
@@ -486,7 +558,9 @@ export const ISLANDS: readonly Island[] = [
 			{ kind: 'fpv-nest', x: 8, y: 4 },
 			{ kind: 'air-defence', x: 5, y: 3 },
 			{ kind: 'flame', x: 8, y: 6 },
-			{ kind: 'depot', x: 5, y: 5 }
+			{ kind: 'depot', x: 5, y: 5 },
+			{ kind: 'mine-emp', x: 3, y: 3 },
+			{ kind: 'mine-at', x: 6, y: 4 }
 		]
 	},
 	{
@@ -503,7 +577,10 @@ export const ISLANDS: readonly Island[] = [
 			{ kind: 'fpv-nest', x: 4, y: 3 },
 			{ kind: 'air-defence', x: 6, y: 0 },
 			{ kind: 'flame', x: 10, y: 6 },
-			{ kind: 'depot', x: 4, y: 6 }
+			{ kind: 'depot', x: 4, y: 6 },
+			{ kind: 'mine-emp', x: 3, y: 3 },
+			{ kind: 'mine-at', x: 6, y: 4 },
+			{ kind: 'mine-personnel', x: 3, y: 5 }
 		]
 	},
 	{
@@ -521,7 +598,10 @@ export const ISLANDS: readonly Island[] = [
 			{ kind: 'fpv-nest', x: 5, y: 3 },
 			{ kind: 'air-defence', x: 7, y: 0 },
 			{ kind: 'flame', x: 8, y: 4 },
-			{ kind: 'depot', x: 4, y: 3 }
+			{ kind: 'depot', x: 4, y: 3 },
+			{ kind: 'mine-emp', x: 3, y: 2 },
+			{ kind: 'mine-at', x: 5, y: 4 },
+			{ kind: 'mine-personnel', x: 3, y: 5 }
 		]
 	},
 	{
@@ -541,7 +621,11 @@ export const ISLANDS: readonly Island[] = [
 			{ kind: 'flame', x: 8, y: 4 },
 			{ kind: 'flame', x: 10, y: 1 },
 			{ kind: 'depot', x: 4, y: 3 },
-			{ kind: 'depot', x: 6, y: 3 }
+			{ kind: 'depot', x: 6, y: 3 },
+			{ kind: 'mine-emp', x: 3, y: 2 },
+			{ kind: 'mine-at', x: 5, y: 4 },
+			{ kind: 'mine-personnel', x: 3, y: 5 },
+			{ kind: 'mine-personnel', x: 3, y: 3 }
 		]
 	}
 ];
