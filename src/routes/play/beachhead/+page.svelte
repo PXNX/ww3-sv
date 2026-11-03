@@ -1,16 +1,18 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import BeachheadBase from '#lib/components/BeachheadBase.svelte';
 	import BeachheadCanvas from '#lib/components/BeachheadCanvas.svelte';
+	import BeachheadIsland from '#lib/components/BeachheadIsland.svelte';
 	import BeachheadMap from '#lib/components/BeachheadMap.svelte';
 	import BeachheadWinPanel from '#lib/components/BeachheadWinPanel.svelte';
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import PauseOverlay from '#lib/components/PauseOverlay.svelte';
+	import ResourceIcon from '#lib/components/ResourceIcon.svelte';
 	import RotateHint from '#lib/components/RotateHint.svelte';
 	import TutorialModal from '#lib/components/TutorialModal.svelte';
-	import { buildingName, islandName } from '#lib/components/beachheadText.js';
-	import type { SkillId } from '#lib/game/beachhead/config.js';
+	import { TROOP_ICONS } from '#lib/components/beachheadIcons.js';
+	import { buildingName, islandName, troopName } from '#lib/components/beachheadText.js';
+	import type { SkillId, TroopKind } from '#lib/game/beachhead/config.js';
 	import {
 		fullscreenAvailable,
 		isFullscreen,
@@ -23,18 +25,19 @@
 	import { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
 	import IconBomb from '~icons/lucide/bomb';
 	import IconCloud from '~icons/lucide/cloud';
-	import IconFlag from '~icons/lucide/flag-triangle-right';
+	import IconCrosshair from '~icons/lucide/crosshair';
 	import IconFlameKindling from '~icons/lucide/flame-kindling';
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconList from '~icons/lucide/list';
-	import IconMap from '~icons/lucide/map';
 	import IconMaximize from '~icons/lucide/maximize';
 	import IconMinimize from '~icons/lucide/minimize';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
 	import IconRocket from '~icons/lucide/rocket';
 	import IconRotate from '~icons/lucide/rotate-ccw';
+	import IconShip from '~icons/lucide/ship';
+	import IconUsers from '~icons/lucide/users';
 	import IconZap from '~icons/lucide/zap';
 
 	const game = new BeachheadGame({ reducedMotion: prefersReducedMotion() });
@@ -51,8 +54,6 @@
 		{ id: 'smoke', icon: IconCloud, label: () => m.beachhead_skill_smoke() },
 		{ id: 'heal', icon: IconHeartPulse, label: () => m.beachhead_skill_heal() }
 	];
-
-	const skillLabel = (id: SkillId) => SKILL_BUTTONS.find((skill) => skill.id === id)?.label() ?? '';
 
 	let showTutorial = $state(false);
 	let fullscreen = $state(false);
@@ -77,6 +78,15 @@
 	const playing = $derived(game.screen === 'play');
 	const running = $derived(game.status === 'playing' || game.status === 'paused');
 	const title = $derived(playing ? `${modeName} · ${islandName(game.islandIndex)}` : modeName);
+	const lootTotal = $derived(
+		game.lootCollected.wood +
+			game.lootCollected.stone +
+			game.lootCollected.iron +
+			game.lootCollected.gold
+	);
+	const fallen = $derived(
+		(Object.entries(game.lastCasualties) as [TroopKind, number][]).filter(([, count]) => count > 0)
+	);
 </script>
 
 <GameShell
@@ -84,25 +94,25 @@
 	score={playing ? game.score : undefined}
 	best={playing ? game.best : undefined}
 	confirmLeave={playing && running}
-	backTo={playing ? () => game.goMap() : undefined}
-	immersive={playing}
+	backTo={playing ? () => game.goMap() : game.screen === 'map' ? () => game.goBase() : undefined}
+	immersive
 	landscape
 >
 	{#snippet actions()}
 		<button
 			type="button"
-			class="btn-chunky px-2 py-1 text-sm sm:px-3"
+			class="btn-chunky px-2 py-1 text-sm"
 			aria-label={m.beachhead_help_button()}
+			title={m.beachhead_help_button()}
 			onclick={openHelp}
 		>
 			<IconHelp class="size-4" aria-hidden="true" />
-			<span class="hidden sm:inline">{m.beachhead_help_button()}</span>
 		</button>
 		{#if playing && running}
 			{#if canFullscreen}
 				<button
 					type="button"
-					class="btn-chunky px-2 py-1 text-sm sm:px-3"
+					class="btn-chunky px-2 py-1 text-sm"
 					aria-label={fullscreen ? m.beachhead_exit_fullscreen() : m.beachhead_fullscreen()}
 					title={fullscreen ? m.beachhead_exit_fullscreen() : m.beachhead_fullscreen()}
 					onclick={toggleFullscreenMode}
@@ -112,98 +122,103 @@
 					{:else}
 						<IconMaximize class="size-4" aria-hidden="true" />
 					{/if}
-					<span class="hidden sm:inline">
-						{fullscreen ? m.beachhead_exit_fullscreen() : m.beachhead_fullscreen()}
-					</span>
 				</button>
 			{/if}
-			<button type="button" class="btn-chunky px-3 py-1 text-sm" onclick={() => game.togglePause()}>
+			<button
+				type="button"
+				class="btn-chunky px-2 py-1 text-sm"
+				aria-label={game.status === 'paused' ? m.game_resume() : m.game_pause()}
+				title={game.status === 'paused' ? m.game_resume() : m.game_pause()}
+				onclick={() => game.togglePause()}
+			>
 				{#if game.status === 'paused'}
 					<IconPlay class="size-4" aria-hidden="true" />
-					{m.game_resume()}
 				{:else}
 					<IconPause class="size-4" aria-hidden="true" />
-					{m.game_pause()}
 				{/if}
 			</button>
-		{:else if !playing}
+		{:else if playing}
 			<button
 				type="button"
-				class="btn-chunky px-2 py-1 text-sm sm:px-3"
-				onclick={() => game.goBase()}
-			>
-				<IconFlag class="size-4" aria-hidden="true" />
-				<span class="hidden sm:inline">{m.beachhead_base_button()}</span>
-			</button>
-			<button
-				type="button"
-				class="btn-chunky px-2 py-1 text-sm sm:px-3"
+				class="btn-chunky px-2 py-1 text-sm"
+				aria-label={m.beachhead_map_button()}
+				title={m.beachhead_map_button()}
 				onclick={() => game.goMap()}
 			>
-				<IconMap class="size-4" aria-hidden="true" />
-				<span class="hidden sm:inline">{m.beachhead_map_button()}</span>
-			</button>
-		{:else}
-			<button type="button" class="btn-chunky px-3 py-1 text-sm" onclick={() => game.goMap()}>
 				<IconList class="size-4" aria-hidden="true" />
-				<span class="hidden sm:inline">{m.beachhead_map_button()}</span>
 			</button>
 		{/if}
 	{/snippet}
 
 	{#if playing}
-		<!-- Played sideways: the island fills the screen and the HUD floats over the top edge -->
+		<!-- Played sideways: the island fills the screen and the HUD floats over it -->
 		<div class="relative flex min-h-0 flex-1 flex-col">
 			<BeachheadCanvas {game} />
 
 			<div
-				class="pointer-events-none absolute inset-x-0 top-[calc(var(--hud-top)+0.15rem)] z-30 flex flex-wrap items-start justify-center gap-1 px-2 font-display text-xs font-bold sm:text-sm"
+				class="pointer-events-none absolute inset-x-0 top-[calc(var(--hud-top)+0.15rem)] z-30 flex flex-wrap items-start justify-center gap-1.5 px-2 font-display text-sm font-bold"
 			>
-				{#if game.squadsLeft > 0}
-					<span class="rounded-md border-2 border-ink bg-paper px-1.5 py-0.5">
-						{m.beachhead_squads({ count: game.squadsLeft })}
-					</span>
-				{/if}
-				<span class="rounded-md border-2 border-ink bg-paper px-1.5 py-0.5">
-					{m.beachhead_troops({ count: game.troops })}
+				<span
+					class="flex items-center gap-1 rounded-full border-2 border-ink bg-paper px-2.5 py-0.5 tabular-nums {game.squadsLeft ===
+					0
+						? 'opacity-50'
+						: ''}"
+					title={m.beachhead_squads({ count: game.squadsLeft })}
+				>
+					<IconShip class="size-4" aria-hidden="true" />
+					{game.squadsLeft}
 				</span>
-				<span class="rounded-md border-2 border-ink bg-paper px-1.5 py-0.5">
-					<IconZap class="inline size-3 -translate-y-px" aria-hidden="true" />
-					{m.beachhead_skill_energy({ energy: game.energy })}
+				<span
+					class="flex items-center gap-1 rounded-full border-2 border-ink bg-paper px-2.5 py-0.5 tabular-nums"
+					title={m.beachhead_troops({ count: game.troops })}
+				>
+					<IconUsers class="size-4" aria-hidden="true" />
+					{game.troops}
+				</span>
+				<span
+					class="flex items-center gap-1 rounded-full border-2 border-ink bg-paper px-2.5 py-0.5 tabular-nums"
+					title={m.beachhead_skill_energy({ energy: game.energy })}
+				>
+					<IconZap class="size-4" aria-hidden="true" />
+					{game.energy}
 				</span>
 				{#if game.focusKind}
-					<span class="rounded-md border-2 border-ink bg-explosion-yellow px-1.5 py-0.5">
-						{m.beachhead_focus({ building: buildingName(game.focusKind) })}
-					</span>
-				{/if}
-				{#if game.squadsLeft === 0}
-					<span class="rounded-md border-2 border-ink bg-tie-red px-1.5 py-0.5 text-paper">
-						{m.beachhead_no_squads()}
-					</span>
-				{:else if game.troops === 0}
-					<span class="rounded-md border-2 border-ink bg-explosion-yellow px-1.5 py-0.5">
-						{m.beachhead_tap_beach()}
+					<span
+						class="flex items-center gap-1 rounded-full border-2 border-ink bg-explosion-yellow px-2.5 py-0.5"
+						title={m.beachhead_focus({ building: buildingName(game.focusKind) })}
+					>
+						<IconCrosshair class="size-4" aria-hidden="true" />
 					</span>
 				{/if}
 			</div>
+
+			{#if lootTotal > 0}
+				<ul
+					class="pointer-events-none absolute top-(--hud-top) right-(--hud-right) z-30 flex flex-col gap-1"
+				>
+					{#each ['wood', 'stone', 'iron', 'gold'] as const as kind (kind)}
+						{#if game.lootCollected[kind] > 0}
+							<li
+								class="pop-in flex items-center gap-1.5 rounded-full border-2 border-ink bg-paper py-0.5 ps-0.5 pe-2.5 font-display text-sm font-bold tabular-nums shadow-[2px_2px_0_var(--color-ink)]"
+							>
+								<ResourceIcon {kind} class="size-6" />
+								+{game.lootCollected[kind]}
+							</li>
+						{/if}
+					{/each}
+				</ul>
+			{/if}
 
 			{#if game.status === 'playing'}
 				<div
 					class="pointer-events-none absolute inset-x-0 bottom-2 z-30 flex flex-col items-center gap-1 px-2"
 				>
-					{#if game.selectedSkill}
-						<span
-							class="pointer-events-auto rounded-md border-2 border-ink bg-explosion-yellow px-2 py-0.5 font-display text-xs font-bold shadow-[2px_2px_0_var(--color-ink)]"
-						>
-							{m.beachhead_skill_aim({ skill: skillLabel(game.selectedSkill) })}
-						</span>
-					{/if}
-					<div class="flex flex-wrap justify-center gap-1">
+					<div class="flex flex-wrap justify-center gap-1.5">
 						{#each SKILL_BUTTONS as skill (skill.id)}
 							{@const SkillIcon = skill.icon}
 							<button
 								type="button"
-								class="btn-chunky pointer-events-auto px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-45 sm:px-3"
+								class="btn-chunky pointer-events-auto relative size-11 rounded-full p-0 disabled:cursor-not-allowed disabled:opacity-45"
 								class:bg-explosion-yellow={game.selectedSkill === skill.id}
 								disabled={!game.canUseSkill && game.selectedSkill !== skill.id}
 								aria-pressed={game.selectedSkill === skill.id}
@@ -211,10 +226,9 @@
 								title={`${skill.label()} — ${m.beachhead_skill_cost({ cost: game.skillPrice })}`}
 								onclick={() => game.chooseSkill(skill.id)}
 							>
-								<SkillIcon class="size-4" aria-hidden="true" />
-								<span class="hidden sm:inline">{skill.label()}</span>
+								<SkillIcon class="mx-auto size-5" aria-hidden="true" />
 								<span
-									class="rounded-md bg-ink px-1 py-0.5 text-[0.62rem] leading-none text-paper tabular-nums"
+									class="absolute -right-1 -bottom-1 rounded-full border-2 border-ink bg-paper px-1 text-[0.62rem] leading-4 font-bold tabular-nums"
 								>
 									{game.skillPrice}
 								</span>
@@ -228,19 +242,29 @@
 
 			{#if game.status === 'paused'}
 				<PauseOverlay onResume={() => game.resume()} cover>
-					<button type="button" class="btn-chunky" onclick={() => game.retry()}>
+					<button
+						type="button"
+						class="btn-chunky"
+						aria-label={m.beachhead_retry()}
+						title={m.beachhead_retry()}
+						onclick={() => game.retry()}
+					>
 						<IconRotate class="size-5" aria-hidden="true" />
-						{m.beachhead_retry()}
 					</button>
-					<button type="button" class="btn-chunky" onclick={() => game.goMap()}>
+					<button
+						type="button"
+						class="btn-chunky"
+						aria-label={m.beachhead_to_map()}
+						title={m.beachhead_to_map()}
+						onclick={() => game.goMap()}
+					>
 						<IconList class="size-5" aria-hidden="true" />
-						{m.beachhead_to_map()}
 					</button>
 				</PauseOverlay>
 			{/if}
 		</div>
 	{:else if game.screen === 'base'}
-		<BeachheadBase {game} />
+		<BeachheadIsland {game} />
 	{:else}
 		<BeachheadMap {game} />
 	{/if}
@@ -254,23 +278,16 @@
 		<p>{m.beachhead_tutorial_goal()}</p>
 		<p>{m.beachhead_tutorial_deploy()}</p>
 		<p>{m.beachhead_tutorial_focus()}</p>
-		<p>{m.beachhead_tutorial_defences()}</p>
 		<p>{m.beachhead_tutorial_skills()}</p>
-		<p>{m.beachhead_tutorial_stars()}</p>
 		<p>{m.beachhead_tutorial_base()}</p>
-		<p>{m.beachhead_tutorial_map()}</p>
-		<p>{m.beachhead_tutorial_landscape()}</p>
 	</TutorialModal>
 
 	<BeachheadWinPanel
 		open={game.status === 'won'}
 		score={game.score}
-		stars={game.stars}
-		alive={game.troops}
-		deployed={game.deployed}
 		loot={game.loot}
+		lost={game.lastCasualties}
 		islandName={islandName(game.islandIndex)}
-		islandIncome={game.islandIncome}
 		newAchievements={game.newAchievements}
 		isNewBest={game.isNewBest}
 		hasNext={game.hasNextIsland}
@@ -292,21 +309,26 @@
 		onRetry={() => game.retry()}
 	>
 		<div class="flex flex-col items-center gap-2">
-			<dl class="flex justify-center gap-6 font-display">
-				<div class="flex flex-col items-center">
-					<dt class="text-xs font-bold uppercase">{m.beachhead_lost_title()}</dt>
-					<dd class="text-2xl font-bold tabular-nums">
-						{m.beachhead_lost_buildings({
-							destroyed: game.buildingsTotal - game.buildingsLeft,
-							total: game.buildingsTotal
-						})}
-					</dd>
-				</div>
-			</dl>
-			<p class="text-sm font-semibold">{m.beachhead_lost_hint()}</p>
-			<button type="button" class="btn-chunky" onclick={() => game.goMap()}>
+			<ul class="flex flex-wrap justify-center gap-1.5" aria-label={m.beachhead_lost_troops()}>
+				{#each fallen as [kind, count] (kind)}
+					{@const LostIcon = TROOP_ICONS[kind]}
+					<li
+						class="flex items-center gap-1 rounded-full border-2 border-ink bg-tie-red px-2 py-0.5 font-display text-sm font-bold text-paper tabular-nums"
+						title={troopName(kind)}
+					>
+						<LostIcon class="size-4" aria-hidden="true" />
+						−{count}
+					</li>
+				{/each}
+			</ul>
+			<button
+				type="button"
+				class="btn-chunky"
+				aria-label={m.beachhead_to_map()}
+				title={m.beachhead_to_map()}
+				onclick={() => game.goMap()}
+			>
 				<IconList class="size-5" aria-hidden="true" />
-				{m.beachhead_to_map()}
 			</button>
 		</div>
 	</GameOverModal>

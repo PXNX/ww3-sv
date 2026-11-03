@@ -979,9 +979,6 @@ export function drawHome(context: CanvasRenderingContext2D, scene: HomeScene, vi
 		}
 		context.restore();
 	}
-	context.lineWidth = 0.1;
-	context.strokeStyle = INK;
-	context.strokeRect(0.05, 0.05, view.width - 0.1, view.height - 0.1);
 }
 
 /** Which building or mine stands under a point on the screen, for taps and drags */

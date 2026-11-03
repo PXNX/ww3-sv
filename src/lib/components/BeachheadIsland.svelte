@@ -1,7 +1,9 @@
 <!--
-	The player's own island in isometric view. Tap a building to see it and level it up; switch to
-	rearranging to drag buildings and mines to other spots on the grid (green shows where they fit,
-	red where they do not), or nudge the selection one cell at a time with the arrow buttons.
+	The home base: your island fills the whole landscape screen in isometric view, and everything else
+	floats over it as round icon buttons, in the manner of a mobile base builder. Resources top right,
+	the army, mines and trophies as a dock bottom left, a big attack button bottom right. Tap a
+	building and a small bar rises with its level and upgrade. Rearranging lets you drag buildings and
+	mines around the grid. Names, hints and counts are icons and numbers; the words live in tooltips.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -27,34 +29,33 @@
 		type Resources,
 		type WarehouseKey
 	} from '#lib/game/beachhead/campaign.js';
+	import { achievementHint, achievementName } from '#lib/components/beachheadText.js';
+	import BeachheadArmy from '#lib/components/BeachheadArmy.svelte';
+	import BeachheadResources from '#lib/components/BeachheadResources.svelte';
+	import BeachheadSheet from '#lib/components/BeachheadSheet.svelte';
+	import BeachheadTakeoverNotice from '#lib/components/BeachheadTakeoverNotice.svelte';
+	import ResourceIcon from '#lib/components/ResourceIcon.svelte';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
-	import IconAnvil from '~icons/lucide/anvil';
 	import IconArrowDownLeft from '~icons/lucide/arrow-down-left';
 	import IconArrowDownRight from '~icons/lucide/arrow-down-right';
 	import IconArrowUpLeft from '~icons/lucide/arrow-up-left';
 	import IconArrowUpRight from '~icons/lucide/arrow-up-right';
-	import IconBlocks from '~icons/lucide/blocks';
 	import IconBomb from '~icons/lucide/bomb';
-	import IconCoins from '~icons/lucide/coins';
-	import IconLeaf from '~icons/lucide/leaf';
+	import IconCheck from '~icons/lucide/check';
+	import IconCircleArrowUp from '~icons/lucide/circle-arrow-up';
+	import IconCrosshair from '~icons/lucide/crosshair';
+	import IconFlag from '~icons/lucide/flag-triangle-right';
+	import IconHammer from '~icons/lucide/hammer';
 	import IconLock from '~icons/lucide/lock';
 	import IconMove from '~icons/lucide/move';
-	import IconTreePalm from '~icons/lucide/tree-palm';
-	import IconWrench from '~icons/lucide/wrench';
+	import IconTrash from '~icons/lucide/trash-2';
+	import IconTrophy from '~icons/lucide/trophy';
+	import IconUsers from '~icons/lucide/users';
 	import IconZap from '~icons/lucide/zap';
 
 	let { game }: { game: BeachheadGame } = $props();
 
-	const RESOURCES: readonly {
-		kind: keyof Resources;
-		icon: Component<SvelteHTMLElements['svg']>;
-		label: () => string;
-	}[] = [
-		{ kind: 'wood', icon: IconLeaf, label: () => m.beachhead_resource_wood() },
-		{ kind: 'stone', icon: IconBlocks, label: () => m.beachhead_resource_stone() },
-		{ kind: 'iron', icon: IconAnvil, label: () => m.beachhead_resource_iron() },
-		{ kind: 'gold', icon: IconCoins, label: () => m.beachhead_resource_gold() }
-	];
+	const RESOURCE_KINDS = ['wood', 'stone', 'iron', 'gold'] as const;
 
 	type Selection = { kind: 'building'; key: string } | { kind: 'mine'; id: number };
 	type Drag = {
@@ -63,6 +64,7 @@
 		cell: Cell;
 		valid: boolean;
 	};
+	type Sheet = 'army' | 'mines' | 'trophies';
 
 	let stage: HTMLDivElement | undefined = $state();
 	let canvas: HTMLCanvasElement | undefined = $state();
@@ -70,6 +72,7 @@
 	let scale = 1;
 	let arranging = $state(false);
 	let selected = $state<Selection | null>(null);
+	let sheet = $state<Sheet | null>(null);
 	let drag: Drag | null = null;
 	let dragging = $state(false);
 	let clock = $state(0);
@@ -104,17 +107,21 @@
 			return { name: m.beachhead_building_dojo(), hint: m.beachhead_building_dojo_hint() };
 		}
 		if (key.startsWith('warehouse-')) {
-			const resource = RESOURCES.find(
-				(entry) => entry.kind === warehouseResource(key as WarehouseKey)
-			);
+			const kind = warehouseResource(key as WarehouseKey);
+			const label =
+				kind === 'wood'
+					? m.beachhead_resource_wood()
+					: kind === 'stone'
+						? m.beachhead_resource_stone()
+						: kind === 'iron'
+							? m.beachhead_resource_iron()
+							: m.beachhead_resource_gold();
 			return {
 				name: m.beachhead_warehouse_name({
-					resource: resource?.label() ?? '',
+					resource: label,
 					index: warehouseIndex(key as WarehouseKey) + 1
 				}),
-				hint: m.beachhead_warehouse_hint({
-					capacity: game.storageCapacity(warehouseResource(key as WarehouseKey))
-				})
+				hint: m.beachhead_warehouse_hint({ capacity: game.storageCapacity(kind) })
 			};
 		}
 		const index = Number(key.slice('boat-'.length));
@@ -126,10 +133,15 @@
 
 	const timeLeft = (ms: number): string => {
 		const total = Math.max(0, Math.ceil(ms / 1000));
-		return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+		const hours = Math.floor(total / 3600);
+		const minutes = Math.floor((total % 3600) / 60);
+		const seconds = total % 60;
+		return hours > 0
+			? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+			: `${minutes}:${String(seconds).padStart(2, '0')}`;
 	};
 
-	/** The card for whatever is selected, re-read as the builders and the stock change */
+	/** The bar for whatever is selected, re-read as the builders and the stock change */
 	const panel = $derived.by(() => {
 		void clock;
 		const current = selected;
@@ -139,19 +151,62 @@
 			return mine ? { type: 'mine' as const, mine } : null;
 		}
 		const key = current.key;
-		const row = game.buildRowFor(key as BuildingKey);
 		const boatIndex = key.startsWith('boat-') ? Number(key.slice('boat-'.length)) : null;
 		return {
 			type: 'building' as const,
 			key,
-			row,
+			row: game.buildRowFor(key as BuildingKey),
 			...describe(key),
 			movable: isLayoutKey(key),
-			footprint: isLayoutKey(key) ? footprintOf(key) : null,
 			boatLocked: boatIndex !== null && !(game.boats[boatIndex]?.unlocked ?? true),
 			boatUnlockLevel: boatIndex === null ? 0 : boatIndex - 1
 		};
 	});
+
+	const dock = $derived<
+		{
+			id: string;
+			label: string;
+			icon: Component<SvelteHTMLElements['svg']>;
+			active: boolean;
+			badge?: number;
+			onclick: () => void;
+		}[]
+	>([
+		{
+			id: 'army',
+			label: m.beachhead_army_title(),
+			icon: IconUsers,
+			active: sheet === 'army',
+			badge: game.lostTotal,
+			onclick: () => (sheet = 'army')
+		},
+		{
+			id: 'mines',
+			label: m.beachhead_island_mines_title(),
+			icon: IconBomb,
+			active: sheet === 'mines',
+			onclick: () => (sheet = 'mines')
+		},
+		{
+			id: 'trophies',
+			label: m.beachhead_achievements_title(),
+			icon: IconTrophy,
+			active: sheet === 'trophies',
+			onclick: () => (sheet = 'trophies')
+		},
+		{
+			id: 'arrange',
+			label: arranging ? m.beachhead_island_arrange_done() : m.beachhead_island_arrange(),
+			icon: IconMove,
+			active: arranging,
+			onclick: () => {
+				arranging = !arranging;
+				drag = null;
+				dragging = false;
+			}
+		}
+	]);
 
 	function buildProgress(key: string): number | null {
 		const task = game.constructionOf(key as BuildingKey);
@@ -163,9 +218,8 @@
 		if (!canvas || !context) return;
 		const ratio = window.devicePixelRatio || 1;
 		context.setTransform(scale * ratio, 0, 0, scale * ratio, 0, 0);
-		const layout = game.layout;
 		drawHome(context, {
-			layout,
+			layout: game.layout,
 			levelOf: (key) => game.levelOf(key as BuildingKey),
 			maxOf: (key) => game.maxLevelOf(key as BuildingKey),
 			fillOf: (resource: HomeResource) => {
@@ -181,15 +235,17 @@
 		});
 	}
 
+	// The island is drawn as large as the screen allows and the sea fills whatever is left over
 	function resize() {
 		if (!stage || !canvas) return;
 		const width = stage.clientWidth;
-		if (width === 0) return;
-		scale = width / HOME_VIEW.width;
+		const height = stage.clientHeight;
+		if (width === 0 || height === 0) return;
+		scale = Math.min(width / HOME_VIEW.width, height / HOME_VIEW.height);
 		const ratio = window.devicePixelRatio || 1;
-		canvas.style.width = `${width}px`;
+		canvas.style.width = `${HOME_VIEW.width * scale}px`;
 		canvas.style.height = `${HOME_VIEW.height * scale}px`;
-		canvas.width = Math.round(width * ratio);
+		canvas.width = Math.round(HOME_VIEW.width * scale * ratio);
 		canvas.height = Math.round(HOME_VIEW.height * scale * ratio);
 		draw(performance.now());
 	}
@@ -206,8 +262,11 @@
 			frame = requestAnimationFrame(tick);
 		};
 		frame = requestAnimationFrame(tick);
-		// The panel needs a heartbeat for the build timers
-		const timer = setInterval(() => (clock = Date.now()), 1000);
+		// Supplies tick in whole minutes and builds finish over time; the bar needs a heartbeat too
+		const timer = setInterval(() => {
+			clock = Date.now();
+			game.tick();
+		}, 1000);
 		return () => {
 			cancelAnimationFrame(frame);
 			clearInterval(timer);
@@ -228,13 +287,8 @@
 		if (event.pointerType === 'mouse' && event.button !== 0) return;
 		const point = viewPoint(event);
 		if (!point) return;
-		const hit = pickHome(
-			HOME_VIEW,
-			game.layout,
-			game.boats.filter((b) => b.unlocked).length,
-			point.x,
-			point.y
-		);
+		const boats = game.boats.filter((boat) => boat.unlocked).length;
+		const hit = pickHome(HOME_VIEW, game.layout, boats, point.x, point.y);
 		selected = hit;
 		if (!hit || !arranging) return;
 		const ground = HOME_VIEW.unproject(point.x, point.y);
@@ -277,10 +331,7 @@
 		const point = viewPoint(event);
 		if (!point) return;
 		const ground = HOME_VIEW.unproject(point.x, point.y);
-		const cell = {
-			x: Math.round(ground.x - drag.grab.x),
-			y: Math.round(ground.y - drag.grab.y)
-		};
+		const cell = { x: Math.round(ground.x - drag.grab.x), y: Math.round(ground.y - drag.grab.y) };
 		drag = { ...drag, cell, valid: fits(drag.item, cell) };
 	}
 
@@ -308,52 +359,32 @@
 		if (mine) game.moveMine(mine.id, { x: mine.x + dx, y: mine.y + dy });
 	}
 
-	function buy(kind: MineKind) {
-		game.buyMine(kind);
-	}
-
-	const costOf = (kind: MineKind): Resources => MINE_COST[kind];
+	const costOf = (kind: MineKind): Resources => ({ ...MINE_COST[kind] });
 </script>
 
-<section class="flex flex-col gap-3" aria-labelledby="beachhead-island-title">
-	<div class="flex flex-wrap items-end justify-between gap-2">
-		<div class="flex items-center gap-3">
-			<span
-				class="flex size-12 shrink-0 items-center justify-center rounded-[14px_8px_16px_10px] border-3 border-ink bg-khaki text-paper shadow-[3px_3px_0_var(--color-ink)]"
-			>
-				<IconTreePalm class="size-7" aria-hidden="true" />
-			</span>
-			<div>
-				<h3 id="beachhead-island-title" class="text-xl font-bold">{m.beachhead_island_title()}</h3>
-				<p class="text-sm font-semibold">{m.beachhead_island_intro()}</p>
-			</div>
-		</div>
-		<button
-			type="button"
-			class="btn-chunky flex items-center gap-1.5 text-sm {arranging ? 'bg-explosion-yellow' : ''}"
-			aria-pressed={arranging}
-			onclick={() => {
-				arranging = !arranging;
-				drag = null;
-				dragging = false;
-			}}
-		>
-			<IconMove class="size-4" aria-hidden="true" />
-			{arranging ? m.beachhead_island_arrange_done() : m.beachhead_island_arrange()}
-		</button>
-	</div>
+{#snippet costChips(cost: Resources)}
+	<span class="flex flex-wrap items-center gap-1 font-display text-xs font-bold">
+		{#each RESOURCE_KINDS as resource (resource)}
+			{#if cost[resource] > 0}
+				<span
+					class="inline-flex items-center gap-0.5 rounded-full border-2 border-ink py-px ps-0.5 pe-1.5 {game
+						.resources[resource] >= cost[resource]
+						? 'bg-paper'
+						: 'bg-tie-red text-paper'}"
+				>
+					<ResourceIcon kind={resource} class="size-4" />
+					{cost[resource]}
+				</span>
+			{/if}
+		{/each}
+	</span>
+{/snippet}
 
-	{#if arranging}
-		<p class="text-sm font-semibold">{m.beachhead_island_arrange_hint()}</p>
-	{/if}
-
-	<div
-		bind:this={stage}
-		class="relative w-full overflow-hidden rounded-[18px_10px_16px_8px] border-3 border-ink shadow-[4px_4px_0_var(--color-ink)]"
-	>
+<div class="relative h-full w-full overflow-hidden bg-[#4fa8d8]">
+	<div bind:this={stage} class="absolute inset-0 flex items-center justify-center">
 		<canvas
 			bind:this={canvas}
-			class="block w-full select-none"
+			class="block shrink-0 select-none"
 			class:touch-none={arranging}
 			class:cursor-grabbing={dragging}
 			class:cursor-grab={arranging && !dragging}
@@ -366,191 +397,286 @@
 		></canvas>
 	</div>
 
-	{#snippet costChips(cost: Resources)}
-		<span class="flex flex-wrap items-center gap-1.5 font-display text-xs font-bold">
-			{#each RESOURCES as resource (resource.kind)}
-				{@const Icon = resource.icon}
-				{#if cost[resource.kind] > 0}
+	<!-- Top left: how many islands are in your hands; the retaken-islands warning sits under it -->
+	<div
+		class="pointer-events-none absolute top-(--hud-top) left-(--hud-left) z-20 flex max-w-[55%] flex-col items-start gap-1.5"
+	>
+		<p
+			class="pointer-events-auto flex items-center gap-1.5 rounded-full border-2 border-ink bg-paper px-2.5 py-0.5 font-display text-sm font-bold tabular-nums shadow-[2px_2px_0_var(--color-ink)]"
+			title={m.beachhead_controlled_count({ count: game.controlled, total: game.islandCount })}
+		>
+			<IconFlag class="size-4 text-khaki" aria-hidden="true" />
+			{game.controlled}/{game.islandCount}
+		</p>
+		<div class="pointer-events-auto">
+			<BeachheadTakeoverNotice {game} />
+		</div>
+	</div>
+
+	<!-- Top right: resources and builders -->
+	<div class="pointer-events-none absolute top-(--hud-top) right-(--hud-right) z-20">
+		<div class="pointer-events-auto">
+			<BeachheadResources {game} />
+		</div>
+	</div>
+
+	<!-- Bottom left: the dock -->
+	<div
+		class="pointer-events-none absolute bottom-[calc(0.5rem+env(safe-area-inset-bottom))] left-(--hud-left) z-20 flex gap-2 *:pointer-events-auto"
+	>
+		{#each dock as item (item.id)}
+			{@const DockIcon = item.icon}
+			<button
+				type="button"
+				class="btn-chunky relative flex size-12 items-center justify-center rounded-full p-0 sm:size-14 {item.active
+					? 'bg-explosion-yellow'
+					: ''}"
+				aria-label={item.label}
+				title={item.label}
+				aria-pressed={item.active}
+				onclick={item.onclick}
+			>
+				<DockIcon class="size-6" aria-hidden="true" />
+				{#if item.badge}
 					<span
-						class="inline-flex items-center gap-0.5 rounded border-2 border-ink px-1 {game
-							.resources[resource.kind] >= cost[resource.kind]
-							? 'bg-paper'
-							: 'bg-tie-red text-paper'}"
-						title={resource.label()}
+						class="absolute -end-1 -top-1 flex min-w-5 items-center justify-center rounded-full border-2 border-ink bg-tie-red px-1 font-display text-[0.7rem] leading-4 font-bold text-paper tabular-nums"
 					>
-						<Icon class="size-3" aria-hidden="true" />
-						{cost[resource.kind]}
+						{item.badge}
 					</span>
 				{/if}
-			{/each}
-		</span>
-	{/snippet}
-
-	{#if panel === null}
-		<p class="text-sm font-semibold">{m.beachhead_island_select_hint()}</p>
-	{:else if panel.type === 'mine'}
-		<div class="sticker flex flex-col gap-2 p-3" style:--tilt="-0.4deg">
-			<div class="flex flex-wrap items-center justify-between gap-2">
-				<div class="flex items-center gap-2">
-					<IconBomb class="size-6 shrink-0" aria-hidden="true" />
-					<div class="leading-tight">
-						<p class="font-bold">{mineName(panel.mine.kind)}</p>
-						<p class="text-xs font-semibold">
-							{m.beachhead_island_footprint({ width: 1, height: 1 })}
-						</p>
-					</div>
-				</div>
-				<button
-					type="button"
-					class="btn-chunky text-sm"
-					onclick={() => game.sellMine(panel.mine.id)}
-				>
-					{m.beachhead_island_mine_sell()}
-				</button>
-			</div>
-			<p class="text-sm leading-snug">{mineHint(panel.mine.kind)}</p>
-		</div>
-	{:else}
-		{@const row = panel.row}
-		<div class="sticker flex flex-col gap-2 p-3" style:--tilt="-0.4deg">
-			<div class="flex flex-wrap items-center justify-between gap-2">
-				<div class="leading-tight">
-					<p class="font-bold">{panel.name}</p>
-					{#key row.level}
-						<p class="pop-in text-xs font-semibold">
-							{m.beachhead_upgrade_level({ level: row.level, max: row.max })}
-							{#if panel.footprint}
-								· {m.beachhead_island_footprint({
-									width: panel.footprint.width,
-									height: panel.footprint.height
-								})}
-							{/if}
-						</p>
-					{/key}
-				</div>
-				<div class="flex gap-1" aria-hidden="true">
-					{#each Array.from({ length: row.max }, (_, index) => index + 1) as pip (pip)}
-						<span
-							class="h-2 w-4 rounded-sm border-2 border-ink {pip <= row.level
-								? 'bg-khaki'
-								: 'bg-paper'}"
-						></span>
-					{/each}
-				</div>
-			</div>
-			<p class="text-sm leading-snug">{panel.hint}</p>
-			{#if row.remainingMs !== null}
-				<p class="flex items-center gap-1 text-sm font-bold text-flag-blue">
-					<IconWrench class="size-4" aria-hidden="true" />
-					{m.beachhead_building_remaining({ time: timeLeft(row.remainingMs) })}
-				</p>
-			{:else if panel.boatLocked}
-				<p class="flex items-center gap-1 text-sm font-semibold">
-					<IconLock class="size-4" aria-hidden="true" />
-					{m.beachhead_boat_locked({ level: panel.boatUnlockLevel })}
-				</p>
-			{:else if row.locked}
-				<p class="flex items-center gap-1 text-sm font-semibold">
-					<IconLock class="size-4" aria-hidden="true" />
-					{m.beachhead_upgrade_locked()}
-				</p>
-			{:else if row.cost === null}
-				<p class="text-sm font-bold">{m.beachhead_upgrade_max()}</p>
-			{:else}
-				<div class="flex flex-wrap items-center justify-between gap-2">
-					{@render costChips(row.cost)}
-					<button
-						type="button"
-						class="btn-chunky text-sm"
-						disabled={!row.canStart}
-						onclick={() => game.upgrade(row.key)}
-					>
-						{m.beachhead_upgrade_button()}
-					</button>
-				</div>
-				{#if game.buildersBusy >= game.builderSlots}
-					<p class="text-xs font-semibold text-tie-red">{m.beachhead_builders_busy()}</p>
-				{/if}
-			{/if}
-		</div>
-	{/if}
-
-	{#if arranging && selected && (selected.kind === 'mine' || isLayoutKey(selected.key))}
-		<div class="flex flex-wrap items-center gap-2">
-			<span class="text-sm font-bold">{m.beachhead_island_move()}</span>
-			<div class="flex gap-1">
-				<button
-					type="button"
-					class="btn-chunky px-2 py-1"
-					aria-label={m.beachhead_island_move_back_left()}
-					onclick={() => nudge(-1, 0)}
-				>
-					<IconArrowUpLeft class="size-4" aria-hidden="true" />
-				</button>
-				<button
-					type="button"
-					class="btn-chunky px-2 py-1"
-					aria-label={m.beachhead_island_move_back_right()}
-					onclick={() => nudge(0, -1)}
-				>
-					<IconArrowUpRight class="size-4" aria-hidden="true" />
-				</button>
-				<button
-					type="button"
-					class="btn-chunky px-2 py-1"
-					aria-label={m.beachhead_island_move_front_left()}
-					onclick={() => nudge(0, 1)}
-				>
-					<IconArrowDownLeft class="size-4" aria-hidden="true" />
-				</button>
-				<button
-					type="button"
-					class="btn-chunky px-2 py-1"
-					aria-label={m.beachhead_island_move_front_right()}
-					onclick={() => nudge(1, 0)}
-				>
-					<IconArrowDownRight class="size-4" aria-hidden="true" />
-				</button>
-			</div>
-		</div>
-	{/if}
-
-	<div class="sticker flex flex-col gap-2 p-3" style:--tilt="0.4deg">
-		<div class="flex flex-wrap items-center justify-between gap-2">
-			<div>
-				<h4 class="font-bold">{m.beachhead_island_mines_title()}</h4>
-				<p class="text-xs font-semibold">{m.beachhead_island_mines_intro()}</p>
-			</div>
-			<p class="rounded-md border-2 border-ink bg-paper px-2 py-0.5 text-xs font-bold tabular-nums">
-				{m.beachhead_island_mines_count({ count: game.layout.mines.length, max: MAX_MINES })}
-			</p>
-		</div>
-		<ul class="grid gap-2 sm:grid-cols-3">
-			{#each MINE_KINDS as kind (kind)}
-				<li class="flex flex-col gap-1.5 rounded-md border-2 border-ink bg-paper p-2">
-					<p class="flex items-center gap-1 text-sm font-bold">
-						{#if kind === 'mine-emp'}
-							<IconZap class="size-4" aria-hidden="true" />
-						{:else}
-							<IconBomb class="size-4" aria-hidden="true" />
-						{/if}
-						{mineName(kind)}
-					</p>
-					<p class="text-xs leading-snug">{mineHint(kind)}</p>
-					{@render costChips(costOf(kind))}
-					<button
-						type="button"
-						class="btn-chunky mt-auto text-sm"
-						disabled={!game.canBuyMine(kind) || game.layout.mines.length >= MAX_MINES}
-						onclick={() => buy(kind)}
-					>
-						{m.beachhead_island_mine_buy()}
-					</button>
-				</li>
-			{/each}
-		</ul>
-		{#if game.layout.mines.length >= MAX_MINES}
-			<p class="text-xs font-semibold text-tie-red">{m.beachhead_island_mines_full()}</p>
-		{/if}
+			</button>
+		{/each}
 	</div>
-</section>
+
+	<!-- Bottom right: off to the islands -->
+	<div
+		class="pointer-events-none absolute right-(--hud-right) bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-20"
+	>
+		<button
+			type="button"
+			class="attack-button btn-chunky pointer-events-auto flex size-16 items-center justify-center rounded-full bg-tie-red p-0 text-paper sm:size-20"
+			aria-label={m.beachhead_to_map()}
+			title={m.beachhead_to_map()}
+			onclick={() => game.goMap()}
+		>
+			<IconCrosshair class="size-9 sm:size-11" aria-hidden="true" />
+		</button>
+	</div>
+
+	<!-- Bottom centre: the selected building or mine -->
+	{#if panel}
+		<div
+			class="pointer-events-none absolute inset-x-0 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-20 flex justify-center px-[11rem] sm:px-[13rem]"
+		>
+			<div
+				class="sticker pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 px-3 py-1.5"
+				style:--tilt="0deg"
+			>
+				{#if panel.type === 'mine'}
+					<p class="flex items-center gap-1.5 font-bold" title={mineHint(panel.mine.kind)}>
+						{#if panel.mine.kind === 'mine-emp'}
+							<IconZap class="size-5" aria-hidden="true" />
+						{:else}
+							<IconBomb class="size-5" aria-hidden="true" />
+						{/if}
+						{mineName(panel.mine.kind)}
+					</p>
+					<button
+						type="button"
+						class="btn-chunky flex size-9 items-center justify-center rounded-full p-0"
+						aria-label={m.beachhead_island_mine_sell()}
+						title={m.beachhead_island_mine_sell()}
+						onclick={() => game.sellMine(panel.mine.id)}
+					>
+						<IconTrash class="size-5" aria-hidden="true" />
+					</button>
+				{:else}
+					{@const row = panel.row}
+					<p class="flex items-center gap-2 leading-tight font-bold" title={panel.hint}>
+						{panel.name}
+						<span
+							class="rounded-full border-2 border-ink bg-paper px-1.5 font-display text-xs tabular-nums"
+							title={m.beachhead_upgrade_level({ level: row.level, max: row.max })}
+						>
+							{row.level}/{row.max}
+						</span>
+					</p>
+					{#if row.remainingMs !== null}
+						<p class="flex items-center gap-1 font-display font-bold text-flag-blue tabular-nums">
+							<IconHammer class="size-4" aria-hidden="true" />
+							{timeLeft(row.remainingMs)}
+						</p>
+					{:else if panel.boatLocked}
+						<p
+							class="flex items-center gap-1 text-sm font-bold"
+							title={m.beachhead_boat_locked({ level: panel.boatUnlockLevel })}
+						>
+							<IconLock class="size-4" aria-hidden="true" />
+							<IconFlag class="size-4" aria-hidden="true" />
+							{panel.boatUnlockLevel}
+						</p>
+					{:else if row.locked}
+						<p
+							class="flex items-center gap-1 text-sm font-bold"
+							title={m.beachhead_upgrade_locked()}
+						>
+							<IconLock class="size-4" aria-hidden="true" />
+							<IconFlag class="size-4" aria-hidden="true" />
+						</p>
+					{:else if row.cost === null}
+						<IconCheck class="size-5 text-khaki" aria-label={m.beachhead_upgrade_max()} />
+					{:else}
+						{@render costChips(row.cost)}
+						<button
+							type="button"
+							class="btn-chunky flex size-10 items-center justify-center rounded-full bg-khaki p-0 text-paper"
+							aria-label={m.beachhead_upgrade_button()}
+							title={game.buildersBusy >= game.builderSlots
+								? m.beachhead_builders_busy()
+								: m.beachhead_upgrade_button()}
+							disabled={!row.canStart}
+							onclick={() => game.upgrade(row.key)}
+						>
+							<IconCircleArrowUp class="size-6" aria-hidden="true" />
+						</button>
+					{/if}
+				{/if}
+				{#if arranging && (panel.type === 'mine' || panel.movable)}
+					<div class="flex gap-1" role="group" aria-label={m.beachhead_island_move()}>
+						<button
+							type="button"
+							class="btn-chunky p-1.5"
+							aria-label={m.beachhead_island_move_back_left()}
+							onclick={() => nudge(-1, 0)}
+						>
+							<IconArrowUpLeft class="size-4" aria-hidden="true" />
+						</button>
+						<button
+							type="button"
+							class="btn-chunky p-1.5"
+							aria-label={m.beachhead_island_move_back_right()}
+							onclick={() => nudge(0, -1)}
+						>
+							<IconArrowUpRight class="size-4" aria-hidden="true" />
+						</button>
+						<button
+							type="button"
+							class="btn-chunky p-1.5"
+							aria-label={m.beachhead_island_move_front_left()}
+							onclick={() => nudge(0, 1)}
+						>
+							<IconArrowDownLeft class="size-4" aria-hidden="true" />
+						</button>
+						<button
+							type="button"
+							class="btn-chunky p-1.5"
+							aria-label={m.beachhead_island_move_front_right()}
+							onclick={() => nudge(1, 0)}
+						>
+							<IconArrowDownRight class="size-4" aria-hidden="true" />
+						</button>
+					</div>
+				{/if}
+			</div>
+		</div>
+	{/if}
+</div>
+
+<BeachheadSheet
+	open={sheet === 'army'}
+	title={m.beachhead_army_title()}
+	onclose={() => (sheet = null)}
+>
+	<BeachheadArmy {game} />
+</BeachheadSheet>
+
+<BeachheadSheet
+	open={sheet === 'mines'}
+	title={m.beachhead_island_mines_title()}
+	onclose={() => (sheet = null)}
+>
+	<p class="text-sm font-semibold tabular-nums">
+		{m.beachhead_island_mines_count({ count: game.layout.mines.length, max: MAX_MINES })}
+	</p>
+	<ul class="grid grid-cols-3 gap-2">
+		{#each MINE_KINDS as kind (kind)}
+			<li class="flex flex-col items-center gap-1.5 rounded-[14px] border-2 border-ink bg-sand p-2">
+				<span
+					class="flex size-12 items-center justify-center rounded-full border-3 border-ink bg-paper shadow-[2px_2px_0_var(--color-ink)]"
+					title={mineHint(kind)}
+				>
+					{#if kind === 'mine-emp'}
+						<IconZap class="size-7" aria-hidden="true" />
+					{:else}
+						<IconBomb class="size-7" aria-hidden="true" />
+					{/if}
+				</span>
+				<p class="text-center text-xs leading-tight font-bold">{mineName(kind)}</p>
+				<p class="text-center text-[0.7rem] leading-snug">{mineHint(kind)}</p>
+				{@render costChips(costOf(kind))}
+				<button
+					type="button"
+					class="btn-chunky flex size-9 items-center justify-center rounded-full p-0"
+					aria-label={m.beachhead_island_mine_buy()}
+					disabled={!game.canBuyMine(kind) || game.layout.mines.length >= MAX_MINES}
+					onclick={() => game.buyMine(kind)}
+				>
+					<IconCircleArrowUp class="size-5" aria-hidden="true" />
+				</button>
+			</li>
+		{/each}
+	</ul>
+</BeachheadSheet>
+
+<BeachheadSheet
+	open={sheet === 'trophies'}
+	title={m.beachhead_achievements_title()}
+	onclose={() => (sheet = null)}
+>
+	<ul class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+		{#each game.achievements as achievement (achievement.id)}
+			<li
+				class="flex items-center gap-2 rounded-[14px] border-2 border-ink p-2 {achievement.earned
+					? 'bg-explosion-yellow'
+					: 'bg-sand opacity-80'}"
+				title={achievementHint(achievement.id)}
+			>
+				<IconTrophy class="size-7 shrink-0" aria-hidden="true" />
+				<div class="min-w-0 leading-tight">
+					<p class="text-sm font-bold">{achievementName(achievement.id)}</p>
+					<p class="text-xs font-semibold">
+						{#if achievement.earned}
+							<IconCheck class="inline size-3.5" aria-label={m.beachhead_achievement_earned()} />
+						{:else}
+							+{achievement.coins}
+						{/if}
+					</p>
+				</div>
+			</li>
+		{/each}
+	</ul>
+</BeachheadSheet>
+
+<style>
+	.attack-button {
+		animation: attack-pulse 2s ease-in-out infinite;
+	}
+
+	@keyframes attack-pulse {
+		0%,
+		100% {
+			box-shadow: 3px 3px 0 var(--color-ink);
+		}
+		50% {
+			box-shadow:
+				3px 3px 0 var(--color-ink),
+				0 0 0 6px color-mix(in srgb, var(--color-tie-red) 40%, transparent);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.attack-button {
+			animation: none;
+		}
+	}
+</style>

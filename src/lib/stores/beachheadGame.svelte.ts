@@ -11,6 +11,7 @@ import {
 	SHORE_X,
 	SKILL_ENERGY,
 	isMine,
+	type ArmyKind,
 	type BuildingKind,
 	type Island,
 	type MineKind,
@@ -35,6 +36,7 @@ import {
 	ACHIEVEMENTS,
 	SAVE_KEY,
 	addResources,
+	applyCasualties,
 	applyHeroUpgrade,
 	applySkillUpgrade,
 	applyTroopUpgrade,
@@ -57,6 +59,7 @@ import {
 	constructionOf,
 	controlIsland,
 	controlledCount,
+	dismissTroop,
 	capturesOf,
 	finishBuilds,
 	fortificationScale,
@@ -72,6 +75,8 @@ import {
 	islandProduction,
 	isUnlocked,
 	layoutOf,
+	lostCount,
+	lostOf,
 	levelOf,
 	lootFor,
 	maxLevelOf,
@@ -82,6 +87,10 @@ import {
 	parseSave,
 	processTakebacks,
 	recordVictory,
+	recruitTroop,
+	retrainAll as retrainAllIn,
+	retrainAllCost,
+	retrainCost,
 	sellMine as sellMineIn,
 	skillCardCost,
 	skillUpgradeCost,
@@ -99,7 +108,6 @@ import {
 	upgradeLocked,
 	usedArmySpace as usedArmySpaceOf,
 	WAREHOUSE_KEYS,
-	type ArmyKind,
 	type BeachheadSave,
 	type BoatLoad,
 	type BuildingKey,
@@ -121,6 +129,8 @@ export type BeachheadStatus = 'playing' | 'paused' | 'won' | 'over';
 
 /** How long the explosions are left to play before the result panel opens */
 const RESULT_DELAY_MS = 900;
+/** A win lasts longer: the loot flies out of the enemy stores before the result opens */
+const WIN_DELAY_MS = 3000;
 
 export function highscoreParts(islandId: string): string[] {
 	return ['beachhead', islandId, 'score'];
@@ -175,6 +185,10 @@ export class BeachheadGame {
 	stars = $state(0);
 	/** Resources won in the last battle, shown on the result panel */
 	loot = $state<Resources>({ wood: 0, stone: 0, iron: 0, gold: 0 });
+	/** Troops the last attack killed, shown on the result panel until they are retrained */
+	lastCasualties = $state<Partial<Record<TroopKind, number>>>({});
+	/** Loot that has reached the stockpile so far during the win animation */
+	lootCollected = $state<Resources>({ wood: 0, stone: 0, iron: 0, gold: 0 });
 	/** Achievements earned by the last battle, shown on the result panel */
 	newAchievements = $state<string[]>([]);
 	/** Azov commander cards found in the last battle, shown on the result panel */
@@ -209,6 +223,9 @@ export class BeachheadGame {
 	#random: () => number;
 	#rewardCoins: (amount: number) => void;
 	#finishMs = 0;
+	#settled = false;
+	/** The loot a win will pay, worked out the moment the headquarters falls so it can fly */
+	#plannedLoot: Resources = { wood: 0, stone: 0, iron: 0, gold: 0 };
 	#shotSound = 0;
 
 	constructor({
@@ -638,11 +655,45 @@ export class BeachheadGame {
 		return true;
 	}
 
-	/** Adds or removes units from the army, refusing to overload the boats */
-	changeTroop(kind: Exclude<TroopKind, 'hero'>, delta: number): boolean {
-		const next = changeTroopIn(this.campaign, kind, delta);
-		if (next === this.campaign) return false;
-		this.#commit(next);
+	/** Trains one unit for gold (plus) or sends one home for a refund (minus) */
+	changeTroop(kind: ArmyKind, delta: number): boolean {
+		const next = delta > 0 ? recruitTroop(this.campaign, kind) : dismissTroop(this.campaign, kind);
+		if (!next) {
+			if (delta > 0) this.#play('ui-error', 0.4);
+			return false;
+		}
+		this.#commit(next, { claim: false });
+		this.#play(delta > 0 ? 'chime' : 'click', 0.4);
+		return true;
+	}
+
+	/** Troops killed in attacks that wait to be retrained, by kind */
+	get lost() {
+		return lostOf(this.campaign);
+	}
+
+	get lostTotal(): number {
+		return lostCount(this.campaign);
+	}
+
+	/** Gold it takes to bring every lost troop back */
+	get retrainTotal(): number {
+		return retrainAllCost(this.campaign);
+	}
+
+	retrainGold(kind: ArmyKind): number {
+		return retrainCost(kind).gold;
+	}
+
+	/** Retrains every lost unit that gold and boat space allow */
+	retrainAll(): boolean {
+		const next = retrainAllIn(this.campaign);
+		if (next === this.campaign) {
+			this.#play('ui-error', 0.4);
+			return false;
+		}
+		this.#commit(next, { claim: false });
+		this.#play('chime', 0.6);
 		return true;
 	}
 
@@ -651,6 +702,7 @@ export class BeachheadGame {
 	}
 
 	goBase() {
+		this.#retreat();
 		this.tick();
 		this.effects = [];
 		this.shake = 0;
@@ -661,6 +713,7 @@ export class BeachheadGame {
 	}
 
 	goMap() {
+		this.#retreat();
 		this.tick();
 		this.effects = [];
 		this.shake = 0;
@@ -672,6 +725,7 @@ export class BeachheadGame {
 
 	/** Starts an island; locked islands stay shut and controlled islands are not replayed */
 	openIsland(index: number) {
+		this.#retreat();
 		if (!this.isUnlocked(index) || index < 0 || index >= ISLAND_IDS.length) return;
 		if (this.isControlled(ISLAND_IDS[index])) return;
 		this.islandIndex = index;
@@ -680,6 +734,9 @@ export class BeachheadGame {
 		this.shake = 0;
 		this.timeMs = 0;
 		this.#finishMs = 0;
+		this.#settled = false;
+		this.lastCasualties = {};
+		this.lootCollected = { wood: 0, stone: 0, iron: 0, gold: 0 };
 		this.#shotSound = 0;
 		this.isNewBest = false;
 		this.loot = { wood: 0, stone: 0, iron: 0, gold: 0 };
@@ -790,7 +847,20 @@ export class BeachheadGame {
 		this.#shotSound = Math.max(0, this.#shotSound - dtMs);
 		this.shake = Math.max(0, this.shake - dtMs * 0.0015);
 		for (const effect of this.effects) effect.ageMs += dtMs;
-		this.effects = this.effects.filter((effect) => effect.ageMs < effect.durationMs);
+		// Loot pieces that reach the stockpile count up on the HUD
+		for (const effect of this.effects) {
+			if (effect.kind === 'loot' && effect.ageMs >= effect.durationMs + effect.delayMs) {
+				this.lootCollected = {
+					...this.lootCollected,
+					[effect.resource]: this.lootCollected[effect.resource] + effect.amount
+				};
+			}
+		}
+		this.effects = this.effects.filter((effect) =>
+			effect.kind === 'loot'
+				? effect.ageMs < effect.durationMs + effect.delayMs
+				: effect.ageMs < effect.durationMs
+		);
 
 		if (this.status !== 'playing') return;
 
@@ -804,7 +874,9 @@ export class BeachheadGame {
 
 		if (this.battle.status === 'playing') return;
 		this.#finishMs += dtMs;
-		if (this.#finishMs >= RESULT_DELAY_MS) this.#finish();
+		if (this.#finishMs >= (this.battle.status === 'won' ? WIN_DELAY_MS : RESULT_DELAY_MS)) {
+			this.#finish();
+		}
 	}
 
 	sceneExtras(): SceneExtras {
@@ -1090,6 +1162,7 @@ export class BeachheadGame {
 				break;
 			case 'won':
 				this.#play('chime-big', 0.8);
+				this.#startLootFlight();
 				break;
 			case 'lost':
 				this.#play('game-over', 0.8);
@@ -1097,24 +1170,76 @@ export class BeachheadGame {
 		}
 	}
 
+	/** Sends the loot out of the enemy headquarters and depots towards the player's stockpile */
+	#startLootFlight() {
+		const first = !isControlled(this.campaign, this.islandId);
+		this.#plannedLoot = lootFor(this.islandIndex, first);
+		this.lootCollected = { wood: 0, stone: 0, iron: 0, gold: 0 };
+		const sources = this.battle.buildings.filter(
+			(building) => building.kind === 'hq' || building.kind === 'depot'
+		);
+		if (sources.length === 0) return;
+		let order = 0;
+		for (const resource of ['wood', 'stone', 'iron', 'gold'] as const) {
+			const total = this.#plannedLoot[resource];
+			if (total <= 0) continue;
+			const pieces = Math.min(total, 5 + sources.length * 2);
+			let left = total;
+			for (let piece = 0; piece < pieces; piece++) {
+				const source = sources[(piece + order) % sources.length];
+				const amount = piece === pieces - 1 ? left : Math.floor(total / pieces);
+				left -= amount;
+				this.#effect({
+					kind: 'loot',
+					resource,
+					amount,
+					fromX: source.x + source.width / 2 + ((piece * 0.37) % 0.8) - 0.4,
+					fromY: source.y + source.height / 2 + ((piece * 0.53) % 0.8) - 0.4,
+					seed: order * 1.7 + piece,
+					delayMs: 250 + order * 70,
+					ageMs: 0,
+					durationMs: this.reducedMotion ? 400 : 1000
+				});
+				order += 1;
+			}
+		}
+	}
+
+	/** Takes the troops the attack killed out of the army; once per attack, win, loss or retreat */
+	#settleCasualties(save: BeachheadSave): BeachheadSave {
+		if (this.#settled) return save;
+		this.#settled = true;
+		this.lastCasualties = { ...this.battle.casualties };
+		return applyCasualties(save, this.battle.casualties);
+	}
+
+	/** Leaving a fight in progress counts as a retreat: whoever already landed is lost */
+	#retreat() {
+		if (this.screen !== 'play' || this.battle.status !== 'playing' || this.battle.deployed === 0)
+			return;
+		for (const troop of this.battle.troops) {
+			if (troop.kind === 'hero' || troop.kind === 'azov' || troop.spawnedBy !== undefined) continue;
+			this.battle.casualties[troop.kind] = (this.battle.casualties[troop.kind] ?? 0) + 1;
+		}
+		this.#commit(this.#settleCasualties(this.campaign), { claim: false });
+	}
+
 	#finish() {
 		if (this.status !== 'playing') return;
 
 		if (this.battle.status === 'won') {
-			this.stars = starsOf(this.battle);
-			const first = !isControlled(this.campaign, this.islandId);
-			const loot = lootFor(this.islandIndex, first);
-			const heroAlive = this.battle.troops.some((troop) => troop.kind === 'hero' && troop.hp > 0);
-			let next = controlIsland(this.campaign, this.islandId, this.stars);
+			this.stars = 0;
+			const loot = this.#plannedLoot;
+			let next = controlIsland(this.campaign, this.islandId, 1);
 			next = addResources(next, loot);
 			next = recordVictory(next, {
-				stars: this.stars,
+				stars: 1,
 				skillsUsed: this.battle.skillsUsed,
-				heroAlive
+				heroAlive: this.battle.troops.some((troop) => troop.kind === 'hero' && troop.hp > 0)
 			});
-			const roll = Math.random();
-			const cards = heroCardsForRoll(roll);
+			const cards = heroCardsForRoll(Math.random());
 			next = grantHeroCards(next, cards);
+			next = this.#settleCasualties(next);
 			this.heroCardsFound = (this.heroCardsFound ?? 0) + cards;
 			this.loot = loot;
 			this.newAchievements = [];
@@ -1126,6 +1251,7 @@ export class BeachheadGame {
 			return;
 		}
 
+		this.#commit(this.#settleCasualties(this.campaign), { claim: false });
 		const result = this.#scores().submit(highscoreParts(this.islandId), scoreOf(this.battle));
 		this.isNewBest = result.isNewBest;
 		this.best = result.best;
