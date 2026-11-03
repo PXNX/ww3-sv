@@ -49,3 +49,17 @@ describe('the defence test island', () => {
 		expect(state.status).toBe('playing');
 	});
 });
+
+describe('which side the test attack comes from', () => {
+	it('lands on the beach side of the base: what lies at the front of the island stands nearest the shore', () => {
+		const layout = defaultLayout();
+		const island = testIslandOf(layout);
+		const hq = island.buildings.find((b) => b.kind === 'hq')!;
+		// The headquarters is at the back of the home island, so it ends up far from the beach...
+		const front = addMine(layout, 'mine-at', { x: 6, y: 12 })!;
+		const withMine = testIslandOf(front);
+		const mine = withMine.buildings.find((b) => b.kind === 'mine-at')!;
+		// ...and a mine at the front stands closer to the beach than the headquarters
+		expect(mine.x).toBeLessThan(hq.x);
+	});
+});

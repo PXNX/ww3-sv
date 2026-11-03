@@ -29,9 +29,11 @@ interface Wanted {
 }
 
 function squeeze(cellX: number, cellY: number): { x: number; y: number } {
+	// The home island is attacked from its lower-left shore, the side where the ramp slopes into the
+	// water, so the home y axis runs back to front and becomes the battle's x axis from the beach
 	return {
-		x: SHORE_X + Math.floor((cellX / BASE_COLS) * (COLUMNS - SHORE_X)),
-		y: Math.floor((cellY / BASE_ROWS) * ROWS)
+		x: SHORE_X + Math.floor(((BASE_ROWS - cellY) / BASE_ROWS) * (COLUMNS - SHORE_X)),
+		y: Math.min(ROWS - 1, Math.floor((cellX / BASE_COLS) * ROWS))
 	};
 }
 
