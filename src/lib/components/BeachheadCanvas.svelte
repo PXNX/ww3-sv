@@ -21,8 +21,20 @@
 	let scale = 1;
 	/** How far the picture is zoomed; the canvas is drawn at that many times the pixels so it stays sharp */
 	let zoom = 1;
-	const pixelRatio = () =>
-		Math.min((window.devicePixelRatio || 1) * zoom, 4096 / Math.max(1, canvas?.clientWidth ?? 1));
+	/** The whole battle is repainted every frame, so the bitmap stays within a fixed pixel budget however far it is zoomed */
+	const PIXEL_BUDGET = 2_600_000;
+	const pixelRatio = () => {
+		const width = Math.max(1, canvas?.clientWidth ?? 1);
+		const height = Math.max(1, canvas?.clientHeight ?? 1);
+		return Math.max(
+			1,
+			Math.min(
+				(window.devicePixelRatio || 1) * zoom,
+				4096 / width,
+				Math.sqrt(PIXEL_BUDGET / (width * height))
+			)
+		);
+	};
 
 	function draw() {
 		if (!canvas || !context) return;

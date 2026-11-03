@@ -650,44 +650,6 @@ function drawRifleman(context: CanvasRenderingContext2D, troop: Troop) {
 	drawMuzzle(context, troop, 0.28, 0.08);
 }
 
-function drawTank(context: CanvasRenderingContext2D, troop: Troop) {
-	// Treads with rolling links, a squat hull and a turret with a long barrel
-	context.fillStyle = STEEL;
-	context.strokeStyle = INK;
-	context.lineWidth = 0.035;
-	for (const side of [-1, 1]) {
-		context.beginPath();
-		context.roundRect(-0.24, side * 0.1 - 0.06, 0.48, 0.12, 0.03);
-		context.fill();
-		context.stroke();
-		const roll = troop.moving ? (troop.walkPhase * 0.06) % 0.12 : 0;
-		context.fillStyle = KHAKI;
-		for (let link = 0; link < 4; link++) {
-			context.fillRect(-0.2 + ((link * 0.12 + roll) % 0.44), side * 0.1 - 0.03, 0.05, 0.06);
-		}
-		context.fillStyle = STEEL;
-	}
-	const hull = KHAKI;
-	context.beginPath();
-	context.roundRect(-0.2, -0.15, 0.4, 0.3, 0.06);
-	context.fillStyle = hull;
-	context.fill();
-	context.strokeStyle = INK;
-	context.lineWidth = 0.035;
-	context.stroke();
-	// A lighter stripe, so the hull reads as painted metal
-	context.fillStyle = SAND_DARK;
-	context.fillRect(-0.16, 0.01, 0.32, 0.035);
-	circle(context, 0.02, -0.02, 0.1, KHAKI, 0.035);
-	context.strokeStyle = INK;
-	context.lineWidth = 0.05;
-	context.beginPath();
-	context.moveTo(0.06, -0.03);
-	context.lineTo(0.4, -0.03);
-	context.stroke();
-	drawMuzzle(context, troop, 0.4, 0.1);
-}
-
 function drawMortarTeam(context: CanvasRenderingContext2D, troop: Troop) {
 	// Two kneeling crew behind a steep tube, so the lobbed shots read at a glance
 	drawLegs(context, troop);
@@ -839,76 +801,6 @@ function drawHero(context: CanvasRenderingContext2D, troop: Troop, timeMs: numbe
 	context.restore();
 }
 
-function drawArtillery(context: CanvasRenderingContext2D, troop: Troop) {
-	// A towed howitzer: split trail, two wheels and a long barrel pointed at the island
-	context.strokeStyle = INK;
-	context.lineWidth = 0.04;
-	context.beginPath();
-	context.moveTo(-0.2, 0.14);
-	context.lineTo(0.12, 0.02);
-	context.moveTo(-0.2, -0.14);
-	context.lineTo(0.12, -0.02);
-	context.stroke();
-	for (const side of [-1, 1]) {
-		circle(context, -0.02, side * 0.12, 0.075, STEEL, 0.03);
-		circle(context, -0.02, side * 0.12, 0.028, SAND_DARK, 0);
-	}
-	rect(context, -0.12, -0.07, 0.24, 0.14, KHAKI, 0.03);
-	context.strokeStyle = INK;
-	context.lineWidth = 0.07;
-	context.beginPath();
-	context.moveTo(0.02, -0.02);
-	context.lineTo(0.42, -0.13);
-	context.stroke();
-	context.strokeStyle = STEEL;
-	context.lineWidth = 0.04;
-	context.stroke();
-	circle(context, 0.02, -0.02, 0.05, MUSTARD, 0.02);
-	// The crewman crouches behind the breech
-	circle(context, -0.16, 0.02, 0.075, KHAKI, 0.03);
-	circle(context, -0.14, -0.07, 0.05, SKIN, 0.02);
-	drawMuzzle(context, troop, 0.42, 0.08);
-}
-
-function drawApc(context: CanvasRenderingContext2D, troop: Troop) {
-	// A boxy M113: sloped front, tracks and a rear ramp the reinforcements walk out of
-	context.fillStyle = STEEL;
-	context.strokeStyle = INK;
-	context.lineWidth = 0.035;
-	for (const side of [-1, 1]) {
-		context.beginPath();
-		context.roundRect(-0.27, side * 0.11 - 0.07, 0.54, 0.14, 0.03);
-		context.fill();
-		context.stroke();
-		const roll = troop.moving ? (troop.walkPhase * 0.07) % 0.14 : 0;
-		context.fillStyle = KHAKI;
-		for (let link = 0; link < 4; link++) {
-			context.fillRect(-0.23 + ((link * 0.14 + roll) % 0.5), side * 0.11 - 0.04, 0.06, 0.08);
-		}
-		context.fillStyle = STEEL;
-	}
-	context.beginPath();
-	context.moveTo(-0.24, -0.1);
-	context.lineTo(0.16, -0.13);
-	context.lineTo(0.27, -0.03);
-	context.lineTo(0.27, 0.06);
-	context.lineTo(0.16, 0.13);
-	context.lineTo(-0.24, 0.1);
-	context.closePath();
-	context.fillStyle = KHAKI;
-	context.fill();
-	context.strokeStyle = INK;
-	context.lineWidth = 0.04;
-	context.stroke();
-	// A hatch, a vision block and the ramp at the back
-	rect(context, -0.04, -0.09, 0.14, 0.1, SAND_DARK, 0.025);
-	context.fillStyle = STEEL;
-	context.fillRect(0.14, -0.04, 0.08, 0.045);
-	rect(context, -0.28, -0.11, 0.06, 0.22, STEEL, 0.025);
-	context.fillStyle = EXPLOSION_YELLOW;
-	context.fillRect(-0.3, -0.03, 0.03, 0.06);
-}
-
 function drawDemo(context: CanvasRenderingContext2D, troop: Troop, timeMs: number) {
 	// A small, fast sapper with a bundle of dynamite and a burning fuse
 	drawLegs(context, troop);
@@ -992,6 +884,389 @@ function drawOrc(context: CanvasRenderingContext2D, troop: Troop) {
 	context.restore();
 }
 
+/** Lightens (positive) or darkens (negative) a colour given as #rrggbb or as the rgb() text shade() returns */
+function tone(color: string, amount: number): string {
+	const found = color.match(/\d+/g);
+	if (!color.startsWith('rgb') || !found) return shade(color, amount);
+	const [r, g, b] = found.map(Number);
+	const move = (channel: number) =>
+		Math.round(amount >= 0 ? channel + (255 - channel) * amount : channel * (1 + amount));
+	return `rgb(${move(r)},${move(g)},${move(b)})`;
+}
+
+/**
+ * A box turned to any heading, drawn as a solid: the sides that face the viewer are shaded by where
+ * they point and the roof is lighter. Vehicles are built from these so they stand with real height.
+ * `across` shifts the box sideways and `along` forwards from the vehicle's centre.
+ */
+function drawPrism(
+	context: CanvasRenderingContext2D,
+	view: ShoreView,
+	at: { x: number; y: number },
+	heading: number,
+	box: { front: number; back: number; half: number; across?: number; along?: number },
+	z0: number,
+	z1: number,
+	color: string,
+	lineWidth = 0.03
+) {
+	const fx = Math.cos(heading);
+	const fy = Math.sin(heading);
+	const across = box.across ?? 0;
+	const along = box.along ?? 0;
+	const corner = (forward: number, side: number, z: number) =>
+		view.project(
+			at.x + fx * (forward + along) - fy * (side + across),
+			at.y + fy * (forward + along) + fx * (side + across),
+			z
+		);
+	const ring: [number, number][] = [
+		[box.front, -box.half],
+		[box.front, box.half],
+		[-box.back, box.half],
+		[-box.back, -box.half]
+	];
+	const bottom = ring.map(([forward, side]) => corner(forward, side, z0));
+	const top = ring.map(([forward, side]) => corner(forward, side, z1));
+	const centre = {
+		x: bottom.reduce((sum, point) => sum + point.x, 0) / 4,
+		y: bottom.reduce((sum, point) => sum + point.y, 0) / 4
+	};
+	context.lineJoin = 'round';
+	context.strokeStyle = INK;
+	context.lineWidth = lineWidth;
+	for (let edge = 0; edge < 4; edge++) {
+		const next = (edge + 1) % 4;
+		let nx = bottom[next].y - bottom[edge].y;
+		let ny = -(bottom[next].x - bottom[edge].x);
+		const mx = (bottom[edge].x + bottom[next].x) / 2 - centre.x;
+		const my = (bottom[edge].y + bottom[next].y) / 2 - centre.y;
+		if (nx * mx + ny * my < 0) {
+			nx = -nx;
+			ny = -ny;
+		}
+		// Only the sides turned towards the viewer can be seen
+		if (ny <= 0) continue;
+		const length = Math.hypot(nx, ny) || 1;
+		// Sides facing the light (up and to the left) are brighter than those facing away
+		const light = Math.max(-1, Math.min(1, (-nx / length) * 0.7 + (ny / length) * 0.2));
+		context.fillStyle = tone(color, -0.14 + light * 0.14);
+		context.beginPath();
+		context.moveTo(bottom[edge].x, bottom[edge].y);
+		context.lineTo(bottom[next].x, bottom[next].y);
+		context.lineTo(top[next].x, top[next].y);
+		context.lineTo(top[edge].x, top[edge].y);
+		context.closePath();
+		context.fill();
+		context.stroke();
+	}
+	context.fillStyle = tone(color, 0.18);
+	context.beginPath();
+	context.moveTo(top[0].x, top[0].y);
+	for (let index = 1; index < 4; index++) context.lineTo(top[index].x, top[index].y);
+	context.closePath();
+	context.fill();
+	context.stroke();
+}
+
+/** A line between two points given as forward, sideways and height from a vehicle's centre */
+function strokeAlong(
+	context: CanvasRenderingContext2D,
+	view: ShoreView,
+	at: { x: number; y: number },
+	heading: number,
+	from: [number, number, number],
+	to: [number, number, number],
+	color: string,
+	width: number
+) {
+	const fx = Math.cos(heading);
+	const fy = Math.sin(heading);
+	const place = ([forward, side, z]: [number, number, number]) =>
+		view.project(at.x + fx * forward - fy * side, at.y + fy * forward + fx * side, z);
+	const a = place(from);
+	const b = place(to);
+	context.strokeStyle = color;
+	context.lineWidth = width;
+	context.lineCap = 'round';
+	context.beginPath();
+	context.moveTo(a.x, a.y);
+	context.lineTo(b.x, b.y);
+	context.stroke();
+	context.lineCap = 'butt';
+}
+
+function muzzleFlashAt(
+	context: CanvasRenderingContext2D,
+	view: ShoreView,
+	troop: Troop,
+	heading: number,
+	forward: number,
+	z: number
+) {
+	if (troop.muzzleMs <= 0) return;
+	const flash = troop.muzzleMs / TROOP.muzzleMs;
+	const point = view.project(
+		troop.x + Math.cos(heading) * forward,
+		troop.y + Math.sin(heading) * forward,
+		z
+	);
+	context.globalAlpha = flash;
+	circle(context, point.x, point.y, 0.09 + flash * 0.08, EXPLOSION_YELLOW, 0);
+	circle(context, point.x, point.y, 0.05 + flash * 0.03, PAPER, 0);
+	context.globalAlpha = 1;
+}
+
+/** Treads whose links roll while the vehicle drives */
+function drawTreads(
+	context: CanvasRenderingContext2D,
+	view: ShoreView,
+	troop: Troop,
+	heading: number,
+	length: number,
+	across: number,
+	half: number,
+	height: number
+) {
+	for (const side of [-1, 1]) {
+		drawPrism(
+			context,
+			view,
+			troop,
+			heading,
+			{ front: length, back: length, half, across: side * across },
+			0,
+			height,
+			'#4a4f57'
+		);
+		const roll = troop.moving ? (troop.walkPhase * 0.08) % 0.16 : 0;
+		for (let link = 0; link < 4; link++) {
+			const forward = -length + 0.06 + ((link * 0.16 + roll) % (length * 1.9));
+			strokeAlong(
+				context,
+				view,
+				troop,
+				heading,
+				[forward, side * across - half * 0.7, height + 0.003],
+				[forward, side * across + half * 0.7, height + 0.003],
+				'#2b2f35',
+				0.025
+			);
+		}
+	}
+}
+
+function drawTankSolid(
+	context: CanvasRenderingContext2D,
+	view: ShoreView,
+	troop: Troop,
+	heading: number
+) {
+	drawTreads(context, view, troop, heading, 0.31, 0.2, 0.075, 0.15);
+	drawPrism(
+		context,
+		view,
+		troop,
+		heading,
+		{ front: 0.3, back: 0.3, half: 0.17 },
+		0.07,
+		0.22,
+		KHAKI
+	);
+	strokeAlong(context, view, troop, heading, [-0.28, 0, 0.221], [0.28, 0, 0.221], SAND_DARK, 0.03);
+	// The turret and its long barrel, which kicks back a little as it fires
+	drawPrism(
+		context,
+		view,
+		troop,
+		heading,
+		{ front: 0.14, back: 0.15, half: 0.12, along: -0.03 },
+		0.22,
+		0.33,
+		shade(KHAKI, 0.06)
+	);
+	const kick = troop.muzzleMs > 0 ? -0.05 * (troop.muzzleMs / TROOP.muzzleMs) : 0;
+	strokeAlong(
+		context,
+		view,
+		troop,
+		heading,
+		[0.08 + kick, 0, 0.285],
+		[0.52 + kick, 0, 0.285],
+		INK,
+		0.06
+	);
+	strokeAlong(
+		context,
+		view,
+		troop,
+		heading,
+		[0.08 + kick, 0, 0.285],
+		[0.52 + kick, 0, 0.285],
+		STEEL,
+		0.035
+	);
+	drawPrism(
+		context,
+		view,
+		troop,
+		heading,
+		{ front: 0.03, back: 0.03, half: 0.03, along: -0.1, across: 0.05 },
+		0.33,
+		0.37,
+		'#2b2f35',
+		0.02
+	);
+	muzzleFlashAt(context, view, troop, heading, 0.58, 0.285);
+}
+
+function drawApcSolid(
+	context: CanvasRenderingContext2D,
+	view: ShoreView,
+	troop: Troop,
+	heading: number
+) {
+	drawTreads(context, view, troop, heading, 0.34, 0.21, 0.08, 0.15);
+	// A tall boxy hull with a lower nose, a troop hatch and a vision slit
+	drawPrism(
+		context,
+		view,
+		troop,
+		heading,
+		{ front: 0.34, back: 0.34, half: 0.18 },
+		0.08,
+		0.28,
+		KHAKI
+	);
+	drawPrism(
+		context,
+		view,
+		troop,
+		heading,
+		{ front: 0.12, back: 0.12, half: 0.16, along: 0.2 },
+		0.28,
+		0.32,
+		shade(KHAKI, -0.08),
+		0.02
+	);
+	drawPrism(
+		context,
+		view,
+		troop,
+		heading,
+		{ front: 0.12, back: 0.1, half: 0.11, along: -0.1 },
+		0.28,
+		0.36,
+		SAND_DARK,
+		0.025
+	);
+	strokeAlong(
+		context,
+		view,
+		troop,
+		heading,
+		[0.341, -0.09, 0.2],
+		[0.341, 0.09, 0.2],
+		'#2b2f35',
+		0.04
+	);
+	// The rear ramp with a warning light
+	drawPrism(
+		context,
+		view,
+		troop,
+		heading,
+		{ front: 0.02, back: 0.02, half: 0.15, along: -0.36 },
+		0.1,
+		0.26,
+		STEEL,
+		0.025
+	);
+	drawPrism(
+		context,
+		view,
+		troop,
+		heading,
+		{ front: 0.02, back: 0.02, half: 0.02, along: -0.36, across: 0.1 },
+		0.26,
+		0.3,
+		EXPLOSION_YELLOW,
+		0.015
+	);
+}
+
+function drawHowitzerSolid(
+	context: CanvasRenderingContext2D,
+	view: ShoreView,
+	troop: Troop,
+	heading: number
+) {
+	// Split trail on the ground, then the wheels at the sides
+	for (const side of [-1, 1]) {
+		strokeAlong(
+			context,
+			view,
+			troop,
+			heading,
+			[-0.34, side * 0.18, 0.02],
+			[0.02, side * 0.04, 0.05],
+			INK,
+			0.07
+		);
+		strokeAlong(
+			context,
+			view,
+			troop,
+			heading,
+			[-0.34, side * 0.18, 0.02],
+			[0.02, side * 0.04, 0.05],
+			STEEL,
+			0.04
+		);
+		const hub = view.project(
+			troop.x - Math.sin(heading) * side * 0.2,
+			troop.y + Math.cos(heading) * side * 0.2,
+			0.1
+		);
+		circle(context, hub.x, hub.y, 0.1, '#2b2f35', 0.03);
+		circle(context, hub.x, hub.y, 0.04, SAND_DARK, 0);
+	}
+	// A carriage with a gun shield, the barrel rising to the front
+	drawPrism(
+		context,
+		view,
+		troop,
+		heading,
+		{ front: 0.1, back: 0.14, half: 0.12 },
+		0.08,
+		0.2,
+		KHAKI
+	);
+	drawPrism(
+		context,
+		view,
+		troop,
+		heading,
+		{ front: 0.02, back: 0.02, half: 0.15, along: 0.1 },
+		0.1,
+		0.3,
+		shade(KHAKI, -0.1),
+		0.025
+	);
+	const kick = troop.muzzleMs > 0 ? -0.06 * (troop.muzzleMs / TROOP.muzzleMs) : 0;
+	strokeAlong(context, view, troop, heading, [kick, 0, 0.2], [0.55 + kick, 0, 0.3], INK, 0.08);
+	strokeAlong(context, view, troop, heading, [kick, 0, 0.2], [0.55 + kick, 0, 0.3], STEEL, 0.045);
+	// The crewman crouches behind the breech
+	const crew = view.project(
+		troop.x - Math.cos(heading) * 0.2 - Math.sin(heading) * 0.04,
+		troop.y - Math.sin(heading) * 0.2 + Math.cos(heading) * 0.04,
+		0.14
+	);
+	circle(context, crew.x, crew.y, 0.08, KHAKI, 0.03);
+	circle(context, crew.x + 0.02, crew.y - 0.1, 0.05, SKIN, 0.02);
+	muzzleFlashAt(context, view, troop, heading, 0.6, 0.3);
+}
+
 function isVehicle(troop: Troop): boolean {
 	return VEHICLE_TROOPS.includes(troop.kind);
 }
@@ -1023,27 +1298,10 @@ function drawTroop(
 
 	if (vehicle) {
 		// Tanks, personnel carriers and guns lie on the ground as top-down models, turned the way they drive
-		const angle = Math.atan2(troop.aimY, troop.aimX);
-		// The flat model is stacked in a few darker layers, so the hull gets visible sides and height
-		const heights = troop.kind === 'artillery' ? [0, 0.05] : [0, 0.06, 0.12, 0.18];
-		const supportsFilter = typeof context.filter === 'string';
-		heights.forEach((lift, index) => {
-			const top = index === heights.length - 1;
-			context.save();
-			context.translate(0, -lift - bob);
-			if (!top && supportsFilter) context.filter = `brightness(${0.5 + index * 0.08})`;
-			onGround(context, view, () => {
-				context.save();
-				context.translate(troop.x, troop.y);
-				context.rotate(angle);
-				context.scale(1.25, 1.25);
-				if (troop.kind === 'tank') drawTank(context, troop);
-				else if (troop.kind === 'apc') drawApc(context, troop);
-				else drawArtillery(context, troop);
-				context.restore();
-			});
-			context.restore();
-		});
+		const heading = Math.atan2(troop.aimY, troop.aimX);
+		if (troop.kind === 'tank') drawTankSolid(context, view, troop, heading);
+		else if (troop.kind === 'apc') drawApcSolid(context, view, troop, heading);
+		else drawHowitzerSolid(context, view, troop, heading);
 	} else {
 		// Soldiers stand upright and face the way they walk on screen
 		const facing = troop.aimX + troop.aimY >= 0 ? 1 : -1;

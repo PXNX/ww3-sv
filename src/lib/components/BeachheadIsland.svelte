@@ -95,8 +95,20 @@
 	let scale = 1;
 	/** How far the island is zoomed; the canvas is redrawn with that many times the pixels */
 	let zoom = 1;
-	const pixelRatio = () =>
-		Math.min((window.devicePixelRatio || 1) * zoom, 4096 / Math.max(1, HOME_VIEW.width * scale));
+	/** The island is repainted every frame, so its bitmap stays within a pixel budget however far it is zoomed */
+	const PIXEL_BUDGET = 2_600_000;
+	const pixelRatio = () => {
+		const width = Math.max(1, HOME_VIEW.width * scale);
+		const height = Math.max(1, HOME_VIEW.height * scale);
+		return Math.max(
+			1,
+			Math.min(
+				(window.devicePixelRatio || 1) * zoom,
+				4096 / width,
+				Math.sqrt(PIXEL_BUDGET / (width * height))
+			)
+		);
+	};
 	let arranging = $state(false);
 	let selected = $state<Selection | null>(null);
 	let sheet = $state<Sheet | null>(null);
