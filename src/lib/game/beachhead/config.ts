@@ -665,17 +665,21 @@ export const ISLANDS: readonly Island[] = [
 
 /** Where each island sits on the sea chart, as a percentage of the chart's width and height */
 export const ISLAND_MAP_POSITIONS: readonly { x: number; y: number }[] = [
-	{ x: 24, y: 74 },
-	{ x: 40, y: 56 },
-	{ x: 56, y: 78 },
-	{ x: 68, y: 52 },
-	{ x: 82, y: 72 },
-	{ x: 86, y: 44 },
+	// Your own base sits in the middle of the chart, and the enemy bases ring it
+	{ x: 30, y: 74 },
+	{ x: 70, y: 76 },
+	{ x: 16, y: 52 },
+	{ x: 84, y: 54 },
+	{ x: 32, y: 40 },
+	{ x: 68, y: 40 },
 	// The orc lands: a broad landmass along the north edge, each stronghold on its own headland
-	{ x: 24, y: 20 },
-	{ x: 50, y: 14 },
-	{ x: 76, y: 20 }
+	{ x: 24, y: 17 },
+	{ x: 50, y: 12 },
+	{ x: 76, y: 17 }
 ];
+
+/** Where your own base lies on the sea chart, as a percentage of its width and height */
+export const HOME_MAP_POSITION = { x: 50, y: 58 } as const;
 
 /** The landmass of the orc lands: where the islands from this index on stand */
 export const ORC_LANDS_FROM_INDEX = 6;

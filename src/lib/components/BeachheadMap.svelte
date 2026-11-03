@@ -10,6 +10,7 @@
 	import {
 		ISLANDS,
 		ISLAND_IDS,
+		HOME_MAP_POSITION,
 		ISLAND_MAP_POSITIONS,
 		ORC_LANDS_FROM_INDEX
 	} from '#lib/game/beachhead/config.js';
@@ -28,7 +29,7 @@
 
 	let { game }: { game: BeachheadGame } = $props();
 
-	const HOME = { x: 11, y: 85 };
+	const HOME = HOME_MAP_POSITION;
 	/** The chart is about 16:9, so sideways distances count a little more than upward ones */
 	const ASPECT = 1.78;
 
