@@ -182,8 +182,6 @@ function drawHq(
 	timeMs: number
 ) {
 	const { x, y } = at;
-	// A paved yard under everything, so the 5 × 5 footprint reads even when the building is smaller
-	drawBox(context, view, x, y, 5, 5, 0, 0.06, paletteOf(SAND_DARK), 0.04);
 	const wall = [WOOD, STONE, '#b7b2a6', '#f1ead8'][stage];
 	const roof = ['#6b4526', TIE_RED, '#b0383d', GOLD][stage];
 	const floors = [1, 2, 2, 3][stage];
@@ -256,7 +254,6 @@ function drawTraining(
 	timeMs: number
 ) {
 	const { x, y } = at;
-	drawBox(context, view, x, y, 3, 3, 0, 0.05, paletteOf(SAND_DARK), 0.04);
 	const length = [1.5, 1.8, 2.2, 2.4][stage];
 	const height = [0.5, 0.6, 0.78, 0.92][stage];
 	drawBox(context, view, x + 0.15, y + 0.15, length, 1.1, 0.05, height, paletteOf(KHAKI));
@@ -317,9 +314,8 @@ function drawDojo(
 	timeMs: number
 ) {
 	const { x, y } = at;
-	drawBox(context, view, x, y, 3, 3, 0, 0.14, paletteOf(STONE), 0.04);
 	const tiers = stage + 1;
-	let z = 0.14;
+	let z = 0;
 	for (let tier = 0; tier < tiers; tier++) {
 		const size = 2.2 - tier * 0.4;
 		const inset = (3 - size) / 2;
@@ -382,7 +378,6 @@ function drawRadar(
 	timeMs: number
 ) {
 	const { x, y } = at;
-	drawBox(context, view, x, y, 2, 2, 0, 0.06, paletteOf(SAND_DARK), 0.04);
 	drawBox(context, view, x + 0.3, y + 0.5, 1.0, 1.0, 0.06, 0.45, paletteOf(KHAKI));
 	const mastHeight = 1.3 + stage * 0.5;
 	// A lattice mast of four legs that tighten towards the top
@@ -491,7 +486,6 @@ function drawWarehouse(
 ) {
 	const { x, y } = at;
 	const resource = resourceOf(key);
-	drawBox(context, view, x, y, 2, 2, 0, 0.05, paletteOf(SAND_DARK), 0.04);
 	const colour = RESOURCE_COLOR[resource];
 	const size = [1.3, 1.45, 1.45, 1.55][stage];
 	const height = [0.55, 0.65, 0.72, 0.8][stage];
@@ -1047,6 +1041,21 @@ export function drawHome(context: CanvasRenderingContext2D, scene: HomeScene, vi
 	const keys = (Object.keys(scene.layout.positions) as LayoutKey[]).filter(
 		(key) => !(dragging?.item.kind === 'building' && dragging.item.key === key)
 	);
+	// The ring of the selected building lies on the ground, under everything that stands on it
+	for (const key of keys) {
+		const at = positionOf(scene.layout, key);
+		const size = footprintOf(key);
+		if (scene.selected?.kind === 'building' && scene.selected.key === key) {
+			context.save();
+			footprintPath(context, view, at.x - 0.05, at.y - 0.05, size.width + 0.1, size.height + 0.1);
+			context.lineWidth = 0.1;
+			context.strokeStyle = EXPLOSION_YELLOW;
+			context.setLineDash([0.22, 0.14]);
+			context.stroke();
+			context.restore();
+		}
+	}
+
 	for (const key of keys) {
 		const at = positionOf(scene.layout, key);
 		const size = footprintOf(key);
@@ -1113,15 +1122,6 @@ export function drawHome(context: CanvasRenderingContext2D, scene: HomeScene, vi
 		const size = footprintOf(key);
 		const stage = stageOf(scene.levelOf(key), scene.maxOf(key));
 		const selected = scene.selected?.kind === 'building' && scene.selected.key === key;
-		if (selected) {
-			context.save();
-			footprintPath(context, view, at.x - 0.05, at.y - 0.05, size.width + 0.1, size.height + 0.1);
-			context.lineWidth = 0.1;
-			context.strokeStyle = EXPLOSION_YELLOW;
-			context.setLineDash([0.22, 0.14]);
-			context.stroke();
-			context.restore();
-		}
 		drawBadge(
 			context,
 			view,
