@@ -707,6 +707,198 @@ function drawBadge(
 	context.fillText(text, at.x, at.y + 0.02);
 }
 
+/**
+ * A little builder hammering at the wall of the building under construction. The hammer is a body
+ * under gravity: it is hauled back, hangs for a breath, falls with a constant angular acceleration
+ * until it meets the wall, and then rings back like a damped spring. The impact squashes the builder,
+ * kicks a few chips out that fall under gravity and bounce twice on the ground before they fade.
+ */
+const SWING = {
+	/** Milliseconds to haul the hammer back, to hold it and the full length of one blow */
+	raiseMs: 520,
+	holdMs: 90,
+	cycleMs: 1320,
+	/** Hammer angle in radians from straight up: cocked back, and where it meets the wall */
+	back: -0.95,
+	hit: 1.2,
+	/** Angular acceleration of the fall, in radians per second squared */
+	gravity: 24
+};
+
+function hammerAngle(phaseMs: number): { angle: number; sinceHit: number } {
+	const fall = Math.sqrt((2 * (SWING.hit - SWING.back)) / SWING.gravity) * 1000;
+	const hitAt = SWING.raiseMs + SWING.holdMs + fall;
+	if (phaseMs < SWING.raiseMs) {
+		const t = phaseMs / SWING.raiseMs;
+		const ease = 1 - Math.pow(1 - t, 3);
+		return { angle: SWING.hit + (SWING.back - SWING.hit) * ease, sinceHit: -1 };
+	}
+	if (phaseMs < SWING.raiseMs + SWING.holdMs) {
+		// A tremble while the arm is cocked
+		return { angle: SWING.back + Math.sin(phaseMs / 9) * 0.015, sinceHit: -1 };
+	}
+	if (phaseMs < hitAt) {
+		const tau = (phaseMs - SWING.raiseMs - SWING.holdMs) / 1000;
+		return { angle: SWING.back + 0.5 * SWING.gravity * tau * tau, sinceHit: -1 };
+	}
+	const tau = (phaseMs - hitAt) / 1000;
+	// Rings back off the wall and settles, the way a stiff spring does
+	const recoil = 0.42 * Math.exp(-7 * tau) * Math.abs(Math.sin(16 * tau));
+	return { angle: SWING.hit - recoil, sinceHit: tau };
+}
+
+function drawBuilder(
+	context: CanvasRenderingContext2D,
+	base: { x: number; y: number },
+	timeMs: number,
+	seed: number
+) {
+	const phase = (((timeMs + seed * 417) % SWING.cycleMs) + SWING.cycleMs) % SWING.cycleMs;
+	const { angle, sinceHit } = hammerAngle(phase);
+	const impact = sinceHit >= 0 ? Math.exp(-11 * sinceHit) : 0;
+	const squash = 1 - 0.1 * impact * Math.cos(34 * Math.max(0, sinceHit));
+	const lean = 0.05 + angle * 0.05;
+
+	context.save();
+	context.translate(base.x, base.y);
+	context.lineJoin = 'round';
+	context.lineCap = 'round';
+
+	// Shadow
+	context.fillStyle = 'rgba(17,17,17,0.25)';
+	context.beginPath();
+	context.ellipse(0, 0.02, 0.3, 0.1, 0, 0, Math.PI * 2);
+	context.fill();
+
+	// Legs and boots, planted
+	context.strokeStyle = INK;
+	context.lineWidth = 0.1;
+	for (const side of [-0.08, 0.1]) {
+		context.beginPath();
+		context.moveTo(side, -0.3);
+		context.lineTo(side + (side > 0 ? 0.03 : -0.03), -0.02);
+		context.stroke();
+	}
+	context.strokeStyle = '#3b4048';
+	context.lineWidth = 0.065;
+	for (const side of [-0.08, 0.1]) {
+		context.beginPath();
+		context.moveTo(side, -0.3);
+		context.lineTo(side + (side > 0 ? 0.03 : -0.03), -0.02);
+		context.stroke();
+	}
+
+	// Torso and head squash and lean as one body hanging off the hips
+	context.save();
+	context.translate(0, -0.3);
+	context.rotate(lean);
+	context.scale(1 / squash, squash);
+	context.beginPath();
+	context.roundRect(-0.17, -0.38, 0.34, 0.4, 0.07);
+	context.fillStyle = '#f28c28';
+	context.fill();
+	context.lineWidth = 0.05;
+	context.strokeStyle = INK;
+	context.stroke();
+	// A reflective stripe on the vest
+	context.fillStyle = '#fff3a8';
+	context.fillRect(-0.15, -0.2, 0.3, 0.05);
+	// Head and hard hat
+	context.beginPath();
+	context.arc(0.02, -0.52, 0.13, 0, Math.PI * 2);
+	context.fillStyle = '#f6c9a0';
+	context.fill();
+	context.stroke();
+	context.beginPath();
+	context.arc(0.02, -0.55, 0.14, Math.PI, Math.PI * 2);
+	context.fillStyle = '#f5c83a';
+	context.fill();
+	context.stroke();
+	context.fillStyle = '#e0a91c';
+	context.fillRect(-0.15, -0.56, 0.34, 0.045);
+	context.fillStyle = INK;
+	context.beginPath();
+	context.arc(0.09, -0.5, 0.017, 0, Math.PI * 2);
+	context.fill();
+
+	// The arm and the hammer swing from the shoulder
+	context.translate(0.1, -0.3);
+	context.rotate(angle);
+	context.strokeStyle = INK;
+	context.lineWidth = 0.13;
+	context.beginPath();
+	context.moveTo(0, 0);
+	context.lineTo(0, -0.3);
+	context.stroke();
+	context.strokeStyle = '#f28c28';
+	context.lineWidth = 0.075;
+	context.stroke();
+	context.strokeStyle = INK;
+	context.lineWidth = 0.1;
+	context.beginPath();
+	context.moveTo(0, -0.28);
+	context.lineTo(0, -0.62);
+	context.stroke();
+	context.strokeStyle = '#9b6a3c';
+	context.lineWidth = 0.05;
+	context.stroke();
+	context.beginPath();
+	context.roundRect(-0.12, -0.74, 0.24, 0.16, 0.03);
+	context.fillStyle = '#8b97a6';
+	context.fill();
+	context.lineWidth = 0.045;
+	context.strokeStyle = INK;
+	context.stroke();
+	context.restore();
+
+	// Chips fly off the wall in front of the builder and bounce on the ground
+	if (sinceHit >= 0 && sinceHit < 0.95) {
+		const wallX = 0.62;
+		const wallY = -0.5;
+		for (let chip = 0; chip < 7; chip++) {
+			const spread = (chip - 3) / 3;
+			let vx = 1.4 + (chip % 3) * 0.55;
+			let vy = -2.6 - Math.abs(spread) * 0.9 - (chip % 2) * 0.8;
+			let x = wallX;
+			let y = wallY;
+			let t = sinceHit;
+			let bounces = 0;
+			// Step the flight under gravity, reflecting off the ground a couple of times
+			const g = 9.5;
+			const dt = 1 / 60;
+			for (let step = 0; step < t / dt && bounces < 3; step++) {
+				vy += g * dt;
+				x += vx * dt * (0.4 + Math.abs(spread) * 0.3);
+				y += vy * dt;
+				if (y > 0) {
+					y = 0;
+					vy = -vy * 0.42;
+					vx *= 0.7;
+					bounces += 1;
+				}
+			}
+			context.globalAlpha = Math.max(0, 1 - sinceHit / 0.95);
+			context.save();
+			context.translate(x + spread * 0.05, y);
+			context.rotate(chip + sinceHit * 9 * (chip % 2 ? 1 : -1));
+			context.fillStyle = chip % 3 === 0 ? '#f5c83a' : chip % 3 === 1 ? '#e8e2c8' : '#9b6a3c';
+			context.fillRect(-0.035, -0.025, 0.07, 0.05);
+			context.restore();
+		}
+		context.globalAlpha = 1;
+		// A flash where the hammer met the wall
+		if (sinceHit < 0.09) {
+			context.globalAlpha = 1 - sinceHit / 0.09;
+			context.fillStyle = '#fff3a8';
+			context.beginPath();
+			context.arc(wallX, wallY, 0.17, 0, Math.PI * 2);
+			context.fill();
+			context.globalAlpha = 1;
+		}
+	}
+	context.restore();
+}
+
 function drawConstruction(
 	context: CanvasRenderingContext2D,
 	view: IsoView,
@@ -746,14 +938,9 @@ function drawConstruction(
 		width * Math.min(1, Math.max(0, progress)),
 		0.16
 	);
-	// A hammer taps while the builders work
-	const tap = Math.sin(timeMs / 140) * 0.1;
-	context.strokeStyle = INK;
-	context.lineWidth = 0.07;
-	context.beginPath();
-	context.moveTo(centre.x + width / 2 + 0.25, centre.y + 0.12);
-	context.lineTo(centre.x + width / 2 + 0.25 + tap, centre.y - 0.2);
-	context.stroke();
+	// The builder stands at the south-west wall, hammering it
+	const standing = view.project(at.x + Math.min(0.9, size.width * 0.3), at.y + size.height + 0.55);
+	drawBuilder(context, standing, timeMs, at.x * 3 + at.y);
 }
 
 function drawGround(context: CanvasRenderingContext2D, view: IsoView, scene: HomeScene) {
@@ -904,6 +1091,12 @@ export function drawHome(context: CanvasRenderingContext2D, scene: HomeScene, vi
 						context.fillRect(spot.x - 0.5, spot.y - 0.1, 1, 0.2);
 						context.fillStyle = EXPLOSION_YELLOW;
 						context.fillRect(spot.x - 0.46, spot.y - 0.06, 0.92 * progress, 0.12);
+						drawBuilder(
+							context,
+							view.project(dock.x - 0.35, dock.y + 1.0),
+							scene.timeMs,
+							index * 5
+						);
 					}
 				} else {
 					drawEmptyBerth(context, view, index);
