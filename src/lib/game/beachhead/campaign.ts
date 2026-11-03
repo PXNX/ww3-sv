@@ -706,14 +706,22 @@ export function retrainAllCost(save: BeachheadSave): number {
 }
 
 /** The support skills the training ground can improve, in the order of the skill bar */
-export const SUPPORT_SKILLS: readonly SkillId[] = ['flamingo', 'barrage', 'flare', 'smoke', 'heal'];
+export const SUPPORT_SKILLS: readonly SkillId[] = [
+	'flamingo',
+	'barrage',
+	'flare',
+	'smoke',
+	'heal',
+	'emp'
+];
 
 const SKILL_BASE_COST: Record<SkillId, Resources> = {
 	flamingo: { wood: 220, stone: 160, iron: 120, gold: 16 },
 	barrage: { wood: 200, stone: 150, iron: 140, gold: 14 },
 	flare: { wood: 120, stone: 90, iron: 50, gold: 8 },
 	smoke: { wood: 130, stone: 100, iron: 60, gold: 8 },
-	heal: { wood: 180, stone: 130, iron: 90, gold: 14 }
+	heal: { wood: 180, stone: 130, iron: 90, gold: 14 },
+	emp: { wood: 210, stone: 140, iron: 160, gold: 18 }
 };
 const SKILL_COST_FACTOR = 1.6;
 

@@ -1254,6 +1254,29 @@ export class BeachheadGame {
 				break;
 			}
 			case 'skill-impact': {
+				if (event.skill === 'emp') {
+					for (let ring = 0; ring < 3; ring++) {
+						this.#effect({
+							kind: 'ring',
+							x: event.x,
+							y: event.y,
+							radius: event.radius * (0.6 + ring * 0.2),
+							color: ring % 2 === 0 ? '#7fd8ff' : '#e8f8ff',
+							ageMs: 0,
+							durationMs: (520 + ring * 160) * short + 60
+						});
+					}
+					this.#effect({
+						kind: 'explosion',
+						x: event.x,
+						y: event.y,
+						size: 0.45,
+						ageMs: 0,
+						durationMs: 360 * short + 60
+					});
+					this.#play('explosion-small', 0.5);
+					break;
+				}
 				const missile = event.skill === 'flamingo';
 				this.#effect({
 					kind: 'explosion',

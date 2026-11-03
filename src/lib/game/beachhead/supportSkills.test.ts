@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MAX_SUPPORT_SKILL_LEVEL, SKILLS, skillStatsAt } from './config';
-import { createBattle, castSkill } from './battle';
+import { castSkill, createBattle, deploy, stepBattle } from './battle';
 import {
 	applySupportSkillUpgrade,
 	canUpgradeSupportSkill,
@@ -64,5 +64,52 @@ describe('support skills at the training ground', () => {
 		castSkill(plain, 'flamingo', 6, 4);
 		expect(trained.strikes[0].damage).toBeGreaterThan(plain.strikes[0].damage);
 		expect(trained.strikes[0].radius).toBeGreaterThan(plain.strikes[0].radius);
+	});
+});
+
+describe('the EMP pulse', () => {
+	it('switches off every defence in the circle for longer at higher levels', () => {
+		const island = {
+			id: 'x',
+			buildings: [
+				{ kind: 'hq' as const, x: 9, y: 3 },
+				{ kind: 'field-cannon' as const, x: 6, y: 3 },
+				{ kind: 'mg' as const, x: 6, y: 6 }
+			]
+		};
+		const pulse = (level: number) => {
+			const state = createBattle(island, { squads: [], skillLevels: { emp: level } });
+			state.energy = 300;
+			castSkill(state, 'emp', 6.5, 3.5);
+			return state;
+		};
+		const low = pulse(1);
+		expect(low.buildings[1].stunMs).toBeGreaterThan(0);
+		// Out of the circle nothing happens, and the headquarters never shoots anyway
+		expect(low.buildings[2].stunMs).toBe(0);
+		expect(pulse(5).buildings[1].stunMs).toBeGreaterThan(low.buildings[1].stunMs);
+		expect(skillStatsAt('emp', 5).radius).toBeGreaterThan(skillStatsAt('emp', 1).radius);
+	});
+
+	it('keeps a switched-off gun from firing until the pulse wears off', () => {
+		const state = createBattle(
+			{
+				id: 'x',
+				buildings: [
+					{ kind: 'hq' as const, x: 9, y: 3 },
+					{ kind: 'mg' as const, x: 3, y: 3 }
+				]
+			},
+			{ squads: [[{ kind: 'assault', hp: 100, damage: 0, range: 1, speed: 0, attackMs: 600 }]] }
+		);
+		deploy(state, 3);
+		state.troops[0].x = 3.5;
+		state.troops[0].y = 3.5;
+		state.energy = 300;
+		castSkill(state, 'emp', 3.5, 3.5);
+		for (let step = 0; step < 15; step++) stepBattle(state, 100);
+		expect(state.troops[0].hp).toBe(100);
+		for (let step = 0; step < 30; step++) stepBattle(state, 100);
+		expect(state.troops[0].hp).toBeLessThan(100);
 	});
 });

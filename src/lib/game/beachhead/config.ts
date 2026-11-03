@@ -582,7 +582,7 @@ export const MAX_RADAR_LEVEL = 8;
 export const BASE_CHARTED_ISLANDS = 6;
 
 /** The support skills the player can call in during an assault */
-export type SkillId = 'flamingo' | 'barrage' | 'flare' | 'smoke' | 'heal';
+export type SkillId = 'flamingo' | 'barrage' | 'flare' | 'smoke' | 'heal' | 'emp';
 
 export interface SkillStats {
 	/** Grid cells around the aim point that are affected */
@@ -605,7 +605,9 @@ export const SKILLS: Record<SkillId, SkillStats> = {
 	barrage: { radius: 1.1, damage: 90, delayMs: 550, shells: 6, scatter: 1.5 },
 	flare: { radius: 0.35, damage: 0, delayMs: 0, durationMs: 9000 },
 	smoke: { radius: 2.3, damage: 0, delayMs: 0, durationMs: 9000 },
-	heal: { radius: 2.2, damage: 0, delayMs: 0, durationMs: 7000, healPerSecond: 16 }
+	heal: { radius: 2.2, damage: 0, delayMs: 0, durationMs: 7000, healPerSecond: 16 },
+	// An electromagnetic pulse: every defence inside the circle is switched off for the duration
+	emp: { radius: 2.4, damage: 0, delayMs: 0, durationMs: 2600 }
 };
 
 /** The support skills are trained at the training ground; every level makes them hit harder and last longer */

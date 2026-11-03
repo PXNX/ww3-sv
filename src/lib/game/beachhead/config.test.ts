@@ -218,8 +218,8 @@ describe('the expanded landing party', () => {
 describe('beachhead support skills', () => {
 	const skills = Object.keys(SKILLS) as SkillId[];
 
-	it('offers all five support calls', () => {
-		expect(skills.sort()).toEqual(['barrage', 'flamingo', 'flare', 'heal', 'smoke']);
+	it('offers all six support calls', () => {
+		expect(skills.sort()).toEqual(['barrage', 'emp', 'flamingo', 'flare', 'heal', 'smoke']);
 	});
 
 	it('gives every skill an area and a cost the HUD can show', () => {

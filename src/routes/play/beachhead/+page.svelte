@@ -55,7 +55,8 @@
 		{ id: 'barrage', icon: IconBomb, label: () => m.beachhead_skill_barrage() },
 		{ id: 'flare', icon: IconFlameKindling, label: () => m.beachhead_skill_flare() },
 		{ id: 'smoke', icon: IconCloud, label: () => m.beachhead_skill_smoke() },
-		{ id: 'heal', icon: IconHeartPulse, label: () => m.beachhead_skill_heal() }
+		{ id: 'heal', icon: IconHeartPulse, label: () => m.beachhead_skill_heal() },
+		{ id: 'emp', icon: IconZap, label: () => m.beachhead_skill_emp() }
 	];
 
 	let showTutorial = $state(false);

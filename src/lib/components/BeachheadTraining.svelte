@@ -37,7 +37,9 @@
 					? m.beachhead_skill_flare()
 					: skill === 'smoke'
 						? m.beachhead_skill_smoke()
-						: m.beachhead_skill_heal();
+						: skill === 'emp'
+							? m.beachhead_skill_emp()
+							: m.beachhead_skill_heal();
 </script>
 
 {#snippet costChips(cost: Resources)}

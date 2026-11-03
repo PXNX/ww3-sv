@@ -16,6 +16,7 @@ import IconStar from '~icons/lucide/star';
 import IconTarget from '~icons/lucide/target';
 import IconTruck from '~icons/lucide/truck';
 import IconUsers from '~icons/lucide/users';
+import IconZap from '~icons/lucide/zap';
 
 export type IconComponent = Component<SvelteHTMLElements['svg']>;
 
@@ -38,5 +39,6 @@ export const SKILL_ICONS: Record<SkillId, IconComponent> = {
 	barrage: IconBomb,
 	flare: IconFlameKindling,
 	smoke: IconCloud,
-	heal: IconHeartPulse
+	heal: IconHeartPulse,
+	emp: IconZap
 };

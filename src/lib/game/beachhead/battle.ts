@@ -104,6 +104,8 @@ export interface Building {
 	regenPerSecond: number;
 	/** How much further than usual the building shoots, from a reach crystal */
 	rangeMultiplier: number;
+	/** Time left switched off by an EMP: the building neither shoots nor pulses */
+	stunMs: number;
 	destroyed: boolean;
 	/** Counts down after a hit, for the hit flash */
 	flashMs: number;
@@ -354,6 +356,7 @@ export function createBattle(
 				skillResist: crystal.skillResist,
 				regenPerSecond: crystal.regenPerSecond,
 				rangeMultiplier: crystal.rangeMultiplier,
+				stunMs: 0,
 				destroyed: false,
 				flashMs: 0,
 				recoilMs: 0
@@ -416,6 +419,27 @@ export function castSkill(state: BattleState, skill: SkillId, x: number, y: numb
 	state.energy -= cost;
 	state.skillsUsed += 1;
 	state.events.push({ kind: 'skill-cast', skill, x: aimX, y: aimY, cost, energy: state.energy });
+
+	if (skill === 'emp') {
+		// The pulse lands at once and switches off every defence in the circle for a while
+		let hits = 0;
+		for (const building of state.buildings) {
+			if (building.destroyed || isMine(building.kind) || building.hp <= 0) continue;
+			if (BUILDINGS[building.kind].damage <= 0 && !BUILDINGS[building.kind].pulse) continue;
+			if (rectDistance(aimX, aimY, building) > stats.radius) continue;
+			building.stunMs = Math.max(building.stunMs, stats.durationMs ?? 2600);
+			hits += 1;
+		}
+		state.events.push({
+			kind: 'skill-impact',
+			skill,
+			x: aimX,
+			y: aimY,
+			radius: stats.radius,
+			hits
+		});
+		return true;
+	}
 
 	if (skill === 'flamingo' || skill === 'barrage') {
 		const shells = skill === 'barrage' ? (stats.shells ?? 1) : 1;
@@ -1079,6 +1103,7 @@ export function stepBattle(state: BattleState, dtMs: number) {
 	for (const building of state.buildings) {
 		building.flashMs = Math.max(0, building.flashMs - frameMs);
 		building.recoilMs = Math.max(0, building.recoilMs - frameMs);
+		building.stunMs = Math.max(0, building.stunMs - frameMs);
 		if (building.destroyed || building.hp <= 0) continue;
 		if (building.regenPerSecond > 0) {
 			building.hp = Math.min(
@@ -1087,6 +1112,8 @@ export function stepBattle(state: BattleState, dtMs: number) {
 			);
 		}
 		const stats = BUILDINGS[building.kind];
+		// A building switched off by an EMP stands there dark until the pulse wears off
+		if (building.stunMs > 0) continue;
 		if (stats.pulse) {
 			// A jammer shakes everything near it on a rhythm, whether or not anything shoots
 			building.cooldownMs = Math.max(0, building.cooldownMs - frameMs);
