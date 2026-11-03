@@ -28,6 +28,20 @@ export function zoomPan(node: HTMLElement, options: ZoomPanOptions = {}) {
 
 	const content = (): HTMLElement | null => node.querySelector<HTMLElement>('[data-zoom]');
 
+	let announced = 0;
+	let frame = 0;
+
+	/** Tells the picture how far it is zoomed, so canvases can redraw sharp instead of stretching pixels */
+	function announce() {
+		if (frame) return;
+		frame = requestAnimationFrame(() => {
+			frame = 0;
+			if (Math.abs(scale - announced) < 0.02) return;
+			announced = scale;
+			node.dispatchEvent(new CustomEvent('zoomchange', { detail: { scale } }));
+		});
+	}
+
 	function clampAndApply() {
 		const target = content();
 		if (!target) return;
@@ -42,6 +56,7 @@ export function zoomPan(node: HTMLElement, options: ZoomPanOptions = {}) {
 		tx = scale <= 1.001 ? 0 : Math.min(slackX, Math.max(-slackX, tx));
 		ty = scale <= 1.001 ? 0 : Math.min(slackY, Math.max(-slackY, ty));
 		target.style.transformOrigin = '50% 50%';
+		announce();
 		target.style.transform =
 			scale === 1 && tx === 0 && ty === 0 ? '' : `translate(${tx}px, ${ty}px) scale(${scale})`;
 	}
@@ -181,6 +196,7 @@ export function zoomPan(node: HTMLElement, options: ZoomPanOptions = {}) {
 			node.removeEventListener('click', onClick, true);
 			node.removeEventListener('dblclick', onDoubleClick);
 			observer.disconnect();
+			cancelAnimationFrame(frame);
 		}
 	};
 }

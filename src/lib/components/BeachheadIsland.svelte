@@ -89,6 +89,10 @@
 	let canvas: HTMLCanvasElement | undefined = $state();
 	let context: CanvasRenderingContext2D | null = null;
 	let scale = 1;
+	/** How far the island is zoomed; the canvas is redrawn with that many times the pixels */
+	let zoom = 1;
+	const pixelRatio = () =>
+		Math.min((window.devicePixelRatio || 1) * zoom, 4096 / Math.max(1, HOME_VIEW.width * scale));
 	let arranging = $state(false);
 	let selected = $state<Selection | null>(null);
 	let sheet = $state<Sheet | null>(null);
@@ -255,7 +259,7 @@
 
 	function draw(timeMs: number) {
 		if (!canvas || !context) return;
-		const ratio = window.devicePixelRatio || 1;
+		const ratio = pixelRatio();
 		context.setTransform(scale * ratio, 0, 0, scale * ratio, 0, 0);
 		drawHome(context, {
 			layout: game.layout,
@@ -282,7 +286,7 @@
 		const height = stage.clientHeight;
 		if (width === 0 || height === 0) return;
 		scale = Math.min(width / HOME_VIEW.width, height / HOME_VIEW.height);
-		const ratio = window.devicePixelRatio || 1;
+		const ratio = pixelRatio();
 		canvas.style.width = `${HOME_VIEW.width * scale}px`;
 		canvas.style.height = `${HOME_VIEW.height * scale}px`;
 		canvas.width = Math.round(HOME_VIEW.width * scale * ratio);
@@ -295,6 +299,12 @@
 		context = canvas.getContext('2d');
 		const observer = new ResizeObserver(resize);
 		observer.observe(stage);
+		const host = stage.parentElement;
+		const onZoom = (event: Event) => {
+			zoom = (event as CustomEvent<{ scale: number }>).detail.scale;
+			resize();
+		};
+		host?.addEventListener('zoomchange', onZoom);
 		resize();
 		let frame = 0;
 		const tick = (now: number) => {
@@ -311,6 +321,7 @@
 			cancelAnimationFrame(frame);
 			clearInterval(timer);
 			observer.disconnect();
+			host?.removeEventListener('zoomchange', onZoom);
 		};
 	});
 

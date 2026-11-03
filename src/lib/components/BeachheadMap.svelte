@@ -93,11 +93,31 @@
 		})
 	);
 
-	/** Draws the little isometric picture of an island's base once it is on the page */
-	function miniature(node: HTMLCanvasElement, index: number) {
+	/** How far the chart is zoomed, so the little island pictures can be redrawn at that resolution */
+	let zoom = $state(1);
+
+	function trackZoom(node: HTMLElement) {
+		const onZoom = (event: Event) => {
+			zoom = (event as CustomEvent<{ scale: number }>).detail.scale;
+		};
+		node.addEventListener('zoomchange', onZoom);
+		return { destroy: () => node.removeEventListener('zoomchange', onZoom) };
+	}
+
+	/** Draws the little isometric picture of an island's base, and again sharper whenever the chart is zoomed */
+	function miniature(node: HTMLCanvasElement, options: { index: number; zoom: number }) {
+		draw(node, options.index, options.zoom);
+		return {
+			update(next: { index: number; zoom: number }) {
+				draw(node, next.index, next.zoom);
+			}
+		};
+	}
+
+	function draw(node: HTMLCanvasElement, index: number, zoomed: number) {
 		const width = 180;
 		const height = Math.round((width * BATTLE_VIEW.height) / BATTLE_VIEW.width);
-		const ratio = Math.min(2, window.devicePixelRatio || 1);
+		const ratio = Math.min(6, (window.devicePixelRatio || 1) * Math.max(1, zoomed));
 		node.width = width * ratio;
 		node.height = height * ratio;
 		const context = node.getContext('2d');
@@ -122,7 +142,7 @@
 	};
 </script>
 
-<div class="map-sea absolute inset-0 overflow-hidden" use:zoomPan={{ max: 3 }}>
+<div class="map-sea absolute inset-0 overflow-hidden" use:zoomPan={{ max: 3 }} use:trackZoom>
 	<div data-zoom class="absolute inset-0">
 		<div class="sea-depth absolute inset-0" aria-hidden="true"></div>
 
@@ -219,7 +239,8 @@
 						title={islandName(index)}
 						onclick={() => game.openIsland(index)}
 					>
-						<canvas use:miniature={index} class="block h-auto w-full" aria-hidden="true"></canvas>
+						<canvas use:miniature={{ index, zoom }} class="block h-auto w-full" aria-hidden="true"
+						></canvas>
 
 						<span
 							class="absolute -end-1 top-0 flex size-8 items-center justify-center rounded-full border-2 border-ink shadow-[2px_2px_0_var(--color-ink)] {controlled

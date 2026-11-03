@@ -19,10 +19,14 @@
 	let context: CanvasRenderingContext2D | null = null;
 	/** CSS pixels per unit of the isometric view */
 	let scale = 1;
+	/** How far the picture is zoomed; the canvas is drawn at that many times the pixels so it stays sharp */
+	let zoom = 1;
+	const pixelRatio = () =>
+		Math.min((window.devicePixelRatio || 1) * zoom, 4096 / Math.max(1, canvas?.clientWidth ?? 1));
 
 	function draw() {
 		if (!canvas || !context) return;
-		const ratio = window.devicePixelRatio || 1;
+		const ratio = pixelRatio();
 		context.setTransform(scale * ratio, 0, 0, scale * ratio, 0, 0);
 		drawScene(context, game.battle, game.sceneExtras(), BATTLE_VIEW);
 	}
@@ -34,7 +38,7 @@
 		const height = stage.clientHeight;
 		if (width === 0 || height === 0) return;
 		scale = Math.min(width / BATTLE_VIEW.width, height / BATTLE_VIEW.height);
-		const ratio = window.devicePixelRatio || 1;
+		const ratio = pixelRatio();
 		canvas.style.width = `${BATTLE_VIEW.width * scale}px`;
 		canvas.style.height = `${BATTLE_VIEW.height * scale}px`;
 		canvas.width = Math.round(BATTLE_VIEW.width * scale * ratio);
@@ -49,11 +53,17 @@
 		context = canvas.getContext('2d');
 		const observer = new ResizeObserver(resize);
 		observer.observe(stage);
+		const onZoom = (event: Event) => {
+			zoom = (event as CustomEvent<{ scale: number }>).detail.scale;
+			resize();
+		};
+		stage.addEventListener('zoomchange', onZoom);
 		resize();
 		const stopHidden = onAppHidden(() => game.pause());
 		return () => {
 			loop.pause();
 			observer.disconnect();
+			stage?.removeEventListener('zoomchange', onZoom);
 			stopHidden();
 		};
 	});
