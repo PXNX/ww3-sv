@@ -24,6 +24,8 @@ export interface IsoView {
 	/** Where grid point (0, 0) lands */
 	originX: number;
 	originY: number;
+	/** The canvas matrix (a, b, c, d, e, f) that maps grid cells onto the screen, for flat drawing */
+	ground: readonly [number, number, number, number, number, number];
 	/** Grid cell and height above the ground to a view position */
 	project(x: number, y: number, z?: number): IsoPoint;
 	/** A view position on the ground plane back to a grid position */
@@ -57,6 +59,7 @@ export function createIsoView(
 		height: (cols + rows + 4 * pad) * halfH + headroom + depth,
 		originX,
 		originY,
+		ground: [halfW, halfH, -halfW, halfH, originX, originY],
 		project(x, y, z = 0) {
 			return { x: originX + (x - y) * halfW, y: originY + (x + y) * halfH - z };
 		},
@@ -68,10 +71,54 @@ export function createIsoView(
 	};
 }
 
+/** A view whose grid is turned so the shore (x = 0) is the bottom-left edge and x grows up and to the right */
+export interface ShoreView extends IsoView {
+	/** The plain isometric view the solids are built in; give it footprints from gridPlacement */
+	grid: IsoView;
+	/** A footprint in grid cells as the plain view sees it */
+	gridPlacement<T extends { x: number; y: number; width: number; height: number }>(
+		footprint: T
+	): { x: number; y: number; width: number; height: number };
+}
+
+export function createShoreView(
+	cols: number,
+	rows: number,
+	options: IsoViewOptions = {}
+): ShoreView {
+	// In the plain view u = y and v = cols - x, so x = 0 lies on the near-left edge
+	const grid = createIsoView(rows, cols, options);
+	return {
+		...grid,
+		cols,
+		rows,
+		grid,
+		ground: [
+			grid.halfW,
+			-grid.halfH,
+			grid.halfW,
+			grid.halfH,
+			grid.originX - cols * grid.halfW,
+			grid.originY + cols * grid.halfH
+		],
+		project: (x, y, z = 0) => grid.project(y, cols - x, z),
+		unproject(sx, sy) {
+			const g = grid.unproject(sx, sy);
+			return { x: cols - g.y, y: g.x };
+		},
+		gridPlacement: (footprint) => ({
+			x: footprint.y,
+			y: cols - footprint.x - footprint.width,
+			width: footprint.height,
+			height: footprint.width
+		})
+	};
+}
+
 /** Runs a drawing function in grid coordinates, so flat shapes on the ground can be drawn as before */
 export function onGround(context: CanvasRenderingContext2D, view: IsoView, draw: () => void) {
 	context.save();
-	context.transform(view.halfW, view.halfH, -view.halfW, view.halfH, view.originX, view.originY);
+	context.transform(...view.ground);
 	draw();
 	context.restore();
 }

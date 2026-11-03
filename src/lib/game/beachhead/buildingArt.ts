@@ -154,7 +154,7 @@ function drawCannonArt(context: CanvasRenderingContext2D, view: IsoView, b: Plac
 		context,
 		view,
 		{ x: cx, y: cy, z: 0.42 },
-		{ x: cx - 0.62, y: cy - 0.05, z: 0.5 },
+		{ x: cx - 0.05, y: cy + 0.62, z: 0.5 },
 		STEEL,
 		0.12
 	);
@@ -165,7 +165,7 @@ function drawSniperArt(context: CanvasRenderingContext2D, view: IsoView, b: Plac
 	const cy = b.y + 0.5;
 	drawBox(context, view, b.x + 0.3, b.y + 0.3, 0.4, 0.4, 0, 0.95, paletteOf(BANNER_SLATE));
 	drawBox(context, view, b.x + 0.18, b.y + 0.18, 0.64, 0.64, 0.95, 1.08, paletteOf(STEEL));
-	drawBar(context, view, { x: cx, y: cy, z: 1.2 }, { x: cx - 0.5, y: cy, z: 1.28 }, INK, 0.06);
+	drawBar(context, view, { x: cx, y: cy, z: 1.2 }, { x: cx, y: cy + 0.5, z: 1.28 }, INK, 0.06);
 	drawBlob(context, view, cx, cy, 1.22, 0.07, EXPLOSION_YELLOW);
 }
 
@@ -177,11 +177,11 @@ function sandbags(
 	radius: number,
 	count: number
 ) {
-	// A horseshoe of bags that opens towards the beach (the -x side), drawn back to front
+	// A horseshoe of bags that opens towards the beach (the +y side of the plain view), back to front
 	const bags: { x: number; y: number }[] = [];
 	for (let bag = 0; bag < count; bag++) {
 		const angle = -Math.PI / 2 + (bag / (count - 1)) * Math.PI;
-		bags.push({ x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius });
+		bags.push({ x: cx + Math.sin(angle) * radius, y: cy - Math.cos(angle) * radius });
 	}
 	bags
 		.sort((a, c) => a.x + a.y - (c.x + c.y))
@@ -192,8 +192,8 @@ function drawMgArt(context: CanvasRenderingContext2D, view: IsoView, b: Placemen
 	const cx = b.x + 0.5;
 	const cy = b.y + 0.5;
 	drawCylinder(context, view, cx, cy, 0.14, 0, 0.3, paletteOf(STEEL));
-	drawBar(context, view, { x: cx, y: cy, z: 0.34 }, { x: cx - 0.5, y: cy, z: 0.36 }, STEEL, 0.08);
-	sandbags(context, view, cx + 0.1, cy, 0.34, 6);
+	drawBar(context, view, { x: cx, y: cy, z: 0.34 }, { x: cx, y: cy + 0.5, z: 0.36 }, STEEL, 0.08);
+	sandbags(context, view, cx, cy - 0.1, 0.34, 6);
 }
 
 function drawMortarArt(context: CanvasRenderingContext2D, view: IsoView, b: Placement) {
@@ -203,13 +203,13 @@ function drawMortarArt(context: CanvasRenderingContext2D, view: IsoView, b: Plac
 	drawBar(
 		context,
 		view,
-		{ x: cx + 0.04, y: cy + 0.04, z: 0.1 },
-		{ x: cx - 0.12, y: cy - 0.1, z: 0.8 },
+		{ x: cx + 0.04, y: cy - 0.04, z: 0.1 },
+		{ x: cx - 0.1, y: cy + 0.12, z: 0.8 },
 		STEEL,
 		0.16
 	);
-	drawBlob(context, view, cx - 0.12, cy - 0.1, 0.82, 0.09, INK);
-	sandbags(context, view, cx + 0.12, cy, 0.38, 7);
+	drawBlob(context, view, cx - 0.1, cy + 0.12, 0.82, 0.09, INK);
+	sandbags(context, view, cx, cy - 0.12, 0.38, 7);
 }
 
 function drawFpvArt(
@@ -251,12 +251,12 @@ function drawAirArt(context: CanvasRenderingContext2D, view: IsoView, b: Placeme
 		drawBar(
 			context,
 			view,
-			{ x: cx - offset * 0.5, y: cy + offset, z: 0.4 },
-			{ x: cx - 0.24 - offset * 0.5, y: cy + offset, z: 0.98 },
+			{ x: cx + offset, y: cy + offset * 0.5, z: 0.4 },
+			{ x: cx + offset, y: cy + 0.24 + offset * 0.5, z: 0.98 },
 			STEEL,
 			0.09
 		);
-		drawBlob(context, view, cx - 0.24 - offset * 0.5, cy + offset, 1.0, 0.07, TIE_RED);
+		drawBlob(context, view, cx + offset, cy + 0.24 + offset * 0.5, 1.0, 0.07, TIE_RED);
 	}
 }
 
@@ -268,10 +268,10 @@ function drawFlameArt(
 ) {
 	const cx = b.x + 0.5;
 	const cy = b.y + 0.5;
-	drawCylinder(context, view, cx + 0.12, cy - 0.2, 0.17, 0, 0.5, paletteOf(TIE_RED));
-	drawCylinder(context, view, cx + 0.12, cy + 0.2, 0.17, 0, 0.5, paletteOf(MUSTARD));
-	drawBar(context, view, { x: cx, y: cy, z: 0.4 }, { x: cx - 0.48, y: cy, z: 0.34 }, INK, 0.1);
-	const tip = view.project(cx - 0.52, cy, 0.34);
+	drawCylinder(context, view, cx - 0.2, cy - 0.12, 0.17, 0, 0.5, paletteOf(TIE_RED));
+	drawCylinder(context, view, cx + 0.2, cy - 0.12, 0.17, 0, 0.5, paletteOf(MUSTARD));
+	drawBar(context, view, { x: cx, y: cy, z: 0.4 }, { x: cx, y: cy + 0.48, z: 0.34 }, INK, 0.1);
+	const tip = view.project(cx, cy + 0.52, 0.34);
 	const flicker = 0.07 + Math.sin(timeMs / 90) * 0.025;
 	context.beginPath();
 	context.moveTo(tip.x - 0.02, tip.y + 0.05);
@@ -280,7 +280,7 @@ function drawFlameArt(
 	context.closePath();
 	context.fillStyle = FLARE_ORANGE;
 	context.fill();
-	drawBlob(context, view, cx - 0.52, cy, 0.38, flicker, EXPLOSION_YELLOW, 0);
+	drawBlob(context, view, cx, cy + 0.52, 0.38, flicker, EXPLOSION_YELLOW, 0);
 }
 
 function drawDepotArt(context: CanvasRenderingContext2D, view: IsoView, b: Placement) {
@@ -385,16 +385,160 @@ export function drawRubbleArt(
 }
 
 /** The standing building, without its damage smoke, health bar and hit flash */
+const ORC_WOOD = '#5a4632';
+const ORC_GREEN = '#5f8a3a';
+const BONE = '#e8e2c8';
+
+/** The orc stronghold: a palisade of spiked logs around a dark hall under a green banner and a skull */
+function drawOrcHq(context: CanvasRenderingContext2D, view: IsoView, b: Placement, timeMs: number) {
+	const { x, y, width: w, height: h } = b;
+	drawBox(context, view, x + 0.04, y + 0.04, w - 0.08, h - 0.08, 0, 0.5, paletteOf(ORC_WOOD));
+	// Spikes along the front of the palisade
+	for (let step = 0; step < 8; step++) {
+		const t = (step + 0.5) / 8;
+		drawRoof(
+			context,
+			view,
+			x + 0.06 + t * (w - 0.3),
+			y + h - 0.2,
+			0.18,
+			0.16,
+			0.5,
+			0.34,
+			paletteOf(BONE),
+			0.03
+		);
+		drawRoof(
+			context,
+			view,
+			x + w - 0.26,
+			y + 0.06 + t * (h - 0.3),
+			0.16,
+			0.18,
+			0.5,
+			0.34,
+			paletteOf(BONE),
+			0.03
+		);
+	}
+	drawBox(context, view, x + 0.4, y + 0.4, w - 0.8, h - 0.8, 0.5, 1.15, paletteOf('#3f3226'));
+	drawRoof(context, view, x + 0.3, y + 0.3, w - 0.6, h - 0.6, 1.15, 0.45, paletteOf(ORC_GREEN));
+	// Horns on the roof and a skull over the gate
+	drawBar(
+		context,
+		view,
+		{ x: x + 0.5, y: y + h / 2, z: 1.5 },
+		{ x: x + 0.25, y: y + h / 2 - 0.2, z: 2.0 },
+		BONE,
+		0.09
+	);
+	drawBar(
+		context,
+		view,
+		{ x: x + w - 0.5, y: y + h / 2, z: 1.5 },
+		{ x: x + w - 0.25, y: y + h / 2 + 0.2, z: 2.0 },
+		BONE,
+		0.09
+	);
+	const skull = view.project(x + w / 2, y + h - 0.1, 0.78);
+	context.beginPath();
+	context.arc(skull.x, skull.y, 0.17, 0, Math.PI * 2);
+	context.fillStyle = BONE;
+	context.fill();
+	context.lineWidth = 0.04;
+	context.strokeStyle = INK;
+	context.stroke();
+	context.fillStyle = INK;
+	context.fillRect(skull.x - 0.09, skull.y - 0.04, 0.06, 0.07);
+	context.fillRect(skull.x + 0.03, skull.y - 0.04, 0.06, 0.07);
+	drawFlag(context, view, x + w / 2, y + h / 2, 1.6, 0.8, ORC_GREEN, timeMs);
+}
+
+function drawCatapultArt(context: CanvasRenderingContext2D, view: IsoView, b: Placement) {
+	const cx = b.x + 0.5;
+	const cy = b.y + 0.5;
+	drawBox(context, view, b.x + 0.15, b.y + 0.2, 0.7, 0.55, 0.12, 0.3, paletteOf(ORC_WOOD));
+	for (const side of [-0.32, 0.32]) {
+		drawCylinder(context, view, cx + side, cy, 0.17, 0, 0.3, paletteOf('#3f3226'));
+	}
+	// The throwing arm, cocked back, with a bucket of boulders at the end
+	drawBar(
+		context,
+		view,
+		{ x: cx, y: cy - 0.1, z: 0.3 },
+		{ x: cx, y: cy + 0.5, z: 1.0 },
+		ORC_WOOD,
+		0.1
+	);
+	drawBlob(context, view, cx, cy + 0.5, 1.04, 0.13, '#7a7a7a');
+	drawBar(
+		context,
+		view,
+		{ x: cx, y: cy - 0.12, z: 0.3 },
+		{ x: cx, y: cy - 0.12, z: 0.62 },
+		BONE,
+		0.07
+	);
+}
+
+function drawBallistaArt(context: CanvasRenderingContext2D, view: IsoView, b: Placement) {
+	const cx = b.x + 0.5;
+	const cy = b.y + 0.5;
+	drawBox(context, view, b.x + 0.28, b.y + 0.2, 0.44, 0.6, 0, 0.3, paletteOf(ORC_WOOD));
+	// A huge bow across the front and a bolt laid on the rail pointing at the beach
+	drawBar(
+		context,
+		view,
+		{ x: cx - 0.45, y: cy + 0.25, z: 0.5 },
+		{ x: cx, y: cy + 0.05, z: 0.55 },
+		BONE,
+		0.07
+	);
+	drawBar(
+		context,
+		view,
+		{ x: cx + 0.45, y: cy + 0.25, z: 0.5 },
+		{ x: cx, y: cy + 0.05, z: 0.55 },
+		BONE,
+		0.07
+	);
+	drawBar(
+		context,
+		view,
+		{ x: cx - 0.45, y: cy + 0.25, z: 0.5 },
+		{ x: cx + 0.45, y: cy + 0.25, z: 0.5 },
+		'#8a8a8a',
+		0.03
+	);
+	drawBar(
+		context,
+		view,
+		{ x: cx, y: cy - 0.1, z: 0.42 },
+		{ x: cx, y: cy + 0.55, z: 0.5 },
+		INK,
+		0.06
+	);
+	drawBlob(context, view, cx, cy + 0.58, 0.5, 0.06, STEEL);
+}
+
 export function drawEnemyBuilding(
 	context: CanvasRenderingContext2D,
 	view: IsoView,
 	building: Building,
-	timeMs: number
+	timeMs: number,
+	theme?: 'orc'
 ) {
 	drawShadow(context, view, building.x, building.y, building.width, building.height);
 	switch (building.kind) {
 		case 'hq':
-			drawEnemyHq(context, view, building, timeMs);
+			if (theme === 'orc') drawOrcHq(context, view, building, timeMs);
+			else drawEnemyHq(context, view, building, timeMs);
+			break;
+		case 'catapult':
+			drawCatapultArt(context, view, building);
+			break;
+		case 'ballista':
+			drawBallistaArt(context, view, building);
 			break;
 		case 'field-cannon':
 			drawCannonArt(context, view, building);

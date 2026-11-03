@@ -16,16 +16,16 @@ import {
 	isMine,
 	type BuildingKind
 } from './config.js';
+import { drawResourceGlyph, type ResourceId } from './resourceIcons.js';
 import { drawEnemyBuilding, drawHitFlash, drawMineArt, drawRubbleArt } from './buildingArt.js';
 import {
-	createIsoView,
-	depthOf,
+	createShoreView,
 	drawBlob,
 	drawBox,
 	onGround,
 	paletteOf,
 	shade,
-	type IsoView
+	type ShoreView
 } from './iso.js';
 import {
 	BANNER_SLATE,
@@ -48,8 +48,13 @@ import {
 	TIE_RED
 } from './palette.js';
 
-/** The battle seen from the south: the beach is the upper-left edge, the headquarters sits far right */
-export const BATTLE_VIEW: IsoView = createIsoView(COLUMNS, ROWS, {
+/** Painter's order in the turned view: nearer the bottom of the screen means a larger y and a smaller x */
+function shoreDepth(x: number, y: number): number {
+	return y - x;
+}
+
+/** The battle seen from the south: the beach is the bottom-left edge, the headquarters sits far up on the right */
+export const BATTLE_VIEW: ShoreView = createShoreView(COLUMNS, ROWS, {
 	pad: 0.6,
 	headroom: 2.2,
 	depth: 0.7
@@ -63,12 +68,15 @@ const BUILDING_MUZZLE = new Set<BuildingKind>([
 	'mg',
 	'flame',
 	'air-defence',
-	'fpv-nest'
+	'fpv-nest',
+	'catapult',
+	'ballista'
 ]);
 
 /** How tall each building stands, for its health bar and damage smoke */
 const BUILDING_TOP: Partial<Record<BuildingKind, number>> = {
 	hq: 1.9,
+	catapult: 1.1,
 	sniper: 1.4,
 	'fpv-nest': 1.3,
 	'air-defence': 1.1,
@@ -108,6 +116,18 @@ export type Effect =
 			durationMs: number;
 	  }
 	| {
+			kind: 'loot';
+			resource: ResourceId;
+			amount: number;
+			fromX: number;
+			fromY: number;
+			seed: number;
+			/** Milliseconds to wait before the piece leaves, so the loot streams out */
+			delayMs: number;
+			ageMs: number;
+			durationMs: number;
+	  }
+	| {
 			kind: 'float';
 			x: number;
 			y: number;
@@ -133,6 +153,8 @@ export interface SceneExtras {
 	/** Screen shake in grid cells, already decayed by the game loop */
 	shake?: number;
 	reducedMotion?: boolean;
+	/** A small picture of the island on the sea chart: no sea, craft, hints or frame around it */
+	map?: boolean;
 }
 
 const PALMS: readonly { x: number; y: number }[] = [
@@ -191,7 +213,7 @@ function healthBar(
 	context.fillRect(x + 0.025, y + 0.025, Math.max(0, width - 0.05) * ratio, 0.07);
 }
 
-function drawSea(context: CanvasRenderingContext2D, view: IsoView, timeMs: number) {
+function drawSea(context: CanvasRenderingContext2D, view: ShoreView, timeMs: number) {
 	context.fillStyle = SEA;
 	context.fillRect(0, 0, view.width, view.height);
 	// Soft cloud bank along the top edge of the picture
@@ -221,7 +243,7 @@ function drawSea(context: CanvasRenderingContext2D, view: IsoView, timeMs: numbe
 
 function drawLandingCraft(
 	context: CanvasRenderingContext2D,
-	view: IsoView,
+	view: ShoreView,
 	count: number,
 	timeMs: number
 ) {
@@ -238,13 +260,40 @@ function drawLandingCraft(
 		context.beginPath();
 		context.ellipse(at.x - 0.1, at.y + 0.18, 0.7, 0.24, 0, 0, Math.PI * 2);
 		context.stroke();
-		drawBox(context, view, x - 0.3, y - 0.2, 0.7, 0.4, bob, 0.2 + bob, paletteOf(STEEL));
-		drawBox(context, view, x - 0.15, y - 0.12, 0.34, 0.24, 0.2 + bob, 0.42 + bob, paletteOf(KHAKI));
+		const hull = view.gridPlacement({ x: x - 0.3, y: y - 0.2, width: 0.7, height: 0.4 });
+		const cabin = view.gridPlacement({ x: x - 0.15, y: y - 0.12, width: 0.34, height: 0.24 });
+		drawBox(
+			context,
+			view.grid,
+			hull.x,
+			hull.y,
+			hull.width,
+			hull.height,
+			bob,
+			0.2 + bob,
+			paletteOf(STEEL)
+		);
+		drawBox(
+			context,
+			view.grid,
+			cabin.x,
+			cabin.y,
+			cabin.width,
+			cabin.height,
+			0.2 + bob,
+			0.42 + bob,
+			paletteOf(KHAKI)
+		);
 		drawBlob(context, view, x + 0.02, y, 0.5 + bob, 0.05, EXPLOSION_YELLOW, 0.02);
 	}
 }
 
-function drawIsland(context: CanvasRenderingContext2D, view: IsoView, timeMs: number) {
+function drawIsland(
+	context: CanvasRenderingContext2D,
+	view: ShoreView,
+	timeMs: number,
+	theme?: 'orc'
+) {
 	const shore = SHORE_X - 0.15;
 	const thickness = 0.55;
 	const p = view.project;
@@ -263,8 +312,10 @@ function drawIsland(context: CanvasRenderingContext2D, view: IsoView, timeMs: nu
 		context.strokeStyle = INK;
 		context.stroke();
 	};
-	wall([shore, ROWS], [COLUMNS, ROWS], DIRT);
-	wall([COLUMNS, 0], [COLUMNS, ROWS], shade(DIRT, -0.2));
+	// The two edges that face the camera are the shore (left) and the far-right side of the island
+	const earth = theme === 'orc' ? '#6b5a48' : DIRT;
+	wall([shore, 0], [shore, ROWS], shade(earth, -0.2));
+	wall([shore, ROWS], [COLUMNS, ROWS], earth);
 
 	onGround(context, view, () => {
 		// A wavy foam edge, then the sand: the foam slides a little so the water reads as alive
@@ -276,7 +327,7 @@ function drawIsland(context: CanvasRenderingContext2D, view: IsoView, timeMs: nu
 		context.lineTo(COLUMNS, ROWS);
 		context.lineTo(COLUMNS, 0);
 		context.closePath();
-		context.fillStyle = SAND;
+		context.fillStyle = theme === 'orc' ? '#8a8f6a' : SAND;
 		context.fill();
 		context.lineWidth = 0.05;
 		context.strokeStyle = INK;
@@ -292,7 +343,7 @@ function drawIsland(context: CanvasRenderingContext2D, view: IsoView, timeMs: nu
 		context.stroke();
 
 		// A few patches of dry grass, kept out of the way of the buildings
-		context.fillStyle = SAND_DARK;
+		context.fillStyle = theme === 'orc' ? '#6f7456' : SAND_DARK;
 		for (const patch of [
 			{ x: 3.1, y: 2.2 },
 			{ x: 3.4, y: 5.6 },
@@ -307,7 +358,7 @@ function drawIsland(context: CanvasRenderingContext2D, view: IsoView, timeMs: nu
 }
 
 /** The crater a mine leaves, flat on the sand */
-function drawCrater(context: CanvasRenderingContext2D, view: IsoView, mine: Building) {
+function drawCrater(context: CanvasRenderingContext2D, view: ShoreView, mine: Building) {
 	onGround(context, view, () => {
 		context.beginPath();
 		context.ellipse(mine.x + 0.5, mine.y + 0.5, 0.36, 0.3, 0, 0, Math.PI * 2);
@@ -321,7 +372,7 @@ function drawCrater(context: CanvasRenderingContext2D, view: IsoView, mine: Buil
 
 function drawDamageSmoke(
 	context: CanvasRenderingContext2D,
-	view: IsoView,
+	view: ShoreView,
 	building: Building,
 	timeMs: number
 ) {
@@ -347,12 +398,13 @@ function drawDamageSmoke(
 
 function drawBuilding(
 	context: CanvasRenderingContext2D,
-	view: IsoView,
+	view: ShoreView,
 	building: Building,
-	timeMs: number
+	timeMs: number,
+	theme?: 'orc'
 ) {
 	if (building.destroyed) {
-		drawRubbleArt(context, view, building, timeMs);
+		drawRubbleArt(context, view.grid, view.gridPlacement(building), timeMs);
 		return;
 	}
 	context.save();
@@ -360,7 +412,13 @@ function drawBuilding(
 		const kick = building.recoilMs / 170;
 		context.translate(Math.sin(building.recoilMs * 0.19) * 0.05 * kick, 0.03 * kick);
 	}
-	drawEnemyBuilding(context, view, building, timeMs);
+	drawEnemyBuilding(
+		context,
+		view.grid,
+		{ ...building, ...view.gridPlacement(building) },
+		timeMs,
+		theme
+	);
 	if (building.recoilMs > 0 && BUILDING_MUZZLE.has(building.kind)) {
 		const flash = building.recoilMs / 170;
 		const muzzle = view.project(building.x - 0.1, building.y + 0.5, 0.5);
@@ -368,8 +426,8 @@ function drawBuilding(
 		context.globalAlpha = flash;
 		context.beginPath();
 		context.moveTo(muzzle.x, muzzle.y);
-		context.lineTo(muzzle.x - 0.4 * flash, muzzle.y - 0.1 * flash);
-		context.lineTo(muzzle.x - 0.2 * flash, muzzle.y + 0.14 * flash);
+		context.lineTo(muzzle.x - 0.4 * flash, muzzle.y + 0.1 * flash);
+		context.lineTo(muzzle.x - 0.2 * flash, muzzle.y - 0.14 * flash);
 		context.closePath();
 		context.fill();
 		context.globalAlpha = 1;
@@ -388,8 +446,8 @@ function drawBuilding(
 	if (building.flashMs > 0) {
 		drawHitFlash(
 			context,
-			view,
-			building,
+			view.grid,
+			view.gridPlacement(building),
 			Math.min(0.55, building.flashMs / 160),
 			BUILDING_TOP[building.kind] ?? 0.7
 		);
@@ -823,7 +881,12 @@ function isVehicle(troop: Troop): boolean {
 	return VEHICLE_TROOPS.includes(troop.kind);
 }
 
-function drawTroop(context: CanvasRenderingContext2D, view: IsoView, troop: Troop, timeMs: number) {
+function drawTroop(
+	context: CanvasRenderingContext2D,
+	view: ShoreView,
+	troop: Troop,
+	timeMs: number
+) {
 	const base = view.project(troop.x, troop.y);
 	const vehicle = isVehicle(troop);
 	context.fillStyle = 'rgba(17,17,17,0.25)';
@@ -858,7 +921,7 @@ function drawTroop(context: CanvasRenderingContext2D, view: IsoView, troop: Troo
 		});
 	} else {
 		// Soldiers stand upright and face the way they walk on screen
-		const facing = (troop.aimX - troop.aimY) * view.halfW >= 0 ? 1 : -1;
+		const facing = troop.aimX + troop.aimY >= 0 ? 1 : -1;
 		context.save();
 		context.translate(base.x, base.y - 0.27 - bob);
 		context.scale(1.7 * facing, 1.7);
@@ -918,7 +981,11 @@ function drawTroop(context: CanvasRenderingContext2D, view: IsoView, troop: Troo
 	}
 }
 
-function drawProjectile(context: CanvasRenderingContext2D, view: IsoView, projectile: Projectile) {
+function drawProjectile(
+	context: CanvasRenderingContext2D,
+	view: ShoreView,
+	projectile: Projectile
+) {
 	const progress = Math.min(1, projectile.ageMs / projectile.flightMs);
 	const distance = Math.hypot(projectile.toX - projectile.fromX, projectile.toY - projectile.fromY);
 	const arc =
@@ -961,10 +1028,10 @@ function drawProjectile(context: CanvasRenderingContext2D, view: IsoView, projec
 		context.arc(at.x - 0.05, at.y, 0.06, 0, Math.PI * 2);
 		context.fill();
 	} else if (projectile.kind === 'rocket') {
-		const dx =
-			(projectile.toX - projectile.fromX - (projectile.toY - projectile.fromY)) * view.halfW;
-		const dy =
-			(projectile.toX - projectile.fromX + (projectile.toY - projectile.fromY)) * view.halfH;
+		const from = view.project(projectile.fromX, projectile.fromY);
+		const to = view.project(projectile.toX, projectile.toY);
+		const dx = to.x - from.x;
+		const dy = to.y - from.y;
 		context.save();
 		context.translate(at.x, at.y);
 		context.rotate(Math.atan2(dy, dx));
@@ -993,7 +1060,7 @@ function drawProjectile(context: CanvasRenderingContext2D, view: IsoView, projec
 
 function drawGroundZones(
 	context: CanvasRenderingContext2D,
-	view: IsoView,
+	view: ShoreView,
 	state: BattleState,
 	timeMs: number
 ) {
@@ -1058,7 +1125,7 @@ function drawGroundZones(
 
 function drawSmokeScreen(
 	context: CanvasRenderingContext2D,
-	view: IsoView,
+	view: ShoreView,
 	smoke: SkillZone,
 	timeMs: number
 ) {
@@ -1079,7 +1146,7 @@ function drawSmokeScreen(
 
 function drawSkillStrike(
 	context: CanvasRenderingContext2D,
-	view: IsoView,
+	view: ShoreView,
 	strike: SkillStrike,
 	timeMs: number
 ) {
@@ -1144,7 +1211,7 @@ function drawSkillStrike(
 
 function drawFocus(
 	context: CanvasRenderingContext2D,
-	view: IsoView,
+	view: ShoreView,
 	state: BattleState,
 	timeMs: number
 ) {
@@ -1166,7 +1233,7 @@ function drawFocus(
 
 function drawDeployHint(
 	context: CanvasRenderingContext2D,
-	view: IsoView,
+	view: ShoreView,
 	state: BattleState,
 	timeMs: number
 ) {
@@ -1188,7 +1255,40 @@ function drawDeployHint(
 	});
 }
 
-function drawEffect(context: CanvasRenderingContext2D, view: IsoView, effect: Effect) {
+/** Where the loot lands: the resource counters in the top-right corner of the picture */
+function lootTarget(view: ShoreView): { x: number; y: number } {
+	return { x: view.width - 1.4, y: 1.1 };
+}
+
+function drawEffect(context: CanvasRenderingContext2D, view: ShoreView, effect: Effect) {
+	if (effect.kind === 'loot') {
+		const flight = (effect.ageMs - effect.delayMs) / effect.durationMs;
+		if (flight < 0 || flight > 1) return;
+		const from = view.project(effect.fromX, effect.fromY, 0.5);
+		const to = lootTarget(view);
+		// Pop up out of the building first, then swing across to the stockpile
+		const ease = flight * flight * (3 - 2 * flight);
+		const pop = Math.sin(Math.min(1, flight * 3) * Math.PI) * 0.5;
+		const x =
+			from.x + (to.x - from.x) * ease + Math.sin(effect.seed) * 0.4 * Math.sin(flight * Math.PI);
+		const y = from.y + (to.y - from.y) * ease - Math.sin(flight * Math.PI) * 1.6 - pop;
+		context.globalAlpha = Math.min(1, (1 - flight) * 4);
+		drawResourceGlyph(context, effect.resource, x, y, 0.95 - flight * 0.35);
+		context.globalAlpha = 1;
+		// A little sparkle trail
+		context.fillStyle = PAPER;
+		for (let spark = 1; spark <= 3; spark++) {
+			const t = Math.max(0, flight - spark * 0.05);
+			const tx = from.x + (to.x - from.x) * (t * t * (3 - 2 * t));
+			const ty = from.y + (to.y - from.y) * (t * t * (3 - 2 * t)) - Math.sin(t * Math.PI) * 1.6;
+			context.globalAlpha = 0.5 / spark;
+			context.beginPath();
+			context.arc(tx, ty, 0.07, 0, Math.PI * 2);
+			context.fill();
+		}
+		context.globalAlpha = 1;
+		return;
+	}
 	const progress = Math.min(1, effect.ageMs / effect.durationMs);
 	switch (effect.kind) {
 		case 'tracer': {
@@ -1352,7 +1452,7 @@ export function drawScene(
 	context: CanvasRenderingContext2D,
 	state: BattleState,
 	extras: SceneExtras,
-	view: IsoView = BATTLE_VIEW
+	view: ShoreView = BATTLE_VIEW
 ) {
 	const { effects, timeMs } = extras;
 	context.save();
@@ -1363,9 +1463,11 @@ export function drawScene(
 			Math.cos(timeMs / 13) * shake * 0.7
 		);
 	}
-	drawSea(context, view, timeMs);
-	drawLandingCraft(context, view, state.squadsLeft, timeMs);
-	drawIsland(context, view, timeMs);
+	if (!extras.map) {
+		drawSea(context, view, timeMs);
+		drawLandingCraft(context, view, state.squadsLeft, timeMs);
+	}
+	drawIsland(context, view, timeMs, state.island.theme);
 	drawGroundZones(context, view, state, timeMs);
 
 	// Mines lie flat on the sand, so they go under everything that stands up
@@ -1379,7 +1481,7 @@ export function drawScene(
 	const standing: { depth: number; draw: () => void }[] = [];
 	for (const palm of PALMS) {
 		standing.push({
-			depth: depthOf(palm.x, palm.y + 0.55),
+			depth: shoreDepth(palm.x, palm.y + 0.55),
 			draw: () => {
 				const at = view.project(palm.x, palm.y + 0.55);
 				context.save();
@@ -1393,13 +1495,13 @@ export function drawScene(
 	for (const building of state.buildings) {
 		if (isMine(building.kind)) continue;
 		standing.push({
-			depth: depthOf(building.x + building.width / 2, building.y + building.height / 2),
-			draw: () => drawBuilding(context, view, building, timeMs)
+			depth: shoreDepth(building.x + building.width / 2, building.y + building.height / 2),
+			draw: () => drawBuilding(context, view, building, timeMs, state.island.theme)
 		});
 	}
 	for (const troop of state.troops) {
 		standing.push({
-			depth: depthOf(troop.x, troop.y) + 0.001,
+			depth: shoreDepth(troop.x, troop.y) + 0.001,
 			draw: () => drawTroop(context, view, troop, timeMs)
 		});
 	}
@@ -1416,12 +1518,14 @@ export function drawScene(
 	for (const effect of effects) if (effect.kind !== 'splash') drawEffect(context, view, effect);
 
 	drawFocus(context, view, state, timeMs);
-	drawDeployHint(context, view, state, timeMs);
+	if (!extras.map) drawDeployHint(context, view, state, timeMs);
 
 	// A small header strip is left to the page; the board itself carries no text
-	context.lineWidth = 0.1;
-	context.strokeStyle = INK;
-	context.strokeRect(0.05, 0.05, view.width - 0.1, view.height - 0.1);
+	if (!extras.map) {
+		context.lineWidth = 0.1;
+		context.strokeStyle = INK;
+		context.strokeRect(0.05, 0.05, view.width - 0.1, view.height - 0.1);
+	}
 	context.restore();
 }
 
