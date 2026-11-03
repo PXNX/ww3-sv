@@ -21,7 +21,6 @@
 	import { islandName } from './beachheadText';
 	import { zoomPan } from './zoomPan';
 	import BeachheadExpedition from './BeachheadExpedition.svelte';
-	import BeachheadResources from './BeachheadResources.svelte';
 	import BeachheadSheet from './BeachheadSheet.svelte';
 	import BeachheadTakeoverNotice from './BeachheadTakeoverNotice.svelte';
 	import IconAnchor from '~icons/lucide/anchor';
@@ -341,11 +340,6 @@
 				></span>
 			{/if}
 		</button>
-	</div>
-	<div class="pointer-events-none absolute top-(--hud-top) right-(--hud-right) z-40">
-		<div class="pointer-events-auto">
-			<BeachheadResources {game} />
-		</div>
 	</div>
 </div>
 

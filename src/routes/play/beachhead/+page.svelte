@@ -111,15 +111,17 @@
 	landscape
 >
 	{#snippet actions()}
-		<button
-			type="button"
-			class="btn-chunky px-2 py-1 text-sm"
-			aria-label={m.beachhead_help_button()}
-			title={m.beachhead_help_button()}
-			onclick={openHelp}
-		>
-			<IconHelp class="size-4" aria-hidden="true" />
-		</button>
+		{#if game.screen === 'base'}
+			<button
+				type="button"
+				class="btn-chunky px-2 py-1 text-sm"
+				aria-label={m.beachhead_help_button()}
+				title={m.beachhead_help_button()}
+				onclick={openHelp}
+			>
+				<IconHelp class="size-4" aria-hidden="true" />
+			</button>
+		{/if}
 		{#if playing && running}
 			{#if game.status === 'playing' && !game.retreating}
 				<button
