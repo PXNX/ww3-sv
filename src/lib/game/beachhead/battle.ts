@@ -4,6 +4,7 @@
  * attack can be simulated in a test without a canvas or a browser.
  */
 import {
+	ATTACK_TIME_LIMIT_MS,
 	BUILDINGS,
 	COLUMNS,
 	LANDING_X,
@@ -1147,7 +1148,9 @@ export function stepBattle(state: BattleState, dtMs: number) {
 	}
 
 	if (state.status === 'won') return;
-	if (state.troops.length === 0 && state.squadsLeft === 0) {
+	// Three minutes is all an attack gets: the defenders bring in reinforcements after that
+	const outOfTime = state.timeMs >= ATTACK_TIME_LIMIT_MS;
+	if (outOfTime || (state.troops.length === 0 && state.squadsLeft === 0)) {
 		state.status = 'lost';
 		state.events.push({ kind: 'lost' });
 	}
@@ -1173,6 +1176,11 @@ export function starsOf(state: BattleState): number {
 	if (share >= 0.5) return 3;
 	if (share >= 0.25) return 2;
 	return 1;
+}
+
+/** Milliseconds left of the three minutes an attack may take */
+export function timeLeftMs(state: BattleState): number {
+	return Math.max(0, ATTACK_TIME_LIMIT_MS - state.timeMs);
 }
 
 /** Troops still on the beach, for the HUD */

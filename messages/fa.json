@@ -3742,6 +3742,7 @@
 	"beachhead_troop_demo": "معدن‌کار",
 	"beachhead_troop_heavy": "مسلسل‌چی سنگین مینی‌گان",
 	"beachhead_troop_azov": "فرمانده آزوف",
+	"beachhead_time_left": "زمان باقی‌مانده: {time}",
 	"beachhead_island_name_desert": "پاسگاه ریگ {number}",
 	"beachhead_island_name_jungle": "جزیرهٔ جنگلی {number}",
 	"beachhead_island_name_ice": "یخ‌زده {number}",

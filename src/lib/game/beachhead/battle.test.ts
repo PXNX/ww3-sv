@@ -17,6 +17,7 @@ import {
 	setFocus,
 	starsOf,
 	stepBattle,
+	timeLeftMs,
 	troopsAlive,
 	type BattleState
 } from './battle';
@@ -264,5 +265,26 @@ describe('the island layouts', () => {
 			island.buildings.filter((building) => BUILDINGS[building.kind].damage > 0).length;
 		expect(guns(ISLANDS[0])).toBeLessThanOrEqual(guns(ISLANDS[ISLANDS.length - 1]));
 		expect(guns(ISLANDS[ISLANDS.length - 1])).toBeGreaterThanOrEqual(5);
+	});
+});
+
+describe('the time limit', () => {
+	it('ends an attack in defeat after three minutes while the headquarters stands', () => {
+		const state = createBattle(OPEN_ISLAND);
+		deploy(state, 3);
+		for (const troop of state.troops) troop.speed = 0;
+		for (let time = 0; time < 200_000 && state.status === 'playing'; time += 100) {
+			stepBattle(state, 100);
+		}
+		expect(state.status).toBe('lost');
+		expect(state.timeMs).toBeGreaterThanOrEqual(180_000);
+		expect(state.timeMs).toBeLessThan(181_000);
+	});
+
+	it('reports the time that is left', () => {
+		const state = createBattle(OPEN_ISLAND);
+		expect(timeLeftMs(state)).toBe(180_000);
+		state.timeMs = 100_000;
+		expect(timeLeftMs(state)).toBe(80_000);
 	});
 });

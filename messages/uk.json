@@ -3742,6 +3742,7 @@
 	"beachhead_troop_demo": "Підривник",
 	"beachhead_troop_heavy": "Кулеметник з мініганом",
 	"beachhead_troop_azov": "Командир «Азову»",
+	"beachhead_time_left": "Лишилось часу: {time}",
 	"beachhead_island_name_desert": "Дюнна застава {number}",
 	"beachhead_island_name_jungle": "Джунглевий острів {number}",
 	"beachhead_island_name_ice": "Мороз {number}",

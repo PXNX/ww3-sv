@@ -597,6 +597,9 @@ export const SKILL_ENERGY = {
 export const SQUADS = 3;
 export const TROOPS_PER_SQUAD = 4;
 
+/** An attack ends in defeat when the headquarters still stands after this long */
+export const ATTACK_TIME_LIMIT_MS = 3 * 60 * 1000;
+
 /** Seconds an island is expected to take; beating it adds a small time bonus to the score */
 export const PAR_SECONDS = 30;
 

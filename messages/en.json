@@ -3733,6 +3733,7 @@
 	"beachhead_troop_demo": "Demolitionist",
 	"beachhead_troop_heavy": "Minigun heavy",
 	"beachhead_troop_azov": "Azov commander",
+	"beachhead_time_left": "Time left: {time}",
 	"beachhead_island_name_desert": "Dune Outpost {number}",
 	"beachhead_island_name_jungle": "Jungle Key {number}",
 	"beachhead_island_name_ice": "Frostbite {number}",

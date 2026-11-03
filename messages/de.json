@@ -3742,6 +3742,7 @@
 	"beachhead_troop_demo": "Sprengmeister",
 	"beachhead_troop_heavy": "Minigun-Schwerer",
 	"beachhead_troop_azov": "Azov-Kommandeur",
+	"beachhead_time_left": "Verbleibende Zeit: {time}",
 	"beachhead_island_name_desert": "Dünenposten {number}",
 	"beachhead_island_name_jungle": "Dschungelinsel {number}",
 	"beachhead_island_name_ice": "Frostbiss {number}",

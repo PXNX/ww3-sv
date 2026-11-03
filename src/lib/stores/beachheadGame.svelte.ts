@@ -28,6 +28,7 @@ import {
 	skillCost,
 	starsOf,
 	stepBattle,
+	timeLeftMs,
 	troopsAlive,
 	type BattleEvent,
 	type BattleState
@@ -188,6 +189,8 @@ export class BeachheadGame {
 	buildingsLeft = $state(0);
 	buildingsTotal = $state(0);
 	score = $state(0);
+	/** Milliseconds left of the three minutes an attack may take */
+	timeLeft = $state(0);
 	stars = $state(0);
 	/** Resources won in the last battle, shown on the result panel */
 	loot = $state<Resources>({ wood: 0, stone: 0, iron: 0, gold: 0 });
@@ -1351,6 +1354,7 @@ export class BeachheadGame {
 		this.buildingsLeft = structures.filter((building) => !building.destroyed).length;
 		this.buildingsTotal = structures.length;
 		this.score = scoreOf(battle);
+		this.timeLeft = timeLeftMs(battle);
 		this.energy = battle.energy;
 		this.skillsUsed = battle.skillsUsed;
 		this.skillPrice = skillCost(battle);

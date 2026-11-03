@@ -3742,6 +3742,7 @@
 	"beachhead_troop_demo": "Подрывник",
 	"beachhead_troop_heavy": "Пулемётчик с миниганом",
 	"beachhead_troop_azov": "Командир «Азова»",
+	"beachhead_time_left": "Осталось времени: {time}",
 	"beachhead_island_name_desert": "Дюнная застава {number}",
 	"beachhead_island_name_jungle": "Джунглевый остров {number}",
 	"beachhead_island_name_ice": "Стужа {number}",

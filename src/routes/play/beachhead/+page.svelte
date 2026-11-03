@@ -25,6 +25,7 @@
 	import { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
 	import IconBomb from '~icons/lucide/bomb';
 	import IconCloud from '~icons/lucide/cloud';
+	import IconTimer from '~icons/lucide/timer';
 	import IconCrosshair from '~icons/lucide/crosshair';
 	import IconFlameKindling from '~icons/lucide/flame-kindling';
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
@@ -74,6 +75,11 @@
 		game.pause();
 		showTutorial = true;
 	}
+
+	const clockText = (ms: number): string => {
+		const total = Math.ceil(ms / 1000);
+		return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+	};
 
 	const playing = $derived(game.screen === 'play');
 	const running = $derived(game.status === 'playing' || game.status === 'paused');
@@ -166,6 +172,16 @@
 			<div
 				class="pointer-events-none absolute inset-x-0 top-[calc(var(--hud-top)+0.15rem)] z-30 flex flex-wrap items-start justify-center gap-1.5 px-2 font-display text-sm font-bold"
 			>
+				<span
+					class="flex items-center gap-1 rounded-full border-2 border-ink px-2.5 py-0.5 tabular-nums {game.timeLeft <
+					30_000
+						? 'bg-tie-red text-paper'
+						: 'bg-paper'}"
+					title={m.beachhead_time_left({ time: clockText(game.timeLeft) })}
+				>
+					<IconTimer class="size-4" aria-hidden="true" />
+					{clockText(game.timeLeft)}
+				</span>
 				<span
 					class="flex items-center gap-1 rounded-full border-2 border-ink bg-paper px-2.5 py-0.5 tabular-nums {game.squadsLeft ===
 					0
