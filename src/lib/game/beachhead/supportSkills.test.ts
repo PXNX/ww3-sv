@@ -4,6 +4,8 @@ import { castSkill, createBattle, deploy, stepBattle } from './battle';
 import {
 	applySupportSkillUpgrade,
 	canUpgradeSupportSkill,
+	finishResearch,
+	startSkillResearch,
 	modifiersFor,
 	newSave,
 	supportSkillCost,
@@ -111,5 +113,21 @@ describe('the EMP pulse', () => {
 		expect(state.troops[0].hp).toBe(100);
 		for (let step = 0; step < 30; step++) stepBattle(state, 100);
 		expect(state.troops[0].hp).toBeLessThan(100);
+	});
+});
+
+describe('researching a support skill', () => {
+	it('is paid now, blocks the lab for a while and raises the level when done', () => {
+		const save = rich({ ...newSave(0), levels: { ...newSave(0).levels, training: 3 } });
+		const started = startSkillResearch(save, 'flare', 1000)!;
+		expect(started.resources.wood).toBeLessThan(save.resources.wood);
+		expect(supportSkillLevel(started, 'flare')).toBe(1);
+		// One thing at a time in the lab
+		expect(startSkillResearch(started, 'smoke', 1000)).toBeNull();
+		const end = started.research!.endsAt;
+		expect(supportSkillLevel(finishResearch(started, end - 1), 'flare')).toBe(1);
+		const done = finishResearch(started, end);
+		expect(supportSkillLevel(done, 'flare')).toBe(2);
+		expect(done.research).toBeUndefined();
 	});
 });
