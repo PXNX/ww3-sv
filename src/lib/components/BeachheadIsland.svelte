@@ -109,6 +109,12 @@
 				hint: m.beachhead_building_radar_hint({ count: game.chartedCount })
 			};
 		}
+		if (key === 'bunker') {
+			return {
+				name: m.beachhead_building_bunker(),
+				hint: m.beachhead_building_bunker_hint({ percent: Math.round(game.securedShare * 100) })
+			};
+		}
 		if (key === 'dojo') {
 			return { name: m.beachhead_building_dojo(), hint: m.beachhead_building_dojo_hint() };
 		}

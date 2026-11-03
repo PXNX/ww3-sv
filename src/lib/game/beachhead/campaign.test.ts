@@ -99,6 +99,7 @@ describe('the campaign save', () => {
 			training: 1,
 			radar: 1,
 			dojo: 1,
+			bunker: 1,
 			boats: Array.from({ length: BOAT_COUNT }, () => 1),
 			warehouses: Array.from({ length: WAREHOUSE_KEYS.length }, () => 1)
 		});

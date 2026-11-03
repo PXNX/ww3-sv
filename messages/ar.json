@@ -3742,6 +3742,8 @@
 	"beachhead_troop_demo": "خبير تفجير",
 	"beachhead_troop_heavy": "رشاش ثقيل متعدد",
 	"beachhead_troop_azov": "قائد آزوف",
+	"beachhead_building_bunker_hint": "يحمي {percent}٪ من كل مخزون من المغيرين.",
+	"beachhead_building_bunker": "ملجأ",
 	"beachhead_time_left": "الوقت المتبقي: {time}",
 	"beachhead_island_name_desert": "موقع الكثبان {number}",
 	"beachhead_island_name_jungle": "جزيرة الأدغال {number}",

@@ -14,7 +14,7 @@ export const MAX_MINES = 16;
 type LayoutResource = 'wood' | 'stone' | 'iron' | 'gold';
 /** The buildings that stand on the grid; the boats are moored in the water instead */
 export type LayoutKey =
-	'hq' | 'training' | 'radar' | 'dojo' | `warehouse-${LayoutResource}-${number}`;
+	'hq' | 'training' | 'radar' | 'dojo' | 'bunker' | `warehouse-${LayoutResource}-${number}`;
 
 export interface Cell {
 	x: number;
@@ -55,6 +55,7 @@ export const LAYOUT_KEYS: readonly LayoutKey[] = [
 	'training',
 	'radar',
 	'dojo',
+	'bunker',
 	...(['wood', 'stone', 'iron', 'gold'] as const).flatMap(
 		(resource) => [0, 1].map((index) => `warehouse-${resource}-${index}` as const) as LayoutKey[]
 	)
@@ -67,7 +68,8 @@ export function isLayoutKey(key: string): key is LayoutKey {
 export function footprintOf(key: LayoutKey | MineKind): Footprint {
 	if (key === 'hq') return { width: 5, height: 5 };
 	if (key === 'training' || key === 'dojo') return { width: 3, height: 3 };
-	if (key === 'radar' || key.startsWith('warehouse-')) return { width: 2, height: 2 };
+	if (key === 'radar' || key === 'bunker' || key.startsWith('warehouse-'))
+		return { width: 2, height: 2 };
 	return { width: 1, height: 1 };
 }
 
@@ -76,6 +78,7 @@ const DEFAULT_POSITIONS: Record<LayoutKey, Cell> = {
 	training: { x: 1, y: 1 },
 	dojo: { x: 10, y: 1 },
 	radar: { x: 11, y: 5 },
+	bunker: { x: 3, y: 7 },
 	'warehouse-wood-0': { x: 1, y: 5 },
 	'warehouse-wood-1': { x: 1, y: 7 },
 	'warehouse-stone-0': { x: 3, y: 10 },

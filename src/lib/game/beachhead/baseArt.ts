@@ -73,6 +73,7 @@ export function stageOf(level: number, max: number): 0 | 1 | 2 | 3 {
 
 /** How tall each building stands, for badges and bars above it */
 export function heightOf(key: LayoutKey, stage: number): number {
+	if (key === 'bunker') return 0.8 + stage * 0.2;
 	if (key === 'hq') return 2.1 + stage * 0.35;
 	if (key === 'dojo') return 0.9 + stage * 0.6;
 	if (key === 'radar') return 1.4 + stage * 0.5;
@@ -998,6 +999,69 @@ function drawBush(
 	}
 }
 
+/** The bunker: a squat concrete block with a steel door; it grows slits, sandbags, a turret and an aerial */
+function drawBunker(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	at: Cell,
+	stage: number,
+	timeMs: number
+) {
+	const { x, y } = at;
+	drawBox(context, view, x + 0.1, y + 0.1, 1.8, 1.8, 0, 0.55 + stage * 0.08, paletteOf('#9a9ea4'));
+	drawRoof(
+		context,
+		view,
+		x + 0.04,
+		y + 0.04,
+		1.92,
+		1.92,
+		0.55 + stage * 0.08,
+		0.2,
+		paletteOf('#7d8187')
+	);
+	wallLeft(context, view, x + 0.7, x + 1.3, y + 1.9, 0, 0.4, '#3b4048');
+	wallLeft(context, view, x + 0.76, x + 1.24, y + 1.9, 0.3, 0.34, '#d6d8dd');
+	if (stage >= 1) {
+		wallLeft(context, view, x + 0.2, x + 0.55, y + 1.9, 0.3, 0.42, INK);
+		wallLeft(context, view, x + 1.45, x + 1.8, y + 1.9, 0.3, 0.42, INK);
+		for (let bag = 0; bag < 5; bag++) {
+			drawBlob(context, view, x + 0.25 + bag * 0.38, y + 2.1, 0.1, 0.15, KHAKI, 0.035);
+		}
+	}
+	if (stage >= 2) {
+		drawCylinder(context, view, x + 1.0, y + 0.9, 0.38, 0.75, 0.95, paletteOf('#7d8187'));
+		drawBar(
+			context,
+			view,
+			{ x: x + 1.0, y: y + 0.9, z: 0.9 },
+			{ x: x + 1.0, y: y + 1.55, z: 0.95 },
+			STEEL,
+			0.1
+		);
+	}
+	if (stage >= 3) {
+		drawBar(
+			context,
+			view,
+			{ x: x + 1.7, y: y + 0.3, z: 0.7 },
+			{ x: x + 1.7, y: y + 0.3, z: 1.6 },
+			STEEL,
+			0.05
+		);
+		drawBlob(
+			context,
+			view,
+			x + 1.7,
+			y + 0.3,
+			1.62,
+			0.06,
+			Math.sin(timeMs / 350) > 0 ? TIE_RED : '#7a1a1a',
+			0.025
+		);
+	}
+}
+
 function drawHomeBuilding(
 	context: CanvasRenderingContext2D,
 	view: IsoView,
@@ -1013,6 +1077,7 @@ function drawHomeBuilding(
 	else if (key === 'training') drawTraining(context, view, at, stage, scene.timeMs);
 	else if (key === 'dojo') drawDojo(context, view, at, stage, scene.timeMs);
 	else if (key === 'radar') drawRadar(context, view, at, stage, scene.timeMs);
+	else if (key === 'bunker') drawBunker(context, view, at, stage, scene.timeMs);
 	else drawWarehouse(context, view, at, key, stage, scene.fillOf(resourceOf(key)));
 }
 

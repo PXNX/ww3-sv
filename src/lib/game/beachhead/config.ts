@@ -522,6 +522,10 @@ export const MAX_TROOP_LEVEL = 8;
 export const MAX_WAREHOUSE_LEVEL = 6;
 /** The hero dojo, and the hero and skill levels it unlocks */
 export const MAX_DOJO_LEVEL = 6;
+/** The bunker keeps part of the stockpile safe from raiders: 20% at level one, 80% at the top */
+export const MAX_BUNKER_LEVEL = 6;
+export const BUNKER_BASE_SECURED = 0.2;
+export const BUNKER_SECURED_PER_LEVEL = 0.12;
 export const MAX_HERO_LEVEL = 6;
 export const MAX_HERO_SKILL_LEVEL = 6;
 /** A conquered base drops Azov commander cards at this low rate */

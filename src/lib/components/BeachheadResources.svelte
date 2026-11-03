@@ -12,6 +12,7 @@
 	import IconFlag from '~icons/lucide/flag-triangle-right';
 	import IconHouse from '~icons/lucide/house';
 	import IconHourglass from '~icons/lucide/hourglass';
+	import IconShieldCheck from '~icons/lucide/shield-check';
 	import IconWarehouse from '~icons/lucide/warehouse';
 	import IconX from '~icons/lucide/x';
 	import IconCrown from '~icons/lucide/crown';
@@ -151,6 +152,16 @@
 				<li class="flex items-center justify-between gap-2 border-t-2 border-ink pt-1">
 					<span>{m.beachhead_upgrade_hq()} +{info.bonus}%</span>
 					<span>+{info.total}/min</span>
+				</li>
+				<li
+					class="flex items-center justify-between gap-2"
+					title={m.beachhead_building_bunker_hint({ percent: Math.round(game.securedShare * 100) })}
+				>
+					<span class="flex items-center gap-1.5">
+						<IconShieldCheck class="size-4" aria-hidden="true" />
+						{Math.round(game.securedShare * 100)}%
+					</span>
+					{game.resources[detail] - game.exposedStock(detail)}
 				</li>
 				{#if info.minutesToFull !== null}
 					<li

@@ -60,8 +60,8 @@ describe('the default island', () => {
 		}
 	});
 
-	it('has the headquarters, training ground, radar, dojo and all eight warehouses', () => {
-		expect(LAYOUT_KEYS).toHaveLength(12);
+	it('has the headquarters, training ground, radar, dojo, bunker and all eight warehouses', () => {
+		expect(LAYOUT_KEYS).toHaveLength(13);
 		expect(LAYOUT_KEYS.filter((key) => key.startsWith('warehouse-'))).toHaveLength(8);
 	});
 
@@ -144,8 +144,8 @@ describe('mines on the island', () => {
 		expect(layout.mines).toHaveLength(1);
 		expect(layout.mines[0]).toMatchObject({ x: 0, y: BASE_ROWS - 1, kind: 'mine-personnel' });
 		const id = layout.mines[0].id;
-		layout = moveMine(layout, id, { x: 4, y: 8 })!;
-		expect(layout.mines[0]).toMatchObject({ x: 4, y: 8 });
+		layout = moveMine(layout, id, { x: 6, y: 9 })!;
+		expect(layout.mines[0]).toMatchObject({ x: 6, y: 9 });
 		expect(moveMine(layout, id, { x: 5, y: 3 })).toBeNull();
 		layout = removeMine(layout, id)!;
 		expect(layout.mines).toHaveLength(0);

@@ -100,6 +100,8 @@ import {
 	skillUpgradeLocked,
 	starsOf as saveStars,
 	startUpgrade as startUpgradeIn,
+	exposedStock,
+	securedShare,
 	storageCapacities,
 	storageCapacity,
 	supportSkillCost,
@@ -328,6 +330,16 @@ export class BeachheadGame {
 
 	isStorageFull(kind: ResourceKind): boolean {
 		return this.campaign.resources[kind] >= this.storageCapacity(kind);
+	}
+
+	/** The share of every stockpile the bunker keeps safe from raiders, 0 to 1 */
+	get securedShare(): number {
+		return securedShare(this.campaign);
+	}
+
+	/** What raiders could still take of one resource */
+	exposedStock(kind: ResourceKind): number {
+		return exposedStock(this.campaign, kind);
 	}
 
 	/** The Azov commander's current level, skill and cards, plus what the next level costs */

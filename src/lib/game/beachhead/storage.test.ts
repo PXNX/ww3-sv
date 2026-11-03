@@ -31,3 +31,32 @@ describe('hero shards', () => {
 		expect(shardsForWin(-3, Number.NaN)).toBe(1);
 	});
 });
+
+describe('the bunker', () => {
+	it('keeps 20% of a stockpile safe at level one and 80% at the top', async () => {
+		const { exposedStock, securedShare, upgradeCost } = await import('./campaign');
+		const { MAX_BUNKER_LEVEL } = await import('./config');
+		const save = newSave(0);
+		expect(securedShare(save)).toBeCloseTo(0.2, 5);
+		const top = { ...save, levels: { ...save.levels, bunker: MAX_BUNKER_LEVEL } };
+		expect(securedShare(top)).toBeCloseTo(0.8, 5);
+		const stocked = { ...save, resources: { wood: 1000, stone: 0, iron: 0, gold: 0 } };
+		expect(exposedStock(stocked, 'wood')).toBe(800);
+		expect(exposedStock({ ...stocked, levels: top.levels }, 'wood')).toBe(200);
+		expect(upgradeCost(save, 'bunker')).not.toBeNull();
+		expect(upgradeCost(top, 'bunker')).toBeNull();
+	});
+
+	it('is upgraded like any other building and survives a save round trip', async () => {
+		const { finishBuilds, startUpgrade, securedShare } = await import('./campaign');
+		let save = {
+			...newSave(0),
+			levels: { ...newSave(0).levels, hq: 3 },
+			resources: { wood: 9999, stone: 9999, iron: 9999, gold: 999 }
+		};
+		save = startUpgrade(save, 'bunker', 0, 1)!;
+		save = finishBuilds(save, 10 * 60 * 60 * 1000);
+		expect(save.levels.bunker).toBe(2);
+		expect(securedShare(parseSave(JSON.parse(JSON.stringify(save)))!)).toBeCloseTo(0.32, 5);
+	});
+});

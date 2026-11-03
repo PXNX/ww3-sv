@@ -14,7 +14,10 @@ import {
 	BOAT_COUNT,
 	HERO_CARD_DROP_CHANCE,
 	ISLAND_IDS,
+	BUNKER_BASE_SECURED,
+	BUNKER_SECURED_PER_LEVEL,
 	MAX_BOAT_LEVEL,
+	MAX_BUNKER_LEVEL,
 	MAX_DOJO_LEVEL,
 	MAX_HERO_LEVEL,
 	MAX_HERO_SKILL_LEVEL,
@@ -71,7 +74,7 @@ export const STORAGE_PER_LEVEL = 500;
 
 export type BoatKey = `boat-${number}`;
 export type WarehouseKey = `warehouse-${ResourceKind}-${number}`;
-export type BuildingKey = 'hq' | 'training' | 'radar' | 'dojo' | BoatKey | WarehouseKey;
+export type BuildingKey = 'hq' | 'training' | 'radar' | 'dojo' | 'bunker' | BoatKey | WarehouseKey;
 export type Army = Record<ArmyKind, number>;
 export type TroopLevels = Record<TroopKind, number>;
 
@@ -97,6 +100,7 @@ export const BUILDING_KEYS: readonly BuildingKey[] = [
 	'training',
 	'radar',
 	'dojo',
+	'bunker',
 	...BOAT_KEYS,
 	...WAREHOUSE_KEYS
 ];
@@ -159,6 +163,8 @@ export interface Levels {
 	radar: number;
 	/** Hero dojo level; it caps both the Azov commander's level and his skill level */
 	dojo: number;
+	/** Bunker level; it decides how much of the stockpile raiders cannot take. Older saves have none. */
+	bunker?: number;
 	/** One level per landing craft, in boarding order */
 	boats: number[];
 	/** One level per warehouse, in the order of WAREHOUSE_KEYS */
@@ -215,13 +221,14 @@ export interface BeachheadSave {
 
 /** Cost of the first upgrade of each building family; each later level grows by a factor */
 const BUILDING_BASE_COST: Record<
-	'hq' | 'training' | 'radar' | 'dojo' | 'boat' | 'warehouse',
+	'hq' | 'training' | 'radar' | 'dojo' | 'bunker' | 'boat' | 'warehouse',
 	Resources
 > = {
 	hq: { wood: 320, stone: 240, iron: 100, gold: 20 },
 	training: { wood: 180, stone: 120, iron: 40, gold: 8 },
 	radar: { wood: 280, stone: 220, iron: 120, gold: 24 },
 	dojo: { wood: 640, stone: 520, iron: 280, gold: 80 },
+	bunker: { wood: 260, stone: 360, iron: 200, gold: 30 },
 	boat: { wood: 100, stone: 60, iron: 20, gold: 4 },
 	warehouse: { wood: 140, stone: 100, iron: 30, gold: 4 }
 };
@@ -289,11 +296,15 @@ function fillTroopLevels(levels: Partial<TroopLevels>): TroopLevels {
 const TROOP_COST_GROWTH = 1.5;
 
 /** How long a building upgrade runs, before the level growth */
-const BUILD_BASE_MS: Record<'hq' | 'training' | 'radar' | 'dojo' | 'boat' | 'warehouse', number> = {
+const BUILD_BASE_MS: Record<
+	'hq' | 'training' | 'radar' | 'dojo' | 'bunker' | 'boat' | 'warehouse',
+	number
+> = {
 	hq: 150_000,
 	training: 100_000,
 	radar: 125_000,
 	dojo: 225_000,
+	bunker: 150_000,
 	boat: 50_000,
 	warehouse: 60_000
 };
@@ -308,6 +319,7 @@ export function newSave(nowMs: number): BeachheadSave {
 			training: 1,
 			radar: 1,
 			dojo: 1,
+			bunker: 1,
 			boats: Array.from({ length: BOAT_COUNT }, () => 1),
 			warehouses: defaultWarehouseLevels()
 		},
@@ -334,8 +346,10 @@ function resourceCost(base: Resources, factor: number): Resources {
 
 function buildingFamily(
 	key: BuildingKey
-): 'hq' | 'training' | 'radar' | 'dojo' | 'boat' | 'warehouse' {
-	if (key === 'hq' || key === 'training' || key === 'radar' || key === 'dojo') return key;
+): 'hq' | 'training' | 'radar' | 'dojo' | 'bunker' | 'boat' | 'warehouse' {
+	if (key === 'hq' || key === 'training' || key === 'radar' || key === 'dojo' || key === 'bunker') {
+		return key;
+	}
 	if (key.startsWith('warehouse-')) return 'warehouse';
 	return 'boat';
 }
@@ -362,6 +376,7 @@ export function levelOf(save: BeachheadSave, key: BuildingKey): number {
 	if (key === 'training') return save.levels.training;
 	if (key === 'radar') return save.levels.radar;
 	if (key === 'dojo') return save.levels.dojo;
+	if (key === 'bunker') return save.levels.bunker ?? 1;
 	if (key.startsWith('warehouse-')) {
 		const index = WAREHOUSE_KEYS.indexOf(key as WarehouseKey);
 		return index >= 0 ? (save.levels.warehouses[index] ?? 1) : 1;
@@ -374,6 +389,7 @@ export function maxLevelOf(key: BuildingKey): number {
 	if (key === 'training') return MAX_TRAINING_LEVEL;
 	if (key === 'radar') return MAX_RADAR_LEVEL;
 	if (key === 'dojo') return MAX_DOJO_LEVEL;
+	if (key === 'bunker') return MAX_BUNKER_LEVEL;
 	if (key.startsWith('warehouse-')) return MAX_WAREHOUSE_LEVEL;
 	return MAX_BOAT_LEVEL;
 }
@@ -388,6 +404,18 @@ export function warehouseResource(key: WarehouseKey): ResourceKind {
 export function warehouseIndex(key: WarehouseKey): number {
 	const index = WAREHOUSE_KEYS.indexOf(key);
 	return index < 0 ? 0 : index % WAREHOUSES_PER_RESOURCE;
+}
+
+/** The share of every stockpile the bunker keeps out of reach of raiders, 0 to 1 */
+export function securedShare(save: BeachheadSave): number {
+	const level = Math.min(MAX_BUNKER_LEVEL, Math.max(1, save.levels.bunker ?? 1));
+	return Math.min(0.8, BUNKER_BASE_SECURED + (level - 1) * BUNKER_SECURED_PER_LEVEL);
+}
+
+/** What raiders can take of one stockpile: everything the bunker does not cover */
+export function exposedStock(save: BeachheadSave, kind: ResourceKind): number {
+	const stock = save.resources[kind];
+	return stock - Math.floor(stock * securedShare(save) + 1e-9);
 }
 
 /** The cost of the next level, or null when the building is already maxed out */
@@ -508,6 +536,12 @@ function withBuildingLevel(save: BeachheadSave, key: BuildingKey): BeachheadSave
 		return {
 			...save,
 			levels: { ...save.levels, radar: Math.min(MAX_RADAR_LEVEL, save.levels.radar + 1) }
+		};
+	}
+	if (key === 'bunker') {
+		return {
+			...save,
+			levels: { ...save.levels, bunker: Math.min(MAX_BUNKER_LEVEL, (save.levels.bunker ?? 1) + 1) }
 		};
 	}
 	if (key === 'dojo') {

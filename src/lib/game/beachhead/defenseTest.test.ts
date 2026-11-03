@@ -9,7 +9,7 @@ describe('the defence test island', () => {
 		const island = testIslandOf(defaultLayout());
 		expect(island.id).toBe(TEST_ISLAND_ID);
 		expect(island.buildings.filter((b) => b.kind === 'hq')).toHaveLength(1);
-		expect(island.buildings.filter((b) => b.kind === 'depot')).toHaveLength(11);
+		expect(island.buildings.filter((b) => b.kind === 'depot')).toHaveLength(12);
 	});
 
 	it('brings every mine you placed along, of the same kind', () => {

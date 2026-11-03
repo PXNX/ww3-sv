@@ -3742,6 +3742,8 @@
 	"beachhead_troop_demo": "Підривник",
 	"beachhead_troop_heavy": "Кулеметник з мініганом",
 	"beachhead_troop_azov": "Командир «Азову»",
+	"beachhead_building_bunker_hint": "Береже {percent}% кожного запасу від рейдерів.",
+	"beachhead_building_bunker": "Бункер",
 	"beachhead_time_left": "Лишилось часу: {time}",
 	"beachhead_island_name_desert": "Дюнна застава {number}",
 	"beachhead_island_name_jungle": "Джунглевий острів {number}",
