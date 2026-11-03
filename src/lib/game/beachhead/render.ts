@@ -155,6 +155,14 @@ function healthBar(
 function drawSea(context: CanvasRenderingContext2D, timeMs: number) {
 	context.fillStyle = SEA;
 	context.fillRect(0, 0, COLUMNS, ROWS);
+	// Soft cloud borders along top/edges
+	context.fillStyle = 'rgba(255,255,255,0.35)';
+	context.beginPath();
+	for (let x = 0; x < COLUMNS; x += 0.3) {
+		const offset = Math.sin(x * 2 + timeMs / 900) * 0.15;
+		context.arc(x, offset - 0.1, 0.35 + Math.abs(offset) * 0.3, 0, Math.PI * 2);
+	}
+	context.fill();
 	context.strokeStyle = SEA_DARK;
 	context.lineWidth = 0.06;
 	for (let row = 0; row < ROWS; row += 2) {
@@ -979,6 +987,25 @@ function drawHeavy(context: CanvasRenderingContext2D, troop: Troop) {
 	context.restore();
 }
 
+function drawOrc(context: CanvasRenderingContext2D, troop: Troop) {
+	// Simple green orc silhouette: broad shoulders, green skin, red eyes, club
+	context.save();
+	drawLegs(context, troop);
+	context.fillStyle = '#3a6b1f';
+	context.beginPath();
+	context.arc(-0.02, -0.05, 0.14, Math.PI, 0);
+	context.fill();
+	context.fillStyle = '#2a4f14';
+	context.fillRect(-0.1, -0.05, 0.08, 0.1);
+	context.fillStyle = '#7a1a1a';
+	context.beginPath();
+	context.arc(0.06, -0.08, 0.03, 0, Math.PI * 2);
+	context.fill();
+	context.fillStyle = '#5a3a18';
+	context.fillRect(0.1, -0.02, 0.08, 0.06);
+	context.restore();
+}
+
 function drawTroop(context: CanvasRenderingContext2D, troop: Troop, timeMs: number) {
 	context.fillStyle = 'rgba(17,17,17,0.25)';
 	context.beginPath();
@@ -1029,6 +1056,9 @@ function drawTroop(context: CanvasRenderingContext2D, troop: Troop, timeMs: numb
 			break;
 		case 'heavy':
 			drawHeavy(context, troop);
+			break;
+		case 'orc':
+			drawOrc(context, troop);
 			break;
 		default:
 			drawRifleman(context, troop);
