@@ -10,10 +10,12 @@
 	import { createFixedLoop, onAppHidden } from '#lib/game/loop.js';
 	import { drawScene } from '#lib/game/killswitch/render.js';
 	import {
+		WAVE_COUNT,
 		WORLD_HEIGHT,
 		WORLD_WIDTH,
 		type CivilianKind,
-		type PostKind
+		type PostKind,
+		type TargetKind
 	} from '#lib/game/killswitch/state.js';
 	import type { KillswitchGame } from '#lib/stores/killswitchGame.svelte.js';
 	import PauseOverlay from './PauseOverlay.svelte';
@@ -29,11 +31,13 @@
 	let dragStart = { x: 0, y: 0 };
 
 	const POST_LINES: Record<PostKind, readonly (() => string)[]> = {
+		unlimited: [m.killswitch_post_unlimited_1, m.killswitch_post_unlimited_2],
 		purge: [m.killswitch_post_purge_1, m.killswitch_post_purge_2],
 		rush: [m.killswitch_post_rush_1, m.killswitch_post_rush_2],
 		boost: [m.killswitch_post_boost_1, m.killswitch_post_boost_2]
 	};
 	const POST_HINTS: Record<PostKind, () => string> = {
+		unlimited: m.killswitch_post_unlimited_hint,
 		purge: m.killswitch_post_purge_hint,
 		rush: m.killswitch_post_rush_hint,
 		boost: m.killswitch_post_boost_hint
@@ -42,7 +46,16 @@
 		van: m.killswitch_angry_van,
 		tractor: m.killswitch_angry_tractor,
 		bus: m.killswitch_angry_bus,
-		boat: m.killswitch_angry_boat
+		boat: m.killswitch_angry_boat,
+		heli: m.killswitch_angry_heli
+	};
+	/** The hint shown when a kind of target appears for the first time */
+	const INTRO: Partial<Record<TargetKind, () => string>> = {
+		van: m.killswitch_intro_van,
+		fast: m.killswitch_intro_fast,
+		swarm: m.killswitch_intro_swarm,
+		heli: m.killswitch_intro_heli,
+		hardened: m.killswitch_intro_hardened
 	};
 
 	function draw() {
@@ -103,7 +116,8 @@
 			canvas!.setPointerCapture(event.pointerId);
 			game.dragFence(point.x, point.y, point.x, point.y);
 		} else {
-			game.tap(point.x, point.y);
+			// Fingers are less exact than mice, so touch and pen get a wider hit area
+			game.tap(point.x, point.y, event.pointerType !== 'mouse');
 		}
 	}
 
@@ -203,6 +217,44 @@
 			{/key}
 		{/if}
 	</div>
+
+	<!-- Wave banner: a new wave (with a hint when something new shows up) or a wave cleared -->
+	{#if game.banner && game.status === 'playing'}
+		{#key game.banner.id}
+			<div
+				class="pointer-events-none absolute inset-x-0 top-[30%] flex flex-col items-center gap-1 px-3"
+				aria-live="polite"
+			>
+				<p
+					class="pop-in rounded-[12px_8px_14px_10px] border-3 border-ink px-4 py-1 text-center font-display text-2xl font-bold shadow-[3px_3px_0_var(--color-ink)] sm:text-3xl {game
+						.banner.type === 'clear'
+						? 'bg-explosion-yellow'
+						: 'bg-paper'}"
+				>
+					{game.banner.type === 'clear'
+						? m.killswitch_wave_clear({ wave: game.banner.wave })
+						: game.banner.wave === WAVE_COUNT
+							? m.killswitch_wave_final()
+							: m.killswitch_wave_start({ wave: game.banner.wave })}
+				</p>
+				{#if game.banner.type === 'clear'}
+					<p
+						class="pop-in rounded-md border-2 border-ink bg-paper px-2 py-0.5 text-sm font-bold tabular-nums"
+					>
+						{game.banner.flawless
+							? m.killswitch_wave_flawless({ bonus: game.banner.bonus })
+							: m.killswitch_wave_bonus({ bonus: game.banner.bonus })}
+					</p>
+				{:else if game.banner.intro}
+					<p
+						class="pop-in max-w-xs rounded-md border-2 border-ink bg-tie-red px-2 py-0.5 text-center text-sm font-bold text-paper"
+					>
+						{INTRO[game.banner.intro]?.()}
+					</p>
+				{/if}
+			</div>
+		{/key}
+	{/if}
 
 	{#if game.fenceArmed && game.status === 'playing'}
 		<p
