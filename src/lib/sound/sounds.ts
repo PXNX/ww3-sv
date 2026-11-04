@@ -77,13 +77,37 @@ export type SoundId =
 	| 'door-creak'
 	| 'draft'
 	| 'candle-snuff'
+	| 'candle-light'
+	| 'treat-crunch'
+	| 'omen-toll'
+	| 'cat-pounce'
+	| 'star-earn'
 	| 'ritual-line'
 	| 'ritual-burst'
+	| 'curl-glide'
+	| 'curl-scrub'
+	| 'seal-bark'
+	| 'penguin-squawk'
 	| 'sonar-ping'
 	| 'ais-off'
 	| 'link-snap'
 	| 'wave-horn'
 	| 'energy-empty'
+	| 'maple-alert'
+	| 'maple-gadget'
+	| 'maple-lever'
+	| 'maple-rewind'
+	| 'slice-clang'
+	| 'slice-focus-in'
+	| 'slice-focus-out'
+	| 'foghorn'
+	| 'spoof-glitch'
+	| 'patrol-siren'
+	| 'shell-whistle'
+	| 'depth-charge'
+	| 'ship-sink'
+	| 'poll-rally'
+	| 'poll-scandal'
 	| 'war-crisis'
 	| 'war-stamp'
 	| 'war-escalate';
@@ -92,6 +116,48 @@ export type SoundId =
 type SoundEffect = (ctx: AudioContext, dest: AudioNode, intensity: number) => void;
 
 export const SOUNDS: Record<SoundId, SoundEffect> = {
+	// A granite stone rumbling over ice: a low filtered hiss that gets louder with speed
+	'curl-glide': (ctx, dest, intensity) =>
+		noise(ctx, dest, {
+			duration: 0.3,
+			filterType: 'lowpass',
+			filterFrequency: 380 + intensity * 500,
+			filterTo: 200,
+			gain: 0.05 + intensity * 0.08,
+			attack: 0.06
+		}),
+
+	// Brooms scrubbing: a short, bright, scratchy burst
+	'curl-scrub': (ctx, dest, intensity) =>
+		noise(ctx, dest, {
+			duration: 0.11,
+			filterType: 'bandpass',
+			filterFrequency: 2600 + intensity * 1400,
+			q: 1.4,
+			gain: 0.11 + intensity * 0.05,
+			attack: 0.015
+		}),
+
+	// A seal's indignant honk
+	'seal-bark': (ctx, dest) => {
+		tone(ctx, dest, { frequency: 190, glideTo: 120, duration: 0.2, type: 'sawtooth', gain: 0.13 });
+		tone(ctx, dest, {
+			frequency: 150,
+			glideTo: 105,
+			duration: 0.16,
+			type: 'square',
+			gain: 0.06,
+			delay: 0.05
+		});
+	},
+
+	// A penguin's two-note squawk
+	'penguin-squawk': (ctx, dest) =>
+		sequence(ctx, dest, [
+			{ frequency: 900, glideTo: 1250, duration: 0.07, type: 'square', gain: 0.11 },
+			{ frequency: 1250, glideTo: 780, duration: 0.11, type: 'square', gain: 0.11, delay: 0.08 }
+		]),
+
 	// A soft, neutral tap for buttons, taps and toggles
 	'ui-tap': (ctx, dest) =>
 		tone(ctx, dest, { frequency: 720, duration: 0.05, type: 'triangle', gain: 0.18 }),
@@ -818,6 +884,85 @@ export const SOUNDS: Record<SoundId, SoundEffect> = {
 			attack: 0.6
 		}),
 
+	// A match struck and a wick catching: a scratch, then a soft rising flutter
+	'candle-light': (ctx, dest, intensity) => {
+		noise(ctx, dest, {
+			duration: 0.12,
+			filterType: 'highpass',
+			filterFrequency: 3500,
+			gain: 0.14,
+			attack: 0.01
+		});
+		tone(ctx, dest, {
+			frequency: 260 + intensity * 120,
+			glideTo: 520 + intensity * 200,
+			duration: 0.22,
+			type: 'triangle',
+			gain: 0.08,
+			attack: 0.06,
+			delay: 0.08
+		});
+	},
+
+	// A treat being crunched: two dry little crackles
+	'treat-crunch': (ctx, dest) => {
+		for (const delay of [0, 0.09]) {
+			noise(ctx, dest, {
+				duration: 0.07,
+				filterType: 'bandpass',
+				filterFrequency: 2200,
+				q: 1.2,
+				gain: 0.2,
+				attack: 0.01,
+				delay
+			});
+		}
+	},
+
+	// A single low bell tolling before something happens in the room
+	'omen-toll': (ctx, dest, intensity) => {
+		tone(ctx, dest, {
+			frequency: 110 + intensity * 30,
+			glideTo: 104 + intensity * 30,
+			duration: 0.9,
+			type: 'sine',
+			gain: 0.26,
+			attack: 0.01
+		});
+		tone(ctx, dest, {
+			frequency: 277,
+			duration: 0.6,
+			type: 'triangle',
+			gain: 0.05,
+			attack: 0.01
+		});
+	},
+
+	// A cat landing a pounce: a soft thump with a quick rush of air
+	'cat-pounce': (ctx, dest) => {
+		tone(ctx, dest, { frequency: 170, glideTo: 70, duration: 0.14, type: 'sine', gain: 0.2 });
+		noise(ctx, dest, {
+			duration: 0.1,
+			filterType: 'lowpass',
+			filterFrequency: 1200,
+			gain: 0.1,
+			attack: 0.02
+		});
+	},
+
+	// A star earned on the result screen: a bright two-note ping; intensity lifts the pitch for each star
+	'star-earn': (ctx, dest, intensity) => {
+		const base = 660 * (1 + intensity * 0.5);
+		tone(ctx, dest, { frequency: base, duration: 0.25, type: 'triangle', gain: 0.14 });
+		tone(ctx, dest, {
+			frequency: base * 1.5,
+			duration: 0.3,
+			type: 'sine',
+			gain: 0.1,
+			delay: 0.07
+		});
+	},
+
 	// A candle pinched out: a short puff of air
 	'candle-snuff': (ctx, dest) =>
 		noise(ctx, dest, {
@@ -916,6 +1061,30 @@ export const SOUNDS: Record<SoundId, SoundEffect> = {
 		});
 	},
 
+	// A moose hearing something: a short, questioning rise
+	'maple-alert': (ctx, dest) =>
+		sequence(ctx, dest, [
+			{ frequency: 330, duration: 0.08, type: 'triangle', gain: 0.16 },
+			{ frequency: 520, duration: 0.14, type: 'triangle', gain: 0.16, delay: 0.08 }
+		]),
+
+	// Picking up or using a gadget: a bright two-note blip
+	'maple-gadget': (ctx, dest) =>
+		sequence(ctx, dest, [
+			{ frequency: 660, duration: 0.07, type: 'square', gain: 0.09 },
+			{ frequency: 990, duration: 0.1, type: 'square', gain: 0.09, delay: 0.06 }
+		]),
+
+	// A heavy lever thrown: a clunk and a latch
+	'maple-lever': (ctx, dest) => {
+		tone(ctx, dest, { frequency: 150, glideTo: 70, duration: 0.14, type: 'triangle', gain: 0.26 });
+		tone(ctx, dest, { frequency: 900, duration: 0.04, type: 'square', gain: 0.08, delay: 0.14 });
+	},
+
+	// Time running backwards: a quick falling sweep
+	'maple-rewind': (ctx, dest) =>
+		tone(ctx, dest, { frequency: 900, glideTo: 220, duration: 0.25, type: 'sawtooth', gain: 0.1 }),
+
 	// A low two-note horn announcing the next wave
 	'wave-horn': (ctx, dest) =>
 		sequence(ctx, dest, [
@@ -923,9 +1092,96 @@ export const SOUNDS: Record<SoundId, SoundEffect> = {
 			{ frequency: 262, duration: 0.34, type: 'sawtooth', gain: 0.17, delay: 0.2 }
 		]),
 
+	// A rally tap: a bright rising blip whose pitch climbs with the streak
+	'poll-rally': (ctx, dest, intensity) =>
+		sequence(ctx, dest, [
+			{ frequency: 520 + intensity * 520, duration: 0.07, type: 'triangle', gain: 0.17 },
+			{ frequency: 780 + intensity * 780, duration: 0.1, type: 'triangle', gain: 0.15, delay: 0.05 }
+		]),
+
+	// A scandal breaking: a low thud under a falling, snarling buzz
+	'poll-scandal': (ctx, dest, intensity) => {
+		tone(ctx, dest, { frequency: 120, glideTo: 55, duration: 0.25, type: 'triangle', gain: 0.26 });
+		tone(ctx, dest, {
+			frequency: 330 + intensity * 100,
+			glideTo: 140,
+			duration: 0.22,
+			type: 'sawtooth',
+			gain: 0.13
+		});
+	},
+
 	// A dull, short click for an action that is not ready yet
 	'energy-empty': (ctx, dest) =>
 		tone(ctx, dest, { frequency: 140, glideTo: 90, duration: 0.09, type: 'triangle', gain: 0.18 }),
+
+	// A blade glancing off armour plating: a bright metallic ting
+	'slice-clang': (ctx, dest, intensity) => {
+		tone(ctx, dest, {
+			frequency: 1180 + intensity * 200,
+			duration: 0.14,
+			type: 'square',
+			gain: 0.1
+		});
+		tone(ctx, dest, { frequency: 1770, duration: 0.18, type: 'sine', gain: 0.1, delay: 0.01 });
+	},
+
+	// Time slowing down: a long falling sweep
+	'slice-focus-in': (ctx, dest) => {
+		tone(ctx, dest, { frequency: 700, glideTo: 120, duration: 0.5, type: 'sine', gain: 0.2 });
+		noise(ctx, dest, {
+			duration: 0.45,
+			filterType: 'lowpass',
+			filterFrequency: 1800,
+			filterTo: 300,
+			gain: 0.08
+		});
+	},
+
+	// Time speeding up again: a short rising sweep
+	'slice-focus-out': (ctx, dest) =>
+		tone(ctx, dest, { frequency: 160, glideTo: 640, duration: 0.25, type: 'sine', gain: 0.15 }),
+
+	// A missile leaving and whistling down: a quick falling tone over a hiss
+	'shell-whistle': (ctx, dest, intensity) => {
+		tone(ctx, dest, {
+			frequency: 1500 + intensity * 400,
+			glideTo: 420,
+			duration: 0.4,
+			type: 'sine',
+			gain: 0.07
+		});
+		noise(ctx, dest, {
+			duration: 0.3,
+			filterType: 'highpass',
+			filterFrequency: 3000,
+			gain: 0.05
+		});
+	},
+
+	// A depth charge going off underwater: a muffled, low thump
+	'depth-charge': (ctx, dest) => {
+		tone(ctx, dest, { frequency: 120, glideTo: 38, duration: 0.7, type: 'sine', gain: 0.4 });
+		noise(ctx, dest, {
+			duration: 0.6,
+			filterType: 'lowpass',
+			filterFrequency: 500,
+			filterTo: 70,
+			gain: 0.25
+		});
+	},
+
+	// A ship going under: a groan falling away over bubbling noise
+	'ship-sink': (ctx, dest) => {
+		tone(ctx, dest, { frequency: 180, glideTo: 50, duration: 1.4, type: 'sawtooth', gain: 0.12 });
+		noise(ctx, dest, {
+			duration: 1.5,
+			filterType: 'lowpass',
+			filterFrequency: 900,
+			filterTo: 120,
+			gain: 0.16
+		});
+	},
 
 	// A wailing two-tone siren for a crisis landing on the desk
 	'war-crisis': (ctx, dest, intensity) =>
