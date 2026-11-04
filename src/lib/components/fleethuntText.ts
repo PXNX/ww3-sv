@@ -12,5 +12,8 @@ export const SHIP_NAMES: Record<ShipClass, () => string> = {
 
 export const WEAPON_NAMES: Record<Weapon, () => string> = {
 	neptune: m.fleethunt_weapon_neptune,
-	usv: m.fleethunt_weapon_usv
+	usv: m.fleethunt_weapon_usv,
+	salvo: m.fleethunt_weapon_salvo,
+	depth: m.fleethunt_weapon_depth,
+	sonar: m.fleethunt_weapon_sonar
 };

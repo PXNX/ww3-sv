@@ -17,9 +17,9 @@ import {
 	type Ship
 } from './fleet';
 
-/** A Kilo along the top row and a Tarantul standing in the bottom-right corner */
+/** A Buyan along the top row and a Tarantul standing in the bottom-right corner */
 const SHIPS: Ship[] = [
-	{ class: 'kilo', cells: [cellOf(0, 0), cellOf(1, 0), cellOf(2, 0)] },
+	{ class: 'buyan', cells: [cellOf(0, 0), cellOf(1, 0), cellOf(2, 0)] },
 	{ class: 'tarantul', cells: [cellOf(9, 8), cellOf(9, 9)] }
 ];
 
@@ -91,9 +91,9 @@ describe('strikes', () => {
 	it('knows when the whole fleet is sunk and what it was worth', () => {
 		const shots = SHIPS[0].cells.map((cell) => ({ cell, weapon: 'neptune' as const }));
 		expect(allSunk(SHIPS, shots)).toBe(false);
-		expect(fleetPoints(SHIPS, shots)).toBe(SHIP_CLASSES.kilo.points);
+		expect(fleetPoints(SHIPS, shots)).toBe(SHIP_CLASSES.buyan.points);
 		const all = [...shots, ...SHIPS[1].cells.map((cell) => ({ cell, weapon: 'usv' as const }))];
 		expect(allSunk(SHIPS, all)).toBe(true);
-		expect(fleetPoints(SHIPS, all)).toBe(SHIP_CLASSES.kilo.points + SHIP_CLASSES.tarantul.points);
+		expect(fleetPoints(SHIPS, all)).toBe(SHIP_CLASSES.buyan.points + SHIP_CLASSES.tarantul.points);
 	});
 });

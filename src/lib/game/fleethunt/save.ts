@@ -8,29 +8,44 @@ import { isFiniteNumber } from '#lib/services/storage.js';
 import {
 	CELL_COUNT,
 	SHIP_CLASSES,
+	WEAPONS,
 	isStraightLine,
 	type Ship,
 	type ShipClass,
 	type Shot,
 	type Weapon
 } from './fleet';
+import { newRun, type RunStats } from './scoring';
 
 export type Ammo = Record<Weapon, number>;
 
 /** The strikes handed out on every new day */
-export const DAILY_AMMO: Readonly<Ammo> = { neptune: 10, usv: 4 };
+export const DAILY_AMMO: Readonly<Ammo> = { neptune: 10, usv: 4, salvo: 2, depth: 1, sonar: 3 };
 
 /** Extra Neptune missiles the player can unlock once a day with a button */
 export const BONUS_SHOTS = 2;
 
 export const SAVE_KEY = 'fleethunt';
 
+/** A sonar ping and the contacts it counted when it was sent; ships may have moved since */
+export interface Ping {
+	cell: number;
+	count: number;
+}
+
 export interface FleetHuntSave {
 	version: 1;
 	/** Local day (YYYY-MM-DD) the ammo and the bonus belong to */
 	day: string;
 	ships: Ship[];
+	/** Decoy buoys that answer a strike like a ship does */
+	decoys: number[];
 	shots: Shot[];
+	pings: Ping[];
+	/** The numbers of the hunt in progress */
+	run: RunStats;
+	/** Stars earned for sunk fleets so far */
+	stars: number;
 	ammo: Ammo;
 	/** Whether today's bonus shots were already taken */
 	bonusClaimed: boolean;
@@ -50,7 +65,33 @@ export function resupply(save: FleetHuntSave, today: string): FleetHuntSave {
 }
 
 export function totalAmmo(ammo: Ammo): number {
-	return ammo.neptune + ammo.usv;
+	return WEAPONS.reduce((sum, weapon) => sum + ammo[weapon], 0);
+}
+
+/** Strikes left: sonar pings do not count, because a hunt cannot be won by listening */
+export function strikesLeft(ammo: Ammo): number {
+	return totalAmmo(ammo) - ammo.sonar;
+}
+
+/**
+ * What the save may look like on disk: an older save has none of the newer fields, and its ammo
+ * knows only the first weapons. `normalize` fills the gaps.
+ */
+export type StoredSave = Omit<FleetHuntSave, 'decoys' | 'pings' | 'run' | 'stars' | 'ammo'> &
+	Partial<Pick<FleetHuntSave, 'decoys' | 'pings' | 'run' | 'stars'>> & {
+		ammo: Partial<Ammo> & Pick<Ammo, 'neptune' | 'usv'>;
+	};
+
+export function normalize(save: StoredSave): FleetHuntSave {
+	return {
+		...save,
+		decoys: save.decoys ?? [],
+		pings: save.pings ?? [],
+		run: save.run ?? newRun(),
+		stars: save.stars ?? 0,
+		// Weapons added later start with a full day's supply
+		ammo: { ...DAILY_AMMO, ...save.ammo }
+	};
 }
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -79,18 +120,39 @@ function isShip(value: unknown): value is Ship {
 function isShot(value: unknown): value is Shot {
 	if (typeof value !== 'object' || value === null) return false;
 	const shot = value as Record<string, unknown>;
-	return isCell(shot.cell) && (shot.weapon === 'neptune' || shot.weapon === 'usv');
+	return isCell(shot.cell) && shot.weapon !== 'sonar' && WEAPONS.includes(shot.weapon as Weapon);
 }
 
-function isAmmo(value: unknown): value is Ammo {
+function isPing(value: unknown): value is Ping {
 	if (typeof value !== 'object' || value === null) return false;
-	const ammo = value as Record<string, unknown>;
+	const ping = value as Record<string, unknown>;
+	return isCell(ping.cell) && isCount(ping.count, CELL_COUNT);
+}
+
+function isRun(value: unknown): value is RunStats {
+	if (typeof value !== 'object' || value === null) return false;
+	const run = value as Record<string, unknown>;
 	return (
-		isCount(ammo.neptune, DAILY_AMMO.neptune + BONUS_SHOTS) && isCount(ammo.usv, DAILY_AMMO.usv)
+		isCount(run.strikes) &&
+		isCount(run.hits) &&
+		isCount(run.streak) &&
+		isCount(run.bestStreak) &&
+		isCount(run.points)
 	);
 }
 
-export function isFleetHuntSave(value: unknown): value is FleetHuntSave {
+/** Ammo as stored: the newer weapons may be missing from an older save */
+function isAmmo(value: unknown): boolean {
+	if (typeof value !== 'object' || value === null) return false;
+	const ammo = value as Record<string, unknown>;
+	return WEAPONS.every((weapon) => {
+		const left = ammo[weapon];
+		if (left === undefined) return weapon !== 'neptune' && weapon !== 'usv';
+		return isCount(left, DAILY_AMMO[weapon] + (weapon === 'neptune' ? BONUS_SHOTS : 0));
+	});
+}
+
+export function isFleetHuntSave(value: unknown): value is StoredSave {
 	if (typeof value !== 'object' || value === null) return false;
 	const save = value as Record<string, unknown>;
 	if (
@@ -105,14 +167,22 @@ export function isFleetHuntSave(value: unknown): value is FleetHuntSave {
 		!isAmmo(save.ammo) ||
 		typeof save.bonusClaimed !== 'boolean' ||
 		!isCount(save.points) ||
-		!isCount(save.fleetsSunk)
+		!isCount(save.fleetsSunk) ||
+		(save.decoys !== undefined && !(Array.isArray(save.decoys) && save.decoys.every(isCell))) ||
+		(save.pings !== undefined && !(Array.isArray(save.pings) && save.pings.every(isPing))) ||
+		(save.run !== undefined && !isRun(save.run)) ||
+		(save.stars !== undefined && !isCount(save.stars))
 	) {
 		return false;
 	}
-	// No cell is struck twice and no two ships share a cell
+	// No cell is struck twice, no two ships share a cell and no decoy sits on a ship
 	const shotCells = (save.shots as Shot[]).map((shot) => shot.cell);
 	const shipCells = (save.ships as Ship[]).flatMap((ship) => ship.cells);
+	const decoys = (save.decoys ?? []) as number[];
 	return (
-		new Set(shotCells).size === shotCells.length && new Set(shipCells).size === shipCells.length
+		new Set(shotCells).size === shotCells.length &&
+		new Set(shipCells).size === shipCells.length &&
+		new Set(decoys).size === decoys.length &&
+		decoys.every((cell) => !shipCells.includes(cell))
 	);
 }

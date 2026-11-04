@@ -1,15 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import { createRandom } from '../random';
 import { placeFleet } from './fleet';
-import { BONUS_SHOTS, DAILY_AMMO, isFleetHuntSave, resupply, type FleetHuntSave } from './save';
+import {
+	normalize,
+	BONUS_SHOTS,
+	DAILY_AMMO,
+	isFleetHuntSave,
+	resupply,
+	type FleetHuntSave
+} from './save';
 
 function save(overrides: Partial<FleetHuntSave> = {}): FleetHuntSave {
 	return {
 		version: 1,
 		day: '2026-10-22',
 		ships: placeFleet(createRandom(5)),
+		decoys: [],
 		shots: [],
-		ammo: { neptune: 1, usv: 0 },
+		pings: [],
+		run: { strikes: 0, hits: 0, streak: 0, bestStreak: 0, points: 0 },
+		stars: 0,
+		ammo: { neptune: 1, usv: 0, salvo: 0, depth: 0, sonar: 0 },
 		bonusClaimed: true,
 		points: 350,
 		fleetsSunk: 2,
@@ -36,10 +47,26 @@ describe('resupply', () => {
 });
 
 describe('isFleetHuntSave', () => {
+	it('accepts an older save without the newer fields and fills them in', () => {
+		const { decoys, pings, run, stars, ...old } = save();
+		void [decoys, pings, run, stars];
+		const legacy = { ...old, ammo: { neptune: 3, usv: 1 } };
+		expect(isFleetHuntSave(legacy)).toBe(true);
+		const fresh = normalize(legacy as never);
+		expect(fresh.ammo).toEqual({ ...DAILY_AMMO, neptune: 3, usv: 1 });
+		expect(fresh.decoys).toEqual([]);
+		expect(fresh.run.streak).toBe(0);
+	});
+
+	it('rejects a decoy on a ship', () => {
+		const ships = save().ships;
+		expect(isFleetHuntSave(save({ decoys: [ships[0].cells[0]] }))).toBe(false);
+	});
+
 	it('accepts a valid save, including the bonus on top of the daily missiles', () => {
 		expect(isFleetHuntSave(save())).toBe(true);
 		expect(
-			isFleetHuntSave(save({ ammo: { neptune: DAILY_AMMO.neptune + BONUS_SHOTS, usv: 4 } }))
+			isFleetHuntSave(save({ ammo: { ...DAILY_AMMO, neptune: DAILY_AMMO.neptune + BONUS_SHOTS } }))
 		).toBe(true);
 	});
 
@@ -71,7 +98,7 @@ describe('isFleetHuntSave', () => {
 		],
 		['a shot off the grid', save({ shots: [{ cell: 100, weapon: 'usv' }] })],
 		['an unknown weapon', save({ shots: [{ cell: 3, weapon: 'kalibr' as 'usv' }] })],
-		['too much ammo', save({ ammo: { neptune: 99, usv: 0 } })],
+		['too much ammo', save({ ammo: { ...DAILY_AMMO, neptune: 99 } })],
 		['negative points', save({ points: -5 })]
 	])('rejects %s', (_, value) => {
 		expect(isFleetHuntSave(value)).toBe(false);

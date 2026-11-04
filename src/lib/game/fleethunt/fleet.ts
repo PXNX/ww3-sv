@@ -15,14 +15,18 @@ export interface ShipClassInfo {
 	length: number;
 	/** Points for sinking a ship of this class */
 	points: number;
+	/** Fast patrol boats slip one cell sideways now and then, as long as they are unhurt */
+	evasive: boolean;
+	/** A submarine is invisible to sea drone cameras, but not to sonar */
+	submerged: boolean;
 }
 
 export const SHIP_CLASSES: Record<ShipClass, ShipClassInfo> = {
-	moskva: { length: 5, points: 500 },
-	ropucha: { length: 4, points: 250 },
-	kilo: { length: 3, points: 200 },
-	buyan: { length: 3, points: 150 },
-	tarantul: { length: 2, points: 100 }
+	moskva: { length: 5, points: 500, evasive: false, submerged: false },
+	ropucha: { length: 4, points: 250, evasive: false, submerged: false },
+	kilo: { length: 3, points: 200, evasive: false, submerged: true },
+	buyan: { length: 3, points: 150, evasive: true, submerged: false },
+	tarantul: { length: 2, points: 100, evasive: true, submerged: false }
 };
 
 /** The ships of every fleet, biggest first */
@@ -35,7 +39,18 @@ export const FLEET: readonly ShipClass[] = [
 	'tarantul'
 ];
 
-export type Weapon = 'neptune' | 'usv';
+/**
+ * Neptune: one cell. Sea drone: one cell, and its camera counts nearby ships when it finds water.
+ * Salvo: three cells in a row. Depth charge: a cross of five cells. Sonar: no strike, it only
+ * listens and counts the contacts in a wide square.
+ */
+export type Weapon = 'neptune' | 'usv' | 'salvo' | 'depth' | 'sonar';
+
+export const WEAPONS: readonly Weapon[] = ['neptune', 'usv', 'salvo', 'depth', 'sonar'];
+
+/** Radius (in cells) of the square a sonar ping listens to, and a drone camera sees */
+export const SONAR_RADIUS = 2;
+export const DRONE_RADIUS = 1;
 
 export interface Ship {
 	class: ShipClass;
@@ -50,6 +65,13 @@ export interface Shot {
 
 export type StrikeResult =
 	{ kind: 'miss' } | { kind: 'hit'; ship: number } | { kind: 'sunk'; ship: number; points: number };
+
+/** What one cell of a volley did; a decoy buoy answers like a hit but is worth nothing */
+export type CellOutcome =
+	| { cell: number; kind: 'miss' }
+	| { cell: number; kind: 'decoy' }
+	| { cell: number; kind: 'hit'; ship: number }
+	| { cell: number; kind: 'sunk'; ship: number; points: number };
 
 export function cellOf(column: number, row: number): number {
 	return row * COLUMNS + column;
@@ -166,10 +188,45 @@ export function strikeResult(
 export function droneContacts(
 	ships: readonly Ship[],
 	shots: readonly Shot[],
-	cell: number
+	cell: number,
+	decoys: readonly number[] = []
+): number {
+	return contactsAround(ships, decoys, shots, cell, DRONE_RADIUS, false);
+}
+
+/** The cells of the square of `radius` around a cell, clipped at the edge of the grid */
+export function squareAround(cell: number, radius: number): number[] {
+	const column = columnOf(cell);
+	const row = rowOf(cell);
+	const result: number[] = [];
+	for (let y = Math.max(0, row - radius); y <= Math.min(ROWS - 1, row + radius); y++) {
+		for (let x = Math.max(0, column - radius); x <= Math.min(COLUMNS - 1, column + radius); x++) {
+			result.push(cellOf(x, y));
+		}
+	}
+	return result;
+}
+
+/**
+ * The untouched ship cells and decoy buoys in the square around a cell. A sea drone camera does
+ * not see submarines; sonar does.
+ */
+export function contactsAround(
+	ships: readonly Ship[],
+	decoys: readonly number[],
+	shots: readonly Shot[],
+	cell: number,
+	radius: number,
+	sonar: boolean
 ): number {
 	const struck = struckCells(shots);
-	return neighbours(cell).filter((near) => !struck.has(near) && shipAt(ships, near) >= 0).length;
+	return squareAround(cell, radius).filter((near) => {
+		if (struck.has(near)) return false;
+		if (decoys.includes(near)) return true;
+		const index = shipAt(ships, near);
+		if (index < 0) return false;
+		return sonar || !SHIP_CLASSES[ships[index].class].submerged;
+	}).length;
 }
 
 /** The points all sunk ships of a fleet are worth */
