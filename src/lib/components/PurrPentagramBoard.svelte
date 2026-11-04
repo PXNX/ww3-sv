@@ -12,7 +12,12 @@
 	import { onMount, type Snippet } from 'svelte';
 	import { CAT_RADIUS, FIELD } from '#lib/game/purrpentagram/config.js';
 	import { finaleStage } from '#lib/game/purrpentagram/finale.js';
-	import { seatPosition, type Point } from '#lib/game/purrpentagram/geometry.js';
+	import { bodyScale } from '#lib/game/purrpentagram/body.js';
+	import { flameFlicker } from '#lib/game/purrpentagram/candles.js';
+	import { candlePosition, seatPosition, type Point } from '#lib/game/purrpentagram/geometry.js';
+	import { age } from '#lib/game/purrpentagram/particles.js';
+	import { PACTS } from '#lib/game/purrpentagram/pacts.js';
+	import { restlessness } from '#lib/game/purrpentagram/step.js';
 	import { roomLook } from '#lib/game/purrpentagram/room.js';
 	import { createFixedLoop, onAppHidden } from '#lib/game/loop.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -22,6 +27,19 @@
 	import PurrCat from './PurrCat.svelte';
 	import PurrDemonCat from './PurrDemonCat.svelte';
 	import IconPlay from '~icons/lucide/play';
+
+	const PACT_NAMES = {
+		none: m.purr_pact_none_name,
+		mercy: m.purr_pact_mercy_name,
+		shadows: m.purr_pact_shadows_name,
+		plenty: m.purr_pact_plenty_name
+	};
+	const PACT_DESCRIPTIONS = {
+		none: m.purr_pact_none_desc,
+		mercy: m.purr_pact_mercy_desc,
+		shadows: m.purr_pact_shadows_desc,
+		plenty: m.purr_pact_plenty_desc
+	};
 
 	let { game, children }: { game: PurrPentagramGame; children?: Snippet } = $props();
 
@@ -107,12 +125,34 @@
 		};
 	}
 
-	/** Where a cat that has run off after the laser dot is (relative to its seat) */
-	function wander(index: number) {
-		const cat = ritual.cats[index];
-		if (cat.motion?.kind !== 'chase' || !look.laser) return { x: 0, y: 0 };
-		return { x: (look.laser.x - seats[index].x) * 0.62, y: (look.laser.y - seats[index].y) * 0.62 };
+	/** Where the cat's body is relative to its seat, lifted by its hop; nothing moves with reduced motion */
+	function bodyOffset(index: number) {
+		if (calm) return { x: 0, y: 0 };
+		const { body } = ritual.cats[index];
+		return { x: body.x, y: body.y - body.z };
 	}
+
+	function squashOf(index: number) {
+		if (calm) return { x: 1, y: 1 };
+		const cat = ritual.cats[index];
+		return bodyScale(cat.body, cat.purr);
+	}
+
+	/** Time for the flicker: the ritual's own clock, so a paused game holds its flames still */
+	const clock = $derived(ritual.elapsedMs + ritual.finaleMs);
+	const restless = $derived(
+		Math.min(1, (restlessness(ritual) - 1) * 1.4 + (ritual.omen ? 0.6 : 0))
+	);
+	const shakeStyle = $derived(
+		calm || game.shake <= 0.01
+			? undefined
+			: `translate(${(Math.sin(clock * 0.09) * 9 * game.shake).toFixed(1)}px, ${(Math.cos(clock * 0.13) * 7 * game.shake).toFixed(1)}px)`
+	);
+	/** How lively the pentagram's guide glows: with the cats' mood and every line joined */
+	const glow = $derived(
+		(ritual.cats.reduce((sum, cat) => sum + cat.purr, 0) / ritual.cats.length) * 0.6 +
+			ritual.chain.length * 0.08
+	);
 
 	/** The place of the cat in the star drawn so far (1 to 5), or null while it has not been joined */
 	function stepOf(index: number): number | null {
@@ -178,16 +218,22 @@
 			event.target.closest('button, a, input, select, textarea, [contenteditable]') !== null;
 		if (event.code === 'Escape') {
 			if (game.status === 'playing') game.pause();
+		} else if (event.code === 'KeyT' && !event.repeat && !interactive) {
+			game.toggleTreat();
 		} else if (event.code === 'KeyP' && !event.repeat && !interactive) {
 			game.togglePause();
 		}
 	}
 
-	// Candles stand between the cats, on the rug's outer ring
-	const CANDLES = Array.from({ length: 5 }, (_, i) => {
-		const angle = -Math.PI / 2 + (Math.PI / 5) * (2 * i + 1);
-		return { x: 500 + 452 * Math.cos(angle), y: 510 + 452 * Math.sin(angle), phase: i * 0.37 };
-	});
+	const CANDLES = Array.from({ length: 5 }, (_, i) => ({ ...candlePosition(i), phase: i * 0.37 }));
+
+	function onCandleKey(event: KeyboardEvent, index: number) {
+		if (event.ctrlKey || event.metaKey || event.altKey) return;
+		if (event.code === 'Enter' || event.code === 'Space') {
+			event.preventDefault();
+			game.relight(index);
+		}
+	}
 </script>
 
 <svelte:window onkeydown={onKey} />
@@ -198,6 +244,7 @@
 		viewBox="0 0 {FIELD} {FIELD}"
 		class="block aspect-square w-full touch-none rounded-[14px_8px_16px_10px] border-3 border-ink bg-[#150a22] shadow-[4px_4px_0_var(--color-ink)]"
 		class:calm
+		style:transform={shakeStyle}
 		role="group"
 		aria-label={m.purr_playfield_label()}
 		onpointerdown={onPointerDown}
@@ -294,30 +341,78 @@
 			<circle cx={100 * (1 - 0.55 * look.door)} cy="104" r="7" fill="#d9b44a" />
 		</g>
 
-		<!-- Candles between the cats -->
+		<!-- The pentagram's guide on the rug: it glows with the purrs and the lines drawn -->
+		<polygon
+			points={[0, 2, 4, 1, 3]
+				.map((seat) => `${seatPosition(seat).x},${seatPosition(seat).y}`)
+				.join(' ')}
+			fill="none"
+			stroke="#d9a8ff"
+			stroke-width="3"
+			stroke-linejoin="round"
+			opacity={0.08 + 0.3 * Math.min(1, glow)}
+			filter="url(#line-glow)"
+		/>
+
+		<!-- An omen: the rim of the rug pulses red shortly before something happens -->
+		{#if ritual.omen}
+			<circle
+				class="omen"
+				class:calm
+				cx="500"
+				cy="510"
+				r="470"
+				fill="none"
+				stroke="#ff4f6a"
+				stroke-width="10"
+			/>
+		{/if}
+
+		<!-- Candles between the cats: tap one that has gone out to light it again -->
 		{#each CANDLES as candle, i (i)}
-			{@const lit = Math.max(stage ? stage.candles : 0, 1 - look.candlesOut)}
+			{@const state = ritual.candles[i]}
 			{@const big = stage ? stage.candles + 0.35 * stage.candles * stage.breath : 0}
-			<g transform="translate({candle.x} {candle.y})">
+			{@const level = Math.max(state.level, stage ? stage.candles : 0)}
+			{@const flick = calm ? 0.5 : flameFlicker(i, clock, restless)}
+			<g
+				class="candle"
+				role="button"
+				tabindex="0"
+				aria-label={m.purr_candle_label({ number: i + 1 })}
+				transform="translate({candle.x} {candle.y})"
+				onkeydown={(event) => onCandleKey(event, i)}
+			>
+				<circle
+					class="focus"
+					r="46"
+					fill="none"
+					stroke="#fff"
+					stroke-width="4"
+					stroke-dasharray="8 8"
+				/>
 				<rect
 					x="-7"
 					y="-4"
 					width="14"
-					height="36"
+					height={36 - (1 - state.fuel) * 12}
 					rx="3"
 					fill="#efe6c8"
 					stroke="#8a7a52"
 					stroke-width="2"
 				/>
-				{#if lit > 0.05}
-					<g class="flame" style:animation-delay="{candle.phase}s" class:flicker={look.flicker}>
+				{#if level > 0.04}
+					<g
+						class="flame"
+						transform="scale({(0.4 + 0.6 * level) * (0.94 + 0.12 * flick)} {(0.3 + 0.7 * level) *
+							(0.9 + 0.2 * flick)}) skewX({(flick - 0.5) * 10})"
+					>
 						<ellipse
 							cx="0"
 							cy="-18"
 							rx={7 + big * 7}
 							ry={14 + big * 12}
 							fill="#ffb347"
-							opacity={0.55 + 0.4 * lit}
+							opacity={0.3 + 0.65 * level}
 							filter="url(#purr-glow)"
 						/>
 						<ellipse cx="0" cy="-15" rx="3.5" ry="8" fill="#fff3c4" />
@@ -331,6 +426,8 @@
 						opacity="0.5"
 					/>
 				{/if}
+				<!-- A faint pool of light on the rug, as big as the flame -->
+				<circle cy="-8" r={20 + 38 * level} fill="#ffb347" opacity={0.07 * level} />
 			</g>
 		{/each}
 
@@ -400,11 +497,47 @@
 					{cat}
 					{calm}
 					eyes={stage?.eyes ?? 0}
-					anchored={game.anchor === index}
+					anchored={game.anchor === index || game.treatArmed}
 					step={stepOf(index)}
-					offset={wander(index)}
+					offset={bodyOffset(index)}
+					squash={squashOf(index)}
 				/>
 			</g>
+		{/each}
+
+		<!-- Embers, smoke, sparks, hearts and dust -->
+		{#each game.particles as particle, i (i)}
+			{@const t = age(particle)}
+			{#if particle.kind === 'smoke'}
+				<circle
+					cx={particle.x}
+					cy={particle.y}
+					r={particle.size * (1 + 2.2 * t)}
+					fill="#9a94a8"
+					opacity={0.35 * (1 - t)}
+				/>
+			{:else if particle.kind === 'heart'}
+				<text
+					x={particle.x}
+					y={particle.y}
+					font-size={particle.size * 2}
+					text-anchor="middle"
+					fill="#ff5a8a"
+					opacity={1 - t}>♥</text
+				>
+			{:else}
+				<circle
+					cx={particle.x}
+					cy={particle.y}
+					r={particle.size * (1 - 0.6 * t)}
+					fill={particle.kind === 'ember'
+						? '#ffb347'
+						: particle.kind === 'spark'
+							? '#ffe9a8'
+							: '#c9b8d8'}
+					opacity={(particle.kind === 'dust' ? 0.5 : 0.9) * (1 - t)}
+				/>
+			{/if}
 		{/each}
 
 		<!-- The laser dot -->
@@ -446,6 +579,28 @@
 				{#if game.best !== null}
 					<p class="text-sm font-semibold">{m.purr_best({ score: game.best })}</p>
 				{/if}
+				<fieldset class="flex w-full flex-col gap-1 text-start">
+					<legend class="mb-1 text-sm font-bold">{m.purr_pact_title()}</legend>
+					{#each PACTS as pact (pact)}
+						<label
+							class="flex cursor-pointer items-start gap-2 rounded-md border-2 border-ink px-2 py-1 text-xs leading-tight {game.pact ===
+							pact
+								? 'bg-sand'
+								: 'bg-paper'}"
+						>
+							<input
+								type="radio"
+								name="purr-pact"
+								class="mt-0.5"
+								checked={game.pact === pact}
+								onchange={() => game.setPact(pact)}
+							/>
+							<span dir="auto"
+								><strong>{PACT_NAMES[pact]()}</strong>: {PACT_DESCRIPTIONS[pact]()}</span
+							>
+						</label>
+					{/each}
+				</fieldset>
 				<button type="button" class="btn-chunky bg-tie-red text-xl" onclick={() => game.start()}>
 					<IconPlay class="size-5" aria-hidden="true" />
 					{m.purr_start()}
@@ -473,29 +628,37 @@
 		opacity: 1;
 	}
 
-	.flame {
-		transform-origin: 0 0;
-		transform-box: fill-box;
+	.candle {
+		outline: none;
+		cursor: pointer;
 	}
 
-	.flame.flicker {
-		animation: flicker 220ms ease-in-out infinite alternate;
+	.candle:focus-visible .focus {
+		opacity: 1;
 	}
 
-	@keyframes flicker {
+	.omen {
+		animation: omen 750ms ease-in-out infinite alternate;
+	}
+
+	@keyframes omen {
 		from {
-			transform: scale(1, 1) translateX(-2px);
+			opacity: 0.1;
 		}
 		to {
-			transform: scale(0.9, 1.12) translateX(2px);
+			opacity: 0.7;
 		}
+	}
+
+	.omen.calm {
+		animation: none;
+		opacity: 0.5;
 	}
 
 	.curtain {
 		transition: d 500ms ease;
 	}
 
-	.calm .flame,
 	.calm .curtain {
 		animation: none;
 		transition: none;

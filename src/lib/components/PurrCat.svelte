@@ -28,7 +28,8 @@
 		eyes = 0,
 		anchored = false,
 		step = null,
-		offset = { x: 0, y: 0 }
+		offset = { x: 0, y: 0 },
+		squash = { x: 1, y: 1 }
 	}: {
 		cat: CatState;
 		/** Reduced motion: poses change, nothing animates */
@@ -41,6 +42,8 @@
 		step?: number | null;
 		/** Where the cat has wandered off to, relative to its seat (the ring stays put) */
 		offset?: { x: number; y: number };
+		/** Squash and stretch of the body from the physics, around the cat's feet */
+		squash?: { x: number; y: number };
 	} = $props();
 
 	const colors = $derived(COAT_COLORS[cat.profile.coat]);
@@ -92,7 +95,10 @@
 		/>
 	{/if}
 
-	<g class="away" style:transform="translate({offset.x}px, {offset.y}px)">
+	<g
+		class="away"
+		style:transform="translate({offset.x}px, {offset.y}px) scale({squash.x}, {squash.y})"
+	>
 		{#if possessed}
 			<ellipse class="shadow" cx="0" cy="70" rx="38" ry="8" fill="#000" opacity="0.4" />
 		{/if}
@@ -464,7 +470,9 @@
 	/* Where the cat has wandered off to: each new target is chased smoothly, so a cat that follows
 	   the laser dot glides after it instead of jumping */
 	.away {
-		transition: transform 450ms ease-out;
+		/* The body physics moves it every frame, so no CSS transition on top of it */
+		transform-origin: 0 70px;
+		transform-box: view-box;
 	}
 
 	.figure {
@@ -803,7 +811,6 @@
 	}
 
 	/* Reduced motion: every pose still shows, nothing moves on its own */
-	.cat.calm .away,
 	.cat.calm .figure,
 	.cat.calm .head {
 		transition: none;
