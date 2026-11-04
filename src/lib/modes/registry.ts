@@ -592,8 +592,8 @@ export const MODES: readonly GameMode[] = [
 		icon: IconFeather,
 		tileClass: 'bg-cyan-100',
 		leaders: ['musk'],
-		name: () => m.mode_curling_name(),
-		description: () => m.mode_curling_description()
+		name: m.mode_curling_name,
+		description: m.mode_curling_description
 	},
 	{
 		id: 'sabotage',
