@@ -1,72 +1,147 @@
-<!-- Sondage Slider - Fully Implemented -->
+<!--
+	Sondage Slider: your approval is the wobbling poll line. Tap rallies, counter scandals, ignore
+	fake polls and survive eight weeks of rising pressure for up to three stars.
+-->
 <script lang="ts">
-	import { SliderGame } from '#lib/stores/sliderGame.svelte.js';
-	import GameShell from '#lib/components/GameShell.svelte';
+	import { onMount } from 'svelte';
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
+	import GameShell from '#lib/components/GameShell.svelte';
+	import SliderBoard from '#lib/components/SliderBoard.svelte';
+	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import { prefersReducedMotion } from '#lib/game/loop.js';
+	import {
+		COUNTER_GAIN,
+		DECOY_PENALTY,
+		PRESS_COOLDOWN,
+		RESIGN_LINE,
+		STAR_LINES,
+		WEEKS_TOTAL
+	} from '#lib/game/slider/state.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { firstPlay } from '#lib/services/tutorial.js';
+	import { SliderGame } from '#lib/stores/sliderGame.svelte.js';
+	import IconHelp from '~icons/lucide/circle-help';
+	import IconPause from '~icons/lucide/pause';
+	import IconPlay from '~icons/lucide/play';
+	import IconStar from '~icons/lucide/star';
 
-	const game = new SliderGame();
-	const modeName = 'Sondage Slider';
+	const reducedMotion = prefersReducedMotion();
+	let board: SliderBoard | undefined = $state();
+	const game = new SliderGame({ onEvent: (event) => board?.fx(event) });
+	const modeName = m.mode_slider_name();
+
+	let showTutorial = $state(false);
+	onMount(() => {
+		game.loadBest();
+		showTutorial = firstPlay('slider');
+	});
+
+	$effect(() => {
+		if (showTutorial) game.pause();
+	});
+
+	function closeTutorial() {
+		showTutorial = false;
+		game.resume();
+	}
+
+	const state = $derived(game.state);
 </script>
 
 <GameShell
 	title={modeName}
-	score={game.score}
+	score={state.score}
 	best={game.best}
-	confirmLeave={game.state === 'playing'}
+	confirmLeave={!game.over}
+	onQuit={() => game.forfeit()}
 >
-	<div class="mx-auto flex w-full max-w-2xl flex-col items-center gap-6 p-4">
-		<div
-			class="w-full rounded-xl border-3 border-ink bg-gradient-to-r from-amber-50 via-yellow-200 to-amber-400 p-6 shadow-[4px_4px_0_var(--color-ink)]"
+	{#snippet actions()}
+		<button
+			type="button"
+			class="btn-chunky px-2 py-1 text-sm sm:px-3"
+			aria-label={m.slider_help_button()}
+			onclick={() => (showTutorial = true)}
 		>
-			<div class="mb-4 flex items-center justify-between">
-				<div class="font-display text-lg font-bold text-ink">Time: {game.time}s</div>
-				<div class="font-display text-lg font-bold text-ink">Round: {game.round}</div>
-				<div class="font-display text-lg font-bold text-ink">Score: {game.score}</div>
-			</div>
-			<div class="mb-6 text-center font-display text-ink">{game.message}</div>
-			<div class="relative mb-8 h-20">
-				<div
-					class="absolute top-1/2 right-0 left-0 h-2 -translate-y-1/2 rounded-full bg-ink/30"
-				></div>
-				<div
-					class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-display text-xs text-ink"
-				>
-					0%
-				</div>
-				<div
-					class="absolute top-1/2 h-8 w-4 -translate-x-1/2 -translate-y-1/2 rounded bg-tie-red shadow-[2px_2px_0_var(--color-ink)] transition-all duration-200"
-					style:left="{50 + game.poll}% ; transform: translate(-50%, -50%) translateY({game.wobble}px)"
-				></div>
-				<div class="absolute top-1/2 -left-2 -translate-y-1/2 font-display text-xs text-tie-red">
-					-60%
-				</div>
-				<div class="absolute top-1/2 -right-6 -translate-y-1/2 font-display text-xs text-ink">
-					+10%
-				</div>
-			</div>
-			<div class="grid grid-cols-4 gap-3">
-				{#each game.icons as icon}
-					<button type="button" class="btn-chunky h-16 text-3xl" onclick={() => game.pick(icon)}
-						>{icon}</button
-					>
-				{/each}
-			</div>
-		</div>
+			<IconHelp class="size-4" aria-hidden="true" />
+			<span class="hidden sm:inline">{m.slider_help_button()}</span>
+		</button>
+		{#if !game.over}
+			<button type="button" class="btn-chunky px-3 py-1 text-sm" onclick={() => game.togglePause()}>
+				{#if game.paused}
+					<IconPlay class="size-4" aria-hidden="true" />
+					{m.game_resume()}
+				{:else}
+					<IconPause class="size-4" aria-hidden="true" />
+					{m.game_pause()}
+				{/if}
+			</button>
+		{/if}
+	{/snippet}
+
+	<div class="mx-auto flex w-full max-w-xl flex-col gap-3 p-3">
+		<SliderBoard bind:this={board} {game} {reducedMotion} />
+		{#if game.paused && !showTutorial && !game.over}
+			<p class="text-center font-display text-sm font-bold" role="status">{m.game_paused()}</p>
+		{/if}
 	</div>
+
+	<TutorialModal
+		open={showTutorial}
+		title={m.slider_tutorial_title()}
+		closeLabel={m.slider_tutorial_close()}
+		onclose={closeTutorial}
+	>
+		<p>{m.slider_tutorial_goal({ weeks: WEEKS_TOTAL, resign: RESIGN_LINE })}</p>
+		<p>{m.slider_tutorial_rally()}</p>
+		<p>{m.slider_tutorial_scandal({ gain: COUNTER_GAIN })}</p>
+		<p>{m.slider_tutorial_decoy({ penalty: DECOY_PENALTY })}</p>
+		<p>{m.slider_tutorial_combo()}</p>
+		<p>{m.slider_tutorial_press({ seconds: PRESS_COOLDOWN })}</p>
+		<p>
+			{m.slider_tutorial_stars({ one: STAR_LINES[0], two: STAR_LINES[1], three: STAR_LINES[2] })}
+		</p>
+	</TutorialModal>
+
 	<GameOverModal
 		open={game.over}
-		score={game.score}
+		score={state.score}
 		mode="slider"
 		{modeName}
+		outcome={state.won ? 'won' : 'lost'}
 		isNewBest={game.isNewBest}
-		title="Poll Results"
+		title={state.won ? m.slider_result_won() : m.slider_result_lost()}
 		onRetry={() => game.start()}
 	>
-		<dl class="grid grid-cols-1 gap-2 font-display text-sm">
+		<div
+			class="mb-2 flex justify-center gap-1"
+			role="img"
+			aria-label={m.slider_stars_label({ stars: state.stars })}
+		>
+			{#each [1, 2, 3] as n (n)}
+				<IconStar
+					class="size-9 {n <= state.stars ? 'fill-explosion-yellow' : 'opacity-30'}"
+					aria-hidden="true"
+				/>
+			{/each}
+		</div>
+		<dl class="grid grid-cols-3 gap-2 font-display text-sm">
 			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
-				<dt class="font-bold">Final Score</dt>
-				<dd class="text-2xl font-bold">{game.score}</dd>
+				<dt class="text-center font-bold">{m.slider_stat_approval()}</dt>
+				<dd class="text-2xl font-bold tabular-nums">{Math.round(state.approval)}%</dd>
+			</div>
+			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
+				<dt class="text-center font-bold">{m.slider_stat_combo()}</dt>
+				<dd class="text-2xl font-bold tabular-nums">{state.bestCombo}</dd>
+			</div>
+			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
+				<dt class="text-center font-bold">{m.slider_stat_countered()}</dt>
+				<dd class="text-2xl font-bold tabular-nums">{state.countered}</dd>
 			</div>
 		</dl>
+		{#if !state.won}
+			<p class="mt-2 text-center font-display text-sm" dir="auto">
+				{m.slider_lost_hint({ week: state.week })}
+			</p>
+		{/if}
 	</GameOverModal>
 </GameShell>

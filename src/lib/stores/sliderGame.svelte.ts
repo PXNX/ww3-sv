@@ -1,116 +1,165 @@
 /*
- * Sondage Slider: push the wobbling poll line downward with correct icons.
+ * Sondage Slider store: wraps the pure game logic with the frame loop, pause, best score, sounds
+ * and haptics. The page's effects (particles, popups, shake) listen through `onEvent`.
  */
-import { highscores, type Highscores } from '#lib/services/highscore.js';
+import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
+import {
+	comboMultiplier,
+	createSlider,
+	pressConference,
+	tap,
+	tick,
+	type SliderEvent,
+	type SliderState
+} from '#lib/game/slider/state.js';
 import { haptic } from '#lib/haptic/haptic.svelte.js';
+import { highscores, type Highscores } from '#lib/services/highscore.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
 
 export const SLIDER_BEST_KEY = ['slider', 'score'] as const;
 
-export type SliderState = 'playing' | 'over';
+/** Longest step the simulation takes at once, so a stalled frame does not skip a whole week */
+const MAX_STEP = 0.1;
 
 export class SliderGame {
-	state = $state<SliderState>('playing');
-	poll = $state(-24); // percent
-	score = $state(0);
+	state = $state<SliderState>(createSlider());
+	paused = $state(false);
 	best = $state<number | null>(null);
 	isNewBest = $state(false);
-	over = $state(false);
-	time = $state(30);
-	round = $state(1);
-	wobble = $state(0);
-	message = $state('Tap correct icons to push poll down!');
-	icons = $state<string[]>([]);
+	/** Counts up with every scandal, so views can restart a shake animation */
+	shakes = $state(0);
 
-	#scores: Highscores;
-	#timer?: ReturnType<typeof setInterval>;
-	#animTimer?: ReturnType<typeof setInterval>;
+	#scores: () => Highscores;
+	#random: Random;
+	#seed: () => number;
+	#onEvent?: (event: SliderEvent) => void;
 
-	constructor({ scores = highscores() }: { scores?: Highscores } = {}) {
+	constructor({
+		scores = () => highscores(),
+		random,
+		onEvent
+	}: {
+		scores?: () => Highscores;
+		random?: Random;
+		onEvent?: (event: SliderEvent) => void;
+	} = {}) {
 		this.#scores = scores;
-		this.best = this.#scores.get(SLIDER_BEST_KEY);
-		this.start();
+		this.#seed = () => randomSeed();
+		this.#random = random ?? createRandom(this.#seed());
+		this.#onEvent = onEvent;
+	}
+
+	get over() {
+		return this.state.over;
+	}
+
+	get multiplier() {
+		return comboMultiplier(this.state.combo);
+	}
+
+	loadBest() {
+		this.best = this.#scores().get(SLIDER_BEST_KEY);
 	}
 
 	start() {
-		if (this.#timer) clearInterval(this.#timer);
-		if (this.#animTimer) clearInterval(this.#animTimer);
-		this.over = false;
-		this.state = 'playing';
-		this.poll = -24;
-		this.score = 0;
-		this.time = 30;
-		this.round = 1;
+		this.#random = createRandom(this.#seed());
+		this.state = createSlider();
+		this.paused = false;
 		this.isNewBest = false;
-		this.#nextRound();
-		this.#timer = setInterval(() => {
-			this.time--;
-			if (this.time <= 0) this.#endGame();
-		}, 1000);
-		this.#animTimer = setInterval(() => {
-			this.wobble = Math.sin(Date.now() / 200) * 4;
-			this.poll += (Math.random() - 0.5) * 0.8;
-			if (this.poll < -60) this.poll = -60;
-			if (this.poll > 10) this.poll = 10;
-		}, 50);
+		this.loadBest();
 	}
 
-	#nextRound() {
-		const opts = ['?', '?', '??', '???', '??', '??', '??', '??'];
-		this.icons = [];
-		const correct = opts[Math.floor(Math.random() * opts.length)];
-		// Mix in wrong ones
-		for (let i = 0; i < 4; i++) {
-			if (i === Math.floor(Math.random() * 4)) {
-				this.icons.push(correct);
-			} else {
-				let w;
-				do {
-					w = opts[Math.floor(Math.random() * opts.length)];
-				} while (w === correct);
-				this.icons.push(w);
-			}
+	pause() {
+		if (!this.state.over) this.paused = true;
+	}
+
+	resume() {
+		this.paused = false;
+	}
+
+	togglePause() {
+		if (this.paused) this.resume();
+		else this.pause();
+	}
+
+	/** Advances by dt seconds; the page calls this once per animation frame */
+	frame(dt: number) {
+		if (this.paused || this.state.over) return;
+		this.#handle(tick(this.state, Math.min(dt, MAX_STEP), this.#random));
+	}
+
+	tapTarget(id: number) {
+		if (this.paused) return;
+		this.#handle(tap(this.state, id));
+	}
+
+	press() {
+		if (this.paused) return;
+		this.#handle(pressConference(this.state));
+	}
+
+	/** Gives up: counts as a lost run */
+	forfeit() {
+		if (this.state.over) return;
+		this.state.approval = 0;
+		this.#handle(tick(this.state, 0.001, this.#random));
+	}
+
+	#handle(events: SliderEvent[]) {
+		for (const event of events) {
+			this.#feedback(event);
+			this.#onEvent?.(event);
+			if (event.type === 'scandal') this.shakes++;
+			if (event.type === 'end') this.#finish();
 		}
-		// Make sure correct is present
-		if (!this.icons.includes(correct)) this.icons[Math.floor(Math.random() * 4)] = correct;
-		(this as any)._correct = correct;
-		this.message = 'Pick the right icon!';
 	}
 
-	pick(icon: string) {
-		if (this.state !== 'playing') return;
-		if (icon === (this as any)._correct) {
-			this.poll -= 8 + Math.random() * 4;
-			this.score += 50 + this.round * 10;
-			this.round++;
-			soundManager().play('sparkle');
-			haptic().play(0.2);
-			this.message = `Good! Poll down`;
-			if (this.poll < -55) {
-				this.#endGame();
-				return;
-			}
-		} else {
-			this.poll += 4;
-			soundManager().play('hit');
-			haptic().play(0.15);
-			this.message = 'Wrong! Poll rises';
-			if (this.poll > 0) {
-				this.#endGame();
-				return;
-			}
+	#feedback(event: SliderEvent) {
+		const sound = soundManager();
+		const vibrate = haptic();
+		switch (event.type) {
+			case 'rally':
+				sound.play('poll-rally', Math.min(1, event.combo / 20));
+				vibrate.play(0.15 + Math.min(0.3, event.combo * 0.02));
+				if (event.combo > 0 && event.combo % 5 === 0) sound.play('ding', 0.8);
+				break;
+			case 'counter':
+				sound.play('click', 0.7);
+				vibrate.play(0.25);
+				break;
+			case 'decoy':
+				sound.play('ui-error');
+				vibrate.play(0.5);
+				break;
+			case 'scandal':
+				sound.play('poll-scandal', 0.8);
+				vibrate.play(0.9);
+				break;
+			case 'missed':
+				sound.play('energy-empty');
+				break;
+			case 'press':
+				sound.play('chime', 0.8);
+				vibrate.play(0.4);
+				break;
+			case 'press-not-ready':
+				sound.play('energy-empty');
+				vibrate.play(0.1);
+				break;
+			case 'week':
+				sound.play('wave-horn');
+				vibrate.play(0.3);
+				break;
+			case 'end':
+				sound.play(event.won ? 'chime-big' : 'game-over');
+				vibrate.play(event.won ? 0.6 : 0.8);
+				break;
 		}
-		setTimeout(() => this.#nextRound(), 600);
 	}
 
-	#endGame() {
-		if (this.#timer) clearInterval(this.#timer);
-		if (this.#animTimer) clearInterval(this.#animTimer);
-		this.over = true;
-		this.state = 'over';
-		const result = this.#scores.submit(SLIDER_BEST_KEY, this.score);
+	#finish() {
+		const result = this.#scores().submit(SLIDER_BEST_KEY, this.state.score);
 		this.isNewBest = result.isNewBest;
 		this.best = result.best;
-		soundManager().play('fake-news');
 	}
 }
