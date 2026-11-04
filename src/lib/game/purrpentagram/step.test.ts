@@ -165,14 +165,17 @@ describe('the star stroke', () => {
 	it('lights a line for each correct stroke and wins when the star is closed', () => {
 		const { state, target } = setup();
 		let events = connect(state, target[0], target[1]);
-		expect(events).toEqual([{ type: 'line', from: target[0], to: target[1], index: 0 }]);
+		expect(events).toEqual([
+			{ type: 'line', from: target[0], to: target[1], index: 0 },
+			{ type: 'combo', combo: 1, points: 0 }
+		]);
 		expect(state.chain).toEqual([target[0], target[1]]);
 		events = connect(state, target[1], target[2]);
-		expect(events).toEqual([{ type: 'line', from: target[1], to: target[2], index: 1 }]);
+		expect(events.map((e) => e.type)).toEqual(['line', 'combo']);
 		connect(state, target[2], target[3]);
 		// All five cats are joined, but the ritual is not complete until the last one goes back to the first
 		events = connect(state, target[3], target[4]);
-		expect(events.map((e) => e.type)).toEqual(['line']);
+		expect(events.map((e) => e.type)).toEqual(['line', 'combo']);
 		expect(state.chain).toEqual(target);
 		expect(state.phase).toBe('playing');
 		expect(state.closed).toBe(false);
@@ -180,6 +183,7 @@ describe('the star stroke', () => {
 		events = connect(state, target[4], target[0]);
 		expect(events).toEqual([
 			{ type: 'line', from: target[4], to: target[0], index: 4 },
+			{ type: 'combo', combo: 5, points: 120 },
 			{ type: 'win' }
 		]);
 		expect(state.phase).toBe('won');

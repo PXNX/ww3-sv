@@ -50,3 +50,9 @@ export function circleAt(
 	});
 	return best;
 }
+
+/** Where candle `index` stands: between two cats, on the rug's outer ring */
+export function candlePosition(index: number): Point {
+	const angle = -Math.PI / 2 + (Math.PI / 5) * (2 * index + 1);
+	return { x: 500 + 452 * Math.cos(angle), y: 510 + 452 * Math.sin(angle) };
+}

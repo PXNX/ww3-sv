@@ -50,3 +50,41 @@ export const SCORE_TIME_PER_S = 3;
 
 /** Set once the ritual has been completed, which unlocks the cat ears for the agent */
 export const PURR_SOLVED_KEY = 'purrpentagram:solved';
+
+// Candles: five of them burn around the rug. Light calms the cats, darkness unsettles them
+export const CANDLE_COUNT = 5;
+/** How fast a flame grows when it is lit and shrinks when it is put out (fraction per second) */
+export const CANDLE_RISE_PER_S = 2.4;
+export const CANDLE_FALL_PER_S = 3.4;
+/** Wax burnt per second of burning; a candle burns for about 160 s and cannot be lit again after that */
+export const CANDLE_FUEL_PER_S = 1 / 160;
+/** Candle light (0 to 1) at which the room neither calms nor unsettles an idle cat */
+export const LIGHT_NEUTRAL = 0.55;
+/** Mood lost per second per unit of light below the neutral point, for a cat that is not being petted */
+export const LIGHT_MOOD_PER_S = 0.09;
+/** Distance from a candle within which a tap lights it */
+export const CANDLE_TAP_RADIUS = 60;
+
+// Omens: every room event announces itself shortly before it begins
+export const OMEN_MS = 1500;
+/** Every cat joined into the star makes the room this much more restless (shorter gaps, stronger fright) */
+export const ESCALATION_PER_CAT = 0.1;
+
+// Combo: correct strokes in quick succession are worth more
+export const COMBO_WINDOW_MS = 14000;
+export const COMBO_MAX = 5;
+
+// Treats: an instant heart, at a price
+export const TREAT_HAPPINESS = 1 / 3;
+export const TREAT_MOOD = 0.25;
+/** A fed cat is full and purrs up more slowly for this long */
+export const SATED_MS = 9000;
+export const SATED_PURR_FACTOR = 0.5;
+
+// Score extras
+export const SCORE_PER_CANDLE = 40;
+export const SCORE_PER_COMBO = 30;
+export const SCORE_PER_TREAT = 40;
+/** Score needed for two and for three stars on the result screen */
+export const STAR_TWO_SCORE = 1250;
+export const STAR_THREE_SCORE = 1750;
