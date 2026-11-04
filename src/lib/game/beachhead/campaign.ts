@@ -16,6 +16,7 @@ import {
 	MAX_HQ_LEVEL,
 	MAX_RADAR_LEVEL,
 	MAX_TRAINING_LEVEL,
+	MAX_DOJO_LEVEL,
 	MAX_TROOP_LEVEL,
 	STARTING_BOATS,
 	TROOPS,
@@ -25,7 +26,7 @@ import {
 import type { BattleModifiers, SquadTroop } from './battle.js';
 
 export const SAVE_KEY = 'beachhead:save';
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 /** Longer absences stop earning at this point, so a save cannot grow forever */
 export const INCOME_CAP_MS = 8 * 60 * 60 * 1000;
 /** One controlled island is lost to the enemy on this rhythm */
@@ -57,7 +58,7 @@ export const ISLAND_PRODUCTION: readonly Resources[] = [
 ];
 
 export type BoatKey = `boat-${number}`;
-export type BuildingKey = 'hq' | 'training' | 'radar' | BoatKey;
+export type BuildingKey = 'hq' | 'training' | 'radar' | 'dojo' | BoatKey;
 export type Army = Record<Exclude<TroopKind, 'hero'>, number>;
 export type TroopLevels = Record<TroopKind, number>;
 
@@ -67,7 +68,8 @@ export const BOAT_KEYS: readonly BoatKey[] = Array.from(
 );
 export const BUILDING_KEYS: readonly BuildingKey[] = ['hq', 'training', 'radar', ...BOAT_KEYS];
 /** Troop kinds the player loads into boats; the hero always comes along and takes no space */
-export const ARMY_KINDS: readonly Exclude<TroopKind, 'hero'>[] = [
+/** Troop kinds the player loads into boats; the heroes always come along and take no space */
+export const ARMY_KINDS: readonly Exclude<TroopKind, 'hero' | 'azov'>[] = [
 	'assault',
 	'tank',
 	'mortar',
@@ -82,6 +84,7 @@ export const ARMY_KINDS: readonly Exclude<TroopKind, 'hero'>[] = [
 export interface Levels {
 	hq: number;
 	training: number;
+	dojo: number;
 	/** Radar tower level; each level charts one more island on the sea map */
 	radar: number;
 	/** One level per landing craft, in boarding order */
@@ -111,7 +114,7 @@ export interface CareerStats {
 }
 
 export interface BeachheadSave {
-	version: 4;
+	version: 5;
 	resources: Resources;
 	levels: Levels;
 	troops: TroopLevels;
@@ -126,14 +129,17 @@ export interface BeachheadSave {
 	lastIncomeMs: number;
 	/** Unix milliseconds of the last enemy takeback check */
 	lastTakebackMs: number;
+	/** Hero card currency and progression */
+	hero: { cards: number; level: number; skillLevel: number };
 }
 
 /** Cost of the first upgrade of each building family; each later level grows by a factor */
-const BUILDING_BASE_COST: Record<'hq' | 'training' | 'radar' | 'boat', Resources> = {
+const BUILDING_BASE_COST: Record<'hq' | 'training' | 'radar' | 'boat' | 'dojo', Resources> = {
 	hq: { wood: 160, stone: 120, iron: 50, gold: 10 },
 	training: { wood: 90, stone: 60, iron: 20, gold: 4 },
 	radar: { wood: 140, stone: 110, iron: 60, gold: 12 },
-	boat: { wood: 50, stone: 30, iron: 10, gold: 2 }
+	boat: { wood: 50, stone: 30, iron: 10, gold: 2 },
+	dojo: { wood: 80, stone: 70, iron: 40, gold: 15 }
 };
 const BUILDING_COST_GROWTH = 1.55;
 
@@ -189,11 +195,12 @@ function fillTroopLevels(levels: Partial<TroopLevels>): TroopLevels {
 const TROOP_COST_GROWTH = 1.5;
 
 /** How long a building upgrade runs, before the level growth */
-const BUILD_BASE_MS: Record<'hq' | 'training' | 'radar' | 'boat', number> = {
+const BUILD_BASE_MS: Record<'hq' | 'training' | 'radar' | 'boat' | 'dojo', number> = {
 	hq: 30_000,
 	training: 20_000,
 	radar: 25_000,
-	boat: 10_000
+	boat: 10_000,
+	dojo: 25_000
 };
 const BUILD_TIME_GROWTH = 1.45;
 
@@ -204,6 +211,7 @@ export function newSave(nowMs: number): BeachheadSave {
 		levels: {
 			hq: 1,
 			training: 1,
+			dojo: 1,
 			radar: 1,
 			boats: Array.from({ length: BOAT_COUNT }, () => 1)
 		},
@@ -214,7 +222,12 @@ export function newSave(nowMs: number): BeachheadSave {
 		achievements: [],
 		stats: { wins: 0, threeStarWins: 0, winsWithoutSkills: 0, heroWins: 0 },
 		lastIncomeMs: nowMs,
-		lastTakebackMs: nowMs
+		lastTakebackMs: nowMs,
+		hero: {
+			cards: 0,
+			level: 1,
+			skillLevel: 1
+		}
 	};
 }
 
@@ -227,7 +240,7 @@ function resourceCost(base: Resources, factor: number): Resources {
 	};
 }
 
-function buildingFamily(key: BuildingKey): 'hq' | 'training' | 'radar' | 'boat' {
+function buildingFamily(key: BuildingKey): 'hq' | 'training' | 'radar' | 'boat' | 'dojo' {
 	if (key === 'hq' || key === 'training' || key === 'radar') return key;
 	return 'boat';
 }

@@ -150,6 +150,7 @@ export type TroopKind =
 	| 'drone'
 	| 'medic'
 	| 'hero'
+	| 'azov'
 	| 'artillery'
 	| 'apc'
 	| 'demo'
@@ -178,7 +179,42 @@ export interface TroopStats {
 	healRadius?: number;
 	healAmount?: number;
 	healEveryMs?: number;
+	/** The hero's aura: how far the buff reaches */
+	damageAuraRadius?: number;
+	speedAuraRadius?: number;
+	/** How much extra damage troops inside the aura deal */
+	damageAura?: number;
+	/** How much faster troops inside the aura move */
+	speedAura?: number;
 }
+
+export const DOJO_MAX_LEVEL = 8;
+export const HERO_MAX_LEVEL = 8;
+export const HERO_SKILL_MAX_LEVEL = 8;
+
+/** Hero cards won from a victory roll against this rate per island index */
+export const HERO_CARD_DROP_BASE = 0.08;
+export const HERO_CARD_DROP_PER_ISLAND = 0.02;
+
+/** How many hero cards each upgrade level costs */
+export function heroCardCost(level: number): number {
+	return Math.round(20 * Math.pow(1.6, level - 1));
+}
+
+/** One hero card each side of the skill: how strong the aura is and how far it reaches */
+export const AZOV = {
+	hp: 620,
+	damage: 60,
+	range: 1.2,
+	speed: 3.1,
+	attackMs: 900,
+	space: 0,
+	/** At skill level one the aura reaches two cells and adds twenty percent damage */
+	damageAuraRadius: 2,
+	speedAuraRadius: 2,
+	damageAura: 0.2,
+	speedAura: 0.1
+} as const;
 
 export const TROOPS: Record<TroopKind, TroopStats> = {
 	assault: {
@@ -244,6 +280,18 @@ export const TROOPS: Record<TroopKind, TroopStats> = {
 		healRadius: 2.2,
 		healAmount: 28,
 		healEveryMs: 2400
+	},
+	azov: {
+		hp: AZOV.hp,
+		damage: AZOV.damage,
+		range: AZOV.range,
+		speed: AZOV.speed,
+		attackMs: AZOV.attackMs,
+		space: AZOV.space,
+		damageAuraRadius: AZOV.damageAuraRadius,
+		speedAuraRadius: AZOV.speedAuraRadius,
+		damageAura: AZOV.damageAura,
+		speedAura: AZOV.speedAura,
 	},
 	artillery: {
 		hp: 120,
@@ -320,6 +368,7 @@ export const MAX_TRAINING_LEVEL = 8;
 export const MAX_TROOP_LEVEL = 8;
 /** The radar tower starts by charting six islands and reveals one more per level */
 export const MAX_RADAR_LEVEL = 4;
+export const MAX_DOJO_LEVEL = 8;
 export const BASE_CHARTED_ISLANDS = 6;
 
 /** The support skills the player can call in during an assault */
