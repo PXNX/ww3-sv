@@ -1,10 +1,11 @@
 /*
  * Canvas drawing for Radar Slice, all in world units (see config.ts) and scaled by the caller:
- * a pale radar sky with a sweeping beam, the flyers, the two halves of sliced ones, the swipe
- * trail and short effects (score popups, puffs, splashes). Bloodless: pieces just tumble apart.
+ * a pale radar sky with parallax clouds and a sweeping beam, the flyers, the two halves of
+ * sliced ones, the blade ribbon and short effects (score popups, puffs, juice, shockwaves,
+ * wave banners). Bloodless: pieces just tumble apart.
  */
-import { HALF_LIFE_MS, TRAIL_FADE_MS, WORLD_HEIGHT, WORLD_WIDTH, specOf } from './config';
-import { INK, PAPER, SAND, YELLOW, drawSilhouette, type Pose } from './art';
+import { HALF_LIFE_MS, SEA_HEIGHT, WORLD_HEIGHT, WORLD_WIDTH, specOf } from './config';
+import { FLAG_BLUE, INK, PAPER, SAND, YELLOW, drawSilhouette, type Pose } from './art';
 import type { Half, SliceState } from './state';
 
 const DISPLAY_FONT = "'Baloo 2', system-ui, sans-serif";
@@ -13,8 +14,9 @@ const SKY_BOTTOM = '#e8f4fa';
 const RADAR_LINE = 'rgba(46, 120, 160, 0.35)';
 const SEA = '#4a93bd';
 const SEA_DARK = '#2f6f99';
-/** Height of the sea strip the flyers launch from and fall back into */
-const SEA_HEIGHT = 30;
+
+/** How long a blade ribbon point stays visible */
+export const RIBBON_FADE_MS = 320;
 
 export type Effect =
 	| {
@@ -27,15 +29,92 @@ export type Effect =
 			durationMs: number;
 	  }
 	| { kind: 'puff'; x: number; y: number; size: number; ageMs: number; durationMs: number }
-	| { kind: 'splash'; x: number; y: number; ageMs: number; durationMs: number };
+	| { kind: 'splash'; x: number; y: number; ageMs: number; durationMs: number }
+	/** A juice droplet or scrap with its own gravity, thrown by a cut */
+	| {
+			kind: 'spark';
+			x: number;
+			y: number;
+			vx: number;
+			vy: number;
+			size: number;
+			color: string;
+			ageMs: number;
+			durationMs: number;
+	  }
+	/** A bright line across a cut flyer */
+	| {
+			kind: 'slash';
+			x: number;
+			y: number;
+			angle: number;
+			length: number;
+			ageMs: number;
+			durationMs: number;
+	  }
+	/** An expanding shockwave ring */
+	| {
+			kind: 'ring';
+			x: number;
+			y: number;
+			radius: number;
+			color: string;
+			ageMs: number;
+			durationMs: number;
+	  }
+	/** A wave title across the middle of the field */
+	| { kind: 'banner'; text: string; sub: string; ageMs: number; durationMs: number };
+
+/** One point of the blade ribbon the player's pointer drew */
+export interface RibbonPoint {
+	x: number;
+	y: number;
+	/** Simulation time it was drawn */
+	t: number;
+}
 
 export interface SceneExtras {
 	effects: readonly Effect[];
-	/** Skip the radar sweep and flicker */
+	/** Skip the radar sweep, parallax and flicker */
 	reducedMotion: boolean;
+	/** The blade ribbon, oldest point first */
+	ribbon: readonly RibbonPoint[];
+	/** Screen shake offset in world units */
+	shake: { x: number; y: number };
+	/** Strength of the slow-motion focus tint, 0 to 1 */
+	focus: number;
 }
 
-const NO_EXTRAS: SceneExtras = { effects: [], reducedMotion: true };
+const NO_EXTRAS: SceneExtras = {
+	effects: [],
+	reducedMotion: true,
+	ribbon: [],
+	shake: { x: 0, y: 0 },
+	focus: 0
+};
+
+const CLOUD_LAYERS = [
+	{
+		speed: 3,
+		alpha: 0.5,
+		scale: 0.7,
+		clouds: [
+			[30, 60, 54],
+			[190, 120, 44],
+			[310, 30, 36]
+		]
+	},
+	{
+		speed: 9,
+		alpha: 0.8,
+		scale: 1.1,
+		clouds: [
+			[60, 200, 54],
+			[260, 280, 44],
+			[150, 340, 40]
+		]
+	}
+];
 
 function drawBackground(ctx: CanvasRenderingContext2D, timeMs: number, calm: boolean) {
 	const sky = ctx.createLinearGradient(0, 0, 0, WORLD_HEIGHT);
@@ -63,6 +142,16 @@ function drawBackground(ctx: CanvasRenderingContext2D, timeMs: number, calm: boo
 	}
 	ctx.stroke();
 
+	// A faint ring pulses outwards from the launch point
+	if (!calm) {
+		const pulse = (timeMs / 3200) % 1;
+		ctx.globalAlpha = 0.5 * (1 - pulse);
+		ctx.beginPath();
+		ctx.arc(cx, cy, 40 + pulse * 520, Math.PI, Math.PI * 2);
+		ctx.stroke();
+		ctx.globalAlpha = 1;
+	}
+
 	// The sweep: a fading wedge that crosses the sky from left to right
 	const sweep = calm ? 0.5 : (timeMs / 2600) % 1;
 	const angle = Math.PI + sweep * Math.PI;
@@ -81,17 +170,18 @@ function drawBackground(ctx: CanvasRenderingContext2D, timeMs: number, calm: boo
 	ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
 	ctx.stroke();
 
-	// A few flat clouds
-	ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
-	for (const [x, y, w] of [
-		[60, 90, 54],
-		[290, 150, 44],
-		[200, 40, 36]
-	]) {
-		ctx.beginPath();
-		ctx.ellipse(x, y, w, w * 0.32, 0, 0, Math.PI * 2);
-		ctx.ellipse(x + w * 0.4, y - w * 0.14, w * 0.5, w * 0.28, 0, 0, Math.PI * 2);
-		ctx.fill();
+	// Two cloud layers drifting at different speeds give the sky some depth
+	for (const layer of CLOUD_LAYERS) {
+		ctx.fillStyle = `rgba(255, 255, 255, ${layer.alpha})`;
+		const drift = calm ? 0 : (timeMs / 1000) * layer.speed;
+		for (const [cloudX, y, width] of layer.clouds) {
+			const w = width * layer.scale;
+			const x = ((cloudX + drift + 80) % (WORLD_WIDTH + 160)) - 80;
+			ctx.beginPath();
+			ctx.ellipse(x, y, w, w * 0.32, 0, 0, Math.PI * 2);
+			ctx.ellipse(x + w * 0.4, y - w * 0.14, w * 0.5, w * 0.28, 0, 0, Math.PI * 2);
+			ctx.fill();
+		}
 	}
 }
 
@@ -131,22 +221,27 @@ function drawHalf(ctx: CanvasRenderingContext2D, half: Half, pose: Pose) {
 	ctx.clip();
 	ctx.rotate(-half.cut);
 	ctx.scale(half.facing, 1);
-	drawSilhouette(ctx, half.kind, radius, pose);
+	drawSilhouette(ctx, half.kind, radius, { ...pose, hp: 1 });
 	ctx.restore();
 }
 
-function drawTrail(ctx: CanvasRenderingContext2D, state: SliceState) {
-	const { points } = state.trail;
-	if (points.length === 0) return;
+/** The blade: a tapering ribbon that fades from the tail, with a glow and a bright core */
+function drawRibbon(
+	ctx: CanvasRenderingContext2D,
+	ribbon: readonly RibbonPoint[],
+	timeMs: number,
+	focus: number
+) {
+	if (ribbon.length === 0) return;
 	ctx.lineCap = 'round';
 	ctx.lineJoin = 'round';
-	if (points.length === 1) {
-		const point = points[0];
-		const alpha = Math.max(0, 1 - (state.timeMs - point.t) / TRAIL_FADE_MS);
-		ctx.globalAlpha = alpha;
+	const core = focus > 0 ? YELLOW : PAPER;
+	const glow = focus > 0 ? '#f59e0b' : FLAG_BLUE;
+	if (ribbon.length === 1) {
+		ctx.globalAlpha = Math.max(0, 1 - (timeMs - ribbon[0].t) / RIBBON_FADE_MS);
 		ctx.beginPath();
-		ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
-		ctx.fillStyle = PAPER;
+		ctx.arc(ribbon[0].x, ribbon[0].y, 6, 0, Math.PI * 2);
+		ctx.fillStyle = core;
 		ctx.fill();
 		ctx.lineWidth = 2;
 		ctx.strokeStyle = INK;
@@ -154,21 +249,49 @@ function drawTrail(ctx: CanvasRenderingContext2D, state: SliceState) {
 		ctx.globalAlpha = 1;
 		return;
 	}
-	for (let layer = 0; layer < 2; layer++) {
-		for (let i = 1; i < points.length; i++) {
-			const a = points[i - 1];
-			const b = points[i];
-			const alpha = Math.max(0, 1 - (state.timeMs - b.t) / TRAIL_FADE_MS);
-			const taper = (i / points.length) * 0.75 + 0.25;
-			ctx.globalAlpha = alpha;
+	const widths = [16, 11, 6];
+	const colors = [glow, INK, core];
+	for (let layer = 0; layer < 3; layer++) {
+		for (let i = 1; i < ribbon.length; i++) {
+			const a = ribbon[i - 1];
+			const b = ribbon[i];
+			const alpha = Math.max(0, 1 - (timeMs - b.t) / RIBBON_FADE_MS);
+			if (alpha <= 0) continue;
+			const taper = (i / ribbon.length) * 0.85 + 0.15;
+			ctx.globalAlpha = layer === 0 ? alpha * 0.5 : alpha;
 			ctx.beginPath();
 			ctx.moveTo(a.x, a.y);
 			ctx.lineTo(b.x, b.y);
-			ctx.lineWidth = layer === 0 ? 10 * taper + 4 : 10 * taper;
-			ctx.strokeStyle = layer === 0 ? INK : PAPER;
+			ctx.lineWidth = widths[layer] * taper;
+			ctx.strokeStyle = colors[layer];
 			ctx.stroke();
 		}
 	}
+	ctx.globalAlpha = 1;
+}
+
+/** Blue wash and a dashed frame while time is slowed */
+function drawFocus(ctx: CanvasRenderingContext2D, focus: number, timeMs: number, calm: boolean) {
+	if (focus <= 0) return;
+	const vignette = ctx.createRadialGradient(
+		WORLD_WIDTH / 2,
+		WORLD_HEIGHT / 2,
+		WORLD_HEIGHT * 0.25,
+		WORLD_WIDTH / 2,
+		WORLD_HEIGHT / 2,
+		WORLD_HEIGHT * 0.65
+	);
+	vignette.addColorStop(0, 'rgba(60, 100, 200, 0)');
+	vignette.addColorStop(1, `rgba(40, 70, 190, ${0.35 * focus})`);
+	ctx.fillStyle = vignette;
+	ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+	ctx.globalAlpha = 0.6 * focus;
+	ctx.setLineDash([10, 12]);
+	ctx.lineDashOffset = calm ? 0 : -timeMs / 60;
+	ctx.lineWidth = 3;
+	ctx.strokeStyle = PAPER;
+	ctx.strokeRect(4, 4, WORLD_WIDTH - 8, WORLD_HEIGHT - 8);
+	ctx.setLineDash([]);
 	ctx.globalAlpha = 1;
 }
 
@@ -185,8 +308,14 @@ function drawEffect(ctx: CanvasRenderingContext2D, effect: Effect) {
 			ctx.strokeStyle = INK;
 			ctx.fillStyle = effect.big ? YELLOW : PAPER;
 			const y = effect.y - 14 - p * 28;
-			ctx.strokeText(effect.text, effect.x, y);
-			ctx.fillText(effect.text, effect.x, y);
+			// Pops in a little oversized, then settles
+			const pop = 1 + Math.max(0, 1 - p * 6) * 0.5;
+			ctx.save();
+			ctx.translate(effect.x, y);
+			ctx.scale(pop, pop);
+			ctx.strokeText(effect.text, 0, 0);
+			ctx.fillText(effect.text, 0, 0);
+			ctx.restore();
 			ctx.globalAlpha = 1;
 			break;
 		}
@@ -200,6 +329,68 @@ function drawEffect(ctx: CanvasRenderingContext2D, effect: Effect) {
 			ctx.lineWidth = 3;
 			ctx.strokeStyle = INK;
 			ctx.stroke();
+			ctx.globalAlpha = 1;
+			break;
+		}
+		case 'spark': {
+			ctx.globalAlpha = 1 - p * p;
+			ctx.beginPath();
+			ctx.arc(effect.x, effect.y, effect.size * (1 - p * 0.5), 0, Math.PI * 2);
+			ctx.fillStyle = effect.color;
+			ctx.fill();
+			ctx.lineWidth = 1.5;
+			ctx.strokeStyle = INK;
+			ctx.stroke();
+			ctx.globalAlpha = 1;
+			break;
+		}
+		case 'slash': {
+			ctx.save();
+			ctx.globalAlpha = 1 - p;
+			ctx.translate(effect.x, effect.y);
+			ctx.rotate(effect.angle);
+			const half = effect.length * (0.5 + p * 0.5);
+			ctx.lineCap = 'round';
+			ctx.lineWidth = 6 * (1 - p) + 1;
+			ctx.strokeStyle = PAPER;
+			ctx.beginPath();
+			ctx.moveTo(-half, 0);
+			ctx.lineTo(half, 0);
+			ctx.stroke();
+			ctx.restore();
+			break;
+		}
+		case 'ring': {
+			ctx.globalAlpha = 0.9 * (1 - p);
+			ctx.beginPath();
+			ctx.arc(effect.x, effect.y, effect.radius * (0.2 + p * 0.8), 0, Math.PI * 2);
+			ctx.lineWidth = 6 * (1 - p) + 1;
+			ctx.strokeStyle = effect.color;
+			ctx.stroke();
+			ctx.globalAlpha = 1;
+			break;
+		}
+		case 'banner': {
+			const slide = p < 0.15 ? 1 - p / 0.15 : p > 0.85 ? (p - 0.85) / 0.15 : 0;
+			ctx.globalAlpha = 1 - slide;
+			ctx.textAlign = 'center';
+			ctx.textBaseline = 'middle';
+			ctx.lineJoin = 'round';
+			ctx.lineWidth = 7;
+			ctx.strokeStyle = INK;
+			ctx.fillStyle = YELLOW;
+			ctx.font = `700 38px ${DISPLAY_FONT}`;
+			const x = WORLD_WIDTH / 2 + slide * 80 * (p < 0.5 ? -1 : 1);
+			const y = WORLD_HEIGHT * 0.38;
+			ctx.strokeText(effect.text, x, y);
+			ctx.fillText(effect.text, x, y);
+			if (effect.sub) {
+				ctx.font = `700 17px ${DISPLAY_FONT}`;
+				ctx.lineWidth = 5;
+				ctx.fillStyle = PAPER;
+				ctx.strokeText(effect.sub, x, y + 30);
+				ctx.fillText(effect.sub, x, y + 30);
+			}
 			ctx.globalAlpha = 1;
 			break;
 		}
@@ -231,22 +422,37 @@ export function drawScene(ctx: CanvasRenderingContext2D, state: SliceState, extr
 	ctx.beginPath();
 	ctx.rect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 	ctx.clip();
+	ctx.translate(extras.shake.x, extras.shake.y);
 	drawBackground(ctx, state.timeMs, calm);
 
 	for (const flyer of state.flyers) {
-		const { radius } = specOf(flyer.kind);
+		const { radius, pointsForward } = specOf(flyer.kind);
 		ctx.save();
 		ctx.translate(flyer.x, flyer.y);
+		// A dented armoured flyer flashes white for a moment
+		const dent = state.timeMs - flyer.hitMs;
+		if (flyer.hitSwipe >= 0 && dent < 160 && !calm) {
+			ctx.globalAlpha = 1 - dent / 160;
+			ctx.beginPath();
+			ctx.arc(0, 0, radius * 1.3, 0, Math.PI * 2);
+			ctx.fillStyle = PAPER;
+			ctx.fill();
+			ctx.globalAlpha = 1;
+		}
 		ctx.rotate(flyer.angle);
-		if (flyer.vx < 0 && !specOf(flyer.kind).pointsForward) ctx.scale(-1, 1);
-		drawSilhouette(ctx, flyer.kind, radius, poseAt(state.timeMs, calm, flyer.phase));
+		if (flyer.vx < 0 && !pointsForward && specOf(flyer.kind).tumble === 0) ctx.scale(-1, 1);
+		drawSilhouette(ctx, flyer.kind, radius, {
+			...poseAt(state.timeMs, calm, flyer.phase),
+			hp: flyer.hp
+		});
 		ctx.restore();
 	}
 	for (const half of state.halves) drawHalf(ctx, half, poseAt(state.timeMs, true));
 
 	drawSea(ctx, state.timeMs, calm);
 	for (const effect of extras.effects) drawEffect(ctx, effect);
-	drawTrail(ctx, state);
+	drawFocus(ctx, extras.focus, state.timeMs, calm);
+	drawRibbon(ctx, extras.ribbon, state.timeMs, extras.focus);
 	ctx.restore();
 }
 

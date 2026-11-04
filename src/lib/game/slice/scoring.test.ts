@@ -1,6 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { COMBO_CAP, COMBO_STEP, COMBO_WINDOW_MS } from './config';
-import { breakCombo, comboBonus, createCombo, registerSlice, sliceScore } from './scoring';
+import {
+	COMBO_CAP,
+	COMBO_STEP,
+	COMBO_WINDOW_MS,
+	STARTING_LIVES,
+	STREAK_MULTIPLIER_CAP,
+	STREAK_TIER
+} from './config';
+import {
+	accuracy,
+	breakCombo,
+	comboBonus,
+	createCombo,
+	registerSlice,
+	sliceScore,
+	starsFor,
+	streakMultiplier
+} from './scoring';
 
 describe('comboBonus', () => {
 	it('is nothing for a lone slice and grows by a step per extra slice', () => {
@@ -57,5 +73,41 @@ describe('sliceScore', () => {
 		let total = 0;
 		for (let i = 0; i < 3; i++) total += sliceScore(20, registerSlice(combo, i * 10, 1));
 		expect(total).toBe(20 + (20 + COMBO_STEP) + (20 + 2 * COMBO_STEP));
+	});
+});
+
+describe('streakMultiplier', () => {
+	it('is x1 until the first tier, then grows by one per tier up to the cap', () => {
+		expect(streakMultiplier(0)).toBe(1);
+		expect(streakMultiplier(STREAK_TIER - 1)).toBe(1);
+		expect(streakMultiplier(STREAK_TIER)).toBe(2);
+		expect(streakMultiplier(STREAK_TIER * 2)).toBe(3);
+		expect(streakMultiplier(STREAK_TIER * 99)).toBe(STREAK_MULTIPLIER_CAP);
+	});
+});
+
+describe('starsFor', () => {
+	const run = { won: true, sliced: 100, missed: 0, lives: STARTING_LIVES };
+
+	it('gives nothing for a lost run', () => {
+		expect(starsFor({ ...run, won: false })).toBe(0);
+	});
+
+	it('gives one star for getting through, two for sharp and three for near perfect', () => {
+		expect(starsFor({ ...run, sliced: 60, missed: 40 })).toBe(1);
+		expect(starsFor({ ...run, sliced: 88, missed: 12 })).toBe(2);
+		expect(starsFor(run)).toBe(3);
+	});
+
+	it('needs hearts to spare for the third star', () => {
+		expect(starsFor({ ...run, lives: STARTING_LIVES - 2 })).toBe(2);
+		expect(starsFor({ ...run, lives: STARTING_LIVES - 1 })).toBe(3);
+	});
+});
+
+describe('accuracy', () => {
+	it('is the share of threats sliced', () => {
+		expect(accuracy({ sliced: 0, missed: 0 })).toBe(1);
+		expect(accuracy({ sliced: 3, missed: 1 })).toBeCloseTo(0.75);
 	});
 });

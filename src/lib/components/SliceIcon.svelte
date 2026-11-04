@@ -17,7 +17,13 @@
 		kalibr: { r: 12, dx: 3, dy: 0 },
 		tanker: { r: 17, dx: 0, dy: 3 },
 		balloon: { r: 12, dx: 0, dy: -6 },
-		gull: { r: 16, dx: 0, dy: 2 }
+		gull: { r: 16, dx: 0, dy: 2 },
+		iskander: { r: 12, dx: 3, dy: 0 },
+		cluster: { r: 12, dx: 3, dy: 0 },
+		bomblet: { r: 14, dx: 0, dy: 0 },
+		mine: { r: 14, dx: 0, dy: 0 },
+		focus: { r: 16, dx: 0, dy: 0 },
+		repair: { r: 16, dx: 0, dy: 0 }
 	};
 
 	let canvas: HTMLCanvasElement | undefined = $state();

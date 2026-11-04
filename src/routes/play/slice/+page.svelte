@@ -3,11 +3,12 @@
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import LivesBar from '#lib/components/LivesBar.svelte';
+	import MazeStars from '#lib/components/MazeStars.svelte';
 	import SliceCanvas from '#lib/components/SliceCanvas.svelte';
 	import SliceIcon from '#lib/components/SliceIcon.svelte';
 	import TutorialModal from '#lib/components/TutorialModal.svelte';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
-	import { STARTING_LIVES } from '#lib/game/slice/config.js';
+	import { STARTING_LIVES, WAVE_COUNT } from '#lib/game/slice/config.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
 	import { SliceGame } from '#lib/stores/sliceGame.svelte.js';
@@ -22,6 +23,7 @@
 	let showTutorial = $state(false);
 	onMount(() => {
 		game.loadBest();
+		if (import.meta.env.DEV) Object.assign(window, { sliceGame: game });
 		showTutorial = firstPlay('slice');
 	});
 </script>
@@ -69,10 +71,25 @@
 				class="min-h-8 flex-1 font-display text-base leading-tight font-bold sm:text-lg"
 				aria-live="off"
 			>
-				{m.slice_hud_hint()}
+				{m.slice_hud_wave({ wave: game.wave, total: WAVE_COUNT })}
 			</p>
+			{#if game.focus > 0}
+				<span
+					class="h-3 w-12 shrink-0 overflow-hidden rounded-full border-2 border-ink bg-paper"
+					role="img"
+					aria-label={m.slice_hud_focus()}
+				>
+					<span class="block h-full bg-sky-500" style:width="{Math.round(game.focus * 100)}%"
+					></span>
+				</span>
+			{/if}
 			<LivesBar lives={game.lives} max={STARTING_LIVES} class="shrink-0 text-xl" />
-			<span class="font-display text-sm font-bold">{game.streak}</span>
+			<span
+				class="min-w-12 shrink-0 text-end font-display text-sm font-bold tabular-nums"
+				title={m.slice_hud_streak()}
+			>
+				{game.streak}{game.multiplier > 1 ? ` x${game.multiplier}` : ''}
+			</span>
 		</div>
 
 		<SliceCanvas {game} />
@@ -104,13 +121,36 @@
 			</li>
 		</ul>
 		<p>{m.slice_tutorial_miss()}</p>
+		<ul class="flex flex-col gap-2">
+			<li class="flex items-center gap-2">
+				<SliceIcon kind="iskander" class="size-10 shrink-0" />
+				<span><strong>{m.slice_iskander_name()}</strong>: {m.slice_tutorial_armor()}</span>
+			</li>
+			<li class="flex items-center gap-2">
+				<SliceIcon kind="cluster" class="size-10 shrink-0" />
+				<span><strong>{m.slice_cluster_name()}</strong>: {m.slice_tutorial_split()}</span>
+			</li>
+		</ul>
 		<p>{m.slice_tutorial_decoys()}</p>
 		<ul class="flex items-center gap-3">
 			<li><SliceIcon kind="tanker" class="size-10" /></li>
 			<li><SliceIcon kind="balloon" class="size-10" /></li>
 			<li><SliceIcon kind="gull" class="size-10" /></li>
+			<li><SliceIcon kind="mine" class="size-10" /></li>
+		</ul>
+		<p>{m.slice_tutorial_mine()}</p>
+		<ul class="flex flex-col gap-2">
+			<li class="flex items-center gap-2">
+				<SliceIcon kind="focus" class="size-10 shrink-0" />
+				<span><strong>{m.slice_focus_name()}</strong>: {m.slice_tutorial_focus()}</span>
+			</li>
+			<li class="flex items-center gap-2">
+				<SliceIcon kind="repair" class="size-10 shrink-0" />
+				<span><strong>{m.slice_repair_name()}</strong>: {m.slice_tutorial_repair()}</span>
+			</li>
 		</ul>
 		<p>{m.slice_tutorial_combo()}</p>
+		<p>{m.slice_tutorial_waves({ total: WAVE_COUNT })}</p>
 		<p class="hidden text-sm sm:block">{m.slice_keyboard_hint()}</p>
 	</TutorialModal>
 
@@ -120,12 +160,24 @@
 		mode="slice"
 		{modeName}
 		isNewBest={game.isNewBest}
-		title={m.slice_gameover_title()}
+		outcome={game.won ? 'won' : 'lost'}
+		title={game.won ? m.slice_victory_title() : m.slice_gameover_title()}
 		drawBoard={game.drawBoard}
 		onRetry={() => game.start()}
-		onRevive={() => game.revive()}
+		onRevive={game.won ? undefined : () => game.revive()}
 	>
+		{#if game.won}
+			<div class="mb-2 flex justify-center"><MazeStars stars={game.stars} class="size-10" /></div>
+		{/if}
 		<dl class="grid grid-cols-2 gap-2 font-display text-sm">
+			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
+				<dt class="font-bold">{m.slice_stat_wave()}</dt>
+				<dd class="text-2xl font-bold tabular-nums">{game.wave}/{WAVE_COUNT}</dd>
+			</div>
+			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
+				<dt class="font-bold">{m.slice_stat_streak()}</dt>
+				<dd class="text-2xl font-bold tabular-nums">{game.bestStreak}</dd>
+			</div>
 			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
 				<dt class="font-bold">{m.slice_stat_sliced()}</dt>
 				<dd class="text-2xl font-bold tabular-nums">{game.sliced}</dd>

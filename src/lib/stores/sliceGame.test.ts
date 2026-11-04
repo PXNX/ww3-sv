@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STARTING_LIVES, THREATS } from '#lib/game/slice/config.js';
+import { STARTING_LIVES, THREATS, WAVE_COUNT, type ThreatKind } from '#lib/game/slice/config.js';
 import type { Flyer } from '#lib/game/slice/state.js';
 import { createHighscores } from '#lib/services/highscore.js';
 import { createStore, type KeyValueStorage } from '#lib/services/storage.js';
@@ -33,7 +33,10 @@ function park(game: SliceGame, kind: Flyer['kind'], x: number, y: number) {
 		angle: 0,
 		phase: 0,
 		id: game.state.nextId++,
-		ageMs: 0
+		ageMs: 0,
+		hp: THREATS[kind as ThreatKind]?.hp ?? 1,
+		hitSwipe: -1,
+		hitMs: 0
 	});
 }
 
@@ -77,7 +80,10 @@ describe('SliceGame', () => {
 		game.pointerMove(150, 200);
 		expect(game.score).toBe(THREATS.kinzhal.points);
 		expect(game.sliced).toBe(1);
-		expect(game.effects.map((effect) => effect.kind).sort()).toEqual(['popup', 'puff']);
+		const kinds = game.effects.map((effect) => effect.kind);
+		expect(kinds).toContain('popup');
+		expect(kinds).toContain('puff');
+		expect(kinds).toContain('spark');
 		for (let i = 0; i < 120; i++) game.update(STEP);
 		expect(game.effects).toHaveLength(0);
 	});
@@ -198,6 +204,55 @@ describe('SliceGame', () => {
 		expect(game.missed).toBe(1);
 		expect(game.lives).toBe(STARTING_LIVES - 1);
 		expect(game.effects.some((effect) => effect.kind === 'splash')).toBe(true);
+	});
+});
+
+describe('SliceGame waves and rewards', () => {
+	it('announces the first wave with a banner and shows it in the chrome', () => {
+		const { game } = newGame();
+		game.start();
+		game.update(STEP);
+		expect(game.wave).toBe(1);
+		expect(game.effects.some((effect) => effect.kind === 'banner')).toBe(true);
+	});
+
+	it('wins the run with stars when the last wave is cleared', () => {
+		const { game, scores } = newGame();
+		game.start();
+		game.state.spawner.wave = WAVE_COUNT;
+		game.state.spawner.volleysLeft = 0;
+		game.state.spawner.announce = false;
+		game.state.sliced = 50;
+		game.update(STEP);
+		expect(game.status).toBe('over');
+		expect(game.won).toBe(true);
+		expect(game.stars).toBe(3);
+		expect(scores.get(['slice', 'score'])).toBe(game.score);
+		game.revive();
+		expect(game.status).toBe('over');
+	});
+
+	it('shows the focus bar and the streak multiplier', () => {
+		const { game } = newGame();
+		game.start();
+		game.state.spawner.nextMs = Infinity;
+		game.state.streak = 10;
+		park(game, 'focus', 100, 200);
+		game.pointerDown(50, 200);
+		game.pointerMove(150, 200);
+		expect(game.focus).toBe(1);
+		expect(game.multiplier).toBe(2);
+		expect(game.sceneExtras().focus).toBe(1);
+	});
+
+	it('does not shake the screen with reduced motion', () => {
+		const calm = new SliceGame({ reducedMotion: true, seed: () => 7 });
+		calm.start();
+		calm.state.spawner.nextMs = Infinity;
+		park(calm, 'tanker', 100, 200);
+		calm.pointerDown(50, 200);
+		calm.pointerMove(150, 200);
+		expect(calm.sceneExtras().shake).toEqual({ x: 0, y: 0 });
 	});
 });
 

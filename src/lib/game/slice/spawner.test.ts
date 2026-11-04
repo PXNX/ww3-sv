@@ -5,16 +5,22 @@ import {
 	APEX_MIN,
 	DECOY_KINDS,
 	GRAVITY,
+	PICKUP_KINDS,
+	STARTING_LIVES,
 	THREAT_KINDS,
+	WAVE_COUNT,
 	WORLD_HEIGHT,
 	WORLD_WIDTH,
 	isDecoy,
+	isPickup,
 	specOf,
+	waveVolleys,
 	type FlyerKind
 } from './config';
 import {
 	FIRST_VOLLEY_MS,
 	arcAt,
+	beginWave,
 	createSpawner,
 	difficultyAt,
 	launchFlyer,
@@ -23,7 +29,7 @@ import {
 	timeToApex
 } from './spawner';
 
-const ALL_KINDS: FlyerKind[] = [...THREAT_KINDS, ...DECOY_KINDS];
+const ALL_KINDS: FlyerKind[] = [...THREAT_KINDS, ...DECOY_KINDS, ...PICKUP_KINDS];
 
 describe('launchFlyer', () => {
 	it('starts just below the bottom edge, moving up', () => {
@@ -78,15 +84,17 @@ describe('launchFlyer', () => {
 });
 
 describe('difficultyAt', () => {
-	it('speeds up, bursts more and adds decoys, within limits', () => {
-		const early = difficultyAt(0);
-		const late = difficultyAt(600_000);
+	it('speeds up, bursts more and adds decoys wave by wave, within limits', () => {
+		const early = difficultyAt(1);
+		const late = difficultyAt(WAVE_COUNT);
 		expect(late.intervalMs).toBeLessThan(early.intervalMs);
 		expect(late.intervalMs).toBeGreaterThanOrEqual(650);
 		expect(late.burstChance).toBeGreaterThan(early.burstChance);
 		expect(late.burstChance).toBeLessThanOrEqual(0.7);
 		expect(late.decoyChance).toBeGreaterThan(early.decoyChance);
 		expect(late.maxBurst).toBeGreaterThan(early.maxBurst);
+		expect(early.pickupChance).toBe(0);
+		expect(late.pickupChance).toBeGreaterThan(0);
 	});
 });
 
@@ -94,11 +102,13 @@ describe('planVolley', () => {
 	it('always opens with a threat and never exceeds the burst limit', () => {
 		const random = createRandom(5);
 		for (let i = 0; i < 300; i++) {
-			const timeMs = (i % 150) * 1000;
-			const volley = planVolley(random, timeMs);
-			expect(volley.length).toBeGreaterThanOrEqual(1);
-			expect(volley.length).toBeLessThanOrEqual(difficultyAt(timeMs).maxBurst);
+			const wave = 1 + (i % WAVE_COUNT);
+			const volley = planVolley(random, wave);
+			const flyers = volley.filter((launch) => !isPickup(launch.kind));
+			expect(flyers.length).toBeGreaterThanOrEqual(1);
+			expect(flyers.length).toBeLessThanOrEqual(difficultyAt(wave).maxBurst);
 			expect(isDecoy(volley[0].kind)).toBe(false);
+			expect(isPickup(volley[0].kind)).toBe(false);
 		}
 	});
 
@@ -107,12 +117,39 @@ describe('planVolley', () => {
 		let single = 0;
 		let decoys = 0;
 		for (let i = 0; i < 500; i++) {
-			const volley = planVolley(random, 120_000);
-			if (volley.length === 1) single += 1;
+			const volley = planVolley(random, WAVE_COUNT);
+			if (volley.filter((launch) => !isPickup(launch.kind)).length === 1) single += 1;
 			decoys += volley.filter((launch) => isDecoy(launch.kind)).length;
 		}
 		expect(single).toBeGreaterThan(0);
 		expect(decoys).toBeGreaterThan(0);
+	});
+
+	it('unlocks the new kinds wave by wave and never launches bomblets', () => {
+		const random = createRandom(8);
+		const seen = (wave: number) => {
+			const kinds = new Set<FlyerKind>();
+			for (let i = 0; i < 800; i++) {
+				for (const launch of planVolley(random, wave, 1)) kinds.add(launch.kind);
+			}
+			return kinds;
+		};
+		const first = seen(1);
+		expect(first.has('iskander') || first.has('cluster') || first.has('mine')).toBe(false);
+		expect(first.has('focus') || first.has('repair')).toBe(false);
+		const late = seen(WAVE_COUNT);
+		for (const kind of ['iskander', 'cluster', 'mine', 'focus', 'repair'] as const) {
+			expect(late.has(kind)).toBe(true);
+		}
+		expect(late.has('bomblet')).toBe(false);
+	});
+
+	it('offers a repair only while a heart is missing', () => {
+		const random = createRandom(9);
+		for (let i = 0; i < 600; i++) {
+			const volley = planVolley(random, WAVE_COUNT, STARTING_LIVES);
+			expect(volley.some((launch) => launch.kind === 'repair')).toBe(false);
+		}
 	});
 });
 
@@ -120,10 +157,30 @@ describe('stepSpawner', () => {
 	it('waits for the first volley, then repeats on the interval', () => {
 		const spawner = createSpawner();
 		const random = createRandom(7);
-		expect(stepSpawner(spawner, random, FIRST_VOLLEY_MS - 10, 100)).toEqual([]);
-		expect(stepSpawner(spawner, random, 20, FIRST_VOLLEY_MS + 10).length).toBeGreaterThan(0);
-		const interval = difficultyAt(FIRST_VOLLEY_MS + 10).intervalMs;
-		expect(stepSpawner(spawner, random, interval - 100, 2000)).toEqual([]);
-		expect(stepSpawner(spawner, random, 200, 2200).length).toBeGreaterThan(0);
+		expect(stepSpawner(spawner, random, FIRST_VOLLEY_MS - 10)).toEqual([]);
+		expect(stepSpawner(spawner, random, 20).length).toBeGreaterThan(0);
+		const interval = difficultyAt(1).intervalMs;
+		expect(stepSpawner(spawner, random, interval - 100)).toEqual([]);
+		expect(stepSpawner(spawner, random, 200).length).toBeGreaterThan(0);
+	});
+
+	it('stops once the wave has launched all its volleys', () => {
+		const spawner = createSpawner();
+		const random = createRandom(7);
+		let volleys = 0;
+		for (let i = 0; i < 400; i++) {
+			if (stepSpawner(spawner, random, 100).length > 0) volleys += 1;
+		}
+		expect(volleys).toBe(waveVolleys(1));
+		expect(spawner.volleysLeft).toBe(0);
+	});
+
+	it('starts the next wave with a short pause and its own volley count', () => {
+		const spawner = createSpawner();
+		beginWave(spawner, 3);
+		expect(spawner.wave).toBe(3);
+		expect(spawner.volleysLeft).toBe(waveVolleys(3));
+		expect(spawner.announce).toBe(true);
+		expect(stepSpawner(spawner, createRandom(1), 10)).toEqual([]);
 	});
 });

@@ -21,6 +21,8 @@ export interface Pose {
 	seconds: number;
 	/** Skip the flicker and flapping */
 	calm: boolean;
+	/** Cuts left (armoured flyers show their plating while above 1) */
+	hp?: number;
 }
 
 type Point = readonly [number, number];
@@ -310,6 +312,130 @@ function gull(ctx: CanvasRenderingContext2D, r: number, pose: Pose) {
 	);
 }
 
+/** Iskander: a heavy missile in steel plating that cracks open after the first cut */
+function iskander(ctx: CanvasRenderingContext2D, r: number, pose: Pose) {
+	kinzhal(ctx, r * 0.95, pose);
+	const armoured = (pose.hp ?? 2) > 1;
+	if (armoured) {
+		roundRect(ctx, -r * 0.55, -r * 0.5, r * 1.3, r * 1.0, r * 0.2, STEEL);
+		for (const x of [-0.35, 0.05, 0.45]) {
+			ctx.beginPath();
+			ctx.arc(r * x, 0, r * 0.07, 0, Math.PI * 2);
+			ctx.fillStyle = INK;
+			ctx.fill();
+		}
+	} else {
+		// Plating torn off: jagged scraps and a dent
+		polygon(
+			ctx,
+			[
+				[-r * 0.4, -r * 0.45],
+				[-r * 0.1, -r * 0.2],
+				[r * 0.2, -r * 0.5],
+				[r * 0.5, -r * 0.25]
+			],
+			STEEL
+		);
+		ctx.beginPath();
+		ctx.moveTo(-r * 0.2, r * 0.1);
+		ctx.lineTo(r * 0.05, r * 0.3);
+		ctx.lineTo(r * 0.3, r * 0.05);
+		ctx.lineWidth = 2;
+		ctx.strokeStyle = INK;
+		ctx.stroke();
+	}
+}
+
+/** Cluster: a kalibr body with a yellow band of little bomblets */
+function cluster(ctx: CanvasRenderingContext2D, r: number, pose: Pose) {
+	kalibr(ctx, r, pose);
+	for (const x of [-0.25, 0.05, 0.35]) {
+		ctx.beginPath();
+		ctx.arc(r * x, 0, r * 0.15, 0, Math.PI * 2);
+		outline(ctx, YELLOW, 2);
+	}
+}
+
+/** Bomblet: a small dart that came out of a cluster */
+function bomblet(ctx: CanvasRenderingContext2D, r: number, pose: Pose) {
+	flame(ctx, -r * 0.9, r * 0.9, pose);
+	ctx.beginPath();
+	ctx.moveTo(-r, -r * 0.45);
+	ctx.lineTo(r * 0.3, -r * 0.45);
+	ctx.quadraticCurveTo(r * 1.2, -r * 0.4, r * 1.2, 0);
+	ctx.quadraticCurveTo(r * 1.2, r * 0.4, r * 0.3, r * 0.45);
+	ctx.lineTo(-r, r * 0.45);
+	ctx.closePath();
+	outline(ctx, YELLOW);
+	roundRect(ctx, -r * 0.1, -r * 0.45, r * 0.25, r * 0.9, 0, TIE_RED);
+}
+
+/** Sea mine: a dark ball with spikes and a blinking red light, clearly not friendly */
+function mine(ctx: CanvasRenderingContext2D, r: number, pose: Pose) {
+	for (let i = 0; i < 8; i++) {
+		const angle = (i / 8) * Math.PI * 2;
+		ctx.save();
+		ctx.rotate(angle);
+		polygon(
+			ctx,
+			[
+				[r * 0.7, -r * 0.2],
+				[r * 1.15, 0],
+				[r * 0.7, r * 0.2]
+			],
+			STEEL
+		);
+		ctx.restore();
+	}
+	ctx.beginPath();
+	ctx.arc(0, 0, r * 0.8, 0, Math.PI * 2);
+	outline(ctx, '#3b4350');
+	const lit = pose.calm || Math.sin(pose.seconds * 8) > 0;
+	ctx.beginPath();
+	ctx.arc(0, 0, r * 0.25, 0, Math.PI * 2);
+	outline(ctx, lit ? TIE_RED : '#7a2a2d', 2);
+}
+
+/** Focus pickup: a stopwatch, because it slows time */
+function focus(ctx: CanvasRenderingContext2D, r: number) {
+	roundRect(ctx, -r * 0.18, -r * 1.12, r * 0.36, r * 0.22, r * 0.05, STEEL);
+	ctx.beginPath();
+	ctx.arc(0, 0, r * 0.9, 0, Math.PI * 2);
+	outline(ctx, FLAG_BLUE);
+	ctx.beginPath();
+	ctx.arc(0, 0, r * 0.62, 0, Math.PI * 2);
+	outline(ctx, PAPER, 2);
+	ctx.beginPath();
+	ctx.moveTo(0, 0);
+	ctx.lineTo(0, -r * 0.5);
+	ctx.moveTo(0, 0);
+	ctx.lineTo(r * 0.3, r * 0.15);
+	ctx.lineWidth = 2.5;
+	ctx.lineCap = 'round';
+	ctx.strokeStyle = INK;
+	ctx.stroke();
+}
+
+/** Repair pickup: a heart on a life ring */
+function repair(ctx: CanvasRenderingContext2D, r: number) {
+	ctx.beginPath();
+	ctx.arc(0, 0, r * 0.95, 0, Math.PI * 2);
+	outline(ctx, PAPER);
+	ctx.beginPath();
+	ctx.arc(0, 0, r * 0.95, 0, Math.PI * 2);
+	ctx.setLineDash([r * 0.5, r * 0.5]);
+	ctx.lineWidth = 5;
+	ctx.strokeStyle = TIE_RED;
+	ctx.stroke();
+	ctx.setLineDash([]);
+	ctx.beginPath();
+	ctx.moveTo(0, r * 0.5);
+	ctx.bezierCurveTo(-r * 0.85, -r * 0.05, -r * 0.4, -r * 0.65, 0, -r * 0.2);
+	ctx.bezierCurveTo(r * 0.4, -r * 0.65, r * 0.85, -r * 0.05, 0, r * 0.5);
+	ctx.closePath();
+	outline(ctx, TIE_RED, 2);
+}
+
 /** Draws one flyer silhouette at the origin, nose along +x */
 export function drawSilhouette(
 	ctx: CanvasRenderingContext2D,
@@ -330,6 +456,24 @@ export function drawSilhouette(
 			break;
 		case 'kalibr':
 			kalibr(ctx, r, pose);
+			break;
+		case 'iskander':
+			iskander(ctx, r, pose);
+			break;
+		case 'cluster':
+			cluster(ctx, r, pose);
+			break;
+		case 'bomblet':
+			bomblet(ctx, r, pose);
+			break;
+		case 'mine':
+			mine(ctx, r, pose);
+			break;
+		case 'focus':
+			focus(ctx, r);
+			break;
+		case 'repair':
+			repair(ctx, r);
 			break;
 		case 'tanker':
 			tanker(ctx, r);

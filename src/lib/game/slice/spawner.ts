@@ -12,10 +12,13 @@ import {
 	DECOY_KINDS,
 	GRAVITY,
 	LAUNCH_MARGIN,
+	STARTING_LIVES,
 	THREAT_KINDS,
+	WAVE_START_MS,
 	WORLD_HEIGHT,
 	WORLD_WIDTH,
 	specOf,
+	waveVolleys,
 	type FlyerKind
 } from './config';
 import { pickWeighted, randomInt, type Random } from '#lib/game/random.js';
@@ -83,60 +86,100 @@ export interface Difficulty {
 	maxBurst: number;
 	/** Chance that each flyer after the first is a decoy */
 	decoyChance: number;
+	/** Chance that a volley carries a floating supply */
+	pickupChance: number;
 }
 
-/** Ramps up with time: faster volleys, bigger bursts, more decoys */
-export function difficultyAt(timeMs: number): Difficulty {
-	const seconds = Math.max(0, timeMs) / 1000;
+/** Ramps up with the wave (1 is the first): faster volleys, bigger bursts, more decoys */
+export function difficultyAt(wave: number): Difficulty {
+	const step = Math.max(0, wave - 1);
 	return {
-		intervalMs: Math.max(650, 1500 - seconds * 12),
-		burstChance: Math.min(0.7, 0.15 + seconds * 0.006),
-		maxBurst: seconds < 40 ? 2 : seconds < 90 ? 3 : 4,
-		decoyChance: Math.min(0.45, 0.2 + seconds * 0.004)
+		intervalMs: Math.max(650, 1450 - step * 110),
+		burstChance: Math.min(0.7, 0.12 + step * 0.08),
+		maxBurst: wave < 3 ? 2 : wave < 6 ? 3 : 4,
+		decoyChance: Math.min(0.45, 0.2 + step * 0.035),
+		pickupChance: wave < 2 ? 0 : 0.1
 	};
 }
 
 export interface Spawner {
 	/** Milliseconds until the next volley */
 	nextMs: number;
+	/** The wave being launched, from 1 */
+	wave: number;
+	/** Volleys of this wave still to launch */
+	volleysLeft: number;
+	/** Milliseconds of the calm between waves that are left (0 while a wave runs) */
+	lullMs: number;
+	/** The current wave has not been announced yet */
+	announce: boolean;
 }
 
 export const FIRST_VOLLEY_MS = 700;
 
 export function createSpawner(): Spawner {
-	return { nextMs: FIRST_VOLLEY_MS };
+	return {
+		nextMs: FIRST_VOLLEY_MS,
+		wave: 1,
+		volleysLeft: waveVolleys(1),
+		lullMs: 0,
+		announce: true
+	};
 }
 
-function pickKind(random: Random, decoy: boolean): FlyerKind {
-	const kinds: readonly FlyerKind[] = decoy ? DECOY_KINDS : THREAT_KINDS;
+/** Starts the next wave: its volleys and a short pause before the first one */
+export function beginWave(spawner: Spawner, wave: number) {
+	spawner.wave = wave;
+	spawner.volleysLeft = waveVolleys(wave);
+	spawner.lullMs = 0;
+	spawner.nextMs = WAVE_START_MS;
+	spawner.announce = true;
+}
+
+function pickKind(random: Random, group: readonly FlyerKind[], wave: number): FlyerKind {
 	return pickWeighted(
 		random,
-		kinds.map((kind) => ({ item: kind, weight: specOf(kind).weight }))
+		group.map((kind) => {
+			const spec = specOf(kind);
+			return { item: kind, weight: spec.minWave <= wave ? spec.weight : 0 };
+		})
 	);
 }
 
-/** One volley: always at least one threat, the rest are threats or decoys */
-export function planVolley(random: Random, timeMs: number): Launch[] {
-	const difficulty = difficultyAt(timeMs);
+/**
+ * One volley: always at least one threat, the rest are threats or decoys, and now and then a
+ * floating supply (a repair only while a heart is missing).
+ */
+export function planVolley(random: Random, wave: number, lives = STARTING_LIVES): Launch[] {
+	const difficulty = difficultyAt(wave);
 	const count =
 		random() < difficulty.burstChance ? randomInt(random, 2, difficulty.maxBurst + 1) : 1;
 	const launches: Launch[] = [];
 	for (let i = 0; i < count; i++) {
 		const decoy = i > 0 && random() < difficulty.decoyChance;
-		launches.push(launchFlyer(random, pickKind(random, decoy)));
+		launches.push(launchFlyer(random, pickKind(random, decoy ? DECOY_KINDS : THREAT_KINDS, wave)));
+	}
+	if (random() < difficulty.pickupChance) {
+		const repair = lives < STARTING_LIVES && random() < 0.45;
+		launches.push(launchFlyer(random, repair ? 'repair' : 'focus'));
 	}
 	return launches;
 }
 
-/** Counts the timer down and returns the launches that are due this step */
+/**
+ * Counts the volley timer down while a wave runs and returns the launches that are due this
+ * step. Between waves (lull) or with every volley out it launches nothing.
+ */
 export function stepSpawner(
 	spawner: Spawner,
 	random: Random,
 	dtMs: number,
-	timeMs: number
+	lives = STARTING_LIVES
 ): Launch[] {
+	if (spawner.volleysLeft <= 0) return [];
 	spawner.nextMs -= dtMs;
 	if (spawner.nextMs > 0) return [];
-	spawner.nextMs += difficultyAt(timeMs).intervalMs;
-	return planVolley(random, timeMs);
+	spawner.nextMs += difficultyAt(spawner.wave).intervalMs;
+	spawner.volleysLeft -= 1;
+	return planVolley(random, spawner.wave, lives);
 }

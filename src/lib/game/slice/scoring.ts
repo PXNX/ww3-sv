@@ -2,7 +2,14 @@
  * Combo scoring: threats sliced one after another in the same swipe, each within the combo
  * window of the last, form a chain. Every slice in a chain after the first adds a growing bonus.
  */
-import { COMBO_CAP, COMBO_STEP, COMBO_WINDOW_MS } from './config';
+import {
+	COMBO_CAP,
+	COMBO_STEP,
+	COMBO_WINDOW_MS,
+	STARTING_LIVES,
+	STREAK_MULTIPLIER_CAP,
+	STREAK_TIER
+} from './config';
 
 export interface Combo {
 	/** Length of the running chain (0 when there is none) */
@@ -43,4 +50,31 @@ export function breakCombo(combo: Combo) {
 /** Points for slicing a threat worth `base` as the nth slice of a chain */
 export function sliceScore(base: number, chainLength: number): number {
 	return base + comboBonus(chainLength);
+}
+
+/** Score multiplier of a streak of clean slices: x1, then one more per tier, up to the cap */
+export function streakMultiplier(streak: number): number {
+	return Math.min(STREAK_MULTIPLIER_CAP, 1 + Math.floor(Math.max(0, streak) / STREAK_TIER));
+}
+
+/** Share of threats that were sliced rather than missed, 0 to 1 (1 when none came) */
+export function accuracy(state: { sliced: number; missed: number }): number {
+	const total = state.sliced + state.missed;
+	return total === 0 ? 1 : state.sliced / total;
+}
+
+/**
+ * Stars for a finished run: none unless the last wave was cleared, then one for getting
+ * through, a second for sharp slicing and a third for near perfect slicing with hearts to spare.
+ */
+export function starsFor(state: {
+	won: boolean;
+	sliced: number;
+	missed: number;
+	lives: number;
+}): number {
+	if (!state.won) return 0;
+	const hit = accuracy(state);
+	if (hit >= 0.95 && state.lives >= STARTING_LIVES - 1) return 3;
+	return hit >= 0.85 ? 2 : 1;
 }
