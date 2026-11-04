@@ -83,7 +83,10 @@ export type SoundId =
 	| 'ais-off'
 	| 'link-snap'
 	| 'wave-horn'
-	| 'energy-empty';
+	| 'energy-empty'
+	| 'war-crisis'
+	| 'war-stamp'
+	| 'war-escalate';
 
 /** Intensity runs from 0 to 1 and lets one sound scale (louder, higher) with how hard something happened */
 type SoundEffect = (ctx: AudioContext, dest: AudioNode, intensity: number) => void;
@@ -922,5 +925,83 @@ export const SOUNDS: Record<SoundId, SoundEffect> = {
 
 	// A dull, short click for an action that is not ready yet
 	'energy-empty': (ctx, dest) =>
-		tone(ctx, dest, { frequency: 140, glideTo: 90, duration: 0.09, type: 'triangle', gain: 0.18 })
+		tone(ctx, dest, { frequency: 140, glideTo: 90, duration: 0.09, type: 'triangle', gain: 0.18 }),
+
+	// A wailing two-tone siren for a crisis landing on the desk
+	'war-crisis': (ctx, dest, intensity) =>
+		sequence(ctx, dest, [
+			{
+				frequency: 520 + intensity * 80,
+				glideTo: 380,
+				duration: 0.2,
+				type: 'sawtooth',
+				gain: 0.14
+			},
+			{
+				frequency: 520 + intensity * 80,
+				glideTo: 380,
+				duration: 0.2,
+				type: 'sawtooth',
+				gain: 0.14,
+				delay: 0.22
+			}
+		]),
+
+	// A rubber stamp hitting paper: a thump and a short papery slap
+	'war-stamp': (ctx, dest, intensity) => {
+		tone(ctx, dest, { frequency: 120, glideTo: 60, duration: 0.1, type: 'triangle', gain: 0.22 });
+		noise(ctx, dest, {
+			duration: 0.06,
+			filterType: 'bandpass',
+			filterFrequency: 1800,
+			gain: 0.08 + intensity * 0.05
+		});
+	},
+
+	// Distant war drums when the Pact steps up a tier
+	'war-escalate': (ctx, dest) =>
+		sequence(ctx, dest, [
+			{ frequency: 80, glideTo: 50, duration: 0.18, type: 'triangle', gain: 0.24 },
+			{ frequency: 80, glideTo: 50, duration: 0.18, type: 'triangle', gain: 0.24, delay: 0.22 },
+			{ frequency: 62, glideTo: 40, duration: 0.4, type: 'triangle', gain: 0.28, delay: 0.5 }
+		]),
+
+	// A deep two-tone ship's foghorn with a slow swell, rolling out over the sea
+	foghorn: (ctx, dest, intensity) => {
+		for (const frequency of [92, 138]) {
+			tone(ctx, dest, {
+				frequency,
+				glideTo: frequency * 0.97,
+				duration: 1.5,
+				type: 'sawtooth',
+				gain: 0.07 + intensity * 0.05,
+				attack: 0.25,
+				release: 1.25
+			});
+		}
+		noise(ctx, dest, {
+			duration: 1.2,
+			filterType: 'lowpass',
+			filterFrequency: 300,
+			gain: 0.05
+		});
+	},
+
+	// A stuttering digital glitch when the spoofer switches on
+	'spoof-glitch': (ctx, dest) => {
+		noise(ctx, dest, { duration: 0.12, filterType: 'highpass', filterFrequency: 3000, gain: 0.14 });
+		sequence(ctx, dest, [
+			{ frequency: 900, duration: 0.04, type: 'square', gain: 0.1 },
+			{ frequency: 380, duration: 0.04, type: 'square', gain: 0.1, delay: 0.05 },
+			{ frequency: 1300, duration: 0.05, type: 'square', gain: 0.1, delay: 0.1 }
+		]);
+	},
+
+	// A two-tone coast guard siren
+	'patrol-siren': (ctx, dest) =>
+		sequence(ctx, dest, [
+			{ frequency: 720, duration: 0.18, type: 'triangle', gain: 0.17 },
+			{ frequency: 540, duration: 0.18, type: 'triangle', gain: 0.17, delay: 0.19 },
+			{ frequency: 720, duration: 0.18, type: 'triangle', gain: 0.17, delay: 0.38 }
+		])
 };

@@ -8,6 +8,10 @@ import {
 	buildFactory as buildFactoryRule,
 	canBuild as canBuildRule,
 	canOrder,
+	canResolveCrisis as canResolveCrisisRule,
+	canUseDirective as canUseDirectiveRule,
+	resolveCrisis as resolveCrisisRule,
+	useDirective as useDirectiveRule,
 	canTrain as canTrainRule,
 	createWarRoom,
 	endTurn,
@@ -20,6 +24,7 @@ import {
 	canExercise as canExerciseRule
 } from '#lib/game/warroom/state.js';
 import {
+	escalationTier,
 	REGIONS,
 	REGION_IDS,
 	areNeighbors,
@@ -28,15 +33,32 @@ import {
 	type RegionId,
 	type TemplateId
 } from '#lib/game/warroom/config.js';
+import type { CrisisId, DirectiveId } from '#lib/game/warroom/council.js';
+import {
+	burst,
+	pushHeadline,
+	stepParticles,
+	type BurstKind,
+	type Headline,
+	type Particle
+} from '#lib/game/warroom/fx.js';
 import type {
 	Building,
+	HistoryPoint,
 	Division,
 	Outcome,
 	TrainingItem,
 	WarRoomEvent,
 	WarRoomState
 } from '#lib/game/warroom/types.js';
-import { regionName, factoryName, templateName } from '#lib/components/warroomText.js';
+import { haptic } from '#lib/haptic/haptic.svelte.js';
+import {
+	crisisTitle,
+	directiveName,
+	regionName,
+	factoryName,
+	templateName
+} from '#lib/components/warroomText.js';
 import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
 import { m } from '#lib/paraglide/messages.js';
 import { highscores, type Highscores } from '#lib/services/highscore.js';
@@ -81,6 +103,19 @@ export class WarRoomGame {
 	focused = $state<RegionId>('marsh');
 	selected = $state<RegionId | null>(null);
 	note = $state.raw<WarRoomNote | null>(null);
+	/** Home front, the Pact's tier and the council's desk */
+	stability = $state(70);
+	tier = $state(0);
+	crisis = $state.raw<CrisisId | null>(null);
+	directiveUsed = $state.raw<DirectiveId | null>(null);
+	intelDays = $state(0);
+	history = $state.raw<HistoryPoint[]>([]);
+	crisesHandled = $state(0);
+	/** Effects: the wire ticker, a shake counter and the pulses the map plays */
+	headlines = $state.raw<Headline[]>([]);
+	shake = $state.raw<{ key: number; power: number }>({ key: 0, power: 0 });
+	pulses = $state.raw<{ id: number; region: RegionId; kind: BurstKind }[]>([]);
+	particles = $state.raw<Particle[]>([]);
 
 	/** Rules state, deliberately not reactive */
 	state: WarRoomState;
@@ -89,6 +124,7 @@ export class WarRoomGame {
 	#seed: () => number;
 	#random: Random = createRandom(1);
 	#noteId = 0;
+	#fxId = 0;
 
 	constructor({ scores = highscores, seed = randomSeed }: WarRoomOptions = {}) {
 		this.#scores = scores;
@@ -106,6 +142,9 @@ export class WarRoomGame {
 		this.#random = createRandom(this.#seed());
 		this.state = createWarRoom();
 		this.note = null;
+		this.headlines = [];
+		this.pulses = [];
+		this.particles = [];
 		this.isNewBest = false;
 		this.outcome = null;
 		this.score = 0;
@@ -187,6 +226,38 @@ export class WarRoomGame {
 		this.#note(m.warroom_toast_training({ template: templateName(template) }));
 		this.#play('click', 0.6);
 		this.#sync();
+	}
+
+	/** Answers the crisis on the desk */
+	resolveCrisis(option: number) {
+		if (this.status !== 'playing') return;
+		if (!canResolveCrisisRule(this.state, option)) {
+			this.#play('ui-error', 0.6);
+			return;
+		}
+		this.#run(resolveCrisisRule(this.state, option));
+	}
+
+	canResolveCrisis(option: number): boolean {
+		return canResolveCrisisRule(this.state, option);
+	}
+
+	useDirective(id: DirectiveId) {
+		if (this.status !== 'playing') return;
+		if (!canUseDirectiveRule(this.state, id)) {
+			this.#play('ui-error', 0.6);
+			return;
+		}
+		this.#run(useDirectiveRule(this.state, id));
+	}
+
+	canUseDirective(id: DirectiveId): boolean {
+		return canUseDirectiveRule(this.state, id);
+	}
+
+	/** Advances the particles; the map calls it every frame */
+	stepFx(dt: number) {
+		if (this.particles.length > 0) this.particles = stepParticles(this.particles, dt);
 	}
 
 	exercise(region: RegionId) {
@@ -275,17 +346,32 @@ export class WarRoomGame {
 				const region = regionName(event.region);
 				if (event.attacker === 'player') {
 					if (event.won) {
-						this.#note(m.warroom_toast_captured({ region, losses: event.attackerLosses }));
+						const text = m.warroom_toast_captured({ region, losses: event.attackerLosses });
+						this.#note(text);
+						this.#headline(text, 'good');
+						this.#pulse(event.region, 'capture');
+						this.#shake(0.5);
 						this.#play('explosion-small', 0.7);
 					} else {
-						this.#note(m.warroom_toast_repelled({ region, losses: event.attackerLosses }));
+						const text = m.warroom_toast_repelled({ region, losses: event.attackerLosses });
+						this.#note(text);
+						this.#headline(text, 'bad');
+						this.#pulse(event.region, 'repelled');
+						this.#shake(0.3);
 						this.#play('hit', 0.8);
 					}
 				} else if (event.won) {
-					this.#note(m.warroom_toast_pact_captured({ region }));
+					const text = m.warroom_toast_pact_captured({ region });
+					this.#note(text);
+					this.#headline(text, 'bad');
+					this.#pulse(event.region, 'lost');
+					this.#shake(1);
 					this.#play('alarm', 1);
 				} else {
-					this.#note(m.warroom_toast_held({ region }));
+					const text = m.warroom_toast_held({ region });
+					this.#note(text);
+					this.#headline(text, 'good');
+					this.#pulse(event.region, 'held');
 					this.#play('chime', 0.6);
 				}
 				break;
@@ -298,8 +384,47 @@ export class WarRoomGame {
 				this.#note(m.warroom_toast_built({ factory: factoryName(event.factory) }));
 				this.#play('blocks-clear', 0.4);
 				break;
+			case 'crisis': {
+				const text = m.warroom_toast_crisis({ title: crisisTitle(event.id) });
+				this.#note(text);
+				this.#headline(text, 'bad');
+				this.#pulse('capital', 'crisis');
+				this.#shake(0.6);
+				this.#play('war-crisis', 0.8);
+				break;
+			}
+			case 'crisisResolved':
+				if (event.neglected) {
+					const text = m.warroom_toast_neglected();
+					this.#note(text);
+					this.#headline(text, 'bad');
+					this.#shake(0.4);
+					this.#play('ui-error', 0.7);
+				} else {
+					this.#note(m.warroom_toast_resolved());
+					this.#headline(crisisTitle(event.id), 'neutral');
+					this.#play('war-stamp', 0.8);
+				}
+				break;
+			case 'directive': {
+				const text = m.warroom_toast_directive({ directive: directiveName(event.id) });
+				this.#note(text);
+				this.#headline(text, 'neutral');
+				this.#play('war-stamp', 0.7);
+				break;
+			}
+			case 'escalation': {
+				const text =
+					event.tier >= 2 ? m.warroom_toast_escalation_2() : m.warroom_toast_escalation_1();
+				this.#note(text);
+				this.#headline(text, 'bad');
+				this.#shake(0.8);
+				this.#play('war-escalate', 1);
+				break;
+			}
 			case 'starved':
 			case 'captured':
+			case 'stability':
 			case 'day':
 			case 'over':
 				break;
@@ -312,6 +437,25 @@ export class WarRoomGame {
 
 	#play(id: SoundId, intensity: number) {
 		soundManager().play(id, intensity);
+		haptic().play(Math.min(0.8, intensity * 0.6));
+	}
+
+	#headline(text: string, tone: Headline['tone']) {
+		this.headlines = pushHeadline(this.headlines, { id: ++this.#fxId, text, tone });
+	}
+
+	#shake(power: number) {
+		this.shake = { key: this.shake.key + 1, power };
+	}
+
+	#pulse(region: RegionId, kind: BurstKind) {
+		this.pulses = [...this.pulses.slice(-5), { id: ++this.#fxId, region, kind }];
+		const def = REGIONS.find((entry) => entry.id === region);
+		if (def) {
+			this.particles = [...this.particles, ...burst(kind, def.x, def.y * 0.6, this.#random)].slice(
+				-160
+			);
+		}
 	}
 
 	#sync() {
@@ -330,6 +474,13 @@ export class WarRoomGame {
 		this.moved = [...state.moved];
 		this.outcome = state.outcome;
 		this.score = this.status === 'ready' ? 0 : finalScore(state);
+		this.stability = state.stability;
+		this.tier = escalationTier(state.day);
+		this.crisis = state.crisis;
+		this.directiveUsed = state.directiveUsed;
+		this.intelDays = state.intelDays;
+		this.history = [...state.history];
+		this.crisesHandled = state.crisesHandled;
 	}
 
 	#finish() {
@@ -342,6 +493,7 @@ export class WarRoomGame {
 		this.status = 'over';
 		this.selected = null;
 		this.#play(this.state.outcome === 'won' ? 'chime-big' : 'game-over', 1);
+		this.#shake(this.state.outcome === 'won' ? 0.3 : 1);
 	}
 
 	/** Draws the campaign map onto the shared score card: zones, capitals and a front line */

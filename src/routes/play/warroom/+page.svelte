@@ -9,6 +9,11 @@
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import WarRoomCouncil from '#lib/components/WarRoomCouncil.svelte';
+	import WarRoomCrisis from '#lib/components/WarRoomCrisis.svelte';
+	import WarRoomCurve from '#lib/components/WarRoomCurve.svelte';
+	import WarRoomTicker from '#lib/components/WarRoomTicker.svelte';
+	import { rankName, rankOf } from '#lib/components/warroomText.js';
 	import WarRoomArmy from '#lib/components/WarRoomArmy.svelte';
 	import WarRoomHud from '#lib/components/WarRoomHud.svelte';
 	import WarRoomIndustry from '#lib/components/WarRoomIndustry.svelte';
@@ -25,7 +30,7 @@
 	const game = new WarRoomGame();
 	const modeName = m.mode_warroom_name();
 
-	type Tab = 'army' | 'industry' | 'recruit';
+	type Tab = 'army' | 'industry' | 'recruit' | 'council';
 	let tab = $state<Tab>('army');
 	let showTutorial = $state(false);
 
@@ -37,7 +42,8 @@
 	const tabs: { id: Tab; label: () => string }[] = [
 		{ id: 'army', label: () => m.warroom_tab_army() },
 		{ id: 'industry', label: () => m.warroom_tab_industry() },
-		{ id: 'recruit', label: () => m.warroom_tab_recruit() }
+		{ id: 'recruit', label: () => m.warroom_tab_recruit() },
+		{ id: 'council', label: () => m.warroom_tab_council() }
 	];
 
 	const gameOverTitle = $derived(
@@ -45,7 +51,9 @@
 			? m.warroom_gameover_won()
 			: game.outcome === 'armistice'
 				? m.warroom_gameover_armistice()
-				: m.warroom_gameover_lost()
+				: game.outcome === 'coup'
+					? m.warroom_gameover_coup()
+					: m.warroom_gameover_lost()
 	);
 
 	function onKey(event: KeyboardEvent) {
@@ -61,6 +69,7 @@
 		if (event.code === 'Digit1') tab = 'army';
 		if (event.code === 'Digit2') tab = 'industry';
 		if (event.code === 'Digit3') tab = 'recruit';
+		if (event.code === 'Digit4') tab = 'council';
 		if (event.code === 'KeyN') game.endTurn();
 		if (event.code === 'Escape') game.clearSelection();
 	}
@@ -104,6 +113,10 @@
 			<div class="flex min-w-0 flex-col gap-2">
 				<WarRoomMap {game} />
 
+				<WarRoomTicker {game} />
+
+				<WarRoomCrisis {game} />
+
 				<p
 					dir="auto"
 					class="min-h-9 rounded-xl border-2 border-ink bg-paper px-2 py-1 text-xs leading-snug font-semibold sm:text-sm"
@@ -112,7 +125,11 @@
 					{game.note?.text ?? m.warroom_note_idle()}
 				</p>
 
-				<div role="tablist" aria-label={m.warroom_tabs_label()} class="grid grid-cols-3 gap-1.5">
+				<div
+					role="tablist"
+					aria-label={m.warroom_tabs_label()}
+					class="grid grid-cols-2 gap-1.5 sm:grid-cols-4"
+				>
 					{#each tabs as entry (entry.id)}
 						<button
 							type="button"
@@ -141,6 +158,8 @@
 						<WarRoomArmy {game} />
 					{:else if tab === 'industry'}
 						<WarRoomIndustry {game} />
+					{:else if tab === 'council'}
+						<WarRoomCouncil {game} />
 					{:else}
 						<WarRoomRecruit {game} />
 					{/if}
@@ -165,6 +184,7 @@
 		<p>{m.warroom_tutorial_industry()}</p>
 		<p>{m.warroom_tutorial_army()}</p>
 		<p>{m.warroom_tutorial_combat()}</p>
+		<p>{m.warroom_tutorial_council()}</p>
 		<p>{m.warroom_tutorial_keys()}</p>
 	</TutorialModal>
 
@@ -199,5 +219,39 @@
 				<dd class="text-2xl font-bold tabular-nums">{game.state.losses}</dd>
 			</div>
 		</dl>
+		<dl class="mt-2 grid grid-cols-3 gap-2 font-display text-sm">
+			<div class="flex flex-col items-center rounded-xl border-2 border-ink bg-sand p-2">
+				<dt dir="auto" class="text-center font-bold">{m.warroom_stat_stability()}</dt>
+				<dd class="text-2xl font-bold tabular-nums">{Math.round(game.stability)}</dd>
+			</div>
+			<div class="flex flex-col items-center rounded-xl border-2 border-ink bg-sand p-2">
+				<dt dir="auto" class="text-center font-bold">{m.warroom_stat_crises()}</dt>
+				<dd class="text-2xl font-bold tabular-nums">{game.crisesHandled}</dd>
+			</div>
+			<div class="flex flex-col items-center rounded-xl border-2 border-ink bg-sand p-2">
+				<dt dir="auto" class="text-center font-bold">{m.warroom_rank_title()}</dt>
+				<dd dir="auto" class="rank-stamp text-center text-sm leading-tight font-bold">
+					{rankName(rankOf(game.score, game.outcome))}
+				</dd>
+			</div>
+		</dl>
+		<div class="mt-2"><WarRoomCurve history={game.history} /></div>
 	</GameOverModal>
 </GameShell>
+
+<style>
+	:global(.rank-stamp) {
+		animation: rank-stamp 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) 0.4s both;
+	}
+	@keyframes rank-stamp {
+		from {
+			transform: scale(2.4) rotate(-12deg);
+			opacity: 0;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		:global(.rank-stamp) {
+			animation: none;
+		}
+	}
+</style>

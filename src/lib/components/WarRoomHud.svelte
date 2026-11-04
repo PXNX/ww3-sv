@@ -3,9 +3,17 @@
 	regions pay and the four kinds of equipment the factories make.
 -->
 <script lang="ts">
-	import { EQUIPMENT_IDS, MAX_DAYS, REGION_IDS, RESOURCE_IDS } from '#lib/game/warroom/config.js';
+	import {
+		EQUIPMENT_IDS,
+		MAX_DAYS,
+		REGION_IDS,
+		RESOURCE_IDS,
+		STABILITY_HIGH,
+		STABILITY_LOW
+	} from '#lib/game/warroom/config.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import type { WarRoomGame } from '#lib/stores/warroomGame.svelte.js';
+	import WarRoomMeter from './WarRoomMeter.svelte';
 	import { equipmentName, regionName, resourceName } from './warroomText.js';
 	import IconAnvil from '~icons/lucide/anvil';
 	import IconBomb from '~icons/lucide/bomb';
@@ -31,6 +39,23 @@
 		trucks: IconTruck
 	} as const;
 
+	const stabilityState = $derived(
+		game.stability < STABILITY_LOW
+			? m.warroom_stability_low()
+			: game.stability >= STABILITY_HIGH
+				? m.warroom_stability_high()
+				: m.warroom_stability_ok()
+	);
+	const threatState = $derived(
+		[m.warroom_threat_0(), m.warroom_threat_1(), m.warroom_threat_2()][game.tier] ?? ''
+	);
+	const stabilityTone = $derived(
+		game.stability < STABILITY_LOW
+			? '#e5484d'
+			: game.stability >= STABILITY_HIGH
+				? '#4fa86a'
+				: '#e8c46a'
+	);
 	const day = $derived(Math.min(game.day, MAX_DAYS));
 	const divisions = $derived(
 		REGION_IDS.reduce((sum, id) => sum + (game.divisions[id]?.length ?? 0), 0)
@@ -66,6 +91,23 @@
 	<p dir="auto" class="text-xs leading-snug font-semibold opacity-80">
 		{m.warroom_hud_goal({ region: regionName('redcapital') })}
 	</p>
+
+	<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+		<WarRoomMeter
+			label={m.warroom_hud_stability()}
+			value={game.stability}
+			tone={stabilityTone}
+			state={stabilityState}
+			low={STABILITY_LOW}
+			high={STABILITY_HIGH}
+		/>
+		<WarRoomMeter
+			label={m.warroom_hud_threat()}
+			value={(game.tier + 1) * 33 + (game.intelDays > 0 ? -10 : 0)}
+			tone="#e5484d"
+			state={threatState}
+		/>
+	</div>
 
 	<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
 		<div class="flex flex-col gap-1">

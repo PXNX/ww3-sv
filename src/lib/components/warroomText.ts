@@ -11,6 +11,7 @@ import type {
 	Terrain
 } from '#lib/game/warroom/config.js';
 import { TERRAIN_DEFENCE } from '#lib/game/warroom/config.js';
+import type { CrisisId, DirectiveId, Effect } from '#lib/game/warroom/council.js';
 import { m } from '#lib/paraglide/messages.js';
 
 const REGION_NAMES: Record<RegionId, () => string> = {
@@ -100,3 +101,103 @@ export function equipmentCost(cost: Partial<Record<EquipmentId, number>>): strin
 export function oddsLabel(attack: number, defence: number): string {
 	return m.warroom_odds({ attack: Math.round(attack), defence: Math.round(defence) });
 }
+
+// Council: crises, directives and the effect chips that show what a choice does
+const CRISIS_TITLES: Record<CrisisId, () => string> = {
+	sabotage: m.warroom_crisis_sabotage_title,
+	strike: m.warroom_crisis_strike_title,
+	defector: m.warroom_crisis_defector_title,
+	aid: m.warroom_crisis_aid_title,
+	scandal: m.warroom_crisis_scandal_title,
+	debt: m.warroom_crisis_debt_title,
+	mutiny: m.warroom_crisis_mutiny_title,
+	rumour: m.warroom_crisis_rumour_title,
+	hero: m.warroom_crisis_hero_title
+};
+
+const CRISIS_BODIES: Record<CrisisId, () => string> = {
+	sabotage: m.warroom_crisis_sabotage_body,
+	strike: m.warroom_crisis_strike_body,
+	defector: m.warroom_crisis_defector_body,
+	aid: m.warroom_crisis_aid_body,
+	scandal: m.warroom_crisis_scandal_body,
+	debt: m.warroom_crisis_debt_body,
+	mutiny: m.warroom_crisis_mutiny_body,
+	rumour: m.warroom_crisis_rumour_body,
+	hero: m.warroom_crisis_hero_body
+};
+
+const CRISIS_OPTIONS: Record<CrisisId, [() => string, () => string]> = {
+	sabotage: [m.warroom_crisis_sabotage_a, m.warroom_crisis_sabotage_b],
+	strike: [m.warroom_crisis_strike_a, m.warroom_crisis_strike_b],
+	defector: [m.warroom_crisis_defector_a, m.warroom_crisis_defector_b],
+	aid: [m.warroom_crisis_aid_a, m.warroom_crisis_aid_b],
+	scandal: [m.warroom_crisis_scandal_a, m.warroom_crisis_scandal_b],
+	debt: [m.warroom_crisis_debt_a, m.warroom_crisis_debt_b],
+	mutiny: [m.warroom_crisis_mutiny_a, m.warroom_crisis_mutiny_b],
+	rumour: [m.warroom_crisis_rumour_a, m.warroom_crisis_rumour_b],
+	hero: [m.warroom_crisis_hero_a, m.warroom_crisis_hero_b]
+};
+
+const DIRECTIVE_NAMES: Record<DirectiveId, () => string> = {
+	propaganda: m.warroom_directive_propaganda_name,
+	mobilise: m.warroom_directive_mobilise_name,
+	counterintel: m.warroom_directive_counterintel_name,
+	austerity: m.warroom_directive_austerity_name
+};
+
+const DIRECTIVE_NOTES: Record<DirectiveId, () => string> = {
+	propaganda: m.warroom_directive_propaganda_note,
+	mobilise: m.warroom_directive_mobilise_note,
+	counterintel: m.warroom_directive_counterintel_note,
+	austerity: m.warroom_directive_austerity_note
+};
+
+export const crisisTitle = (id: CrisisId) => CRISIS_TITLES[id]();
+export const crisisBody = (id: CrisisId) => CRISIS_BODIES[id]();
+export const crisisOptionLabel = (id: CrisisId, option: number) => CRISIS_OPTIONS[id][option]();
+export const directiveName = (id: DirectiveId) => DIRECTIVE_NAMES[id]();
+export const directiveNote = (id: DirectiveId) => DIRECTIVE_NOTES[id]();
+
+const signed = (amount: number) => (amount > 0 ? `+${amount}` : `${amount}`);
+
+/** One effect as a short chip text, such as "Home front +10" */
+export function effectLabel(effect: Effect): string {
+	switch (effect.kind) {
+		case 'stability':
+			return m.warroom_effect_stability({ delta: signed(effect.amount) });
+		case 'morale':
+			return m.warroom_effect_morale({ delta: signed(effect.amount) });
+		case 'experience':
+			return m.warroom_effect_experience({ delta: signed(effect.amount) });
+		case 'resource':
+			return m.warroom_effect_stock({
+				delta: signed(effect.amount),
+				name: resourceName(effect.id)
+			});
+		case 'equipment':
+			return m.warroom_effect_stock({
+				delta: signed(effect.amount),
+				name: equipmentName(effect.id)
+			});
+		case 'enemyReinforce':
+			return m.warroom_effect_reinforce({ count: effect.amount });
+		case 'enemyMorale':
+			return m.warroom_effect_enemy_morale({ delta: signed(effect.amount) });
+		case 'intel':
+			return m.warroom_effect_intel({ days: effect.days });
+		case 'flag':
+			return m.warroom_effect_flag();
+	}
+}
+
+/** The final rank for the result screen, 0 (worst) to 4 */
+export function rankOf(score: number, outcome: string | null): number {
+	if (outcome === 'won') return score >= 1800 ? 4 : 3;
+	return score >= 1100 ? 2 : score >= 600 ? 1 : 0;
+}
+
+export const rankName = (rank: number) =>
+	[m.warroom_rank_0, m.warroom_rank_1, m.warroom_rank_2, m.warroom_rank_3, m.warroom_rank_4][
+		Math.max(0, Math.min(4, rank))
+	]();
