@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { LEVEL_NAMES } from '#lib/components/mapleText.js';
-import { STARTING_HEARTS } from '#lib/game/maple/config.js';
+import { STARTING_HEARTS, UNDOS_PER_LEVEL } from '#lib/game/maple/config.js';
 import type { Dir } from '#lib/game/maple/level.js';
 import { LEVEL_IDS } from '#lib/game/maple/levels.js';
 import { createHighscores } from '#lib/services/highscore.js';
@@ -189,6 +189,43 @@ describe('MapleGame', () => {
 		expect(game.status).toBe('playing');
 		expect(game.hearts).toBe(STARTING_HEARTS);
 		expect(game.hurtCount).toBe(0);
+	});
+
+	it('rewinds a tick, a limited number of times, and counts it against the score', () => {
+		const { game } = newGame();
+		game.openLevel(0);
+		expect(game.canRewind).toBe(false);
+		game.step('down');
+		game.step('down');
+		expect(game.canRewind).toBe(true);
+		game.rewind();
+		expect(game.moves).toBe(1);
+		expect(game.state.cart[0]).toEqual({ row: 2, col: 1 });
+		expect(game.rewinds).toBe(UNDOS_PER_LEVEL - 1);
+		expect(game.message).not.toBe('');
+		game.rewind();
+		expect(game.moves).toBe(0);
+		game.step('down');
+		game.rewind();
+		expect(game.rewinds).toBe(0);
+		game.step('down');
+		game.rewind();
+		expect(game.moves).toBe(1);
+		// A bump is no tick and leaves nothing to rewind
+		game.step('left');
+		expect(game.moves).toBe(1);
+	});
+
+	it('uses a gadget only when one is in hand', () => {
+		const { game } = newGame();
+		game.openLevel(0);
+		game.useGadget();
+		expect(game.moves).toBe(0);
+		game.state.gadget = 'toque';
+		game.useGadget();
+		expect(game.moves).toBe(1);
+		expect(game.gadget).toBeNull();
+		expect(game.state.hidden).toBeGreaterThan(0);
 	});
 
 	it('goes back to the select screen', () => {

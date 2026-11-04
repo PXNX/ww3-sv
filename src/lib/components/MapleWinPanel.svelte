@@ -1,6 +1,7 @@
 <!-- Level-won panel for Maple Reserve Heist: stars, score, what was delivered, next level, and sharing on a new best -->
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages.js';
+	import type { ScoreBreakdown } from '#lib/game/maple/state.js';
 	import type { ScoreCard } from '#lib/services/share.js';
 	import Confetti from './Confetti.svelte';
 	import MaplePancakes from './MaplePancakes.svelte';
@@ -19,6 +20,7 @@
 		delivered,
 		totalBarrels,
 		spotted,
+		breakdown,
 		isNewBest,
 		hasNext,
 		modeName,
@@ -37,6 +39,8 @@
 		delivered: number;
 		totalBarrels: number;
 		spotted: number;
+		/** Where the points came from, one line each */
+		breakdown: ScoreBreakdown;
 		isNewBest: boolean;
 		/** Another level follows this one */
 		hasNext: boolean;
@@ -93,6 +97,26 @@
 			<li>{m.maple_win_moves({ moves, par })}</li>
 			<li>{m.maple_win_spotted({ count: spotted })}</li>
 		</ul>
+
+		<!-- Every line of the sum, so the score is readable and not only a number -->
+		<dl class="grid w-full max-w-xs grid-cols-[1fr_auto] gap-x-4 text-sm tabular-nums">
+			<dt class="text-start">{m.maple_points_barrels()}</dt>
+			<dd class="font-bold">+{breakdown.barrels}</dd>
+			{#if breakdown.golden > 0}
+				<dt class="text-start">{m.maple_points_golden()}</dt>
+				<dd class="font-bold">+{breakdown.golden}</dd>
+			{/if}
+			<dt class="text-start">{m.maple_points_par()}</dt>
+			<dd class="font-bold">+{breakdown.underPar}</dd>
+			{#if breakdown.spotted > 0}
+				<dt class="text-start">{m.maple_points_spotted()}</dt>
+				<dd class="font-bold text-tie-red">-{breakdown.spotted}</dd>
+			{/if}
+			{#if breakdown.rewinds > 0}
+				<dt class="text-start">{m.maple_points_rewinds()}</dt>
+				<dd class="font-bold text-tie-red">-{breakdown.rewinds}</dd>
+			{/if}
+		</dl>
 
 		{#if !hasNext}
 			<p class="font-semibold">{m.maple_all_cleared()}</p>

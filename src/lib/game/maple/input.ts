@@ -1,5 +1,5 @@
 /*
- * Controls: arrow keys and WASD step the cart, Space (or the dot key) waits a tick, and a swipe
+ * Controls: arrow keys and WASD step the cart, Space (or the dot key) waits a tick, E uses the gadget, Z rewinds, and a swipe
  * on the warehouse floor steps toward its dominant direction.
  */
 import type { Dir } from './level.js';
@@ -21,6 +21,14 @@ export function keyDirection(code: string): Dir | null {
 
 export function isWaitKey(code: string): boolean {
 	return code === 'Space' || code === 'Period';
+}
+
+export function isGadgetKey(code: string): boolean {
+	return code === 'KeyE' || code === 'KeyQ' || code === 'Enter';
+}
+
+export function isRewindKey(code: string): boolean {
+	return code === 'KeyZ' || code === 'KeyU' || code === 'Backspace';
 }
 
 /** Shorter drags than this many pixels are taps, not swipes */

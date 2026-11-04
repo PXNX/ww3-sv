@@ -1,9 +1,10 @@
 /*
  * Maple Reserve Heist levels: a warehouse grid with shelves, a cart start, a truck, barrels and
- * moose guards that patrol back and forth along a route. Levels are written as text rows:
- * # shelf, . aisle, S cart start, T truck, B barrel.
+ * moose guards that patrol along a route, stand guard and turn, or walk a loop. Levels are written
+ * as text rows: # shelf, . aisle, S cart start, T truck, B barrel, G golden barrel, L lever that
+ * unlocks the truck, C coffee pad, H toque pad.
  */
-import { BOSS_RANGE, GUARD_RANGE } from './config.js';
+import { BOSS_RANGE, GUARD_RANGE, SENTRY_TURN_EVERY } from './config.js';
 
 export interface Cell {
 	row: number;
@@ -37,11 +38,24 @@ export function opposite(dir: Dir): Dir {
 	return { up: 'down', down: 'up', left: 'right', right: 'left' }[dir] as Dir;
 }
 
+export type GadgetKind = 'coffee' | 'toque';
+
+/** How a moose moves: back and forth, around a closed loop, or on the spot turning clockwise */
+export type GuardMode = 'patrol' | 'loop' | 'sentry';
+
 /** A level as authored: waypoints are [row, col] corners of a straight-lined patrol route */
 export interface GuardSpec {
 	waypoints: readonly (readonly [number, number])[];
 	/** The boss moose in the tiny tariff hat sees further */
 	boss?: boolean;
+	/** Defaults to a patrol; a loop closes the route by itself, a sentry uses the first waypoint only */
+	mode?: GuardMode;
+	/** A patrol stands still this many extra ticks at each end of its route */
+	dwell?: number;
+	/** A sentry turns a quarter clockwise every this many ticks */
+	turnEvery?: number;
+	/** Where a sentry looks at the start */
+	facing?: Dir;
 }
 
 export interface LevelSpec {
@@ -59,6 +73,16 @@ export interface Guard {
 	route: readonly Cell[];
 	boss: boolean;
 	range: number;
+	mode: GuardMode;
+	dwell: number;
+	turnEvery: number;
+	/** Set for a sentry; the others look along their route */
+	facing: Dir | null;
+}
+
+export interface Pad {
+	cell: Cell;
+	kind: GadgetKind;
 }
 
 export interface Level {
@@ -69,6 +93,11 @@ export interface Level {
 	start: Cell;
 	truck: Cell;
 	barrels: readonly Cell[];
+	/** Parallel to barrels: the golden ones are worth more and make the cart louder */
+	golden: readonly boolean[];
+	/** The lever that unlocks the truck; null when the truck is open from the start */
+	lever: Cell | null;
+	pads: readonly Pad[];
 	guards: readonly Guard[];
 	quota: number;
 	par: number;
@@ -92,6 +121,14 @@ export function expandRoute(waypoints: GuardSpec['waypoints']): Cell[] {
 	return route;
 }
 
+/** A closed route: the waypoints in order and then back to the first one, without repeating it */
+export function expandLoop(waypoints: GuardSpec['waypoints']): Cell[] {
+	const route = expandRoute([...waypoints, waypoints[0]]);
+	return route.slice(0, -1);
+}
+
+const PAD_CHARS: Record<string, GadgetKind> = { C: 'coffee', H: 'toque' };
+
 export function parseLevel(spec: LevelSpec): Level {
 	const height = spec.map.length;
 	const width = spec.map[0]?.length ?? 0;
@@ -99,12 +136,19 @@ export function parseLevel(spec: LevelSpec): Level {
 	let start: Cell | null = null;
 	let truck: Cell | null = null;
 	const barrels: Cell[] = [];
+	const golden: boolean[] = [];
+	const pads: Pad[] = [];
+	let lever: Cell | null = null;
 	const walls = spec.map.map((line, row) => {
 		if (line.length !== width) throw new Error(`Level ${spec.id} has a ragged row ${row}`);
 		return [...line].map((char, col) => {
 			if (char === 'S') start = { row, col };
 			else if (char === 'T') truck = { row, col };
-			else if (char === 'B') barrels.push({ row, col });
+			else if (char === 'B' || char === 'G') {
+				barrels.push({ row, col });
+				golden.push(char === 'G');
+			} else if (char === 'L') lever = { row, col };
+			else if (char in PAD_CHARS) pads.push({ cell: { row, col }, kind: PAD_CHARS[char] });
 			else if (char !== '#' && char !== '.')
 				throw new Error(`Level ${spec.id}: bad cell "${char}"`);
 			return char === '#';
@@ -119,13 +163,31 @@ export function parseLevel(spec: LevelSpec): Level {
 		start,
 		truck,
 		barrels,
-		guards: spec.guards.map((guard) => ({
-			route: expandRoute(guard.waypoints),
-			boss: guard.boss ?? false,
-			range: guard.boss ? BOSS_RANGE : GUARD_RANGE
-		})),
+		golden,
+		lever,
+		pads,
+		guards: spec.guards.map(parseGuard),
 		quota: spec.quota,
 		par: spec.par
+	};
+}
+
+function parseGuard(guard: GuardSpec): Guard {
+	const mode = guard.mode ?? 'patrol';
+	const route =
+		mode === 'loop'
+			? expandLoop(guard.waypoints)
+			: mode === 'sentry'
+				? expandRoute(guard.waypoints.slice(0, 1))
+				: expandRoute(guard.waypoints);
+	return {
+		route,
+		boss: guard.boss ?? false,
+		range: guard.boss ? BOSS_RANGE : GUARD_RANGE,
+		mode,
+		dwell: guard.dwell ?? 0,
+		turnEvery: guard.turnEvery ?? SENTRY_TURN_EVERY,
+		facing: mode === 'sentry' ? (guard.facing ?? 'down') : null
 	};
 }
 
@@ -157,4 +219,30 @@ export function visibleCells(level: Level, at: Cell, facing: Dir, range: number)
 		}
 	}
 	return seen;
+}
+
+export function clockwise(dir: Dir): Dir {
+	return { up: 'right', right: 'down', down: 'left', left: 'up' }[dir] as Dir;
+}
+
+/** Aisle steps between two cells (breadth first through open cells), Infinity beyond the limit */
+export function aisleDistance(level: Level, from: Cell, to: Cell, limit: number): number {
+	if (sameCell(from, to)) return 0;
+	const seen = new Set([`${from.row},${from.col}`]);
+	let frontier = [from];
+	for (let distance = 1; distance <= limit; distance++) {
+		const next: Cell[] = [];
+		for (const cell of frontier) {
+			for (const dir of DIRS) {
+				const step = { row: cell.row + DELTAS[dir].row, col: cell.col + DELTAS[dir].col };
+				const key = `${step.row},${step.col}`;
+				if (seen.has(key) || isWall(level, step)) continue;
+				if (sameCell(step, to)) return distance;
+				seen.add(key);
+				next.push(step);
+			}
+		}
+		frontier = next;
+	}
+	return Infinity;
 }

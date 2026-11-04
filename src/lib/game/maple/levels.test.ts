@@ -37,7 +37,8 @@ describe('maple levels', () => {
 
 	it('start unseen, and bring in the guards and the boss gradually', () => {
 		for (const level of LEVELS) expect(spottedBy(createGame(level)), level.id).toBe(-1);
-		expect(LEVELS[0].guards).toHaveLength(0);
+		expect(LEVELS[0].guards).toHaveLength(1);
+		expect(LEVELS[0].guards[0].mode).toBe('sentry');
 		expect(LEVELS[1].guards).toHaveLength(1);
 		expect(LEVELS.some((level) => level.guards.some((guard) => guard.boss))).toBe(true);
 		expect(LEVELS[9].guards.length).toBeGreaterThan(LEVELS[1].guards.length);
@@ -52,4 +53,18 @@ describe('maple levels', () => {
 			expect(LEVEL_SPECS[index].par, level.id).toBeLessThanOrEqual(Math.round(fewest * 1.2) + 3);
 		}
 	}, 60_000);
+});
+
+describe('maple level progression', () => {
+	it('introduces every mechanic and gets harder', () => {
+		const modes = new Set(LEVELS.flatMap((level) => level.guards.map((guard) => guard.mode)));
+		expect([...modes].sort()).toEqual(['loop', 'patrol', 'sentry']);
+		expect(LEVELS.some((level) => level.lever !== null)).toBe(true);
+		expect(LEVELS.some((level) => level.golden.some(Boolean))).toBe(true);
+		expect(LEVELS.some((level) => level.pads.some((pad) => pad.kind === 'coffee'))).toBe(true);
+		expect(LEVELS.some((level) => level.pads.some((pad) => pad.kind === 'toque'))).toBe(true);
+		// Every level has at least one guard: no free first lap any more
+		for (const level of LEVELS) expect(level.guards.length, level.id).toBeGreaterThan(0);
+		expect(LEVELS[9].par).toBeGreaterThan(LEVELS[0].par * 4);
+	});
 });

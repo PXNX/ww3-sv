@@ -4,17 +4,29 @@ import {
 	HEAVY_AT,
 	PAR_MOVE_POINTS,
 	SPOTTED_PENALTY,
-	STARTING_HEARTS
+	STARTING_HEARTS,
+	COFFEE_TICKS,
+	GOLDEN_POINTS,
+	NOISE_RADIUS,
+	TOQUE_TICKS,
+	UNDOS_PER_LEVEL,
+	UNDO_PENALTY
 } from './config.js';
-import { parseLevel, type Dir, type LevelSpec } from './level.js';
+import { aisleDistance, parseLevel, type Dir, type LevelSpec } from './level.js';
 import {
 	carried,
 	cellsSeenBy,
 	cloneState,
 	createGame,
+	goldenInTow,
+	noiseRadius,
 	guardCell,
 	isHeavy,
 	move,
+	rewindsLeft,
+	rewound,
+	scoreBreakdown,
+	useGadget,
 	scoreOf,
 	spottedBy,
 	starsFor,
@@ -49,7 +61,7 @@ const patrol = () => ({
 describe('moving the cart', () => {
 	it('steps one cell per move and counts the tick', () => {
 		const state = game(lane());
-		expect(move(state, 'right')).toEqual([{ type: 'move' }]);
+		expect(move(state, 'right')).toContainEqual({ type: 'move' });
 		expect(state.cart[0]).toEqual({ row: 1, col: 2 });
 		expect(state.moves).toBe(1);
 	});
@@ -66,7 +78,12 @@ describe('moving the cart', () => {
 		const state = game(lane());
 		walk(state, 'right');
 		const events = move(state, 'right');
-		expect(events).toContainEqual({ type: 'pickup', cell: { row: 1, col: 3 }, carried: 1 });
+		expect(events).toContainEqual({
+			type: 'pickup',
+			cell: { row: 1, col: 3 },
+			carried: 1,
+			golden: false
+		});
 		expect(carried(state)).toBe(1);
 		expect(state.barrels).toEqual(['cart']);
 		expect(state.cart).toEqual([
@@ -109,7 +126,7 @@ describe('delivering', () => {
 		const state = game(lane());
 		walk(state, 'right', 'right', 'right');
 		const events = move(state, 'right');
-		expect(events).toContainEqual({ type: 'deliver', count: 1 });
+		expect(events).toContainEqual({ type: 'deliver', count: 1, golden: 0 });
 		expect(events).toContainEqual({ type: 'win' });
 		expect(state.phase).toBe('won');
 		expect(state.delivered).toBe(1);
@@ -327,5 +344,250 @@ describe('cloneState', () => {
 		expect(state.moves).toBe(0);
 		expect(state.barrels).toEqual(['floor']);
 		expect(state.guards[0].index).toBe(0);
+	});
+});
+
+describe('guard routines', () => {
+	const hall = ['#########', '#S.....T#', '#.......#', '#########'];
+
+	it('a sentry stays put and turns clockwise on schedule', () => {
+		const state = game({
+			map: hall,
+			guards: [{ mode: 'sentry', waypoints: [[2, 4]], facing: 'up', turnEvery: 2 }]
+		});
+		const facings: string[] = [];
+		for (let i = 0; i < 4; i++) {
+			state.cart = [{ row: 1, col: 1 }];
+			wait(state);
+			facings.push(state.guards[0].facing);
+		}
+		expect(facings).toEqual(['up', 'right', 'right', 'down']);
+		expect(guardCell(state, 0)).toEqual({ row: 2, col: 4 });
+	});
+
+	it('a loop walks around and never turns back', () => {
+		const state = game({
+			map: ['######', '#S..T#', '#....#', '######'],
+			guards: [
+				{
+					mode: 'loop',
+					waypoints: [
+						[1, 3],
+						[2, 3],
+						[2, 2],
+						[1, 2]
+					]
+				}
+			]
+		});
+		const cells: string[] = [];
+		for (let i = 0; i < 5; i++) {
+			cells.push(`${guardCell(state, 0).row},${guardCell(state, 0).col}`);
+			state.cart = [{ row: 1, col: 1 }];
+			state.hidden = 9;
+			wait(state);
+		}
+		expect(cells).toEqual(['1,3', '2,3', '2,2', '1,2', '1,3']);
+	});
+
+	it('a patrol stands still at the ends for its dwell time', () => {
+		const state = game({
+			map: ['#######', '#S...T#', '#.....#', '#######'],
+			guards: [
+				{
+					dwell: 2,
+					waypoints: [
+						[2, 4],
+						[2, 5]
+					]
+				}
+			]
+		});
+		const cells: number[] = [];
+		for (let i = 0; i < 6; i++) {
+			state.hidden = 9;
+			wait(state);
+			cells.push(guardCell(state, 0).col);
+		}
+		// Steps to the end, stands for two ticks and the turn, then walks back
+		expect(cells).toEqual([5, 5, 5, 5, 4, 4]);
+	});
+});
+
+describe('noise', () => {
+	const aisle = () => ({
+		map: ['#########', '#S.....T#', '#.#####.#', '#.......#', '#########'],
+		guards: [
+			{
+				mode: 'sentry' as const,
+				waypoints: [[3, 4]] as [number, number][],
+				facing: 'up' as const,
+				turnEvery: 99
+			}
+		]
+	});
+
+	it('makes a moose in earshot turn to face the cart', () => {
+		const state = game(aisle());
+		state.cart = [{ row: 3, col: 2 }];
+		state.hidden = 0;
+		const events = move(state, 'right');
+		expect(events).toContainEqual({ type: 'alert', guards: [0] });
+		// The moose turned to the noise and now has the cart in its cone
+		expect(events).toContainEqual({ type: 'spotted', guard: 0, dropped: 0 });
+	});
+
+	it('is silent when waiting, and out of range does nothing', () => {
+		const state = game(aisle());
+		state.cart = [{ row: 3, col: 3 }];
+		expect(wait(state)).not.toContainEqual(expect.objectContaining({ type: 'alert' }));
+		const far = game(aisle());
+		const events = move(far, 'right');
+		expect(events).not.toContainEqual(expect.objectContaining({ type: 'alert' }));
+		expect(far.noise?.radius).toBe(NOISE_RADIUS);
+	});
+
+	it('does not travel through shelves, and is louder for a golden barrel', () => {
+		const state = game({
+			...aisle(),
+			map: ['#########', '#SG....T#', '#.#####.#', '#.......#', '#########']
+		});
+		expect(noiseRadius(state)).toBe(NOISE_RADIUS);
+		move(state, 'right');
+		expect(noiseRadius(state)).toBe(NOISE_RADIUS + 1);
+		expect(goldenInTow(state)).toBe(1);
+		expect(aisleDistance(state.level, { row: 1, col: 2 }, { row: 3, col: 2 }, 2)).toBe(Infinity);
+	});
+});
+
+describe('gadgets', () => {
+	const pads = () => ({
+		map: ['#########', '#SCH...T#', '#.......#', '#########'],
+		guards: [
+			{
+				mode: 'sentry' as const,
+				waypoints: [[2, 7]] as [number, number][],
+				facing: 'up' as const,
+				turnEvery: 99
+			}
+		]
+	});
+
+	it('picks up a gadget from a pad, and swaps with the one in hand', () => {
+		const state = game(pads());
+		expect(move(state, 'right')).toContainEqual({ type: 'gadget', kind: 'coffee', swapped: null });
+		expect(state.gadget).toBe('coffee');
+		expect(state.pads[0]).toBeNull();
+		expect(move(state, 'right')).toContainEqual({
+			type: 'gadget',
+			kind: 'toque',
+			swapped: 'coffee'
+		});
+		expect(state.gadget).toBe('toque');
+		expect(state.pads[1]).toBe('coffee');
+	});
+
+	it('coffee freezes the moose for a few ticks and costs a tick', () => {
+		const state = game({
+			map: ['#########', '#SC....T#', '#.......#', '#########'],
+			guards: [
+				{
+					waypoints: [
+						[2, 7],
+						[2, 3]
+					]
+				}
+			]
+		});
+		move(state, 'right');
+		const moves = state.moves;
+		expect(useGadget(state)).toContainEqual({ type: 'use', kind: 'coffee' });
+		expect(state.moves).toBe(moves + 1);
+		expect(state.gadget).toBeNull();
+		expect(state.freeze).toBe(COFFEE_TICKS - 1);
+		const at = { ...guardCell(state, 0) };
+		for (let i = 0; i < COFFEE_TICKS - 1; i++) {
+			state.cart = [{ row: 1, col: 1 }];
+			wait(state);
+			expect(guardCell(state, 0)).toEqual(at);
+		}
+		state.cart = [{ row: 1, col: 1 }];
+		state.hidden = 9;
+		wait(state);
+		expect(guardCell(state, 0)).not.toEqual(at);
+	});
+
+	it('the toque hides the cart from cones and makes no noise, then wears off', () => {
+		const state = game({
+			map: ['#########', '#SH....T#', '#.......#', '#########'],
+			guards: [{ mode: 'sentry', waypoints: [[1, 6]], facing: 'left', turnEvery: 99 }]
+		});
+		move(state, 'right');
+		useGadget(state);
+		expect(state.hidden).toBeGreaterThan(0);
+		const events = move(state, 'right');
+		expect(events).not.toContainEqual(expect.objectContaining({ type: 'noise' }));
+		expect(state.spotted).toBe(0);
+		for (let i = 0; i < TOQUE_TICKS; i++) {
+			state.cart = [{ row: 2, col: 1 }];
+			wait(state);
+		}
+		expect(state.hidden).toBe(0);
+	});
+
+	it('using nothing costs nothing', () => {
+		const state = game(pads());
+		expect(useGadget(state)).toEqual([]);
+		expect(state.moves).toBe(0);
+	});
+});
+
+describe('the lever', () => {
+	it('keeps the truck locked until it is pulled, and says so', () => {
+		const state = game({ map: ['#########', '#SBTL...#', '#########'] });
+		walk(state, 'right');
+		const events = move(state, 'right');
+		expect(events).toContainEqual({ type: 'locked' });
+		expect(state.delivered).toBe(0);
+		expect(state.phase).toBe('playing');
+		expect(state.lever).toBe(false);
+	});
+
+	it('opens the truck once pulled', () => {
+		const state = game({ map: ['#########', '#SBL..T.#', '#########'] });
+		walk(state, 'right');
+		const pull = move(state, 'right');
+		expect(pull).toContainEqual({ type: 'lever', cell: { row: 1, col: 3 } });
+		expect(state.lever).toBe(true);
+		walk(state, 'right', 'right', 'right');
+		expect(state.phase).toBe('won');
+	});
+});
+
+describe('golden barrels, rewinds and the breakdown', () => {
+	it('count for more points', () => {
+		const state = game({ map: ['#######', '#SG.T##', '#######'], par: 3 });
+		walk(state, 'right', 'right', 'right');
+		expect(state.goldenDelivered).toBe(1);
+		const lines = scoreBreakdown(state);
+		expect(lines.barrels).toBe(BARREL_POINTS);
+		expect(lines.golden).toBe(GOLDEN_POINTS - BARREL_POINTS);
+		expect(lines.total).toBe(GOLDEN_POINTS);
+	});
+
+	it('a rewind goes back to a snapshot, is counted, costs points and runs out', () => {
+		const state = game(lane());
+		const snapshot = cloneState(state);
+		move(state, 'right');
+		const back = rewound(state, snapshot);
+		expect(back.moves).toBe(0);
+		expect(back.cart).toEqual(snapshot.cart);
+		expect(back.undosUsed).toBe(1);
+		expect(rewindsLeft(back)).toBe(UNDOS_PER_LEVEL - 1);
+		expect(rewindsLeft({ ...back, undosUsed: 9 })).toBe(0);
+		const won = game({ ...lane(), par: 4 });
+		won.undosUsed = 2;
+		walk(won, 'right', 'right', 'right', 'right');
+		expect(scoreBreakdown(won).rewinds).toBe(2 * UNDO_PENALTY);
 	});
 });

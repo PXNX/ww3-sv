@@ -1,7 +1,8 @@
 /*
  * Breadth-first solver, used by the tests to prove that every level can be finished cleanly: it
  * looks for the fewest ticks that bring every barrel to the truck without a single spotting.
- * Waiting is allowed, because letting a moose walk on is part of the puzzle.
+ * Waiting is allowed, because letting a moose walk on is part of the puzzle. Gadgets and rewinds
+ * are never used: a level has to be solvable without them.
  */
 import { DIRS, type Dir, type Level } from './level.js';
 import { cloneState, createGame, move, wait, type GameState } from './state.js';
@@ -15,8 +16,10 @@ export interface Solution {
 
 function keyOf(state: GameState): string {
 	const cart = state.cart.map((cell) => `${cell.row},${cell.col}`).join(';');
-	const guards = state.guards.map((guard) => `${guard.index}${guard.way}`).join('');
-	return `${cart}|${state.barrels.map((status) => status[0]).join('')}|${guards}`;
+	const guards = state.guards
+		.map((guard) => `${guard.index}${guard.way}${guard.facing[0]}${guard.rest}`)
+		.join('');
+	return `${cart}|${state.barrels.map((status) => status[0]).join('')}|${guards}|${state.lever ? 1 : 0}`;
 }
 
 /** The shortest clean run that delivers every barrel, null when there is none within the limit */

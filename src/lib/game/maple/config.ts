@@ -25,3 +25,24 @@ export const SPOTTED_PENALTY = 50;
 
 /** Pancakes in the ending stack never grow taller than this, however many barrels got home */
 export const MAX_PANCAKES = 12;
+
+/** Noise: every step of the cart is heard by the moose within this many aisle steps */
+export const NOISE_RADIUS = 1;
+
+/** A heavy cart and a golden barrel in tow each make the cart louder by this much */
+export const NOISE_HEAVY_BONUS = 1;
+export const NOISE_GOLDEN_BONUS = 1;
+
+/** Gadgets: how many ticks the coffee freezes the moose and the toque hides the cart (the tick of use counts) */
+export const COFFEE_TICKS = 4;
+export const TOQUE_TICKS = 6;
+
+/** A moose that stands guard turns clockwise this often when a level does not say otherwise */
+export const SENTRY_TURN_EVERY = 2;
+
+/** Rewinds per level: each takes back one tick and costs a few points */
+export const UNDOS_PER_LEVEL = 3;
+export const UNDO_PENALTY = 25;
+
+/** A golden barrel is worth this many points instead of BARREL_POINTS */
+export const GOLDEN_POINTS = 300;

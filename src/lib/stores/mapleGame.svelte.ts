@@ -5,7 +5,7 @@
  * the HUD update; `message` is the short line of news for the last tick.
  */
 import { STARTING_HEARTS } from '#lib/game/maple/config.js';
-import type { Dir } from '#lib/game/maple/level.js';
+import type { Cell, Dir, GadgetKind } from '#lib/game/maple/level.js';
 import { LEVEL_IDS, levelAt } from '#lib/game/maple/levels.js';
 import { drawWarehousePreview } from '#lib/game/maple/preview.js';
 import {
@@ -21,12 +21,18 @@ import {
 	cloneState,
 	createGame,
 	isHeavy,
+	isTick,
 	move,
+	rewindsLeft,
+	rewound,
+	scoreBreakdown,
 	scoreOf,
+	useGadget,
 	wait,
 	type GameState,
 	type MapleEvent
 } from '#lib/game/maple/state.js';
+import { haptic } from '#lib/haptic/haptic.svelte.js';
 import { m } from '#lib/paraglide/messages.js';
 import { highscores, type Highscores } from '#lib/services/highscore.js';
 import { localStore, type Store } from '#lib/services/storage.js';
@@ -35,6 +41,22 @@ import type { SoundId } from '#lib/sound/sounds.js';
 
 export type MapleScreen = 'select' | 'play';
 export type MapleStatus = 'playing' | 'won' | 'over';
+
+/** A short-lived particle for the field: a dust puff, a spark, a coin. It removes itself when its animation ends. */
+export interface MapleFx {
+	id: number;
+	kind: 'dust' | 'spark' | 'coin' | 'pulse';
+	cell: Cell;
+	/** Where it flies, in cell units, and how high it hops first */
+	dx: number;
+	up: number;
+	fall: number;
+	/** The size of a noise pulse in cells */
+	radius?: number;
+}
+
+/** Rewind snapshots kept per level */
+const HISTORY_LIMIT = 300;
 
 export { LEVEL_IDS };
 
@@ -62,6 +84,14 @@ export class MapleGame {
 	isNewBest = $state(false);
 	best = $state<number | null>(null);
 	progress = $state<MapleProgress>(EMPTY_PROGRESS);
+	/** Counts every cart step, with its direction, so the field can squash and stretch the cart */
+	moveSeq = $state(0);
+	lastDir = $state<Dir>('right');
+	/** Counts up when a moose turns to look at a noise, and when the truck turns out to be locked */
+	alertCount = $state(0);
+	fx = $state<MapleFx[]>([]);
+	#history: GameState[] = [];
+	#fxId = 0;
 
 	readonly reducedMotion: boolean;
 	#scores: () => Highscores;
@@ -134,6 +164,22 @@ export class MapleGame {
 		return this.state.spotted;
 	}
 
+	get rewinds(): number {
+		return rewindsLeft(this.state);
+	}
+
+	get canRewind(): boolean {
+		return this.state.phase === 'playing' && this.#history.length > 0 && this.rewinds > 0;
+	}
+
+	get gadget(): GadgetKind | null {
+		return this.state.gadget;
+	}
+
+	get breakdown() {
+		return scoreBreakdown(this.state);
+	}
+
 	get stars(): number {
 		return this.state.stars;
 	}
@@ -163,6 +209,10 @@ export class MapleGame {
 		this.state = createGame(level);
 		this.message = '';
 		this.hurtCount = 0;
+		this.alertCount = 0;
+		this.moveSeq = 0;
+		this.fx = [];
+		this.#history = [];
 		this.isNewBest = false;
 		this.best = this.bestFor(level.id);
 		this.screen = 'play';
@@ -183,13 +233,39 @@ export class MapleGame {
 	/** Pushes the cart one cell; a shelf or the cart's own barrels in the way cost nothing */
 	step(dir: Dir) {
 		if (this.screen !== 'play' || this.state.phase !== 'playing') return;
-		this.#run(move(this.state, dir));
+		this.lastDir = dir;
+		const before = cloneState(this.state);
+		this.#run(move(this.state, dir), before);
+	}
+
+	/** Uses the gadget in hand (coffee freezes the moose, the toque hides the cart); takes a tick */
+	useGadget() {
+		if (this.screen !== 'play' || this.state.phase !== 'playing') return;
+		const before = cloneState(this.state);
+		this.#run(useGadget(this.state), before);
+	}
+
+	/** Takes back the last tick, a limited number of times per level */
+	rewind() {
+		if (this.screen !== 'play' || !this.canRewind) return;
+		const snapshot = this.#history.pop() as GameState;
+		this.state = rewound(this.state, snapshot);
+		this.message = m.maple_popup_rewind({ left: this.rewinds });
+		this.fx = [];
+		this.#play('maple-rewind');
+		haptic().play(0.3);
+	}
+
+	/** Called by the field when a particle's animation has ended */
+	dropFx(id: number) {
+		this.fx = this.fx.filter((item) => item.id !== id);
 	}
 
 	/** Lets one tick pass without moving, so the moose walk on */
 	waitTick() {
 		if (this.screen !== 'play' || this.state.phase !== 'playing') return;
-		this.#run(wait(this.state));
+		const before = cloneState(this.state);
+		this.#run(wait(this.state), before);
 	}
 
 	/** Draws the warehouse onto the shared score card */
@@ -201,7 +277,34 @@ export class MapleGame {
 		soundManager().play(id, intensity);
 	}
 
-	#run(events: MapleEvent[]) {
+	#spawn(kind: MapleFx['kind'], cell: Cell, count = 1, radius?: number) {
+		if (this.reducedMotion) return;
+		for (let i = 0; i < count; i++) {
+			const side = count === 1 ? 0 : (i / (count - 1) - 0.5) * 2;
+			this.fx.push({
+				id: ++this.#fxId,
+				kind,
+				cell,
+				dx: side * 1.1 + (Math.random() - 0.5) * 0.3,
+				up: 0.5 + Math.random() * 0.7,
+				fall: 0.6 + Math.random() * 0.4,
+				radius
+			});
+		}
+		if (this.fx.length > 60) this.fx = this.fx.slice(-60);
+	}
+
+	/** `before` is a copy of the state from before the tick: what a rewind goes back to */
+	#run(events: MapleEvent[], before: GameState) {
+		if (events.length === 0) return;
+		if (isTick(events)) {
+			this.#history.push(before);
+			if (this.#history.length > HISTORY_LIMIT) this.#history.shift();
+		} else {
+			// A bump: no tick, but the cart nudges and thuds
+			this.#handle(events[0]);
+			return;
+		}
 		for (const event of events) this.#handle(event);
 		// A fresh copy, so everything that reads the state redraws
 		this.state = cloneState(this.state);
@@ -213,7 +316,9 @@ export class MapleGame {
 		switch (event.type) {
 			case 'move':
 				this.message = '';
+				this.moveSeq += 1;
 				this.#play('click', 0.5);
+				this.#spawn('dust', this.state.cart[0], 2);
 				break;
 			case 'wait':
 				this.message = '';
@@ -221,14 +326,51 @@ export class MapleGame {
 				break;
 			case 'bump':
 				this.#play('thud', 0.4);
+				haptic().play(0.15);
 				break;
 			case 'pickup':
 				this.message = m.maple_popup_pickup({ count: event.carried });
-				this.#play('pickup');
+				this.#play(event.golden ? 'sparkle' : 'pickup');
+				haptic().play(event.golden ? 0.5 : 0.25);
+				this.#spawn('spark', event.cell, event.golden ? 8 : 4);
 				break;
 			case 'deliver':
 				this.message = m.maple_popup_deliver({ count: event.count });
 				this.#play('chime');
+				haptic().play(0.5);
+				this.#spawn('coin', this.state.level.truck, 3 + event.count * 2);
+				break;
+			case 'locked':
+				this.message = m.maple_popup_locked();
+				this.#play('ui-error');
+				haptic().play(0.3);
+				break;
+			case 'lever':
+				this.message = m.maple_popup_lever();
+				this.#play('maple-lever');
+				haptic().play(0.6);
+				this.#spawn('spark', event.cell, 6);
+				break;
+			case 'gadget':
+				this.message =
+					event.kind === 'coffee' ? m.maple_popup_coffee_picked() : m.maple_popup_toque_picked();
+				this.#play('maple-gadget');
+				haptic().play(0.3);
+				this.#spawn('spark', this.state.cart[0], 4);
+				break;
+			case 'use':
+				this.message = event.kind === 'coffee' ? m.maple_popup_coffee() : m.maple_popup_toque();
+				this.#play('maple-gadget', 1);
+				haptic().play(0.45);
+				this.#spawn('spark', this.state.cart[0], 8);
+				break;
+			case 'noise':
+				this.#spawn('pulse', event.cell, 1, event.radius);
+				break;
+			case 'alert':
+				this.alertCount += 1;
+				this.#play('maple-alert', 0.8);
+				haptic().play(0.2);
 				break;
 			case 'creak':
 				this.message = m.maple_popup_creak();
@@ -239,11 +381,15 @@ export class MapleGame {
 				this.message = m.maple_sorry();
 				this.#play('hit');
 				this.#play('alarm', 0.5);
+				haptic().play(0.9);
 				break;
 			case 'win':
 				this.#play('chime-big');
+				haptic().play(0.8);
+				this.#spawn('coin', this.state.level.truck, 12);
 				break;
 			case 'game-over':
+				haptic().play(1);
 				break;
 		}
 	}

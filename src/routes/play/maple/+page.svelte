@@ -21,11 +21,14 @@
 	import { firstPlay } from '#lib/services/tutorial.js';
 	import { cameoAsset } from '#lib/theme/cameos.js';
 	import { MapleGame } from '#lib/stores/mapleGame.svelte.js';
+	import IconCoffee from '~icons/lucide/coffee';
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconHourglass from '~icons/lucide/hourglass';
 	import IconLeaf from '~icons/lucide/leaf';
 	import IconList from '~icons/lucide/list';
+	import IconLock from '~icons/lucide/lock';
 	import IconRotate from '~icons/lucide/rotate-ccw';
+	import IconUndo from '~icons/lucide/undo-2';
 
 	const game = new MapleGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_maple_name();
@@ -50,6 +53,13 @@
 		playing ? `${modeName} · ${m.maple_level_label({ number: game.levelIndex + 1 })}` : modeName
 	);
 	const level = $derived(game.state.level);
+	const gadgetName = $derived(
+		game.gadget === 'coffee'
+			? m.maple_gadget_coffee()
+			: game.gadget === 'toque'
+				? m.maple_gadget_toque()
+				: m.maple_gadget_none()
+	);
 </script>
 
 <GameShell
@@ -106,6 +116,23 @@
 				</p>
 			</div>
 
+			<!-- Objectives: the lever that opens the truck, the gadget in hand, the rewinds left -->
+			<div
+				class="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm font-semibold"
+			>
+				{#if level.lever}
+					<p dir="auto" class="flex items-center gap-1">
+						<IconLock class="size-4 shrink-0" aria-hidden="true" />
+						{game.state.lever ? m.maple_hud_truck_open() : m.maple_hud_truck_locked()}
+					</p>
+				{/if}
+				<p dir="auto" class="flex items-center gap-1">
+					<IconCoffee class="size-4 shrink-0" aria-hidden="true" />
+					{m.maple_hud_gadget({ name: gadgetName })}
+				</p>
+				<p dir="auto" class="tabular-nums">{m.maple_hud_rewinds({ left: game.rewinds })}</p>
+			</div>
+
 			<!-- The sign on the warehouse wall -->
 			<p
 				dir="auto"
@@ -136,6 +163,24 @@
 					<button
 						type="button"
 						class="btn-chunky px-3 py-1 text-sm"
+						disabled={!running || game.gadget === null}
+						onclick={() => game.useGadget()}
+					>
+						<IconCoffee class="size-4" aria-hidden="true" />
+						{m.maple_gadget_use()}
+					</button>
+					<button
+						type="button"
+						class="btn-chunky px-3 py-1 text-sm"
+						disabled={!game.canRewind}
+						onclick={() => game.rewind()}
+					>
+						<IconUndo class="size-4" aria-hidden="true" />
+						{m.maple_rewind({ left: game.rewinds })}
+					</button>
+					<button
+						type="button"
+						class="btn-chunky px-3 py-1 text-sm"
 						disabled={game.moves === 0}
 						onclick={() => game.retry()}
 					>
@@ -160,6 +205,9 @@
 		<p>{m.maple_tutorial_steer()}</p>
 		<p>{m.maple_tutorial_cart()}</p>
 		<p>{m.maple_tutorial_guards()}</p>
+		<p>{m.maple_tutorial_routines()}</p>
+		<p>{m.maple_tutorial_noise()}</p>
+		<p>{m.maple_tutorial_gadgets()}</p>
 		<p>{m.maple_tutorial_spotted()}</p>
 		<p>{m.maple_tutorial_stars()}</p>
 		<p class="hidden text-sm sm:block">{m.maple_tutorial_keys()}</p>
@@ -174,6 +222,7 @@
 		delivered={game.delivered}
 		totalBarrels={game.totalBarrels}
 		spotted={game.spotted}
+		breakdown={game.breakdown}
 		isNewBest={game.isNewBest}
 		hasNext={game.hasNextLevel}
 		{modeName}
