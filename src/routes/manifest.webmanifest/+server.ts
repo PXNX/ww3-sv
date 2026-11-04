@@ -23,8 +23,15 @@ export const GET: RequestHandler = () =>
 			background_color: THEME_COLOR,
 			theme_color: THEME_COLOR,
 			icons: [
-				{ src: '/brand/bomb.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
-				{ src: '/brand/app-icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' }
+				{ src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+				{ src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+				{
+					src: '/icons/icon-maskable-512.png',
+					sizes: '512x512',
+					type: 'image/png',
+					purpose: 'maskable'
+				},
+				{ src: '/brand/bomb.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }
 			],
 			prefer_related_applications: false
 		},
