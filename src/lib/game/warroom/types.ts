@@ -1,4 +1,5 @@
 /* Shared shapes of the War Room campaign. The state is a plain object the rules mutate. */
+import type { CrisisId, DirectiveId } from './council.js';
 import type { EquipmentId, FactoryId, Owner, RegionId, ResourceId, TemplateId } from './config.js';
 
 export interface Division {
@@ -22,7 +23,14 @@ export interface TrainingItem {
 	daysLeft: number;
 }
 
-export type Outcome = 'won' | 'lost' | 'armistice';
+export type Outcome = 'won' | 'lost' | 'armistice' | 'coup';
+
+/** One line of the campaign curve, taken at the start of each day */
+export interface HistoryPoint {
+	regions: number;
+	stability: number;
+	divisions: number;
+}
 
 export interface WarRoomState {
 	/** Day 1 is the first day; it becomes 31 when the armistice falls */
@@ -41,6 +49,19 @@ export interface WarRoomState {
 	losses: number;
 	outcome: Outcome | null;
 	score: number;
+	/** The home front, 0 to 100; at 0 the generals take over */
+	stability: number;
+	/** The crisis waiting for an answer, if any */
+	crisis: CrisisId | null;
+	crisesSeen: CrisisId[];
+	crisesHandled: number;
+	/** Marks left by earlier choices; they unlock follow-up crises */
+	flags: string[];
+	/** One directive per day */
+	directiveUsed: DirectiveId | null;
+	/** Days of counter-intelligence left: the Pact attacks more carefully */
+	intelDays: number;
+	history: HistoryPoint[];
 }
 
 export type WarRoomEvent =
@@ -61,4 +82,9 @@ export type WarRoomEvent =
 	| { type: 'built'; region: RegionId; factory: FactoryId }
 	| { type: 'starved'; factory: FactoryId }
 	| { type: 'day'; day: number }
+	| { type: 'crisis'; id: CrisisId }
+	| { type: 'crisisResolved'; id: CrisisId; option: string; neglected: boolean }
+	| { type: 'directive'; id: DirectiveId }
+	| { type: 'escalation'; tier: number }
+	| { type: 'stability'; value: number; delta: number }
 	| { type: 'over'; outcome: Outcome; score: number };

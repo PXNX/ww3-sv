@@ -364,3 +364,33 @@ export const SCORE_PER_KILL = 40;
 export const SCORE_LOSS_PENALTY = 30;
 export const SCORE_WIN_BONUS = 800;
 export const SCORE_DAY_BONUS = 25;
+
+// Home front
+export const STABILITY_START = 70;
+/** Below this the home front strikes: income drops and morale recovers slowly */
+export const STABILITY_LOW = 30;
+/** At or above this the nation pulls together and pays a little extra */
+export const STABILITY_HIGH = 75;
+export const STABILITY_LOW_INCOME = 0.75;
+export const STABILITY_HIGH_INCOME = 1.1;
+export const STABILITY_CAPTURE_GAIN = 4;
+export const STABILITY_LOSS_PENALTY = 8;
+/** Every day the home front drifts by this much, by how many regions are held */
+export const STABILITY_DRIFT_GOOD = 1;
+export const STABILITY_DRIFT_BAD = -2;
+export const SCORE_PER_STABILITY = 3;
+
+// Escalation: the Pact steps up on these days
+export const ESCALATION_DAYS = [10, 20] as const;
+export const ENEMY_CAP_PER_TIER = 2;
+/** Counter-intelligence makes the Pact attack only with this much more advantage */
+export const INTEL_RATIO_BONUS = 0.4;
+
+// Council
+export const CRISIS_FIRST_DAY = 3;
+export const CRISIS_EVERY = 3;
+
+/** 0 before day 10, 1 up to day 19 and 2 from day 20: how hard the Pact is pressing */
+export function escalationTier(day: number): number {
+	return ESCALATION_DAYS.filter((start) => day >= start).length;
+}

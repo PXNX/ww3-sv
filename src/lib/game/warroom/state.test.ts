@@ -6,6 +6,9 @@ import {
 	SCORE_WIN_BONUS,
 	SCORE_PER_REGION,
 	SCORE_DAY_BONUS,
+	SCORE_PER_STABILITY,
+	STABILITY_START,
+	escalationTier,
 	EXERCISE_MORALE_LOSS,
 	EXERCISE_SUPPLY_COST,
 	templateDef,
@@ -16,6 +19,10 @@ import {
 	battlePreview,
 	buildFactory,
 	canBuild,
+	canResolveCrisis,
+	canUseDirective,
+	resolveCrisis,
+	useDirective,
 	canExercise,
 	canOrder,
 	canTrain,
@@ -268,16 +275,20 @@ describe('War Room campaign end', () => {
 		endTurn(state, steady);
 		expect(state.day).toBe(MAX_DAYS + 1);
 		expect(state.outcome).toBe('armistice');
-		expect(state.score).toBe(heldRegions(state) * SCORE_PER_REGION);
+		expect(state.score).toBe(
+			heldRegions(state) * SCORE_PER_REGION + Math.round(state.stability) * SCORE_PER_STABILITY
+		);
 	});
 
 	it('scores regions, kills and losses, and adds the win bonus only for a win', () => {
 		const state = game();
 		state.kills = 2;
 		state.losses = 1;
-		expect(finalScore(state, null)).toBe(6 * SCORE_PER_REGION + 2 * 40 - 1 * 30);
+		const calm = state.stability * SCORE_PER_STABILITY;
+		expect(finalScore(state, null)).toBe(6 * SCORE_PER_REGION + 2 * 40 - 1 * 30 + calm);
 		expect(finalScore(state, 'won')).toBe(
-			6 * SCORE_PER_REGION +
+			calm +
+				6 * SCORE_PER_REGION +
 				2 * 40 -
 				1 * 30 +
 				SCORE_WIN_BONUS +
@@ -289,6 +300,131 @@ describe('War Room campaign end', () => {
 		const state = game();
 		state.outcome = 'won';
 		expect(endTurn(state, steady)).toEqual([]);
+	});
+});
+
+describe('War Room home front', () => {
+	it('starts calm and rises when ground is taken, falls when it is lost', () => {
+		const state = clearEnemy();
+		expect(state.stability).toBe(STABILITY_START);
+		state.divisions.marsh = [state.divisions.marsh[0], state.divisions.marsh[1]];
+		orderStack(state, 'marsh', 'plains', steady);
+		expect(state.stability).toBe(STABILITY_START + 4);
+	});
+
+	it('pays less income when the home front is restless and more when it is firm', () => {
+		const low = game();
+		low.stability = 10;
+		const firm = game();
+		firm.stability = 90;
+		const baseline = game();
+		endTurn(low, steady);
+		endTurn(firm, steady);
+		endTurn(baseline, steady);
+		expect(low.resources.steel).toBeLessThan(baseline.resources.steel);
+		expect(firm.resources.steel).toBeGreaterThan(baseline.resources.steel);
+	});
+
+	it('ends in a coup when stability reaches zero', () => {
+		const state = clearEnemy();
+		state.stability = 1;
+		for (const region of ['rustbelt', 'grain', 'tar'] as const) state.owner[region] = 'enemy';
+		const events = endTurn(state, steady);
+		expect(state.outcome).toBe('coup');
+		expect(events.some((event) => event.type === 'over')).toBe(true);
+	});
+
+	it('escalates the Pact in tiers', () => {
+		expect(escalationTier(9)).toBe(0);
+		expect(escalationTier(10)).toBe(1);
+		expect(escalationTier(20)).toBe(2);
+		const state = game();
+		state.day = 9;
+		const events = endTurn(state, steady);
+		expect(events).toContainEqual({ type: 'escalation', tier: 1 });
+	});
+});
+
+describe('War Room council', () => {
+	it('draws a crisis on day 3 and blocks nothing until the day ends', () => {
+		const state = game();
+		state.day = 2;
+		const events = endTurn(state, steady);
+		expect(state.day).toBe(3);
+		expect(state.crisis).not.toBeNull();
+		expect(events.some((event) => event.type === 'crisis')).toBe(true);
+		expect(state.history.length).toBeGreaterThan(1);
+	});
+
+	it('applies the effects and cost of a chosen option and clears the crisis', () => {
+		const state = game();
+		state.crisis = 'sabotage';
+		const oil = state.resources.oil;
+		const events = resolveCrisis(state, 0);
+		expect(state.crisis).toBeNull();
+		expect(state.resources.oil).toBe(oil - 8);
+		expect(state.flags).toContain('vigilant');
+		expect(state.crisesHandled).toBe(1);
+		expect(events[0]).toMatchObject({
+			type: 'crisisResolved',
+			option: 'counter',
+			neglected: false
+		});
+	});
+
+	it('refuses an option that is not affordable', () => {
+		const state = game();
+		state.crisis = 'sabotage';
+		state.resources.oil = 2;
+		expect(canResolveCrisis(state, 0)).toBe(false);
+		expect(resolveCrisis(state, 0)).toEqual([{ type: 'blocked' }]);
+		expect(state.crisis).toBe('sabotage');
+	});
+
+	it('punishes a crisis left unanswered when the day ends', () => {
+		const state = clearEnemy();
+		state.crisis = 'strike';
+		state.day = 4;
+		const events = endTurn(state, steady);
+		expect(events).toContainEqual({
+			type: 'crisisResolved',
+			id: 'strike',
+			option: 'neglect',
+			neglected: true
+		});
+		expect(state.stability).toBeLessThan(STABILITY_START);
+	});
+
+	it('chains a harsh crackdown into a later scandal', () => {
+		const state = game();
+		state.crisis = 'strike';
+		resolveCrisis(state, 1);
+		expect(state.flags).toContain('harsh');
+		state.crisis = null;
+		state.crisesSeen = ['strike'];
+		state.day = 5;
+		endTurn(state, steady);
+		expect(state.crisis).toBe('scandal');
+	});
+
+	it('allows one directive a day and resets it with the day', () => {
+		const state = clearEnemy();
+		expect(canUseDirective(state, 'propaganda')).toBe(true);
+		const events = useDirective(state, 'propaganda');
+		expect(events[0]).toEqual({ type: 'directive', id: 'propaganda' });
+		expect(state.stability).toBe(STABILITY_START + 10);
+		expect(state.resources.rare).toBe(15);
+		expect(canUseDirective(state, 'austerity')).toBe(false);
+		endTurn(state, steady);
+		expect(canUseDirective(state, 'austerity')).toBe(true);
+	});
+
+	it('makes counter-intelligence hold the Pact back for a while', () => {
+		const state = game();
+		useDirective(state, 'counterintel');
+		expect(state.intelDays).toBe(2);
+		endTurn(state, steady);
+		expect(state.intelDays).toBe(1);
 	});
 });
 

@@ -6,6 +6,20 @@
 import type { Random } from '#lib/game/random.js';
 import {
 	AI_ATTACK_RATIO,
+	ENEMY_CAP_PER_TIER,
+	ESCALATION_DAYS,
+	INTEL_RATIO_BONUS,
+	SCORE_PER_STABILITY,
+	STABILITY_CAPTURE_GAIN,
+	STABILITY_DRIFT_BAD,
+	STABILITY_DRIFT_GOOD,
+	STABILITY_HIGH,
+	STABILITY_HIGH_INCOME,
+	STABILITY_LOSS_PENALTY,
+	STABILITY_LOW,
+	STABILITY_LOW_INCOME,
+	STABILITY_START,
+	escalationTier,
 	COMBAT_LUCK,
 	ENEMY_MAX_DIVISIONS,
 	ENEMY_REINFORCE_EVERY,
@@ -41,6 +55,17 @@ import {
 	type RegionId,
 	type TemplateId
 } from './config.js';
+import {
+	NEGLECT_EFFECTS,
+	applyEffects,
+	canPay,
+	clampStability,
+	crisisDef,
+	directiveDef,
+	drawCrisis,
+	payCost,
+	type DirectiveId
+} from './council.js';
 import type { Division, Outcome, TrainingItem, WarRoomEvent, WarRoomState } from './types.js';
 
 function emptyDivisions(): Record<RegionId, Division[]> {
@@ -64,7 +89,15 @@ export function createWarRoom(): WarRoomState {
 		kills: 0,
 		losses: 0,
 		outcome: null,
-		score: 0
+		score: 0,
+		stability: STABILITY_START,
+		crisis: null,
+		crisesSeen: [],
+		crisesHandled: 0,
+		flags: [],
+		directiveUsed: null,
+		intelDays: 0,
+		history: []
 	};
 	for (const seed of START_DIVISIONS) {
 		state.divisions[seed.region].push({
@@ -74,7 +107,16 @@ export function createWarRoom(): WarRoomState {
 			experience: 1
 		});
 	}
+	state.history.push(snapshot(state));
 	return state;
+}
+
+function snapshot(state: WarRoomState) {
+	return {
+		regions: heldRegions(state),
+		stability: Math.round(state.stability),
+		divisions: totalDivisions(state, 'player')
+	};
 }
 
 export function regionsOwnedBy(state: WarRoomState, owner: Owner): RegionId[] {
@@ -218,6 +260,13 @@ function capture(state: WarRoomState, region: RegionId, owner: Owner) {
 	state.buildings = state.buildings.filter((building) => building.region !== region);
 }
 
+/** Taking ground lifts the home front; losing it shakes it */
+function shiftStability(state: WarRoomState, attacker: Owner) {
+	state.stability = clampStability(
+		state.stability + (attacker === 'player' ? STABILITY_CAPTURE_GAIN : -STABILITY_LOSS_PENALTY)
+	);
+}
+
 /**
  * A defeated defender retreats into a friendly neighbour when there is one; a stack with nowhere
  * to go is destroyed. Returns how many were destroyed.
@@ -259,6 +308,7 @@ function fight(
 		state.divisions[to] = moving;
 		state.divisions[from] = [];
 		capture(state, to, attacker);
+		shiftStability(state, attacker);
 		events.push({ type: 'captured', region: to, by: attacker });
 		events.push({
 			type: 'battle',
@@ -302,6 +352,7 @@ function fight(
 		state.divisions[to] = moving;
 		state.divisions[from] = [];
 		capture(state, to, attacker);
+		shiftStability(state, attacker);
 		events.push({
 			type: 'battle',
 			region: to,
@@ -433,7 +484,8 @@ export function train(state: WarRoomState, template: TemplateId): boolean {
 function regenMorale(state: WarRoomState) {
 	const supplies = supplyMap(state);
 	for (const region of REGION_IDS) {
-		const gain = supplies[region] >= 60 ? MORALE_REGEN : MORALE_REGEN_LOW;
+		const gain =
+			supplies[region] >= 60 && state.stability >= STABILITY_LOW ? MORALE_REGEN : MORALE_REGEN_LOW;
 		for (const division of state.divisions[region]) {
 			division.morale = Math.min(100, division.morale + gain);
 			if (supplies[region] >= 60)
@@ -452,8 +504,8 @@ function pactTurn(state: WarRoomState, random: Random): WarRoomEvent[] {
 
 	const enemyTotal = totalDivisions(state, 'enemy');
 	if (
-		state.day % ENEMY_REINFORCE_EVERY === 0 &&
-		enemyTotal < ENEMY_MAX_DIVISIONS &&
+		state.day % (escalationTier(state.day) >= 2 ? 1 : ENEMY_REINFORCE_EVERY) === 0 &&
+		enemyTotal < ENEMY_MAX_DIVISIONS + escalationTier(state.day) * ENEMY_CAP_PER_TIER &&
 		state.owner.redcapital === 'enemy'
 	) {
 		state.divisions.redcapital.push({
@@ -479,14 +531,14 @@ function pactTurn(state: WarRoomState, random: Random): WarRoomEvent[] {
 		for (const to of regionDef(from).neighbors) {
 			if (state.owner[to] !== 'player') continue;
 			const preview = battlePreview(state, from, to);
-			if (preview.ratio >= AI_ATTACK_RATIO) {
+			if (preview.ratio >= AI_ATTACK_RATIO + (state.intelDays > 0 ? INTEL_RATIO_BONUS : 0)) {
 				candidates.push({ from, to, ratio: preview.ratio });
 			}
 		}
 	}
 	candidates.sort((a, b) => b.ratio - a.ratio);
 
-	let attacksLeft = state.day >= 10 ? 2 : 1;
+	let attacksLeft = 1 + escalationTier(state.day);
 	for (const candidate of candidates) {
 		if (attacksLeft <= 0) break;
 		if (
@@ -507,11 +559,26 @@ function pactTurn(state: WarRoomState, random: Random): WarRoomEvent[] {
 export function endTurn(state: WarRoomState, random: Random): WarRoomEvent[] {
 	if (state.outcome) return [];
 	const events: WarRoomEvent[] = [];
+	const stabilityBefore = state.stability;
 
+	if (state.crisis) {
+		const id = state.crisis;
+		applyEffects(state, NEGLECT_EFFECTS);
+		state.crisis = null;
+		state.crisesHandled += 1;
+		events.push({ type: 'crisisResolved', id, option: 'neglect', neglected: true });
+	}
+
+	const incomeFactor =
+		state.stability < STABILITY_LOW
+			? STABILITY_LOW_INCOME
+			: state.stability >= STABILITY_HIGH
+				? STABILITY_HIGH_INCOME
+				: 1;
 	for (const region of REGION_IDS) {
 		if (state.owner[region] !== 'player') continue;
 		const income = regionDef(region).income;
-		state.resources[income.resource] += income.amount;
+		state.resources[income.resource] += Math.round(income.amount * incomeFactor);
 	}
 
 	for (const building of [...state.buildings]) {
@@ -545,9 +612,36 @@ export function endTurn(state: WarRoomState, random: Random): WarRoomEvent[] {
 	regenMorale(state);
 	events.push(...pactTurn(state, random));
 
+	if (state.intelDays > 0) state.intelDays -= 1;
+
 	state.day += 1;
 	state.moved = [];
+	state.directiveUsed = null;
 	events.push({ type: 'day', day: state.day });
+
+	const held = heldRegions(state);
+	state.stability = clampStability(
+		state.stability + (held >= 5 ? STABILITY_DRIFT_GOOD : held <= 3 ? STABILITY_DRIFT_BAD : 0)
+	);
+	if ((ESCALATION_DAYS as readonly number[]).includes(state.day)) {
+		events.push({ type: 'escalation', tier: escalationTier(state.day) });
+	}
+
+	const crisis = state.outcome ? null : drawCrisis(state, random);
+	if (crisis) {
+		state.crisis = crisis;
+		state.crisesSeen.push(crisis);
+		events.push({ type: 'crisis', id: crisis });
+	}
+
+	if (state.stability !== stabilityBefore) {
+		events.push({
+			type: 'stability',
+			value: state.stability,
+			delta: state.stability - stabilityBefore
+		});
+	}
+	state.history.push(snapshot(state));
 
 	const settled = settle(state);
 	if (settled) events.push(settled);
@@ -563,7 +657,7 @@ export function finalScore(state: WarRoomState, outcome: Outcome | null = state.
 	const regions = heldRegions(state) * SCORE_PER_REGION;
 	const kills = state.kills * SCORE_PER_KILL;
 	const losses = state.losses * SCORE_LOSS_PENALTY;
-	let score = regions + kills - losses;
+	let score = regions + kills - losses + Math.round(state.stability) * SCORE_PER_STABILITY;
 	if (outcome === 'won') {
 		score += SCORE_WIN_BONUS + Math.max(0, MAX_DAYS - state.day) * SCORE_DAY_BONUS;
 	}
@@ -598,11 +692,63 @@ function settle(state: WarRoomState): WarRoomEvent | null {
 			? 'won'
 			: state.owner.capital === 'enemy'
 				? 'lost'
-				: state.day > MAX_DAYS
-					? 'armistice'
-					: null;
+				: state.stability <= 0
+					? 'coup'
+					: state.day > MAX_DAYS
+						? 'armistice'
+						: null;
 	if (!outcome) return null;
 	state.outcome = outcome;
 	state.score = finalScore(state, outcome);
 	return { type: 'over', outcome, score: state.score };
+}
+
+export function canResolveCrisis(state: WarRoomState, option: number): boolean {
+	if (state.outcome !== null || !state.crisis) return false;
+	const choice = crisisDef(state.crisis).options[option];
+	return choice !== undefined && canPay(state, choice.cost);
+}
+
+/** Answers the crisis on the desk with one of its two options */
+export function resolveCrisis(state: WarRoomState, option: number): WarRoomEvent[] {
+	if (!canResolveCrisis(state, option) || !state.crisis) return [{ type: 'blocked' }];
+	const id = state.crisis;
+	const choice = crisisDef(id).options[option];
+	const before = state.stability;
+	payCost(state, choice.cost);
+	applyEffects(state, choice.effects);
+	state.crisis = null;
+	state.crisesHandled += 1;
+	const events: WarRoomEvent[] = [
+		{ type: 'crisisResolved', id, option: choice.id, neglected: false }
+	];
+	if (state.stability !== before) {
+		events.push({ type: 'stability', value: state.stability, delta: state.stability - before });
+	}
+	const settled = settle(state);
+	if (settled) events.push(settled);
+	return events;
+}
+
+export function canUseDirective(state: WarRoomState, id: DirectiveId): boolean {
+	return (
+		state.outcome === null && state.directiveUsed === null && canPay(state, directiveDef(id).cost)
+	);
+}
+
+/** One directive a day: the council's standing orders, each at a price */
+export function useDirective(state: WarRoomState, id: DirectiveId): WarRoomEvent[] {
+	if (!canUseDirective(state, id)) return [{ type: 'blocked' }];
+	const def = directiveDef(id);
+	const before = state.stability;
+	payCost(state, def.cost);
+	applyEffects(state, def.effects);
+	state.directiveUsed = id;
+	const events: WarRoomEvent[] = [{ type: 'directive', id }];
+	if (state.stability !== before) {
+		events.push({ type: 'stability', value: state.stability, delta: state.stability - before });
+	}
+	const settled = settle(state);
+	if (settled) events.push(settled);
+	return events;
 }
