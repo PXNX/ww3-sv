@@ -8,6 +8,8 @@ import {
 	deal,
 	enemyLeft,
 	move,
+	repair,
+	starsFor,
 	talk,
 	weatherNow,
 	zonesLeft,
@@ -16,9 +18,12 @@ import {
 	type FalklandsState,
 	type Speed
 } from '#lib/game/falklands/state.js';
-import { DIPLOMACY_TARGET } from '#lib/game/falklands/config.js';
+import { DIPLOMACY_TARGET, MAX_HULL } from '#lib/game/falklands/config.js';
+import { legAt, type Zones } from '#lib/game/falklands/zones.js';
+import { haptic } from '#lib/haptic/haptic.svelte.js';
 import type { Weather } from '#lib/game/falklands/weather.js';
 import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
+import { hazardText } from '#lib/components/falklandsText.js';
 import { m } from '#lib/paraglide/messages.js';
 import { highscores, type Highscores } from '#lib/services/highscore.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
@@ -27,6 +32,13 @@ import type { SoundId } from '#lib/sound/sounds.js';
 export type FalklandsStatus = 'ready' | 'playing' | 'over';
 
 export const SCORE_KEY = ['falklands', 'score'] as const;
+
+function pickupNote(kind: 'tanker' | 'repair' | 'chaff' | 'intel', amount: number): string {
+	if (kind === 'tanker') return m.falklands_note_tanker({ fuel: amount });
+	if (kind === 'repair') return m.falklands_note_repair_crate({ hull: amount });
+	if (kind === 'chaff') return m.falklands_note_chaff_get();
+	return m.falklands_note_intel();
+}
 
 export interface FalklandsNote {
 	id: number;
@@ -53,6 +65,15 @@ export class FalklandsGame {
 	weather = $state.raw<Weather>('clear');
 	outcome = $state.raw<FalklandsOutcome | null>(null);
 	score = $state(0);
+	hull = $state(MAX_HULL);
+	chaff = $state(0);
+	streak = $state(0);
+	bestStreak = $state(0);
+	stars = $state(0);
+	leg = $state<1 | 2 | 3>(1);
+	zones = $state.raw<Zones>([]);
+	/** The playfield listens here to animate impacts, pickups and popups */
+	onEvents: ((events: FalklandsEvent[]) => void) | null = null;
 	note = $state.raw<FalklandsNote | null>(null);
 	best = $state<number | null>(null);
 	isNewBest = $state(false);
@@ -98,6 +119,12 @@ export class FalklandsGame {
 		this.#run(talk(this.state));
 	}
 
+	/** Spend a day patching the hull */
+	repair() {
+		if (this.status !== 'playing') return;
+		this.#run(repair(this.state));
+	}
+
 	/** Sign the peace deal once the talks have gone on long enough */
 	deal() {
 		if (this.status !== 'playing') return;
@@ -107,6 +134,7 @@ export class FalklandsGame {
 	#run(events: FalklandsEvent[]) {
 		for (const event of events) this.#handle(event);
 		if (events.length > 0) {
+			this.onEvents?.(events);
 			this.#sync();
 			if (this.state.phase === 'over') this.#finish();
 		}
@@ -116,15 +144,63 @@ export class FalklandsGame {
 		switch (event.type) {
 			case 'move':
 				this.#note(m.falklands_note_move({ zones: event.zones }));
-				this.#play('whoosh', 0.5);
+				this.#play('whoosh', event.speed === 'flank' ? 0.8 : event.speed === 'cruise' ? 0.5 : 0.3);
+				haptic().play(event.speed === 'flank' ? 0.25 : 0.1);
+				if (event.weather === 'storm') this.#play('thunder', 0.4);
+				break;
+			case 'hit':
+				this.#note(
+					m.falklands_note_hit({ hazard: hazardText(event.hazard), damage: event.damage })
+				);
+				this.#play(
+					event.hazard === 'mine' ? 'mine-explosion' : 'explosion-small',
+					0.6 + event.damage / 100
+				);
+				haptic().play(Math.min(1, 0.5 + event.damage / 60));
+				break;
+			case 'chaff':
+				this.#note(m.falklands_note_chaff({ hazard: hazardText(event.hazard) }));
+				this.#play('dome-pop', 0.7);
+				haptic().play(0.3);
+				break;
+			case 'swept':
+				this.#note(m.falklands_note_swept());
+				this.#play('sonar-ping', 0.6);
+				haptic().play(0.15);
+				break;
+			case 'pickup':
+				this.#note(pickupNote(event.kind, event.amount));
+				this.#play('pickup', 0.7);
+				haptic().play(0.2);
+				break;
+			case 'combo':
+				this.#note(m.falklands_note_streak({ count: event.streak, points: event.points }));
+				this.#play('ding', Math.min(1, 0.4 + event.streak * 0.1));
+				haptic().play(0.15);
+				break;
+			case 'leg':
+				this.#play('wave-horn', 0.7);
+				haptic().play(0.35);
+				break;
+			case 'repair':
+				this.#note(m.falklands_note_repair({ hull: event.gain }));
+				this.#play('hammer', 0.6);
+				haptic().play(0.2);
+				break;
+			case 'repair-none':
+				this.#note(m.falklands_note_repair_none());
+				this.#play('ui-error', 0.6);
+				haptic().play(0.15);
 				break;
 			case 'blocked':
 				this.#note(event.weather === 'storm' ? m.falklands_note_storm() : m.falklands_note_fog());
 				this.#play('ui-error', 0.8);
+				haptic().play(0.3);
 				break;
 			case 'shortfuel':
 				this.#note(m.falklands_note_shortfuel({ need: event.need }));
 				this.#play('ui-error', 0.8);
+				haptic().play(0.3);
 				break;
 			case 'talk':
 				this.#note(
@@ -133,19 +209,24 @@ export class FalklandsGame {
 						: m.falklands_note_talk({ talks: event.talks, target: DIPLOMACY_TARGET })
 				);
 				this.#play('ui-tap', 0.6);
+				haptic().play(0.1);
 				break;
 			case 'no-deal':
 				this.#note(m.falklands_note_nodeal({ talks: event.talks, target: DIPLOMACY_TARGET }));
 				this.#play('ui-error', 0.8);
+				haptic().play(0.3);
 				break;
 			case 'win':
 				this.#play('chime-big', 1);
+				haptic().play(0.8);
 				break;
 			case 'peace':
 				this.#play('chime', 0.9);
+				haptic().play(0.5);
 				break;
 			case 'lose':
-				this.#play('ui-error', 1);
+				this.#play(event.outcome === 'sunk' ? 'explosion-big' : 'ui-error', 1);
+				haptic().play(1);
 				break;
 		}
 	}
@@ -171,6 +252,13 @@ export class FalklandsGame {
 		this.weather = weatherNow(state);
 		this.outcome = state.outcome;
 		this.score = state.score;
+		this.hull = state.hull;
+		this.chaff = state.chaff;
+		this.streak = state.streak;
+		this.bestStreak = state.bestStreak;
+		this.leg = legAt(Math.min(state.playerAt + 1, state.zones.length - 1));
+		this.zones = [...state.zones];
+		this.stars = starsFor(state);
 	}
 
 	#finish() {

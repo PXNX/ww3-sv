@@ -4,22 +4,27 @@
 	it stays left to right and never scrolls.
 -->
 <script lang="ts">
-	import { DISTANCE, DIPLOMACY_TARGET, STORM_EXTRA_FUEL } from '#lib/game/falklands/config.js';
+	import {
+		DIPLOMACY_TARGET,
+		MAX_HULL,
+		REPAIR_HULL,
+		STORM_EXTRA_FUEL
+	} from '#lib/game/falklands/config.js';
 	import { SPEEDS, type Speed } from '#lib/game/falklands/state.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import type { FalklandsGame } from '#lib/stores/falklandsGame.svelte.js';
-	import { speedLabel, weatherEffect, weatherText } from './falklandsText.js';
+	import FalklandsSea from './FalklandsSea.svelte';
+	import { legText, speedLabel, weatherEffect, weatherText } from './falklandsText.js';
 	import IconCloud from '~icons/lucide/cloud';
 	import IconCloudFog from '~icons/lucide/cloud-fog';
 	import IconCloudLightning from '~icons/lucide/cloud-lightning';
 	import IconHandshake from '~icons/lucide/handshake';
 	import IconPlay from '~icons/lucide/play';
-	import IconShip from '~icons/lucide/ship';
+	import IconWrench from '~icons/lucide/wrench';
 
 	let { game }: { game: FalklandsGame } = $props();
 
 	const speeds: readonly Speed[] = ['slow', 'cruise', 'flank'];
-	const zones = $derived(Array.from({ length: DISTANCE + 1 }, (_, index) => index));
 	const playing = $derived(game.status === 'playing');
 	const storm = $derived(game.weather === 'storm');
 
@@ -44,6 +49,7 @@
 		if (event.code === 'Digit3') game.move('flank');
 		if (event.code === 'KeyT') game.talk();
 		if (event.code === 'KeyD') game.deal();
+		if (event.code === 'KeyR') game.repair();
 	}
 </script>
 
@@ -89,78 +95,41 @@
 		</div>
 	</div>
 
-	<!-- The chart: two tracks to the islands -->
+	<!-- Hull, chaff, streak and the current leg -->
 	<div
-		class="relative flex flex-col gap-1 rounded-md border-3 border-ink bg-[#8fb4c9] px-2 py-2"
-		role="group"
-		aria-label={m.falklands_aria_map()}
+		class="flex items-center justify-between gap-2 rounded-md border-2 border-ink bg-paper px-3 py-1 text-xs font-bold tabular-nums"
 	>
-		<!-- The islands at the end of the chart -->
-		<div class="absolute inset-y-0 right-1 flex flex-col justify-center" aria-hidden="true">
-			<div class="h-10 w-8 rounded-full border-2 border-ink bg-[#7f9a5e]"></div>
-		</div>
-
-		<div class="flex items-center gap-1.5">
-			<IconShip class="size-4 shrink-0 text-[#2f5d8a]" aria-hidden="true" />
-			<p dir="auto" class="min-w-0 flex-1 text-[0.7rem] leading-tight font-bold sm:text-xs">
-				{game.zonesLeft === 1
-					? m.falklands_hud_distance_one()
-					: m.falklands_hud_distance({ left: game.zonesLeft })}
-			</p>
-		</div>
-		<div class="relative mr-9 h-5" aria-hidden="true">
-			<div
-				class="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full border border-ink bg-paper/70"
-			></div>
-			{#each zones as zone (zone)}
+		<span dir="auto" class="truncate">{legText(game.leg)}</span>
+		<span class="flex shrink-0 items-center gap-2">
+			<span dir="auto">{m.falklands_hud_hull({ hull: game.hull })}</span>
+			<span class="h-2.5 w-12 overflow-hidden rounded-full border-2 border-ink bg-sand">
 				<span
-					class="absolute top-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-ink {zone <=
-					game.playerAt
-						? 'bg-[#2f5d8a]'
-						: 'bg-paper'}"
-					style:left="{(zone / DISTANCE) * 100}%"
+					class="block h-full transition-[width] duration-500 {game.hull > 40
+						? 'bg-[#8fd19e]'
+						: 'bg-tie-red'}"
+					style:width="{Math.max(0, Math.min(100, (game.hull / MAX_HULL) * 100))}%"
 				></span>
-			{/each}
-			<div
-				class="absolute top-1/2 flex h-6 w-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-sm border-2 border-ink bg-[#2f5d8a] text-[0.55rem] font-bold text-paper"
-				style:left="{(game.playerAt / DISTANCE) * 100}%"
-				aria-label={m.falklands_aria_taskforce()}
-				role="img"
-			>
-				TF
-			</div>
-		</div>
+			</span>
+			<span dir="auto">{m.falklands_hud_chaff({ count: game.chaff })}</span>
+			{#if game.streak >= 2}
+				<span dir="auto" class="text-[#a77a00]"
+					>{m.falklands_hud_streak({ count: game.streak })}</span
+				>
+			{/if}
+		</span>
+	</div>
 
-		<div class="mt-1 flex items-center gap-1.5">
-			<IconShip class="size-4 shrink-0 rotate-180 text-[#a34a3a]" aria-hidden="true" />
-			<p dir="auto" class="min-w-0 flex-1 text-[0.7rem] leading-tight font-bold sm:text-xs">
-				{game.enemyLeft === 1
-					? m.falklands_hud_enemy_one()
-					: m.falklands_hud_enemy({ left: game.enemyLeft })}
-			</p>
-		</div>
-		<div class="relative mr-9 h-5" aria-hidden="true">
-			<div
-				class="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full border border-ink bg-paper/70"
-			></div>
-			{#each zones as zone (zone)}
-				<span
-					class="absolute top-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-ink {zone <=
-					game.enemyAt
-						? 'bg-[#a34a3a]'
-						: 'bg-paper'}"
-					style:left="{(zone / DISTANCE) * 100}%"
-				></span>
-			{/each}
-			<div
-				class="absolute top-1/2 flex h-6 w-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-sm border-2 border-ink bg-[#a34a3a] text-[0.55rem] font-bold text-paper"
-				style:left="{(game.enemyAt / DISTANCE) * 100}%"
-				aria-label={m.falklands_aria_enemy()}
-				role="img"
-			>
-				TF
-			</div>
-		</div>
+	<!-- The animated chart -->
+	<div role="group" aria-label={m.falklands_aria_map()}>
+		<FalklandsSea {game} />
+		<p class="sr-only" aria-live="polite">
+			{game.zonesLeft === 1
+				? m.falklands_hud_distance_one()
+				: m.falklands_hud_distance({ left: game.zonesLeft })}
+			{game.enemyLeft === 1
+				? m.falklands_hud_enemy_one()
+				: m.falklands_hud_enemy({ left: game.enemyLeft })}
+		</p>
 	</div>
 
 	<!-- The three speeds, each worth a day and some fuel -->
@@ -183,7 +152,7 @@
 	</div>
 
 	<!-- The diplomatic track: talks take a day, the deal is the slower win -->
-	<div class="grid grid-cols-2 gap-1.5">
+	<div class="grid grid-cols-3 gap-1.5">
 		<button
 			type="button"
 			class="btn-chunky flex-col gap-0.5 px-2 py-2 text-xs leading-tight disabled:opacity-50 sm:text-sm"
@@ -205,6 +174,18 @@
 			<span dir="auto">{m.falklands_action_deal()}</span>
 			<span class="text-[0.65rem] tabular-nums sm:text-xs">
 				{m.falklands_hud_talks({ count: game.talks, target: DIPLOMACY_TARGET })}
+			</span>
+		</button>
+		<button
+			type="button"
+			class="btn-chunky flex-col gap-0.5 px-2 py-2 text-xs leading-tight disabled:opacity-50 sm:text-sm"
+			disabled={!playing || game.hull >= MAX_HULL}
+			onclick={() => game.repair()}
+		>
+			<IconWrench class="size-4" aria-hidden="true" />
+			<span dir="auto">{m.falklands_action_repair()}</span>
+			<span class="text-[0.65rem] tabular-nums sm:text-xs">
+				{m.falklands_repair_summary({ hull: REPAIR_HULL })}
 			</span>
 		</button>
 	</div>

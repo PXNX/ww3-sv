@@ -23,3 +23,15 @@ export function speedLabel(speed: Speed): string {
 	if (speed === 'flank') return m.falklands_action_flank();
 	return m.falklands_action_slow();
 }
+
+export function hazardText(hazard: 'mine' | 'sub' | 'raid'): string {
+	if (hazard === 'mine') return m.falklands_hazard_mine();
+	if (hazard === 'sub') return m.falklands_hazard_sub();
+	return m.falklands_hazard_raid();
+}
+
+export function legText(leg: 1 | 2 | 3): string {
+	if (leg === 2) return m.falklands_leg_mines();
+	if (leg === 3) return m.falklands_leg_air();
+	return m.falklands_leg_open();
+}

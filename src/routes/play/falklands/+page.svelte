@@ -32,7 +32,9 @@
 				? m.falklands_gameover_enemy()
 				: game.outcome === 'stranded'
 					? m.falklands_gameover_stranded()
-					: m.falklands_gameover_military()
+					: game.outcome === 'sunk'
+						? m.falklands_gameover_sunk()
+						: m.falklands_gameover_military()
 	);
 </script>
 
@@ -79,6 +81,9 @@
 		<p>{m.falklands_tutorial_speeds()}</p>
 		<p>{m.falklands_tutorial_weather()}</p>
 		<p>{m.falklands_tutorial_enemy()}</p>
+		<p>{m.falklands_tutorial_hazards()}</p>
+		<p>{m.falklands_tutorial_pickups()}</p>
+		<p>{m.falklands_tutorial_streak()}</p>
 		<p>{m.falklands_tutorial_peace()}</p>
 		<p>{m.falklands_tutorial_keys()}</p>
 	</TutorialModal>
@@ -93,6 +98,17 @@
 		drawBoard={game.drawBoard}
 		onRetry={() => game.start()}
 	>
+		<p
+			class="mb-2 flex justify-center gap-1 text-4xl"
+			role="img"
+			aria-label={m.falklands_stars_aria({ count: game.stars })}
+		>
+			{#each [1, 2, 3] as n (n)}
+				<span class="star-pop" class:opacity-25={n > game.stars} style:--n={n} aria-hidden="true"
+					>★</span
+				>
+			{/each}
+		</p>
 		<dl class="grid grid-cols-3 gap-2 font-display text-sm">
 			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
 				<dt class="font-bold">{m.falklands_stat_days()}</dt>
@@ -106,6 +122,35 @@
 				<dt class="font-bold">{m.falklands_stat_talks()}</dt>
 				<dd class="text-2xl font-bold tabular-nums">{game.talks}</dd>
 			</div>
+			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
+				<dt class="font-bold">{m.falklands_stat_hull()}</dt>
+				<dd class="text-2xl font-bold tabular-nums">{game.hull}</dd>
+			</div>
+			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
+				<dt class="font-bold">{m.falklands_stat_streak()}</dt>
+				<dd class="text-2xl font-bold tabular-nums">{game.bestStreak}</dd>
+			</div>
 		</dl>
 	</GameOverModal>
 </GameShell>
+
+<style>
+	.star-pop {
+		display: inline-block;
+		animation: star-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+		animation-delay: calc(var(--n) * 0.18s);
+	}
+	@keyframes star-pop {
+		from {
+			transform: scale(0) rotate(-40deg);
+		}
+		to {
+			transform: scale(1) rotate(0);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.star-pop {
+			animation: none;
+		}
+	}
+</style>
