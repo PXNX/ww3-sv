@@ -41,6 +41,21 @@ export interface TankerRoute {
 	to: Vec;
 }
 
+export interface PatrolRoute {
+	/** The oval the patrol boat cruises: its middle, its radii, the seconds for one lap and where on the oval it starts */
+	center: Vec;
+	rx: number;
+	ry: number;
+	period: number;
+	phase: number;
+}
+
+export interface Storm {
+	/** Seconds since the level began, and how long it lasts */
+	start: number;
+	duration: number;
+}
+
 export interface LevelSpec {
 	id: string;
 	seed: number;
@@ -58,6 +73,11 @@ export interface LevelSpec {
 	/** How far the boat can see through the fog, in units */
 	fogRadius: number;
 	crossChecks: number;
+	/** Coast guard patrols, storms, the sea current (units per second), seconds between sanction checks (0 for none) */
+	patrols?: number;
+	storms?: number;
+	current?: number;
+	sanctionEvery?: number;
 }
 
 export interface Level {
@@ -78,6 +98,14 @@ export interface Level {
 	crossChecks: number;
 	/** The time the star rating asks for, in seconds */
 	par: number;
+	/** Units of sailing on a full tank; leave out (or 0) for a boat that never runs dry */
+	fuelRange?: number;
+	patrols?: readonly PatrolRoute[];
+	storms?: readonly Storm[];
+	/** The base sea current in units per second */
+	current?: Vec;
+	/** Seconds between sanction checks, 0 for none */
+	sanctionEvery?: number;
 }
 
 /** Radius of a lighthouse islet, which is as solid as a rock */
@@ -234,6 +262,42 @@ export function buildLevel(spec: LevelSpec): Level {
 		from = stop;
 	}
 	const par = Math.ceil(runLength / (BOAT_MAX_SPEED * PAR_SPEED_FRACTION) + PAR_CUSHION_S);
+	const fuelRange = Math.ceil(runLength * 1.35 + 8);
+
+	// Patrols, storms and the current come last, so the sea of a level does not change when they are added
+	const patrolRoutes: PatrolRoute[] = [];
+	for (let i = 0; i < (spec.patrols ?? 0); i++) {
+		const rx = 2.6 + random() * 2;
+		const ry = 1.8 + random() * 1.6;
+		let center: Vec = { x: width / 2, y: height / 2 };
+		for (let attempt = 0; attempt < 40; attempt++) {
+			center = {
+				x: 3 + rx + random() * (width - 6 - 2 * rx),
+				y: COAST_DEPTH + 2 + ry + random() * (height - COAST_DEPTH - 4 - 2 * ry)
+			};
+			// Never park the oval over the start
+			if (distance(turned(center), startPoint) > Math.max(rx, ry) + 2.6) break;
+		}
+		patrolRoutes.push({
+			center: turned(center),
+			rx,
+			ry,
+			period: 30 + random() * 16,
+			phase: random() * Math.PI * 2
+		});
+	}
+	const storms: Storm[] = [];
+	let stormAt = 22 + random() * 10;
+	for (let i = 0; i < (spec.storms ?? 0); i++) {
+		const duration = 12 + random() * 6;
+		storms.push({ start: Math.round(stormAt), duration: Math.round(duration) });
+		stormAt += duration + 20 + random() * 16;
+	}
+	const currentAngle = random() * Math.PI * 2;
+	const current = {
+		x: Math.cos(currentAngle) * (spec.current ?? 0),
+		y: Math.sin(currentAngle) * (spec.current ?? 0)
+	};
 
 	return {
 		id: spec.id,
@@ -251,7 +315,12 @@ export function buildLevel(spec: LevelSpec): Level {
 		lieSeed: spec.seed ^ 0x9e3779b9,
 		fogRadius: spec.fogRadius,
 		crossChecks: spec.crossChecks,
-		par
+		par,
+		fuelRange,
+		patrols: patrolRoutes,
+		storms,
+		current,
+		sanctionEvery: spec.sanctionEvery ?? 0
 	};
 }
 

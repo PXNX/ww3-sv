@@ -11,16 +11,21 @@ import {
 	COAST_DEPTH,
 	GULL_COUNT,
 	LIGHT_RANGE,
+	PATROL_CONE,
+	PATROL_RANGE,
 	TANKER_RADIUS,
 	VIEW_H,
 	VIEW_W
 } from './config.js';
+import type { Particle } from './fx.js';
 import { gullFlock } from './gulls.js';
 import { LIGHTHOUSE_RADIUS, seaBounds, type Level } from './level.js';
 import type { Vec } from './lie.js';
 import { lightOffset, lightOn } from './lights.js';
+import { patrolPose } from './patrol.js';
 import { claimedPosition, heading, nextStop, type GameState } from './state.js';
 import { tankerPose } from './tanker.js';
+import { currentAt, fogFactor, lightning } from './weather.js';
 
 /** Pixels per sea unit in the scene */
 export const UNIT = 50;
@@ -72,6 +77,8 @@ export interface SceneExtras {
 	reducedMotion: boolean;
 	/** How far the view is shaken right now, in scene pixels */
 	shake?: number;
+	/** Foam, sparks and confetti, in sea units */
+	particles?: readonly Particle[];
 }
 
 export const NO_EXTRAS: SceneExtras = { effects: [], reducedMotion: true };
@@ -144,6 +151,10 @@ interface View {
 	fog: number;
 	/** The point the fog is centred on: the boat itself */
 	boat: Vec;
+	/** Storm strength 0 to 1 */
+	storm: number;
+	/** Seconds on the animation clock: 0 when motion is reduced */
+	clock: number;
 }
 
 const sx = (view: View, x: number) => (x - view.cam.x) * UNIT + view.frame.width / 2;
@@ -162,6 +173,27 @@ function drawWater(ctx: CanvasRenderingContext2D, state: GameState, view: View, 
 
 	// Wave dashes on a loose grid, bobbing a little
 	const time = still ? 0 : state.time;
+	// A slow far layer of swell bands that scrolls at half the speed of the camera (parallax)
+	ctx.fillStyle = 'rgba(255,255,255,0.09)';
+	const bandGap = 86;
+	for (let band = -1; band * bandGap < height + bandGap; band++) {
+		const y =
+			band * bandGap -
+			((view.cam.y * UNIT * 0.5) % bandGap) +
+			Math.sin(time * 0.5 + band * 1.7) * (4 + view.storm * 8);
+		ctx.beginPath();
+		ctx.moveTo(0, y);
+		for (let x = 0; x <= width; x += 40) {
+			ctx.lineTo(x, y + Math.sin(x * 0.02 + time * 0.8 + view.cam.x * 0.4 + band) * 6);
+		}
+		ctx.lineTo(width, y + 18);
+		ctx.lineTo(0, y + 18);
+		ctx.closePath();
+		ctx.fill();
+	}
+	const current = currentAt(level, time);
+	const driftX = current.x * time * 0.6;
+	const driftY = current.y * time * 0.6;
 	ctx.strokeStyle = WATER_DARK;
 	ctx.lineWidth = 2.5;
 	ctx.lineCap = 'round';
@@ -171,8 +203,10 @@ function drawWater(ctx: CanvasRenderingContext2D, state: GameState, view: View, 
 		for (let gy = firstY; gy <= firstY + height / UNIT + 1; gy++) {
 			if (gx < 0 || gy < 0 || gx >= level.width || gy >= level.height) continue;
 			if (hash(gx, gy) < 0.45) continue;
-			const x = sx(view, gx + hash(gy, gx));
-			const y = sy(view, gy + hash(gx + 7, gy)) + Math.sin(time * 1.6 + gx + gy) * 2;
+			const x = sx(view, gx + hash(gy, gx) + driftX);
+			const y =
+				sy(view, gy + hash(gx + 7, gy) + driftY) +
+				Math.sin(time * (1.6 + view.storm * 1.4) + gx + gy) * (2 + view.storm * 3);
 			ctx.beginPath();
 			ctx.moveTo(x - 8, y);
 			ctx.quadraticCurveTo(x - 4, y - 5, x, y);
@@ -429,16 +463,34 @@ function drawTanker(ctx: CanvasRenderingContext2D, state: GameState, view: View)
 	ctx.restore();
 }
 
-function drawBoat(ctx: CanvasRenderingContext2D, state: GameState, view: View, still: boolean) {
-	if (!still && state.invulnerable > 0 && Math.floor(state.time * 10) % 2 === 0) return;
-	const x = sx(view, state.pos.x);
-	const y = sy(view, state.pos.y);
+function drawBoat(
+	ctx: CanvasRenderingContext2D,
+	state: GameState,
+	view: View,
+	still: boolean,
+	at: Vec = state.pos,
+	ghost = false
+) {
+	if (!ghost && !still && state.invulnerable > 0 && Math.floor(state.time * 10) % 2 === 0) return;
+	// Bobbing on the swell: a small lift and a roll that both grow in a storm
+	const swell = still ? 0 : Math.sin(state.time * 2.3) * (1.2 + view.storm * 3.2);
+	const roll = still ? 0 : Math.sin(state.time * 1.7 + 1) * (0.03 + view.storm * 0.08);
+	const x = sx(view, at.x);
+	const y = sy(view, at.y) + swell;
 	const half = BOAT_RADIUS * UNIT;
 	ctx.save();
+	if (ghost) ctx.globalAlpha = 0.4 + Math.sin(state.time * 30) * 0.1;
+	if (!ghost) {
+		// A soft shadow on the water
+		ctx.fillStyle = 'rgba(20,60,90,0.25)';
+		ctx.beginPath();
+		ctx.ellipse(x + 3, y + 6, half * 1.3, half * 0.7, state.facing, 0, Math.PI * 2);
+		ctx.fill();
+	}
 	ctx.translate(x, y);
-	ctx.rotate(state.facing);
+	ctx.rotate(state.facing + roll);
 	// A wake behind a moving boat
-	if (!still && Math.hypot(state.vel.x, state.vel.y) > 0.4) {
+	if (!ghost && !still && Math.hypot(state.vel.x, state.vel.y) > 0.4) {
 		ctx.strokeStyle = 'rgba(255,255,255,0.8)';
 		ctx.lineWidth = 3;
 		ctx.lineCap = 'round';
@@ -468,6 +520,185 @@ function drawBoat(ctx: CanvasRenderingContext2D, state: GameState, view: View, s
 	ctx.fillStyle = BROWN;
 	ctx.fillRect(-half * 1.0, -half * 0.45, half * 0.55, half * 0.9);
 	ctx.strokeRect(-half * 1.0, -half * 0.45, half * 0.55, half * 0.9);
+	if (ghost) {
+		ctx.strokeStyle = '#19e3ff';
+		ctx.lineWidth = 2;
+		ctx.setLineDash([5, 4]);
+		ctx.strokeRect(-half * 1.2, -half * 0.8, half * 2.5, half * 1.6);
+		ctx.setLineDash([]);
+	}
+	ctx.restore();
+}
+
+/** The lock-on ring around the boat: it fills as a radar beam holds on, and blinks near full */
+function drawAlertRing(
+	ctx: CanvasRenderingContext2D,
+	state: GameState,
+	view: View,
+	still: boolean
+) {
+	if (state.alert <= 0.02) return;
+	const x = sx(view, state.pos.x);
+	const y = sy(view, state.pos.y);
+	const radius = BOAT_RADIUS * UNIT + 16;
+	ctx.save();
+	ctx.lineCap = 'round';
+	ctx.lineWidth = 5;
+	ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+	ctx.beginPath();
+	ctx.arc(x, y, radius, 0, Math.PI * 2);
+	ctx.stroke();
+	const blink = !still && state.alert > 0.7 && Math.floor(state.time * 8) % 2 === 0;
+	ctx.strokeStyle = blink ? RED : YELLOW;
+	ctx.beginPath();
+	ctx.arc(x, y, radius, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * state.alert);
+	ctx.stroke();
+	ctx.restore();
+}
+
+/** Coast guard boats with their sweeping radar beam, drawn under the fog */
+function drawPatrols(ctx: CanvasRenderingContext2D, state: GameState, view: View, still: boolean) {
+	const routes = state.level.patrols ?? [];
+	routes.forEach((route, index) => {
+		const pose = patrolPose(route, state.time);
+		if (away(pose.pos, state.pos) > view.fog + PATROL_RANGE) return;
+		const x = sx(view, pose.pos.x);
+		const y = sy(view, pose.pos.y);
+		// The radar beam: a wedge that turns round, bright when it holds the boat
+		const locked = state.beamOn[index];
+		const beam = still ? 0 : pose.beam;
+		ctx.save();
+		ctx.fillStyle = locked ? 'rgba(229,72,77,0.38)' : 'rgba(80,255,150,0.2)';
+		ctx.beginPath();
+		ctx.moveTo(x, y);
+		ctx.arc(x, y, PATROL_RANGE * UNIT, beam - PATROL_CONE / 2, beam + PATROL_CONE / 2);
+		ctx.closePath();
+		ctx.fill();
+		ctx.strokeStyle = locked ? 'rgba(229,72,77,0.8)' : 'rgba(80,255,150,0.5)';
+		ctx.lineWidth = 2;
+		ctx.stroke();
+		// A faint trail of the sweep
+		for (let i = 1; i <= 3; i++) {
+			ctx.fillStyle = `rgba(80,255,150,${0.07 / i})`;
+			ctx.beginPath();
+			ctx.moveTo(x, y);
+			ctx.arc(
+				x,
+				y,
+				PATROL_RANGE * UNIT,
+				beam - PATROL_CONE / 2 - i * 0.18,
+				beam - PATROL_CONE / 2 - (i - 1) * 0.18
+			);
+			ctx.closePath();
+			ctx.fill();
+		}
+		ctx.restore();
+
+		// The hull: a white boat with a blue stripe and a flashing light
+		const bob = still ? 0 : Math.sin(state.time * 2 + index) * 1.5;
+		ctx.save();
+		ctx.translate(x, y + bob);
+		ctx.rotate(pose.heading);
+		const half = 0.42 * UNIT;
+		ctx.fillStyle = PAPER;
+		ctx.beginPath();
+		ctx.moveTo(-half * 1.2, -half * 0.7);
+		ctx.lineTo(half * 0.6, -half * 0.7);
+		ctx.lineTo(half * 1.4, 0);
+		ctx.lineTo(half * 0.6, half * 0.7);
+		ctx.lineTo(-half * 1.2, half * 0.7);
+		ctx.closePath();
+		ctx.fill();
+		outline(ctx, 3);
+		ctx.fillStyle = '#2f6fd0';
+		ctx.fillRect(-half * 1.1, -half * 0.18, half * 2, half * 0.36);
+		const flash = still || Math.floor(state.time * 5 + index) % 2 === 0;
+		ctx.fillStyle = flash ? '#3a7bff' : RED;
+		ctx.beginPath();
+		ctx.arc(-half * 0.1, 0, 5, 0, Math.PI * 2);
+		ctx.fill();
+		outline(ctx, 1.5);
+		ctx.restore();
+	});
+}
+
+/** Foam, sparks, confetti and glitch bits, in sea units */
+function drawParticles(ctx: CanvasRenderingContext2D, view: View, particles: readonly Particle[]) {
+	for (const particle of particles) {
+		const t = particle.ageMs / particle.durationMs;
+		const x = sx(view, particle.x);
+		const y = sy(view, particle.y);
+		const size = particle.size * UNIT;
+		ctx.save();
+		ctx.globalAlpha = Math.max(0, 1 - t);
+		if (particle.kind === 'foam') {
+			ctx.fillStyle = PAPER;
+			ctx.beginPath();
+			ctx.arc(x, y, size * (1 + t * 1.5), 0, Math.PI * 2);
+			ctx.fill();
+		} else if (particle.kind === 'spark') {
+			ctx.fillStyle = particle.tint % 2 === 0 ? YELLOW : PAPER;
+			ctx.fillRect(x - size / 2, y - size / 2, size, size);
+		} else if (particle.kind === 'confetti') {
+			ctx.fillStyle = [RED, YELLOW, GREEN, '#3a7bff'][particle.tint % 4];
+			ctx.translate(x, y);
+			ctx.rotate(t * 8 + particle.tint);
+			ctx.fillRect(-size, -size / 2, size * 2, size);
+		} else {
+			ctx.fillStyle = particle.tint % 2 === 0 ? '#19e3ff' : '#ff3bd4';
+			ctx.fillRect(x - size * 2, y - size / 3, size * 4, size / 1.5);
+		}
+		ctx.restore();
+	}
+}
+
+/** Storm weather over the sea: gloom, slanting rain and lightning flashes */
+function drawStorm(ctx: CanvasRenderingContext2D, state: GameState, view: View, still: boolean) {
+	if (view.storm <= 0.01) return;
+	const { width, height } = view.frame;
+	ctx.fillStyle = `rgba(20,35,60,${0.32 * view.storm})`;
+	ctx.fillRect(0, 0, width, height);
+	if (!still) {
+		ctx.strokeStyle = `rgba(220,235,255,${0.5 * view.storm})`;
+		ctx.lineWidth = 1.5;
+		ctx.beginPath();
+		const drops = Math.round(70 * view.storm);
+		for (let i = 0; i < drops; i++) {
+			const fall = (state.time * 520 + hash(i, 3) * height) % height;
+			const x = (hash(i, 9) * (width + 100) - fall * 0.25 + width) % (width + 100);
+			ctx.moveTo(x, fall);
+			ctx.lineTo(x - 5, fall + 16);
+		}
+		ctx.stroke();
+		const flash = lightning(view.storm, state.time);
+		if (flash > 0) {
+			ctx.fillStyle = `rgba(255,255,255,${0.55 * flash})`;
+			ctx.fillRect(0, 0, width, height);
+		}
+	}
+}
+
+/** Signal glitch over the scene while the spoofer runs: scanlines and colour tears at the edges */
+function drawGlitch(ctx: CanvasRenderingContext2D, state: GameState, view: View, still: boolean) {
+	const strength = state.spoofBlend;
+	if (strength <= 0.02) return;
+	const { width, height } = view.frame;
+	ctx.save();
+	ctx.fillStyle = `rgba(25,227,255,${0.07 * strength})`;
+	ctx.fillRect(0, 0, width, height);
+	ctx.fillStyle = `rgba(0,0,0,${0.12 * strength})`;
+	for (let y = 0; y < height; y += 6) ctx.fillRect(0, y, width, 2);
+	if (!still) {
+		const tick = Math.floor(state.time * 14);
+		for (let i = 0; i < 4; i++) {
+			if (hash(tick, i) > 0.45 * strength + 0.1) continue;
+			const y = hash(tick, i + 20) * height;
+			const h = 3 + hash(tick, i + 40) * 14;
+			const shift = (hash(tick, i + 60) - 0.5) * 60;
+			ctx.fillStyle = i % 2 === 0 ? 'rgba(25,227,255,0.3)' : 'rgba(255,59,212,0.28)';
+			ctx.fillRect(shift, y, width, h);
+		}
+	}
 	ctx.restore();
 }
 
@@ -534,6 +765,31 @@ function drawLights(ctx: CanvasRenderingContext2D, state: GameState, view: View)
 		ctx.fillStyle = YELLOW;
 		ctx.beginPath();
 		ctx.arc(x, y, 6, 0, Math.PI * 2);
+		ctx.fill();
+		outline(ctx, 2);
+	});
+}
+
+/** A blinking patrol light pinned to the edge, so a boat beyond the fog still shows */
+function drawPatrolLights(ctx: CanvasRenderingContext2D, state: GameState, view: View) {
+	const { frame } = view;
+	(state.level.patrols ?? []).forEach((route, index) => {
+		const pose = patrolPose(route, state.time);
+		const distance = away(pose.pos, state.pos);
+		if (distance > LIGHT_RANGE || distance <= view.fog) return;
+		if (Math.floor(state.time * 4 + index) % 2 !== 0) return;
+		const margin = 16;
+		const x = Math.min(
+			frame.width - frame.right - margin,
+			Math.max(frame.left + margin, sx(view, pose.pos.x))
+		);
+		const y = Math.min(
+			frame.height - frame.bottom - margin,
+			Math.max(frame.top + margin, sy(view, pose.pos.y))
+		);
+		ctx.fillStyle = Math.floor(state.time * 2 + index) % 2 === 0 ? '#3a7bff' : RED;
+		ctx.beginPath();
+		ctx.arc(x, y, 5, 0, Math.PI * 2);
 		ctx.fill();
 		outline(ctx, 2);
 	});
@@ -710,11 +966,31 @@ function drawChart(
 	ctx.strokeStyle = PAPER;
 	ctx.lineWidth = 2;
 	ctx.stroke();
+	if (state.spoofBlend > 0.02) {
+		// The spoofed chart: scanlines, colour tears and a label
+		ctx.fillStyle = `rgba(25,227,255,${0.1 * state.spoofBlend})`;
+		ctx.fillRect(box.x, box.y, box.w, box.h);
+		ctx.fillStyle = `rgba(0,0,0,${0.14 * state.spoofBlend})`;
+		for (let y = box.y; y < box.y + box.h; y += 5) ctx.fillRect(box.x, y, box.w, 1.5);
+		if (!still) {
+			const tick = Math.floor(state.time * 12);
+			for (let i = 0; i < 3; i++) {
+				if (hash(tick, i + 5) > 0.55) continue;
+				ctx.fillStyle = i % 2 === 0 ? 'rgba(25,227,255,0.35)' : 'rgba(255,59,212,0.3)';
+				ctx.fillRect(
+					box.x + (hash(tick, i) - 0.5) * 24,
+					box.y + hash(tick, i + 9) * box.h,
+					box.w,
+					2 + hash(tick, i + 3) * 7
+				);
+			}
+		}
+	}
 	ctx.restore();
 
 	ctx.beginPath();
 	ctx.roundRect(box.x, box.y, box.w, box.h, 12);
-	ctx.strokeStyle = showTruth ? GREEN : INK;
+	ctx.strokeStyle = showTruth ? GREEN : state.spoofBlend > 0.5 ? '#19e3ff' : INK;
 	ctx.lineWidth = showTruth ? 5 : 3;
 	ctx.stroke();
 }
@@ -760,7 +1036,9 @@ export function drawScene(
 		cam: camera(level, state.pos, frame),
 		frame,
 		boat: state.pos,
-		fog: level.fogRadius
+		fog: level.fogRadius * fogFactor(state.storm),
+		storm: state.storm,
+		clock: still ? 0 : state.time
 	};
 	ctx.save();
 	if (extras.shake)
@@ -805,9 +1083,18 @@ export function drawScene(
 			drawTanker(ctx, state, view);
 		}
 	}
+	drawPatrols(ctx, state, view, still);
+	if (state.spoofBlend > 0.05) {
+		drawBoat(ctx, state, view, still, claimedPosition(state), true);
+	}
 	drawBoat(ctx, state, view, still);
+	drawAlertRing(ctx, state, view, still);
+	if (extras.particles) drawParticles(ctx, view, extras.particles);
 	drawFog(ctx, view);
 	drawLights(ctx, state, view);
+	drawPatrolLights(ctx, state, view);
+	drawStorm(ctx, state, view, still);
+	drawGlitch(ctx, state, view, still);
 	for (const gull of gullFlock(state.pos, level.land, still ? 0 : state.time).slice(
 		0,
 		GULL_COUNT

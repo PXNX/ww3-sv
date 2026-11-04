@@ -64,3 +64,49 @@ export const COAST_DEPTH = 1.2;
 /** The seagull flock: gulls cross the view toward land at this speed, over a stretch this long */
 export const GULL_SPEED = 2.2;
 export const GULL_SPAN = 16;
+
+/** Turning: the bow swings round at this rate (radians per second), and thrust only bites along the bow */
+export const TURN_RATE = 3.4;
+/** Thrust a boat gets when the bow points straight away from where the helm wants to go */
+export const SIDE_THRUST = 0.35;
+
+/** Fuel: a full tank lasts level.fuelRange units; shallows burn it faster; a harbour pumps some back */
+export const SHALLOWS_FUEL_FACTOR = 2;
+export const REFUEL_AMOUNT = 0.35;
+export const FUEL_LOW = 0.2;
+/** With an empty tank the crew rows: the top speed is cut to this fraction */
+export const EMPTY_TANK_SPEED_FACTOR = 0.3;
+export const POINTS_PER_FUEL = 300;
+
+/** Spoofing: a fake transponder position hides the boat from radar and sanction checks */
+export const SPOOF_DRAIN = 0.16;
+export const SPOOF_REGEN = 0.07;
+/** Energy needed to switch the spoofer on */
+export const SPOOF_MIN_ENERGY = 0.15;
+/** How fast the effect fades in and out (per second) */
+export const SPOOF_BLEND_RATE = 3;
+/** Price of the lie: the chart gets this much worse and the helm wanders by up to this angle */
+export const SPOOF_CHART_ERROR = 1.7;
+export const SPOOF_HELM_DRIFT = 0.4;
+
+/** Coast guard patrol: radar range and cone, sweep speed, how fast it locks on and how fast it forgets */
+export const PATROL_RANGE = 3.4;
+export const PATROL_CONE = 1.3;
+export const PATROL_SWEEP = 1.3;
+export const PATROL_LOCK_RATE = 0.8;
+export const PATROL_FORGET_RATE = 0.12;
+/** After a fine the patrols leave the boat alone for this long */
+export const FINE_COOLDOWN_S = 4;
+export const POINTS_FINE = 250;
+
+/** Sanction check: a warning this long before it, a pass pays this much */
+export const SANCTION_WARN_S = 3.5;
+export const POINTS_SANCTION_PASS = 100;
+
+/** Storms: ramp time, how hard the wind pushes (units per second) and how much of the fog radius is lost */
+export const STORM_RAMP_S = 2.5;
+export const STORM_PUSH = 0.9;
+export const STORM_FOG_LOSS = 0.3;
+
+/** A foghorn sounds from the coast this often (seconds) */
+export const HORN_EVERY_S = 24;

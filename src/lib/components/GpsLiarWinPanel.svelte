@@ -1,5 +1,6 @@
 <!-- Level-won panel for GPS Liar: stars, score, what was delivered, next level, and sharing on a new best -->
 <script lang="ts">
+	import type { Breakdown } from '#lib/game/gpsliar/state.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import type { ScoreCard } from '#lib/services/share.js';
 	import Confetti from './Confetti.svelte';
@@ -17,6 +18,7 @@
 		par,
 		hearts,
 		crossChecksUsed,
+		breakdown = null,
 		isNewBest,
 		hasNext,
 		modeName,
@@ -33,6 +35,8 @@
 		par: number;
 		hearts: number;
 		crossChecksUsed: number;
+		/** The points line by line */
+		breakdown?: Breakdown | null;
 		isNewBest: boolean;
 		/** Another level follows this one */
 		hasNext: boolean;
@@ -44,6 +48,21 @@
 	} = $props();
 
 	let dialog: HTMLDialogElement | undefined = $state();
+
+	/** The score lines worth showing: everything that paid or cost something */
+	const lines = $derived(
+		breakdown
+			? [
+					{ label: m.gpsliar_result_stops(), points: breakdown.stops },
+					{ label: m.gpsliar_result_time(), points: breakdown.time },
+					{ label: m.gpsliar_result_hearts(), points: breakdown.hearts },
+					{ label: m.gpsliar_result_clean(), points: breakdown.clean },
+					{ label: m.gpsliar_result_fuel(), points: breakdown.fuel },
+					{ label: m.gpsliar_result_sanctions(), points: breakdown.sanctions },
+					{ label: m.gpsliar_result_fines(), points: breakdown.fines }
+				].filter((line) => line.points !== 0)
+			: []
+	);
 
 	$effect(() => {
 		if (!dialog) return;
@@ -87,6 +106,22 @@
 			<li>{m.gpsliar_win_checks({ count: crossChecksUsed })}</li>
 			<li>{m.gpsliar_win_hearts({ count: hearts })}</li>
 		</ul>
+
+		{#if lines.length > 0}
+			<dl class="w-full max-w-xs text-sm">
+				{#each lines as line (line.label)}
+					<div class="flex justify-between gap-3 border-b border-dashed border-ink/30 py-0.5">
+						<dt dir="auto" class="font-semibold">{line.label}</dt>
+						<dd
+							class="font-display font-bold tabular-nums {line.points < 0 ? 'text-tie-red' : ''}"
+							dir="ltr"
+						>
+							{line.points > 0 ? '+' : ''}{line.points}
+						</dd>
+					</div>
+				{/each}
+			</dl>
+		{/if}
 
 		{#if !hasNext}
 			<p class="font-semibold">{m.gpsliar_all_cleared()}</p>

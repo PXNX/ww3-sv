@@ -10,7 +10,7 @@ import { NO_LIE, type LieParams } from './lie.js';
 
 const lie = (params: Partial<LieParams>): LieParams => ({ ...NO_LIE, ...params });
 
-export const LEVEL_SPECS: readonly LevelSpec[] = [
+const BASE_SPECS: readonly LevelSpec[] = [
 	{
 		id: 'gpsliar-1',
 		seed: 1101,
@@ -238,6 +238,30 @@ export const LEVEL_SPECS: readonly LevelSpec[] = [
 		crossChecks: 2
 	}
 ];
+
+/**
+ * What each level adds on top of its sea: the current from the start, coast guard patrols from level
+ * four, storms from level five and sanction checks (seconds between them) from level six
+ */
+const ESCALATION: readonly Pick<LevelSpec, 'patrols' | 'storms' | 'current' | 'sanctionEvery'>[] = [
+	{ current: 0.1 },
+	{ current: 0.15 },
+	{ current: 0.2 },
+	{ patrols: 1, current: 0.2 },
+	{ patrols: 1, storms: 1, current: 0.25 },
+	{ patrols: 1, storms: 1, current: 0.25, sanctionEvery: 42 },
+	{ patrols: 2, storms: 1, current: 0.3, sanctionEvery: 38 },
+	{ patrols: 2, storms: 2, current: 0.3, sanctionEvery: 36 },
+	{ patrols: 2, storms: 2, current: 0.35, sanctionEvery: 34 },
+	{ patrols: 3, storms: 2, current: 0.35, sanctionEvery: 32 },
+	{ patrols: 3, storms: 3, current: 0.4, sanctionEvery: 30 },
+	{ patrols: 3, storms: 3, current: 0.45, sanctionEvery: 28 }
+];
+
+export const LEVEL_SPECS: readonly LevelSpec[] = BASE_SPECS.map((spec, index) => ({
+	...spec,
+	...ESCALATION[index]
+}));
 
 export const LEVEL_IDS: readonly string[] = LEVEL_SPECS.map((spec) => spec.id);
 

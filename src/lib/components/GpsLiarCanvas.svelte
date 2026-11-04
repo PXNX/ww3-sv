@@ -23,6 +23,7 @@
 	import IconList from '~icons/lucide/list';
 	import IconPlay from '~icons/lucide/play';
 	import IconRotate from '~icons/lucide/rotate-ccw';
+	import IconRadio from '~icons/lucide/radio';
 	import IconScanEye from '~icons/lucide/scan-eye';
 
 	let {
@@ -39,7 +40,7 @@
 	let canvas: HTMLCanvasElement | undefined = $state();
 	/** An invisible box padded by --hud-top and the safe-area insets, read back in pixels */
 	let insets: HTMLDivElement | undefined = $state();
-	let checkButton: HTMLButtonElement | undefined = $state();
+	let controls: HTMLDivElement | undefined = $state();
 	let context: CanvasRenderingContext2D | null = null;
 	/** CSS pixels per scene pixel */
 	let scale = 1;
@@ -69,7 +70,7 @@
 			right: inset(pad?.paddingRight),
 			bottom: inset(pad?.paddingBottom),
 			left: inset(pad?.paddingLeft),
-			buttonTop: checkButton ? checkButton.offsetTop / scale : height / scale
+			buttonTop: controls ? controls.offsetTop / scale : height / scale
 		};
 		canvas.width = Math.round(width * ratio);
 		canvas.height = Math.round(height * ratio);
@@ -160,6 +161,9 @@
 		} else if (isSteerKey(event.code)) {
 			game.setKey(event.code, true);
 			event.preventDefault();
+		} else if (event.code === 'KeyX' && !event.repeat) {
+			game.spoof();
+			event.preventDefault();
 		} else if ((event.code === 'KeyC' || event.code === 'Space') && !event.repeat) {
 			game.crossCheck();
 			event.preventDefault();
@@ -172,6 +176,18 @@
 </script>
 
 <svelte:window onkeydown={onKeyDown} onkeyup={onKeyUp} />
+
+{#snippet gauge(label: string, percent: number, color: string)}
+	<div class="flex items-center gap-1">
+		<span class="w-14 shrink-0 rounded-sm bg-paper/80 px-0.5 text-center uppercase">{label}</span>
+		<div
+			class="h-3 flex-1 overflow-hidden rounded-sm border-2 border-ink bg-paper"
+			aria-hidden="true"
+		>
+			<div class="h-full {color}" style:width="{percent}%"></div>
+		</div>
+	</div>
+{/snippet}
 
 <div data-playfield class="relative min-h-0 flex-1 overflow-hidden select-none">
 	<canvas
@@ -201,19 +217,76 @@
 		{/if}
 	{/key}
 
-	<!-- Always at the bottom right, even in right-to-left languages: the chart takes the other corner -->
-	<button
-		bind:this={checkButton}
-		type="button"
-		class="btn-chunky absolute right-[calc(0.5rem+env(safe-area-inset-right))] bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-10 text-lg {game.revealing
-			? 'bg-explosion-yellow'
-			: 'bg-flag-blue'}"
-		disabled={game.status !== 'playing' || game.crossChecksLeft === 0}
-		onclick={() => game.crossCheck()}
+	<!-- Gauges under the HUD: fuel, spoofer energy and the patrol lock-on; the page dir never flips the playfield -->
+	<div
+		dir="ltr"
+		class="pointer-events-none absolute top-[calc(var(--hud-top)+0.25rem+var(--gps-hud,0px))] left-[calc(0.5rem+env(safe-area-inset-left))] z-10 flex w-36 flex-col gap-1 text-xs font-bold"
+		style:--gps-hud="{hudHeight}px"
 	>
-		<IconScanEye class="size-6" aria-hidden="true" />
-		{m.gpsliar_cross_check_button({ count: game.crossChecksLeft })}
-	</button>
+		{#if game.hasFuel}
+			{@render gauge(
+				m.gpsliar_gauge_fuel(),
+				game.fuelPercent,
+				game.fuelPercent < 20 ? 'bg-tie-red' : 'bg-khaki'
+			)}
+		{/if}
+		{@render gauge(
+			m.gpsliar_gauge_spoof(),
+			game.spoofPercent,
+			game.spoofing ? 'bg-explosion-yellow' : 'bg-flag-blue'
+		)}
+		{#if game.hasPatrols}
+			{@render gauge(m.gpsliar_gauge_alert(), game.alertPercent, 'bg-tie-red')}
+		{/if}
+	</div>
+
+	<!-- What is about to happen: a sanction check, a storm, an empty tank -->
+	{#if game.status === 'playing' && (game.sanctionWarn > 0 || game.stormNow || game.alertPercent > 60)}
+		<p
+			dir="auto"
+			role="status"
+			class="banner pointer-events-none absolute top-[calc(var(--hud-top)+0.25rem+var(--gps-hud,0px))] left-1/2 z-10 -translate-x-1/2 rounded-md border-3 border-ink px-3 py-1 text-center font-display text-sm font-bold shadow-[2px_2px_0_var(--color-ink)] {game.sanctionWarn >
+			0
+				? 'bg-explosion-yellow'
+				: 'bg-paper'}"
+			style:--gps-hud="{hudHeight}px"
+		>
+			{#if game.sanctionWarn > 0}
+				{m.gpsliar_banner_sanction({ seconds: game.sanctionWarn })}
+			{:else if game.alertPercent > 60}
+				{m.gpsliar_banner_radar()}
+			{:else}
+				{m.gpsliar_banner_storm()}
+			{/if}
+		</p>
+	{/if}
+
+	<!-- Always at the bottom right, even in right-to-left languages: the chart takes the other corner -->
+	<div
+		bind:this={controls}
+		dir="ltr"
+		class="absolute right-[calc(0.5rem+env(safe-area-inset-right))] bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-10 flex flex-col items-end gap-2"
+	>
+		<button
+			type="button"
+			class="btn-chunky text-lg {game.spoofing ? 'bg-explosion-yellow' : 'bg-paper'}"
+			aria-pressed={game.spoofing}
+			disabled={game.status !== 'playing'}
+			onclick={() => game.spoof()}
+		>
+			<IconRadio class="size-6" aria-hidden="true" />
+			{m.gpsliar_spoof_button()}
+		</button>
+		<button
+			type="button"
+			class="btn-chunky text-lg {game.revealing ? 'bg-explosion-yellow' : 'bg-flag-blue'}"
+			disabled={game.status !== 'playing' || game.crossChecksLeft === 0}
+			onclick={() => game.crossCheck()}
+		>
+			<IconScanEye class="size-6" aria-hidden="true" />
+			{m.gpsliar_cross_check_button({ count: game.crossChecksLeft })}
+		</button>
+	</div>
 
 	{#if game.status === 'ready'}
 		<div
@@ -254,6 +327,16 @@
 </div>
 
 <style>
+	.banner {
+		animation: banner 0.8s ease-in-out infinite alternate;
+	}
+
+	@keyframes banner {
+		to {
+			transform: translateX(-50%) scale(1.06);
+		}
+	}
+
 	.hurt {
 		animation: hurt 420ms ease-out forwards;
 	}
@@ -270,6 +353,10 @@
 	@media (prefers-reduced-motion: reduce) {
 		.hurt {
 			animation-duration: 1ms;
+		}
+
+		.banner {
+			animation: none;
 		}
 	}
 </style>

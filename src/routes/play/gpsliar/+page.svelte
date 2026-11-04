@@ -139,6 +139,10 @@
 		<p>{m.gpsliar_tutorial_truth()}</p>
 		<p>{m.gpsliar_tutorial_cross_check()}</p>
 		<p>{m.gpsliar_tutorial_hazards()}</p>
+		<p>{m.gpsliar_tutorial_spoof()}</p>
+		<p>{m.gpsliar_tutorial_patrol()}</p>
+		<p>{m.gpsliar_tutorial_fuel()}</p>
+		<p>{m.gpsliar_tutorial_storm()}</p>
 		<p>{m.gpsliar_tutorial_stars()}</p>
 		<p class="hidden text-sm sm:block">{m.gpsliar_tutorial_keys()}</p>
 	</TutorialModal>
@@ -151,6 +155,7 @@
 		par={game.par}
 		hearts={game.hearts}
 		crossChecksUsed={game.crossChecksUsed}
+		breakdown={game.breakdown}
 		isNewBest={game.isNewBest}
 		hasNext={game.hasNextLevel}
 		{modeName}
@@ -177,6 +182,10 @@
 				<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
 					<dt class="font-bold">{m.gpsliar_stat_stops()}</dt>
 					<dd class="text-2xl font-bold tabular-nums">{game.delivered}/{game.stopsTotal}</dd>
+				</div>
+				<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
+					<dt class="font-bold">{m.gpsliar_stat_fines()}</dt>
+					<dd class="text-2xl font-bold tabular-nums">{game.fines}</dd>
 				</div>
 				<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
 					<dt class="font-bold">{m.gpsliar_stat_checks()}</dt>
