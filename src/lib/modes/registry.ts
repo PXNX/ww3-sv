@@ -562,8 +562,8 @@ export const MODES: readonly GameMode[] = [
 		icon: IconShuffle,
 		tileClass: 'bg-khaki',
 		leaders: ['musk'],
-		name: () => 'Shadow Fleet',
-		description: () => 'Shell game: track the sanctioned tanker behind shifting cards.'
+		name: m.mode_shuffle_name,
+		description: m.mode_shuffle_description
 	},
 	{
 		id: 'slider',
@@ -572,8 +572,8 @@ export const MODES: readonly GameMode[] = [
 		icon: IconVote,
 		tileClass: 'bg-amber-100',
 		leaders: ['musk'],
-		name: () => 'Sondage Slider',
-		description: () => 'Push the wobbling poll line downward with correct icons.'
+		name: m.mode_slider_name,
+		description: m.mode_slider_description
 	},
 	{
 		id: 'grain',
@@ -582,8 +582,8 @@ export const MODES: readonly GameMode[] = [
 		icon: IconDroplets,
 		tileClass: 'bg-blue-950',
 		leaders: ['musk'],
-		name: () => 'Grain Corridor',
-		description: () => 'Black Sea runner: steer grain ships through mine lanes to port.'
+		name: m.mode_grain_name,
+		description: m.mode_grain_description
 	},
 	{
 		id: 'curling',
@@ -592,8 +592,8 @@ export const MODES: readonly GameMode[] = [
 		icon: IconFeather,
 		tileClass: 'bg-cyan-100',
 		leaders: ['musk'],
-		name: () => 'Iceberg Curling',
-		description: () => 'Sweep the stone against the For Sale sign — 8 ends, stars for wins.'
+		name: () => m.mode_curling_name(),
+		description: () => m.mode_curling_description()
 	},
 	{
 		id: 'sabotage',

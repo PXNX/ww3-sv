@@ -79,6 +79,8 @@ export type SoundId =
 	| 'candle-snuff'
 	| 'ritual-line'
 	| 'ritual-burst'
+	| 'sonar-ping'
+	| 'ais-off'
 	| 'link-snap'
 	| 'wave-horn'
 	| 'energy-empty';
@@ -853,6 +855,23 @@ export const SOUNDS: Record<SoundId, SoundEffect> = {
 			attack: 0.1
 		});
 	},
+
+	// A satellite ping: a clean sonar blip with a softer echo
+	'sonar-ping': (ctx, dest) => {
+		tone(ctx, dest, { frequency: 1320, glideTo: 1180, duration: 0.32, type: 'sine', gain: 0.22 });
+		tone(ctx, dest, {
+			frequency: 1320,
+			glideTo: 1180,
+			duration: 0.4,
+			type: 'sine',
+			gain: 0.08,
+			delay: 0.22
+		});
+	},
+
+	// A transponder going dark: a quick falling blip
+	'ais-off': (ctx, dest) =>
+		tone(ctx, dest, { frequency: 640, glideTo: 140, duration: 0.2, type: 'triangle', gain: 0.16 }),
 
 	// The star complete: a deep boom, a swell of noise and a minor chord blooming over it
 	'ritual-burst': (ctx, dest) => {
