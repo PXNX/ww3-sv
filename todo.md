@@ -2,6 +2,17 @@
 
 State as of the PauseOverlay migration commit (`06bbcbd`). Source of truth for specs: the ww3-sv roadmap (sections 1 to 5).
 
+## 0. In flight: five modes still need implementation
+
+The commits `feat(slice)`, `feat(curling)`, `feat(fleethunt)`, `feat(gpsliar)` and `feat(maple)` land a first cut of a polish pass on five existing modes, plus the missing sound effects. The code compiles and the new rules come with tests, but this is **work in progress that still requires additional implementation** before it counts as finished:
+
+- [ ] **Radar Slice**: the new armoured `iskander`, the `cluster` that splits into bomblets, the floating `mine` decoy and the `focus`/`repair` pickups are wired through rules, spawner, scoring, renderer and store, but the balance, the spawn weights and the pickup cadence have not been played. Art and the HUD for the pickups need a visual pass.
+- [ ] **Iceberg Curling**: the rebuilt end flow, sweep, curl, gamble, wind, penguin, seals and drifting ice have rule tests, but the power/sweep balance, the hazard ramp and the end-summary cadence are untuned and untested on a touch device. The renderer is a first cut and needs a browser check.
+- [ ] **Black Sea Fleet Hunt**: salvos, depth charges, sonar, decoy buoys and patrol boats are in, with shell arcs, splashes and sinking ships. Weapon balance, the larger late fleets and the save migration for existing hunts need a pass; the effects layer is unmeasured on low-end phones.
+- [ ] **GPS Liar**: coast guard patrols, storms and the spoof pressure are covered by `pressure.test.ts`, but the weather module has no direct tests and the new sea, wakes and win panel need a visual check and a balance pass.
+- [ ] **Maple Reserve Heist**: the lever/truck, coffee and toque gadgets, rewinds, golden barrels and the new moose routines are implemented, but the store tests are still red: `LEVEL_1_RUN` is stale after the level rebuild and six tests in `src/lib/stores/mapleGame.test.ts` fail (quota, win flow and the heart-loss setup). The new level curve and scoring need a play-test.
+- [ ] None of the five modes was played in a browser in any locale. Balance, touch input, RTL layouts and the Persian, Arabic, Russian and Ukrainian strings still need the usual checks from section 3.
+
 ## 1. Modes still to build
 
 ### Requested, not started
