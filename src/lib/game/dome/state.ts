@@ -70,7 +70,7 @@ export interface DomeState {
 
 export type DomeEvent =
 	| { type: 'wave-start'; wave: number; count: number }
-	| { type: 'launch'; x: number; y: number }
+	| { type: 'launch'; x: number; y: number; heading: number }
 	| { type: 'no-ammo' }
 	| {
 			type: 'intercept';
@@ -88,6 +88,8 @@ export type DomeEvent =
 			y: number;
 			target: TargetKind | null;
 			cost: number;
+			/** Index into TARGETS of the building that was hit, or null for a harmless landing */
+			index: number | null;
 	  }
 	| { type: 'blackout' }
 	| { type: 'wave-clear'; wave: number; bonus: number; perfect: boolean; heartBack: boolean }
@@ -162,7 +164,7 @@ function resolveLanding(state: DomeState, rocket: Rocket, events: DomeEvent[]) {
 	const y = rocket.flight.flightMs > 0 ? flightPoint(rocket.flight, rocket.flight.flightMs).y : 0;
 	const index = rocket.targetIndex;
 	if (index === null || state.ruined[index]) {
-		events.push({ type: 'impact', x, y, target: null, cost: 0 });
+		events.push({ type: 'impact', x, y, target: null, cost: 0, index: null });
 		return;
 	}
 	const target = TARGETS[index];
@@ -171,7 +173,7 @@ function resolveLanding(state: DomeState, rocket: Rocket, events: DomeEvent[]) {
 	state.hits += 1;
 	state.waveHit = true;
 	state.combo = 0;
-	events.push({ type: 'impact', x, y, target: target.kind, cost: target.cost });
+	events.push({ type: 'impact', x, y, target: target.kind, cost: target.cost, index });
 	if (target.kind === 'plant') {
 		state.blackoutMs = BLACKOUT_MS;
 		events.push({ type: 'blackout' });
@@ -291,7 +293,7 @@ function launchAt(state: DomeState, rocket: Rocket): DomeEvent[] {
 	const interceptor = launchInterceptor(state.nextId++, rocket.id, rocket.flight, rocket.elapsedMs);
 	rocket.interceptorId = interceptor.id;
 	state.interceptors.push(interceptor);
-	return [{ type: 'launch', x: interceptor.x, y: interceptor.y }];
+	return [{ type: 'launch', x: interceptor.x, y: interceptor.y, heading: interceptor.heading }];
 }
 
 /** The input: a tap at a world point launches an interceptor at the rocket nearest to it */

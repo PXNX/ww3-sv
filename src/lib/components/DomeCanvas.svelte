@@ -25,7 +25,25 @@
 		if (!canvas || !context) return;
 		const ratio = window.devicePixelRatio || 1;
 		context.setTransform(scale * ratio, 0, 0, scale * ratio, 0, 0);
+		const fx = game.fx;
+		const shake = !game.reducedMotion && fx.shakeMs > 0 ? fx.shakeStrength : 0;
+		context.save();
+		if (shake > 0) {
+			// A little zoom around the centre keeps a shaken frame from showing the canvas edge
+			context.translate(
+				WORLD_WIDTH / 2 + (Math.random() * 2 - 1) * shake,
+				WORLD_HEIGHT / 2 + (Math.random() * 2 - 1) * shake
+			);
+			context.scale(1.03, 1.03);
+			context.translate(-WORLD_WIDTH / 2, -WORLD_HEIGHT / 2);
+		}
 		drawScene(context, game.state, game.sceneExtras());
+		context.restore();
+		if (fx.flashMs > 0) {
+			// A warm flash over the field when a building is hit, still drawn in world units
+			context.fillStyle = `rgba(255, 227, 160, ${(fx.flashMs / fx.flashMaxMs) * 0.16})`;
+			context.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+		}
 	}
 
 	function resize() {

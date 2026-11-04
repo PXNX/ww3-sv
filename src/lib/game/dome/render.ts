@@ -16,6 +16,7 @@ import {
 	type TargetKind
 } from './config.js';
 import type { Interceptor } from './intercept.js';
+import { WOBBLE_MS, type Particle, type Ring } from './fx.js';
 import { rocketPosition, type DomeState, type Rocket } from './state.js';
 import { flightHeading, pointAt, remainingPath } from './trajectory.js';
 
@@ -59,10 +60,26 @@ export type Effect =
 			color: string;
 			ageMs: number;
 			durationMs: number;
+	  }
+	| {
+			/** A tilted sticker that drops in from above the field for the start and the end of a wave */
+			kind: 'banner';
+			text: string;
+			sub: string;
+			color: string;
+			ageMs: number;
+			durationMs: number;
 	  };
 
 export interface SceneExtras {
 	effects: readonly Effect[];
+	/** Sparks, debris, smoke, water and shock rings from the dome's fx module */
+	particles?: readonly Particle[];
+	rings?: readonly Ring[];
+	/** Wobble left per building in ms, indexed like TARGETS */
+	wobble?: readonly number[];
+	/** The battery's recoil in world units: positive pushes the launch tubes down */
+	recoil?: number;
 	reducedMotion: boolean;
 	/** Running time in ms, for drifting clouds and waves (ignored with reduced motion) */
 	timeMs: number;
@@ -345,7 +362,7 @@ function drawTag(
 	ctx.fillText(text, x, y + 1);
 }
 
-function drawBattery(ctx: CanvasRenderingContext2D, state: DomeState) {
+function drawBattery(ctx: CanvasRenderingContext2D, state: DomeState, recoil = 0) {
 	// A little hill, a dome-shaped shelter and three launch tubes
 	ctx.beginPath();
 	ctx.ellipse(BATTERY_X, GROUND_Y, 26, 12, 0, Math.PI, 0);
@@ -357,8 +374,9 @@ function drawBattery(ctx: CanvasRenderingContext2D, state: DomeState) {
 	for (let i = 0; i < 3; i++) {
 		const loaded = i < state.ammo.loaded;
 		ctx.save();
-		ctx.translate(BATTERY_X + (i - 1) * 9, GROUND_Y - 18);
-		ctx.rotate(-0.4 + i * 0.4);
+		// The fired tube kicks down on its spring and comes back up
+		ctx.translate(BATTERY_X + (i - 1) * 9, GROUND_Y - 18 + recoil);
+		ctx.rotate(-0.4 + i * 0.4 + recoil * 0.02);
 		ctx.beginPath();
 		ctx.roundRect(-3.5, -14, 7, 16, 2);
 		fillOutlined(ctx, loaded ? PAPER : GREY_DARK, 2);
@@ -369,12 +387,18 @@ function drawBattery(ctx: CanvasRenderingContext2D, state: DomeState) {
 function drawCity(ctx: CanvasRenderingContext2D, state: DomeState, extras: SceneExtras) {
 	TARGETS.forEach((target, index) => {
 		const ruined = state.ruined[index];
+		// A hit building rocks briefly, further the harder the hit
+		const wobble = extras.wobble?.[index] ?? 0;
+		const lean = wobble > 0 ? Math.sin(wobble / 24) * (wobble / WOBBLE_MS) * 3.5 : 0;
+		ctx.save();
+		ctx.translate(lean, 0);
 		if (target.kind === 'house') drawHouse(ctx, target.x, ruined);
 		else if (target.kind === 'hospital') drawHospital(ctx, target.x, ruined);
 		else drawPlant(ctx, target.x, ruined, state.blackoutMs > 0, extras);
 		if (ruined) smoke(ctx, target.x, GROUND_Y - 28, extras, 2);
 		const top = target.kind === 'house' ? 46 : target.kind === 'hospital' ? 52 : 84;
 		drawTag(ctx, target.x, GROUND_Y - top - 12, ruined ? 0 : target.value, target.kind, ruined);
+		ctx.restore();
 	});
 }
 
@@ -503,7 +527,101 @@ function starburst(ctx: CanvasRenderingContext2D, x: number, y: number, radius: 
 	ctx.closePath();
 }
 
-function drawEffects(ctx: CanvasRenderingContext2D, effects: readonly Effect[]) {
+/** Ease out with a small overshoot, for things that drop or pop into place */
+function easeOutBack(t: number): number {
+	const c1 = 1.70158;
+	const c3 = c1 + 1;
+	const u = Math.min(1, Math.max(0, t)) - 1;
+	return 1 + c3 * u * u * u + c1 * u * u;
+}
+
+function drawParticles(ctx: CanvasRenderingContext2D, particles: readonly Particle[]) {
+	for (const p of particles) {
+		const t = p.ageMs / p.lifeMs;
+		const fade = t > 0.75 ? Math.max(0, (1 - t) / 0.25) : 1;
+		ctx.save();
+		ctx.globalAlpha = fade;
+		if (p.kind === 'smoke') {
+			ctx.globalAlpha = fade * 0.5;
+			ctx.fillStyle = p.color;
+			ctx.beginPath();
+			ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+			ctx.fill();
+		} else if (p.kind === 'debris') {
+			ctx.translate(p.x, p.y);
+			ctx.rotate(p.rot);
+			ctx.fillStyle = p.color;
+			ctx.strokeStyle = INK;
+			ctx.lineWidth = 1.2;
+			ctx.fillRect(-p.size / 2, -p.size * 0.35, p.size, p.size * 0.7);
+			ctx.strokeRect(-p.size / 2, -p.size * 0.35, p.size, p.size * 0.7);
+		} else {
+			// Sparks, embers and drops are drawn as a streak along their own motion
+			ctx.strokeStyle = p.color;
+			ctx.lineWidth = p.size;
+			ctx.lineCap = 'round';
+			const tail = p.kind === 'drop' ? 0.012 : p.kind === 'ember' ? 0.01 : 0.022;
+			ctx.beginPath();
+			ctx.moveTo(p.x - p.vx * tail, p.y - p.vy * tail);
+			ctx.lineTo(p.x, p.y);
+			ctx.stroke();
+		}
+		ctx.restore();
+	}
+}
+
+function drawRings(ctx: CanvasRenderingContext2D, rings: readonly Ring[]) {
+	for (const ring of rings) {
+		const t = Math.min(1, ring.ageMs / ring.lifeMs);
+		const radius = ring.radius * (0.25 + 0.75 * t);
+		ctx.save();
+		ctx.globalAlpha = Math.max(0, 1 - t);
+		ctx.strokeStyle = ring.color;
+		ctx.lineWidth = Math.max(1, ring.width * (1 - t * 0.6));
+		ctx.beginPath();
+		ctx.ellipse(ring.x, ring.y, radius, radius * 0.55, 0, 0, Math.PI * 2);
+		ctx.stroke();
+		ctx.restore();
+	}
+}
+
+function drawBanner(
+	ctx: CanvasRenderingContext2D,
+	effect: Extract<Effect, { kind: 'banner' }>,
+	reduced: boolean
+) {
+	const t = Math.min(1, effect.ageMs / effect.durationMs);
+	const enter = Math.min(1, effect.ageMs / 260);
+	// It drops in from above the field, overshoots a touch and settles, then fades
+	const drop = reduced ? 0 : (1 - easeOutBack(enter)) * -80;
+	const fade = t > 0.8 ? Math.max(0, (1 - t) / 0.2) : 1;
+	ctx.save();
+	ctx.globalAlpha = fade;
+	ctx.translate(WORLD_WIDTH / 2, 76 + drop);
+	ctx.rotate(-0.018);
+	ctx.font = `bold 24px ${DISPLAY_FONT}`;
+	const width = Math.min(
+		WORLD_WIDTH - 40,
+		Math.max(170, ctx.measureText(effect.text).width + 44, ctx.measureText(effect.sub).width + 44)
+	);
+	const height = 64;
+	// A hard shadow and a sticker panel, like the in-game cards
+	ctx.fillStyle = INK;
+	ctx.beginPath();
+	ctx.roundRect(-width / 2 + 4, -height / 2 + 4, width, height, 14);
+	ctx.fill();
+	ctx.beginPath();
+	ctx.roundRect(-width / 2, -height / 2, width, height, 14);
+	fillOutlined(ctx, effect.color, 3);
+	ctx.fillStyle = INK;
+	ctx.fillText(effect.text, 0, -9);
+	ctx.font = `bold 12px ${DISPLAY_FONT}`;
+	ctx.globalAlpha = fade * 0.75;
+	ctx.fillText(effect.sub.toUpperCase(), 0, 16);
+	ctx.restore();
+}
+
+function drawEffects(ctx: CanvasRenderingContext2D, effects: readonly Effect[], reduced: boolean) {
 	ctx.textAlign = 'center';
 	ctx.textBaseline = 'middle';
 	for (const effect of effects) {
@@ -513,15 +631,21 @@ function drawEffects(ctx: CanvasRenderingContext2D, effects: readonly Effect[]) 
 		if (effect.kind === 'burst') {
 			starburst(ctx, effect.x, effect.y, effect.radius * (0.4 + 0.6 * Math.min(1, t * 3)));
 			fillOutlined(ctx, effect.color, 2.5);
+		} else if (effect.kind === 'banner') {
+			drawBanner(ctx, effect, reduced);
 		} else {
-			const rise = t * 28;
+			// A popup lands with a small overshoot, then drifts up and fades
+			const appear = Math.min(1, effect.ageMs / 150);
+			const pop = reduced ? 1 : 0.7 + 0.3 * easeOutBack(appear);
+			ctx.translate(effect.x, effect.y - (reduced ? 0 : t * 30));
+			ctx.scale(pop, pop);
 			ctx.font = `bold ${effect.big ? 22 : 16}px ${DISPLAY_FONT}`;
 			ctx.lineWidth = 5;
 			ctx.lineJoin = 'round';
 			ctx.strokeStyle = INK;
-			ctx.strokeText(effect.text, effect.x, effect.y - rise);
+			ctx.strokeText(effect.text, 0, 0);
 			ctx.fillStyle = effect.color;
-			ctx.fillText(effect.text, effect.x, effect.y - rise);
+			ctx.fillText(effect.text, 0, 0);
 		}
 		ctx.restore();
 	}
@@ -536,12 +660,14 @@ export function drawScene(
 	drawSky(ctx, extras);
 	drawSea(ctx, extras);
 	drawGround(ctx);
-	drawBattery(ctx, state);
+	drawBattery(ctx, state, extras.recoil);
 	drawCity(ctx, state, extras);
 	for (const rocket of state.rockets) drawTrajectory(ctx, rocket);
 	for (const rocket of state.rockets) drawRocket(ctx, rocket, extras);
 	for (const interceptor of state.interceptors) drawInterceptor(ctx, interceptor);
-	drawEffects(ctx, extras.effects);
+	drawParticles(ctx, extras.particles ?? []);
+	drawRings(ctx, extras.rings ?? []);
+	drawEffects(ctx, extras.effects, extras.reducedMotion);
 }
 
 /** Draws the final scene onto the shared score card, centred on the city */

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MAX_AMMO, STARTING_LIVES, TARGETS, WASTE_PENALTY } from '#lib/game/dome/config.js';
 import { rocketPosition, type Rocket } from '#lib/game/dome/state.js';
+import { waveParams } from '#lib/game/dome/waves.js';
 import { createHighscores } from '#lib/services/highscore.js';
 import { createStore, type KeyValueStorage } from '#lib/services/storage.js';
 import { loadMessages, missingMessages } from '#lib/testing/messages.js';
@@ -72,12 +73,13 @@ describe('DomeGame', () => {
 		expect(game.loaded).toBe(MAX_AMMO);
 	});
 
-	it('starts wave one after a short lead-in and puts a wave popup on screen', () => {
+	it('starts wave one after a short lead-in and drops a wave banner in', () => {
 		const { game } = newGame();
 		game.start();
 		play(game, 1000);
 		expect(game.wave).toBe(1);
-		expect(game.effects.some((effect) => effect.kind === 'popup')).toBe(true);
+		const banner = game.effects.find((effect) => effect.kind === 'banner');
+		expect(banner).toMatchObject({ kind: 'banner', sub: `${waveParams(1).count} incoming` });
 	});
 
 	it('stops everything while paused and resumes where it left off', () => {

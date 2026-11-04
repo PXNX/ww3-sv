@@ -93,39 +93,45 @@
 				<p dir="auto" class="font-display text-xs font-bold sm:text-sm" aria-hidden="true">
 					{m.dome_hud_ammo()}
 				</p>
-				<div
-					class="flex items-center gap-1"
-					role="img"
-					aria-label={m.dome_ammo_label({ loaded: game.loaded, max: MAX_AMMO })}
-					dir="ltr"
-				>
-					{#each pips as pip (pip)}
-						<span
-							class="relative h-5 w-3 overflow-hidden rounded-[3px] border-2 border-ink {pip <
-							game.loaded
-								? 'bg-explosion-yellow'
-								: 'bg-sand'}"
-						>
-							{#if pip === game.loaded}
-								<span
-									class="absolute inset-x-0 bottom-0 bg-explosion-yellow/70"
-									style:height="{game.reloadPercent}%"
-								></span>
-							{/if}
-						</span>
-					{/each}
-				</div>
+				{#key game.loaded}
+					<div
+						class="dome-pop flex items-center gap-1"
+						role="img"
+						aria-label={m.dome_ammo_label({ loaded: game.loaded, max: MAX_AMMO })}
+						dir="ltr"
+					>
+						{#each pips as pip (pip)}
+							<span
+								class="relative h-5 w-3 overflow-hidden rounded-[3px] border-2 border-ink {pip <
+								game.loaded
+									? 'bg-explosion-yellow'
+									: 'bg-sand'}"
+							>
+								{#if pip === game.loaded}
+									<span
+										class="absolute inset-x-0 bottom-0 bg-explosion-yellow/70"
+										style:height="{game.reloadPercent}%"
+									></span>
+								{/if}
+							</span>
+						{/each}
+					</div>
+				{/key}
 			</div>
-			<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
-				{m.dome_hud_wave({ wave: Math.max(1, game.wave) })}
-			</p>
-			<p
-				dir="auto"
-				class="font-display text-sm font-bold tabular-nums sm:text-base"
-				class:opacity-40={game.combo === 0}
-			>
-				{m.dome_hud_combo({ combo: game.combo, multiplier: game.multiplier })}
-			</p>
+			{#key game.wave}
+				<p dir="auto" class="dome-pop font-display text-sm font-bold tabular-nums sm:text-base">
+					{m.dome_hud_wave({ wave: Math.max(1, game.wave) })}
+				</p>
+			{/key}
+			{#key game.combo}
+				<p
+					dir="auto"
+					class="dome-pop font-display text-sm font-bold tabular-nums sm:text-base"
+					class:opacity-40={game.combo === 0}
+				>
+					{m.dome_hud_combo({ combo: game.combo, multiplier: game.multiplier })}
+				</p>
+			{/key}
 			{#if game.blackout}
 				<p
 					dir="auto"
@@ -187,3 +193,25 @@
 		</dl>
 	</GameOverModal>
 </GameShell>
+
+<style>
+	/* A quick spring pop when the wave, the combo or the loaded interceptors change */
+	.dome-pop {
+		animation: dome-pop 320ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+	}
+
+	@keyframes dome-pop {
+		from {
+			transform: scale(0.86);
+		}
+		to {
+			transform: scale(1);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.dome-pop {
+			animation: none;
+		}
+	}
+</style>
