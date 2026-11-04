@@ -273,14 +273,14 @@
 		bind:this={box}
 		style:translate={offset > 0 ? `0 ${offset}px` : undefined}
 		style:transition={dragOffset === null ? undefined : 'none'}
-		class="sticker relative modal-box {wide
+		class="sticker modal-box {wide
 			? 'sm:max-w-3xl'
-			: ''} flex max-h-[92dvh] flex-col items-center gap-3 overflow-y-auto rounded-[18px_10px_16px_8px] border-3 border-ink bg-paper p-5 text-center shadow-(--shadow-hard)"
+			: ''} flex max-h-[92dvh] flex-col items-center gap-2 overflow-y-auto rounded-[18px_10px_16px_8px] border-3 border-ink bg-paper p-4 text-center shadow-(--shadow-hard) sm:gap-3 sm:p-5"
 		style:--tilt="-1deg"
 	>
 		<button
 			type="button"
-			class="-mt-3 flex h-8 w-full shrink-0 cursor-grab touch-none items-center justify-center border-0 bg-transparent p-0 active:cursor-grabbing"
+			class="-mt-2 flex h-7 w-full shrink-0 cursor-grab touch-none items-center justify-center border-0 bg-transparent p-0 active:cursor-grabbing sm:-mt-3 sm:h-8"
 			aria-label={peeked ? m.gameover_peek_show() : m.gameover_peek_hide()}
 			aria-expanded={!peeked}
 			onpointerdown={startDrag}
@@ -292,31 +292,41 @@
 			<span class="h-1.5 w-14 rounded-full bg-ink/40"></span>
 		</button>
 
-		<div class="flex w-full flex-col items-center gap-3" inert={peeked}>
+		<div class="flex w-full flex-col items-center gap-2 sm:gap-3" inert={peeked}>
 			{#if isNewBest && !terminal}
 				<Confetti />
 			{/if}
 
-			<!-- The wide card puts the title beside the score to save height on a sideways phone -->
+			<!-- The title keeps its own line and the score shares one with the reacting host, which
+			     keeps the sheet roughly a hundred pixels shorter on a phone -->
 			<div
-				class="flex flex-col items-center gap-3 {wide
+				class="flex w-full flex-col items-center gap-2 {wide
 					? 'sm:flex-row sm:justify-center sm:gap-8'
 					: ''}"
 			>
 				<h2 id="game-over-title" class="text-3xl font-bold">{title ?? m.gameover_title()}</h2>
 
 				{#if !terminal}
-					<div class="flex flex-col items-center">
-						<span class="text-sm font-bold uppercase">{m.gameover_final_score()}</span>
-						<span class="pop-in font-display text-5xl font-bold text-tie-red tabular-nums"
-							>{score}</span
-						>
-						{#if isNewBest}
-							<span
-								class="pop-in mt-1 rotate-2 rounded-md border-2 border-ink bg-explosion-yellow px-2 font-bold"
+					<div class="flex items-center justify-center gap-3">
+						<div class="flex flex-col items-center">
+							<span class="text-xs font-bold uppercase sm:text-sm"
+								>{m.gameover_final_score()}</span
 							>
-								{m.gameover_new_best()}
-							</span>
+							<span
+								class="pop-in font-display text-4xl font-bold text-tie-red tabular-nums sm:text-5xl"
+								>{score}</span
+							>
+							{#if isNewBest}
+								<span
+									class="pop-in mt-1 rotate-2 rounded-md border-2 border-ink bg-explosion-yellow px-2 font-bold"
+								>
+									{m.gameover_new_best()}
+								</span>
+							{/if}
+						</div>
+
+						{#if withCharacter && open}
+							<ResultCharacter {mode} {outcome} class="w-20 sm:w-24" />
 						{/if}
 					</div>
 				{/if}
@@ -387,12 +397,12 @@
 
 			{#if showCameo && !terminal}
 				<figure
-					class="flex w-full items-center gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-sand p-3 text-start"
+					class="flex w-full items-center gap-2 rounded-[12px_6px_14px_8px] border-3 border-ink bg-sand p-2 text-start sm:gap-3 sm:p-3"
 				>
 					<img
 						src={portrait}
 						alt={cameoAlt}
-						class="size-20 shrink-0 -rotate-2 rounded-lg border-3 border-ink bg-paper object-cover"
+						class="size-16 shrink-0 -rotate-2 rounded-lg border-3 border-ink bg-paper object-cover sm:size-20"
 						style:background={flag ? `url(${flag}) center / 100% 100%` : undefined}
 						onerror={() => (portraitFailed = true)}
 					/>
@@ -401,10 +411,6 @@
 						<span class="leading-snug">{cameoMessage}</span>
 					</figcaption>
 				</figure>
-			{/if}
-
-			{#if withCharacter && open && !terminal}
-				<ResultCharacter {mode} {outcome} class="w-24" />
 			{/if}
 
 			{#if nearBest}
@@ -458,7 +464,7 @@
 				</p>
 			{/if}
 
-			<div class="flex flex-wrap items-center justify-center gap-3">
+			<div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
 				<!-- Focus lands on the main action, not on the drag handle above it -->
 				<!-- svelte-ignore a11y_autofocus -->
 				<button
