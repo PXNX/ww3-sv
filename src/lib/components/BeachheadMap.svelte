@@ -26,6 +26,7 @@
 	import { islandName } from './beachheadText';
 	import { zoomPan } from './zoomPan';
 	import BeachheadExpedition from './BeachheadExpedition.svelte';
+	import BeachheadRivals from './BeachheadRivals.svelte';
 	import BeachheadSeaLog from './BeachheadSeaLog.svelte';
 	import BeachheadSheet from './BeachheadSheet.svelte';
 	import BeachheadTakeoverNotice from './BeachheadTakeoverNotice.svelte';
@@ -35,10 +36,17 @@
 	import IconFlag from '~icons/lucide/flag-triangle-right';
 	import IconLock from '~icons/lucide/lock';
 	import IconRadar from '~icons/lucide/radar';
+	import IconCoins from '~icons/lucide/coins';
 
 	let { game }: { game: BeachheadGame } = $props();
 	let expeditionOpen = $state(false);
 	let now = $state(Date.now());
+	// Publishes your base and fetches raids and rivals; nothing happens outside Telegram
+	$effect(() => {
+		void game.syncRivals();
+		const timer = setInterval(() => void game.syncRivals(), 90_000);
+		return () => clearInterval(timer);
+	});
 	$effect(() => {
 		const timer = setInterval(() => (now = Date.now()), 30_000);
 		return () => clearInterval(timer);
@@ -293,6 +301,9 @@
 			{/each}
 		</ol>
 
+		<!-- Other players' bases, when the game runs in Telegram -->
+		<BeachheadRivals {game} />
+
 		<!-- Clouds over everything the radar has not reached yet -->
 		<div class="pointer-events-none absolute inset-0 z-20" aria-hidden="true">
 			{#each clouds as cloud, index (index)}
@@ -324,6 +335,23 @@
 		<div class="pointer-events-auto">
 			<BeachheadTakeoverNotice {game} />
 		</div>
+		{#if game.raidedNotice.length > 0}
+			<button
+				type="button"
+				class="pointer-events-auto flex max-w-full items-start gap-2 rounded-[10px_6px_12px_8px] border-2 border-ink bg-tie-red px-2 py-1 text-start text-xs font-bold text-paper shadow-[2px_2px_0_var(--color-ink)]"
+				title={m.beachhead_takeback_dismiss()}
+				onclick={() => game.dismissRaided()}
+			>
+				<IconCoins class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+				<span class="flex flex-col">
+					{#each game.raidedNotice as raid, index (index)}
+						<span dir="auto"
+							>{m.beachhead_raided_notice({ player: raid.player, total: raid.total })}</span
+						>
+					{/each}
+				</span>
+			</button>
+		{/if}
 		<BeachheadSeaLog
 			events={logEvents}
 			retakeIn={retakeAt === null ? null : clock(retakeAt - now)}

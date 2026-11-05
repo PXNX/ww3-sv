@@ -174,11 +174,24 @@ import { soundManager } from '#lib/sound/soundManager.svelte.js';
 import type { SoundId } from '#lib/sound/sounds.js';
 import { telegram } from '#lib/stores/telegram.svelte.js';
 import type { LogEvent } from '#lib/game/beachhead/mapLog.js';
+import { applyRaidLoss, raidLog, rivalIsland } from '#lib/game/beachhead/rivals.js';
+import {
+	beachheadRivals,
+	isUnavailable,
+	remember,
+	rivalErrorCode,
+	unseen,
+	type BeachheadAttack,
+	type BeachheadRival,
+	type RivalErrorCode
+} from '#lib/services/rivals.js';
 
 export type BeachheadScreen = 'base' | 'map' | 'play';
 export type BeachheadStatus = 'playing' | 'paused' | 'won' | 'over';
 
 /** How long the explosions are left to play before the result panel opens */
+/** Ids of raids on your base whose losses were already taken from the stock */
+const RAIDS_SEEN_KEY = 'beachhead:raids-seen';
 const RESULT_DELAY_MS = 900;
 /** A win lasts longer: the loot flies out of the enemy stores before the result opens */
 const WIN_DELAY_MS = 3000;
@@ -258,6 +271,16 @@ export class BeachheadGame {
 	testing = $state(false);
 	/** Real lines for the sea log: raids on your base and raids you made, from the bot's server */
 	seaLog = $state.raw<LogEvent[]>([]);
+	/** Other players' bases to raid; empty outside Telegram */
+	rivals = $state.raw<BeachheadRival[]>([]);
+	/** True once the bot's server answered, so the chart can show rival bases */
+	rivalsOnline = $state(false);
+	/** The rival whose base is being attacked right now, or null for a campaign island */
+	rival = $state.raw<BeachheadRival | null>(null);
+	/** Why the last attempt to raid a rival was refused, until the next attempt */
+	rivalError = $state<RivalErrorCode | 'failed' | null>(null);
+	/** What others took from your base since the last visit, until the notice is dismissed */
+	raidedNotice = $state.raw<{ player: string; total: number }[]>([]);
 	/** True once the attack has been given up and the troops are running for the beach */
 	retreating = $state(false);
 	/** How fast an attack runs: normal, double, or four times as fast for Pro */
@@ -298,6 +321,10 @@ export class BeachheadGame {
 	/** The loot a win will pay, worked out the moment the headquarters falls so it can fly */
 	#plannedLoot: Resources = { wood: 0, stone: 0, iron: 0, gold: 0 };
 	#shotSound = 0;
+	#attack: BeachheadAttack | null = null;
+	#syncing: Promise<void> | null = null;
+	#publishedAt = 0;
+	#publishedKey = '';
 
 	constructor({
 		reducedMotion = false,
@@ -1008,6 +1035,7 @@ export class BeachheadGame {
 
 	goBase() {
 		this.#retreat();
+		this.#leaveRival();
 		this.tick();
 		this.effects = [];
 		this.shake = 0;
@@ -1019,6 +1047,7 @@ export class BeachheadGame {
 
 	goMap() {
 		this.#retreat();
+		this.#leaveRival();
 		this.tick();
 		this.effects = [];
 		this.shake = 0;
@@ -1037,23 +1066,11 @@ export class BeachheadGame {
 			return false;
 		}
 		this.#retreat();
-		const slots = crystalsOf(this.campaign).slots;
-		this.battle = createBattle(
-			testIslandOf(
-				this.layout,
-				(target) => {
-					const type = slots[target];
-					return type ? { type, level: crystalLevel(this.campaign, type) } : undefined;
-				},
-				(house) => this.levelOf(`house-${house}` as BuildingKey),
-				(key) => this.levelOf(key as BuildingKey)
-			),
-			{
-				...modifiersFor(this.campaign),
-				// The bulwark crystal toughens everything in your own base
-				defenseScale: 1 + baseEffects(this.campaign).defense
-			}
-		);
+		this.battle = createBattle(this.#ownIsland(), {
+			...modifiersFor(this.campaign),
+			// The bulwark crystal toughens everything in your own base
+			defenseScale: 1 + baseEffects(this.campaign).defense
+		});
 		this.testing = true;
 		this.retreating = false;
 		this.speed = 1;
@@ -1077,8 +1094,183 @@ export class BeachheadGame {
 		return true;
 	}
 
+	/** Your own base as the island an attacker lands on */
+	#ownIsland(): Island {
+		const slots = crystalsOf(this.campaign).slots;
+		return testIslandOf(
+			this.layout,
+			(target) => {
+				const type = slots[target];
+				return type ? { type, level: crystalLevel(this.campaign, type) } : undefined;
+			},
+			(house) => this.levelOf(`house-${house}` as BuildingKey),
+			(key) => this.levelOf(key as BuildingKey)
+		);
+	}
+
+	/**
+	 * Talks to the bot's server: publishes your base (when it changed, at most once a minute), takes
+	 * what raiders got away with out of your stock, and fetches the raid history and a few bases to
+	 * raid. Does nothing outside Telegram. Safe to call whenever the chart opens.
+	 */
+	syncRivals(): Promise<void> {
+		// Two overlapping syncs would take the same raid off the stock twice
+		this.#syncing ??= this.#syncRivals().finally(() => (this.#syncing = null));
+		return this.#syncing;
+	}
+
+	async #syncRivals(): Promise<void> {
+		try {
+			await this.#publishBase();
+			const [raids, rivals] = await Promise.all([beachheadRivals.log(), beachheadRivals.list()]);
+			const fresh = unseen(
+				raids.filter((raid) => raid.kind === 'raided'),
+				this.#seenRaids()
+			);
+			if (fresh.length > 0) {
+				let next = this.campaign;
+				for (const raid of fresh) next = applyRaidLoss(next, raid.loot);
+				this.#commit(next, { claim: false });
+				this.#store().write(
+					RAIDS_SEEN_KEY,
+					remember(
+						this.#seenRaids(),
+						fresh.map((raid) => raid.id)
+					)
+				);
+				this.raidedNotice = fresh.map((raid) => ({
+					player: raid.player.name,
+					total: raid.loot.wood + raid.loot.stone + raid.loot.iron + raid.loot.gold
+				}));
+			}
+			this.seaLog = raidLog(raids);
+			this.rivals = rivals;
+			this.rivalsOnline = true;
+		} catch (error) {
+			if (!isUnavailable(error)) console.warn('beachhead rivals', error);
+			this.rivalsOnline = false;
+		}
+	}
+
+	dismissRaided() {
+		this.raidedNotice = [];
+	}
+
+	#seenRaids(): string[] {
+		const seen = this.#store().read<unknown>(RAIDS_SEEN_KEY, []);
+		return Array.isArray(seen) ? seen.filter((id): id is string => typeof id === 'string') : [];
+	}
+
+	async #publishBase() {
+		const island = this.#ownIsland();
+		const base = {
+			buildings: [...island.buildings],
+			defenseScale: 1 + baseEffects(this.campaign).defense
+		};
+		const exposed = {
+			wood: exposedStock(this.campaign, 'wood'),
+			stone: exposedStock(this.campaign, 'stone'),
+			iron: exposedStock(this.campaign, 'iron'),
+			gold: exposedStock(this.campaign, 'gold')
+		};
+		const key = JSON.stringify([base, exposed]);
+		if (key === this.#publishedKey && this.#now() - this.#publishedAt < 10 * 60_000) return;
+		if (this.#now() - this.#publishedAt < 60_000) return;
+		await beachheadRivals.publish(base, exposed, this.campaign.levels.hq);
+		this.#publishedKey = key;
+		this.#publishedAt = this.#now();
+	}
+
+	/** Locks a rival's base with the server and lands on it; false when refused */
+	async attackRival(rivalId: string): Promise<boolean> {
+		this.rivalError = null;
+		if (usedArmySpaceOf(this.campaign) <= 0) {
+			this.#play('ui-error', 0.4);
+			return false;
+		}
+		let attack: BeachheadAttack;
+		try {
+			attack = await beachheadRivals.attack(rivalId);
+		} catch (error) {
+			this.rivalError = rivalErrorCode(error) ?? 'failed';
+			this.#play('ui-error', 0.4);
+			if (this.rivalError !== 'failed') this.rivals = this.rivals.filter((r) => r.id !== rivalId);
+			return false;
+		}
+		this.#retreat();
+		this.testing = false;
+		this.retreating = false;
+		this.speed = 1;
+		this.#attack = attack;
+		this.rival = attack.rival;
+		this.battle = createBattle(rivalIsland(attack.rival.id, attack.rival.base), {
+			...modifiersFor(this.campaign),
+			defenseScale: attack.rival.base.defenseScale
+		});
+		this.#resetFight();
+		this.best = null;
+		this.screen = 'play';
+		this.status = 'playing';
+		this.#sync();
+		return true;
+	}
+
+	/** Leaving a rival's base before landing anyone still uses up the attack */
+	#leaveRival() {
+		if (this.#attack) void this.#settleRival(false);
+		this.rival = null;
+	}
+
+	/** Tells the server how a rival attack ended and banks what it granted */
+	async #settleRival(won: boolean) {
+		const attack = this.#attack;
+		this.#attack = null;
+		if (!attack) return;
+		try {
+			const granted = await beachheadRivals.result(attack.id, won);
+			if (won) {
+				this.#commit(addResources(this.campaign, granted), { claim: false });
+				this.loot = granted;
+				this.seaLog = [
+					{
+						kind: 'plundered',
+						player: attack.rival.name,
+						island: 'home',
+						atMs: this.#now(),
+						id: `attack-${attack.id}`,
+						loot: granted
+					},
+					...this.seaLog
+				];
+			}
+		} catch (error) {
+			console.warn('beachhead rival result', error);
+		}
+		this.rivals = this.rivals.filter((entry) => entry.id !== attack.rival.id);
+	}
+
+	#resetFight() {
+		this.effects = [];
+		this.shake = 0;
+		this.timeMs = 0;
+		this.#finishMs = 0;
+		this.#settled = false;
+		this.lastCasualties = {};
+		this.lootCollected = { wood: 0, stone: 0, iron: 0, gold: 0 };
+		this.#shotSound = 0;
+		this.isNewBest = false;
+		this.loot = { wood: 0, stone: 0, iron: 0, gold: 0 };
+		this.newAchievements = [];
+		this.heroCardsFound = 0;
+		this.crystalFound = null;
+		this.stars = 0;
+		this.focusKind = null;
+		this.selectedSkill = null;
+	}
+
 	openIsland(index: number) {
 		this.#retreat();
+		this.rival = null;
 		this.testing = false;
 		this.retreating = false;
 		this.speed = 1;
@@ -1107,7 +1299,9 @@ export class BeachheadGame {
 	}
 
 	retry() {
-		this.openIsland(this.islandIndex);
+		// A rival's base is locked for one attack only
+		if (this.rival) this.goMap();
+		else this.openIsland(this.islandIndex);
 	}
 
 	openNextIsland() {
@@ -1647,8 +1841,8 @@ export class BeachheadGame {
 	#startLootFlight() {
 		if (this.testing) return;
 		const first = !isControlled(this.campaign, this.islandId);
-		const base = lootFor(this.islandIndex, first);
-		const bonus = 1 + baseEffects(this.campaign).loot;
+		const base = this.rival?.loot ?? lootFor(this.islandIndex, first);
+		const bonus = this.rival ? 1 : 1 + baseEffects(this.campaign).loot;
 		this.#plannedLoot = {
 			wood: Math.round(base.wood * bonus),
 			stone: Math.round(base.stone * bonus),
@@ -1703,6 +1897,7 @@ export class BeachheadGame {
 			this.battle.casualties[troop.kind] = (this.battle.casualties[troop.kind] ?? 0) + 1;
 		}
 		this.#commit(this.#settleCasualties(this.campaign), { claim: false });
+		if (this.rival) void this.#settleRival(false);
 	}
 
 	#finish() {
@@ -1719,6 +1914,19 @@ export class BeachheadGame {
 			setTimeout(() => {
 				if (this.testResult === shown) this.testResult = null;
 			}, 7000);
+			return;
+		}
+
+		if (this.rival) {
+			const won = this.battle.status === 'won';
+			this.lastSeconds = Math.round(this.battle.timeMs / 1000);
+			this.#commit(this.#settleCasualties(this.campaign), { claim: false });
+			this.loot = won ? this.#plannedLoot : { wood: 0, stone: 0, iron: 0, gold: 0 };
+			this.heroCardsFound = 0;
+			this.crystalFound = null;
+			this.newAchievements = [];
+			this.status = won ? 'won' : 'over';
+			void this.#settleRival(won);
 			return;
 		}
 

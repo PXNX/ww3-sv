@@ -4377,5 +4377,15 @@
 	"beachhead_log_raided": "{player} أغار على قاعدتك",
 	"beachhead_log_defended": "صددت هجوم {player}",
 	"beachhead_log_plundered": "أغرت على {player}",
-	"beachhead_log_empty": "البحر هادئ. لا شيء يُذكر."
+	"beachhead_log_empty": "البحر هادئ. لا شيء يُذكر.",
+	"beachhead_rival_aria": "قاعدة {player}، المستوى {level}",
+	"beachhead_rival_intro": "قاعدة قائد آخر",
+	"beachhead_rival_revenge": "انتقام! لقد أغار عليك",
+	"beachhead_rival_level": "المقر المستوى {level}",
+	"beachhead_rival_loot": "الفوز يجلب",
+	"beachhead_rival_attack": "أغِر على هذه القاعدة",
+	"beachhead_rival_cooldown": "أغرت على هذه القاعدة قبل قليل. انتظر بعض الوقت.",
+	"beachhead_rival_shielded": "تعرضت هذه القاعدة لغارة للتو وهي محمية.",
+	"beachhead_rival_failed": "لا اتصال لاسلكي. حاول مرة أخرى بعد قليل.",
+	"beachhead_raided_notice": "{player} أغار عليك وأخذ {total}"
 }

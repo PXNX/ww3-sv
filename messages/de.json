@@ -4377,5 +4377,15 @@
 	"beachhead_log_raided": "{player} hat deine Basis geplündert",
 	"beachhead_log_defended": "Du hast {player} zurückgeschlagen",
 	"beachhead_log_plundered": "Du hast {player} geplündert",
-	"beachhead_log_empty": "Ruhige See. Nichts zu melden."
+	"beachhead_log_empty": "Ruhige See. Nichts zu melden.",
+	"beachhead_rival_aria": "Basis von {player}, Stufe {level}",
+	"beachhead_rival_intro": "Die Basis eines anderen Kommandanten",
+	"beachhead_rival_revenge": "Rache! Er hat dich geplündert",
+	"beachhead_rival_level": "Hauptquartier Stufe {level}",
+	"beachhead_rival_loot": "Ein Sieg bringt",
+	"beachhead_rival_attack": "Diese Basis plündern",
+	"beachhead_rival_cooldown": "Du hast diese Basis gerade erst geplündert. Gib ihr etwas Zeit.",
+	"beachhead_rival_shielded": "Diese Basis wurde gerade geplündert und ist geschützt.",
+	"beachhead_rival_failed": "Kein Funkkontakt. Versuch es gleich noch einmal.",
+	"beachhead_raided_notice": "{player} hat dich geplündert und {total} erbeutet"
 }

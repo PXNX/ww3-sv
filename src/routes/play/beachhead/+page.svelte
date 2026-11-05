@@ -64,6 +64,8 @@
 	let canFullscreen = $state(false);
 	onMount(() => {
 		game.load();
+		// Raids on your base while you were away come off the stock right at the start
+		void game.syncRivals();
 		showTutorial = firstPlay('beachhead');
 		canFullscreen = fullscreenAvailable();
 		fullscreen = isFullscreen();
@@ -88,7 +90,11 @@
 	const running = $derived(game.status === 'playing' || game.status === 'paused');
 	const title = $derived(
 		playing
-			? `${modeName} · ${game.testing ? m.beachhead_test_title() : islandName(game.islandIndex)}`
+			? `${modeName} · ${
+					game.testing
+						? m.beachhead_test_title()
+						: (game.rival?.name ?? islandName(game.islandIndex))
+				}`
 			: modeName
 	);
 	const lootTotal = $derived(
@@ -354,7 +360,7 @@
 		shards={game.heroCardsFound}
 		crystal={game.crystalFound}
 		seconds={game.lastSeconds}
-		islandName={islandName(game.islandIndex)}
+		islandName={game.rival?.name ?? islandName(game.islandIndex)}
 		newAchievements={game.newAchievements}
 		onIslands={() => game.goMap()}
 	/>

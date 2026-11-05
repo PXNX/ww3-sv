@@ -4377,5 +4377,15 @@
 	"beachhead_log_raided": "{player} به پایگاه تو یورش برد",
 	"beachhead_log_defended": "حملهٔ {player} را دفع کردی",
 	"beachhead_log_plundered": "به {player} یورش بردی",
-	"beachhead_log_empty": "دریا آرام است. خبری نیست."
+	"beachhead_log_empty": "دریا آرام است. خبری نیست.",
+	"beachhead_rival_aria": "پایگاه {player}، سطح {level}",
+	"beachhead_rival_intro": "پایگاه یک فرماندهٔ دیگر",
+	"beachhead_rival_revenge": "انتقام! او به تو یورش برده بود",
+	"beachhead_rival_level": "مقر سطح {level}",
+	"beachhead_rival_loot": "پیروزی می‌آورد",
+	"beachhead_rival_attack": "به این پایگاه یورش ببر",
+	"beachhead_rival_cooldown": "همین تازگی به این پایگاه یورش بردی. کمی صبر کن.",
+	"beachhead_rival_shielded": "این پایگاه تازه غارت شده و زیر سپر است.",
+	"beachhead_rival_failed": "ارتباط رادیویی نیست. کمی بعد دوباره تلاش کن.",
+	"beachhead_raided_notice": "{player} به تو یورش برد و {total} برد"
 }

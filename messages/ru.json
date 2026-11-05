@@ -4377,5 +4377,15 @@
 	"beachhead_log_raided": "{player} ограбил вашу базу",
 	"beachhead_log_defended": "Вы отбили атаку {player}",
 	"beachhead_log_plundered": "Вы ограбили {player}",
-	"beachhead_log_empty": "Море спокойно. Без происшествий."
+	"beachhead_log_empty": "Море спокойно. Без происшествий.",
+	"beachhead_rival_aria": "База {player}, уровень {level}",
+	"beachhead_rival_intro": "База другого командира",
+	"beachhead_rival_revenge": "Месть! Он ограбил вас",
+	"beachhead_rival_level": "Штаб, уровень {level}",
+	"beachhead_rival_loot": "Победа принесёт",
+	"beachhead_rival_attack": "Напасть на базу",
+	"beachhead_rival_cooldown": "Вы недавно грабили эту базу. Подождите немного.",
+	"beachhead_rival_shielded": "Эту базу только что ограбили, она под щитом.",
+	"beachhead_rival_failed": "Нет связи. Попробуйте ещё раз.",
+	"beachhead_raided_notice": "{player} ограбил вас и унёс {total}"
 }

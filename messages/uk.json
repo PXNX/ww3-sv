@@ -4377,5 +4377,15 @@
 	"beachhead_log_raided": "{player} пограбував вашу базу",
 	"beachhead_log_defended": "Ви відбили атаку {player}",
 	"beachhead_log_plundered": "Ви пограбували {player}",
-	"beachhead_log_empty": "Море спокійне. Без пригод."
+	"beachhead_log_empty": "Море спокійне. Без пригод.",
+	"beachhead_rival_aria": "База {player}, рівень {level}",
+	"beachhead_rival_intro": "База іншого командира",
+	"beachhead_rival_revenge": "Помста! Він пограбував вас",
+	"beachhead_rival_level": "Штаб, рівень {level}",
+	"beachhead_rival_loot": "Перемога принесе",
+	"beachhead_rival_attack": "Напасти на базу",
+	"beachhead_rival_cooldown": "Ви нещодавно грабували цю базу. Зачекайте трохи.",
+	"beachhead_rival_shielded": "Цю базу щойно пограбували, вона під щитом.",
+	"beachhead_rival_failed": "Немає зв'язку. Спробуйте ще раз.",
+	"beachhead_raided_notice": "{player} пограбував вас і забрав {total}"
 }

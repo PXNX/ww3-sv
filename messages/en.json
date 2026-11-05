@@ -4377,5 +4377,15 @@
 	"beachhead_log_raided": "{player} raided your base",
 	"beachhead_log_defended": "You beat off {player}",
 	"beachhead_log_plundered": "You raided {player}",
-	"beachhead_log_empty": "Calm seas. Nothing to report."
+	"beachhead_log_empty": "Calm seas. Nothing to report.",
+	"beachhead_rival_aria": "{player}'s base, level {level}",
+	"beachhead_rival_intro": "Another commander's base",
+	"beachhead_rival_revenge": "Revenge! They raided you",
+	"beachhead_rival_level": "HQ level {level}",
+	"beachhead_rival_loot": "A win takes",
+	"beachhead_rival_attack": "Raid this base",
+	"beachhead_rival_cooldown": "You raided this base a moment ago. Give it some time.",
+	"beachhead_rival_shielded": "This base was just raided and is under a shield.",
+	"beachhead_rival_failed": "No radio contact. Try again in a moment.",
+	"beachhead_raided_notice": "{player} raided you and took {total}"
 }
