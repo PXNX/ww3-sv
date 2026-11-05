@@ -14,13 +14,19 @@
 		ISLAND_MAP_POSITIONS,
 		ORC_LANDS_FROM_INDEX
 	} from '#lib/game/beachhead/config.js';
-	import { ambientEvents, nextRetakeAt } from '#lib/game/beachhead/mapLog.js';
+	import {
+		ambientEvents,
+		mergeLog,
+		nextRetakeAt,
+		type LogPlace
+	} from '#lib/game/beachhead/mapLog.js';
 	import { createBattle } from '#lib/game/beachhead/battle.js';
 	import { BATTLE_VIEW, drawScene } from '#lib/game/beachhead/render.js';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
 	import { islandName } from './beachheadText';
 	import { zoomPan } from './zoomPan';
 	import BeachheadExpedition from './BeachheadExpedition.svelte';
+	import BeachheadSeaLog from './BeachheadSeaLog.svelte';
 	import BeachheadSheet from './BeachheadSheet.svelte';
 	import BeachheadTakeoverNotice from './BeachheadTakeoverNotice.svelte';
 	import IconAnchor from '~icons/lucide/anchor';
@@ -28,7 +34,6 @@
 	import IconCrosshair from '~icons/lucide/crosshair';
 	import IconFlag from '~icons/lucide/flag-triangle-right';
 	import IconLock from '~icons/lucide/lock';
-	import IconSkull from '~icons/lucide/skull';
 	import IconRadar from '~icons/lucide/radar';
 
 	let { game }: { game: BeachheadGame } = $props();
@@ -40,7 +45,25 @@
 	});
 
 	const retakeAt = $derived(nextRetakeAt(game.campaign.lastTakebackMs, game.controlled));
-	const logEvents = $derived(ambientEvents(now, game.islandCount, 4));
+	const logEvents = $derived(
+		mergeLog(game.seaLog, ambientEvents(now, game.chartedCount || 1, 5), 8)
+	);
+
+	let chart: HTMLDivElement | undefined = $state();
+	/** The island the log just flew to; it pulses for a moment so the eye finds it */
+	let spotlight = $state<LogPlace | null>(null);
+	let spotlightTimer: ReturnType<typeof setTimeout> | undefined;
+	$effect(() => () => clearTimeout(spotlightTimer));
+
+	/** Flies the chart to where a log line happened */
+	function focusOn(place: LogPlace) {
+		const point = place === 'home' ? HOME : ISLAND_MAP_POSITIONS[place];
+		if (!point || !chart) return;
+		chart.dispatchEvent(new CustomEvent('zoomfocus', { detail: { ...point, scale: 2.2 } }));
+		spotlight = place;
+		clearTimeout(spotlightTimer);
+		spotlightTimer = setTimeout(() => (spotlight = null), 2600);
+	}
 	const clock = (ms: number): string => {
 		const total = Math.max(0, Math.ceil(ms / 1000));
 		const hours = Math.floor(total / 3600);
@@ -153,7 +176,12 @@
 	};
 </script>
 
-<div class="map-sea absolute inset-0 overflow-hidden" use:zoomPan={{ max: 3 }} use:trackZoom>
+<div
+	bind:this={chart}
+	class="map-sea absolute inset-0 overflow-hidden"
+	use:zoomPan={{ max: 3 }}
+	use:trackZoom
+>
 	<div data-zoom class="absolute inset-0">
 		<div class="sea-depth absolute inset-0" aria-hidden="true"></div>
 
@@ -196,6 +224,7 @@
 		<!-- Home bay -->
 		<button
 			type="button"
+			class:spotlight={spotlight === 'home'}
 			class="home-marker btn-chunky absolute z-30 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-khaki p-0 text-paper sm:size-20"
 			style:left="{HOME.x}%"
 			style:top="{HOME.y}%"
@@ -226,6 +255,7 @@
 						class="island-marker group relative flex w-[clamp(6.5rem,15vw,11rem)] flex-col items-center disabled:cursor-not-allowed"
 						class:island-locked={charted && !unlocked}
 						class:island-held={controlled}
+						class:spotlight={spotlight === index}
 						disabled={!attackable}
 						aria-label={islandAria(index, islandId)}
 						title={islandName(index)}
@@ -294,60 +324,12 @@
 		<div class="pointer-events-auto">
 			<BeachheadTakeoverNotice {game} />
 		</div>
-		<!-- Compact sea log: one small tappable chip per event, a logo and a word, coloured by what it means for you -->
-		<ul class="pointer-events-auto flex flex-col gap-1" aria-label={m.beachhead_log_title()}>
-			{#if retakeAt !== null}
-				<li
-					class="flex w-fit items-center gap-1 rounded-full border-2 border-ink bg-tie-red px-2 py-0.5 font-display text-xs font-bold text-paper tabular-nums"
-					title={m.beachhead_log_retake({ time: clock(retakeAt - now) })}
-				>
-					<IconSkull class="size-3.5" aria-hidden="true" />
-					{clock(retakeAt - now)}
-				</li>
-			{/if}
-			{#each logEvents as event, index (index)}
-				{@const mine = event.kind === 'raided' || event.kind === 'defended'}
-				{@const label =
-					event.kind === 'taken'
-						? m.beachhead_log_short_lost()
-						: event.kind === 'raided'
-							? m.beachhead_log_short_raided()
-							: event.kind === 'defended'
-								? m.beachhead_log_short_defended()
-								: event.kind === 'attack'
-									? m.beachhead_log_short_attack()
-									: m.beachhead_log_short_raiders()}
-				<li>
-					<button
-						type="button"
-						class="flex items-center gap-1 rounded-full border-2 border-ink py-0.5 ps-0.5 pe-2 text-[0.7rem] font-bold shadow-[1px_1px_0_var(--color-ink)] {event.kind ===
-							'taken' || event.kind === 'raided'
-							? 'bg-tie-red text-paper'
-							: event.kind === 'defended'
-								? 'bg-[#3fa65a] text-paper'
-								: 'bg-paper'}"
-						title={event.kind === 'raiders'
-							? m.beachhead_log_raiders({ island: islandName(event.island) })
-							: event.kind === 'taken'
-								? m.beachhead_log_taken({ player: event.player, island: islandName(event.island) })
-								: `${event.player} · ${label}`}
-						onclick={() => (mine ? game.goBase() : game.openIsland(event.island))}
-					>
-						<!-- The logo is the commander's avatar, or a skull when the raiders are not a player -->
-						<span
-							class="flex size-5 items-center justify-center rounded-full border-2 border-ink bg-explosion-yellow font-display text-[0.65rem] text-ink"
-						>
-							{#if event.kind === 'raiders'}
-								<IconSkull class="size-3" aria-hidden="true" />
-							{:else}
-								{event.player.charAt(0)}
-							{/if}
-						</span>
-						{label}
-					</button>
-				</li>
-			{/each}
-		</ul>
+		<BeachheadSeaLog
+			events={logEvents}
+			retakeIn={retakeAt === null ? null : clock(retakeAt - now)}
+			{now}
+			onfocus={focusOn}
+		/>
 	</div>
 	<div
 		class="pointer-events-none absolute right-(--hud-right) bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40"
@@ -407,6 +389,28 @@
 		filter: saturate(0.85);
 	}
 
+	/* The island the sea log flew to: a ring that ripples out a few times */
+	.spotlight::after {
+		content: '';
+		position: absolute;
+		inset: -12%;
+		border: 3px solid #fff;
+		border-radius: 50%;
+		pointer-events: none;
+		animation: spotlight 0.85s ease-out 3;
+	}
+
+	@keyframes spotlight {
+		from {
+			opacity: 1;
+			transform: scale(0.6);
+		}
+		to {
+			opacity: 0;
+			transform: scale(1.35);
+		}
+	}
+
 	.attack-ping {
 		animation: attack-ping 2s ease-in-out infinite;
 	}
@@ -459,6 +463,11 @@
 		.attack-ping,
 		.cloud {
 			animation: none;
+		}
+
+		.spotlight::after {
+			animation: none;
+			opacity: 1;
 		}
 
 		.cloud {

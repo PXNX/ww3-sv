@@ -4373,5 +4373,9 @@
 	"maple_points_rewinds": "Rewinds",
 	"maple_tutorial_routines": "Not every moose walks back and forth. Some stand guard and turn on the spot, some walk a loop, and some stop at the end of their route for a moment before turning around. Watch them for a few turns before you move.",
 	"maple_tutorial_noise": "Every step of the cart is heard, and the blue ring shows how far. A moose in earshot stops, turns to face you and does not walk on that turn: a good way to delay one, a bad one to walk into its cone. Waiting is silent. A heavy cart or a golden barrel in tow is louder.",
-	"maple_tutorial_gadgets": "Some levels have a lever that unlocks the truck, golden barrels that are worth three times as much, and pads with a gadget. You can hold one gadget: the coffee freezes the moose where they stand (their cones stay on!), the toque hides you and makes you silent for a few turns. Using it takes a turn (E). You may rewind a turn three times per level (Z), which costs points."
+	"maple_tutorial_gadgets": "Some levels have a lever that unlocks the truck, golden barrels that are worth three times as much, and pads with a gadget. You can hold one gadget: the coffee freezes the moose where they stand (their cones stay on!), the toque hides you and makes you silent for a few turns. Using it takes a turn (E). You may rewind a turn three times per level (Z), which costs points.",
+	"beachhead_log_raided": "{player} raided your base",
+	"beachhead_log_defended": "You beat off {player}",
+	"beachhead_log_plundered": "You raided {player}",
+	"beachhead_log_empty": "Calm seas. Nothing to report."
 }

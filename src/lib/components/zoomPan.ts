@@ -4,7 +4,16 @@
  * data-zoom (the picture), around its centre. Two fingers pinch and pan, the mouse wheel zooms at
  * the cursor, and a single finger or the mouse pans once the picture is zoomed in. A gesture swallows
  * the taps that would otherwise end it, so zooming never lands a boat or opens an island by accident.
+ * Dispatching a `zoomfocus` event on the container (detail: a point in percent of the picture and a
+ * scale) glides the picture there, which the sea log uses to fly to the island something happened on.
  */
+
+export interface ZoomFocus {
+	/** Percent of the picture's width and height */
+	x: number;
+	y: number;
+	scale: number;
+}
 export interface ZoomPanOptions {
 	min?: number;
 	max?: number;
@@ -91,6 +100,9 @@ export function zoomPan(node: HTMLElement, options: ZoomPanOptions = {}) {
 	}
 
 	function onPointerDown(event: PointerEvent) {
+		// A finger stops a glide where it is
+		const target = content();
+		if (target) target.style.transition = '';
 		pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
 		if (pointers.size === 2) {
 			// The second finger starts a pinch: nothing underneath should see it
@@ -176,6 +188,23 @@ export function zoomPan(node: HTMLElement, options: ZoomPanOptions = {}) {
 		}
 	}
 
+	let glide: ReturnType<typeof setTimeout> | undefined;
+
+	function onFocus(event: Event) {
+		const target = content();
+		const detail = (event as CustomEvent<ZoomFocus>).detail;
+		if (!target || !detail) return;
+		scale = Math.min(opts.max ?? 3.5, Math.max(opts.min ?? 1, detail.scale));
+		tx = -((detail.x / 100 - 0.5) * target.offsetWidth) * scale;
+		ty = -((detail.y / 100 - 0.5) * target.offsetHeight) * scale;
+		const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+		if (!reduced) target.style.transition = 'transform 450ms cubic-bezier(0.2, 0.7, 0.2, 1)';
+		clampAndApply();
+		clearTimeout(glide);
+		glide = setTimeout(() => (target.style.transition = ''), 480);
+	}
+
+	node.addEventListener('zoomfocus', onFocus);
 	node.addEventListener('wheel', onWheel, { passive: false });
 	node.addEventListener('pointerdown', onPointerDown, true);
 	node.addEventListener('pointermove', onPointerMove, true);
@@ -191,6 +220,8 @@ export function zoomPan(node: HTMLElement, options: ZoomPanOptions = {}) {
 			opts = next;
 		},
 		destroy() {
+			node.removeEventListener('zoomfocus', onFocus);
+			clearTimeout(glide);
 			node.removeEventListener('wheel', onWheel);
 			node.removeEventListener('pointerdown', onPointerDown, true);
 			node.removeEventListener('pointermove', onPointerMove, true);

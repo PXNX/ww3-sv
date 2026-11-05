@@ -4373,5 +4373,9 @@
 	"maple_points_rewinds": "Zurückspulen",
 	"maple_tutorial_routines": "Nicht jeder Elch läuft hin und her. Manche halten Wache und drehen sich auf der Stelle, manche laufen im Kreis, und manche bleiben am Ende ihrer Route kurz stehen, bevor sie umkehren. Beobachte sie ein paar Züge, bevor du losfährst.",
 	"maple_tutorial_noise": "Jeder Schritt des Wagens ist zu hören, und der blaue Ring zeigt wie weit. Ein Elch in Hörweite bleibt stehen, dreht sich zu dir und geht in diesem Zug nicht weiter: eine gute Art, einen aufzuhalten, aber eine schlechte, in seinen Kegel zu laufen. Warten ist lautlos. Ein schwerer Wagen oder ein goldenes Fass im Schlepptau ist lauter.",
-	"maple_tutorial_gadgets": "Manche Level haben einen Hebel, der den Laster öffnet, goldene Fässer, die dreimal so viel wert sind, und Felder mit einem Gadget. Du trägst ein Gadget: Der Kaffee lässt die Elche an Ort und Stelle erstarren (ihre Kegel bleiben an!), die Mütze macht dich ein paar Züge lang unsichtbar und lautlos. Benutzen kostet einen Zug (E). Pro Level kannst du dreimal einen Zug zurückspulen (Z), das kostet Punkte."
+	"maple_tutorial_gadgets": "Manche Level haben einen Hebel, der den Laster öffnet, goldene Fässer, die dreimal so viel wert sind, und Felder mit einem Gadget. Du trägst ein Gadget: Der Kaffee lässt die Elche an Ort und Stelle erstarren (ihre Kegel bleiben an!), die Mütze macht dich ein paar Züge lang unsichtbar und lautlos. Benutzen kostet einen Zug (E). Pro Level kannst du dreimal einen Zug zurückspulen (Z), das kostet Punkte.",
+	"beachhead_log_raided": "{player} hat deine Basis geplündert",
+	"beachhead_log_defended": "Du hast {player} zurückgeschlagen",
+	"beachhead_log_plundered": "Du hast {player} geplündert",
+	"beachhead_log_empty": "Ruhige See. Nichts zu melden."
 }

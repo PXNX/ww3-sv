@@ -173,6 +173,7 @@ import { localStore, type Store } from '#lib/services/storage.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
 import type { SoundId } from '#lib/sound/sounds.js';
 import { telegram } from '#lib/stores/telegram.svelte.js';
+import type { LogEvent } from '#lib/game/beachhead/mapLog.js';
 
 export type BeachheadScreen = 'base' | 'map' | 'play';
 export type BeachheadStatus = 'playing' | 'paused' | 'won' | 'over';
@@ -255,6 +256,8 @@ export class BeachheadGame {
 	recentTakeovers = $state<string[]>([]);
 	/** True while the player attacks their own base to try out its layout; nothing is won or lost */
 	testing = $state(false);
+	/** Real lines for the sea log: raids on your base and raids you made, from the bot's server */
+	seaLog = $state.raw<LogEvent[]>([]);
 	/** True once the attack has been given up and the troops are running for the beach */
 	retreating = $state(false);
 	/** How fast an attack runs: normal, double, or four times as fast for Pro */
