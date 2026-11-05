@@ -8,6 +8,7 @@
 	`--hud-top` variable tells the game how far down its own overlays start to stay clear of them;
 	`--hud-left` and `--hud-right` keep overlays along the top edge clear of the corners, where
 	Telegram's full screen puts its own buttons. Landscape games also go full screen on phones while immersive, hiding the browser bars.
+	`fitKeyboard` keeps an immersive page with a text field inside the area the on-screen keyboard leaves.
 	A `compact` page puts the back link and the actions into the banner, one row instead of two, for
 	games whose board needs the height; `back={false}` drops the back link, for a game opened from a
 	chat's game message that has nowhere to go back to. A game with its own level or difficulty
@@ -39,6 +40,7 @@
 		back = true,
 		backTo,
 		backStyle = 'default',
+		fitKeyboard = false,
 		children
 	}: {
 		title: string;
@@ -64,6 +66,8 @@
 		backTo?: () => void;
 		/** 'terminal' swaps the chunky back button for a green-on-black terminal one */
 		backStyle?: 'default' | 'terminal';
+		/** Immersive pages with a text field: the frame follows the visible area above the on-screen keyboard */
+		fitKeyboard?: boolean;
 		children: Snippet;
 	} = $props();
 
@@ -113,6 +117,33 @@
 		if (!immersive || !landscape) return;
 		void enterLandscape();
 		return () => leaveLandscape();
+	});
+
+	// The on-screen keyboard shrinks the visible area without moving fixed elements on iOS, and moves
+	// the page under them on some Android browsers. Pinning the frame to the visual viewport keeps
+	// the text field right above the keyboard and stops the page jumping when it opens or closes.
+	let viewport = $state<{ top: number; height: number } | null>(null);
+	$effect(() => {
+		const visual = window.visualViewport;
+		if (!immersive || !fitKeyboard || !visual) return;
+		let frame = 0;
+		const measure = () => {
+			cancelAnimationFrame(frame);
+			frame = requestAnimationFrame(() => {
+				const keyboard = window.innerHeight - visual.height > 80;
+				viewport = keyboard ? { top: visual.offsetTop, height: visual.height } : null;
+				if (keyboard && window.scrollY !== 0 && visual.offsetTop === 0) window.scrollTo(0, 0);
+			});
+		};
+		measure();
+		visual.addEventListener('resize', measure);
+		visual.addEventListener('scroll', measure);
+		return () => {
+			cancelAnimationFrame(frame);
+			visual.removeEventListener('resize', measure);
+			visual.removeEventListener('scroll', measure);
+			viewport = null;
+		};
 	});
 
 	// Nothing a game started (a voice line, a long explosion) keeps sounding on the next page
@@ -175,6 +206,9 @@
 </svelte:head>
 
 <main
+	style:top={viewport ? `${viewport.top}px` : undefined}
+	style:height={viewport ? `${viewport.height}px` : undefined}
+	style:bottom={viewport ? 'auto' : undefined}
 	class={immersive
 		? 'fixed inset-0 overflow-hidden [--hud-left:calc(0.5rem+var(--top-left-inset))] [--hud-right:calc(0.5rem+var(--top-right-inset))] [--hud-top:calc(3.25rem+var(--top-inset))]'
 		: `mx-auto flex h-dvh ${wide ? 'max-w-none' : 'max-w-3xl'} flex-col gap-2 overflow-hidden px-2 pt-[calc(0.5rem+var(--top-inset))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] [--hud-left:0.5rem] [--hud-right:0.5rem] [--hud-top:0.5rem] sm:gap-3 sm:px-3 sm:pt-[calc(0.75rem+var(--top-inset))] sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]`}

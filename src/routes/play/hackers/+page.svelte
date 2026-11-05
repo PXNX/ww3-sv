@@ -122,7 +122,13 @@
 
 <svelte:window onkeydown={onKey} />
 
-<GameShell title={modeName} confirmLeave={playing} immersive backStyle="terminal">
+<GameShell
+	title={modeName}
+	confirmLeave={playing}
+	immersive
+	fitKeyboard={game.status === 'ready'}
+	backStyle="terminal"
+>
 	{#snippet actions()}
 		{#if playing && !booting}
 			<button type="button" class="hk-btn text-sm" onclick={() => game.togglePause()}>
@@ -170,6 +176,22 @@
 						>
 							<span style:width="{game.trace}%"></span>
 						</div>
+						{#if game.incomePerSecond > 0 || game.siphonRate > 0}
+							<div class="mt-1 flex flex-wrap gap-x-3 text-[10px] font-bold opacity-80">
+								{#if game.incomePerSecond > 0}
+									<span>
+										{m.hackers_tool_miner()}
+										{m.hackers_income_rate({ rate: game.incomePerSecond })}
+									</span>
+								{/if}
+								{#if game.siphonRate > 0}
+									<span>
+										{m.hackers_tool_siphon()}
+										{m.hackers_wallet({ left: game.wallet, total: game.walletStart })}
+									</span>
+								{/if}
+							</div>
+						{/if}
 					</div>
 					{#if playing}
 						<button
@@ -185,76 +207,71 @@
 					{/if}
 				</div>
 
-				<div class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
-					{#if playing}
-						{#if game.incomePerSecond > 0 || game.siphonRate > 0}
-							<div class="flex flex-wrap gap-1.5 text-[11px] font-bold">
-								{#if game.incomePerSecond > 0}
-									<span class="hk-panel px-1.5 py-0.5">
-										{m.hackers_tool_miner()}
-										{m.hackers_income_rate({ rate: game.incomePerSecond })}
-									</span>
-								{/if}
-								{#if game.siphonRate > 0}
-									<span class="hk-panel px-1.5 py-0.5">
-										{m.hackers_tool_siphon()}
-										{m.hackers_wallet({ left: game.wallet, total: game.walletStart })}
-									</span>
-								{/if}
-							</div>
-						{/if}
-						{#if shopOpen}
-							<div id="hackers-shop">
-								<HackersShop {game} />
-							</div>
-						{/if}
-					{/if}
-
+				<!-- The contract fills the rest of the screen at a fixed size: the log keeps its height and
+				     the keypad stays pinned to the bottom, so nothing jumps while the run goes on -->
+				<div class="relative flex min-h-0 flex-1 flex-col">
 					{#key game.hurtCount}
 						<div
 							dir="ltr"
-							class="hk-panel flex flex-col gap-3 p-3 {game.hurtCount > 0 ? 'hk-shake' : ''}"
+							class="hk-panel flex min-h-0 flex-1 flex-col gap-2 p-3 {game.hurtCount > 0
+								? 'hk-shake'
+								: ''}"
 						>
 							<div class="flex flex-wrap items-baseline justify-between gap-x-3 text-xs">
-								<span class="font-bold">{game.ip}</span>
+								<span class="font-bold"><span class="opacity-60">&gt;</span> {game.ip}</span>
 								<span class="opacity-80">{game.system}</span>
 							</div>
 
 							<ol class="flex gap-1.5 text-[11px] font-bold" aria-label={m.hackers_stages_label()}>
 								{#each STAGES as stage, i (stage.id)}
 									<li
-										class="flex-1 rounded border px-1.5 py-1 text-center {i === stageIndex
+										class="hk-step flex-1 truncate rounded border px-1.5 py-1 text-center {i ===
+										stageIndex
 											? 'border-(--hk-green) bg-(--hk-green) text-(--hk-bg) [text-shadow:none]'
 											: i < stageIndex
 												? 'border-(--hk-green-dim)'
 												: 'border-(--hk-green-faint) opacity-50'}"
 										aria-current={i === stageIndex ? 'step' : undefined}
 									>
-										{i + 1}/3
+										{i < stageIndex ? '✓' : `${i + 1}/3`}
 										{stage.label()}
 									</li>
 								{/each}
 							</ol>
 
-							{#if game.stage === 'breach'}
-								<HackersBreach {game} />
-							{:else if game.stage === 'keylog'}
-								<HackersKeylog {game} />
-							{:else}
-								<HackersRelays {game} />
-							{/if}
-
-							<div class="hk-rule min-h-[7.5rem] pt-2 text-xs leading-relaxed" aria-live="polite">
+							<div class="hk-log" aria-live="polite">
 								{#each game.log as line, i (game.logSeq - (game.log.length - 1 - i))}
 									{@const newest = i === game.log.length - 1}
-									<p class={newest ? '' : 'opacity-65'}>
-										<HackersTyped text={line} animate={newest} />
+									<p class={newest ? '' : 'opacity-55'}>
+										<HackersTyped text={line} animate={newest} />{#if newest}<span
+												class="hk-cursor ms-0.5"
+												aria-hidden="true"
+											></span>{/if}
 									</p>
 								{/each}
-								<span class="hk-cursor" aria-hidden="true"></span>
+							</div>
+
+							<div class="flex min-h-0 flex-1 flex-col">
+								{#if game.stage === 'breach'}
+									<HackersBreach {game} />
+								{:else if game.stage === 'keylog'}
+									<HackersKeylog {game} />
+								{:else}
+									<HackersRelays {game} />
+								{/if}
 							</div>
 						</div>
 					{/key}
+
+					{#if playing && shopOpen}
+						<!-- The shop floats over the contract instead of pushing it down -->
+						<div
+							id="hackers-shop"
+							class="hk-panel absolute inset-0 z-10 overflow-y-auto p-3 shadow-[0_0_24px_rgb(0_0_0/0.8)]"
+						>
+							<HackersShop {game} />
+						</div>
+					{/if}
 				</div>
 			</div>
 

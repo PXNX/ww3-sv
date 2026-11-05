@@ -103,7 +103,11 @@
 		else printTimer = setInterval(printNext, LINE_MS);
 		if (window.matchMedia?.('(pointer: fine)').matches) input?.focus();
 		const clock = setInterval(() => (sessionMs += 1000), 1000);
+		// When the keyboard opens the screen gets shorter: keep the newest output in sight
+		const resized = new ResizeObserver(() => void scrollDown());
+		if (screen) resized.observe(screen);
 		return () => {
+			resized.disconnect();
 			clearInterval(printTimer);
 			clearInterval(clock);
 		};
@@ -166,6 +170,14 @@
 		}
 		game.buyHardware(id);
 		say(m.hackers_term_bought({ part: HW_NAMES[id](), level: game.hardware[id] }));
+	}
+
+	/** The commands a tap can run, so a phone rarely needs its keyboard at all */
+	const QUICK = ['targets', 'hardware', 'neofetch', 'help', 'clear'] as const;
+
+	function quick(name: (typeof QUICK)[number]) {
+		command = name;
+		run();
 	}
 
 	function run() {
@@ -232,17 +244,21 @@
 	}
 </script>
 
-<section class="flex min-h-0 flex-1 flex-col gap-2" dir="ltr" aria-label={m.hackers_term_aria()}>
-	<div
-		class="flex flex-wrap items-baseline justify-between gap-x-3 text-[11px] uppercase opacity-70"
-	>
-		<span>hermit-shell</span>
-		<span>{m.hackers_term_bank({ amount: game.bank })}</span>
+<section
+	class="hk-panel flex min-h-0 flex-1 flex-col overflow-hidden"
+	dir="ltr"
+	aria-label={m.hackers_term_aria()}
+>
+	<div class="hk-titlebar shrink-0">
+		<span class="hk-dot" aria-hidden="true"></span>
+		<span class="font-bold">hermit-shell</span>
+		<span class="opacity-50">— tty0</span>
+		<span class="ms-auto tabular-nums">{m.hackers_term_bank({ amount: game.bank })}</span>
 	</div>
 
 	<div
 		bind:this={screen}
-		class="min-h-0 flex-1 overflow-y-auto text-sm leading-relaxed"
+		class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-2 text-sm leading-relaxed"
 		aria-live="polite"
 	>
 		<pre class="font-mono whitespace-pre-wrap">{lines.join('\n')}</pre>
@@ -254,7 +270,7 @@
 				<ul class="flex flex-col gap-1.5">
 					{#each targets as target (target.ip)}
 						{@const favorite = game.favorites.includes(target.ip)}
-						<li class="flex items-center gap-2 text-xs">
+						<li class="hk-row text-xs">
 							<button
 								type="button"
 								class="hk-btn shrink-0 {favorite ? 'text-(--hk-amber)' : 'opacity-70'}"
@@ -287,7 +303,7 @@
 					{#each HARDWARE_SPECS as part (part.id)}
 						{@const level = game.hardware[part.id]}
 						{@const cost = hardwareCost(part.id, level)}
-						<li class="flex items-center gap-2 text-xs">
+						<li class="hk-row text-xs">
 							<span class="w-9 shrink-0 font-bold">{HW_NAMES[part.id]()}</span>
 							<span class="w-16 shrink-0 opacity-80">
 								{m.hackers_shop_level({ level, max: part.maxLevel })}
@@ -315,15 +331,29 @@
 		{/if}
 	</div>
 
+	<div class="hk-rule flex shrink-0 [scrollbar-width:none] gap-1.5 overflow-x-auto px-2 pt-2">
+		{#each QUICK as name (name)}
+			<button
+				type="button"
+				class="hk-chip"
+				aria-pressed={(name === 'targets' && program === 'targets') ||
+					(name === 'hardware' && program === 'hardware')}
+				onclick={() => quick(name)}
+			>
+				<span class="opacity-50">$</span>&nbsp;{name}
+			</button>
+		{/each}
+	</div>
+
 	<form
-		class="hk-rule flex items-center gap-2 pt-2"
+		class="flex shrink-0 items-center gap-2 px-2 pt-1.5 pb-2"
 		onsubmit={(event) => {
 			event.preventDefault();
 			run();
 		}}
 	>
 		<label class="sr-only" for="hackers-command">{m.hackers_term_input()}</label>
-		<span class="shrink-0 text-sm">root@hermit:~$</span>
+		<span class="shrink-0 text-sm"><span class="hidden sm:inline">root@hermit:</span>~$</span>
 		<input
 			id="hackers-command"
 			bind:this={input}

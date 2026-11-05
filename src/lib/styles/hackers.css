@@ -416,3 +416,94 @@ dialog.hk-theme {
 		transition: none;
 	}
 }
+
+/* ---- Contract log and steps -------------------------------------------------------------- */
+
+/* The log always keeps the height of its last few lines, newest at the bottom, so the stage
+   underneath never moves as lines come in */
+.hk-log {
+	flex-shrink: 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	block-size: calc(4 * 1.45em + 0.75rem);
+	overflow: hidden;
+	padding: 0.35rem 0.5rem;
+	font-size: 0.72rem;
+	line-height: 1.45;
+	border: 1px solid var(--hk-green-faint);
+	border-radius: 3px;
+	background: rgb(0 0 0 / 0.35);
+	mask-image: linear-gradient(to bottom, transparent, #000 40%);
+}
+
+.hk-log > p {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* ---- Boot terminal ---------------------------------------------------------------------- */
+
+.hk-titlebar {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.3rem 0.6rem;
+	font-size: 0.7rem;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	border-bottom: 1px solid var(--hk-green-faint);
+	background: linear-gradient(to bottom, rgb(57 255 106 / 0.1), transparent);
+}
+
+.hk-dot {
+	inline-size: 0.5rem;
+	block-size: 0.5rem;
+	border-radius: 50%;
+	background: var(--hk-green);
+	box-shadow: var(--hk-glow);
+}
+
+.hk-chip {
+	display: inline-flex;
+	align-items: center;
+	min-height: 2.25rem;
+	padding-inline: 0.7rem;
+	font-size: 0.78rem;
+	font-weight: 700;
+	color: var(--hk-green);
+	background: transparent;
+	border: 1px dashed var(--hk-green-dim);
+	border-radius: 999px;
+	cursor: pointer;
+	white-space: nowrap;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.hk-chip:hover,
+.hk-chip[aria-pressed='true'] {
+	border-style: solid;
+	background: var(--hk-panel-hi);
+}
+
+.hk-chip:active {
+	background: var(--hk-green);
+	color: var(--hk-bg);
+	text-shadow: none;
+}
+
+.hk-row {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.35rem 0.4rem;
+	border: 1px solid var(--hk-green-faint);
+	border-radius: 3px;
+	background: rgb(57 255 106 / 0.03);
+}
+
+.hk-row:hover {
+	background: rgb(57 255 106 / 0.08);
+}

@@ -25,14 +25,25 @@
 	// 5 glyphs in one row, 6 in two even rows, 7 and 8 in rows of four
 	const keypadColumns = $derived(game.symbols <= 5 ? game.symbols : game.symbols === 6 ? 3 : 4);
 	const filled = $derived(game.input.length === game.codeLength);
+
+	/** The attempts list scrolls on its own; it follows the newest row so the keypad never moves */
+	function followNewest(node: HTMLElement, rows: number) {
+		const down = () => node.scrollTo({ top: node.scrollHeight + rows });
+		down();
+		return { update: (next: number) => node.scrollTo({ top: node.scrollHeight + next }) };
+	}
 </script>
 
-<div class="flex flex-col gap-3">
-	<p class="text-sm leading-snug">{m.hackers_breach_hint()}</p>
+<div class="flex min-h-0 flex-1 flex-col gap-2">
+	<p class="shrink-0 text-xs leading-snug opacity-85">{m.hackers_breach_hint()}</p>
 
-	<ol class="flex flex-col gap-1.5" aria-label={m.hackers_breach_history()}>
+	<ol
+		class="flex min-h-[3rem] flex-1 flex-col gap-1.5 overflow-y-auto overscroll-contain [&>li:first-child]:mt-auto"
+		aria-label={m.hackers_breach_history()}
+		use:followNewest={game.guesses.length}
+	>
 		{#each game.guesses as guess, row (row)}
-			<li class="flex items-center gap-1.5">
+			<li class="flex shrink-0 items-center gap-1.5">
 				{#each guess.symbols as symbol, i (i)}
 					<span
 						class="flex size-10 items-center justify-center rounded border border-[#39ff6a]/60 text-lg font-bold {MARK_CLASS[
@@ -44,7 +55,7 @@
 				{/each}
 			</li>
 		{/each}
-		<li class="flex items-center gap-1.5">
+		<li class="flex shrink-0 items-center gap-1.5">
 			{#each { length: game.codeLength }, i (i)}
 				<span
 					class="flex size-10 items-center justify-center rounded border-2 border-dashed border-[#39ff6a] text-lg font-bold {game
@@ -67,7 +78,10 @@
 		</li>
 	</ol>
 
-	<div class="grid gap-2" style:grid-template-columns="repeat({keypadColumns}, minmax(0, 1fr))">
+	<div
+		class="grid shrink-0 gap-2"
+		style:grid-template-columns="repeat({keypadColumns}, minmax(0, 1fr))"
+	>
 		{#each GLYPHS.slice(0, game.symbols) as glyph, i (glyph)}
 			<button
 				type="button"
@@ -86,7 +100,7 @@
 		{/each}
 	</div>
 
-	<div class="flex gap-2">
+	<div class="flex shrink-0 gap-2">
 		<button
 			type="button"
 			class="hk-btn h-12 flex-1"

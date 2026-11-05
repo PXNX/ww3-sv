@@ -11,10 +11,10 @@
 	let { game }: { game: HackersGame } = $props();
 </script>
 
-<div class="flex flex-col gap-3">
-	<p class="text-sm leading-snug">{m.hackers_keylog_hint()}</p>
+<div class="flex min-h-0 flex-1 flex-col gap-2">
+	<p class="shrink-0 text-xs leading-snug opacity-85">{m.hackers_keylog_hint()}</p>
 
-	<p class="flex items-center gap-1.5 text-sm" aria-live="polite">
+	<p class="flex shrink-0 items-center gap-1.5 text-sm" aria-live="polite">
 		<span class="opacity-80">{m.hackers_keylog_passphrase()}</span>
 		<span class="flex gap-1 font-bold tracking-widest">
 			{#each { length: game.passphraseLength }, i (i)}
@@ -32,7 +32,7 @@
 
 	<div
 		dir="ltr"
-		class="relative h-56 touch-none overflow-hidden rounded border-2 border-[#39ff6a]/60 bg-[#031a0a] select-none"
+		class="relative min-h-[11rem] flex-1 touch-none overflow-hidden rounded border-2 border-[#39ff6a]/60 bg-[#031a0a] select-none"
 		role="group"
 		aria-label={m.hackers_keylog_stream()}
 	>
