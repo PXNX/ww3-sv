@@ -11,7 +11,7 @@ const gitignorePath = fileURLToPath(new URL('./.gitignore', import.meta.url));
 
 export default defineConfig(
 	includeIgnoreFile(gitignorePath),
-	// The Telegram bot has its own style and tests (see bot/AGENTS.md)
+	// The Telegram bot is Python with its own tests (see bot/README.md)
 	{ ignores: ['bot/**'] },
 	js.configs.recommended,
 	...ts.configs.recommended,

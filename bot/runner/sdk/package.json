@@ -1,9 +1,0 @@
-{
-  "name": "sdk",
-  "private": true,
-  "type": "module",
-  "exports": {
-    ".": "./index.js",
-    "./db": "./db.js"
-  }
-}

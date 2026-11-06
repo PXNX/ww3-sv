@@ -12,5 +12,5 @@ bun.lockb
 /project.inlang/README.md
 /node_modules
 
-# The Telegram bot formats with its own settings (see bot/AGENTS.md)
+# The Telegram bot is Python with its own tests (see bot/README.md)
 /bot/

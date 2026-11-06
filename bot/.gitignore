@@ -1,12 +1,8 @@
-.tgcloud/
-node_modules/
-# The assembled Mini App (ww3-sv's static export plus the legal pages)
-/app/
-# Operator data for Impressum and Datenschutz, and the generated module that carries it
-/config.local.json
-/tgcloud/lib/generated.js
-# The nyx runner: bot token and the purchase ledger
+# Bot token and database URL
 /.env
-/data/
-# Written by bun install in the nyx container (package-lock.json is the lockfile)
-/bun.lock
+# Operator data for the Impressum and the privacy policy
+/config.local.json
+__pycache__/
+.pytest_cache/
+/venv/
+/logs/
