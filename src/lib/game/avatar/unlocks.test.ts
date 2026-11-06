@@ -40,7 +40,8 @@ const NOTHING: GameProgress = {
 	purrSolved: false,
 	petrobrasStreak: 0,
 	blocksBest: 0,
-	beachheadAchievements: []
+	beachheadAchievements: [],
+	hackersNetwork: 0
 };
 
 /** ...and for one who has done everything */
@@ -51,6 +52,7 @@ const FINISHED: GameProgress = {
 	purrSolved: true,
 	petrobrasStreak: 10,
 	blocksBest: 9001,
+	hackersNetwork: 6,
 	beachheadAchievements: [
 		'first-landing',
 		'archipelago',
@@ -308,5 +310,15 @@ describe('the extra look messages', () => {
 				);
 			}
 		}
+	});
+
+	it('unlocks the Matrix coat once the whole hacker network is found', () => {
+		const coat = unlockFor('shirt', 'matrix-coat')!;
+		expect(
+			requirementMet(coat.requirement, progress({ games: { ...NOTHING, hackersNetwork: 5 } }))
+		).toBe(false);
+		expect(
+			requirementMet(coat.requirement, progress({ games: { ...NOTHING, hackersNetwork: 6 } }))
+		).toBe(true);
 	});
 });

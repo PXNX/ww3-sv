@@ -4539,5 +4539,12 @@
 	"hackers_fortune_2": "Eine gesparte DogeLite ist eine, die der Siphon nicht genommen hat.",
 	"hackers_fortune_3": "Dein Passwort ist stark. Deine Haftnotiz nicht.",
 	"hackers_fortune_4": "Der Admin kommt immer vom Mittagessen zurück. Immer.",
-	"hackers_fortune_5": "404: Glück nicht gefunden. Versuch's bei einer größeren Bank."
+	"hackers_fortune_5": "404: Glück nicht gefunden. Versuch's bei einer größeren Bank.",
+	"crossover_from": "Geschenk aus {game}",
+	"crossover_from_career": "vom Obersten Führer",
+	"crossover_gift_prigo_hammer": "Prigoschin hat am Brückenkopf trainiert und dir seinen Hammer ins Raid-Lager gelegt.",
+	"crossover_gift_raid_veteran": "Zehn Raids überlebt: Dein Trupp schickt 2 Bollwerk-Kristalle zum Brückenkopf.",
+	"crossover_gift_hackers_archive": "Alle Mails der Promis gelesen. Der Oberste Führer zahlt 300 Fake News für den Tratsch.",
+	"crossover_gift_hackers_network": "Halbes Netzwerk gefunden: 500 Gratis-DogeLite liegen in deiner Eremitenbank.",
+	"avatar_unlock_hackers": "Finde alle {count} Netzwerksysteme in {game}"
 }

@@ -15,6 +15,9 @@
 	import { appearance } from '#lib/stores/appearance.svelte.js';
 	import { cloudSave } from '#lib/stores/cloudSave.svelte.js';
 	import CloudImportDialog from '#lib/components/CloudImportDialog.svelte';
+	import CrossoverToast from '#lib/components/CrossoverToast.svelte';
+	import { receive } from '#lib/stores/crossover.svelte.js';
+	import { ARCHIVE_COINS } from '#lib/game/crossover/gifts.js';
 	import { telegram } from '#lib/stores/telegram.svelte.js';
 
 	let { children } = $props();
@@ -45,6 +48,12 @@
 	});
 
 	onMount(() => {
+		// Gifts from the games for the career: the Fake News coins of a full mail archive
+		receive('career', (ids) =>
+			ids.includes('hackers-archive') && careerState.grantCoins(ARCHIVE_COINS) > 0
+				? ['hackers-archive']
+				: []
+		);
 		// Voice clips are fetched while the player is still on the start screen; a muted player
 		// starts the same prefetch when they turn sound on.
 		if (!soundManager().muted) clipPreload().start();
@@ -84,3 +93,4 @@
 </div>
 
 <CloudImportDialog />
+<CrossoverToast />

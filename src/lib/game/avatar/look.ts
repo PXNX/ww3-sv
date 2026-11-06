@@ -6,7 +6,15 @@
  */
 import { createRandom, pickOne, randomSeed, type Random } from '#lib/game/random.js';
 
-export const SHIRT_TYPES = ['tee', 'hoodie', 'suit', 'camo', 'tank', 'trump-suit'] as const;
+export const SHIRT_TYPES = [
+	'tee',
+	'hoodie',
+	'suit',
+	'camo',
+	'tank',
+	'trump-suit',
+	'matrix-coat'
+] as const;
 export const FACE_SHAPES = ['round', 'oval', 'square', 'long'] as const;
 export const NOSES = ['button', 'pointy', 'potato', 'hook', 'beak'] as const;
 /** Hair on the face; the mustache is an extra look */

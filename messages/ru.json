@@ -4539,5 +4539,12 @@
 	"hackers_fortune_2": "Сбережённый DogeLite — тот, что не утащил сифон.",
 	"hackers_fortune_3": "Ваш пароль надёжен. Ваш стикер — нет.",
 	"hackers_fortune_4": "Админ всегда возвращается с обеда. Всегда.",
-	"hackers_fortune_5": "404: удача не найдена. Попробуйте банк побольше."
+	"hackers_fortune_5": "404: удача не найдена. Попробуйте банк побольше.",
+	"crossover_from": "Подарок из {game}",
+	"crossover_from_career": "от Верховного лидера",
+	"crossover_gift_prigo_hammer": "Пригожин натренировался на плацдарме и оставил свой Молот в вашем схроне для рейдов.",
+	"crossover_gift_raid_veteran": "Десять рейдов пережито: отряд прислал на плацдарм 2 кристалла укрепления.",
+	"crossover_gift_hackers_archive": "Все письма прочитаны. Верховный лидер платит 300 Fake News за сплетни.",
+	"crossover_gift_hackers_network": "Найдена половина сети: 500 бесплатных DogeLite упали в ваш банк.",
+	"avatar_unlock_hackers": "Найдите все {count} систем сети в {game}"
 }

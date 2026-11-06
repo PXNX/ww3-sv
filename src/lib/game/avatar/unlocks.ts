@@ -28,7 +28,9 @@ export type UnlockRequirement =
 	/** How many friends joined through the referral link */
 	| { kind: 'referral'; count: number }
 	/** An achievement of Beachhead, which keeps its own save outside the career */
-	| { kind: 'beachhead'; achievement: string };
+	| { kind: 'beachhead'; achievement: string }
+	/** Systems of the cast's network found in Hermit Hackers */
+	| { kind: 'hackers'; network: number };
 
 export interface LookUnlock {
 	id: string;
@@ -173,6 +175,13 @@ export const LOOK_UNLOCKS: readonly LookUnlock[] = [
 		value: 'ogre-ears',
 		// Headquarters, training ground and all eight boats at the top level
 		requirement: { kind: 'beachhead', achievement: 'fortress' }
+	},
+	{
+		id: 'matrix-coat',
+		part: 'shirt',
+		value: 'matrix-coat',
+		// Every system of the cast's network found in Hermit Hackers
+		requirement: { kind: 'hackers', network: 6 }
 	}
 ];
 
@@ -240,6 +249,8 @@ export function requirementMet(requirement: UnlockRequirement, progress: UnlockP
 			return (progress.games?.blocksBest ?? 0) > requirement.score;
 		case 'beachhead':
 			return (progress.games?.beachheadAchievements ?? []).includes(requirement.achievement);
+		case 'hackers':
+			return (progress.games?.hackersNetwork ?? 0) >= requirement.network;
 	}
 }
 
@@ -321,6 +332,8 @@ export function requirementShare(requirement: UnlockRequirement, progress: Unloc
 			return (progress.games?.beachheadAchievements ?? []).includes(requirement.achievement)
 				? 1
 				: 0;
+		case 'hackers':
+			return Math.min(1, (progress.games?.hackersNetwork ?? 0) / requirement.network);
 	}
 }
 

@@ -42,5 +42,10 @@ export function requirementText(requirement: UnlockRequirement): string {
 				game: modeById('beachhead').name(),
 				achievement: beachheadAchievementName(requirement.achievement)
 			});
+		case 'hackers':
+			return m.avatar_unlock_hackers({
+				game: modeById('hackers').name(),
+				count: requirement.network
+			});
 	}
 }

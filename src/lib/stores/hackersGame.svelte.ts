@@ -56,6 +56,9 @@ import {
 	type CastId
 } from '#lib/game/hackers/lore.js';
 import { emptyBotnet, type Botnet } from '#lib/game/hackers/botnet.js';
+import { ARCHIVE_COINS, NETWORK_DOGELITE } from '#lib/game/crossover/gifts.js';
+import { career } from '#lib/game/career/store.svelte.js';
+import { receive } from '#lib/stores/crossover.svelte.js';
 import {
 	effectiveSpec,
 	toolSpec,
@@ -209,6 +212,16 @@ export class HackersGame {
 	loadProfile() {
 		this.#applyProfile(
 			this.#store().read<HackersProfile>(HACKERS_PROFILE_KEY, defaultProfile(), isProfile)
+		);
+		// Half the network found: free DogeLite from the Supreme Leader
+		receive(
+			'hackers',
+			(ids) => {
+				if (!ids.includes('hackers-network')) return [];
+				this.#saveProfile({ ...this.#profile(), bank: this.bank + NETWORK_DOGELITE });
+				return ['hackers-network'];
+			},
+			this.#store()
 		);
 	}
 
@@ -461,6 +474,15 @@ export class HackersGame {
 		}
 		if (!this.lore.includes(mail.id)) {
 			this.#saveProfile({ ...this.#profile(), lore: [...this.lore, mail.id] });
+			// The whole archive read: the Supreme Leader pays in Fake News
+			receive(
+				'career',
+				(ids) =>
+					ids.includes('hackers-archive') && career().grantCoins(ARCHIVE_COINS) > 0
+						? ['hackers-archive']
+						: [],
+				this.#store()
+			);
 		}
 		this.#play('ui-toggle', 0.5);
 		this.#showDesktop();
@@ -524,6 +546,15 @@ export class HackersGame {
 		if (!id) return;
 		this.#saveProfile({ ...this.#profile(), network: [...this.network, id] });
 		this.#say(m.hackers_net_log_found({ system: networkName(id) }));
+		receive(
+			'hackers',
+			(ids) => {
+				if (!ids.includes('hackers-network')) return [];
+				this.#saveProfile({ ...this.#profile(), bank: this.bank + NETWORK_DOGELITE });
+				return ['hackers-network'];
+			},
+			this.#store()
+		);
 		this.#play('chime-big', 0.8);
 		this.#flash('ok');
 		this.#showDesktop();

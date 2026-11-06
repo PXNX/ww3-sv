@@ -40,6 +40,7 @@ import {
 	SKILL_COOLDOWN_MS,
 	WEAPONS,
 	SPRINT_COOLDOWN_MS,
+	STASH_SIZE,
 	type Archetype,
 	type ArmorSlot,
 	type MapId,
@@ -48,7 +49,14 @@ import {
 	type Variant,
 	type WeaponKind
 } from '#lib/game/raid/config.js';
-import { gearScore, weaponStats, type Crystal, type GearItem } from '#lib/game/raid/items.js';
+import {
+	gearScore,
+	makeWeapon,
+	weaponStats,
+	type Crystal,
+	type GearItem
+} from '#lib/game/raid/items.js';
+import { receive } from '#lib/stores/crossover.svelte.js';
 import {
 	bankHaul,
 	claimQuest,
@@ -306,6 +314,13 @@ export class RaidGame {
 		const today = dateAt(this.#now());
 		const saved = parseProfile(this.#store().read<unknown>(PROFILE_KEY, null), today);
 		this.#setProfile(saved ?? newProfile(today));
+		// Prigozhin trained up in Beachhead brings his hammer along
+		receive('raid', (ids) => {
+			if (!ids.includes('prigo-hammer') || this.profile.stash.length >= STASH_SIZE) return [];
+			const hammer = makeWeapon('hammer', 'rare', 3);
+			this.#setProfile({ ...this.profile, stash: [...this.profile.stash, hammer] });
+			return ['prigo-hammer'];
+		});
 		this.state = createRaid(this.map, this.profile.loadout, this.level);
 		this.#syncChrome();
 	}

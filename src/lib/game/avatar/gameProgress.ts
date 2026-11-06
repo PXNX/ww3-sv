@@ -9,6 +9,7 @@ import { parseSave as parseBeachheadSave } from '#lib/game/beachhead/campaign.js
 import { PREPARED_LEVEL_COUNT, levelIdAt } from '#lib/game/fury/levels/index.js';
 import { PROGRESS_KEY as FURY_PROGRESS_KEY, isFuryProgress } from '#lib/game/fury/progress.js';
 import { PURR_SOLVED_KEY } from '#lib/game/purrpentagram/config.js';
+import { HACKERS_PROFILE_KEY, isProfile as isHackersProfile } from '#lib/game/hackers/profile.js';
 import { LEVEL_IDS as VENEZUELA_LEVEL_IDS } from '#lib/game/venezuela/levels.js';
 import {
 	PROGRESS_KEY as VENEZUELA_PROGRESS_KEY,
@@ -36,6 +37,8 @@ export interface GameProgress {
 	blocksBest: number;
 	/** Beachhead: the achievement ids earned in its own save */
 	beachheadAchievements: readonly string[];
+	/** Hermit Hackers: systems of the cast's network found */
+	hackersNetwork: number;
 }
 
 export function readGameProgress(
@@ -47,6 +50,8 @@ export function readGameProgress(
 	const fury = isFuryProgress(furyRaw) ? furyRaw : null;
 	const venezuela = isVenezuelaProgress(venezuelaRaw) ? venezuelaRaw : null;
 	const beachhead = parseBeachheadSave(store.read<unknown>(BEACHHEAD_SAVE_KEY, null));
+	const hackersRaw = store.read<unknown>(HACKERS_PROFILE_KEY, null);
+	const hackers = isHackersProfile(hackersRaw) ? hackersRaw : null;
 	let furyWon = 0;
 	for (let index = 0; index < PREPARED_LEVEL_COUNT; index += 1) {
 		if ((fury?.stars[levelIdAt(index)] ?? 0) > 0) furyWon += 1;
@@ -59,6 +64,7 @@ export function readGameProgress(
 		purrSolved: store.read<unknown>(PURR_SOLVED_KEY, false) === true,
 		petrobrasStreak: scores.get(PETROBRAS_STREAK_KEY) ?? 0,
 		blocksBest: scores.get(BLOCKS_BEST_KEY) ?? 0,
-		beachheadAchievements: beachhead?.achievements ?? []
+		beachheadAchievements: beachhead?.achievements ?? [],
+		hackersNetwork: hackers ? new Set(hackers.network ?? []).size : 0
 	};
 }

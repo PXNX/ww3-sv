@@ -173,6 +173,7 @@ import { localStore, type Store } from '#lib/services/storage.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
 import type { SoundId } from '#lib/sound/sounds.js';
 import { telegram } from '#lib/stores/telegram.svelte.js';
+import { receive } from '#lib/stores/crossover.svelte.js';
 import type { LogEvent } from '#lib/game/beachhead/mapLog.js';
 import { applyRaidLoss, raidLog, rivalIsland } from '#lib/game/beachhead/rivals.js';
 import {
@@ -551,6 +552,16 @@ export class BeachheadGame {
 		const takebacks = this.#applyTakebacks(claimed);
 		this.campaign = takebacks;
 		if (takebacks !== base || !stored) this.#commit(takebacks, { write: true, claim: false });
+		// A seasoned raider sends crystals home
+		receive(
+			'beachhead',
+			(ids) => {
+				if (!ids.includes('raid-veteran')) return [];
+				this.#commit(addCrystals(this.campaign, 'fortify', 2), { claim: false });
+				return ['raid-veteran'];
+			},
+			this.#store()
+		);
 	}
 
 	/** Finishes any due build and banks production; called often by the base screen */

@@ -4539,5 +4539,12 @@
 	"hackers_fortune_2": "A DogeLite saved is a DogeLite the siphon didn't take.",
 	"hackers_fortune_3": "Your password is strong. Your sticky note is not.",
 	"hackers_fortune_4": "The admin always comes back from lunch. Always.",
-	"hackers_fortune_5": "404: fortune not found. Try a bigger bank."
+	"hackers_fortune_5": "404: fortune not found. Try a bigger bank.",
+	"crossover_from": "Gift from {game}",
+	"crossover_from_career": "the Supreme Leader",
+	"crossover_gift_prigo_hammer": "Prigozhin trained up on the beachhead and left his Hammer in your Raid stash.",
+	"crossover_gift_raid_veteran": "Ten raids survived: your squad sent 2 fortify crystals home to the beachhead.",
+	"crossover_gift_hackers_archive": "Every email of the cast read. The Supreme Leader pays 300 Fake News for the gossip.",
+	"crossover_gift_hackers_network": "Half the network found: 500 free DogeLite landed in your hermit bank.",
+	"avatar_unlock_hackers": "Find all {count} network systems in {game}"
 }

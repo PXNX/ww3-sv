@@ -33,7 +33,8 @@ describe('game progress for the avatar', () => {
 			purrSolved: false,
 			petrobrasStreak: 0,
 			blocksBest: 0,
-			beachheadAchievements: []
+			beachheadAchievements: [],
+			hackersNetwork: 0
 		});
 	});
 

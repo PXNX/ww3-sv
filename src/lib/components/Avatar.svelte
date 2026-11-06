@@ -115,7 +115,11 @@
 	{:else}
 		<path
 			d="M12 141 C12 116 32 103 60 103 C88 103 108 116 108 141 Z"
-			fill={current.shirt === 'trump-suit' ? '#1c2a4a' : current.shirtColor}
+			fill={current.shirt === 'trump-suit'
+				? '#1c2a4a'
+				: current.shirt === 'matrix-coat'
+					? '#0d0f0d'
+					: current.shirtColor}
 		/>
 	{/if}
 	{#if current.shirt === 'camo'}
@@ -137,6 +141,19 @@
 		<path d="M56 108 L64 108 L67 138 L60 141 L53 138 Z" fill="#e5484d" stroke-width="2" />
 		<path d="M47 104 L57 128 M73 104 L63 128" fill="none" stroke-width="2.5" />
 		<rect x="84" y="116" width="8" height="5" fill="#e5484d" stroke-width="1.5" />
+	{:else if current.shirt === 'matrix-coat'}
+		<!-- A long black leather coat with wide lapels, a black shirt and green code running down it -->
+		<path d="M50 104 L60 124 L70 104 Z" fill="#1d1f1d" />
+		<path d="M44 104 L56 130 L48 141 M76 104 L64 130 L72 141" fill="none" stroke-width="2.5" />
+		<g stroke="none" fill="#39ff6a" opacity="0.8">
+			<rect x="24" y="118" width="2" height="5" />
+			<rect x="24" y="126" width="2" height="3" />
+			<rect x="30" y="114" width="2" height="4" />
+			<rect x="30" y="122" width="2" height="7" />
+			<rect x="88" y="116" width="2" height="6" />
+			<rect x="88" y="125" width="2" height="3" />
+			<rect x="94" y="120" width="2" height="5" />
+		</g>
 	{:else if current.shirt === 'hoodie'}
 		<path d="M52 108 L50 126 M68 108 L70 126" fill="none" stroke-width="2.5" />
 		<circle cx="50" cy="128" r="2" fill={darkShirt ? '#ffffff' : INK} stroke-width="1.5" />
