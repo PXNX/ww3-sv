@@ -1,7 +1,7 @@
 // Assembles the deployable project:
 //   1. fills legal/*.txt with the operator data from config.local.json and writes
 //      tgcloud/lib/generated.js (texts, app URL, admin ids) for the bot modules;
-//   2. unless --no-app: builds ww3-sv as a static export and copies it to app/, with the legal
+//   2. unless --no-app: builds the game (the repository root, one level up) as a static export and copies it to app/, with the legal
 //      pages added as app/legal/<page>.html.
 // `npm run deploy` runs this and then `tgcloud push`.
 
@@ -41,7 +41,7 @@ export const TEXTS = ${JSON.stringify(texts, null, 2)};
 console.log(`wrote tgcloud/lib/generated.js${salesOpen ? '' : ' (sales closed: operator data missing)'}`);
 
 if (!process.argv.includes('--no-app')) {
-  const gameDir = resolve(root, config.gameDir ?? '../../ww3-sv');
+  const gameDir = resolve(root, config.gameDir ?? '..');
   console.log(`building the game in ${gameDir}`);
   execSync('bun run build:static', { cwd: gameDir, stdio: 'inherit' });
 

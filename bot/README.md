@@ -1,10 +1,11 @@
 # ptb-ww3
 
-The Telegram side of [World War 3](https://github.com/PXNX/ww3-sv) (`@game_ww3_bot`), written for
+The Telegram side of World War 3 (`@game_ww3_bot`), living in `bot/` of the game's repository
+([PXNX/ww3-sv](https://github.com/PXNX/ww3-sv); its history up to the move is that of PXNX/ptb-ww3), written for
 [Telegram Serverless](https://core.telegram.org/bots/serverless). **Serverless does not work for this bot
 yet** (it is still behind a waitlist), so the same handlers run on nyx (see *Run on nyx*):
 
-- **Mini App hosting**: the game's static export (`ww3-sv`, `bun run build:static`) is served at
+- **Mini App hosting**: the game's static export (the repository root, `bun run build:static`) is served at
   `https://app<id>.tgcloud.ai/`, together with the legal pages under `/legal/<page>.html`.
 - **Login**: inside Telegram the player is signed in through the Mini App's `initData`, which the
   platform verifies before any endpoint runs. `/start` and `/login` open the game.
@@ -115,14 +116,16 @@ scheduled trigger.
 
 ```sh
 ssh nyx@mn
-git clone https://github.com/PXNX/ptb-ww3 ~/projects/ptb-ww3 && cd ~/projects/ptb-ww3
+git clone https://github.com/PXNX/ww3-sv ~/projects/ww3-sv
+# The container unit mounts ~/projects/ptb-ww3, so that path points at the bot folder
+ln -sfn ~/projects/ww3-sv/bot ~/projects/ptb-ww3 && cd ~/projects/ptb-ww3
 cp example.env .env                     # TELEGRAM=<bot token>
 cp config.example.json config.local.json  # operator data; appUrl https://ww3-sv.vercel.app, legalUrl "", adminIds
 ln -sf ~/projects/ptb-ww3/ptb-ww3.container ~/.config/containers/systemd/
 systemctl --user daemon-reload && systemctl --user start ptb-ww3
 ```
 
-Updates: push, then `ssh nyx@mn "cd ~/projects/ptb-ww3 && gh repo sync && systemctl --user restart ptb-ww3"`.
+Updates: push, then `ssh nyx@mn "cd ~/projects/ww3-sv && gh repo sync && systemctl --user restart ptb-ww3"`.
 
 On start the runner also refreshes the command menus (English, German, and the admins' own with `/set_cmd` and `/stats`) and the menu button, like ptb-words' `post_init`. It serves the legal pages at `/legal/<page>.html`; set `legalUrl` in `config.local.json` to `https://mn.tail865185.ts.net:10000/legal` so messages and the Mini App link to them.
 
