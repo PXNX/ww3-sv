@@ -18,6 +18,7 @@ import {
 	type CatalogueItem,
 	type GroupBoardRow,
 	type GroupGame,
+	type GroupOvertaken,
 	type PurchaseConsent,
 	type TelegramInvite,
 	type TelegramUser
@@ -96,6 +97,8 @@ class TelegramStore {
 	/** The chat's leaderboard after the last reported run, for the result sheet */
 	groupBoard = $state<GroupBoardRow[] | null>(null);
 	groupBoardStatus = $state<'idle' | 'loading' | 'ready' | 'failed'>('idle');
+	/** The player the last reported run overtook in that chat, for the result sheet's animation */
+	groupOvertaken = $state<GroupOvertaken | null>(null);
 
 	#started = false;
 	/** The last streak report the bot accepted, so an unchanged streak is not sent again */
@@ -155,8 +158,11 @@ class TelegramStore {
 		const game = this.groupGame;
 		if (!game || game.mode !== mode || !Number.isFinite(score)) return;
 		this.groupBoardStatus = 'loading';
+		this.groupOvertaken = null;
 		try {
-			this.groupBoard = await postGroupScore(game, Math.max(0, Math.floor(score)));
+			const result = await postGroupScore(game, Math.max(0, Math.floor(score)));
+			this.groupBoard = result.rows;
+			this.groupOvertaken = result.overtaken;
 			this.groupBoardStatus = 'ready';
 		} catch {
 			// A run that does not reach the chat only misses that one entry on its scoreboard

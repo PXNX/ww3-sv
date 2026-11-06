@@ -5,6 +5,7 @@ import {
 	fromApiReply,
 	groupGameFromUrl,
 	parseGroupBoard,
+	parseOvertaken,
 	inviteShareUrl,
 	isTelegramLaunch,
 	parseMe,
@@ -281,6 +282,22 @@ describe("the leaderboard of a chat's game", () => {
 			{ leaderboard: [{ position: 1, name: 'A', score: 1 }] }
 		]) {
 			expect(parseGroupBoard(value)).toBeNull();
+		}
+	});
+
+	it('knows whom the run overtook, for the rush past them', () => {
+		expect(parseOvertaken({ overtaken: { name: 'Ada', score: 300 } })).toEqual({
+			name: 'Ada',
+			score: 300
+		});
+		expect(parseOvertaken({ overtaken: { score: 3 } })).toEqual({ name: '', score: 3 });
+		for (const value of [
+			null,
+			{},
+			{ overtaken: null },
+			{ overtaken: { name: 'Ada', score: -1 } }
+		]) {
+			expect(parseOvertaken(value)).toBeNull();
 		}
 	});
 });

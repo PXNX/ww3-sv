@@ -504,6 +504,7 @@
 	"gameover_group_board_title": "Group leaderboard",
 	"gameover_group_board_loading": "Loading the group's leaderboard…",
 	"gameover_group_board_failed": "The group's leaderboard could not be loaded.",
+	"gameover_group_overtake": "You overtake {name}!",
 	"gameover_near_best": "So close: {gap} short of your best ({best}). Revive and keep this run going.",
 	"gameover_try_again": "Try again",
 	"gameover_peek_show": "Show results",

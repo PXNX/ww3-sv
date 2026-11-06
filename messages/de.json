@@ -504,6 +504,7 @@
 	"gameover_group_board_title": "Bestenliste der Gruppe",
 	"gameover_group_board_loading": "Bestenliste der Gruppe wird geladen …",
 	"gameover_group_board_failed": "Die Bestenliste der Gruppe konnte nicht geladen werden.",
+	"gameover_group_overtake": "Du überholst {name}!",
 	"gameover_near_best": "So knapp: {gap} bis zu deinem Rekord ({best}). Wiederbeleben und weiterlaufen?",
 	"gameover_try_again": "Nochmal",
 	"gameover_peek_show": "Ergebnis anzeigen",

@@ -504,6 +504,7 @@
 	"gameover_group_board_title": "Таблица лидеров группы",
 	"gameover_group_board_loading": "Загрузка таблицы лидеров группы…",
 	"gameover_group_board_failed": "Не удалось загрузить таблицу лидеров группы.",
+	"gameover_group_overtake": "Ты обгоняешь {name}!",
 	"gameover_near_best": "Так близко: {gap} до рекорда ({best}). Оживить и продолжить?",
 	"gameover_try_again": "Попробовать ещё раз",
 	"gameover_peek_show": "Показать результат",

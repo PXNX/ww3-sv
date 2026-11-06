@@ -337,7 +337,11 @@
 			{/if}
 
 			{#if groupGame}
-				<GroupLeaderboard rows={account.groupBoard} status={account.groupBoardStatus} />
+				<GroupLeaderboard
+					rows={account.groupBoard}
+					status={account.groupBoardStatus}
+					overtaken={account.groupOvertaken}
+				/>
 			{/if}
 
 			{#if reward}

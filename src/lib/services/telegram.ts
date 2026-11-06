@@ -199,12 +199,32 @@ export function parseGroupBoard(value: unknown): GroupBoardRow[] | null {
 	return rows;
 }
 
+/** The player a run overtook in its chat: the strongest one whose best it beat */
+export interface GroupOvertaken {
+	name: string;
+	score: number;
+}
+
+/** Who the run overtook, from the bot's answer; null when nobody was or the field is malformed */
+export function parseOvertaken(value: unknown): GroupOvertaken | null {
+	if (!isRecord(value) || !isRecord(value.overtaken)) return null;
+	const { name, score } = value.overtaken;
+	if (!isCount(score)) return null;
+	return { name: typeof name === 'string' ? name : '', score };
+}
+
+/** The bot's answer to a group run: the chat's leaderboard and whom the run overtook */
+export interface GroupScoreResult {
+	rows: GroupBoardRow[];
+	overtaken: GroupOvertaken | null;
+}
+
 /**
  * Sends a finished run of a group game to the bot's server and returns the chat's leaderboard
- * around the player. The session is the credential, so no initData goes along; without the server
- * (VITE_TELEGRAM_API_URL) the run is not reported.
+ * around the player, with the player the run overtook. The session is the credential, so no
+ * initData goes along; without the server (VITE_TELEGRAM_API_URL) the run is not reported.
  */
-export async function postGroupScore(game: GroupGame, score: number): Promise<GroupBoardRow[]> {
+export async function postGroupScore(game: GroupGame, score: number): Promise<GroupScoreResult> {
 	const url = apiUrl();
 	if (!url) throw new TelegramCallError('UNAVAILABLE');
 	let response: Response;
@@ -217,11 +237,10 @@ export async function postGroupScore(game: GroupGame, score: number): Promise<Gr
 	} catch (error) {
 		throw toCallError(error);
 	}
-	const board = parseGroupBoard(
-		fromApiReply(response.status, await response.json().catch(() => null))
-	);
+	const result = fromApiReply(response.status, await response.json().catch(() => null));
+	const board = parseGroupBoard(result);
 	if (!board) throw new TelegramCallError('UNKNOWN', 'Unexpected leaderboard');
-	return board;
+	return { rows: board, overtaken: parseOvertaken(result) };
 }
 
 /** The start parameter of the current Mini App launch, once Telegram is loaded */
