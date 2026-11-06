@@ -13,6 +13,8 @@
 	import { clipPreload } from '#lib/sound/preload.svelte.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import { appearance } from '#lib/stores/appearance.svelte.js';
+	import { cloudSave } from '#lib/stores/cloudSave.svelte.js';
+	import CloudImportDialog from '#lib/components/CloudImportDialog.svelte';
 	import { telegram } from '#lib/stores/telegram.svelte.js';
 
 	let { children } = $props();
@@ -50,6 +52,9 @@
 		void account.start();
 		// A `startapp=shop` or `startapp=profile` link opens that page instead of the start screen
 		void launchStartParam().then((param) => {
+			// Inside Telegram the progress is mirrored to the account; a transfer link from the
+			// browser (`startapp=import_<code>`) offers taking that browser's progress over
+			void cloudSave().start(param);
 			// A shared squad link (`startapp=squad_<code>`, or `?join=<code>` in dev) offers joining
 			// that squad in the raid lobby
 			const join = page.url.searchParams.get('join');
@@ -77,3 +82,5 @@
 <div class="min-h-dvh">
 	{@render children()}
 </div>
+
+<CloudImportDialog />

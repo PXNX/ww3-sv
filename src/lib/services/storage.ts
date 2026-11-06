@@ -17,6 +17,23 @@ export interface Store {
 
 const PREFIX = 'ww3:';
 
+/** Keys under this part of the prefix belong to the cloud save itself and never mark progress */
+export const CLOUD_META = 'cloud:';
+
+type WriteListener = (key: string) => void;
+const writeListeners = new Set<WriteListener>();
+
+/** Hears about every change the app makes to its progress, so the cloud save can follow */
+export function onStoreWrite(listener: WriteListener): () => void {
+	writeListeners.add(listener);
+	return () => writeListeners.delete(listener);
+}
+
+function changed(key: string) {
+	if (key.startsWith(CLOUD_META)) return;
+	for (const listener of writeListeners) listener(key);
+}
+
 export function browserStorage(): KeyValueStorage | null {
 	try {
 		if (typeof localStorage === 'undefined') return null;
@@ -47,6 +64,7 @@ export function createStore(storage: KeyValueStorage | null): Store {
 			if (!storage) return false;
 			try {
 				storage.setItem(PREFIX + key, JSON.stringify(value));
+				changed(key);
 				return true;
 			} catch {
 				return false;
@@ -55,6 +73,7 @@ export function createStore(storage: KeyValueStorage | null): Store {
 		remove(key) {
 			try {
 				storage?.removeItem(PREFIX + key);
+				changed(key);
 			} catch {
 				// Nothing to do: storage is unavailable
 			}
@@ -69,6 +88,9 @@ export function localStore(): Store {
 	shared ??= createStore(browserStorage());
 	return shared;
 }
+
+/** The prefix every key of the app carries in the browser's storage */
+export const STORAGE_PREFIX = PREFIX;
 
 export function isFiniteNumber(value: unknown): value is number {
 	return typeof value === 'number' && Number.isFinite(value);

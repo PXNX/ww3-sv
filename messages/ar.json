@@ -4387,5 +4387,13 @@
 	"beachhead_rival_cooldown": "أغرت على هذه القاعدة قبل قليل. انتظر بعض الوقت.",
 	"beachhead_rival_shielded": "تعرضت هذه القاعدة لغارة للتو وهي محمية.",
 	"beachhead_rival_failed": "لا اتصال لاسلكي. حاول مرة أخرى بعد قليل.",
-	"beachhead_raided_notice": "{player} أغار عليك وأخذ {total}"
+	"beachhead_raided_notice": "{player} أغار عليك وأخذ {total}",
+	"cloud_hint_title": "احفظ تقدمك",
+	"cloud_hint_body": "تقدمك الآن محفوظ في هذا المتصفح فقط. تابع في تيليجرام ليُحفظ في حسابك على كل الأجهزة. كل ما حققته حتى الآن سينتقل معك.",
+	"cloud_hint_button": "تابع في تيليجرام",
+	"cloud_hint_dismiss": "ليس الآن",
+	"cloud_import_title": "نقل تقدمك؟",
+	"cloud_import_body": "فتحت اللعبة من متصفحك. هل تنقل ذلك التقدم إلى حساب تيليجرام هذا؟ سيحل محل ما حفظه هذا الحساب حتى الآن.",
+	"cloud_import_take": "انقله",
+	"cloud_import_keep": "أبقِ تقدم الحساب"
 }

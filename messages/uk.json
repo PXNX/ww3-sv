@@ -4387,5 +4387,13 @@
 	"beachhead_rival_cooldown": "Ви нещодавно грабували цю базу. Зачекайте трохи.",
 	"beachhead_rival_shielded": "Цю базу щойно пограбували, вона під щитом.",
 	"beachhead_rival_failed": "Немає зв'язку. Спробуйте ще раз.",
-	"beachhead_raided_notice": "{player} пограбував вас і забрав {total}"
+	"beachhead_raided_notice": "{player} пограбував вас і забрав {total}",
+	"cloud_hint_title": "Збережіть свій прогрес",
+	"cloud_hint_body": "Зараз прогрес зберігається лише в цьому браузері. Продовжте в Telegram, і він збережеться у вашому акаунті на всіх пристроях. Усе, що у вас уже є, перенесеться.",
+	"cloud_hint_button": "Продовжити в Telegram",
+	"cloud_hint_dismiss": "Не зараз",
+	"cloud_import_title": "Перенести прогрес?",
+	"cloud_import_body": "Ви відкрили гру з браузера. Перенести цей прогрес у цей акаунт Telegram? Він замінить те, що вже збережено в акаунті.",
+	"cloud_import_take": "Перенести",
+	"cloud_import_keep": "Залишити як є"
 }

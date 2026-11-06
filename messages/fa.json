@@ -4387,5 +4387,13 @@
 	"beachhead_rival_cooldown": "همین تازگی به این پایگاه یورش بردی. کمی صبر کن.",
 	"beachhead_rival_shielded": "این پایگاه تازه غارت شده و زیر سپر است.",
 	"beachhead_rival_failed": "ارتباط رادیویی نیست. کمی بعد دوباره تلاش کن.",
-	"beachhead_raided_notice": "{player} به تو یورش برد و {total} برد"
+	"beachhead_raided_notice": "{player} به تو یورش برد و {total} برد",
+	"cloud_hint_title": "پیشرفتت را امن نگه دار",
+	"cloud_hint_body": "الان پیشرفتت فقط در همین مرورگر است. در تلگرام ادامه بده تا در حسابت و روی همهٔ دستگاه‌ها ذخیره شود. هرچه تا الان داری همراهت می‌آید.",
+	"cloud_hint_button": "ادامه در تلگرام",
+	"cloud_hint_dismiss": "الان نه",
+	"cloud_import_title": "پیشرفتت را بیاوری؟",
+	"cloud_import_body": "بازی را از مرورگرت باز کردی. آن پیشرفت به این حساب تلگرام منتقل شود؟ جای چیزی را می‌گیرد که این حساب تا الان ذخیره کرده.",
+	"cloud_import_take": "منتقل کن",
+	"cloud_import_keep": "همین حساب بماند"
 }

@@ -4387,5 +4387,13 @@
 	"beachhead_rival_cooldown": "Du hast diese Basis gerade erst geplündert. Gib ihr etwas Zeit.",
 	"beachhead_rival_shielded": "Diese Basis wurde gerade geplündert und ist geschützt.",
 	"beachhead_rival_failed": "Kein Funkkontakt. Versuch es gleich noch einmal.",
-	"beachhead_raided_notice": "{player} hat dich geplündert und {total} erbeutet"
+	"beachhead_raided_notice": "{player} hat dich geplündert und {total} erbeutet",
+	"cloud_hint_title": "Sichere deinen Fortschritt",
+	"cloud_hint_body": "Gerade lebt dein Fortschritt nur in diesem Browser. Spiel in Telegram weiter, dann wird er in deinem Konto gespeichert, auf jedem Gerät. Alles Bisherige kommt mit.",
+	"cloud_hint_button": "In Telegram weiterspielen",
+	"cloud_hint_dismiss": "Nicht jetzt",
+	"cloud_import_title": "Fortschritt mitnehmen?",
+	"cloud_import_body": "Du hast das Spiel aus deinem Browser geöffnet. Diesen Fortschritt in dieses Telegram-Konto übernehmen? Er ersetzt, was dieses Konto bisher gespeichert hat.",
+	"cloud_import_take": "Übernehmen",
+	"cloud_import_keep": "Kontostand behalten"
 }

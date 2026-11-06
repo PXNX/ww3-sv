@@ -227,7 +227,7 @@ export function toCallError(error: unknown): TelegramCallError {
 }
 
 /** The bot's own server, used when the bot does not run on Telegram Serverless */
-function apiUrl(): string {
+export function apiUrl(): string {
 	const url: string = import.meta.env.VITE_TELEGRAM_API_URL ?? '';
 	return url.startsWith('https://') ? url.replace(/\/+$/, '') : '';
 }

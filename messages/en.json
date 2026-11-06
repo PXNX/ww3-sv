@@ -4387,5 +4387,13 @@
 	"beachhead_rival_cooldown": "You raided this base a moment ago. Give it some time.",
 	"beachhead_rival_shielded": "This base was just raided and is under a shield.",
 	"beachhead_rival_failed": "No radio contact. Try again in a moment.",
-	"beachhead_raided_notice": "{player} raided you and took {total}"
+	"beachhead_raided_notice": "{player} raided you and took {total}",
+	"cloud_hint_title": "Keep your progress safe",
+	"cloud_hint_body": "Right now your progress only lives in this browser. Continue in Telegram and it is saved to your account, on every device. Everything you have so far comes along.",
+	"cloud_hint_button": "Continue in Telegram",
+	"cloud_hint_dismiss": "Not now",
+	"cloud_import_title": "Bring your progress along?",
+	"cloud_import_body": "You opened the game from your browser. Take that progress over to this Telegram account? It replaces what this account has saved so far.",
+	"cloud_import_take": "Take it over",
+	"cloud_import_keep": "Keep this account's"
 }

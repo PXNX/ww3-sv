@@ -9,6 +9,7 @@
 	import Avatar from '#lib/components/Avatar.svelte';
 	import CameoLineup from '#lib/components/CameoLineup.svelte';
 	import ClipPreloadLine from '#lib/components/ClipPreloadLine.svelte';
+	import CloudSaveHint from '#lib/components/CloudSaveHint.svelte';
 	import DailyPanel from '#lib/components/DailyPanel.svelte';
 	import InstallPwaHint from '#lib/components/InstallPwaHint.svelte';
 	import ModeSelect from '#lib/components/ModeSelect.svelte';
@@ -66,6 +67,8 @@
 			<CameoLineup bind:selected={leader} />
 		</div>
 	</header>
+
+	<CloudSaveHint />
 
 	<DailyPanel />
 
