@@ -1,0 +1,57 @@
+# Datenschutzerklärung
+
+## 1. Verantwortlicher
+
+Verantwortlich für die Datenverarbeitung im Sinne der Datenschutz-Grundverordnung (DSGVO) ist {name}, {street}, {city}, {country}, E-Mail: {email}.
+
+## 2. Das Spiel im Browser
+
+Das Spiel World War 3 läuft in Ihrem Browser oder als Telegram Mini App. Spielstände, Einstellungen, Ihre Spielfigur und der Karrierefortschritt werden im lokalen Speicher Ihres Geräts abgelegt und nicht an uns übertragen; Ausnahmen sind in Telegram Ihre Tagesserie für die Erinnerungen (Abschnitt 6) und Ihr Ergebnis, wenn Sie ein Spiel aus einer Gruppe heraus öffnen (Abschnitt 8). Das Speichern ist für die von Ihnen gewünschte Funktion unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG). Es werden keine Tracking- oder Analysewerkzeuge eingesetzt.
+
+Die Website außerhalb von Telegram wird bei Vercel Inc. (440 N Barranca Ave #4133, Covina, CA 91723, USA) gehostet. Beim Aufruf verarbeitet Vercel technisch notwendige Verbindungsdaten (IP-Adresse, Zeitpunkt, abgerufene Datei, Browserkennung), um die Seite auszuliefern und vor Angriffen zu schützen (Art. 6 Abs. 1 lit. f DSGVO). Vercel ist nach dem EU-US Data Privacy Framework zertifiziert; zusätzlich bestehen Standardvertragsklauseln.
+
+## 3. Anmeldung über Telegram
+
+Öffnen Sie das Spiel als Telegram Mini App, übermittelt Telegram uns signierte Startdaten. Daraus verarbeiten wir Ihre Telegram-Nutzer-ID, Ihren Vornamen, Ihren Benutzernamen und Ihre Spracheinstellung, um Sie zu erkennen und Ihnen Ihre Käufe zuzuordnen (Art. 6 Abs. 1 lit. b DSGVO). Die Startdaten selbst speichern wir nicht.
+
+## 4. Käufe mit Telegram Stars
+
+Für Käufe verarbeiten wir Ihre Telegram-Nutzer-ID, den gekauften Artikel, den Preis in Stars, den Zeitpunkt, die Zahlungskennungen von Telegram, Ihre Zustimmung zur sofortigen Lieferung (mit Zeitpunkt und Version der Bedingungen) sowie Ihr Guthaben an gekauften Revival-Token und die Laufzeit von Pro. Rechtsgrundlage ist die Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO) und, soweit Aufbewahrungspflichten bestehen, Art. 6 Abs. 1 lit. c DSGVO.
+
+Die Zahlung wickelt Telegram ab. Zahlungsdaten wie Kartennummern erhalten wir nicht. Für die Verarbeitung durch Telegram gilt die Datenschutzerklärung von Telegram: https://telegram.org/privacy
+
+## 5. Der Telegram-Bot
+
+Wenn Sie dem Bot schreiben, verarbeiten wir Ihre Nachrichten und Ihre Telegram-Nutzer-ID, um Ihre Anfragen zu beantworten (Art. 6 Abs. 1 lit. b und f DSGVO). Nachrichten werden über die Server von Telegram übertragen, die auch außerhalb der EU stehen können.
+
+## 6. Erinnerungen an Ihre Tagesserie
+
+Spielen Sie in Telegram, meldet das Spiel dem Bot die Länge Ihrer Serie bei der täglichen Belohnung und den Zeitpunkt, an dem sie endet (Mitternacht nach Ihrer Gerätezeit). Zwei Stunden vorher schickt Ihnen der Bot eine Erinnerung, sofern er Ihnen schreiben darf. Dafür speichern wir Ihre Telegram-Nutzer-ID, die Serienlänge, diesen Zeitpunkt, Ihre Sprache (Deutsch oder Englisch) und ob Sie die Erinnerungen abgeschaltet haben. Jede neue Meldung überschreibt die vorige. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (die Erinnerung ist Teil des Spiels, das Sie nutzen). Sie können die Erinnerungen jederzeit mit der Schaltfläche in der Nachricht oder mit /reminders abschalten.
+
+## 7. Einladungslinks
+
+Jede Spielerin und jeder Spieler erhält einen persönlichen Einladungslink, der die eigene Telegram-Nutzer-ID in kodierter Form enthält. Startet jemand, der den Bot noch nie genutzt hat, den Bot über diesen Link, speichern wir, wer wen eingeladen hat, und schreiben der einladenden Person eine Belohnung gut; sie erhält eine Nachricht ohne Namen der eingeladenen Person. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (die Belohnung ist Teil des Spiels). Die Zuordnung bewahren wir auf, solange die gutgeschriebenen Revival-Token im Guthaben zählen, und löschen sie auf Anfrage.
+
+## 8. Bestenlisten in Gruppen
+
+Fügen Sie den Bot einer Gruppe hinzu, kann er dort Spiele posten. Tippen Sie bei einem solchen Spiel auf „Spielen“, speichern wir eine Spielsitzung mit Ihrer Telegram-Nutzer-ID, Ihrem Vornamen, Ihrer Spracheinstellung, dem Spiel, der Gruppe und der Nachricht, damit Ihr Ergebnis in die Bestenliste genau dieser Gruppe kommt; nach einem Tag wird sie gelöscht. Am Ende einer Runde meldet das Spiel Ihr Ergebnis. Ist es Ihre neue Bestleistung in dieser Gruppe, tragen wir es bei Telegram in die Bestenliste des Spiels ein, und Telegram zeigt in der Gruppe eine Nachricht mit Ihrem Namen und Ergebnis. Wir speichern Ihre Bestleistung je Spiel und Gruppe mit Ihrem Vornamen, damit /top die Bestenliste der Gruppe anzeigen kann; holen Sie den Rekord der Gruppe, schreibt der Bot das mit Ihrem Vornamen und dem der bisherigen Rekordhalterin oder des bisherigen Rekordhalters in die Gruppe. Diese Angaben sehen alle Mitglieder der Gruppe. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (die Bestenliste ist Teil des Spiels, das Sie aus der Gruppe heraus öffnen). Spielen Sie das Spiel nicht aus einer Gruppe heraus, wird nichts davon gespeichert.
+
+## 9. Hosting des Bots, der Schnittstelle und der Datenbank
+
+Der Bot, die Schnittstelle, über die die Mini App Ihr Konto, Ihre Käufe und Ihre Serie abfragt, und die Datenbank mit Konten, Käufen, Zustimmungen, Serien und Bestenlisten laufen auf einem von uns selbst betriebenen Server. Verbindungen zur Schnittstelle werden über Tailscale Funnel der Tailscale Inc. (Kanada) weitergeleitet; Tailscale sieht dabei Ihre IP-Adresse und den Zeitpunkt, die Inhalte bleiben verschlüsselt (https://tailscale.com/privacy-policy). Für Kanada besteht ein Angemessenheitsbeschluss der EU-Kommission. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b und f DSGVO. Fehlerprotokolle enthalten technische Angaben (Zeitpunkt, Fehlermeldung, gegebenenfalls Ihre Telegram-Nutzer-ID) und dienen der Fehlerbehebung.
+
+## 10. Speicherdauer
+
+Die Seriendaten und Ihre Einträge in Bestenlisten löschen wir auf Anfrage sofort; Spielsitzungen löschen wir nach einem Tag. Kauf- und Zustimmungsdaten bewahren wir auf, solange Sie das Spiel nutzen, und darüber hinaus so lange, wie es gesetzliche Aufbewahrungspflichten erfordern (bis zu zehn Jahre nach § 147 AO und § 257 HGB). Kontodaten ohne Käufe löschen wir auf Anfrage sofort.
+
+## 11. Ihre Rechte
+
+Sie haben das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch gegen Verarbeitungen auf Grundlage berechtigter Interessen (Art. 21). Wenden Sie sich dazu an {email}.
+
+Sie haben außerdem das Recht, sich bei einer Datenschutz-Aufsichtsbehörde zu beschweren (Art. 77 DSGVO), insbesondere in dem Mitgliedstaat Ihres Aufenthaltsorts.
+
+## 12. Keine automatisierte Entscheidung
+
+Eine automatisierte Entscheidungsfindung einschließlich Profiling findet nicht statt.
+
+Stand: {updated}

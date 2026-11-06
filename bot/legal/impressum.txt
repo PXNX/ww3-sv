@@ -1,0 +1,29 @@
+# Impressum
+
+## Angaben gemäß § 5 DDG
+
+{name}
+{street}
+{city}
+{country}
+
+## Kontakt
+
+E-Mail: {email}
+{phone_line}
+
+{vat_line}
+
+## Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV
+
+{name}, Anschrift wie oben
+
+## Verbraucherstreitbeilegung
+
+Wir sind nicht bereit und nicht verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.
+
+## Satire
+
+World War 3 ist ein satirisches Spiel. Personen des öffentlichen Lebens erscheinen als Karikaturen; alle Szenen sind erfunden und keine Äußerung einer Figur ist ein echtes Zitat.
+
+Stand: {updated}

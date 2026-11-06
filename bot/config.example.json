@@ -1,0 +1,15 @@
+{
+	"operator": {
+		"name": "Vorname Nachname",
+		"street": "Musterstraße 1",
+		"city": "12345 Musterstadt",
+		"country": "Deutschland",
+		"email": "support@example.com",
+		"phone": "",
+		"vat_id": ""
+	},
+	"legalUpdated": "27.10.2026",
+	"appUrl": "https://app0000000.tgcloud.ai",
+	"adminIds": [],
+	"gameDir": "../../ww3-sv"
+}
