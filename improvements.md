@@ -226,7 +226,7 @@ Not covered yet, each for a specific reason:
 - [ ] More ranks and cosmetic titles beyond level 40.
 - [ ] Mode mastery levels: each mode has its own small XP bar and unlocks a badge or a cosmetic.
 - [ ] Unlockable characters, card backs, board themes and music tracks.
-- [ ] A career "office" that visibly improves with rank (a joke version of the AMETRAS office).
+- [ ] A career "office" that visibly improves with rank (a joke version of a corporate office).
 - [ ] Collection completion rewards.
 - [ ] Seasonal reset of a small side-track while lifetime XP stays permanent.
 - [ ] Personal records per mode, per difficulty and per seed.

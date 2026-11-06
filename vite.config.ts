@@ -21,8 +21,8 @@ export default defineConfig({
 			paths: { relative: false },
 
 			// Vercel by default; Functions run on Vercel's Bun runtime, its version is set by bunVersion in
-			// vercel.json. ADAPTER=static writes a plain folder (build/) for the Telegram Mini App, which
-			// Telegram Serverless hosts (see mn/ptb-ww3)
+			// vercel.json. ADAPTER=static writes a plain folder (build/) for hosts
+			// that serve static files only, such as Telegram Serverless
 			adapter:
 				process.env.ADAPTER === 'static'
 					? staticAdapter({ pages: 'build', assets: 'build', strict: true })
