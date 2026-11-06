@@ -36,11 +36,26 @@ import {
 import {
 	createDesktop,
 	openFolder as openDesktopFolder,
+	readMail as readDesktopMail,
+	runProgram as runDesktopProgram,
+	shiftClock,
+	takeLink as takeDesktopLink,
 	takeItem as takeDesktopItem,
 	tickDesktop,
 	tryVault as tryDesktopVault,
 	type Desktop
 } from '#lib/game/hackers/desktop.js';
+import {
+	BROOM_TRACE,
+	COFFEE_MS,
+	NETWORK,
+	NOISE_COINS,
+	NOISE_MS,
+	networkSystem,
+	ownerOf,
+	type CastId
+} from '#lib/game/hackers/lore.js';
+import { emptyBotnet, type Botnet } from '#lib/game/hackers/botnet.js';
 import {
 	effectiveSpec,
 	toolSpec,
@@ -74,6 +89,26 @@ const TOOL_NAMES: Record<ToolId, () => string> = {
 	miner: m.hackers_tool_miner,
 	siphon: m.hackers_tool_siphon
 };
+
+/** The display name of a system of the cast's network */
+export function networkName(id: string): string {
+	switch (id) {
+		case 'dome':
+			return m.hackers_net_dome();
+		case 'maple':
+			return m.hackers_net_maple();
+		case 'petrobras':
+			return m.hackers_net_petrobras();
+		case 'whack':
+			return m.hackers_net_whack();
+		case 'chipfab':
+			return m.hackers_net_chipfab();
+		case 'tycoon':
+			return m.hackers_net_tycoon();
+		default:
+			return id;
+	}
+}
 
 export class HackersGame {
 	status = $state<HackersStatus>('ready');
@@ -136,10 +171,15 @@ export class HackersGame {
 	vaultInput = $state.raw<number[]>([]);
 	/** The bank whose desktop is open: the contract that was just finished */
 	desktopSystem = $state('');
+	/** Ids of the cast's emails read so far, kept between runs */
+	lore = $state.raw<number[]>([]);
+	/** Systems of the cast's wider network found so far, kept between runs */
+	network = $state.raw<string[]>([]);
 
 	/** Rules state, deliberately not reactive */
 	state: HackersState;
 	#desktop: Desktop | null = null;
+	#botnet: Botnet | undefined;
 
 	/** Set once the trace has crossed the warning line, until it falls well below it again */
 	#warned = false;
@@ -175,6 +215,27 @@ export class HackersGame {
 	start(targetIndex = 0) {
 		this.#random = createRandom(this.#seed());
 		this.state = createGame(this.#random, { hardware: this.hardware, targetIndex });
+		this.leaveDesktop();
+		this.log = [];
+		this.input = [];
+		this.isNewBest = false;
+		this.hurtCount = 0;
+		this.flashSeq = 0;
+		this.#warned = false;
+		this.#sync();
+		this.status = 'playing';
+		this.#apply([openingEvent(this.state)]);
+	}
+
+	/** Starts a run on a system of the cast's network that was found on a desktop */
+	startNetwork(id: string) {
+		const system = networkSystem(id);
+		if (!system || !this.network.includes(id)) return;
+		this.#random = createRandom(this.#seed());
+		this.state = createGame(this.#random, {
+			hardware: this.hardware,
+			extra: { ip: system.ip, system: networkName(id), reward: system.reward }
+		});
 		this.leaveDesktop();
 		this.log = [];
 		this.input = [];
@@ -335,24 +396,9 @@ export class HackersGame {
 				this.#say(m.hackers_desk_log_note({ slot: item.slot + 1, glyph: GLYPHS[item.symbol] }));
 				this.#play('pickup', 0.6);
 				break;
-			case 'app': {
-				const level = this.state.upgrades[item.app];
-				if (level < toolSpec(item.app).maxLevel) {
-					this.state.upgrades = { ...this.state.upgrades, [item.app]: level + 1 };
-					this.state.contract.spec = effectiveSpec(
-						this.state.contract.n,
-						this.state.upgrades,
-						this.state.hardware
-					);
-					this.#say(m.hackers_desk_log_app({ tool: TOOL_NAMES[item.app](), level: level + 1 }));
-				} else {
-					// A tool already at the top is sold on for a little DogeLite
-					this.state.score += 50;
-					this.#say(m.hackers_desk_log_coins({ amount: 50 }));
-				}
-				this.#play('sparkle', 0.7);
+			case 'app':
+				this.#grantTool(item.app);
 				break;
-			}
 			case 'coins':
 				this.state.score += item.amount;
 				this.#say(m.hackers_desk_log_coins({ amount: item.amount }));
@@ -400,6 +446,109 @@ export class HackersGame {
 		}
 		this.#sync();
 		this.#showDesktop();
+	}
+
+	/** Opens a mail in the inbox; read mail goes into the lore archive */
+	readMail(index: number) {
+		const desktop = this.#desktop;
+		if (!desktop || this.status !== 'playing') return;
+		const mail = readDesktopMail(desktop, index);
+		if (!mail) return;
+		if (mail.clue) {
+			this.#say(
+				m.hackers_desk_log_note({ slot: mail.clue.slot + 1, glyph: GLYPHS[mail.clue.symbol] })
+			);
+		}
+		if (!this.lore.includes(mail.id)) {
+			this.#saveProfile({ ...this.#profile(), lore: [...this.lore, mail.id] });
+		}
+		this.#play('ui-toggle', 0.5);
+		this.#showDesktop();
+	}
+
+	/** Runs one of the bank's installed programs */
+	runProgram(index: number) {
+		const desktop = this.#desktop;
+		if (!desktop || this.status !== 'playing') return;
+		const program = runDesktopProgram(desktop, index);
+		if (!program) return;
+		switch (program.kind) {
+			case 'coffee':
+				shiftClock(desktop, COFFEE_MS);
+				this.#say(m.hackers_prog_log_coffee({ seconds: COFFEE_MS / 1000 }));
+				this.#play('pickup', 0.6);
+				break;
+			case 'broom':
+				this.state.trace = Math.max(0, this.state.trace - BROOM_TRACE);
+				this.#say(m.hackers_prog_log_broom({ amount: BROOM_TRACE }));
+				this.#play('sparkle', 0.6);
+				break;
+			case 'tool':
+				this.#grantTool(program.app);
+				break;
+			case 'miner': {
+				const level = this.state.upgrades.miner;
+				if (level < toolSpec('miner').maxLevel) {
+					this.state.upgrades = { ...this.state.upgrades, miner: level + 1 };
+					this.#say(m.hackers_desk_log_app({ tool: TOOL_NAMES.miner(), level: level + 1 }));
+				} else {
+					this.state.score += 50;
+					this.#say(m.hackers_desk_log_coins({ amount: 50 }));
+				}
+				this.#play('sparkle', 0.7);
+				break;
+			}
+			case 'karaoke':
+			case 'selfie':
+				shiftClock(desktop, -NOISE_MS);
+				this.state.score += NOISE_COINS;
+				this.#say(
+					program.kind === 'karaoke'
+						? m.hackers_prog_log_karaoke({ amount: NOISE_COINS })
+						: m.hackers_prog_log_selfie({ amount: NOISE_COINS })
+				);
+				this.#play('alarm', 0.4);
+				this.#flash('fail');
+				break;
+		}
+		haptic().play(0.2);
+		this.#sync();
+		this.#showDesktop();
+	}
+
+	/** Follows the desktop's network link: that system joins the target list for good */
+	takeLink() {
+		const desktop = this.#desktop;
+		if (!desktop || this.status !== 'playing') return;
+		const id = takeDesktopLink(desktop);
+		if (!id) return;
+		this.#saveProfile({ ...this.#profile(), network: [...this.network, id] });
+		this.#say(m.hackers_net_log_found({ system: networkName(id) }));
+		this.#play('chime-big', 0.8);
+		this.#flash('ok');
+		this.#showDesktop();
+	}
+
+	#ownerAt(ip: string): CastId {
+		return NETWORK.find((system) => system.ip === ip)?.owner ?? ownerOf(ip);
+	}
+
+	#grantTool(app: 'breach' | 'keylog' | 'relays') {
+		const level = this.state.upgrades[app];
+		if (level < toolSpec(app).maxLevel) {
+			this.state.upgrades = { ...this.state.upgrades, [app]: level + 1 };
+			this.state.contract.spec = effectiveSpec(
+				this.state.contract.n,
+				this.state.upgrades,
+				this.state.hardware
+			);
+			this.#say(m.hackers_desk_log_app({ tool: TOOL_NAMES[app](), level: level + 1 }));
+		} else {
+			// A tool already at the top is sold on for a little DogeLite
+			this.state.score += 50;
+			this.#say(m.hackers_desk_log_coins({ amount: 50 }));
+		}
+		this.#play('sparkle', 0.7);
 	}
 
 	/** Logs off the desktop; the next contract starts */
@@ -510,7 +659,13 @@ export class HackersGame {
 				// The bank's desktop is open for a little while before the next contract; the
 				// reactive fields still show the finished contract until the sync after the events
 				this.desktopSystem = this.system;
-				this.#desktop = createDesktop(this.#random, event.n);
+				this.#desktop = createDesktop(
+					this.#random,
+					event.n,
+					this.#ownerAt(this.ip),
+					this.lore,
+					this.network
+				);
 				this.desktopFolder = null;
 				this.vaultInput = [];
 				this.#showDesktop();
@@ -610,13 +765,23 @@ export class HackersGame {
 	}
 
 	#profile(): HackersProfile {
-		return { bank: this.bank, hardware: this.hardware, favorites: this.favorites };
+		return {
+			bank: this.bank,
+			hardware: this.hardware,
+			botnet: this.#botnet ?? emptyBotnet(),
+			favorites: this.favorites,
+			lore: this.lore,
+			network: this.network
+		};
 	}
 
 	#applyProfile(profile: HackersProfile) {
 		this.bank = profile.bank;
 		this.hardware = { ...profile.hardware };
 		this.favorites = [...profile.favorites];
+		this.#botnet = profile.botnet;
+		this.lore = [...(profile.lore ?? [])];
+		this.network = [...(profile.network ?? [])];
 	}
 
 	#saveProfile(profile: HackersProfile) {

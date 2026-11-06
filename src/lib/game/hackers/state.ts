@@ -88,6 +88,8 @@ export interface HackersState {
 	data: number;
 	/** Which entry of TARGETS the contract in play sits on */
 	targetIndex: number;
+	/** The contract in play is on this system instead, until it is finished */
+	extra?: ExtraTarget;
 	/** Bruteforce progress on the current contract (0 to 1), auto-gains access at 1 */
 	bruteforceProgress: number;
 	/** Mined DogeLite that has not reached a whole coin yet */
@@ -114,15 +116,25 @@ export type HackersEvent =
 	| { type: 'traced' }
 	| { type: 'game-over' };
 
+/** A system outside the target list, such as one found on a bank's network */
+export interface ExtraTarget {
+	ip: string;
+	system: string;
+	/** Multiplies what the contract pays */
+	reward: number;
+}
+
 export function newContract(
 	n: number,
 	random: Random,
 	upgrades: Upgrades = emptyUpgrades(),
 	hardware: Hardware = emptyHardware(),
-	targetIndex = 0
+	targetIndex = 0,
+	extra?: ExtraTarget
 ): Contract {
 	const spec = effectiveSpec(n, upgrades, hardware);
-	const target = TARGETS[((targetIndex % TARGETS.length) + TARGETS.length) % TARGETS.length];
+	const target =
+		extra ?? TARGETS[((targetIndex % TARGETS.length) + TARGETS.length) % TARGETS.length];
 	const wallet = walletFor(n);
 	return {
 		n,
@@ -147,6 +159,8 @@ export interface GameOptions {
 	targetIndex?: number;
 	/** Botnet and data from the profile */
 	botnet?: Botnet;
+	/** Starts on a system outside the target list */
+	extra?: ExtraTarget;
 }
 
 export function createGame(random: Random, options: GameOptions = {}): HackersState {
@@ -155,7 +169,7 @@ export function createGame(random: Random, options: GameOptions = {}): HackersSt
 	const targetIndex = options.targetIndex ?? 0;
 	const botnet = options.botnet ?? emptyBotnet();
 	return {
-		contract: newContract(1, random, upgrades, hardware, targetIndex),
+		contract: newContract(1, random, upgrades, hardware, targetIndex, options.extra),
 		lives: STARTING_LIVES,
 		trace: 0,
 		score: 0,
@@ -167,6 +181,7 @@ export function createGame(random: Random, options: GameOptions = {}): HackersSt
 		hardware: { ...hardware },
 		botnet: { ...botnet },
 		targetIndex,
+		...(options.extra ? { extra: options.extra } : {}),
 		data: botnet.data,
 		bruteforceProgress: 0,
 		pendingIncome: 0,
@@ -197,7 +212,8 @@ function addTrace(state: HackersState, amount: number, random: Random): HackersE
 		random,
 		state.upgrades,
 		state.hardware,
-		state.targetIndex
+		state.targetIndex,
+		state.extra
 	);
 	events.push(contractEvent(state.contract));
 	return events;
@@ -292,14 +308,18 @@ export function flipRelay(state: HackersState, index: number, random: Random): H
 	const events: HackersEvent[] = [{ type: 'relay' }];
 	if (!isDark(contract.panel)) return events;
 
-	const points =
-		100 + 10 * contract.n + 10 * Math.max(0, contract.spec.presses + 4 - contract.moves);
+	const points = Math.round(
+		(100 + 10 * contract.n + 10 * Math.max(0, contract.spec.presses + 4 - contract.moves)) *
+			(state.extra?.reward ?? 1)
+	);
 	state.score += points;
 	state.completed += 1;
 	state.number += 1;
 	state.trace = Math.max(0, state.trace - TRACE_RELIEF);
 	events.push({ type: 'contract-done', points, n: contract.n });
-	state.targetIndex = (state.targetIndex + 1) % TARGETS.length;
+	// A system off the list is a one-off; the run goes back to the list where it left it
+	if (state.extra) delete state.extra;
+	else state.targetIndex = (state.targetIndex + 1) % TARGETS.length;
 	state.contract = newContract(
 		state.number,
 		random,

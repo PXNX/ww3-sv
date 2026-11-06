@@ -1,15 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import { createRandom } from '#lib/game/random.js';
-import { createDesktop, openFolder, takeItem, tickDesktop, tryVault } from './desktop';
+import {
+	DESKTOP_MAX_MS,
+	createDesktop,
+	openFolder,
+	readMail,
+	runProgram,
+	shiftClock,
+	takeLink,
+	takeItem,
+	tickDesktop,
+	tryVault
+} from './desktop';
+import { FOLDER_OWNERS } from './lore';
 
 const desk = (seed = 7, n = 3) => createDesktop(createRandom(seed), n);
 
 describe('the bank desktop', () => {
-	it('hides one vault, notes for all but one slot, an app and some coins in its folders', () => {
+	it('hides one vault, notes for all but two slots, an app and some coins in its folders', () => {
 		const desktop = desk();
 		const items = desktop.folders.flatMap((folder) => folder.items);
 		expect(items.filter((item) => item.kind === 'vault')).toHaveLength(1);
-		expect(items.filter((item) => item.kind === 'note')).toHaveLength(desktop.code.length - 1);
+		expect(items.filter((item) => item.kind === 'note')).toHaveLength(desktop.code.length - 2);
 		expect(items.some((item) => item.kind === 'app')).toBe(true);
 		expect(items.some((item) => item.kind === 'coins')).toBe(true);
 	});
@@ -50,5 +62,72 @@ describe('the bank desktop', () => {
 		expect(tickDesktop(desktop, 10_000)).toBe(true);
 		expect(tickDesktop(desktop, 60_000)).toBe(false);
 		expect(openFolder(desktop, 0)).toBe(false);
+	});
+});
+
+describe('the owner, the programs and the mail', () => {
+	it("puts the owner's folders on the desktop and three programs that run once", () => {
+		const desktop = createDesktop(createRandom(3), 2, 'kim');
+		expect(desktop.owner).toBe('kim');
+		expect(desktop.folders.some((folder) => FOLDER_OWNERS[folder.name] === 'kim')).toBe(true);
+		expect(desktop.programs).toHaveLength(3);
+		expect(runProgram(desktop, 0)?.used).toBe(true);
+		expect(runProgram(desktop, 0)).toBeNull();
+	});
+
+	it('hides exactly one vault clue in the inbox and tells every slot but one somewhere', () => {
+		for (let seed = 1; seed < 20; seed++) {
+			const desktop = createDesktop(createRandom(seed), 5, 'musk');
+			const clues = desktop.mail.filter((mail) => mail.clue);
+			expect(clues).toHaveLength(1);
+			const notes = desktop.folders
+				.flatMap((folder) => folder.items)
+				.filter((item) => item.kind === 'note');
+			const told = new Set([
+				clues[0].clue!.slot,
+				...notes.map((n) => (n.kind === 'note' ? n.slot : -1))
+			]);
+			expect(told.size).toBe(desktop.code.length - 1);
+		}
+	});
+
+	it('fills in the lock from the clue mail and prefers mail not read before', () => {
+		const desktop = createDesktop(createRandom(5), 2, 'putin', [0, 1, 2]);
+		expect(desktop.mail.every((mail) => ![0, 1, 2].includes(mail.id))).toBe(true);
+		const index = desktop.mail.findIndex((mail) => mail.clue);
+		const mail = readMail(desktop, index);
+		expect(desktop.known[mail!.clue!.slot]).toBe(desktop.code[mail!.clue!.slot]);
+		expect(readMail(desktop, index)).toBeNull();
+	});
+
+	it('lets coffee stretch the clock only so far', () => {
+		const desktop = createDesktop(createRandom(5), 2);
+		shiftClock(desktop, 1_000_000);
+		expect(desktop.timeLeftMs).toBe(DESKTOP_MAX_MS);
+		shiftClock(desktop, -1_000_000);
+		expect(desktop.timeLeftMs).toBe(0);
+	});
+});
+
+describe('the network and the cameras', () => {
+	it('links to the next unknown network system and lets it be taken once', () => {
+		let linked = 0;
+		for (let seed = 1; seed < 40; seed++) {
+			const desktop = createDesktop(createRandom(seed), 4, 'trump', [], ['dome']);
+			expect(desktop.cameras.length).toBeGreaterThanOrEqual(2);
+			if (!desktop.link) continue;
+			linked += 1;
+			expect(desktop.link).toBe('maple');
+			expect(takeLink(desktop)).toBe('maple');
+			expect(takeLink(desktop)).toBeNull();
+		}
+		expect(linked).toBeGreaterThan(5);
+	});
+
+	it('shows no link once the whole network is known', () => {
+		const all = ['dome', 'maple', 'petrobras', 'whack', 'chipfab', 'tycoon'];
+		for (let seed = 1; seed < 20; seed++) {
+			expect(createDesktop(createRandom(seed), 4, 'kim', [], all).link).toBeNull();
+		}
 	});
 });

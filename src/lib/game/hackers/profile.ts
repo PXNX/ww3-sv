@@ -24,6 +24,10 @@ export interface HackersProfile {
 	botnet: Botnet;
 	/** Addresses marked in the target list */
 	favorites: string[];
+	/** Ids of the cast's emails read on bank desktops, the hermit's lore archive */
+	lore?: number[];
+	/** Systems of the cast's wider network whose link was followed */
+	network?: string[];
 }
 
 /** Key of the stored profile, without the local storage prefix */
@@ -44,7 +48,11 @@ export function isProfile(value: unknown): value is HackersProfile {
 			(typeof profile.botnet === 'object' &&
 				typeof (profile.botnet as Record<string, unknown>).nodes === 'number')) &&
 		Array.isArray(profile.favorites) &&
-		profile.favorites.every((ip) => typeof ip === 'string')
+		profile.favorites.every((ip) => typeof ip === 'string') &&
+		(profile.lore === undefined ||
+			(Array.isArray(profile.lore) && profile.lore.every((id) => Number.isInteger(id)))) &&
+		(profile.network === undefined ||
+			(Array.isArray(profile.network) && profile.network.every((id) => typeof id === 'string')))
 	);
 }
 

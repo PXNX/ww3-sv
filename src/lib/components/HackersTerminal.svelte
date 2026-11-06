@@ -20,10 +20,25 @@
 	import type { HackersGame } from '#lib/stores/hackersGame.svelte.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import IconStar from '~icons/lucide/star';
+	import HackersMatrix from './HackersMatrix.svelte';
+	import { EMAILS, NETWORK, type CastId } from '#lib/game/hackers/lore.js';
+	import { networkName } from '#lib/stores/hackersGame.svelte.js';
+	import { leaderById } from '#lib/theme/leaders.js';
+	import { mailBody, mailSubject } from './hackersMail';
+
+	const castName = (id: CastId | 'all'): string =>
+		id === 'all'
+			? m.hackers_mail_everyone()
+			: id === 'leader'
+				? m.hackers_cast_leader()
+				: leaderById(id).name();
 
 	let { game }: { game: HackersGame } = $props();
 
-	type Program = 'none' | 'targets' | 'hardware';
+	type Program = 'none' | 'targets' | 'hardware' | 'mail';
+	/** The archived mail open in the `mail` program */
+	let archiveOpen = $state<number | null>(null);
+	let matrix = $state(false);
 
 	const BOOT = [
 		'HERMIT-OS 3.1.1 (tty0)',
@@ -121,6 +136,8 @@
 			`  ${m.hackers_term_help_targets()}`,
 			`  ${m.hackers_term_help_hardware()}`,
 			`  ${m.hackers_term_help_hack()}`,
+			`  ${m.hackers_term_help_mail()}`,
+			`  ${m.hackers_term_help_fun()}`,
 			`  ${m.hackers_term_help_clear()}`
 		);
 	}
@@ -150,6 +167,11 @@
 
 	function hack(ip?: string) {
 		hackStartMs = Date.now();
+		const linked = NETWORK.find((system) => system.ip === ip);
+		if (linked && game.network.includes(linked.id)) {
+			game.startNetwork(linked.id);
+			return;
+		}
 		const target = ip === undefined ? 0 : TARGETS.findIndex((entry) => entry.ip === ip);
 		if (target < 0) {
 			say(m.hackers_term_unknown_ip({ ip: ip ?? '' }));
@@ -173,7 +195,16 @@
 	}
 
 	/** The commands a tap can run, so a phone rarely needs its keyboard at all */
-	const QUICK = ['targets', 'hardware', 'neofetch', 'help', 'clear'] as const;
+	const QUICK = ['targets', 'hardware', 'mail', 'neofetch', 'help', 'clear'] as const;
+
+	const FORTUNES = [
+		m.hackers_fortune_0,
+		m.hackers_fortune_1,
+		m.hackers_fortune_2,
+		m.hackers_fortune_3,
+		m.hackers_fortune_4,
+		m.hackers_fortune_5
+	];
 
 	function quick(name: (typeof QUICK)[number]) {
 		command = name;
@@ -200,6 +231,23 @@
 			case 'hardware':
 			case 'hw':
 				program = 'hardware';
+				break;
+			case 'mail':
+			case 'archive':
+				archiveOpen = null;
+				program = 'mail';
+				break;
+			case 'whoami':
+				say(m.hackers_term_whoami({ read: game.lore.length, total: EMAILS.length }));
+				break;
+			case 'fortune':
+				say(FORTUNES[Math.floor(Math.random() * FORTUNES.length)]());
+				break;
+			case 'sudo':
+				say(m.hackers_term_sudo());
+				break;
+			case 'matrix':
+				matrix = true;
 				break;
 			case 'hack':
 				hack(args[0]);
@@ -245,7 +293,7 @@
 </script>
 
 <section
-	class="hk-panel flex min-h-0 flex-1 flex-col overflow-hidden"
+	class="hk-panel relative flex min-h-0 flex-1 flex-col overflow-hidden"
 	dir="ltr"
 	aria-label={m.hackers_term_aria()}
 >
@@ -293,7 +341,61 @@
 							</button>
 						</li>
 					{/each}
+					{#each NETWORK.filter((system) => game.network.includes(system.id)) as system (system.id)}
+						<li class="hk-row text-xs">
+							<span class="hk-btn shrink-0 text-(--hk-amber)" aria-hidden="true">NET</span>
+							<span class="w-[7.5rem] shrink-0 tabular-nums">{system.ip}</span>
+							<span class="min-w-0 flex-1 truncate opacity-80">
+								{networkName(system.id)} · ×{system.reward}
+							</span>
+							<button
+								type="button"
+								class="hk-btn hk-btn-sm hk-btn-solid shrink-0 text-xs"
+								onclick={() => game.startNetwork(system.id)}
+							>
+								{m.hackers_term_hack()}
+							</button>
+						</li>
+					{/each}
 				</ul>
+				{#if game.network.length < NETWORK.length}
+					<p class="mt-1 text-[11px] opacity-60">
+						{m.hackers_term_network_hint({ found: game.network.length, total: NETWORK.length })}
+					</p>
+				{/if}
+			</div>
+		{:else if program === 'mail'}
+			<div class="hk-rule mt-2 pt-2">
+				<p class="text-xs font-bold tracking-wide">
+					{m.hackers_term_archive_title({ read: game.lore.length, total: EMAILS.length })}
+				</p>
+				{#if archiveOpen !== null}
+					<button type="button" class="hk-chip my-1" onclick={() => (archiveOpen = null)}>
+						&lt; {m.hackers_tab_mail()}
+					</button>
+					<p class="text-xs opacity-70">
+						{castName(EMAILS[archiveOpen].from)} → {castName(EMAILS[archiveOpen].to)}
+					</p>
+					<p class="text-xs font-bold">{mailSubject(archiveOpen)}</p>
+					<p class="text-xs leading-relaxed whitespace-pre-line">{mailBody(archiveOpen)}</p>
+				{:else if game.lore.length === 0}
+					<p class="text-[11px] opacity-70">{m.hackers_term_archive_empty()}</p>
+				{:else}
+					<ul class="mt-1 flex flex-col gap-1.5">
+						{#each [...game.lore].sort((a, b) => a - b) as id (id)}
+							<li>
+								<button
+									type="button"
+									class="hk-row w-full text-start text-xs"
+									onclick={() => (archiveOpen = id)}
+								>
+									<span class="w-24 shrink-0 truncate opacity-70">{castName(EMAILS[id].from)}</span>
+									<span class="min-w-0 flex-1 truncate">{mailSubject(id)}</span>
+								</button>
+							</li>
+						{/each}
+					</ul>
+				{/if}
 			</div>
 		{:else if program === 'hardware'}
 			<div class="hk-rule mt-2 pt-2">
@@ -369,4 +471,7 @@
 			<span aria-hidden="true">&#9166;</span>
 		</button>
 	</form>
+	{#if matrix}
+		<HackersMatrix onDone={() => (matrix = false)} />
+	{/if}
 </section>
