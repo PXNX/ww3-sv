@@ -116,16 +116,16 @@ scheduled trigger.
 
 ```sh
 ssh nyx@mn
-git clone https://github.com/PXNX/ww3-sv ~/projects/ww3-sv
-# The container unit mounts ~/projects/ptb-ww3, so that path points at the bot folder
-ln -sfn ~/projects/ww3-sv/bot ~/projects/ptb-ww3 && cd ~/projects/ptb-ww3
-cp example.env .env                     # TELEGRAM=<bot token>
-cp config.example.json config.local.json  # operator data; appUrl https://ww3-sv.vercel.app, legalUrl "", adminIds
-ln -sf ~/projects/ptb-ww3/ptb-ww3.container ~/.config/containers/systemd/
-systemctl --user daemon-reload && systemctl --user start ptb-ww3
+git clone https://github.com/PXNX/ww3-sv ~/projects/ww3-sv && cd ~/projects/ww3-sv
+cp bot/example.env .env                           # TELEGRAM=<bot token>, next to the checkout's root
+cp bot/config.example.json bot/config.local.json  # operator data; appUrl https://ww3-sv.vercel.app, legalUrl "", adminIds
+# The unit is ww3-sv.container in github.com/PXNX/quadlets (checked out at ~/.config/containers/systemd)
+cd ~/.config/containers/systemd && gh repo sync
+systemctl --user daemon-reload && systemctl --user start ww3-sv
 ```
 
-Updates: push, then `ssh nyx@mn "cd ~/projects/ww3-sv && gh repo sync && systemctl --user restart ptb-ww3"`.
+Updates: push, then `ssh nyx@mn "cd ~/projects/ww3-sv && gh repo sync && systemctl --user restart ww3-sv"`
+(or `/redeploy ww3-sv` through ptb-manager). The ledger lives in `bot/data/ww3.db` on the host.
 
 On start the runner also refreshes the command menus (English, German, and the admins' own with `/set_cmd` and `/stats`) and the menu button, like ptb-words' `post_init`. It serves the legal pages at `/legal/<page>.html`; set `legalUrl` in `config.local.json` to `https://mn.tail865185.ts.net:10000/legal` so messages and the Mini App link to them.
 
