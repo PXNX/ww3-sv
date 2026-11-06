@@ -14,6 +14,7 @@
 	import GameShell from '#lib/components/GameShell.svelte';
 	import HackersBoot from '#lib/components/HackersBoot.svelte';
 	import HackersBreach from '#lib/components/HackersBreach.svelte';
+	import HackersDesktop from '#lib/components/HackersDesktop.svelte';
 	import HackersKeylog from '#lib/components/HackersKeylog.svelte';
 	import HackersRelays from '#lib/components/HackersRelays.svelte';
 	import HackersShop from '#lib/components/HackersShop.svelte';
@@ -89,6 +90,14 @@
 			return;
 		}
 		if (game.status !== 'playing' || booting) return;
+		if (game.desktop) {
+			if (/^Digit[1-8]$/.test(event.code)) game.pushVault(Number(event.code.slice(5)) - 1);
+			else if (event.code === 'Backspace') game.popVault();
+			else if (event.code === 'Enter' && !(target instanceof HTMLButtonElement)) game.tryVault();
+			else return;
+			event.preventDefault();
+			return;
+		}
 		if (game.stage === 'breach') {
 			if (/^Digit[1-8]$/.test(event.code)) game.pushSymbol(Number(event.code.slice(5)) - 1);
 			else if (event.code === 'Backspace') game.popSymbol();
@@ -252,7 +261,9 @@
 							</div>
 
 							<div class="flex min-h-0 flex-1 flex-col">
-								{#if game.stage === 'breach'}
+								{#if game.desktop}
+									<HackersDesktop {game} />
+								{:else if game.stage === 'breach'}
 									<HackersBreach {game} />
 								{:else if game.stage === 'keylog'}
 									<HackersKeylog {game} />

@@ -6,7 +6,7 @@
  * away unseen (and never on the server).
  */
 import { haptic } from '#lib/haptic/haptic.svelte.js';
-import { STARTING_LIVES, TRACE_MAX } from '#lib/game/hackers/config.js';
+import { GLYPHS, STARTING_LIVES, TRACE_MAX } from '#lib/game/hackers/config.js';
 import type { Chip } from '#lib/game/hackers/keylog.js';
 import { emptyHardware, type Hardware, type HardwareId } from '#lib/game/hackers/hardware.js';
 import {
@@ -34,6 +34,16 @@ import {
 	type Stage
 } from '#lib/game/hackers/state.js';
 import {
+	createDesktop,
+	openFolder as openDesktopFolder,
+	takeItem as takeDesktopItem,
+	tickDesktop,
+	tryVault as tryDesktopVault,
+	type Desktop
+} from '#lib/game/hackers/desktop.js';
+import {
+	effectiveSpec,
+	toolSpec,
 	emptyUpgrades,
 	minerIncome,
 	siphonShare,
@@ -118,9 +128,18 @@ export class HackersGame {
 	hardware = $state.raw<Hardware>(emptyHardware());
 	/** Addresses marked in the target list */
 	favorites = $state.raw<string[]>([]);
+	/** The bank's desktop after a finished contract, while its bonus round runs; null otherwise */
+	desktop = $state.raw<Desktop | null>(null);
+	/** The folder open on the desktop */
+	desktopFolder = $state<number | null>(null);
+	/** Symbols typed into the vault lock */
+	vaultInput = $state.raw<number[]>([]);
+	/** The bank whose desktop is open: the contract that was just finished */
+	desktopSystem = $state('');
 
 	/** Rules state, deliberately not reactive */
 	state: HackersState;
+	#desktop: Desktop | null = null;
 
 	/** Set once the trace has crossed the warning line, until it falls well below it again */
 	#warned = false;
@@ -156,6 +175,7 @@ export class HackersGame {
 	start(targetIndex = 0) {
 		this.#random = createRandom(this.#seed());
 		this.state = createGame(this.#random, { hardware: this.hardware, targetIndex });
+		this.leaveDesktop();
 		this.log = [];
 		this.input = [];
 		this.isNewBest = false;
@@ -172,6 +192,7 @@ export class HackersGame {
 		if (this.status !== 'over') return;
 		this.#random = createRandom(this.#seed());
 		this.state = createGame(this.#random, { hardware: this.hardware });
+		this.leaveDesktop();
 		this.log = [];
 		this.input = [];
 		this.isNewBest = false;
@@ -273,7 +294,124 @@ export class HackersGame {
 	/** One fixed step: called by the page's game loop */
 	update(dtMs: number) {
 		if (this.status !== 'playing') return;
+		// The bonus round stops the clock of the contract waiting behind it
+		if (this.#desktop) {
+			if (!tickDesktop(this.#desktop, dtMs)) {
+				this.#say(m.hackers_desk_admin_back());
+				this.#play('alarm', 0.5);
+				this.leaveDesktop();
+			} else this.#showDesktop();
+			return;
+		}
 		this.#apply(step(this.state, dtMs, this.#random));
+	}
+
+	openFolder(index: number) {
+		const desktop = this.#desktop;
+		if (!desktop || this.status !== 'playing') return;
+		if (desktop.folders[index]?.opened) {
+			this.desktopFolder = index;
+			return;
+		}
+		if (!openDesktopFolder(desktop, index)) return;
+		this.desktopFolder = index;
+		this.#play('ui-toggle', 0.6);
+		haptic().play(0.1);
+		this.#showDesktop();
+	}
+
+	closeFolder() {
+		this.desktopFolder = null;
+	}
+
+	/** Picks up a note, downloads an app or pockets a pile of DogeLite */
+	takeItem(folderIndex: number, itemIndex: number) {
+		const desktop = this.#desktop;
+		if (!desktop || this.status !== 'playing') return;
+		const item = takeDesktopItem(desktop, folderIndex, itemIndex);
+		if (!item) return;
+		switch (item.kind) {
+			case 'note':
+				this.#say(m.hackers_desk_log_note({ slot: item.slot + 1, glyph: GLYPHS[item.symbol] }));
+				this.#play('pickup', 0.6);
+				break;
+			case 'app': {
+				const level = this.state.upgrades[item.app];
+				if (level < toolSpec(item.app).maxLevel) {
+					this.state.upgrades = { ...this.state.upgrades, [item.app]: level + 1 };
+					this.state.contract.spec = effectiveSpec(
+						this.state.contract.n,
+						this.state.upgrades,
+						this.state.hardware
+					);
+					this.#say(m.hackers_desk_log_app({ tool: TOOL_NAMES[item.app](), level: level + 1 }));
+				} else {
+					// A tool already at the top is sold on for a little DogeLite
+					this.state.score += 50;
+					this.#say(m.hackers_desk_log_coins({ amount: 50 }));
+				}
+				this.#play('sparkle', 0.7);
+				break;
+			}
+			case 'coins':
+				this.state.score += item.amount;
+				this.#say(m.hackers_desk_log_coins({ amount: item.amount }));
+				this.#play('pickup', 0.8);
+				break;
+		}
+		haptic().play(0.2);
+		this.#sync();
+		this.#showDesktop();
+	}
+
+	pushVault(symbol: number) {
+		const desktop = this.#desktop;
+		if (!desktop || desktop.cracked !== null || !desktop.vaultFound) return;
+		if (this.vaultInput.length >= desktop.code.length || symbol < 0 || symbol >= desktop.symbols)
+			return;
+		this.vaultInput = [...this.vaultInput, symbol];
+		this.#play('ui-tap', 0.5);
+	}
+
+	popVault() {
+		if (this.vaultInput.length === 0) return;
+		this.vaultInput = this.vaultInput.slice(0, -1);
+		this.#play('ui-tap', 0.4);
+	}
+
+	/** Tries the typed combination on the vault */
+	tryVault() {
+		const desktop = this.#desktop;
+		if (!desktop || this.vaultInput.length !== desktop.code.length) return;
+		const reward = tryDesktopVault(desktop, this.vaultInput);
+		this.vaultInput = [];
+		if (reward > 0) {
+			this.state.score += reward;
+			this.#say(m.hackers_desk_log_vault({ amount: reward }));
+			this.#play('chime-big', 1);
+			haptic().play(0.5);
+			this.#flash('ok');
+		} else if (desktop.cracked === false) {
+			this.#say(m.hackers_desk_log_vault_locked());
+			this.#play('alarm', 0.6);
+			this.#flash('fail');
+		} else {
+			this.#play('ui-error', 0.5);
+		}
+		this.#sync();
+		this.#showDesktop();
+	}
+
+	/** Logs off the desktop; the next contract starts */
+	leaveDesktop() {
+		this.#desktop = null;
+		this.desktop = null;
+		this.desktopFolder = null;
+		this.vaultInput = [];
+	}
+
+	#showDesktop() {
+		this.desktop = this.#desktop ? { ...this.#desktop } : null;
 	}
 
 	/** Draws a little terminal onto the shared score card */
@@ -369,6 +507,13 @@ export class HackersGame {
 				this.#play('sparkle', 0.9);
 				haptic().play(0.4);
 				this.#flash('ok');
+				// The bank's desktop is open for a little while before the next contract; the
+				// reactive fields still show the finished contract until the sync after the events
+				this.desktopSystem = this.system;
+				this.#desktop = createDesktop(this.#random, event.n);
+				this.desktopFolder = null;
+				this.vaultInput = [];
+				this.#showDesktop();
 				break;
 			case 'upgrade':
 				this.#say(
