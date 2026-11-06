@@ -149,14 +149,24 @@ describe("a game page opened from a chat's game message", () => {
 		);
 	});
 
+	it('knows every arcade mode offered in groups', () => {
+		for (const mode of ['convoy', 'flamingo', 'whack', 'veto', 'grain']) {
+			expect(groupGameFromUrl(at(`/play/${mode}?game_session=${session}`))).toEqual({
+				mode,
+				session
+			});
+		}
+	});
+
 	it('ignores any other page or session', () => {
 		for (const path of [
 			'/play/blocks',
 			`/?game_session=${session}`,
 			`/play/blocks?game_session=${session.slice(1)}`,
 			`/play/blocks?game_session=${session.toUpperCase()}`,
-			// Not offered as a Telegram game yet
-			`/play/minefield?game_session=${session}`
+			// Levels would mix on one board, so these are not Telegram games
+			`/play/minefield?game_session=${session}`,
+			`/play/wordle?game_session=${session}`
 		]) {
 			expect(groupGameFromUrl(at(path))).toBeNull();
 		}

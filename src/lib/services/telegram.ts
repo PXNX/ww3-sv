@@ -136,8 +136,30 @@ export interface GroupGame {
 	session: string;
 }
 
-/** The modes offered as Telegram games in groups, for now only Block Puzzle (see todo.md) */
-const GROUP_GAME_ROUTES = { blocks: '/play/blocks' } as const;
+/**
+ * The modes offered as Telegram games in groups: quick arcade runs that end on the shared result
+ * sheet with one score where higher is better, and no levels or variants that would mix on one
+ * board (see todo.md). The bot's list of games has to match.
+ */
+const GROUP_GAME_ROUTES = {
+	blocks: '/play/blocks',
+	convoy: '/play/convoy',
+	merge: '/play/merge',
+	shootdown: '/play/shootdown',
+	flamingo: '/play/flamingo',
+	slice: '/play/slice',
+	whack: '/play/whack',
+	runcomrade: '/play/runcomrade',
+	dome: '/play/dome',
+	leakpatrol: '/play/leakpatrol',
+	killswitch: '/play/killswitch',
+	veto: '/play/veto',
+	shuffle: '/play/shuffle',
+	centrifuge: '/play/centrifuge',
+	rareearth: '/play/rareearth',
+	balloon: '/play/balloon',
+	grain: '/play/grain'
+} as const;
 
 export type GroupGameMode = keyof typeof GROUP_GAME_ROUTES;
 
