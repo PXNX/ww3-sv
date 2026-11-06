@@ -1,8 +1,10 @@
 <!--
 	Result screen shared by every mode (requirements Section 10): final score, a random cameo
 	portrait with its matching message, the game's character reacting to whether the player won or
-	lost, and a Try Again button. On a new personal best it adds confetti and a Share button; a run
-	opened from a chat's game message shows that chat's leaderboard instead of Share.
+	lost, and a Try Again button. On a new personal best it adds confetti and a Share button. A run
+	opened from a chat's game message is about that chat: its leaderboard sits right under the
+	score (with the rush past an overtaken player), and Share, the cameo and the shop link, which do
+	not fit Telegram's game browser, are left out.
 -->
 <script lang="ts" module>
 	import type { CameoId } from '#lib/theme/cameos.js';
@@ -309,9 +311,7 @@
 				{#if !terminal}
 					<div class="flex items-center justify-center gap-3">
 						<div class="flex flex-col items-center">
-							<span class="text-xs font-bold uppercase sm:text-sm"
-								>{m.gameover_final_score()}</span
-							>
+							<span class="text-xs font-bold uppercase sm:text-sm">{m.gameover_final_score()}</span>
 							<span
 								class="pop-in font-display text-4xl font-bold text-tie-red tabular-nums sm:text-5xl"
 								>{score}</span
@@ -332,16 +332,16 @@
 				{/if}
 			</div>
 
-			{#if children}
-				<div class="w-full">{@render children()}</div>
-			{/if}
-
 			{#if groupGame}
 				<GroupLeaderboard
 					rows={account.groupBoard}
 					status={account.groupBoardStatus}
 					overtaken={account.groupOvertaken}
 				/>
+			{/if}
+
+			{#if children}
+				<div class="w-full">{@render children()}</div>
 			{/if}
 
 			{#if reward}
@@ -399,7 +399,7 @@
 				</div>
 			{/if}
 
-			{#if showCameo && !terminal}
+			{#if showCameo && !terminal && !groupGame}
 				<figure
 					class="flex w-full items-center gap-2 rounded-[12px_6px_14px_8px] border-3 border-ink bg-sand p-2 text-start sm:gap-3 sm:p-3"
 				>
@@ -444,7 +444,7 @@
 				{:else if account.status === 'verified' && account.reviveItem}
 					<!-- One tap inside Telegram: once the revival arrives, the button above takes over -->
 					<StarsOffer item={account.reviveItem} compact />
-				{:else}
+				{:else if !groupGame}
 					<a href={resolve('/shop')} class="btn-chunky bg-khaki text-lg">
 						<IconHeartPulse class="size-5" aria-hidden="true" />
 						{m.gameover_revive_none()}
@@ -493,6 +493,7 @@
 		</div>
 	</div>
 </dialog>
+<!-- Outside the result dialog: a second modal inside the top layer is unreliable in older Safari -->
 <RewardedAdModal
 	open={adOpen}
 	coins={AD_COINS}
@@ -500,7 +501,6 @@
 	onClose={() => (adOpen = false)}
 />
 
-<!-- Outside the result dialog: a second modal inside the top layer is unreliable in older Safari -->
 <style>
 	.xp-reward {
 		animation: xp-pop 0.6s ease-out forwards;
