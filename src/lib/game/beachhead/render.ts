@@ -769,6 +769,56 @@ function drawMedic(context: CanvasRenderingContext2D, troop: Troop) {
 	drawMuzzle(context, troop, 0.2, 0.05);
 }
 
+/** The Azov commander: helmet, grey beard, a pistol, and a pennant he raises while his aura is on */
+function drawAzov(context: CanvasRenderingContext2D, troop: Troop, timeMs: number) {
+	context.save();
+	context.scale(1.2, 1.2);
+	drawLegs(context, troop);
+	// The pennant on a pole behind him, waving
+	context.strokeStyle = INK;
+	context.lineWidth = 0.03;
+	context.beginPath();
+	context.moveTo(-0.12, 0.04);
+	context.lineTo(-0.12, -0.42);
+	context.stroke();
+	const wave = Math.sin(timeMs / 160) * 0.03;
+	context.fillStyle = '#f5c83a';
+	context.beginPath();
+	context.moveTo(-0.12, -0.42);
+	context.lineTo(-0.34, -0.37 + wave);
+	context.lineTo(-0.12, -0.3);
+	context.closePath();
+	context.fill();
+	context.lineWidth = 0.02;
+	context.stroke();
+	// Body in dark grey with the khaki chest rig, the face, a grey beard and an olive helmet
+	circle(context, 0, 0, 0.12, '#3b4048', 0.035);
+	context.fillStyle = KHAKI;
+	context.fillRect(-0.09, 0.0, 0.18, 0.05);
+	circle(context, 0.03, -0.11, 0.072, SKIN, 0.03);
+	context.fillStyle = '#c9c4bb';
+	context.beginPath();
+	context.arc(0.05, -0.09, 0.055, 0, Math.PI);
+	context.fill();
+	context.fillStyle = KHAKI;
+	context.beginPath();
+	context.arc(0.03, -0.125, 0.08, Math.PI, Math.PI * 2);
+	context.fill();
+	context.strokeStyle = INK;
+	context.lineWidth = 0.025;
+	context.stroke();
+	context.fillRect(-0.06, -0.135, 0.18, 0.02);
+	// A pistol held forward
+	context.strokeStyle = INK;
+	context.lineWidth = 0.035;
+	context.beginPath();
+	context.moveTo(0.06, -0.02);
+	context.lineTo(0.2, -0.04);
+	context.stroke();
+	drawMuzzle(context, troop, 0.2, 0.06);
+	context.restore();
+}
+
 function drawHero(context: CanvasRenderingContext2D, troop: Troop, timeMs: number) {
 	// Bigger than the troops, shaven head, grey beard, black jacket and the healing hammer
 	context.save();
@@ -1335,6 +1385,9 @@ function drawTroop(
 				break;
 			case 'hero':
 				drawHero(context, troop, timeMs);
+				break;
+			case 'azov':
+				drawAzov(context, troop, timeMs);
 				break;
 			case 'demo':
 				drawDemo(context, troop, timeMs);
