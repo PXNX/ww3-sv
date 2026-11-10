@@ -588,7 +588,7 @@
 						</div>
 					</div>
 					<div
-						class="pinned-foot absolute z-10 flex items-start gap-2"
+						class="pinned-foot absolute z-10 flex items-start gap-0.5"
 						style:left="{anchor.foot.x}%"
 						style:top="{anchor.foot.y}%"
 					>
