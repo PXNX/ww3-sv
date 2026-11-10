@@ -1,7 +1,9 @@
 <!--
-	The upgrade window of a building, in the manner of a base builder: the building as it is now and as
-	it will look after the upgrade side by side, what the upgrade changes in numbers, and for the
-	headquarters everything it unlocks. The price, the build time and the button are at the bottom.
+	The window of a building or defence, in the manner of a base builder. The picture stands on the
+	left on a lit tile with its level; on the right every number is a bar, and in the upgrade view the
+	part the next level adds is shown in green. For the headquarters everything it unlocks is listed.
+	The build time and a big green button with the price are at the bottom. The info view shows the
+	same picture and bars for the level it has now, with what it does in a line of text.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -35,15 +37,26 @@
 	import BeachheadPortrait from '#lib/components/BeachheadPortrait.svelte';
 	import ResourceIcon from '#lib/components/ResourceIcon.svelte';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
-	import IconArrowRight from '~icons/lucide/arrow-right';
-	import IconCircleArrowUp from '~icons/lucide/circle-arrow-up';
+	import IconArrowBigUp from '~icons/lucide/arrow-big-up';
 	import IconHourglass from '~icons/lucide/hourglass';
 	import IconShip from '~icons/lucide/ship';
 	import IconStar from '~icons/lucide/star';
-	import IconTrendingUp from '~icons/lucide/trending-up';
 
-	let { game, building, defenseId }: { game: BeachheadGame; building: string; defenseId?: number } =
-		$props();
+	let {
+		game,
+		building,
+		defenseId,
+		mode = 'upgrade',
+		hint = ''
+	}: {
+		game: BeachheadGame;
+		building: string;
+		defenseId?: number;
+		/** What it is now, or what the next level brings */
+		mode?: 'info' | 'upgrade';
+		/** What it does, in a line, for the info view */
+		hint?: string;
+	} = $props();
 
 	/** A placed mine, gun or hedgehog being looked at instead of a building */
 	const defense = $derived(
@@ -197,186 +210,248 @@
 			guns: GUARD_KINDS.filter((kind) => GUARD_UNLOCK_HQ[kind] === next)
 		};
 	});
+
+	/** A number from a stat text such as "+25%" or "1200", for its bar */
+	const numberOf = (text: string): number => Number.parseFloat(text.replace(/[^0-9.-]/g, ''));
+
+	/** How a stat's bar is filled: the part it has now and the part the next level adds */
+	function barOf(stat: { from: string; to: string }): { now: number; gain: number } | null {
+		const from = numberOf(stat.from);
+		const to = numberOf(stat.to);
+		if (!Number.isFinite(from) || !Number.isFinite(to)) return null;
+		const top = Math.max(Math.abs(from), Math.abs(to)) * 1.25;
+		if (top <= 0) return { now: 0, gain: 0 };
+		return {
+			now: (Math.abs(from) / top) * 100,
+			gain: upgrading ? (Math.max(0, Math.abs(to) - Math.abs(from)) / top) * 100 : 0
+		};
+	}
+
+	/** Whatever is open: its level and what upgrading it takes */
+	const shown = $derived.by(() => {
+		if (defense) {
+			return {
+				level: defenseNow,
+				next: defenseNext,
+				cost: defenseCost,
+				remainingMs: defenseLeft,
+				timeMs: game.defenseUpgradeTime(defense.id) ?? 0,
+				canStart: game.canUpgradeDefense(defense.id),
+				start: () => game.upgradeDefense(defense.id)
+			};
+		}
+		return {
+			level,
+			next,
+			cost: row.remainingMs === null ? cost : null,
+			remainingMs: row.remainingMs,
+			timeMs: game.buildDuration(key),
+			canStart: row.canStart,
+			start: () => game.upgrade(key)
+		};
+	});
+	/** The upgrade view only makes sense while there is a next level to buy */
+	const upgrading = $derived(mode === 'upgrade' && shown.cost !== null);
+	const statList = $derived(defense ? defenseStats : stats);
 </script>
 
 {#snippet statRow(stat: { label: string; from: string; to: string })}
-	<li class="flex items-center justify-between gap-2 font-display text-sm font-bold tabular-nums">
-		<span class="flex items-center gap-1.5">
-			<IconTrendingUp class="size-4" aria-hidden="true" />
-			{stat.label}
-		</span>
-		{#if stat.from === stat.to}
-			<span class="opacity-70">{stat.from}</span>
-		{:else}
+	{@const bar = barOf(stat)}
+	<li class="flex flex-col gap-0.5">
+		<span
+			class="flex items-baseline justify-between gap-2 font-display text-sm font-bold tabular-nums"
+		>
+			<span>{stat.label}</span>
 			<span>
 				{stat.from}
-				<IconArrowRight class="inline size-3.5 rtl:rotate-180" aria-hidden="true" />
-				<span class="text-[#2f8a49]">{stat.to}</span>
+				{#if upgrading && stat.from !== stat.to}
+					<span class="text-[#2f8a49]">→ {stat.to}</span>
+				{/if}
+			</span>
+		</span>
+		{#if bar}
+			<span
+				class="flex h-3.5 overflow-hidden rounded-full border-2 border-ink bg-ink/70"
+				aria-hidden="true"
+			>
+				<span class="h-full bg-[#5aaee8]" style:width="{bar.now}%"></span>
+				<span class="gain h-full bg-[#5fd068]" style:width="{bar.gain}%"></span>
 			</span>
 		{/if}
 	</li>
 {/snippet}
 
 <div class="flex flex-col gap-3">
-	<!-- Only the next level is shown: what the building will look like once it is upgraded -->
-	<div class="flex items-center justify-center gap-3">
-		{#if defense}
-			<div class="rounded-[18px] bg-explosion-yellow/40 p-1 ring-4 ring-explosion-yellow/60">
-				<BeachheadPortrait type="defense" kind={defense.kind as BuildingKind} size={96} />
-			</div>
-			<span
-				class="rounded-full border-2 border-ink bg-explosion-yellow px-2 font-display text-lg font-bold tabular-nums"
+	<div class="flex flex-col gap-3 sm:flex-row">
+		<!-- The picture on a lit tile, with the level it has or will have -->
+		<div class="flex shrink-0 flex-col items-center gap-2 sm:w-48">
+			<div
+				class="spotlight relative flex w-full items-center justify-center rounded-[18px] border-3 border-ink p-2"
 			>
-				{defenseNext}
-			</span>
-		{:else if isLayoutKey(key)}
-			<div class="rounded-[18px] bg-explosion-yellow/40 p-1 ring-4 ring-explosion-yellow/60">
-				<BeachheadPortrait type="building" kind={key} level={next} {max} size={104} />
+				{#if defense}
+					<BeachheadPortrait
+						type="defense"
+						kind={defense.kind as BuildingKind}
+						size={upgrading ? 120 : 112}
+					/>
+				{:else if isLayoutKey(key)}
+					<BeachheadPortrait
+						type="building"
+						kind={key}
+						level={upgrading ? next : Math.max(1, level)}
+						{max}
+						size={128}
+					/>
+				{:else}
+					<IconShip
+						class="size-20 text-paper drop-shadow-[0_3px_0_var(--color-ink)]"
+						aria-hidden="true"
+					/>
+				{/if}
+				<span
+					class="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full border-2 border-ink bg-explosion-yellow px-2.5 font-display text-base font-bold whitespace-nowrap tabular-nums"
+				>
+					{m.beachhead_level_tag({ level: upgrading ? shown.next : shown.level })}
+				</span>
 			</div>
-			<span
-				class="rounded-full border-2 border-ink bg-explosion-yellow px-2 font-display text-lg font-bold tabular-nums"
-			>
-				{next}
-			</span>
-		{:else}
-			<IconShip class="size-12" aria-hidden="true" />
-			<span class="font-display text-xl font-bold tabular-nums">
-				{next}
-			</span>
-		{/if}
+
+			{#if crystalTarget}
+				<!-- The overcharge crystal: tap to cycle through the types and back to empty -->
+				<button
+					type="button"
+					class="mt-1 flex w-full items-center justify-between gap-2 rounded-[14px] border-2 border-ink bg-sand px-2 py-1 text-start"
+					title={crystalHere ? crystalName(crystalHere) : m.beachhead_crystals_empty_slot()}
+					disabled={!crystalHere && game.overchargeSlotsUsed >= game.overchargeSlotsTotal}
+					onclick={cycleCrystal}
+				>
+					<span class="text-xs font-bold">
+						{crystalHere ? crystalName(crystalHere) : m.beachhead_crystals_empty_slot()}
+					</span>
+					<span
+						class="flex size-9 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-paper"
+					>
+						{#if crystalHere}
+							<CrystalIcon type={crystalHere} class="size-6" />
+						{/if}
+					</span>
+				</button>
+			{/if}
+		</div>
+
+		<div class="flex min-w-0 flex-1 flex-col gap-2">
+			{#if !upgrading && hint}
+				<p class="text-sm">{hint}</p>
+			{/if}
+			{#if statList.length > 0}
+				<ul class="flex flex-col gap-1.5 rounded-[14px] border-2 border-ink bg-sand p-2">
+					{#each statList as stat (stat.label)}
+						{@render statRow(stat)}
+					{/each}
+				</ul>
+			{/if}
+
+			{#if !defense && upgrading && unlocks && (unlocks.boat !== null || unlocks.guns.length > 0)}
+				<div class="flex flex-col gap-1.5">
+					<h4 class="text-sm font-bold">{m.beachhead_unlocks_title()}</h4>
+					<ul class="flex flex-wrap gap-2">
+						{#if unlocks.boat !== null}
+							<li
+								class="flex items-center gap-2 rounded-[14px] border-2 border-ink bg-paper px-2 py-1"
+								title={m.beachhead_building_boat({ index: unlocks.boat })}
+							>
+								<IconShip class="size-10" aria-hidden="true" />
+							</li>
+						{/if}
+						{#each unlocks.guns as kind (kind)}
+							<li
+								class="rounded-[14px] border-2 border-ink bg-paper p-1"
+								title={buildingName(kind)}
+							>
+								<BeachheadPortrait type="defense" {kind} size={60} />
+							</li>
+						{/each}
+					</ul>
+				</div>
+			{/if}
+		</div>
 	</div>
 
-	{#if crystalTarget}
-		<!-- The overcharge crystal: tap to cycle through the types and back to empty -->
-		<button
-			type="button"
-			class="flex items-center justify-between gap-2 rounded-[14px] border-2 border-ink bg-sand px-2 py-1 text-start"
-			title={crystalHere ? crystalName(crystalHere) : m.beachhead_crystals_empty_slot()}
-			disabled={!crystalHere && game.overchargeSlotsUsed >= game.overchargeSlotsTotal}
-			onclick={cycleCrystal}
+	<!-- The bottom bar: how long it takes, and the big green button with the price -->
+	{#if shown.remainingMs !== null}
+		<p
+			class="flex items-center justify-center gap-1.5 rounded-[14px] border-2 border-ink bg-explosion-yellow px-3 py-2 font-display font-bold tabular-nums"
 		>
-			<span class="text-sm font-bold">
-				{crystalHere ? crystalName(crystalHere) : m.beachhead_crystals_empty_slot()}
-			</span>
-			<span
-				class="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-paper"
+			<IconHourglass class="size-5" aria-hidden="true" />
+			{timeText(shown.remainingMs)}
+		</p>
+	{:else if shown.cost === null}
+		<p class="flex items-center justify-center gap-1.5 font-display font-bold">
+			<IconStar class="size-6 text-explosion-yellow" aria-hidden="true" />
+			{m.beachhead_upgrade_max()}
+		</p>
+	{:else if upgrading}
+		{@const price = shown.cost as Resources}
+		<div class="flex flex-wrap items-center justify-between gap-3">
+			<p class="flex flex-col font-display font-bold tabular-nums">
+				<span class="text-xs opacity-70">{m.beachhead_upgrade_time()}</span>
+				<span class="flex items-center gap-1 text-lg">
+					<IconHourglass class="size-5" aria-hidden="true" />
+					{timeText(shown.timeMs)}
+				</span>
+			</p>
+			<button
+				type="button"
+				class="upgrade-go flex min-h-13 items-center gap-2 rounded-[16px] px-4 py-1.5 font-display font-bold text-paper tabular-nums disabled:cursor-not-allowed disabled:grayscale-[0.6]"
+				aria-label={m.beachhead_upgrade_button()}
+				disabled={!shown.canStart}
+				onclick={shown.start}
 			>
-				{#if crystalHere}
-					<CrystalIcon type={crystalHere} class="size-7" />
-				{/if}
-			</span>
-		</button>
-	{/if}
-
-	{#if defense}
-		<ul class="flex flex-col gap-1 rounded-[14px] border-2 border-ink bg-sand p-2">
-			{#each defenseStats as stat (stat.label)}
-				{@render statRow(stat)}
-			{/each}
-		</ul>
-		{#if defenseCost === null}
-			<IconStar
-				class="mx-auto size-6 text-explosion-yellow"
-				aria-label={m.beachhead_upgrade_max()}
-			/>
-		{:else}
-			<div class="flex flex-wrap items-center justify-between gap-2">
-				<span class="flex flex-wrap items-center gap-1 font-display text-xs font-bold">
+				<IconArrowBigUp class="size-7 fill-current" aria-hidden="true" />
+				<span class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
 					{#each RESOURCE_KINDS as resource (resource)}
-						{#if defenseCost[resource] > 0}
+						{#if price[resource] > 0}
 							<span
-								class="inline-flex items-center gap-0.5 rounded-full border-2 border-ink py-px ps-0.5 pe-1.5 {game
-									.resources[resource] >= defenseCost[resource]
-									? 'bg-paper'
-									: 'bg-tie-red text-paper'}"
+								class="inline-flex items-center gap-0.5 text-base"
+								class:text-[#ffd0c8]={game.resources[resource] < price[resource]}
 							>
-								<ResourceIcon kind={resource} class="size-4" />
-								{defenseCost[resource]}
+								<ResourceIcon kind={resource} class="size-5" />
+								{price[resource]}
 							</span>
 						{/if}
 					{/each}
 				</span>
-				{#if defenseLeft !== null}
-					<span
-						class="flex items-center gap-1 font-display text-sm font-bold text-flag-blue tabular-nums"
-					>
-						<IconHourglass class="size-4" aria-hidden="true" />
-						{timeText(defenseLeft)}
-					</span>
-				{:else}
-					<button
-						type="button"
-						class="btn-chunky flex h-11 items-center gap-1.5 rounded-full bg-khaki px-4 py-0 font-display text-sm font-bold text-paper tabular-nums"
-						aria-label={m.beachhead_upgrade_button()}
-						disabled={!game.canUpgradeDefense(defense.id)}
-						onclick={() => game.upgradeDefense(defense.id)}
-					>
-						<IconCircleArrowUp class="size-5" aria-hidden="true" />
-						<IconHourglass class="size-4" aria-hidden="true" />
-						{timeText(game.defenseUpgradeTime(defense.id) ?? 0)}
-					</button>
-				{/if}
-			</div>
-		{/if}
-	{/if}
-
-	{#if !defense && stats.length > 0}
-		<ul class="flex flex-col gap-1 rounded-[14px] border-2 border-ink bg-sand p-2">
-			{#each stats as stat (stat.label)}
-				{@render statRow(stat)}
-			{/each}
-		</ul>
-	{/if}
-
-	{#if !defense && unlocks && (unlocks.boat !== null || unlocks.guns.length > 0)}
-		<div class="flex flex-col gap-1.5">
-			<h4 class="text-sm font-bold">{m.beachhead_unlocks_title()}</h4>
-			<ul class="flex flex-wrap gap-2">
-				{#if unlocks.boat !== null}
-					<li
-						class="flex items-center gap-2 rounded-[14px] border-2 border-ink bg-paper px-2 py-1"
-						title={m.beachhead_building_boat({ index: unlocks.boat })}
-					>
-						<IconShip class="size-10" aria-hidden="true" />
-					</li>
-				{/if}
-				{#each unlocks.guns as kind (kind)}
-					<li class="rounded-[14px] border-2 border-ink bg-paper p-1" title={buildingName(kind)}>
-						<BeachheadPortrait type="defense" {kind} size={60} />
-					</li>
-				{/each}
-			</ul>
-		</div>
-	{/if}
-
-	{#if !defense && cost !== null && row.remainingMs === null}
-		<div class="flex flex-wrap items-center justify-between gap-2">
-			<span class="flex flex-wrap items-center gap-1 font-display text-xs font-bold">
-				{#each RESOURCE_KINDS as resource (resource)}
-					{#if (cost as Resources)[resource] > 0}
-						<span
-							class="inline-flex items-center gap-0.5 rounded-full border-2 border-ink py-px ps-0.5 pe-1.5 {game
-								.resources[resource] >= (cost as Resources)[resource]
-								? 'bg-paper'
-								: 'bg-tie-red text-paper'}"
-						>
-							<ResourceIcon kind={resource} class="size-4" />
-							{(cost as Resources)[resource]}
-						</span>
-					{/if}
-				{/each}
-			</span>
-			<button
-				type="button"
-				class="btn-chunky flex h-11 items-center gap-1.5 rounded-full bg-khaki px-4 py-0 font-display text-sm font-bold text-paper tabular-nums"
-				aria-label={m.beachhead_upgrade_button()}
-				disabled={!row.canStart}
-				onclick={() => game.upgrade(key)}
-			>
-				<IconCircleArrowUp class="size-5" aria-hidden="true" />
-				<IconHourglass class="size-4" aria-hidden="true" />
-				{timeText(game.buildDuration(key))}
 			</button>
 		</div>
 	{/if}
 </div>
+
+<style>
+	.spotlight {
+		min-height: 9rem;
+		background:
+			radial-gradient(circle at 50% 55%, rgb(255 255 255 / 0.55), transparent 60%),
+			linear-gradient(#7cc4f0, #3b8fd9);
+	}
+
+	.gain {
+		background-image: repeating-linear-gradient(
+			-45deg,
+			rgb(255 255 255 / 0.25) 0 4px,
+			transparent 4px 8px
+		);
+	}
+
+	.upgrade-go {
+		border: 3px solid var(--color-ink);
+		background: linear-gradient(#6fd36a, #2f9a4a);
+		box-shadow:
+			inset 0 2px 0 rgb(255 255 255 / 0.4),
+			2px 3px 0 var(--color-ink);
+		text-shadow: 0 2px 0 var(--color-ink);
+	}
+
+	.upgrade-go:not(:disabled):active {
+		transform: translateY(2px);
+		box-shadow: 1px 1px 0 var(--color-ink);
+	}
+</style>
