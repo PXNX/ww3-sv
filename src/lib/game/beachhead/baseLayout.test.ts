@@ -72,7 +72,7 @@ describe('the default island', () => {
 			return sum + size.width * size.height;
 		}, 0);
 		expect(used).toBeLessThan(BASE_COLS * BASE_ROWS * 0.6);
-		expect(occupantAt(layout, 7, 5)).toEqual({ kind: 'building', key: 'hq' });
+		expect(occupantAt(layout, 11, 10)).toEqual({ kind: 'building', key: 'hq' });
 		expect(occupantAt(layout, 0, BASE_ROWS - 1)).toBeNull();
 	});
 });
@@ -107,11 +107,11 @@ describe('the forest and the mountain', () => {
 describe('moving buildings', () => {
 	it('moves a building to a free spot and keeps the rest where they were', () => {
 		const layout = defaultLayout();
-		const moved = moveBuilding(layout, 'training', { x: 0, y: 9 })!;
-		expect(positionOf(moved, 'training')).toEqual({ x: 0, y: 9 });
+		const moved = moveBuilding(layout, 'training', { x: 0, y: 17 })!;
+		expect(positionOf(moved, 'training')).toEqual({ x: 0, y: 17 });
 		expect(positionOf(moved, 'hq')).toEqual(positionOf(layout, 'hq'));
 		// The original is not touched
-		expect(positionOf(layout, 'training')).toEqual({ x: 2, y: 1 });
+		expect(positionOf(layout, 'training')).toEqual({ x: 4, y: 9 });
 	});
 
 	it('lets a building slide over its own old cells', () => {
@@ -122,8 +122,8 @@ describe('moving buildings', () => {
 
 	it('refuses a spot that is taken, off the grid or unchanged', () => {
 		const layout = defaultLayout();
-		expect(moveBuilding(layout, 'training', { x: 5, y: 3 })).toBeNull();
-		expect(moveBuilding(layout, 'hq', { x: 10, y: 0 })).toBeNull();
+		expect(moveBuilding(layout, 'training', { x: 9, y: 8 })).toBeNull();
+		expect(moveBuilding(layout, 'hq', { x: 7, y: 0 })).toBeNull();
 		expect(moveBuilding(layout, 'hq', { x: -1, y: 3 })).toBeNull();
 		expect(moveBuilding(layout, 'hq', { x: BASE_COLS - 4, y: 3 })).toBeNull();
 		expect(moveBuilding(layout, 'training', { x: 1.5, y: 1 })).toBeNull();
@@ -131,10 +131,10 @@ describe('moving buildings', () => {
 	});
 
 	it('cannot put anything where a mine is, or a mine where a building is', () => {
-		const layout = addMine(defaultLayout(), 'mine-at', { x: 0, y: 9 })!;
-		expect(moveBuilding(layout, 'training', { x: 0, y: 9 })).toBeNull();
-		expect(addMine(layout, 'mine-emp', { x: 5, y: 3 })).toBeNull();
-		expect(addMine(layout, 'mine-emp', { x: 0, y: 9 })).toBeNull();
+		const layout = addMine(defaultLayout(), 'mine-at', { x: 0, y: 17 })!;
+		expect(moveBuilding(layout, 'training', { x: 0, y: 17 })).toBeNull();
+		expect(addMine(layout, 'mine-emp', { x: 9, y: 8 })).toBeNull();
+		expect(addMine(layout, 'mine-emp', { x: 0, y: 17 })).toBeNull();
 	});
 });
 
@@ -144,9 +144,9 @@ describe('mines on the island', () => {
 		expect(layout.mines).toHaveLength(1);
 		expect(layout.mines[0]).toMatchObject({ x: 0, y: BASE_ROWS - 1, kind: 'mine-personnel' });
 		const id = layout.mines[0].id;
-		layout = moveMine(layout, id, { x: 6, y: 9 })!;
-		expect(layout.mines[0]).toMatchObject({ x: 6, y: 9 });
-		expect(moveMine(layout, id, { x: 5, y: 3 })).toBeNull();
+		layout = moveMine(layout, id, { x: 7, y: 9 })!;
+		expect(layout.mines[0]).toMatchObject({ x: 7, y: 9 });
+		expect(moveMine(layout, id, { x: 9, y: 8 })).toBeNull();
 		layout = removeMine(layout, id)!;
 		expect(layout.mines).toHaveLength(0);
 		expect(removeMine(layout, id)).toBeNull();
@@ -171,8 +171,8 @@ describe('mines on the island', () => {
 	it('canPlace agrees with the moves', () => {
 		const layout = defaultLayout();
 		expect(canPlace(layout, { width: 1, height: 1 }, { x: 0, y: 13 })).toBe(true);
-		expect(canPlace(layout, { width: 1, height: 1 }, { x: 5, y: 3 })).toBe(false);
-		expect(canPlace(layout, { width: 1, height: 1 }, { x: 14, y: 0 })).toBe(false);
+		expect(canPlace(layout, { width: 1, height: 1 }, { x: 9, y: 8 })).toBe(false);
+		expect(canPlace(layout, { width: 1, height: 1 }, { x: BASE_COLS, y: 0 })).toBe(false);
 	});
 });
 
@@ -184,26 +184,26 @@ describe('reading a stored layout', () => {
 	});
 
 	it('keeps a valid arrangement', () => {
-		const moved = moveBuilding(defaultLayout(), 'radar', { x: 8, y: 12 })!;
+		const moved = moveBuilding(defaultLayout(), 'radar', { x: 8, y: 18 })!;
 		const withMine = addMine(moved, 'mine-emp', { x: 4, y: 4 })!;
 		expect(normalizeLayout(JSON.parse(JSON.stringify(withMine)))).toEqual(withMine);
 	});
 
 	it('puts a building that overlaps another one back on its default spot', () => {
 		const messy = defaultLayout();
-		messy.positions.training = { x: 5, y: 3 };
+		messy.positions.training = { x: 9, y: 8 };
 		messy.positions.dojo = { x: 99, y: -4 };
 		const fixed = normalizeLayout(messy);
-		expect(positionOf(fixed, 'hq')).toEqual({ x: 5, y: 3 });
-		expect(positionOf(fixed, 'training')).toEqual({ x: 2, y: 1 });
-		expect(positionOf(fixed, 'dojo')).toEqual({ x: 10, y: 1 });
+		expect(positionOf(fixed, 'hq')).toEqual({ x: 9, y: 8 });
+		expect(positionOf(fixed, 'training')).toEqual({ x: 4, y: 9 });
+		expect(positionOf(fixed, 'dojo')).toEqual({ x: 15, y: 8 });
 	});
 
 	it('drops mines that are on a building, off the grid or of an unknown kind', () => {
 		const stored = {
 			...defaultLayout(),
 			mines: [
-				{ id: 1, kind: 'mine-at', x: 5, y: 3 },
+				{ id: 1, kind: 'mine-at', x: 9, y: 8 },
 				{ id: 2, kind: 'mine-at', x: 40, y: 3 },
 				{ id: 3, kind: 'mine-nuke', x: 0, y: 13 },
 				{ id: 4, kind: 'mine-emp', x: 0, y: 13 },
@@ -217,6 +217,39 @@ describe('reading a stored layout', () => {
 	});
 });
 
+describe('a layout from the small island', () => {
+	it('moves towards the middle of the big one, buildings and mines alike', () => {
+		const old = {
+			// The old default arrangement on the 14 × 14 island
+			positions: {
+				hq: { x: 5, y: 3 },
+				training: { x: 2, y: 1 },
+				dojo: { x: 10, y: 1 },
+				radar: { x: 11, y: 5 },
+				bunker: { x: 3, y: 7 },
+				'warehouse-wood-0': { x: 1, y: 5 },
+				'warehouse-wood-1': { x: 1, y: 7 },
+				'warehouse-stone-0': { x: 3, y: 10 },
+				'warehouse-stone-1': { x: 5, y: 10 },
+				'warehouse-iron-0': { x: 7, y: 10 },
+				'warehouse-iron-1': { x: 9, y: 10 },
+				'warehouse-gold-0': { x: 11, y: 8 },
+				'warehouse-gold-1': { x: 11, y: 10 }
+			},
+			mines: [{ id: 1, kind: 'mine-at', x: 0, y: 13 }],
+			nextMineId: 2
+		};
+		const moved = normalizeLayout(old);
+		expect(positionOf(moved, 'hq')).toEqual({ x: 9, y: 7 });
+		expect(positionOf(moved, 'training')).toEqual({ x: 6, y: 5 });
+		expect(positionOf(moved, 'radar')).toEqual({ x: 15, y: 9 });
+		expect(moved.mines[0]).toMatchObject({ x: 4, y: 17 });
+		expect(moved.grid).toBe(BASE_COLS);
+		// Read again, it stays where it is
+		expect(normalizeLayout(JSON.parse(JSON.stringify(moved)))).toEqual(moved);
+	});
+});
+
 describe('the island in a save', () => {
 	it('is the default arrangement for a fresh or an older save', () => {
 		const save = newSave(0);
@@ -225,10 +258,10 @@ describe('the island in a save', () => {
 	});
 
 	it('saves a move and survives a round trip through storage', () => {
-		const save = moveBuildingTo(newSave(0), 'training', { x: 0, y: 9 })!;
-		expect(positionOf(layoutOf(save), 'training')).toEqual({ x: 0, y: 9 });
+		const save = moveBuildingTo(newSave(0), 'training', { x: 0, y: 17 })!;
+		expect(positionOf(layoutOf(save), 'training')).toEqual({ x: 0, y: 17 });
 		const loaded = parseSave(JSON.parse(JSON.stringify(save)))!;
-		expect(positionOf(layoutOf(loaded), 'training')).toEqual({ x: 0, y: 9 });
+		expect(positionOf(layoutOf(loaded), 'training')).toEqual({ x: 0, y: 17 });
 	});
 
 	it('ignores moves for buildings that are not on the grid, such as boats', () => {

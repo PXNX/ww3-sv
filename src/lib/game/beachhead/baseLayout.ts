@@ -82,10 +82,12 @@ export function defenseUnlocked(kind: DefenseKind, hqLevel: number): boolean {
 	return !isGuard(kind) || hqLevel >= GUARD_UNLOCK_HQ[kind];
 }
 
-export const BASE_COLS = 14;
-export const BASE_ROWS = 14;
+export const BASE_COLS = 22;
+export const BASE_ROWS = 22;
+/** The island was 14 × 14 before; layouts saved then are moved this far towards the middle */
+export const LEGACY_SHIFT = 4;
 /** At most this many mines and guns fit on the island, so the grid cannot be filled with them */
-export const MAX_MINES = 24;
+export const MAX_MINES = 40;
 
 type LayoutResource = 'wood' | 'stone' | 'iron' | 'gold';
 /** The buildings that stand on the grid; the boats are moored in the water instead */
@@ -114,6 +116,8 @@ export interface BaseLayout {
 	positions: Record<string, Cell>;
 	mines: PlacedMine[];
 	nextMineId: number;
+	/** The side of the grid the layout was arranged on; missing in saves from the small island */
+	grid?: number;
 }
 
 /** Ground the island keeps for itself: a forest that gives wood and a little mountain with an iron mine */
@@ -155,27 +159,29 @@ export function footprintOf(key: LayoutKey | DefenseKind): Footprint {
 	return { width: 1, height: 1 };
 }
 
+// The headquarters in the middle with room around it; the stores near what fills them
 const DEFAULT_POSITIONS: Record<LayoutKey, Cell> = {
-	hq: { x: 5, y: 3 },
-	training: { x: 2, y: 1 },
-	dojo: { x: 10, y: 1 },
-	radar: { x: 11, y: 5 },
-	bunker: { x: 3, y: 7 },
-	'warehouse-wood-0': { x: 1, y: 5 },
-	'warehouse-wood-1': { x: 1, y: 7 },
-	'warehouse-stone-0': { x: 3, y: 10 },
-	'warehouse-stone-1': { x: 5, y: 10 },
-	'warehouse-iron-0': { x: 7, y: 10 },
-	'warehouse-iron-1': { x: 9, y: 10 },
-	'warehouse-gold-0': { x: 11, y: 8 },
-	'warehouse-gold-1': { x: 11, y: 10 }
+	hq: { x: 9, y: 8 },
+	training: { x: 4, y: 9 },
+	dojo: { x: 15, y: 8 },
+	radar: { x: 16, y: 4 },
+	bunker: { x: 10, y: 15 },
+	'warehouse-wood-0': { x: 1, y: 7 },
+	'warehouse-wood-1': { x: 1, y: 10 },
+	'warehouse-stone-0': { x: 1, y: 13 },
+	'warehouse-stone-1': { x: 4, y: 13 },
+	'warehouse-iron-0': { x: 7, y: 15 },
+	'warehouse-iron-1': { x: 13, y: 15 },
+	'warehouse-gold-0': { x: 18, y: 13 },
+	'warehouse-gold-1': { x: 18, y: 16 }
 };
 
 export function defaultLayout(): BaseLayout {
 	return {
 		positions: Object.fromEntries(LAYOUT_KEYS.map((key) => [key, { ...DEFAULT_POSITIONS[key] }])),
 		mines: [],
-		nextMineId: 1
+		nextMineId: 1,
+		grid: BASE_COLS
 	};
 }
 
@@ -352,10 +358,15 @@ export function normalizeLayout(value: unknown): BaseLayout {
 		typeof candidate.positions === 'object' && candidate.positions !== null
 			? (candidate.positions as Record<string, unknown>)
 			: {};
+	// A layout from the small island moves towards the middle of the big one; the scenery all
+	// lies in the top-left corner, so the moved buildings never land on it
+	const shift = candidate.grid === BASE_COLS ? 0 : LEGACY_SHIFT;
+	const moved = (cell: Cell): Cell => ({ x: cell.x + shift, y: cell.y + shift });
 
-	let layout: BaseLayout = { positions: {}, mines: [], nextMineId: 1 };
+	let layout: BaseLayout = { positions: {}, mines: [], nextMineId: 1, grid: BASE_COLS };
 	for (const key of LAYOUT_KEYS) {
-		const wanted = stored[key];
+		const raw = stored[key];
+		const wanted = isCell(raw) ? moved(raw) : raw;
 		const size = footprintOf(key);
 		const fallback = DEFAULT_POSITIONS[key];
 		const choice =
@@ -378,7 +389,8 @@ export function normalizeLayout(value: unknown): BaseLayout {
 		if (typeof x !== 'number' || typeof y !== 'number') continue;
 		if (layout.mines.some((placed) => placed.id === id)) continue;
 		if (layout.mines.length >= MAX_MINES) break;
-		if (!fitsAmongPlaced(layout, { width: 1, height: 1 }, { x, y })) continue;
+		const at = moved({ x, y });
+		if (!fitsAmongPlaced(layout, { width: 1, height: 1 }, at)) continue;
 		const stored =
 			typeof level === 'number' &&
 			Number.isInteger(level) &&
@@ -388,7 +400,7 @@ export function normalizeLayout(value: unknown): BaseLayout {
 				: {};
 		layout = {
 			...layout,
-			mines: [...layout.mines, { id, kind: kind as DefenseKind, x, y, ...stored }]
+			mines: [...layout.mines, { id, kind: kind as DefenseKind, x: at.x, y: at.y, ...stored }]
 		};
 		highest = Math.max(highest, id);
 	}

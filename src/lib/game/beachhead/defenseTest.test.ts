@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BUILDINGS, COLUMNS, ROWS, SHORE_X, isMine } from './config';
-import { addMine, defaultLayout } from './baseLayout';
+import { BASE_ROWS, addMine, defaultLayout } from './baseLayout';
 import { TEST_ISLAND_ID, testIslandOf } from './defenseTest';
 import { createBattle } from './battle';
 
@@ -56,7 +56,7 @@ describe('which side the test attack comes from', () => {
 		const island = testIslandOf(layout);
 		const hq = island.buildings.find((b) => b.kind === 'hq')!;
 		// The headquarters is at the back of the home island, so it ends up far from the beach...
-		const front = addMine(layout, 'mine-at', { x: 6, y: 12 })!;
+		const front = addMine(layout, 'mine-at', { x: 6, y: BASE_ROWS - 2 })!;
 		const withMine = testIslandOf(front);
 		const mine = withMine.buildings.find((b) => b.kind === 'mine-at')!;
 		// ...and a mine at the front stands closer to the beach than the headquarters
