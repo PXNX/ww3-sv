@@ -15,8 +15,10 @@
 	import {
 		DEFENSE_COST,
 		GUARD_UNLOCK_HQ,
-		MAX_MINES,
+		defenseCap,
+		defenseCount,
 		defenseUnlocked,
+		isMineKind,
 		isGuard,
 		isRemovable,
 		STORE_CATEGORIES,
@@ -810,9 +812,15 @@
 	title={m.beachhead_store_title()}
 	onclose={() => (sheet = null)}
 >
-	<p class="text-sm font-semibold tabular-nums">
-		{m.beachhead_island_mines_count({ count: game.layout.mines.length, max: MAX_MINES })}
-	</p>
+	{#if storeTab === 'obstacles'}
+		<!-- All the mines share one allowance, the headquarters level plus one -->
+		<p class="text-sm font-semibold tabular-nums">
+			{m.beachhead_island_mines_count({
+				count: defenseCount(game.layout, 'mine-at'),
+				max: defenseCap('mine-at', game.levelOf('hq'))
+			})}
+		</p>
+	{/if}
 	<div class="flex gap-1.5" role="tablist">
 		{#each STORE_TABS as tab (tab)}
 			<button
@@ -893,6 +901,19 @@
 						<BeachheadPortrait type="defense" kind={kind as BuildingKind} size={46} />
 					</span>
 					<p class="text-center text-xs leading-tight font-bold">{mineName(kind)}</p>
+					{#if unlocked && !isMineKind(kind)}
+						{@const cap = defenseCap(kind, game.levelOf('hq'))}
+						{@const placed = defenseCount(game.layout, kind)}
+						<p
+							class="rounded-full border-2 border-ink px-2 font-display text-xs font-bold tabular-nums {placed >=
+							cap
+								? 'bg-tie-red text-paper'
+								: 'bg-paper'}"
+							title={m.beachhead_defense_allowance({ count: placed, max: cap })}
+						>
+							{placed}/{cap}
+						</p>
+					{/if}
 					{#if mineHint(kind)}
 						<p class="text-center text-[0.7rem] leading-snug">{mineHint(kind)}</p>
 					{/if}
@@ -916,7 +937,7 @@
 							type="button"
 							class="btn-chunky flex size-9 items-center justify-center rounded-full p-0"
 							aria-label={m.beachhead_island_mine_buy()}
-							disabled={!game.canBuyMine(kind) || game.layout.mines.length >= MAX_MINES}
+							disabled={!game.canBuyMine(kind)}
 							onclick={() => game.buyMine(kind)}
 						>
 							<IconCircleArrowUp class="size-5" aria-hidden="true" />

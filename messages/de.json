@@ -4547,5 +4547,6 @@
 	"crossover_gift_raid_veteran": "Zehn Raids überlebt: Dein Trupp schickt 2 Bollwerk-Kristalle zum Brückenkopf.",
 	"crossover_gift_hackers_archive": "Alle Mails der Promis gelesen. Der Oberste Führer zahlt 300 Fake News für den Tratsch.",
 	"crossover_gift_hackers_network": "Halbes Netzwerk gefunden: 500 Gratis-DogeLite liegen in deiner Eremitenbank.",
-	"avatar_unlock_hackers": "Finde alle {count} Netzwerksysteme in {game}"
+	"avatar_unlock_hackers": "Finde alle {count} Netzwerksysteme in {game}",
+	"beachhead_defense_allowance": "{count} von {max} auf dieser Hauptquartier-Stufe erlaubt; jede weitere Stufe erlaubt eins mehr"
 }

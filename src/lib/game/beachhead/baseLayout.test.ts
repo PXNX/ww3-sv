@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+	canAddDefense,
+	defenseCap,
+	defenseCount,
 	BASE_COLS,
 	BASE_ROWS,
 	LAYOUT_KEYS,
@@ -296,5 +299,31 @@ describe('the island in a save', () => {
 			bought.resources.iron + Math.floor(MINE_COST['mine-at'].iron / 2)
 		);
 		expect(sellMine(sold, id)).toBeNull();
+	});
+});
+
+describe('what the headquarters allows', () => {
+	it('lets all mines together reach the headquarters level plus one', () => {
+		let layout = defaultLayout();
+		expect(defenseCap('mine-at', 1)).toBe(2);
+		layout = addMine(layout, 'mine-at')!;
+		layout = addMine(layout, 'mine-emp')!;
+		// Two different mines already fill the shared allowance at level one
+		expect(canAddDefense(layout, 'mine-personnel', 1)).toBe(false);
+		expect(canAddDefense(layout, 'mine-personnel', 2)).toBe(true);
+	});
+
+	it('counts every gun on its own, one more with every level after its unlock', () => {
+		expect(defenseCap('sniper', 1)).toBe(0);
+		expect(defenseCap('sniper', 2)).toBe(1);
+		expect(defenseCap('sniper', 5)).toBe(4);
+		expect(defenseCap('jammer', 8)).toBe(2);
+		let layout = addMine(defaultLayout(), 'sniper')!;
+		expect(canAddDefense(layout, 'sniper', 2)).toBe(false);
+		// Another gun is not held back by the sniper
+		expect(canAddDefense(layout, 'flame', 3)).toBe(true);
+		layout = addMine(layout, 'flame')!;
+		expect(defenseCount(layout, 'sniper')).toBe(1);
+		expect(defenseCount(layout, 'mine-at')).toBe(0);
 	});
 });

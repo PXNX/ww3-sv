@@ -134,10 +134,12 @@ describe('what can be taken away again', () => {
 describe('upgrading defences', () => {
 	it('raises every mine of a kind on one builder, taking the time of the slowest, never past the headquarters level', () => {
 		let save = rich(2);
-		for (let index = 0; index < 3; index++) save = buyMine(save, 'mine-at')!;
+		// Three mines in all is what a level 2 headquarters allows
+		for (let index = 0; index < 2; index++) save = buyMine(save, 'mine-at')!;
 		save = buyMine(save, 'mine-emp')!;
+		expect(buyMine(save, 'mine-at')).toBeNull();
 		const plan = allDefenseUpgrades(save, 'mine-at');
-		expect(plan.ids).toHaveLength(3);
+		expect(plan.ids).toHaveLength(2);
 		expect(plan.cost.iron).toBeGreaterThan(0);
 		expect(plan.ms).toBeGreaterThan(0);
 		const started = startDefenseUpgrade(save, plan, 1000, 1)!;
@@ -151,7 +153,7 @@ describe('upgrading defences', () => {
 		expect(layoutOf(early).mines.every((mine) => (mine.level ?? 1) === 1)).toBe(true);
 		const raised = finishBuilds(started, 1000 + plan.ms);
 		const levels = layoutOf(raised).mines.map((mine) => [mine.kind, mine.level ?? 1]);
-		expect(levels.filter(([kind, level]) => kind === 'mine-at' && level === 2)).toHaveLength(3);
+		expect(levels.filter(([kind, level]) => kind === 'mine-at' && level === 2)).toHaveLength(2);
 		expect(levels.find(([kind]) => kind === 'mine-emp')?.[1]).toBe(1);
 		// The headquarters is level two, so a second round is refused
 		expect(allDefenseUpgrades(raised, 'mine-at').ids).toHaveLength(0);

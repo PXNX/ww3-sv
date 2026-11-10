@@ -4547,5 +4547,6 @@
 	"crossover_gift_raid_veteran": "Десять рейдов пережито: отряд прислал на плацдарм 2 кристалла укрепления.",
 	"crossover_gift_hackers_archive": "Все письма прочитаны. Верховный лидер платит 300 Fake News за сплетни.",
 	"crossover_gift_hackers_network": "Найдена половина сети: 500 бесплатных DogeLite упали в ваш банк.",
-	"avatar_unlock_hackers": "Найдите все {count} систем сети в {game}"
+	"avatar_unlock_hackers": "Найдите все {count} систем сети в {game}",
+	"beachhead_defense_allowance": "{count} из {max} разрешено на этом уровне штаба; каждый следующий уровень даёт ещё один"
 }

@@ -41,7 +41,7 @@ import {
 	DEFENSE_COST,
 	MAX_DEFENSE_LEVEL,
 	defenseLevel,
-	defenseUnlocked,
+	canAddDefense,
 	defenseUpgradeCost,
 	levelUpDefense,
 	isRemovable,
@@ -1812,7 +1812,7 @@ export function moveBuildingTo(
 }
 
 export function canAffordMine(save: BeachheadSave, kind: DefenseKind): boolean {
-	return defenseUnlocked(kind, save.levels.hq) && canAfford(save, DEFENSE_COST[kind]);
+	return canAddDefense(layoutOf(save), kind, save.levels.hq) && canAfford(save, DEFENSE_COST[kind]);
 }
 
 /** Buys a mine and puts it on the first free cell; null when unaffordable or the island is full */

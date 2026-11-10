@@ -4547,5 +4547,6 @@
 	"crossover_gift_raid_veteran": "نجوت من عشر غارات: أرسلت فرقتك بلّورتي تحصين إلى رأس الجسر.",
 	"crossover_gift_hackers_archive": "قُرئت كل رسائل الشخصيات. القائد الأعلى يدفع 300 أخبار كاذبة مقابل الثرثرة.",
 	"crossover_gift_hackers_network": "وجدت نصف الشبكة: 500 دوجلايت مجانًا وصلت إلى بنكك.",
-	"avatar_unlock_hackers": "اعثر على كل أنظمة الشبكة الـ{count} في {game}"
+	"avatar_unlock_hackers": "اعثر على كل أنظمة الشبكة الـ{count} في {game}",
+	"beachhead_defense_allowance": "{count} من {max} مسموح بها في مستوى المقر هذا؛ كل مستوى إضافي يسمح بواحد آخر"
 }

@@ -82,12 +82,44 @@ export function defenseUnlocked(kind: DefenseKind, hqLevel: number): boolean {
 	return !isGuard(kind) || hqLevel >= GUARD_UNLOCK_HQ[kind];
 }
 
+export function isMineKind(kind: DefenseKind): boolean {
+	return (MINE_KINDS as readonly string[]).includes(kind);
+}
+
+/**
+ * How many of a defence the headquarters allows. The mines share one allowance, the headquarters
+ * level plus one; every gun and the hedgehogs count on their own, one when unlocked and one more
+ * with every headquarters level after that.
+ */
+export function defenseCap(kind: DefenseKind, hqLevel: number): number {
+	const hq = Math.max(1, Math.floor(hqLevel));
+	if (isMineKind(kind)) return hq + 1;
+	const unlock = isGuard(kind) ? GUARD_UNLOCK_HQ[kind] : 1;
+	return Math.max(0, hq - unlock + 1);
+}
+
+/** How many already stand that count against the defence's allowance */
+export function defenseCount(layout: BaseLayout, kind: DefenseKind): number {
+	return layout.mines.filter((placed) =>
+		isMineKind(kind) ? isMineKind(placed.kind) : placed.kind === kind
+	).length;
+}
+
+/** Whether one more of the defence may be bought at this headquarters level */
+export function canAddDefense(layout: BaseLayout, kind: DefenseKind, hqLevel: number): boolean {
+	return (
+		defenseUnlocked(kind, hqLevel) &&
+		layout.mines.length < MAX_MINES &&
+		defenseCount(layout, kind) < defenseCap(kind, hqLevel)
+	);
+}
+
 export const BASE_COLS = 22;
 export const BASE_ROWS = 22;
 /** The island was 14 × 14 before; layouts saved then are moved this far towards the middle */
 export const LEGACY_SHIFT = 4;
-/** At most this many mines and guns fit on the island, so the grid cannot be filled with them */
-export const MAX_MINES = 40;
+/** A safety limit on everything placed together; the headquarters allowances stay well below it */
+export const MAX_MINES = 60;
 
 type LayoutResource = 'wood' | 'stone' | 'iron' | 'gold';
 /** The buildings that stand on the grid; the boats are moored in the water instead */
