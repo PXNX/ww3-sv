@@ -152,6 +152,20 @@ export function parseBuilding(value: unknown): IslandBuilding | null {
 		if (!type || level === null || level < 1) return null;
 		building.crystal = { type, level };
 	}
+	// How the building looks in its owner's base; a wrong one is simply left out
+	const look = value.look;
+	if (
+		isRecord(look) &&
+		typeof look.key === 'string' &&
+		/^(hq|training|dojo|radar|bunker|warehouse-(wood|stone|iron|gold)-\d|house-\d)$/.test(
+			look.key
+		) &&
+		Number.isInteger(look.level) &&
+		(look.level as number) >= 1 &&
+		(look.level as number) <= 50
+	) {
+		building.look = { key: look.key, level: look.level as number };
+	}
 	return building;
 }
 
@@ -175,7 +189,8 @@ export function baseToWire(base: BeachheadBase, exposed: Resources, level: numbe
 				y: building.y,
 				...(building.hpScale !== undefined ? { hp_scale: building.hpScale } : {}),
 				...(building.damageScale !== undefined ? { damage_scale: building.damageScale } : {}),
-				...(building.crystal ? { crystal: building.crystal } : {})
+				...(building.crystal ? { crystal: building.crystal } : {}),
+				...(building.look ? { look: building.look } : {})
 			})),
 			defense_scale: base.defenseScale
 		},

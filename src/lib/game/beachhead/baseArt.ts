@@ -19,6 +19,7 @@ import {
 	boatDock,
 	defaultLayout,
 	footprintOf,
+	isLayoutKey,
 	positionOf,
 	type BaseLayout,
 	type Cell,
@@ -2021,4 +2022,46 @@ export function homeAnchor(
 		top: { x: middle.x, y: middle.y - tall - view.halfH * 0.6 },
 		foot: { x: middle.x, y: front.y + view.halfH * 0.3 }
 	};
+}
+
+/**
+ * A player's own building in a battle, drawn as it looks in their home base: the home picture at its
+ * level, shrunk around the middle of the battle cell it stands on. False when the key is unknown, so
+ * the caller can fall back to the plain battle picture.
+ */
+export function drawHomeLook(
+	context: CanvasRenderingContext2D,
+	view: IsoView,
+	look: { key: string; level: number },
+	placement: { x: number; y: number; width: number; height: number },
+	maxOf: (key: string) => number,
+	timeMs: number
+): boolean {
+	const house = /^house-(\d)$/.exec(look.key);
+	if (!house && !isLayoutKey(look.key)) return false;
+	const size = house ? { width: 1, height: 1 } : footprintOf(look.key as LayoutKey);
+	const fit = Math.min(placement.width / size.width, placement.height / size.height) * 1.15;
+	const middleX = placement.x + placement.width / 2;
+	const middleY = placement.y + placement.height / 2;
+	const centre = view.project(middleX, middleY);
+	const at = { x: middleX - size.width / 2, y: middleY - size.height / 2 };
+	context.save();
+	context.translate(centre.x, centre.y);
+	context.scale(fit, fit);
+	context.translate(-centre.x, -centre.y);
+	if (house) {
+		drawHouse(context, view, at.x, at.y, timeMs, Number(house[1]));
+	} else {
+		const key = look.key as LayoutKey;
+		const stage = stageOf(look.level, maxOf(key));
+		drawShadow(context, view, at.x, at.y, size.width, size.height);
+		if (key === 'hq') drawHq(context, view, at, stage, timeMs);
+		else if (key === 'training') drawTraining(context, view, at, stage, timeMs);
+		else if (key === 'dojo') drawDojo(context, view, at, stage, timeMs);
+		else if (key === 'radar') drawRadar(context, view, at, stage, timeMs);
+		else if (key === 'bunker') drawBunker(context, view, at, stage, timeMs);
+		else drawWarehouse(context, view, at, key, stage, 0.6);
+	}
+	context.restore();
+	return true;
 }

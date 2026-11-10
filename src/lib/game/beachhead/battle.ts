@@ -88,6 +88,8 @@ export const DEFAULT_MODIFIERS: BattleModifiers = {
 export interface Building {
 	id: number;
 	kind: BuildingKind;
+	/** How a player's own building looks in their home base, so it looks the same in a battle */
+	look?: { key: string; level: number };
 	x: number;
 	y: number;
 	width: number;
@@ -348,6 +350,7 @@ export function createBattle(
 			return {
 				id,
 				kind: spec.kind,
+				...(spec.look ? { look: spec.look } : {}),
 				x: spec.x,
 				y: spec.y,
 				width: stats.width,

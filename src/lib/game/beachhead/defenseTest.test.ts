@@ -63,3 +63,22 @@ describe('which side the test attack comes from', () => {
 		expect(mine.x).toBeLessThan(hq.x);
 	});
 });
+
+describe('how your own base looks in a battle', () => {
+	it('keeps the home picture of every building with its level', () => {
+		const island = testIslandOf(
+			defaultLayout(),
+			undefined,
+			() => 2,
+			(key) => (key === 'hq' ? 3 : 1)
+		);
+		const hq = island.buildings.find((building) => building.kind === 'hq');
+		expect(hq?.look).toEqual({ key: 'hq', level: 3 });
+		expect(island.buildings.some((building) => building.look?.key === 'training')).toBe(true);
+		expect(island.buildings.some((building) => building.look?.key === 'house-0')).toBe(true);
+		// Defences keep their own battle pictures
+		expect(island.buildings.filter((building) => building.look === undefined).length).toBe(
+			defaultLayout().mines.length
+		);
+	});
+});

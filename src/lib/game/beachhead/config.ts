@@ -677,6 +677,8 @@ export interface IslandBuilding {
 	hpScale?: number;
 	/** An overcharge crystal in the building's slot, with the level it has reached */
 	crystal?: { type: OverchargeCrystal; level: number };
+	/** A player's own building: drawn as it looks in the home base, by its key and level there */
+	look?: { key: string; level: number };
 }
 
 export type IslandTheme = 'orc' | 'ice' | 'jungle' | 'desert';

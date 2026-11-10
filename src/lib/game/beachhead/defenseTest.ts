@@ -30,6 +30,7 @@ interface Wanted {
 	target: string;
 	hpScale?: number;
 	damageScale?: number;
+	look?: IslandBuilding['look'];
 }
 
 function squeeze(cellX: number, cellY: number): { x: number; y: number } {
@@ -58,7 +59,8 @@ export function testIslandOf(
 		x: at.x - 1,
 		y: at.y - 1,
 		target: 'hq',
-		hpScale: buildingHpScale(levelOf('hq'))
+		hpScale: buildingHpScale(levelOf('hq')),
+		look: { key: 'hq', level: levelOf('hq') }
 	});
 	for (const key of LAYOUT_KEYS) {
 		if (key === 'hq' || levelOf(key) < 1) continue;
@@ -70,7 +72,8 @@ export function testIslandOf(
 			x: spot.x,
 			y: spot.y,
 			target: key,
-			hpScale: buildingHpScale(levelOf(key))
+			hpScale: buildingHpScale(levelOf(key)),
+			look: { key, level: levelOf(key) }
 		});
 	}
 	// The cottages stand in your base too; the higher their level, the sturdier they are
@@ -82,7 +85,8 @@ export function testIslandOf(
 			x: spot.x,
 			y: spot.y,
 			target: `house-${house}`,
-			hpScale: 1 + 0.25 * (houseLevel(house) - 1)
+			hpScale: 1 + 0.25 * (houseLevel(house) - 1),
+			look: { key: `house-${house}`, level: houseLevel(house) }
 		});
 	}
 	for (const mine of layout.mines) {
@@ -114,7 +118,8 @@ export function testIslandOf(
 			y: spot.y,
 			...(crystal ? { crystal } : {}),
 			...(item.hpScale && item.hpScale !== 1 ? { hpScale: item.hpScale } : {}),
-			...(item.damageScale && item.damageScale !== 1 ? { damageScale: item.damageScale } : {})
+			...(item.damageScale && item.damageScale !== 1 ? { damageScale: item.damageScale } : {}),
+			...(item.look ? { look: item.look } : {})
 		});
 	}
 	return { id: TEST_ISLAND_ID, buildings };

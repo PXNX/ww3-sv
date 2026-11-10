@@ -21,6 +21,8 @@ import {
 } from './config.js';
 import { drawResourceGlyph, type ResourceId } from './resourceIcons.js';
 import { drawEnemyBuilding, drawHitFlash, drawMineArt, drawRubbleArt } from './buildingArt.js';
+import { drawHomeLook } from './baseArt.js';
+import { maxLevelOf, type BuildingKey } from './campaign.js';
 import {
 	createShoreView,
 	mix,
@@ -527,13 +529,26 @@ function drawBuilding(
 		const kick = building.recoilMs / 170;
 		context.translate(Math.sin(building.recoilMs * 0.19) * 0.05 * kick, 0.03 * kick);
 	}
-	drawEnemyBuilding(
-		context,
-		view.grid,
-		{ ...building, ...view.gridPlacement(building) },
-		timeMs,
-		theme
-	);
+	// A player's own building looks just as it does in their home base
+	const drawnAsHome =
+		building.look !== undefined &&
+		drawHomeLook(
+			context,
+			view.grid,
+			building.look,
+			view.gridPlacement(building),
+			(key) => maxLevelOf(key as BuildingKey),
+			timeMs
+		);
+	if (!drawnAsHome) {
+		drawEnemyBuilding(
+			context,
+			view.grid,
+			{ ...building, ...view.gridPlacement(building) },
+			timeMs,
+			theme
+		);
+	}
 	if (building.recoilMs > 0 && BUILDING_MUZZLE.has(building.kind)) {
 		const flash = building.recoilMs / 170;
 		const muzzle = view.project(building.x - 0.1, building.y + 0.5, 0.5);
