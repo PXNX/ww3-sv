@@ -11,12 +11,19 @@
 	import type { Component } from 'svelte';
 	import type { SvelteHTMLElements } from 'svelte/elements';
 	import { m } from '#lib/paraglide/messages.js';
-	import { drawHome, HOME_VIEW, pickHome, type HomeResource } from '#lib/game/beachhead/baseArt.js';
+	import {
+		drawHome,
+		homeAnchor,
+		HOME_VIEW,
+		pickHome,
+		type HomeResource
+	} from '#lib/game/beachhead/baseArt.js';
 	import {
 		DEFENSE_COST,
 		GUARD_UNLOCK_HQ,
 		defenseCap,
 		defenseCount,
+		defenseLevel,
 		defenseUnlocked,
 		isMineKind,
 		isGuard,
@@ -58,6 +65,7 @@
 	import IconArrowDownRight from '~icons/lucide/arrow-down-right';
 	import IconArrowUpLeft from '~icons/lucide/arrow-up-left';
 	import IconArrowUpRight from '~icons/lucide/arrow-up-right';
+	import IconArrowBigUp from '~icons/lucide/arrow-big-up';
 	import IconCheck from '~icons/lucide/check';
 	import IconCircleArrowUp from '~icons/lucide/circle-arrow-up';
 	import IconCrosshair from '~icons/lucide/crosshair';
@@ -115,6 +123,8 @@
 	let arranging = $state(false);
 	let selected = $state<Selection | null>(null);
 	let sheet = $state<Sheet | null>(null);
+	/** The building window shows what something is now, or what its next level brings */
+	let windowMode = $state<'info' | 'upgrade'>('upgrade');
 	let drag: Drag | null = null;
 	let dragging = $state(false);
 	let clock = $state(0);
@@ -243,6 +253,53 @@
 			boatUnlockLevel: boatIndex === null ? 0 : boatIndex - 1
 		};
 	});
+
+	/** Where the name tag and the round buttons of the selection sit, in percent of the picture */
+	const anchor = $derived.by(() => {
+		const current = selected;
+		if (!current) return null;
+		const at = homeAnchor(
+			game.layout,
+			current,
+			(key) => game.levelOf(key as BuildingKey),
+			(key) => game.maxLevelOf(key as BuildingKey)
+		);
+		if (!at) return null;
+		const percent = (point: { x: number; y: number }) => ({
+			x: (point.x / HOME_VIEW.width) * 100,
+			y: (point.y / HOME_VIEW.height) * 100
+		});
+		return { top: percent(at.top), foot: percent(at.foot) };
+	});
+
+	/** What the tag over the selection says, and what its upgrade would cost */
+	const tag = $derived.by(() => {
+		const current = panel;
+		if (!current) return null;
+		if (current.type === 'mine') {
+			return {
+				name: mineName(current.mine.kind),
+				level: defenseLevel(current.mine),
+				remainingMs: game.defenseRemaining(current.mine.id),
+				cost: game.defenseUpgradeCost(current.mine.id),
+				canUpgrade: game.canUpgradeDefense(current.mine.id)
+			};
+		}
+		const locked = game.upgradeLocked(current.key as BuildingKey);
+		const cost = locked ? null : game.upgradeCost(current.key as BuildingKey);
+		return {
+			name: current.name,
+			level: current.row.level,
+			remainingMs: current.row.remainingMs,
+			cost: current.row.remainingMs === null ? cost : null,
+			canUpgrade: current.row.canStart
+		};
+	});
+
+	function openWindow(mode: 'info' | 'upgrade') {
+		windowMode = mode;
+		sheet = 'upgrade';
+	}
 
 	const dock = $derived<
 		{
@@ -410,9 +467,8 @@
 			point.y,
 			(key) => game.levelOf(key as BuildingKey) >= 1
 		);
+		// A tap picks a building: its name rises above it and its buttons wait underneath
 		selected = hit;
-		// A tap on a building opens its detail sheet; while rearranging nothing about upgrades shows
-		if (hit && !arranging) sheet = 'upgrade';
 		if (!hit || !arranging) return;
 		const ground = HOME_VIEW.unproject(point.x, point.y);
 		if (hit.kind === 'building') {
@@ -508,43 +564,152 @@
 	use:zoomPan={{ max: 3.5, singlePan: () => !arranging }}
 >
 	<div bind:this={stage} data-zoom class="absolute inset-0 flex items-center justify-center">
-		<canvas
-			bind:this={canvas}
-			class="block shrink-0 select-none"
-			class:touch-none={arranging}
-			class:cursor-grabbing={dragging}
-			class:cursor-grab={arranging && !dragging}
-			aria-label={m.beachhead_island_canvas_label()}
-			onpointerdown={onPointerDown}
-			onpointermove={onPointerMove}
-			onpointerup={onPointerUp}
-			onpointercancel={onPointerUp}
-			oncontextmenu={(event) => event.preventDefault()}
-		></canvas>
+		<div class="relative shrink-0">
+			<canvas
+				bind:this={canvas}
+				class="block shrink-0 select-none"
+				class:touch-none={arranging}
+				class:cursor-grabbing={dragging}
+				class:cursor-grab={arranging && !dragging}
+				aria-label={m.beachhead_island_canvas_label()}
+				onpointerdown={onPointerDown}
+				onpointermove={onPointerMove}
+				onpointerup={onPointerUp}
+				onpointercancel={onPointerUp}
+				oncontextmenu={(event) => event.preventDefault()}
+			></canvas>
+			{#if anchor && tag && !arranging}
+				<!-- The name and level float above the picked building, the round buttons sit under it -->
+				<div
+					class="pinned-top pointer-events-none absolute z-10 flex flex-col items-center gap-0.5 text-center"
+					style:left="{anchor.top.x}%"
+					style:top="{anchor.top.y}%"
+				>
+					{#if tag.remainingMs !== null}
+						<span
+							class="flex items-center gap-1 rounded-full border-2 border-ink bg-explosion-yellow px-2 font-display text-xs font-bold tabular-nums"
+						>
+							<IconHammer class="size-3.5" aria-hidden="true" />
+							{timeLeft(tag.remainingMs)}
+						</span>
+					{/if}
+					<span class="tag-text font-display text-lg leading-tight font-bold whitespace-nowrap">
+						{tag.name}
+					</span>
+					<span class="tag-text font-display text-sm leading-none font-bold whitespace-nowrap">
+						{m.beachhead_level_tag({ level: tag.level })}
+					</span>
+				</div>
+				<div
+					class="pinned-foot absolute z-10 flex items-start gap-2"
+					style:left="{anchor.foot.x}%"
+					style:top="{anchor.foot.y}%"
+				>
+					<button
+						type="button"
+						class="action-disc size-12 text-flag-blue"
+						aria-label={m.beachhead_info_button()}
+						title={m.beachhead_info_button()}
+						onclick={() => openWindow('info')}
+					>
+						<IconInfo class="size-7" aria-hidden="true" />
+					</button>
+					{#if tag.cost}
+						<div class="flex flex-col items-center gap-0.5">
+							<button
+								type="button"
+								class="action-disc size-12 text-[#2f9a4a]"
+								class:opacity-70={!tag.canUpgrade}
+								aria-label={m.beachhead_upgrade_button()}
+								title={m.beachhead_upgrade_button()}
+								onclick={() => openWindow('upgrade')}
+							>
+								<IconArrowBigUp class="size-8 fill-current" aria-hidden="true" />
+							</button>
+							{@render costChips(tag.cost)}
+						</div>
+					{/if}
+					{#if panel?.type === 'building' && panel.row.remainingMs !== null && game.canCutBuild(panel.row.key)}
+						{@const key = panel.row.key}
+						<button
+							type="button"
+							class="action-disc size-12 bg-explosion-yellow"
+							aria-label={m.beachhead_ad_cut()}
+							title={m.beachhead_ad_cut()}
+							onclick={() => (adFor = key)}
+						>
+							<IconTv class="size-6" aria-hidden="true" />
+						</button>
+					{/if}
+					{#if panel?.type === 'building' && panel.key === 'training'}
+						<button
+							type="button"
+							class="action-disc size-12"
+							aria-label={m.beachhead_open_training()}
+							title={m.beachhead_open_training()}
+							onclick={() => (sheet = 'training')}
+						>
+							<IconGraduationCap class="size-6" aria-hidden="true" />
+						</button>
+					{/if}
+					{#if panel?.type === 'building' && panel.key === 'dojo'}
+						<button
+							type="button"
+							class="action-disc size-12"
+							aria-label={m.beachhead_open_hero()}
+							title={m.beachhead_open_hero()}
+							onclick={() => (sheet = 'hero')}
+						>
+							<IconCrown class="size-6" aria-hidden="true" />
+						</button>
+					{/if}
+					{#if panel?.type === 'mine' && isRemovable(panel.mine.kind)}
+						{@const id = panel.mine.id}
+						<button
+							type="button"
+							class="action-disc size-12 text-tie-red"
+							aria-label={m.beachhead_island_mine_sell()}
+							title={m.beachhead_island_mine_sell()}
+							onclick={() => game.sellMine(id)}
+						>
+							<IconTrash class="size-6" aria-hidden="true" />
+						</button>
+					{/if}
+				</div>
+			{/if}
+		</div>
 	</div>
 
 	<!-- Top left: how many islands are in your hands; the retaken-islands warning sits under it -->
 	<div
 		class="pointer-events-none absolute top-(--hud-top) left-(--hud-left) z-20 flex max-w-[55%] flex-col items-start gap-1.5"
 	>
-		<p
-			class="pointer-events-auto flex items-center gap-1.5 rounded-full border-2 border-ink bg-paper px-2.5 py-0.5 font-display text-sm font-bold tabular-nums shadow-[2px_2px_0_var(--color-ink)]"
-			title={m.beachhead_controlled_count({ count: game.controlled, total: game.islandCount })}
-		>
-			<IconFlag class="size-4 text-khaki" aria-hidden="true" />
-			{game.controlled}/{game.islandCount}
-		</p>
+		<!-- The headquarters level on a round badge, its ring filling towards the top level, and the islands held -->
+		<div class="pointer-events-auto flex items-center">
+			<span
+				class="hq-badge relative z-10 flex size-14 items-center justify-center rounded-full font-display text-2xl font-bold text-paper tabular-nums sm:size-16"
+				style:--progress="{(game.levelOf('hq') / Math.max(1, game.maxLevelOf('hq'))) * 100}%"
+				title={m.beachhead_hq_badge({ level: game.levelOf('hq') })}
+			>
+				{game.levelOf('hq')}
+			</span>
+			<span
+				class="-ms-4 flex items-center gap-1.5 rounded-e-full border-2 border-ink bg-ink/75 py-0.5 ps-5 pe-3 font-display text-sm font-bold text-paper tabular-nums"
+				title={m.beachhead_controlled_count({ count: game.controlled, total: game.islandCount })}
+			>
+				<IconFlag class="size-4 text-explosion-yellow" aria-hidden="true" />
+				{game.controlled}/{game.islandCount}
+			</span>
+		</div>
 		<button
 			type="button"
-			class="btn-chunky pointer-events-auto relative flex size-10 items-center justify-center rounded-full p-0 {sheet ===
-			'trophies'
-				? 'bg-explosion-yellow'
-				: ''}"
+			class="side-square pointer-events-auto flex size-11 items-center justify-center p-0"
 			aria-label={m.beachhead_achievements_title()}
 			title={m.beachhead_achievements_title()}
+			aria-pressed={sheet === 'trophies'}
 			onclick={() => (sheet = 'trophies')}
 		>
-			<IconTrophy class="size-5" aria-hidden="true" />
+			<IconTrophy class="size-6" aria-hidden="true" />
 		</button>
 		<div class="pointer-events-auto">
 			<BeachheadTakeoverNotice {game} />
@@ -584,15 +749,13 @@
 			{@const DockIcon = item.icon}
 			<button
 				type="button"
-				class="btn-chunky relative flex size-12 items-center justify-center rounded-full p-0 sm:size-14 {item.active
-					? 'bg-explosion-yellow'
-					: ''}"
+				class="hud-round relative flex size-13 items-center justify-center p-0 sm:size-15"
 				aria-label={item.label}
 				title={item.label}
 				aria-pressed={item.active}
 				onclick={item.onclick}
 			>
-				<DockIcon class="size-6" aria-hidden="true" />
+				<DockIcon class="size-7 drop-shadow-[0_2px_0_var(--color-ink)]" aria-hidden="true" />
 				{#if item.badge}
 					<span
 						class="absolute -end-1 -top-1 flex min-w-5 items-center justify-center rounded-full border-2 border-ink bg-tie-red px-1 font-display text-[0.7rem] leading-4 font-bold text-paper tabular-nums"
@@ -620,7 +783,7 @@
 	</div>
 
 	<!-- Bottom centre: a small chip for what is selected; the details open in a bigger sheet -->
-	{#if panel}
+	{#if panel && arranging}
 		<div
 			class="pointer-events-none absolute inset-x-0 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-20 flex justify-center px-[11rem] sm:px-[13rem]"
 		>
@@ -654,60 +817,8 @@
 							{row.level}/{row.max}
 						</span>
 					</p>
-					<!-- While rearranging there is nothing about upgrades: only the buildings move -->
-					{#if !arranging}
-						{#if row.remainingMs !== null}
-							<p class="flex items-center gap-1 font-display font-bold text-flag-blue tabular-nums">
-								<IconHammer class="size-4" aria-hidden="true" />
-								{timeLeft(row.remainingMs)}
-							</p>
-							{#if game.canCutBuild(row.key)}
-								<button
-									type="button"
-									class="btn-chunky flex items-center gap-1 bg-explosion-yellow px-2 py-1 text-xs"
-									aria-label={m.beachhead_ad_cut()}
-									title={m.beachhead_ad_cut()}
-									onclick={() => (adFor = row.key)}
-								>
-									<IconTv class="size-4" aria-hidden="true" />
-									−10%
-								</button>
-							{/if}
-						{/if}
-						{#if panel.key === 'dojo'}
-							<button
-								type="button"
-								class="btn-chunky flex size-9 items-center justify-center rounded-full bg-explosion-yellow p-0"
-								aria-label={m.beachhead_open_hero()}
-								title={m.beachhead_open_hero()}
-								onclick={() => (sheet = 'hero')}
-							>
-								<IconCrown class="size-5" aria-hidden="true" />
-							</button>
-						{/if}
-						{#if panel.key === 'training'}
-							<button
-								type="button"
-								class="btn-chunky flex size-9 items-center justify-center rounded-full bg-explosion-yellow p-0"
-								aria-label={m.beachhead_open_training()}
-								title={m.beachhead_open_training()}
-								onclick={() => (sheet = 'training')}
-							>
-								<IconGraduationCap class="size-5" aria-hidden="true" />
-							</button>
-						{/if}
-						<button
-							type="button"
-							class="btn-chunky flex size-9 items-center justify-center rounded-full p-0"
-							aria-label={m.beachhead_open_info()}
-							title={m.beachhead_open_info()}
-							onclick={() => (sheet = 'upgrade')}
-						>
-							<IconInfo class="size-5" aria-hidden="true" />
-						</button>
-					{/if}
 				{/if}
-				{#if arranging && (panel.type === 'mine' || panel.movable)}
+				{#if panel.type === 'mine' || panel.movable}
 					<div class="flex gap-1" role="group" aria-label={m.beachhead_island_move()}>
 						<button
 							type="button"
@@ -776,18 +887,28 @@
 
 <BeachheadSheet
 	open={sheet === 'upgrade' && selected !== null}
-	narrow
-	title={panel
-		? panel.type === 'building'
-			? panel.name
-			: mineName(panel.mine.kind)
+	title={tag
+		? windowMode === 'upgrade' && tag.cost
+			? m.beachhead_upgrade_to_level({ level: tag.level + 1 })
+			: tag.name
 		: m.beachhead_open_info()}
 	onclose={() => (sheet = null)}
 >
 	{#if selected?.kind === 'building'}
-		<BeachheadUpgradeWindow {game} building={selected.key} />
+		<BeachheadUpgradeWindow
+			{game}
+			building={selected.key}
+			mode={windowMode}
+			hint={panel?.type === 'building' ? panel.hint : ''}
+		/>
 	{:else if selected?.kind === 'mine'}
-		<BeachheadUpgradeWindow {game} building="" defenseId={selected.id} />
+		<BeachheadUpgradeWindow
+			{game}
+			building=""
+			defenseId={selected.id}
+			mode={windowMode}
+			hint={panel?.type === 'mine' ? mineHint(panel.mine.kind) : ''}
+		/>
 	{/if}
 </BeachheadSheet>
 
@@ -1008,5 +1129,86 @@
 		.attack-button {
 			animation: none;
 		}
+	}
+
+	/* Pinned onto the zoomed picture, but kept the same size on screen */
+	.pinned-top {
+		transform: translate(-50%, -100%) scale(calc(1 / var(--zoom, 1)));
+		transform-origin: 50% 100%;
+	}
+
+	.pinned-foot {
+		transform: translate(-50%, 0) scale(calc(1 / var(--zoom, 1)));
+		transform-origin: 50% 0;
+	}
+
+	.tag-text {
+		color: var(--color-paper);
+		paint-order: stroke fill;
+		-webkit-text-stroke: 4px var(--color-ink);
+	}
+
+	/* The round white buttons under a picked building */
+	.action-disc {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 9999px;
+		border: 3px solid var(--color-ink);
+		background: radial-gradient(circle at 50% 30%, #fff, #dfe6ea 75%);
+		box-shadow:
+			inset 0 -3px 0 rgb(0 0 0 / 0.12),
+			2px 3px 0 var(--color-ink);
+		cursor: pointer;
+		transition: transform 80ms ease-out;
+	}
+
+	.action-disc:active {
+		transform: translateY(2px);
+		box-shadow: 1px 1px 0 var(--color-ink);
+	}
+
+	/* The headquarters badge: a blue disc in a ring that fills with the level */
+	.hq-badge {
+		border: 3px solid var(--color-ink);
+		background:
+			radial-gradient(circle closest-side, #5aaee8 0 70%, transparent 71%),
+			conic-gradient(var(--color-explosion-yellow) var(--progress), #1d3b57 0);
+		box-shadow: 2px 3px 0 var(--color-ink);
+		text-shadow: 0 2px 0 var(--color-ink);
+	}
+
+	/* The round dock buttons and the square side buttons: sky blue with a light rim */
+	.hud-round,
+	.side-square {
+		border: 3px solid var(--color-ink);
+		background: radial-gradient(circle at 50% 30%, #9fd8ff, #3b8fd9 72%);
+		color: var(--color-paper);
+		box-shadow:
+			inset 0 0 0 3px rgb(255 255 255 / 0.5),
+			2px 3px 0 var(--color-ink);
+		cursor: pointer;
+	}
+
+	.hud-round {
+		border-radius: 9999px;
+	}
+
+	.side-square {
+		border-radius: 12px;
+	}
+
+	.hud-round[aria-pressed='true'],
+	.side-square[aria-pressed='true'] {
+		background: radial-gradient(circle at 50% 30%, #fff3b0, var(--color-explosion-yellow) 72%);
+		color: var(--color-ink);
+	}
+
+	.hud-round:active,
+	.side-square:active {
+		transform: translateY(2px);
+		box-shadow:
+			inset 0 0 0 3px rgb(255 255 255 / 0.5),
+			1px 1px 0 var(--color-ink);
 	}
 </style>

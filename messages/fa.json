@@ -4548,5 +4548,10 @@
 	"crossover_gift_hackers_archive": "همهٔ ایمیل‌ها خوانده شد. رهبر عالی برای این شایعات ۳۰۰ فیک‌نیوز می‌پردازد.",
 	"crossover_gift_hackers_network": "نیمی از شبکه پیدا شد: ۵۰۰ داج‌لایت رایگان به بانکت رسید.",
 	"avatar_unlock_hackers": "همهٔ {count} سیستم شبکه را در {game} پیدا کن",
-	"beachhead_defense_allowance": "{count} از {max} در این سطح مقر مجاز است؛ هر سطح بعدی یکی بیشتر"
+	"beachhead_defense_allowance": "{count} از {max} در این سطح مقر مجاز است؛ هر سطح بعدی یکی بیشتر",
+	"beachhead_upgrade_to_level": "ارتقا به سطح {level}",
+	"beachhead_level_tag": "سطح {level}",
+	"beachhead_info_button": "اطلاعات",
+	"beachhead_upgrade_time": "زمان ارتقا",
+	"beachhead_hq_badge": "سطح مقر {level}"
 }

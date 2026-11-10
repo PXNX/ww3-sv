@@ -68,6 +68,8 @@ export function zoomPan(node: HTMLElement, options: ZoomPanOptions = {}) {
 		tx = scale <= 1.001 ? 0 : Math.min(slackX, Math.max(-slackX, tx));
 		ty = scale <= 1.001 ? 0 : Math.min(slackY, Math.max(-slackY, ty));
 		target.style.transformOrigin = '50% 50%';
+		// Labels pinned onto the picture read this to stay the same size on screen
+		target.style.setProperty('--zoom', String(scale));
 		announce();
 		target.style.transform =
 			scale === 1 && tx === 0 && ty === 0 ? '' : `translate(${tx}px, ${ty}px) scale(${scale})`;

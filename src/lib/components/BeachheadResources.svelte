@@ -109,7 +109,7 @@
 		{@const info = detailOf(detail)}
 		{@const resource = RESOURCES.find((entry) => entry.kind === detail)!}
 		<div
-			class="detail-pop absolute top-0 right-[calc(100%+0.5rem)] z-50 flex w-60 flex-col gap-1.5 rounded-[14px] border-3 border-ink bg-paper p-2.5 shadow-[3px_3px_0_var(--color-ink)]"
+			class="detail-pop absolute top-full right-0 z-50 mt-1 flex w-60 flex-col gap-1.5 rounded-[14px] border-3 border-ink bg-paper p-2.5 shadow-[3px_3px_0_var(--color-ink)]"
 			role="dialog"
 			aria-label={resource.label()}
 		>
@@ -199,7 +199,8 @@
 			</ul>
 		</div>
 	{/if}
-	<ul class="flex flex-col gap-1">
+	<!-- A row across the top: a big picture overlapping a dark bar that fills up towards the warehouse cap -->
+	<ul class="flex flex-wrap justify-end gap-x-1 gap-y-1.5 ps-3">
 		{#each RESOURCES as resource (resource.kind)}
 			{@const capacity = game.storageCapacity(resource.kind)}
 			{@const full = game.isStorageFull(resource.kind)}
@@ -208,23 +209,24 @@
 					type="button"
 					onclick={() => (detail = detail === resource.kind ? null : resource.kind)}
 					aria-expanded={detail === resource.kind}
-					class="relative flex w-full min-w-[5.8rem] items-center gap-1.5 overflow-hidden rounded-full border-2 border-ink py-0.5 ps-0.5 pe-2.5 font-display text-sm font-bold tabular-nums shadow-[2px_2px_0_var(--color-ink)] {full
-						? 'bg-explosion-yellow'
-						: 'bg-paper'}"
+					class="relative flex h-8 items-center ps-4"
 					title={`${resource.label()} — ${m.beachhead_resource_capacity({ capacity })} · ${m.beachhead_resource_rate({ amount: game.income[resource.kind] })}`}
 				>
-					<ResourceIcon kind={resource.kind} class="size-7 shrink-0" />
-					<span class="flex-1 text-end">{game.resources[resource.kind]}</span>
 					<span
-						class="absolute inset-x-1.5 bottom-0 h-[3px] rounded-full bg-ink/15"
-						aria-hidden="true"
+						class="relative flex h-6 min-w-[4.6rem] items-center justify-end overflow-hidden rounded-s-md rounded-e-full border-2 border-ink bg-ink/75 ps-5 pe-2 font-display text-sm leading-none font-bold text-paper tabular-nums [text-shadow:0_1px_0_var(--color-ink)] sm:min-w-[5.6rem]"
 					>
 						<span
-							class="block h-full rounded-full"
+							class="absolute inset-y-0 start-0 opacity-60"
 							style:width="{Math.min(100, (game.resources[resource.kind] / capacity) * 100)}%"
-							style:background={resource.color}
+							style:background={full ? 'var(--color-explosion-yellow)' : resource.color}
+							aria-hidden="true"
 						></span>
+						<span class="relative">{game.resources[resource.kind]}</span>
 					</span>
+					<ResourceIcon
+						kind={resource.kind}
+						class="absolute start-0 top-1/2 size-8 -translate-y-1/2 drop-shadow-[1px_2px_0_var(--color-ink)]"
+					/>
 				</button>
 			</li>
 		{/each}

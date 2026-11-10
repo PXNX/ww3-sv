@@ -4548,5 +4548,10 @@
 	"crossover_gift_hackers_archive": "Alle Mails der Promis gelesen. Der Oberste Führer zahlt 300 Fake News für den Tratsch.",
 	"crossover_gift_hackers_network": "Halbes Netzwerk gefunden: 500 Gratis-DogeLite liegen in deiner Eremitenbank.",
 	"avatar_unlock_hackers": "Finde alle {count} Netzwerksysteme in {game}",
-	"beachhead_defense_allowance": "{count} von {max} auf dieser Hauptquartier-Stufe erlaubt; jede weitere Stufe erlaubt eins mehr"
+	"beachhead_defense_allowance": "{count} von {max} auf dieser Hauptquartier-Stufe erlaubt; jede weitere Stufe erlaubt eins mehr",
+	"beachhead_upgrade_to_level": "Upgrade auf Level {level}",
+	"beachhead_level_tag": "Level {level}",
+	"beachhead_info_button": "Info",
+	"beachhead_upgrade_time": "Bauzeit",
+	"beachhead_hq_badge": "Hauptquartier Level {level}"
 }

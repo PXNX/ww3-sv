@@ -4548,5 +4548,10 @@
 	"crossover_gift_hackers_archive": "Every email of the cast read. The Supreme Leader pays 300 Fake News for the gossip.",
 	"crossover_gift_hackers_network": "Half the network found: 500 free DogeLite landed in your hermit bank.",
 	"avatar_unlock_hackers": "Find all {count} network systems in {game}",
-	"beachhead_defense_allowance": "{count} of {max} allowed at this headquarters level; every headquarters level allows one more"
+	"beachhead_defense_allowance": "{count} of {max} allowed at this headquarters level; every headquarters level allows one more",
+	"beachhead_upgrade_to_level": "Upgrade to level {level}",
+	"beachhead_level_tag": "Level {level}",
+	"beachhead_info_button": "Info",
+	"beachhead_upgrade_time": "Upgrade time",
+	"beachhead_hq_badge": "Headquarters level {level}"
 }

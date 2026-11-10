@@ -4548,5 +4548,10 @@
 	"crossover_gift_hackers_archive": "Все письма прочитаны. Верховный лидер платит 300 Fake News за сплетни.",
 	"crossover_gift_hackers_network": "Найдена половина сети: 500 бесплатных DogeLite упали в ваш банк.",
 	"avatar_unlock_hackers": "Найдите все {count} систем сети в {game}",
-	"beachhead_defense_allowance": "{count} из {max} разрешено на этом уровне штаба; каждый следующий уровень даёт ещё один"
+	"beachhead_defense_allowance": "{count} из {max} разрешено на этом уровне штаба; каждый следующий уровень даёт ещё один",
+	"beachhead_upgrade_to_level": "Улучшить до уровня {level}",
+	"beachhead_level_tag": "Уровень {level}",
+	"beachhead_info_button": "Инфо",
+	"beachhead_upgrade_time": "Время улучшения",
+	"beachhead_hq_badge": "Штаб, уровень {level}"
 }

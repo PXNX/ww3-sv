@@ -1976,3 +1976,49 @@ export function drawBuildingPreview(
 	);
 	context.restore();
 }
+
+/**
+ * Where something on the home island sits in the picture, in view units: the point just above its
+ * top for a name tag, and the point at its front corner for the buttons under it.
+ */
+export function homeAnchor(
+	layout: BaseLayout,
+	selection: { kind: 'building'; key: string } | { kind: 'mine'; id: number },
+	levelOf: (key: string) => number,
+	maxOf: (key: string) => number,
+	view: IsoView = HOME_VIEW
+): { top: { x: number; y: number }; foot: { x: number; y: number } } | null {
+	let rect: { x: number; y: number; width: number; height: number } | null = null;
+	let tall = 0.9;
+	if (selection.kind === 'mine') {
+		const mine = layout.mines.find((candidate) => candidate.id === selection.id);
+		if (!mine) return null;
+		rect = { x: mine.x, y: mine.y, width: 1, height: 1 };
+		tall = 0.8;
+	} else {
+		const key = selection.key;
+		if (key in layout.positions) {
+			const at = positionOf(layout, key as LayoutKey);
+			rect = { ...at, ...footprintOf(key as LayoutKey) };
+			tall = heightOf(key as LayoutKey, stageOf(levelOf(key), maxOf(key)));
+		} else if (key === 'sawmill') rect = SAWMILL;
+		else if (key === 'quarry') rect = QUARRY;
+		else if (key === 'mine') {
+			rect = MOUNTAIN;
+			tall = 1.6;
+		} else if (key.startsWith('house-')) {
+			rect = { x: HOUSES.x + Number(key.slice('house-'.length)), y: HOUSES.y, width: 1, height: 1 };
+		} else if (key.startsWith('boat-')) {
+			const dock = boatDock(Number(key.slice('boat-'.length)));
+			rect = { x: dock.x, y: dock.y, width: 1, height: 1.6 };
+			tall = 0.6;
+		}
+	}
+	if (!rect) return null;
+	const middle = view.project(rect.x + rect.width / 2, rect.y + rect.height / 2);
+	const front = view.project(rect.x + rect.width, rect.y + rect.height);
+	return {
+		top: { x: middle.x, y: middle.y - tall - view.halfH * 0.6 },
+		foot: { x: middle.x, y: front.y + view.halfH * 0.3 }
+	};
+}
