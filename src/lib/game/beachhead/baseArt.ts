@@ -12,7 +12,6 @@ import {
 	BASE_COLS,
 	BASE_ROWS,
 	FOREST,
-	HOUSES,
 	MOUNTAIN,
 	QUARRY,
 	SAWMILL,
@@ -1170,6 +1169,11 @@ function drawHomeBuilding(
 	const at = ghostAt ?? positionOf(scene.layout, key);
 	const stage = stageOf(scene.levelOf(key), scene.maxOf(key));
 	const size = footprintOf(key);
+	// A cottage brings its own little shadow
+	if (key.startsWith('house-')) {
+		drawHouse(context, view, at.x, at.y, scene.timeMs, Number(key.slice('house-'.length)));
+		return;
+	}
 	drawShadow(context, view, at.x, at.y, size.width, size.height);
 	if (key === 'hq') drawHq(context, view, at, stage, scene.timeMs);
 	else if (key === 'training') drawTraining(context, view, at, stage, scene.timeMs);
@@ -1727,19 +1731,6 @@ export function drawHome(context: CanvasRenderingContext2D, input: HomeScene, vi
 			draw: () => drawTree(context, view, tree.x, tree.y, tree.size, scene.timeMs)
 		});
 	}
-	for (let house = 0; house < HOUSES.width; house++) {
-		if (!shown(`house-${house}`)) continue;
-		standing.push({
-			depth: depthOf(HOUSES.x + house + 0.5, HOUSES.y + 0.5),
-			draw: () =>
-				scaledAbout(
-					context,
-					view.project(HOUSES.x + house + 0.5, HOUSES.y + 0.9),
-					growthOf(scene.levelOf(`house-${house}`), 0.05),
-					() => drawHouse(context, view, HOUSES.x + house, HOUSES.y, scene.timeMs, house)
-				)
-		});
-	}
 	standing.push({
 		depth: depthOf(SAWMILL.x + 0.5, SAWMILL.y + 1),
 		draw: () =>
@@ -1808,12 +1799,6 @@ export function drawHome(context: CanvasRenderingContext2D, input: HomeScene, vi
 	}
 	// The producers carry a level badge too, and a ring on the ground when they are selected
 	const producerSpots: { key: string; x: number; y: number; z: number }[] = [
-		...[0, 1, 2].map((house) => ({
-			key: `house-${house}`,
-			x: HOUSES.x + house + 0.5,
-			y: HOUSES.y + 0.5,
-			z: 1.5
-		})),
 		{ key: 'sawmill', x: SAWMILL.x + 0.5, y: SAWMILL.y + 1, z: 1.5 },
 		{ key: 'quarry', x: QUARRY.x + 1, y: QUARRY.y + 1, z: 1.4 },
 		{ key: 'mine', x: MOUNTAIN.x + 1, y: MOUNTAIN.y + 1, z: 2.3 }
@@ -1916,14 +1901,6 @@ export function pickHome(
 				return { kind: 'building', key };
 			}
 		}
-		if (
-			y === HOUSES.y &&
-			x >= HOUSES.x &&
-			x < HOUSES.x + HOUSES.width &&
-			built(`house-${x - HOUSES.x}`)
-		) {
-			return { kind: 'building', key: `house-${x - HOUSES.x}` };
-		}
 		for (let index = 0; index < boatCount; index++) {
 			const dock = boatDock(index);
 			if (
@@ -2007,8 +1984,6 @@ export function homeAnchor(
 		else if (key === 'mine') {
 			rect = MOUNTAIN;
 			tall = 1.6;
-		} else if (key.startsWith('house-')) {
-			rect = { x: HOUSES.x + Number(key.slice('house-'.length)), y: HOUSES.y, width: 1, height: 1 };
 		} else if (key.startsWith('boat-')) {
 			const dock = boatDock(Number(key.slice('boat-'.length)));
 			rect = { x: dock.x, y: dock.y, width: 1, height: 1.6 };

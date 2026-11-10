@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	canAddDefense,
+	spotFor,
 	defenseCap,
 	defenseCount,
 	BASE_COLS,
@@ -63,9 +64,10 @@ describe('the default island', () => {
 		}
 	});
 
-	it('has the headquarters, training ground, radar, dojo, bunker and all eight warehouses', () => {
-		expect(LAYOUT_KEYS).toHaveLength(13);
+	it('has the headquarters, training ground, radar, dojo, bunker, all eight warehouses and the three cottages', () => {
+		expect(LAYOUT_KEYS).toHaveLength(16);
 		expect(LAYOUT_KEYS.filter((key) => key.startsWith('warehouse-'))).toHaveLength(8);
+		expect(LAYOUT_KEYS.filter((key) => key.startsWith('house-'))).toHaveLength(3);
 	});
 
 	it('leaves room to move things around', () => {
@@ -325,5 +327,37 @@ describe('what the headquarters allows', () => {
 		layout = addMine(layout, 'flame')!;
 		expect(defenseCount(layout, 'sniper')).toBe(1);
 		expect(defenseCount(layout, 'mine-at')).toBe(0);
+	});
+});
+
+describe('placing new buildings', () => {
+	it('moves a cottage like any other building', () => {
+		const layout = defaultLayout();
+		const moved = moveBuilding(layout, 'house-0', { x: 12, y: 20 });
+		expect(moved?.positions['house-0']).toEqual({ x: 12, y: 20 });
+	});
+
+	it('lets a building go where one not built yet would stand, and moves that one aside', () => {
+		const layout = defaultLayout();
+		const bunker = positionOf(layout, 'bunker');
+		const standing = (key: string) => key !== 'bunker';
+		expect(moveBuilding(layout, 'house-0', bunker)).toBeNull();
+		const moved = moveBuilding(layout, 'house-0', bunker, standing)!;
+		expect(moved.positions['house-0']).toEqual(bunker);
+		const aside = positionOf(moved, 'bunker');
+		expect(canPlace(moved, footprintOf('bunker'), aside, { key: 'bunker' })).toBe(true);
+	});
+
+	it('offers a new building its own spot when it is free, and a free one otherwise', () => {
+		const layout = defaultLayout();
+		expect(spotFor(layout, 'bunker')).toEqual(positionOf(layout, 'bunker'));
+		const blocked = moveBuilding(
+			layout,
+			'house-0',
+			positionOf(layout, 'bunker'),
+			(key) => key !== 'bunker'
+		)!;
+		const spot = spotFor(blocked, 'radar', () => true);
+		expect(spot).toEqual(positionOf(blocked, 'radar'));
 	});
 });

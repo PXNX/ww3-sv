@@ -124,7 +124,13 @@ export const MAX_MINES = 60;
 type LayoutResource = 'wood' | 'stone' | 'iron' | 'gold';
 /** The buildings that stand on the grid; the boats are moored in the water instead */
 export type LayoutKey =
-	'hq' | 'training' | 'radar' | 'dojo' | 'bunker' | `warehouse-${LayoutResource}-${number}`;
+	| 'hq'
+	| 'training'
+	| 'radar'
+	| 'dojo'
+	| 'bunker'
+	| `warehouse-${LayoutResource}-${number}`
+	| `house-${0 | 1 | 2}`;
 
 export interface Cell {
 	x: number;
@@ -156,16 +162,17 @@ export interface BaseLayout {
 export const FOREST: Footprint & Cell = { x: 6, y: 0, width: 4, height: 2 };
 export const MOUNTAIN: Footprint & Cell = { x: 0, y: 0, width: 2, height: 2 };
 
-/** Three cottages whose families pay taxes in gold, and the quarry ditch dug beside the mountain */
+/**
+ * Where the three cottages, whose families pay taxes in gold, stand at first; they can be moved like
+ * any other building. And the quarry ditch dug beside the mountain
+ */
 export const HOUSES: Footprint & Cell = { x: 1, y: 4, width: 3, height: 1 };
 export const QUARRY: Footprint & Cell = { x: 0, y: 2, width: 2, height: 2 };
 /** The sawmill beside the forest, which turns the logs into planks */
 export const SAWMILL: Footprint & Cell = { x: 5, y: 0, width: 1, height: 2 };
 
 export function touchesNature(cell: Cell, footprint: Footprint): boolean {
-	return [FOREST, MOUNTAIN, HOUSES, QUARRY, SAWMILL].some((rect) =>
-		overlaps(cell, footprint, rect, rect)
-	);
+	return [FOREST, MOUNTAIN, QUARRY, SAWMILL].some((rect) => overlaps(cell, footprint, rect, rect));
 }
 
 export const LAYOUT_KEYS: readonly LayoutKey[] = [
@@ -176,7 +183,10 @@ export const LAYOUT_KEYS: readonly LayoutKey[] = [
 	'bunker',
 	...(['wood', 'stone', 'iron', 'gold'] as const).flatMap(
 		(resource) => [0, 1].map((index) => `warehouse-${resource}-${index}` as const) as LayoutKey[]
-	)
+	),
+	'house-0',
+	'house-1',
+	'house-2'
 ];
 
 export function isLayoutKey(key: string): key is LayoutKey {
@@ -205,7 +215,10 @@ const DEFAULT_POSITIONS: Record<LayoutKey, Cell> = {
 	'warehouse-iron-0': { x: 7, y: 15 },
 	'warehouse-iron-1': { x: 13, y: 15 },
 	'warehouse-gold-0': { x: 18, y: 13 },
-	'warehouse-gold-1': { x: 18, y: 16 }
+	'warehouse-gold-1': { x: 18, y: 16 },
+	'house-0': { x: HOUSES.x, y: HOUSES.y },
+	'house-1': { x: HOUSES.x + 1, y: HOUSES.y },
+	'house-2': { x: HOUSES.x + 2, y: HOUSES.y }
 };
 
 export function defaultLayout(): BaseLayout {
@@ -290,11 +303,13 @@ export function canPlace(
 	layout: BaseLayout,
 	footprint: Footprint,
 	cell: Cell,
-	ignore?: { key?: LayoutKey; mineId?: number }
+	ignore?: { key?: LayoutKey; mineId?: number },
+	/** Which buildings stand already; one not built yet keeps no ground. Every one by default */
+	standing: (key: LayoutKey) => boolean = () => true
 ): boolean {
 	if (!isInside(cell, footprint) || touchesNature(cell, footprint)) return false;
 	for (const key of LAYOUT_KEYS) {
-		if (key === ignore?.key) continue;
+		if (key === ignore?.key || !standing(key)) continue;
 		if (overlaps(cell, footprint, positionOf(layout, key), footprintOf(key))) return false;
 	}
 	for (const mine of layout.mines) {
@@ -305,11 +320,58 @@ export function canPlace(
 }
 
 /** Moves a building to a new top-left cell; null when it would not fit there */
-export function moveBuilding(layout: BaseLayout, key: LayoutKey, cell: Cell): BaseLayout | null {
-	if (!canPlace(layout, footprintOf(key), cell, { key })) return null;
+export function moveBuilding(
+	layout: BaseLayout,
+	key: LayoutKey,
+	cell: Cell,
+	standing?: (key: LayoutKey) => boolean
+): BaseLayout | null {
+	if (!canPlace(layout, footprintOf(key), cell, { key }, standing)) return null;
 	const current = positionOf(layout, key);
 	if (current.x === cell.x && current.y === cell.y) return null;
-	return { ...layout, positions: { ...layout.positions, [key]: { x: cell.x, y: cell.y } } };
+	let moved: BaseLayout = {
+		...layout,
+		positions: { ...layout.positions, [key]: { x: cell.x, y: cell.y } }
+	};
+	// A building not built yet whose spot is now taken waits somewhere free instead, so the stored
+	// layout never has two buildings on top of each other
+	if (standing) {
+		for (const other of LAYOUT_KEYS) {
+			if (other === key || standing(other)) continue;
+			if (!overlaps(cell, footprintOf(key), positionOf(moved, other), footprintOf(other))) continue;
+			const spot = spotFor(moved, other);
+			if (spot) moved = { ...moved, positions: { ...moved.positions, [other]: spot } };
+		}
+	}
+	return moved;
+}
+
+/**
+ * Where a new building first goes when it is placed from the store: its own spot if that is free,
+ * otherwise the free spot nearest the middle of the island. Null when the island is full.
+ */
+export function spotFor(
+	layout: BaseLayout,
+	key: LayoutKey,
+	standing?: (key: LayoutKey) => boolean
+): Cell | null {
+	const size = footprintOf(key);
+	const own = positionOf(layout, key);
+	if (canPlace(layout, size, own, { key }, standing)) return { ...own };
+	const middle = { x: (BASE_COLS - size.width) / 2, y: (BASE_ROWS - size.height) / 2 };
+	let best: Cell | null = null;
+	let bestDistance = Number.POSITIVE_INFINITY;
+	for (let y = 0; y <= BASE_ROWS - size.height; y++) {
+		for (let x = 0; x <= BASE_COLS - size.width; x++) {
+			if (!canPlace(layout, size, { x, y }, { key }, standing)) continue;
+			const distance = Math.hypot(x - middle.x, y - middle.y);
+			if (distance < bestDistance) {
+				best = { x, y };
+				bestDistance = distance;
+			}
+		}
+	}
+	return best;
 }
 
 /** The first free cell for a new mine, searching from the front of the island */

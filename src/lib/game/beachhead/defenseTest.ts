@@ -11,12 +11,12 @@ import {
 	BASE_ROWS,
 	DEFENSE_LEVEL_GAIN,
 	buildingHpScale,
-	HOUSES,
 	defenseLevel,
 	footprintOf,
 	positionOf,
 	LAYOUT_KEYS,
-	type BaseLayout
+	type BaseLayout,
+	type LayoutKey
 } from './baseLayout.js';
 
 /** Id of the island the test is played on, so nothing is stored for it */
@@ -63,7 +63,7 @@ export function testIslandOf(
 		look: { key: 'hq', level: levelOf('hq') }
 	});
 	for (const key of LAYOUT_KEYS) {
-		if (key === 'hq' || levelOf(key) < 1) continue;
+		if (key === 'hq' || key.startsWith('house-') || levelOf(key) < 1) continue;
 		const position = positionOf(layout, key);
 		const size = footprintOf(key);
 		const spot = squeeze(position.x + size.width / 2, position.y + size.height / 2);
@@ -77,9 +77,10 @@ export function testIslandOf(
 		});
 	}
 	// The cottages stand in your base too; the higher their level, the sturdier they are
-	for (let house = 0; house < HOUSES.width; house++) {
+	for (let house = 0; house < 3; house++) {
 		if (houseLevel(house) < 1) continue;
-		const spot = squeeze(HOUSES.x + house + 0.5, HOUSES.y + 0.5);
+		const home = positionOf(layout, `house-${house}` as LayoutKey);
+		const spot = squeeze(home.x + 0.5, home.y + 0.5);
 		wanted.push({
 			kind: 'depot',
 			x: spot.x,
