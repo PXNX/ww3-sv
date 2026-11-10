@@ -4553,5 +4553,6 @@
 	"beachhead_level_tag": "Level {level}",
 	"beachhead_info_button": "Info",
 	"beachhead_upgrade_time": "Bauzeit",
-	"beachhead_hq_badge": "Hauptquartier Level {level}"
+	"beachhead_hq_badge": "Hauptquartier Level {level}",
+	"beachhead_map_troops": "Truppen bereit zum Angriff"
 }

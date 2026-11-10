@@ -4553,5 +4553,6 @@
 	"beachhead_level_tag": "المستوى {level}",
 	"beachhead_info_button": "معلومات",
 	"beachhead_upgrade_time": "وقت الترقية",
-	"beachhead_hq_badge": "مستوى المقر {level}"
+	"beachhead_hq_badge": "مستوى المقر {level}",
+	"beachhead_map_troops": "قوات جاهزة للهجوم"
 }

@@ -4553,5 +4553,6 @@
 	"beachhead_level_tag": "سطح {level}",
 	"beachhead_info_button": "اطلاعات",
 	"beachhead_upgrade_time": "زمان ارتقا",
-	"beachhead_hq_badge": "سطح مقر {level}"
+	"beachhead_hq_badge": "سطح مقر {level}",
+	"beachhead_map_troops": "نیروهای آماده حمله"
 }

@@ -4553,5 +4553,6 @@
 	"beachhead_level_tag": "Уровень {level}",
 	"beachhead_info_button": "Инфо",
 	"beachhead_upgrade_time": "Время улучшения",
-	"beachhead_hq_badge": "Штаб, уровень {level}"
+	"beachhead_hq_badge": "Штаб, уровень {level}",
+	"beachhead_map_troops": "Войска готовы к атаке"
 }

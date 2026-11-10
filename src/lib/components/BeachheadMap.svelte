@@ -3,7 +3,9 @@
 	on small islands across the middle, and the orc lands, a broad dark landmass along the north
 	edge. Every island is a little isometric picture of the base you will land on. The whole chart is
 	buried in clouds; the radar tower clears them area by area, so the north only shows once the radar
-	reaches it. Icons say what you can do, the words are in tooltips.
+	reaches it. Each island carries its name and a round badge with its level. The activity log runs
+	down the left edge, the resources across the top right, the troops ready to land along the bottom
+	left, and a big button bottom right takes you home.
 -->
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages.js';
@@ -29,6 +31,11 @@
 	import BeachheadRivals from './BeachheadRivals.svelte';
 	import BeachheadSeaLog from './BeachheadSeaLog.svelte';
 	import BeachheadSheet from './BeachheadSheet.svelte';
+	import BeachheadPortrait from './BeachheadPortrait.svelte';
+	import BeachheadResources from './BeachheadResources.svelte';
+	import { ARMY_KINDS } from '#lib/game/beachhead/campaign.js';
+	import IconHouse from '~icons/lucide/house';
+	import IconScroll from '~icons/lucide/scroll-text';
 	import BeachheadTakeoverNotice from './BeachheadTakeoverNotice.svelte';
 	import IconAnchor from '~icons/lucide/anchor';
 	import IconCompass from '~icons/lucide/compass';
@@ -40,6 +47,14 @@
 
 	let { game }: { game: BeachheadGame } = $props();
 	let expeditionOpen = $state(false);
+	/** The activity log panel down the left edge */
+	let logOpen = $state(true);
+	/** The troops that would land in an attack, with how many of each */
+	const ready = $derived(
+		ARMY_KINDS.map((kind) => ({ kind, count: game.campaign.army[kind] ?? 0 })).filter(
+			(troop) => troop.count > 0
+		)
+	);
 	let now = $state(Date.now());
 	// Publishes your base and fetches raids and rivals; nothing happens outside Telegram
 	$effect(() => {
@@ -272,27 +287,33 @@
 						<canvas use:miniature={{ index, zoom }} class="block h-auto w-full" aria-hidden="true"
 						></canvas>
 
+						<!-- A round badge with what you can do there and the island's level -->
 						<span
-							class="absolute -end-1 top-0 flex size-8 items-center justify-center rounded-full border-2 border-ink shadow-[2px_2px_0_var(--color-ink)] {controlled
+							class="badge-bob absolute top-[8%] left-1/2 flex size-10 -translate-x-1/2 items-center justify-center rounded-full border-3 border-ink shadow-[2px_2px_0_var(--color-ink)] {controlled
 								? 'bg-khaki text-paper'
 								: attackable
 									? 'attack-ping bg-tie-red text-paper'
 									: 'bg-sand text-ink'}"
+							style:--bob="{(index % 5) * 0.37}s"
 						>
 							{#if controlled}
-								<IconFlag class="size-3.5" aria-hidden="true" />
+								<IconFlag class="size-5" aria-hidden="true" />
 							{:else if attackable}
-								<IconCrosshair class="size-4" aria-hidden="true" />
+								<IconCrosshair class="size-5" aria-hidden="true" />
 							{:else}
-								<IconLock class="size-3" aria-hidden="true" />
+								<IconLock class="size-4" aria-hidden="true" />
 							{/if}
+							<span
+								class="absolute -end-1.5 -bottom-1.5 flex size-5 items-center justify-center rounded-full border-2 border-ink bg-paper font-display text-[0.65rem] font-bold text-ink tabular-nums"
+								title={m.beachhead_level_tag({ level: index + 1 })}
+							>
+								{index + 1}
+							</span>
 						</span>
 
 						<span
 							dir="auto"
-							class="label -mt-1 rounded-full border-2 border-ink bg-paper/95 px-2 py-px text-[0.68rem] leading-tight font-bold transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 sm:text-xs {attackable
-								? 'opacity-100'
-								: 'opacity-0'}"
+							class="map-label -mt-2 font-display text-xs leading-tight font-bold whitespace-nowrap text-paper sm:text-sm"
 						>
 							{islandName(index)}
 						</span>
@@ -352,15 +373,76 @@
 				</span>
 			</button>
 		{/if}
-		<BeachheadSeaLog
-			events={logEvents}
-			retakeIn={retakeAt === null ? null : clock(retakeAt - now)}
-			{now}
-			onfocus={focusOn}
-		/>
+		{#if !logOpen}
+			<button
+				type="button"
+				class="btn-chunky pointer-events-auto relative flex size-11 items-center justify-center rounded-[12px] p-0"
+				aria-label={m.beachhead_log_title()}
+				title={m.beachhead_log_title()}
+				onclick={() => (logOpen = true)}
+			>
+				<IconScroll class="size-6" aria-hidden="true" />
+				{#if retakeAt !== null}
+					<span
+						class="absolute -end-1 -top-1 size-4 rounded-full border-2 border-ink bg-tie-red"
+						aria-hidden="true"
+					></span>
+				{/if}
+			</button>
+		{/if}
 	</div>
+
+	{#if logOpen}
+		<div class="absolute inset-y-0 start-0 z-50 pt-[env(safe-area-inset-top)]">
+			<BeachheadSeaLog
+				events={logEvents}
+				retakeIn={retakeAt === null ? null : clock(retakeAt - now)}
+				{now}
+				onfocus={focusOn}
+				onclose={() => (logOpen = false)}
+			/>
+		</div>
+	{/if}
+
+	<!-- Top right: the resources -->
+	<div class="pointer-events-none absolute top-(--hud-top) right-(--hud-right) z-40">
+		<div class="pointer-events-auto">
+			<BeachheadResources {game} />
+		</div>
+	</div>
+
+	<!-- Bottom left: the troops that would land -->
+	{#if ready.length > 0}
+		<div
+			class="pointer-events-none absolute bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40 flex max-w-[50%] flex-col items-start gap-1 transition-[left] duration-300 {logOpen
+				? 'left-[calc(min(19rem,44vw)+0.5rem)]'
+				: 'left-(--hud-left)'}"
+		>
+			<p class="map-label font-display text-sm font-bold text-paper">{m.beachhead_map_troops()}</p>
+			<ul class="flex flex-wrap gap-1">
+				{#each ready as troop, index (troop.kind)}
+					<li
+						class="troop-card relative flex size-12 items-center justify-center rounded-[10px] border-2 border-ink bg-paper shadow-[1px_2px_0_var(--color-ink)] sm:size-14"
+						style:--card={index}
+					>
+						<BeachheadPortrait
+							type="troop"
+							kind={troop.kind}
+							level={game.troopLevel(troop.kind)}
+							size={44}
+						/>
+						<span
+							class="absolute -start-1 -top-1.5 rounded-full border-2 border-ink bg-explosion-yellow px-1 font-display text-xs leading-4 font-bold tabular-nums"
+						>
+							{troop.count}
+						</span>
+					</li>
+				{/each}
+			</ul>
+		</div>
+	{/if}
 	<div
-		class="pointer-events-none absolute right-(--hud-right) bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40"
+		class="pointer-events-none absolute right-(--hud-right) bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40 flex items-end gap-2"
 	>
 		<button
 			type="button"
@@ -376,6 +458,15 @@
 					aria-hidden="true"
 				></span>
 			{/if}
+		</button>
+		<button
+			type="button"
+			class="btn-chunky pointer-events-auto flex size-16 items-center justify-center rounded-full bg-khaki p-0 text-paper sm:size-20"
+			aria-label={m.beachhead_home_base()}
+			title={m.beachhead_home_base()}
+			onclick={() => game.goBase()}
+		>
+			<IconHouse class="size-8 sm:size-10" aria-hidden="true" />
 		</button>
 	</div>
 </div>
@@ -407,6 +498,46 @@
 	.island-marker:not(:disabled):hover,
 	.island-marker:not(:disabled):focus-visible {
 		transform: translateY(-3px) scale(1.06);
+	}
+
+	/* Island names in white with a dark outline, readable on sea and on land */
+	.map-label {
+		paint-order: stroke fill;
+		-webkit-text-stroke: 3px var(--color-ink);
+	}
+
+	/* Badges float gently over their islands, each a little out of step */
+	.badge-bob {
+		animation: badge-bob 2.6s ease-in-out var(--bob, 0s) infinite;
+	}
+
+	.badge-bob.attack-ping {
+		animation:
+			badge-bob 2.6s ease-in-out var(--bob, 0s) infinite,
+			attack-ping 2s ease-in-out infinite;
+	}
+
+	@keyframes badge-bob {
+		0%,
+		100% {
+			translate: 0 0;
+		}
+		50% {
+			translate: 0 -4px;
+		}
+	}
+
+	/* The troop cards hop in one by one */
+	.troop-card {
+		animation: troop-in 380ms cubic-bezier(0.3, 1.6, 0.5, 1) both;
+		animation-delay: calc(var(--card, 0) * 50ms);
+	}
+
+	@keyframes troop-in {
+		from {
+			opacity: 0;
+			transform: translateY(14px) scale(0.6);
+		}
 	}
 
 	.island-locked canvas {
@@ -489,6 +620,9 @@
 
 	@media (prefers-reduced-motion: reduce) {
 		.attack-ping,
+		.badge-bob,
+		.badge-bob.attack-ping,
+		.troop-card,
 		.cloud {
 			animation: none;
 		}

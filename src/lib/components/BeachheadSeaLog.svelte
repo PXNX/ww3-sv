@@ -1,17 +1,17 @@
 <!--
-	The sea log on the chart, kept as simple as a ship's log: one line per event, newest first, each
-	with an icon, a short sentence and how long ago. Tapping a line flies the chart to the island it
-	happened on (or to your home bay for raids on your base) and makes that island pulse. Lines about
-	you are coloured: red when you lost something, green when you held or won. The log folds away to
-	just its header so it never covers the chart for long.
+	The activity log on the chart, a panel down the left edge in the manner of a base builder: a title
+	bar with a close button and one tinted row per event, newest first. Each row has a big round icon,
+	a short headline, how long ago, and a chevron. Red rows are losses, blue ones held or won, sand
+	ones loot you took, purple ones other players on the move. Tapping a row flies the chart to the
+	island it happened on (or to your home bay for raids on your base) and makes that island pulse.
 -->
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages.js';
 	import { ago, isPersonal, type LogEvent, type LogPlace } from '#lib/game/beachhead/mapLog.js';
 	import { islandName } from './beachheadText';
-	import IconChevronDown from '~icons/lucide/chevron-down';
+	import IconChevronRight from '~icons/lucide/chevron-right';
+	import IconX from '~icons/lucide/x';
 	import IconFlag from '~icons/lucide/flag-triangle-right';
-	import IconScroll from '~icons/lucide/scroll-text';
 	import IconShield from '~icons/lucide/shield-check';
 	import IconSkull from '~icons/lucide/skull';
 	import IconSwords from '~icons/lucide/swords';
@@ -21,16 +21,16 @@
 		events,
 		retakeIn,
 		now,
-		onfocus
+		onfocus,
+		onclose
 	}: {
 		events: readonly LogEvent[];
 		/** Time left until the enemy retakes one of your islands, already formatted; null when none */
 		retakeIn: string | null;
 		now: number;
 		onfocus: (place: LogPlace) => void;
+		onclose: () => void;
 	} = $props();
-
-	let open = $state(true);
 
 	const placeName = (place: LogPlace): string =>
 		place === 'home' ? m.beachhead_home_base() : islandName(place);
@@ -52,82 +52,127 @@
 		}
 	}
 
+	/** The tint of a row: losses red, wins blue, loot sand, other players purple, raiders slate */
 	const tone = (event: LogEvent): string =>
-		event.kind === 'raided'
-			? 'bg-tie-red text-paper'
-			: event.kind === 'defended' || event.kind === 'plundered'
-				? 'bg-[#3fa65a] text-paper'
-				: '';
+		event.kind === 'raided' || event.kind === 'taken'
+			? 'bg-[#b9575a] text-paper'
+			: event.kind === 'defended'
+				? 'bg-[#3f7ea3] text-paper'
+				: event.kind === 'plundered'
+					? 'bg-[#efe4c2] text-ink'
+					: event.kind === 'attack'
+						? 'bg-[#7a4fb5] text-paper'
+						: 'bg-[#5b6f80] text-paper';
 </script>
 
 <section
-	class="pointer-events-auto w-[min(17rem,52vw)] overflow-hidden rounded-[10px_6px_12px_8px] border-2 border-ink bg-paper/95 shadow-[2px_2px_0_var(--color-ink)]"
+	class="log-in pointer-events-auto flex h-full w-[min(19rem,44vw)] flex-col border-e-3 border-ink bg-ink/85 shadow-[4px_0_0_rgb(0_0_0/0.25)]"
 	aria-label={m.beachhead_log_title()}
 >
-	<button
-		type="button"
-		class="flex w-full items-center gap-1.5 px-2 py-1 font-display text-xs font-bold"
-		aria-expanded={open}
-		onclick={() => (open = !open)}
-	>
-		<IconScroll class="size-3.5 shrink-0" aria-hidden="true" />
-		<span class="flex-1 text-start">{m.beachhead_log_title()}</span>
-		{#if retakeIn !== null}
-			<span
-				class="flex items-center gap-0.5 rounded-full bg-tie-red px-1.5 text-paper tabular-nums"
-				title={m.beachhead_log_retake({ time: retakeIn })}
-			>
-				<IconSkull class="size-3" aria-hidden="true" />
-				{retakeIn}
-			</span>
-		{/if}
-		<IconChevronDown
-			class="size-3.5 shrink-0 transition-transform motion-reduce:transition-none {open
-				? 'rotate-180'
-				: ''}"
-			aria-hidden="true"
-		/>
-	</button>
+	<header class="flex items-center gap-2 bg-[#3c5468] px-2 py-1.5 text-paper">
+		<h2
+			class="log-title min-w-0 flex-1 truncate font-display text-lg font-bold tracking-wide uppercase"
+		>
+			{m.beachhead_log_title()}
+		</h2>
+		<button
+			type="button"
+			class="btn-chunky flex size-9 shrink-0 items-center justify-center rounded-full p-0 text-ink"
+			aria-label={m.beachhead_tutorial_close()}
+			title={m.beachhead_tutorial_close()}
+			onclick={onclose}
+		>
+			<IconX class="size-5" aria-hidden="true" />
+		</button>
+	</header>
 
-	{#if open}
-		<ol class="max-h-[40vh] overflow-y-auto border-t-2 border-ink/20">
-			{#each events as event (event.id ?? `${event.kind}-${event.atMs}`)}
-				<li class="border-b border-ink/10 last:border-b-0">
-					<button
-						type="button"
-						class="flex w-full items-center gap-1.5 px-2 py-1 text-start text-[0.7rem] leading-tight hover:bg-sand focus-visible:bg-sand {tone(
-							event
-						)}"
-						onclick={() => onfocus(event.island)}
+	{#if retakeIn !== null}
+		<p
+			class="flex items-center gap-1.5 border-b-2 border-ink bg-tie-red px-2 py-1 font-display text-xs font-bold text-paper tabular-nums"
+		>
+			<IconSkull class="size-4 shrink-0" aria-hidden="true" />
+			{m.beachhead_log_retake({ time: retakeIn })}
+		</p>
+	{/if}
+
+	<ol class="min-h-0 flex-1 overflow-y-auto">
+		{#each events as event, index (event.id ?? `${event.kind}-${event.atMs}`)}
+			<li class="log-row border-b-2 border-ink/40" style:--row={index}>
+				<button
+					type="button"
+					class="flex w-full items-center gap-2 px-2 py-1.5 text-start transition-[filter] hover:brightness-110 focus-visible:brightness-110 {tone(
+						event
+					)}"
+					onclick={() => onfocus(event.island)}
+				>
+					<span
+						class="flex size-11 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-paper text-ink shadow-[1px_2px_0_var(--color-ink)]"
+						aria-hidden="true"
 					>
-						<span
-							class="flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-explosion-yellow text-ink"
-							aria-hidden="true"
-						>
-							{#if event.kind === 'raiders'}
-								<IconSkull class="size-3" />
-							{:else if event.kind === 'taken'}
-								<IconFlag class="size-3" />
-							{:else if event.kind === 'defended'}
-								<IconShield class="size-3" />
-							{:else if event.kind === 'plundered' || event.kind === 'raided'}
-								<IconCoins class="size-3" />
-							{:else}
-								<IconSwords class="size-3" />
-							{/if}
-						</span>
+						{#if event.kind === 'raiders'}
+							<IconSkull class="size-6" />
+						{:else if event.kind === 'taken'}
+							<IconFlag class="size-6" />
+						{:else if event.kind === 'defended'}
+							<IconShield class="size-6" />
+						{:else if event.kind === 'plundered' || event.kind === 'raided'}
+							<IconCoins class="size-6" />
+						{:else}
+							<IconSwords class="size-6" />
+						{/if}
+					</span>
+					<span class="flex min-w-0 flex-1 flex-col">
 						<span
 							dir="auto"
-							class="min-w-0 flex-1 font-semibold {isPersonal(event) ? 'font-bold' : ''}"
+							class="text-sm leading-tight font-bold {isPersonal(event) ? '' : 'font-semibold'}"
 						>
 							{sentence(event)}
 						</span>
-						<span class="shrink-0 tabular-nums opacity-70">{ago(now, event.atMs)}</span>
-					</button>
-				</li>
-			{:else}
-				<li class="px-2 py-1.5 text-[0.7rem] opacity-70">{m.beachhead_log_empty()}</li>
-			{/each}
-		</ol>
-	{/if}
+						<span class="text-xs font-semibold tabular-nums opacity-80">{ago(now, event.atMs)}</span
+						>
+					</span>
+					<IconChevronRight class="size-5 shrink-0 rtl:rotate-180" aria-hidden="true" />
+				</button>
+			</li>
+		{:else}
+			<li class="px-3 py-3 text-sm text-paper opacity-80">{m.beachhead_log_empty()}</li>
+		{/each}
+	</ol>
 </section>
+
+<style>
+	/* The panel slides in from the edge and its rows follow one after another */
+	.log-in {
+		animation: log-in 260ms cubic-bezier(0.2, 1.2, 0.4, 1);
+	}
+
+	.log-row {
+		animation: log-row 320ms cubic-bezier(0.3, 1.5, 0.5, 1) both;
+		animation-delay: calc(var(--row, 0) * 45ms + 120ms);
+	}
+
+	.log-title {
+		paint-order: stroke fill;
+		-webkit-text-stroke: 3px var(--color-ink);
+	}
+
+	@keyframes log-in {
+		from {
+			transform: translateX(-100%);
+		}
+	}
+
+	@keyframes log-row {
+		from {
+			opacity: 0;
+			transform: translateX(-24px);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.log-in,
+		.log-row {
+			animation: none;
+		}
+	}
+</style>
