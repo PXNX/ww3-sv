@@ -253,6 +253,14 @@
 	/** The upgrade view only makes sense while there is a next level to buy */
 	const upgrading = $derived(mode === 'upgrade' && shown.cost !== null);
 	const statList = $derived(defense ? defenseStats : stats);
+
+	/** A burst of stars from the button when an upgrade starts */
+	let burst = $state(0);
+	const BURST_COLORS = ['#ffd23f', '#5fd068', '#5aaee8', '#e5484d', '#ffffff'];
+	function startUpgrade() {
+		shown.start();
+		burst += 1;
+	}
 </script>
 
 {#snippet statRow(stat: { label: string; from: string; to: string })}
@@ -391,7 +399,7 @@
 		</p>
 	{:else if upgrading}
 		{@const price = shown.cost as Resources}
-		<div class="flex flex-wrap items-center justify-between gap-3">
+		<div class="relative flex flex-wrap items-center justify-between gap-3">
 			<p class="flex flex-col font-display font-bold tabular-nums">
 				<span class="text-xs opacity-70">{m.beachhead_upgrade_time()}</span>
 				<span class="flex items-center gap-1 text-lg">
@@ -404,7 +412,7 @@
 				class="upgrade-go flex min-h-13 items-center gap-2 rounded-[16px] px-4 py-1.5 font-display font-bold text-paper tabular-nums disabled:cursor-not-allowed disabled:grayscale-[0.6]"
 				aria-label={m.beachhead_upgrade_button()}
 				disabled={!shown.canStart}
-				onclick={shown.start}
+				onclick={startUpgrade}
 			>
 				<IconArrowBigUp class="size-7 fill-current" aria-hidden="true" />
 				<span class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
@@ -421,11 +429,46 @@
 					{/each}
 				</span>
 			</button>
+			{#if burst > 0}
+				{#key burst}
+					<span class="pointer-events-none absolute end-16 top-1/2" aria-hidden="true">
+						{#each Array.from({ length: 12 }, (_, index) => index) as index (index)}
+							<span
+								class="joy-star absolute size-2.5 rounded-full border border-ink"
+								style:background={BURST_COLORS[index % BURST_COLORS.length]}
+								style:--angle="{index * 30}deg"
+							></span>
+						{/each}
+					</span>
+				{/key}
+			{/if}
 		</div>
 	{/if}
 </div>
 
 <style>
+	/* Stars fly out of the upgrade button and fade */
+	.joy-star {
+		animation: joy-star 650ms cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+	}
+
+	@keyframes joy-star {
+		from {
+			transform: rotate(var(--angle)) translateY(0) scale(1.2);
+			opacity: 1;
+		}
+		to {
+			transform: rotate(var(--angle)) translateY(-56px) scale(0.3);
+			opacity: 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.joy-star {
+			display: none;
+		}
+	}
+
 	.spotlight {
 		min-height: 9rem;
 		background:

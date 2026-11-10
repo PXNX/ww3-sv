@@ -221,7 +221,9 @@
 							style:background={full ? 'var(--color-explosion-yellow)' : resource.color}
 							aria-hidden="true"
 						></span>
-						<span class="relative">{game.resources[resource.kind]}</span>
+						{#key game.resources[resource.kind]}
+							<span class="joy-bump relative">{game.resources[resource.kind]}</span>
+						{/key}
 					</span>
 					<ResourceIcon
 						kind={resource.kind}
@@ -416,6 +418,28 @@
 
 	@media (prefers-reduced-motion: reduce) {
 		.builder-work {
+			animation: none;
+		}
+	}
+
+	/* The number hops a little whenever it changes */
+	.joy-bump {
+		display: inline-block;
+		animation: joy-bump 320ms cubic-bezier(0.3, 1.8, 0.5, 1);
+	}
+
+	@keyframes joy-bump {
+		from {
+			transform: scale(1.35);
+			color: var(--color-explosion-yellow);
+		}
+		to {
+			transform: none;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.joy-bump {
 			animation: none;
 		}
 	}
