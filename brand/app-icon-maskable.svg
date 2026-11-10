@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
-  <!-- Maskable app icon (art inside the 80% safe circle): the world as a cartoon bomb with a lit fuse, the same art as the Telegram bot's profile photo (bot/res/icon.svg). Rendered to static/icons/icon-maskable-512.png. -->
+  <!-- Maskable app icon (art inside the 80% safe circle): the world as a cartoon bomb with a lit fuse, the same art as the Telegram bot's profile photo (bot/res/icon.svg). Rendered to static/icons/bomb-icon-maskable-512.png. -->
   <defs>
     <clipPath id="globe"><circle cx="300" cy="372" r="186"/></clipPath>
     <radialGradient id="glow" cx="50%" cy="58%" r="60%">
