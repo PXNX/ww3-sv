@@ -80,6 +80,7 @@
 	import IconShip from '~icons/lucide/ship';
 	import IconTrash from '~icons/lucide/trash-2';
 	import IconTrophy from '~icons/lucide/trophy';
+	import IconX from '~icons/lucide/x';
 	import IconUsers from '~icons/lucide/users';
 
 	let { game }: { game: BeachheadGame } = $props();
@@ -124,6 +125,11 @@
 	let windowMode = $state<'info' | 'upgrade'>('upgrade');
 	let drag: Drag | null = null;
 	let dragging = $state(false);
+	/** A new building from the store, waiting on the island for the player to pick its spot and build it */
+	let placing = $state<{ key: LayoutKey; cell: Cell } | null>(null);
+	const placingValid = $derived(
+		placing ? fits({ kind: 'building', key: placing.key }, placing.cell) : false
+	);
 	let clock = $state(0);
 	/** The category tab open in the store */
 	type StoreTab = 'resources' | 'guns' | 'obstacles' | 'buildings';
@@ -379,7 +385,15 @@
 			timeMs,
 			arranging: dragging,
 			selected,
-			drag: drag ? { item: drag.item, cell: drag.cell, valid: drag.valid } : null
+			drag: drag
+				? { item: drag.item, cell: drag.cell, valid: drag.valid }
+				: placing
+					? {
+							item: { kind: 'building' as const, key: placing.key },
+							cell: placing.cell,
+							valid: placingValid
+						}
+					: null
 		});
 	}
 
@@ -449,6 +463,40 @@
 		if (event.pointerType === 'mouse' && event.button !== 0) return;
 		const point = viewPoint(event);
 		if (!point) return;
+		// While a new building is being placed, any press picks it up and drags it to where the finger is
+		if (placing) {
+			const ground = HOME_VIEW.unproject(point.x, point.y);
+			const size = footprintOf(placing.key);
+			const onIt =
+				ground.x >= placing.cell.x &&
+				ground.x < placing.cell.x + size.width &&
+				ground.y >= placing.cell.y &&
+				ground.y < placing.cell.y + size.height;
+			drag = {
+				item: { kind: 'building', key: placing.key },
+				grab: onIt
+					? { x: ground.x - placing.cell.x, y: ground.y - placing.cell.y }
+					: { x: size.width / 2, y: size.height / 2 },
+				cell: placing.cell,
+				valid: placingValid,
+				moved: true
+			};
+			if (!onIt) {
+				const cell = {
+					x: Math.round(ground.x - size.width / 2),
+					y: Math.round(ground.y - size.height / 2)
+				};
+				drag = { ...drag, cell, valid: fits(drag.item, cell) };
+			}
+			dragging = true;
+			try {
+				canvas?.setPointerCapture(event.pointerId);
+			} catch {
+				// Already gone; the drag still follows the canvas
+			}
+			event.preventDefault();
+			return;
+		}
 		const boats = game.boats.filter((boat) => boat.unlocked).length;
 		const hit = pickHome(
 			HOME_VIEW,
@@ -500,7 +548,9 @@
 
 	function fits(item: Drag['item'], cell: Cell): boolean {
 		return item.kind === 'building'
-			? canPlace(game.layout, footprintOf(item.key), cell, { key: item.key })
+			? canPlace(game.layout, footprintOf(item.key), cell, { key: item.key }, (key) =>
+					game.standing(key)
+				)
 			: canPlace(game.layout, { width: 1, height: 1 }, cell, { mineId: item.id });
 	}
 
@@ -519,12 +569,103 @@
 		const done = drag;
 		drag = null;
 		dragging = false;
+		if (placing && done.item.kind === 'building' && done.item.key === placing.key) {
+			placing = { key: placing.key, cell: done.cell };
+			return;
+		}
 		if (!done.valid || !done.moved) return;
 		if (done.item.kind === 'building') game.moveBuilding(done.item.key, done.cell);
 		else game.moveMine(done.item.id, done.cell);
 	}
 
 	const costOf = (kind: DefenseKind): Resources => ({ ...DEFENSE_COST[kind] });
+
+	/** Puts a new building from the store on the island, where the player can drag it before building */
+	function startPlacing(key: LayoutKey) {
+		const cell = game.spotForNew(key);
+		if (!cell) return;
+		sheet = null;
+		selected = null;
+		placing = { key, cell };
+	}
+
+	function buildPlaced() {
+		if (!placing || !placingValid) return;
+		const key = placing.key;
+		if (game.placeNew(key, placing.cell)) {
+			placing = null;
+			selected = { kind: 'building', key };
+		}
+	}
+
+	/** Where the tag and the build buttons of the building being placed sit */
+	const placingAnchor = $derived.by(() => {
+		if (!placing) return null;
+		const at = homeAnchor(
+			{ ...game.layout, positions: { ...game.layout.positions, [placing.key]: placing.cell } },
+			{ kind: 'building', key: placing.key },
+			() => 1,
+			(key) => game.maxLevelOf(key as BuildingKey)
+		);
+		if (!at) return null;
+		return {
+			top: { x: (at.top.x / HOME_VIEW.width) * 100, y: (at.top.y / HOME_VIEW.height) * 100 },
+			foot: { x: (at.foot.x / HOME_VIEW.width) * 100, y: (at.foot.y / HOME_VIEW.height) * 100 }
+		};
+	});
+
+	/**
+	 * The store lists each kind of building once, with how many of it stand: the two warehouses of a
+	 * resource, the three cottages and the landing craft are one card each. Tapping a card places the
+	 * next one not built yet, or opens the first one when they all stand.
+	 */
+	type StoreGroup = { id: string; name: string; keys: BuildingKey[] };
+	const resourceLabel = (resource: string): string =>
+		resource === 'wood'
+			? m.beachhead_resource_wood()
+			: resource === 'stone'
+				? m.beachhead_resource_stone()
+				: resource === 'iron'
+					? m.beachhead_resource_iron()
+					: m.beachhead_resource_gold();
+	const storeGroups = $derived.by((): StoreGroup[] => {
+		const groups: StoreGroup[] = [];
+		const keys =
+			storeTab === 'resources' || storeTab === 'buildings' ? STORE_BUILDINGS[storeTab] : [];
+		for (const key of keys) {
+			const id = key.startsWith('warehouse-')
+				? key.slice(0, key.lastIndexOf('-'))
+				: key.startsWith('house-')
+					? 'house'
+					: key.startsWith('boat-')
+						? 'boat'
+						: key;
+			const group = groups.find((candidate) => candidate.id === id);
+			if (group) {
+				group.keys.push(key);
+				continue;
+			}
+			const name = id.startsWith('warehouse-')
+				? m.beachhead_warehouse_kind({ resource: resourceLabel(id.split('-')[1]) })
+				: id === 'boat'
+					? m.beachhead_upgrade_landing()
+					: describe(key).name;
+			groups.push({ id, name, keys: [key] });
+		}
+		return groups;
+	});
+	const isBuilt = (key: BuildingKey): boolean =>
+		game.levelOf(key) >= 1 || game.constructionOf(key) !== undefined;
+
+	function openGroup(group: StoreGroup) {
+		const next = group.keys.find((key) => !isBuilt(key));
+		if (next && isLayoutKey(next) && !game.upgradeLocked(next)) {
+			startPlacing(next);
+			return;
+		}
+		selected = { kind: 'building', key: next ?? group.keys[0] };
+		openWindow('upgrade');
+	}
 </script>
 
 {#snippet costChips(cost: Resources)}
@@ -562,7 +703,51 @@
 				onpointercancel={onPointerUp}
 				oncontextmenu={(event) => event.preventDefault()}
 			></canvas>
-			{#if anchor && tag && !dragging}
+			{#if placing && placingAnchor && !dragging}
+				<!-- A new building waiting for its spot: drag it, then build it or put it back -->
+				<div
+					class="pinned-top pointer-events-none absolute z-10"
+					style:left="{placingAnchor.top.x}%"
+					style:top="{placingAnchor.top.y}%"
+				>
+					<div class="joy-tag flex flex-col items-center text-center">
+						<span class="tag-text font-display text-lg leading-tight font-bold whitespace-nowrap">
+							{describe(placing.key).name}
+						</span>
+					</div>
+				</div>
+				<div
+					class="pinned-foot absolute z-10 flex items-start gap-0.5"
+					style:left="{placingAnchor.foot.x}%"
+					style:top="{placingAnchor.foot.y}%"
+				>
+					<button
+						type="button"
+						class="btn-chunky flex size-12 items-center justify-center rounded-full p-0 text-tie-red"
+						aria-label={m.beachhead_place_cancel()}
+						title={m.beachhead_place_cancel()}
+						onclick={() => (placing = null)}
+					>
+						<IconX class="size-7" aria-hidden="true" />
+					</button>
+					<div class="flex flex-col items-center gap-0.5">
+						<button
+							type="button"
+							class="btn-chunky flex size-12 items-center justify-center rounded-full bg-[#3fa65a] p-0 text-paper"
+							aria-label={m.beachhead_place_build()}
+							title={m.beachhead_place_build()}
+							disabled={!placingValid || !game.buildRowFor(placing.key).canStart}
+							onclick={buildPlaced}
+						>
+							<IconCheck class="size-7" aria-hidden="true" />
+						</button>
+						{#if game.upgradeCost(placing.key)}
+							{@render costChips(game.upgradeCost(placing.key) as Resources)}
+						{/if}
+					</div>
+				</div>
+			{/if}
+			{#if anchor && tag && !dragging && !placing}
 				{#key selectionId}
 					<!-- The name and level float above the picked building, the round buttons sit under it -->
 					<div
@@ -862,17 +1047,25 @@
 	</div>
 	{#if storeTab === 'resources' || storeTab === 'buildings'}
 		<ul class="flex gap-2 overflow-x-auto pb-2">
-			{#each STORE_BUILDINGS[storeTab] as key (key)}
-				{@const level = game.levelOf(key)}
+			{#each storeGroups as group (group.id)}
+				{@const key = group.keys.find((candidate) => !isBuilt(candidate)) ?? group.keys[0]}
+				{@const built = group.keys.filter(isBuilt).length}
 				<li class="shrink-0">
 					<button
 						type="button"
-						class="flex w-28 flex-col items-center gap-1 rounded-[14px] border-2 border-ink bg-sand p-2"
-						onclick={() => {
-							selected = { kind: 'building', key };
-							sheet = 'upgrade';
-						}}
+						class="relative flex w-28 flex-col items-center gap-1 rounded-[14px] border-2 border-ink bg-sand p-2"
+						onclick={() => openGroup(group)}
 					>
+						{#if group.keys.length > 1}
+							<span
+								class="absolute -end-1.5 -top-2 rounded-full border-2 border-ink px-1.5 font-display text-xs font-bold tabular-nums {built ===
+								group.keys.length
+									? 'bg-paper'
+									: 'bg-explosion-yellow'}"
+							>
+								{built}/{group.keys.length}
+							</span>
+						{/if}
 						<span
 							class="flex size-12 items-center justify-center rounded-full border-3 border-ink bg-paper shadow-[2px_2px_0_var(--color-ink)]"
 						>
@@ -880,7 +1073,7 @@
 								<BeachheadPortrait
 									type="building"
 									kind={key}
-									level={Math.max(1, level)}
+									level={Math.max(1, game.levelOf(key))}
 									max={game.maxLevelOf(key)}
 									size={46}
 								/>
@@ -888,17 +1081,17 @@
 								<IconShip class="size-7" aria-hidden="true" />
 							{/if}
 						</span>
-						<span class="text-center text-xs leading-tight font-bold">{describe(key).name}</span>
-						{#if level === 0}
-							<!-- Not built yet: it costs a builder and some resources, and the headquarters must be high enough -->
+						<span class="text-center text-xs leading-tight font-bold">{group.name}</span>
+						{#if built < group.keys.length}
+							<!-- One still to build: it costs a builder and some resources, and the headquarters must be high enough -->
 							{#if game.upgradeLocked(key)}
 								<IconLock class="size-5" aria-hidden="true" />
 							{:else if game.upgradeCost(key)}
 								{@render costChips(game.upgradeCost(key) as Resources)}
 							{/if}
-						{:else}
+						{:else if group.keys.length === 1}
 							<span class="font-display text-xs font-bold tabular-nums">
-								{level}/{game.maxLevelOf(key)}
+								{game.levelOf(key)}/{game.maxLevelOf(key)}
 							</span>
 						{/if}
 					</button>

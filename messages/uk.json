@@ -4554,5 +4554,8 @@
 	"beachhead_info_button": "Інфо",
 	"beachhead_upgrade_time": "Час покращення",
 	"beachhead_hq_badge": "Штаб, рівень {level}",
-	"beachhead_map_troops": "Війська готові до атаки"
+	"beachhead_map_troops": "Війська готові до атаки",
+	"beachhead_place_build": "Будувати тут",
+	"beachhead_place_cancel": "Скасувати",
+	"beachhead_warehouse_kind": "Склад: {resource}"
 }

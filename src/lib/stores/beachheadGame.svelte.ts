@@ -92,6 +92,8 @@ import {
 	maxLevelOf,
 	modifiersFor,
 	moveBuildingTo,
+	placeNewBuilding,
+	standingIn,
 	moveMineTo,
 	newSave,
 	parseSave,
@@ -136,7 +138,13 @@ import {
 	type ResourceKind,
 	type Resources
 } from '#lib/game/beachhead/campaign.js';
-import type { BaseLayout, Cell, DefenseKind } from '#lib/game/beachhead/baseLayout.js';
+import {
+	spotFor,
+	type BaseLayout,
+	type Cell,
+	type DefenseKind,
+	type LayoutKey
+} from '#lib/game/beachhead/baseLayout.js';
 import { testIslandOf } from '#lib/game/beachhead/defenseTest.js';
 import {
 	EXPEDITION_TIERS,
@@ -776,6 +784,28 @@ export class BeachheadGame {
 	upgrade(key: BuildingKey): boolean {
 		const next = startUpgradeIn(this.campaign, key, this.#now(), this.builderSlots);
 		if (!next) return false;
+		this.#commit(next);
+		this.#play('chime', 0.7);
+		return true;
+	}
+
+	/** Which buildings already stand on the island; one not built yet keeps no ground */
+	standing(key: LayoutKey): boolean {
+		return standingIn(this.campaign)(key);
+	}
+
+	/** Where a new building goes at first when it is placed from the store */
+	spotForNew(key: LayoutKey): Cell | null {
+		return spotFor(this.layout, key, standingIn(this.campaign));
+	}
+
+	/** Builds a new building on the spot the player picked; false when it cannot go there or start */
+	placeNew(key: BuildingKey, cell: Cell): boolean {
+		const next = placeNewBuilding(this.campaign, key, cell, this.#now(), this.builderSlots);
+		if (!next) {
+			this.#play('ui-error', 0.4);
+			return false;
+		}
 		this.#commit(next);
 		this.#play('chime', 0.7);
 		return true;

@@ -4554,5 +4554,8 @@
 	"beachhead_info_button": "Info",
 	"beachhead_upgrade_time": "Upgrade time",
 	"beachhead_hq_badge": "Headquarters level {level}",
-	"beachhead_map_troops": "Troops ready to attack"
+	"beachhead_map_troops": "Troops ready to attack",
+	"beachhead_place_build": "Build here",
+	"beachhead_place_cancel": "Cancel",
+	"beachhead_warehouse_kind": "{resource} warehouse"
 }

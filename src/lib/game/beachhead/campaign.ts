@@ -46,8 +46,11 @@ import {
 	levelUpDefense,
 	isRemovable,
 	addMine,
+	canPlace,
 	defaultLayout,
+	footprintOf,
 	isLayoutKey,
+	positionOf,
 	mineRefund,
 	moveBuilding,
 	moveMine,
@@ -55,7 +58,8 @@ import {
 	removeMine,
 	type BaseLayout,
 	type Cell,
-	type DefenseKind
+	type DefenseKind,
+	type LayoutKey
 } from './baseLayout.js';
 
 export const SAVE_KEY = 'beachhead:save';
@@ -1807,8 +1811,38 @@ export function moveBuildingTo(
 	cell: Cell
 ): BeachheadSave | null {
 	if (!isLayoutKey(key)) return null;
-	const layout = moveBuilding(layoutOf(save), key, cell);
+	const layout = moveBuilding(layoutOf(save), key, cell, standingIn(save));
 	return layout ? { ...save, layout } : null;
+}
+
+/** Which buildings stand on the island already; one not built yet keeps no ground */
+export function standingIn(save: BeachheadSave): (key: LayoutKey) => boolean {
+	return (key) => levelOf(save, key) >= 1 || constructionOf(save, key) !== undefined;
+}
+
+/**
+ * Builds a new building where the player put it: it moves to that spot and its first level starts
+ * on a free builder. Null when it is already built, the spot is taken, or it cannot be started.
+ */
+export function placeNewBuilding(
+	save: BeachheadSave,
+	key: BuildingKey,
+	cell: Cell,
+	nowMs: number,
+	slots: number
+): BeachheadSave | null {
+	if (!isLayoutKey(key) || levelOf(save, key) >= 1 || constructionOf(save, key)) return null;
+	const layout = layoutOf(save);
+	const standing = standingIn(save);
+	const at = positionOf(layout, key);
+	const placed =
+		at.x === cell.x && at.y === cell.y
+			? canPlace(layout, footprintOf(key), cell, { key }, standing)
+				? layout
+				: null
+			: moveBuilding(layout, key, cell, standing);
+	if (!placed) return null;
+	return startUpgrade({ ...save, layout: placed }, key, nowMs, slots);
 }
 
 export function canAffordMine(save: BeachheadSave, kind: DefenseKind): boolean {

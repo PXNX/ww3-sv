@@ -4554,5 +4554,8 @@
 	"beachhead_info_button": "معلومات",
 	"beachhead_upgrade_time": "وقت الترقية",
 	"beachhead_hq_badge": "مستوى المقر {level}",
-	"beachhead_map_troops": "قوات جاهزة للهجوم"
+	"beachhead_map_troops": "قوات جاهزة للهجوم",
+	"beachhead_place_build": "ابنِ هنا",
+	"beachhead_place_cancel": "إلغاء",
+	"beachhead_warehouse_kind": "مستودع {resource}"
 }

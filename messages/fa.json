@@ -4554,5 +4554,8 @@
 	"beachhead_info_button": "اطلاعات",
 	"beachhead_upgrade_time": "زمان ارتقا",
 	"beachhead_hq_badge": "سطح مقر {level}",
-	"beachhead_map_troops": "نیروهای آماده حمله"
+	"beachhead_map_troops": "نیروهای آماده حمله",
+	"beachhead_place_build": "اینجا بساز",
+	"beachhead_place_cancel": "لغو",
+	"beachhead_warehouse_kind": "انبار {resource}"
 }
