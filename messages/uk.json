@@ -4557,5 +4557,15 @@
 	"beachhead_map_troops": "Війська готові до атаки",
 	"beachhead_place_build": "Будувати тут",
 	"beachhead_place_cancel": "Скасувати",
-	"beachhead_warehouse_kind": "Склад: {resource}"
+	"beachhead_warehouse_kind": "Склад: {resource}",
+	"beachhead_upgrade_short": "Не вистачає ресурсів",
+	"beachhead_stat_every": "Кожні",
+	"beachhead_unit_attack": "Атака",
+	"beachhead_attack_pistol": "Пістолет",
+	"beachhead_attack_hammer": "Удар молотом",
+	"beachhead_skill_command": "Командна аура",
+	"beachhead_skill_command_text": "Війська поруч із ним б'ють сильніше й рухаються швидше. Тренування командування посилює ауру.",
+	"beachhead_skill_hammer": "Імпульс молота",
+	"beachhead_skill_hammer_text": "Кожні кілька секунд молот випускає імпульс, що лікує війська навколо.",
+	"beachhead_troop_azov_hint": "Веде в бій особисто: його аура посилює всіх навколо."
 }

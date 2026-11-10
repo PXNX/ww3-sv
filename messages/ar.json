@@ -4557,5 +4557,15 @@
 	"beachhead_map_troops": "قوات جاهزة للهجوم",
 	"beachhead_place_build": "ابنِ هنا",
 	"beachhead_place_cancel": "إلغاء",
-	"beachhead_warehouse_kind": "مستودع {resource}"
+	"beachhead_warehouse_kind": "مستودع {resource}",
+	"beachhead_upgrade_short": "لا توجد موارد كافية",
+	"beachhead_stat_every": "كل",
+	"beachhead_unit_attack": "الهجوم",
+	"beachhead_attack_pistol": "مسدس",
+	"beachhead_attack_hammer": "ضربة المطرقة",
+	"beachhead_skill_command": "هالة القيادة",
+	"beachhead_skill_command_text": "القوات القريبة منه تضرب أقوى وتتحرك أسرع. تدريب مهارة القيادة يقوّي الهالة.",
+	"beachhead_skill_hammer": "نبضة المطرقة",
+	"beachhead_skill_hammer_text": "كل بضع ثوانٍ تطلق مطرقته نبضة تشفي القوات من حوله.",
+	"beachhead_troop_azov_hint": "يقود من الأمام: هالته ترفع كل جندي حوله."
 }

@@ -17,7 +17,7 @@
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
 	import IconArrowRight from '~icons/lucide/arrow-right';
-	import IconCircleArrowUp from '~icons/lucide/circle-arrow-up';
+	import BeachheadUpgradeButton from '#lib/components/BeachheadUpgradeButton.svelte';
 	import IconHourglass from '~icons/lucide/hourglass';
 	import IconLock from '~icons/lucide/lock';
 	import IconStar from '~icons/lucide/star';
@@ -168,17 +168,15 @@
 			{#if game.supportSkillLocked(skill)}
 				<IconLock class="size-5" aria-label={m.beachhead_upgrade_locked()} />
 			{:else}
-				<button
-					type="button"
-					class="btn-chunky flex h-10 items-center justify-center gap-1.5 rounded-full bg-khaki px-3 py-0 font-display text-sm font-bold text-paper tabular-nums"
-					aria-label={m.beachhead_troop_train()}
+				<BeachheadUpgradeButton
+					label={m.beachhead_troop_train()}
+					short={!game.canAfford(cost as Resources)}
 					disabled={!game.canUpgradeSupportSkill(skill)}
 					onclick={() => game.upgradeSupportSkill(skill)}
 				>
-					<IconCircleArrowUp class="size-5" aria-hidden="true" />
 					<IconHourglass class="size-4" aria-hidden="true" />
 					{clock(game.skillResearchMs(skill))}
-				</button>
+				</BeachheadUpgradeButton>
 			{/if}
 		{/if}
 	</div>

@@ -55,6 +55,7 @@
 	import BeachheadCrystals from '#lib/components/BeachheadCrystals.svelte';
 	import BeachheadPortrait from '#lib/components/BeachheadPortrait.svelte';
 	import BeachheadUpgradeWindow from '#lib/components/BeachheadUpgradeWindow.svelte';
+	import BeachheadUpgradeButton from '#lib/components/BeachheadUpgradeButton.svelte';
 	import BeachheadHero from '#lib/components/BeachheadHero.svelte';
 	import BeachheadResources from '#lib/components/BeachheadResources.svelte';
 	import BeachheadSheet from '#lib/components/BeachheadSheet.svelte';
@@ -62,9 +63,7 @@
 	import BeachheadTakeoverNotice from '#lib/components/BeachheadTakeoverNotice.svelte';
 	import ResourceIcon from '#lib/components/ResourceIcon.svelte';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
-	import IconArrowBigUp from '~icons/lucide/arrow-big-up';
 	import IconCheck from '~icons/lucide/check';
-	import IconCircleArrowUp from '~icons/lucide/circle-arrow-up';
 	import IconCrosshair from '~icons/lucide/crosshair';
 	import IconFlag from '~icons/lucide/flag-triangle-right';
 	import IconGraduationCap from '~icons/lucide/graduation-cap';
@@ -788,16 +787,12 @@
 						</button>
 						{#if tag.cost}
 							<div class="flex flex-col items-center gap-0.5">
-								<button
-									type="button"
-									class="btn-chunky flex size-12 items-center justify-center rounded-full p-0 text-[#2f9a4a]"
-									class:opacity-70={!tag.canUpgrade}
-									aria-label={m.beachhead_upgrade_button()}
-									title={m.beachhead_upgrade_button()}
+								<BeachheadUpgradeButton
+									label={m.beachhead_upgrade_button()}
+									short={!game.canAfford(tag.cost)}
+									size="lg"
 									onclick={() => openWindow('upgrade')}
-								>
-									<IconArrowBigUp class="size-8 fill-current" aria-hidden="true" />
-								</button>
+								/>
 							</div>
 						{/if}
 						{#if panel?.type === 'building' && panel.row.remainingMs !== null && game.canCutBuild(panel.row.key)}
@@ -1132,29 +1127,25 @@
 					{/if}
 					{#if storeTab === 'obstacles' && game.allDefenseUpgrades(kind).ids.length > 0}
 						<!-- Every placed one of this kind goes up a level on a single builder -->
-						<button
-							type="button"
-							class="btn-chunky flex h-8 items-center gap-1 rounded-full bg-explosion-yellow px-2 py-0 font-display text-xs font-bold tabular-nums"
-							aria-label={m.beachhead_upgrade_all()}
-							title={m.beachhead_upgrade_all()}
+						<BeachheadUpgradeButton
+							label={m.beachhead_upgrade_all()}
+							short={!game.canAfford(game.allDefenseUpgrades(kind).cost)}
 							disabled={game.buildersBusy >= game.builderSlots}
+							size="sm"
 							onclick={() => game.upgradeAllDefenses(kind)}
 						>
-							<IconCircleArrowUp class="size-4" aria-hidden="true" />
 							×{game.allDefenseUpgrades(kind).ids.length}
-						</button>
+						</BeachheadUpgradeButton>
 					{/if}
 					{#if unlocked}
 						{@render costChips(costOf(kind))}
-						<button
-							type="button"
-							class="btn-chunky flex size-9 items-center justify-center rounded-full p-0"
-							aria-label={m.beachhead_island_mine_buy()}
+						<BeachheadUpgradeButton
+							label={m.beachhead_island_mine_buy()}
+							short={!game.canAfford(costOf(kind))}
 							disabled={!game.canBuyMine(kind)}
+							size="sm"
 							onclick={() => game.buyMine(kind)}
-						>
-							<IconCircleArrowUp class="size-5" aria-hidden="true" />
-						</button>
+						/>
 					{:else if isGuard(kind)}
 						<p
 							class="flex items-center gap-1 font-display text-sm font-bold"

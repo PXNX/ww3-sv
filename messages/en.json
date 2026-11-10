@@ -4557,5 +4557,15 @@
 	"beachhead_map_troops": "Troops ready to attack",
 	"beachhead_place_build": "Build here",
 	"beachhead_place_cancel": "Cancel",
-	"beachhead_warehouse_kind": "{resource} warehouse"
+	"beachhead_warehouse_kind": "{resource} warehouse",
+	"beachhead_upgrade_short": "Not enough resources",
+	"beachhead_stat_every": "Every",
+	"beachhead_unit_attack": "Attack",
+	"beachhead_attack_pistol": "Pistol",
+	"beachhead_attack_hammer": "Hammer swing",
+	"beachhead_skill_command": "Command aura",
+	"beachhead_skill_command_text": "Troops near him hit harder and move faster. Training his command skill makes the aura stronger.",
+	"beachhead_skill_hammer": "Hammer pulse",
+	"beachhead_skill_hammer_text": "Every few seconds his hammer sends out a pulse that heals the troops around him.",
+	"beachhead_troop_azov_hint": "Leads from the front: his aura lifts every troop around him."
 }

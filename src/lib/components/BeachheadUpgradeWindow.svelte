@@ -38,6 +38,7 @@
 	import ResourceIcon from '#lib/components/ResourceIcon.svelte';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
 	import IconArrowBigUp from '~icons/lucide/arrow-big-up';
+	import IconLock from '~icons/lucide/lock';
 	import IconHourglass from '~icons/lucide/hourglass';
 	import IconShip from '~icons/lucide/ship';
 	import IconStar from '~icons/lucide/star';
@@ -411,10 +412,16 @@
 				type="button"
 				class="upgrade-go flex min-h-13 items-center gap-2 rounded-[16px] px-4 py-1.5 font-display font-bold text-paper tabular-nums disabled:cursor-not-allowed disabled:grayscale-[0.6]"
 				aria-label={m.beachhead_upgrade_button()}
+				class:short={!game.canAfford(price)}
+				title={game.canAfford(price) ? m.beachhead_upgrade_button() : m.beachhead_upgrade_short()}
 				disabled={!shown.canStart}
 				onclick={startUpgrade}
 			>
-				<IconArrowBigUp class="size-7 fill-current" aria-hidden="true" />
+				{#if game.canAfford(price)}
+					<IconArrowBigUp class="size-7 fill-current" aria-hidden="true" />
+				{:else}
+					<IconLock class="size-7" aria-hidden="true" />
+				{/if}
 				<span class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
 					{#each RESOURCE_KINDS as resource (resource)}
 						{#if price[resource] > 0}
@@ -491,6 +498,13 @@
 			inset 0 2px 0 rgb(255 255 255 / 0.4),
 			2px 3px 0 var(--color-ink);
 		text-shadow: 0 2px 0 var(--color-ink);
+	}
+
+	/* Not enough resources: grey with a lock instead of the arrow */
+	.upgrade-go.short {
+		background: #a7a9ad;
+		opacity: 1;
+		filter: none;
 	}
 
 	.upgrade-go:not(:disabled):active {

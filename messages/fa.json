@@ -4557,5 +4557,15 @@
 	"beachhead_map_troops": "نیروهای آماده حمله",
 	"beachhead_place_build": "اینجا بساز",
 	"beachhead_place_cancel": "لغو",
-	"beachhead_warehouse_kind": "انبار {resource}"
+	"beachhead_warehouse_kind": "انبار {resource}",
+	"beachhead_upgrade_short": "منابع کافی نیست",
+	"beachhead_stat_every": "هر",
+	"beachhead_unit_attack": "حمله",
+	"beachhead_attack_pistol": "تپانچه",
+	"beachhead_attack_hammer": "ضربه پتک",
+	"beachhead_skill_command": "هاله فرماندهی",
+	"beachhead_skill_command_text": "نیروهای نزدیک او محکم‌تر می‌زنند و سریع‌تر حرکت می‌کنند. آموزش مهارت فرماندهی هاله را قوی‌تر می‌کند.",
+	"beachhead_skill_hammer": "ضربان پتک",
+	"beachhead_skill_hammer_text": "هر چند ثانیه پتک او ضربانی می‌فرستد که نیروهای اطرافش را درمان می‌کند.",
+	"beachhead_troop_azov_hint": "از خط مقدم رهبری می‌کند: هاله‌اش همه نیروهای اطراف را تقویت می‌کند."
 }

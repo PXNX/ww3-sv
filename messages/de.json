@@ -4557,5 +4557,15 @@
 	"beachhead_map_troops": "Truppen bereit zum Angriff",
 	"beachhead_place_build": "Hier bauen",
 	"beachhead_place_cancel": "Abbrechen",
-	"beachhead_warehouse_kind": "{resource}lager"
+	"beachhead_warehouse_kind": "{resource}lager",
+	"beachhead_upgrade_short": "Nicht genug Rohstoffe",
+	"beachhead_stat_every": "Alle",
+	"beachhead_unit_attack": "Angriff",
+	"beachhead_attack_pistol": "Pistole",
+	"beachhead_attack_hammer": "Hammerschlag",
+	"beachhead_skill_command": "Kommando-Aura",
+	"beachhead_skill_command_text": "Truppen in seiner Nähe treffen härter und laufen schneller. Seine Kommandofähigkeit zu trainieren, stärkt die Aura.",
+	"beachhead_skill_hammer": "Hammerpuls",
+	"beachhead_skill_hammer_text": "Alle paar Sekunden sendet sein Hammer einen Puls aus, der die Truppen um ihn herum heilt.",
+	"beachhead_troop_azov_hint": "Führt von vorn: Seine Aura stärkt jede Truppe um ihn herum."
 }
