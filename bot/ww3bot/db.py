@@ -141,6 +141,69 @@ CREATE TABLE IF NOT EXISTS group_scores (
     UNIQUE (chat_id, game, user_id)
 );
 CREATE INDEX IF NOT EXISTS idx_group_scores_chat_game_score ON group_scores (chat_id, game, score);
+
+-- Player versus player (docs/rivals-api.md). Each player's latest published Beachhead base, with what
+-- a raid could take (the part the bunker does not protect) and until when a raid shield holds
+CREATE TABLE IF NOT EXISTS beachhead_bases (
+    user_id bigint PRIMARY KEY,
+    base jsonb NOT NULL,
+    level integer NOT NULL DEFAULT 1,
+    wood bigint NOT NULL DEFAULT 0,
+    stone bigint NOT NULL DEFAULT 0,
+    iron bigint NOT NULL DEFAULT 0,
+    gold bigint NOT NULL DEFAULT 0,
+    shielded_until bigint NOT NULL DEFAULT 0,
+    updated_at bigint NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_beachhead_bases_level ON beachhead_bases (level);
+
+-- One attack: opened with the base and loot locked, settled once ('won', 'lost', or 'abandoned' when
+-- the attacker opened another); outcome is null while open. Settled ones are the raid log.
+CREATE TABLE IF NOT EXISTS beachhead_attacks (
+    id text PRIMARY KEY,
+    attacker_id bigint NOT NULL,
+    target_id bigint NOT NULL,
+    base jsonb NOT NULL,
+    -- Quoted when opened; after a win, what was actually taken
+    loot jsonb NOT NULL,
+    revenge boolean NOT NULL DEFAULT false,
+    outcome text,
+    created_at bigint NOT NULL,
+    settled_at bigint
+);
+CREATE INDEX IF NOT EXISTS idx_beachhead_attacks_attacker ON beachhead_attacks (attacker_id, target_id, settled_at);
+CREATE INDEX IF NOT EXISTS idx_beachhead_attacks_target ON beachhead_attacks (target_id, settled_at);
+CREATE INDEX IF NOT EXISTS idx_beachhead_attacks_created ON beachhead_attacks (created_at);
+
+-- Each player's Hermit Hackers rig: a made-up address that belongs to the first who published it
+CREATE TABLE IF NOT EXISTS hacker_rigs (
+    user_id bigint PRIMARY KEY,
+    ip text NOT NULL UNIQUE,
+    bank bigint NOT NULL DEFAULT 0,
+    firewall integer NOT NULL DEFAULT 1,
+    hacks integer NOT NULL DEFAULT 0,
+    look jsonb,
+    shielded_until bigint NOT NULL DEFAULT 0,
+    updated_at bigint NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_hacker_rigs_updated ON hacker_rigs (updated_at);
+
+-- One hack, like a Beachhead attack; settled ones are the target's firewall log, with the address
+-- the attacker's rig had at the time
+CREATE TABLE IF NOT EXISTS hacker_hacks (
+    id text PRIMARY KEY,
+    attacker_id bigint NOT NULL,
+    target_id bigint NOT NULL,
+    attacker_ip text NOT NULL,
+    revenge boolean NOT NULL DEFAULT false,
+    stolen bigint NOT NULL DEFAULT 0,
+    outcome text,
+    created_at bigint NOT NULL,
+    settled_at bigint
+);
+CREATE INDEX IF NOT EXISTS idx_hacker_hacks_attacker ON hacker_hacks (attacker_id, target_id, settled_at);
+CREATE INDEX IF NOT EXISTS idx_hacker_hacks_target ON hacker_hacks (target_id, settled_at);
+CREATE INDEX IF NOT EXISTS idx_hacker_hacks_created ON hacker_hacks (created_at);
 """
 
 _pool: AsyncConnectionPool | None = None

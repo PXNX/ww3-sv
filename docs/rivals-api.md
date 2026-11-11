@@ -85,6 +85,18 @@ FirewallEntry = { id: string; ip: string; player: Player; stolen: number; blocke
 - `result` with `won: true` steals a share of the target's bank (suggested **10 %**, 15 % with `revenge`, at most 5000), lowers the stored bank, and adds a `FirewallEntry` with the attacker's IP and `stolen` to the target's log. With `won: false` the entry has `stolen: 0` (the firewall held, but the trace is still there).
 - The **victim's client** subtracts `stolen` of every entry it has not applied yet from its bank and remembers applied ids.
 
+## Server decisions
+
+What the bot's server (`bot/ww3bot/rivals.py`) settles where the contract above leaves room:
+
+- Malformed input is refused with `INVALID_INPUT`. Building and crystal kinds are only checked for their form (`[a-z][a-z0-9-]*`), since they change with the game; a base must have exactly one `hq`. Unknown keys are dropped. A stored base is at most 64 KB and a `look` at most 4 KB as JSON. Resources above 10 000 000 and levels above 99 are capped.
+- `hackers_publish` without `look` clears the stored look.
+- `hackers_hack` needs a published rig of the caller (its IP goes into the trace), otherwise `NOT_FOUND`.
+- A player has one open attack per mode: opening another gives up the previous one, whose result is then `EXPIRED`. Only settled attacks count for `COOLDOWN`, failed ones included.
+- Revenge (here and in the share) only counts successful raids/hacks on the caller in the last 24 h, and ends once the caller paid that player back successfully.
+- A hack steals from the target's bank as stored when the result comes in; a raid's loot is quoted when the attack opens and capped by the stored `exposed` when the result comes in.
+- Log line ids are the attack/hack ids; `at` is when the result came in. Settled lines are kept for 30 days.
+
 ## Privacy
 
 Published bases and rigs, names, photos and avatars are shown to other players picked as opponents. The privacy notice needs a line about it before release, and the server should drop a player's snapshot on request.

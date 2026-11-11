@@ -1,5 +1,6 @@
 """
-What the game calls: `me`, `invoice`, `spend`, `streak`, `friends` and `presence` from the Mini App
+What the game calls: `me`, `invoice`, `spend`, `streak`, `friends`, `presence` and the rival calls
+(`beachhead_*`, `hackers_*`, see docs/rivals-api.md) from the Mini App
 (with verified initData), and `gamescore` from a game page opened by a group's Play button (with its session id
 instead, since Telegram's game browser has no initData).
 """
@@ -10,7 +11,7 @@ from types import SimpleNamespace
 
 from telegram import Bot
 
-from ww3bot import chat, friends as friendships, games, ledger, reminders
+from ww3bot import chat, friends as friendships, games, ledger, reminders, rivals
 from ww3bot.catalogue import PRODUCTS, localized, product
 from ww3bot.legal import CONSENT_TEXT, CONSENT_VERSION, page_url
 from ww3bot.referrals import invite_stats
@@ -128,6 +129,81 @@ async def gamescore(bot: Bot, data: dict, init_data: None) -> dict:
     return {key: result[key] for key in ("new_best", "best", "rank", "overtaken", "leaderboard")}
 
 
-ENDPOINTS = {"me": me, "invoice": invoice, "spend": spend, "streak": streak, "friends": friends, "presence": presence}
+async def _rival(work):
+    """Runs a rivals call, turning its refusals into the endpoint's."""
+    try:
+        return await work
+    except rivals.RivalError as error:
+        raise EndpointError(str(error), error.code) from error
+
+
+async def beachhead_publish(bot: Bot, data: dict, init_data: dict) -> dict:
+    """`{ base, exposed, level }` → `{}`: stores the player's base for others to raid."""
+    user = player(init_data)
+    await ledger.upsert_account(user)
+    await _rival(rivals.publish_base(user.id, data))
+    return {}
+
+
+async def beachhead_rivals(bot: Bot, data: dict, init_data: dict) -> dict:
+    """`{}` → `{ rivals }`: up to six bases to raid, revenge first."""
+    return {"rivals": await rivals.list_rivals(player(init_data).id)}
+
+
+async def beachhead_attack(bot: Bot, data: dict, init_data: dict) -> dict:
+    """`{ rival_id }` → `{ attack_id, rival }`: locks the rival's base for one attack."""
+    return await _rival(rivals.open_attack(player(init_data).id, data.get("rival_id")))
+
+
+async def beachhead_result(bot: Bot, data: dict, init_data: dict) -> dict:
+    """`{ attack_id, won }` → `{ loot }`: settles the attack once."""
+    return {"loot": await _rival(rivals.settle_attack(player(init_data).id, data.get("attack_id"), data.get("won") is True))}
+
+
+async def beachhead_log(bot: Bot, data: dict, init_data: dict) -> dict:
+    """`{}` → `{ events }`: the player's raid history, newest first."""
+    return {"events": await rivals.raid_log(player(init_data).id)}
+
+
+async def hackers_publish(bot: Bot, data: dict, init_data: dict) -> dict:
+    """`{ ip, bank, firewall, hacks, look? }` → `{}`: stores the player's rig for others to hack."""
+    user = player(init_data)
+    await ledger.upsert_account(user)
+    await _rival(rivals.publish_rig(user.id, data))
+    return {}
+
+
+async def hackers_targets(bot: Bot, data: dict, init_data: dict) -> dict:
+    """`{}` → `{ targets }`: up to eight rigs to hack, revenge first."""
+    return {"targets": await rivals.list_targets(player(init_data).id)}
+
+
+async def hackers_lookup(bot: Bot, data: dict, init_data: dict) -> dict:
+    """`{ ip }` → `{ target }`: the rig behind an address, for hacking back."""
+    return {"target": await _rival(rivals.lookup_rig(player(init_data).id, data.get("ip")))}
+
+
+async def hackers_hack(bot: Bot, data: dict, init_data: dict) -> dict:
+    """`{ target_id }` → `{ hack_id, target }`: opens a hack on a rig."""
+    return await _rival(rivals.open_hack(player(init_data).id, data.get("target_id")))
+
+
+async def hackers_result(bot: Bot, data: dict, init_data: dict) -> dict:
+    """`{ hack_id, won }` → `{ stolen }`: settles the hack once."""
+    return {"stolen": await _rival(rivals.settle_hack(player(init_data).id, data.get("hack_id"), data.get("won") is True))}
+
+
+async def hackers_firewall(bot: Bot, data: dict, init_data: dict) -> dict:
+    """`{}` → `{ entries }`: who tried the player's rig, newest first."""
+    return {"entries": await rivals.firewall_log(player(init_data).id)}
+
+
+ENDPOINTS = {
+    "me": me, "invoice": invoice, "spend": spend, "streak": streak, "friends": friends, "presence": presence,
+    "beachhead_publish": beachhead_publish, "beachhead_rivals": beachhead_rivals, "beachhead_attack": beachhead_attack,
+    "beachhead_result": beachhead_result, "beachhead_log": beachhead_log,
+    "hackers_publish": hackers_publish, "hackers_targets": hackers_targets, "hackers_lookup": hackers_lookup,
+    "hackers_hack": hackers_hack, "hackers_result": hackers_result, "hackers_firewall": hackers_firewall,
+}
 # Called by the game page of a Telegram game, which has a session id instead of initData
 OPEN_ENDPOINTS = {"gamescore": gamescore}
