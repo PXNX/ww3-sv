@@ -16,6 +16,7 @@ import {
 import { OVERCHARGE_CRYSTALS } from '#lib/game/beachhead/crystals.js';
 import type { Resources } from '#lib/game/beachhead/campaign.js';
 import { parseLook, type AvatarLook } from '#lib/game/avatar/look.js';
+import { IP_PATTERN } from '#lib/game/hackers/pvp.js';
 import { call, endpointCode, TelegramCallError } from '#lib/services/telegram.js';
 
 // ---------------------------------------------------------------------------------------------
@@ -291,9 +292,7 @@ export interface HackerCard extends RivalPlayer {
 	revenge: boolean;
 }
 
-/** Four numbers 0 to 255, like the game's fictional addresses */
-export const IP_PATTERN =
-	/^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
+export { IP_PATTERN };
 
 export function parseHacker(value: unknown): HackerCard | null {
 	const player = parsePlayer(value);

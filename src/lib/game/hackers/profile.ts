@@ -14,6 +14,7 @@ import {
 	type HardwareId
 } from './hardware.js';
 import { emptyBotnet, type Botnet } from './botnet.js';
+import { IP_PATTERN } from './pvp.js';
 
 export interface HackersProfile {
 	/** DogeLite left over from finished runs */
@@ -28,6 +29,12 @@ export interface HackersProfile {
 	lore?: number[];
 	/** Systems of the cast's wider network whose link was followed */
 	network?: string[];
+	/** The rig's own made-up address, the one other players see in their firewall logs */
+	ip?: string;
+	/** Other players' rigs hacked so far, for the dossier */
+	hacks?: number;
+	/** Firewall lines whose theft was already taken from the bank */
+	firewallSeen?: string[];
 }
 
 /** Key of the stored profile, without the local storage prefix */
@@ -52,7 +59,13 @@ export function isProfile(value: unknown): value is HackersProfile {
 		(profile.lore === undefined ||
 			(Array.isArray(profile.lore) && profile.lore.every((id) => Number.isInteger(id)))) &&
 		(profile.network === undefined ||
-			(Array.isArray(profile.network) && profile.network.every((id) => typeof id === 'string')))
+			(Array.isArray(profile.network) && profile.network.every((id) => typeof id === 'string'))) &&
+		(profile.ip === undefined || (typeof profile.ip === 'string' && IP_PATTERN.test(profile.ip))) &&
+		(profile.hacks === undefined ||
+			(Number.isInteger(profile.hacks) && (profile.hacks as number) >= 0)) &&
+		(profile.firewallSeen === undefined ||
+			(Array.isArray(profile.firewallSeen) &&
+				profile.firewallSeen.every((id) => typeof id === 'string')))
 	);
 }
 

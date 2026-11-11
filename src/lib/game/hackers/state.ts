@@ -161,6 +161,8 @@ export interface GameOptions {
 	botnet?: Botnet;
 	/** Starts on a system outside the target list */
 	extra?: ExtraTarget;
+	/** The contract the run opens with, for another player's rig: its firewall level */
+	level?: number;
 }
 
 export function createGame(random: Random, options: GameOptions = {}): HackersState {
@@ -168,13 +170,14 @@ export function createGame(random: Random, options: GameOptions = {}): HackersSt
 	const hardware = options.hardware ?? emptyHardware();
 	const targetIndex = options.targetIndex ?? 0;
 	const botnet = options.botnet ?? emptyBotnet();
+	const level = Math.max(1, Math.floor(options.level ?? 1));
 	return {
-		contract: newContract(1, random, upgrades, hardware, targetIndex, options.extra),
+		contract: newContract(level, random, upgrades, hardware, targetIndex, options.extra),
 		lives: STARTING_LIVES,
 		trace: 0,
 		score: 0,
 		completed: 0,
-		number: 1,
+		number: level,
 		over: false,
 		timeMs: 0,
 		upgrades,

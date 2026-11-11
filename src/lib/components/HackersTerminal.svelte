@@ -21,6 +21,9 @@
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import IconStar from '~icons/lucide/star';
 	import HackersMatrix from './HackersMatrix.svelte';
+	import HackersDossier from './HackersDossier.svelte';
+	import { agoShort, firewallLevel, IP_PATTERN } from '#lib/game/hackers/pvp.js';
+	import type { RivalProblem } from '#lib/stores/hackersGame.svelte.js';
 	import { EMAILS, NETWORK, type CastId } from '#lib/game/hackers/lore.js';
 	import { networkName } from '#lib/stores/hackersGame.svelte.js';
 	import { leaderById } from '#lib/theme/leaders.js';
@@ -35,7 +38,7 @@
 
 	let { game }: { game: HackersGame } = $props();
 
-	type Program = 'none' | 'targets' | 'hardware' | 'mail';
+	type Program = 'none' | 'targets' | 'hardware' | 'mail' | 'players' | 'firewall';
 	/** The archived mail open in the `mail` program */
 	let archiveOpen = $state<number | null>(null);
 	let matrix = $state(false);
@@ -118,6 +121,7 @@
 		else printTimer = setInterval(printNext, LINE_MS);
 		if (window.matchMedia?.('(pointer: fine)').matches) input?.focus();
 		const clock = setInterval(() => (sessionMs += 1000), 1000);
+		void game.syncRivals();
 		// When the keyboard opens the screen gets shorter: keep the newest output in sight
 		const resized = new ResizeObserver(() => void scrollDown());
 		if (screen) resized.observe(screen);
@@ -134,6 +138,9 @@
 			`  ${m.hackers_term_help_help()}`,
 			`  ${m.hackers_term_help_neofetch()}`,
 			`  ${m.hackers_term_help_targets()}`,
+			`  ${m.hackers_term_help_players()}`,
+			`  ${m.hackers_term_help_firewall()}`,
+			`  ${m.hackers_term_help_whois()}`,
 			`  ${m.hackers_term_help_hardware()}`,
 			`  ${m.hackers_term_help_hack()}`,
 			`  ${m.hackers_term_help_mail()}`,
@@ -174,11 +181,73 @@
 		}
 		const target = ip === undefined ? 0 : TARGETS.findIndex((entry) => entry.ip === ip);
 		if (target < 0) {
-			say(m.hackers_term_unknown_ip({ ip: ip ?? '' }));
+			// Not a bank: maybe another hermit's rig, such as an address from the firewall log
+			if (ip !== undefined && IP_PATTERN.test(ip)) void whois(ip);
+			else say(m.hackers_term_unknown_ip({ ip: ip ?? '' }));
 			return;
 		}
 		game.start(target);
 	}
+
+	const problemText = (problem: RivalProblem): string => {
+		switch (problem) {
+			case 'COOLDOWN':
+				return m.hackers_rival_error_cooldown();
+			case 'SHIELDED':
+				return m.hackers_rival_error_shielded();
+			case 'SELF':
+				return m.hackers_rival_error_self();
+			case 'NOT_FOUND':
+				return m.hackers_rival_error_not_found();
+			default:
+				return m.hackers_rival_error_failed();
+		}
+	};
+
+	/** Pulls up the dossier of whoever owns an address */
+	async function whois(ip: string) {
+		if (ip === game.ownIp) {
+			say(m.hackers_rival_error_self());
+			return;
+		}
+		say(m.hackers_term_tracing({ ip }));
+		const found = await game.whois(ip);
+		if (!found && game.rivalProblem) say(problemText(game.rivalProblem));
+	}
+
+	let hacking = $state(false);
+	async function hackPlayer(id: string) {
+		if (hacking) return;
+		hacking = true;
+		hackStartMs = Date.now();
+		const started = await game.hackRival(id);
+		hacking = false;
+		if (!started && game.rivalProblem) say(problemText(game.rivalProblem));
+	}
+
+	/** The clock the firewall ages are measured against; ticks with the session clock */
+	const now = $derived.by(() => {
+		void sessionMs;
+		return Date.now();
+	});
+
+	// What happened while the shell was away: a hack on a player that just ended, or thefts
+	$effect(() => {
+		const outcome = game.rivalOutcome;
+		if (!outcome) return;
+		game.rivalOutcome = null;
+		say(
+			outcome.won
+				? m.hackers_rival_won({ name: outcome.name, amount: outcome.stolen })
+				: m.hackers_rival_lost({ name: outcome.name })
+		);
+	});
+	$effect(() => {
+		const robbed = game.robbed;
+		if (!robbed) return;
+		game.robbed = null;
+		say(m.hackers_rival_robbed({ count: robbed.hits, amount: robbed.stolen }));
+	});
 
 	function buy(id: HardwareId) {
 		const cost = hardwareCost(id, game.hardware[id]);
@@ -195,7 +264,16 @@
 	}
 
 	/** The commands a tap can run, so a phone rarely needs its keyboard at all */
-	const QUICK = ['targets', 'hardware', 'mail', 'neofetch', 'help', 'clear'] as const;
+	const QUICK = [
+		'targets',
+		'players',
+		'firewall',
+		'hardware',
+		'mail',
+		'neofetch',
+		'help',
+		'clear'
+	] as const;
 
 	const FORTUNES = [
 		m.hackers_fortune_0,
@@ -231,6 +309,22 @@
 			case 'hardware':
 			case 'hw':
 				program = 'hardware';
+				break;
+			case 'players':
+			case 'rivals':
+				game.openDossier(null);
+				program = 'players';
+				void game.syncRivals();
+				break;
+			case 'firewall':
+			case 'fw':
+				game.openDossier(null);
+				program = 'firewall';
+				void game.syncRivals();
+				break;
+			case 'whois':
+				if (args[0] && IP_PATTERN.test(args[0])) void whois(args[0]);
+				else say(m.hackers_term_unknown_ip({ ip: args[0] ?? '' }));
 				break;
 			case 'mail':
 			case 'archive':
@@ -364,6 +458,80 @@
 					</p>
 				{/if}
 			</div>
+		{:else if program === 'players'}
+			<div class="hk-rule mt-2 pt-2">
+				<p class="text-xs font-bold tracking-wide">{m.hackers_players_title()}</p>
+				<p class="mb-1 text-[11px] opacity-70">
+					{m.hackers_players_hint()}
+					{#if game.ownIp}
+						<span class="tabular-nums">{m.hackers_rival_your_ip({ ip: game.ownIp })}</span>
+					{/if}
+				</p>
+				{#if !game.rivalsOnline && !game.rivalsLoading}
+					<p class="text-[11px] text-(--hk-amber)">{m.hackers_players_offline()}</p>
+				{:else if game.rivalTargets.length === 0}
+					<p class="text-[11px] opacity-70">
+						{game.rivalsLoading ? m.hackers_players_scanning() : m.hackers_players_empty()}
+					</p>
+				{:else}
+					<ul class="flex flex-col gap-1.5">
+						{#each game.rivalTargets as target (target.id)}
+							<li>
+								<button
+									type="button"
+									class="hk-row w-full text-start text-xs {target.revenge ? 'text-(--hk-red)' : ''}"
+									onclick={() => game.openDossier(target)}
+								>
+									<span class="w-[7.5rem] shrink-0 tabular-nums">{target.ip}</span>
+									<span class="min-w-0 flex-1 truncate" dir="auto">{target.name}</span>
+									<span class="shrink-0 tabular-nums opacity-80">
+										FW{target.firewall} · {target.bank}
+									</span>
+								</button>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			</div>
+		{:else if program === 'firewall'}
+			<div class="hk-rule mt-2 pt-2">
+				<p class="text-xs font-bold tracking-wide">
+					{m.hackers_firewall_title()}
+					<span class="opacity-60">· FW{firewallLevel(game.hardware)}</span>
+				</p>
+				{#if !game.rivalsOnline && !game.rivalsLoading}
+					<p class="text-[11px] text-(--hk-amber)">{m.hackers_players_offline()}</p>
+				{:else if game.firewallLog.length === 0}
+					<p class="text-[11px] opacity-70">{m.hackers_firewall_empty()}</p>
+				{:else}
+					<ul class="flex flex-col gap-1.5">
+						{#each game.firewallLog as entry (entry.id)}
+							<li class="hk-row fw-line text-xs">
+								<span class="w-8 shrink-0 tabular-nums opacity-60">{agoShort(now, entry.atMs)}</span
+								>
+								<span class="w-[7.5rem] shrink-0 tabular-nums">{entry.ip}</span>
+								<span class="min-w-0 flex-1 truncate" dir="auto">{entry.player.name}</span>
+								<span
+									class="shrink-0 font-bold tabular-nums {entry.blocked
+										? 'opacity-70'
+										: 'text-(--hk-red)'}"
+								>
+									{entry.blocked
+										? m.hackers_firewall_blocked()
+										: m.hackers_firewall_stolen({ amount: entry.stolen })}
+								</span>
+								<button
+									type="button"
+									class="hk-btn hk-btn-sm hk-btn-solid shrink-0 text-xs"
+									onclick={() => void whois(entry.ip)}
+								>
+									{m.hackers_hack_back()}
+								</button>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			</div>
 		{:else if program === 'mail'}
 			<div class="hk-rule mt-2 pt-2">
 				<p class="text-xs font-bold tracking-wide">
@@ -397,7 +565,16 @@
 					</ul>
 				{/if}
 			</div>
-		{:else if program === 'hardware'}
+		{/if}
+		{#if game.dossier}
+			<HackersDossier
+				card={game.dossier}
+				busy={hacking}
+				onhack={() => game.dossier && void hackPlayer(game.dossier.id)}
+				onclose={() => game.openDossier(null)}
+			/>
+		{/if}
+		{#if program === 'hardware'}
 			<div class="hk-rule mt-2 pt-2">
 				<p class="text-xs font-bold tracking-wide">{m.hackers_term_hardware_title()}</p>
 				<p class="mb-1 text-[11px] opacity-70">{m.hackers_term_hardware_hint()}</p>
@@ -439,7 +616,9 @@
 				type="button"
 				class="hk-chip"
 				aria-pressed={(name === 'targets' && program === 'targets') ||
-					(name === 'hardware' && program === 'hardware')}
+					(name === 'hardware' && program === 'hardware') ||
+					(name === 'players' && program === 'players') ||
+					(name === 'firewall' && program === 'firewall')}
 				onclick={() => quick(name)}
 			>
 				<span class="opacity-50">$</span>&nbsp;{name}

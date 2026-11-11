@@ -30,6 +30,7 @@
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
 	import IconTerminal from '~icons/lucide/terminal';
+	import IconUnplug from '~icons/lucide/unplug';
 	import IconWrench from '~icons/lucide/wrench';
 
 	const game = new HackersGame();
@@ -139,6 +140,12 @@
 	backStyle="terminal"
 >
 	{#snippet actions()}
+		{#if game.rival && playing && !booting}
+			<button type="button" class="hk-btn text-sm" onclick={() => game.abandonRival()}>
+				<IconUnplug class="size-4" aria-hidden="true" />
+				{m.hackers_rival_disconnect()}
+			</button>
+		{/if}
 		{#if playing && !booting}
 			<button type="button" class="hk-btn text-sm" onclick={() => game.togglePause()}>
 				{#if game.status === 'paused'}

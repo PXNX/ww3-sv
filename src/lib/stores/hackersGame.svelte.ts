@@ -18,6 +18,18 @@ import {
 	toggleFavorite as toggleProfileFavorite,
 	type HackersProfile
 } from '#lib/game/hackers/profile.js';
+import { applyThefts, firewallLevel, randomIp, rivalContractLevel } from '#lib/game/hackers/pvp.js';
+import { avatar } from '#lib/game/avatar/store.svelte.js';
+import {
+	hackerRivals,
+	isUnavailable,
+	remember,
+	rivalErrorCode,
+	type FirewallEntry,
+	type HackerCard,
+	type HackerHack,
+	type RivalErrorCode
+} from '#lib/services/rivals.js';
 import {
 	buyUpgrade,
 	attemptsLeft,
@@ -77,6 +89,16 @@ import { soundManager } from '#lib/sound/soundManager.svelte.js';
 import type { SoundId } from '#lib/sound/sounds.js';
 
 export type HackersStatus = 'ready' | 'playing' | 'paused' | 'over';
+
+/** How a hack on another player's rig ended, for the terminal to print */
+export interface RivalOutcome {
+	name: string;
+	won: boolean;
+	stolen: number;
+}
+
+/** Why a hack on a player could not start: one of the server's refusals, or a dropped uplink */
+export type RivalProblem = RivalErrorCode | 'failed';
 
 export const HACKERS_BEST_KEY = ['hackers', 'score'] as const;
 
@@ -179,10 +201,38 @@ export class HackersGame {
 	/** Systems of the cast's wider network found so far, kept between runs */
 	network = $state.raw<string[]>([]);
 
+	/** The rig's own address, the trace other players find in their firewall logs */
+	ownIp = $state('');
+	/** Other players' rigs hacked so far */
+	hacks = $state(0);
+	/** Whether the bot's server answered: false outside Telegram */
+	rivalsOnline = $state(false);
+	/** True while the first sync with the server is still running */
+	rivalsLoading = $state(false);
+	/** Other hermits' rigs offered as targets */
+	rivalTargets = $state.raw<HackerCard[]>([]);
+	/** Who tried the player's rig lately, newest first */
+	firewallLog = $state.raw<FirewallEntry[]>([]);
+	/** The dossier open in the terminal */
+	dossier = $state.raw<HackerCard | null>(null);
+	/** The last refusal, until the next try */
+	rivalProblem = $state<RivalProblem | null>(null);
+	/** The end of the last hack on a player, until the terminal printed it */
+	rivalOutcome = $state.raw<RivalOutcome | null>(null);
+	/** Thefts from the bank found at the last sync, until the terminal printed them */
+	robbed = $state.raw<{ hits: number; stolen: number } | null>(null);
+	/** The other player's rig while a hack on it runs */
+	rival = $state.raw<HackerCard | null>(null);
+
 	/** Rules state, deliberately not reactive */
 	state: HackersState;
 	#desktop: Desktop | null = null;
 	#botnet: Botnet | undefined;
+	#firewallSeen: string[] = [];
+	#hack: HackerHack | null = null;
+	/** Set by the events when a hack on a player is decided, handled once they are through */
+	#rivalDecided: boolean | null = null;
+	#syncing: Promise<void> | null = null;
 
 	/** Set once the trace has crossed the warning line, until it falls well below it again */
 	#warned = false;
@@ -213,6 +263,10 @@ export class HackersGame {
 		this.#applyProfile(
 			this.#store().read<HackersProfile>(HACKERS_PROFILE_KEY, defaultProfile(), isProfile)
 		);
+		// Every rig gets its own address once and keeps it
+		if (!this.ownIp) {
+			this.#saveProfile({ ...this.#profile(), ip: randomIp(createRandom(this.#seed())) });
+		}
 		// Half the network found: free DogeLite from the Supreme Leader
 		receive(
 			'hackers',
@@ -259,6 +313,170 @@ export class HackersGame {
 		this.#sync();
 		this.status = 'playing';
 		this.#apply([openingEvent(this.state)]);
+	}
+
+	/**
+	 * Talks to the bot's server: publishes the rig, takes what other hermits stole from the bank,
+	 * and fetches the firewall log and a few rigs to hack. Does nothing outside Telegram.
+	 */
+	syncRivals(): Promise<void> {
+		this.#syncing ??= this.#syncRivals().finally(() => (this.#syncing = null));
+		return this.#syncing;
+	}
+
+	async #syncRivals(): Promise<void> {
+		this.rivalsLoading = true;
+		try {
+			await this.#publishRig();
+			const [entries, targets] = await Promise.all([hackerRivals.firewall(), hackerRivals.list()]);
+			const thefts = applyThefts(this.bank, entries, this.#firewallSeen);
+			if (thefts.ids.length > 0) {
+				this.#saveProfile({
+					...this.#profile(),
+					bank: thefts.bank,
+					firewallSeen: remember(this.#firewallSeen, thefts.ids)
+				});
+				if (thefts.hits > 0) {
+					this.robbed = { hits: thefts.hits, stolen: thefts.stolen };
+					this.#play('alarm', 0.6);
+				}
+			}
+			this.firewallLog = entries;
+			this.rivalTargets = targets;
+			this.rivalsOnline = true;
+		} catch (error) {
+			if (!isUnavailable(error)) console.warn('hackers rivals', error);
+			this.rivalsOnline = false;
+		} finally {
+			this.rivalsLoading = false;
+		}
+	}
+
+	/** Publishes the rig; an address someone else already owns is swapped for a fresh one */
+	async #publishRig() {
+		for (let attempt = 0; attempt < 3; attempt++) {
+			try {
+				const look = avatar().anonymous ? undefined : avatar().look;
+				await hackerRivals.publish({
+					ip: this.ownIp,
+					bank: this.bank,
+					firewall: firewallLevel(this.hardware),
+					hacks: this.hacks,
+					...(look ? { look } : {})
+				});
+				return;
+			} catch (error) {
+				if (rivalErrorCode(error) !== 'IP_TAKEN') throw error;
+				this.#saveProfile({ ...this.#profile(), ip: randomIp(createRandom(this.#seed())) });
+			}
+		}
+	}
+
+	/** Opens the dossier of a rig from the list */
+	openDossier(card: HackerCard | null) {
+		this.rivalProblem = null;
+		this.dossier = card;
+	}
+
+	/** Finds the player behind an address, as a hack-back from the firewall log does; false if none */
+	async whois(ip: string): Promise<boolean> {
+		this.rivalProblem = null;
+		try {
+			this.dossier = await hackerRivals.lookup(ip);
+			return true;
+		} catch (error) {
+			this.rivalProblem = isUnavailable(error) ? 'failed' : (rivalErrorCode(error) ?? 'failed');
+			this.#play('ui-error', 0.4);
+			return false;
+		}
+	}
+
+	/** Opens a hack on another player's rig: one contract at the difficulty of their firewall */
+	async hackRival(targetId: string): Promise<boolean> {
+		if (this.status !== 'ready') return false;
+		this.rivalProblem = null;
+		let hack: HackerHack;
+		try {
+			hack = await hackerRivals.hack(targetId);
+		} catch (error) {
+			this.rivalProblem = rivalErrorCode(error) ?? 'failed';
+			this.#play('ui-error', 0.4);
+			if (this.rivalProblem !== 'failed') {
+				this.rivalTargets = this.rivalTargets.filter((target) => target.id !== targetId);
+			}
+			return false;
+		}
+		this.#hack = hack;
+		this.rival = hack.target;
+		this.dossier = null;
+		this.#rivalDecided = null;
+		this.#random = createRandom(this.#seed());
+		this.state = createGame(this.#random, {
+			hardware: this.hardware,
+			level: rivalContractLevel(hack.target.firewall),
+			// The DogeLite comes from their wallet through the server, not from the contract
+			extra: {
+				ip: hack.target.ip,
+				system: m.hackers_rival_system({ name: hack.target.name }),
+				reward: 0
+			}
+		});
+		this.leaveDesktop();
+		this.log = [];
+		this.input = [];
+		this.isNewBest = false;
+		this.hurtCount = 0;
+		this.flashSeq = 0;
+		this.#warned = false;
+		this.#sync();
+		this.status = 'playing';
+		this.#apply([openingEvent(this.state)]);
+		return true;
+	}
+
+	/** Leaves a hack on a player before it is decided: it counts as traced */
+	abandonRival() {
+		if (!this.#hack) return;
+		void this.#settleRival(false);
+		this.status = 'ready';
+	}
+
+	/** Tells the server how a hack on a player ended, banks the loot and goes back to the shell */
+	async #settleRival(won: boolean) {
+		const hack = this.#hack;
+		this.#hack = null;
+		this.rival = null;
+		if (!hack) return;
+		let stolen = 0;
+		try {
+			stolen = await hackerRivals.result(hack.id, won);
+		} catch (error) {
+			console.warn('hackers rival result', error);
+		}
+		if (won) {
+			this.#saveProfile({
+				...this.#profile(),
+				bank: this.bank + stolen,
+				hacks: this.hacks + 1
+			});
+		}
+		this.rivalOutcome = { name: hack.target.name, won, stolen };
+		this.rivalTargets = this.rivalTargets.filter((target) => target.id !== hack.target.id);
+		// The bank changed: the next publish carries it
+		void this.syncRivals();
+	}
+
+	/** Ends a decided hack on a player: back to the shell, where the outcome is printed */
+	#endRival(won: boolean) {
+		this.#rivalDecided = null;
+		this.#random = createRandom(this.#seed());
+		this.state = createGame(this.#random, { hardware: this.hardware });
+		this.leaveDesktop();
+		this.log = [];
+		this.input = [];
+		this.#sync();
+		this.status = 'ready';
+		void this.#settleRival(won);
 	}
 
 	/** Closes the game-over sheet and goes back to the boot terminal */
@@ -627,6 +845,10 @@ export class HackersGame {
 	#apply(events: HackersEvent[]) {
 		for (const event of events) this.#handle(event);
 		this.#sync();
+		if (this.#rivalDecided !== null) {
+			this.#endRival(this.#rivalDecided);
+			return;
+		}
 		if (this.state.over && this.status === 'playing') this.#finish();
 	}
 
@@ -683,6 +905,14 @@ export class HackersGame {
 				haptic().play(0.1);
 				break;
 			case 'contract-done':
+				if (this.#hack) {
+					// Another player's rig: through its firewall, the server settles the loot
+					this.#play('sparkle', 0.9);
+					haptic().play(0.4);
+					this.#flash('ok');
+					this.#rivalDecided ??= true;
+					break;
+				}
 				this.#say(m.hackers_log_done({ coins: event.points }));
 				this.#play('sparkle', 0.9);
 				haptic().play(0.4);
@@ -717,6 +947,8 @@ export class HackersGame {
 				this.#play('pickup', 0.5);
 				break;
 			case 'traced':
+				// Traced on another player's rig: the hack fails, the trace stays in their log
+				if (this.#hack) this.#rivalDecided ??= false;
 				this.hurtCount += 1;
 				this.#say(m.hackers_log_traced());
 				this.#play('alarm', 1);
@@ -802,7 +1034,10 @@ export class HackersGame {
 			botnet: this.#botnet ?? emptyBotnet(),
 			favorites: this.favorites,
 			lore: this.lore,
-			network: this.network
+			network: this.network,
+			ip: this.ownIp,
+			hacks: this.hacks,
+			firewallSeen: this.#firewallSeen
 		};
 	}
 
@@ -813,6 +1048,9 @@ export class HackersGame {
 		this.#botnet = profile.botnet;
 		this.lore = [...(profile.lore ?? [])];
 		this.network = [...(profile.network ?? [])];
+		this.hacks = profile.hacks ?? 0;
+		this.#firewallSeen = [...(profile.firewallSeen ?? [])];
+		this.ownIp = profile.ip ?? '';
 	}
 
 	#saveProfile(profile: HackersProfile) {
