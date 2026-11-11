@@ -43,6 +43,15 @@ function toName(value: unknown): string | null {
 	return name === '' ? null : name;
 }
 
+/** Like parseList, but leaves out entries it cannot read, such as a base from a newer version */
+function parseSome<T>(value: unknown, parse: (entry: unknown) => T | null, max = 50): T[] | null {
+	if (!Array.isArray(value)) return null;
+	return value
+		.slice(0, max)
+		.map(parse)
+		.filter((item): item is T => item !== null);
+}
+
 function parseList<T>(value: unknown, parse: (entry: unknown) => T | null, max = 50): T[] | null {
 	if (!Array.isArray(value) || value.length > max) return null;
 	const items = value.map(parse);
@@ -252,7 +261,7 @@ export const beachheadRivals = {
 	/** A few bases to raid, picked by the server */
 	list: () =>
 		ask('beachhead_rivals', {}, (value) =>
-			isRecord(value) ? parseList(value.rivals, parseRival, 6) : null
+			isRecord(value) ? parseSome(value.rivals, parseRival, 6) : null
 		),
 	/** Locks a rival's base for one attack; the base that comes back is the one to fight */
 	attack: (rivalId: string) =>
@@ -269,7 +278,7 @@ export const beachheadRivals = {
 	/** The raid history, newest first */
 	log: () =>
 		ask('beachhead_log', {}, (value) =>
-			isRecord(value) ? parseList(value.events, parseRaid, 50) : null
+			isRecord(value) ? parseSome(value.events, parseRaid, 50) : null
 		)
 };
 
@@ -360,7 +369,7 @@ export const hackerRivals = {
 	/** A few rigs to hack, picked by the server; the ones who hacked you come first */
 	list: () =>
 		ask('hackers_targets', {}, (value) =>
-			isRecord(value) ? parseList(value.targets, parseHacker, 8) : null
+			isRecord(value) ? parseSome(value.targets, parseHacker, 8) : null
 		),
 	/** Finds the player behind an address, such as one from the firewall log */
 	lookup: (ip: string) =>
@@ -380,7 +389,7 @@ export const hackerRivals = {
 	/** Who tried the player's rig lately, newest first */
 	firewall: () =>
 		ask('hackers_firewall', {}, (value) =>
-			isRecord(value) ? parseList(value.entries, parseFirewallEntry, 50) : null
+			isRecord(value) ? parseSome(value.entries, parseFirewallEntry, 50) : null
 		)
 };
 

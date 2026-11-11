@@ -327,7 +327,7 @@ export class HackersGame {
 	async #syncRivals(): Promise<void> {
 		this.rivalsLoading = true;
 		try {
-			await this.#publishRig();
+			// Thefts first: publishing the bank from before them would hand the coins back
 			const [entries, targets] = await Promise.all([hackerRivals.firewall(), hackerRivals.list()]);
 			const thefts = applyThefts(this.bank, entries, this.#firewallSeen);
 			if (thefts.ids.length > 0) {
@@ -341,6 +341,7 @@ export class HackersGame {
 					this.#play('alarm', 0.6);
 				}
 			}
+			await this.#publishRig();
 			this.firewallLog = entries;
 			this.rivalTargets = targets;
 			this.rivalsOnline = true;
