@@ -29,6 +29,7 @@ import {
 	MAX_WAREHOUSE_LEVEL,
 	STARTING_BOATS,
 	TROOPS,
+	roundPrice,
 	type ArmyKind,
 	type Island,
 	type SkillId,
@@ -82,9 +83,9 @@ export const RESOURCE_KINDS: readonly ResourceKind[] = ['wood', 'stone', 'iron',
 export const WAREHOUSES_PER_RESOURCE = 2;
 /** A stockpile starts here and every warehouse level adds room for more */
 /** The headquarters keeps a little of every resource itself; the rest needs warehouses */
-export const STORAGE_BASE = 300;
-export const HQ_STORAGE_PER_LEVEL = 150;
-export const STORAGE_PER_LEVEL = 500;
+export const STORAGE_BASE = 600;
+export const HQ_STORAGE_PER_LEVEL = 400;
+export const STORAGE_PER_LEVEL = 1200;
 
 export type BoatKey = `boat-${number}`;
 export type WarehouseKey = `warehouse-${ResourceKind}-${number}`;
@@ -135,7 +136,7 @@ export const BUILDING_KEYS: readonly BuildingKey[] = [
 	...WAREHOUSE_KEYS
 ];
 
-export const STARTING_RESOURCES: Resources = { wood: 300, stone: 220, iron: 100, gold: 120 };
+export const STARTING_RESOURCES: Resources = { wood: 600, stone: 450, iron: 220, gold: 200 };
 /** What the home shore produces per minute on its own: the forest's logs, the mountain's ore and a trickle of gold; the islands add their own lines */
 /** Every cottage on the island pays this much gold per minute in taxes */
 export const HOUSE_TAX = 1;
@@ -314,7 +315,10 @@ const BUILDING_BASE_COST: Record<
 	boat: { wood: 100, stone: 60, iron: 20, gold: 4 },
 	warehouse: { wood: 140, stone: 100, iron: 30, gold: 4 }
 };
-const BUILDING_COST_GROWTH = 1.55;
+const BUILDING_COST_GROWTH = 1.6;
+/** Everything costs this many times the base prices above */
+const BUILDING_COST_SCALE = 2;
+const TROOP_COST_SCALE = 3;
 
 const TROOP_BASE_COST: Record<TroopKind, Resources> = {
 	assault: { wood: 50, stone: 30, iron: 15, gold: 3 },
@@ -331,8 +335,8 @@ const TROOP_BASE_COST: Record<TroopKind, Resources> = {
 };
 
 /** The Azov commander is paid for in cards as well as resources, and he is not cheap */
-const HERO_COST_GROWTH = 1.75;
-const SKILL_COST_GROWTH = 1.7;
+const HERO_COST_GROWTH = 1.7;
+const SKILL_COST_GROWTH = 1.65;
 
 /** The army of a fresh base: a full first wave of riflemen */
 const STARTING_ARMY: Army = {
@@ -380,23 +384,49 @@ function fillTroopLevels(levels: Partial<TroopLevels>): TroopLevels {
 		})
 	) as TroopLevels;
 }
-const TROOP_COST_GROWTH = 1.5;
+const TROOP_COST_GROWTH = 1.6;
 
-/** How long a building upgrade runs, before the level growth */
-const BUILD_BASE_MS: Record<
+const MINUTE = 60_000;
+const HOUR = 60 * MINUTE;
+/** Every timer in the game is one of these steps: they grow exponentially, but stay round numbers */
+export const TIME_STEPS_MS: readonly number[] = [
+	MINUTE,
+	5 * MINUTE,
+	15 * MINUTE,
+	30 * MINUTE,
+	HOUR,
+	1.5 * HOUR,
+	2 * HOUR,
+	3 * HOUR,
+	4 * HOUR,
+	6 * HOUR,
+	8 * HOUR,
+	12 * HOUR,
+	16 * HOUR,
+	24 * HOUR
+];
+
+/** The time of one step; steps past the end add a day each */
+export function steppedMs(step: number): number {
+	const index = Math.max(0, Math.floor(step));
+	const last = TIME_STEPS_MS.length - 1;
+	return index <= last ? TIME_STEPS_MS[index] : TIME_STEPS_MS[last] + (index - last) * 24 * HOUR;
+}
+
+/** How many steps later than the cheap buildings a family's timers start */
+const BUILD_STEP_OFFSET: Record<
 	'hq' | 'training' | 'radar' | 'dojo' | 'bunker' | 'producer' | 'boat' | 'warehouse',
 	number
 > = {
-	hq: 150_000,
-	training: 100_000,
-	radar: 125_000,
-	dojo: 225_000,
-	bunker: 150_000,
-	producer: 90_000,
-	boat: 50_000,
-	warehouse: 60_000
+	hq: 1,
+	training: 0,
+	radar: 1,
+	dojo: 2,
+	bunker: 1,
+	producer: 0,
+	boat: 0,
+	warehouse: 0
 };
-const BUILD_TIME_GROWTH = 1.45;
 
 export function newSave(nowMs: number): BeachheadSave {
 	return {
@@ -427,10 +457,10 @@ export function newSave(nowMs: number): BeachheadSave {
 
 function resourceCost(base: Resources, factor: number): Resources {
 	return {
-		wood: Math.max(1, Math.round(base.wood * factor)),
-		stone: Math.max(1, Math.round(base.stone * factor)),
-		iron: Math.max(1, Math.round(base.iron * factor)),
-		gold: Math.max(1, Math.round(base.gold * factor))
+		wood: Math.max(1, roundPrice(base.wood * factor)),
+		stone: Math.max(1, roundPrice(base.stone * factor)),
+		iron: Math.max(1, roundPrice(base.iron * factor)),
+		gold: Math.max(1, roundPrice(base.gold * factor))
 	};
 }
 
@@ -543,7 +573,7 @@ export function upgradeCost(save: BeachheadSave, key: BuildingKey): Resources | 
 	if (level >= maxLevelOf(key)) return null;
 	return resourceCost(
 		BUILDING_BASE_COST[buildingFamily(key)],
-		Math.pow(BUILDING_COST_GROWTH, Math.max(0, level - 1))
+		BUILDING_COST_SCALE * Math.pow(BUILDING_COST_GROWTH, Math.max(0, level - 1))
 	);
 }
 
@@ -598,10 +628,9 @@ function payResources(resources: Resources, cost: Resources): Resources {
 	};
 }
 
-/** How long the next level of a building takes on a builder */
+/** How long the next level of a building takes on a builder: one step longer for every level */
 export function buildDurationMs(key: BuildingKey, level: number): number {
-	const family = buildingFamily(key);
-	return Math.round(BUILD_BASE_MS[family] * Math.pow(BUILD_TIME_GROWTH, Math.max(0, level - 1)));
+	return steppedMs(level - 1 + BUILD_STEP_OFFSET[buildingFamily(key)]);
 }
 
 export function constructionOf(save: BeachheadSave, key: string): BuildTask | undefined {
@@ -902,7 +931,10 @@ export function supportSkillLevel(save: BeachheadSave, skill: SkillId): number {
 export function supportSkillCost(save: BeachheadSave, skill: SkillId): Resources | null {
 	const level = supportSkillLevel(save, skill);
 	if (level >= MAX_SUPPORT_SKILL_LEVEL) return null;
-	return resourceCost(SKILL_BASE_COST[skill], Math.pow(SKILL_COST_FACTOR, level - 1));
+	return resourceCost(
+		SKILL_BASE_COST[skill],
+		BUILDING_COST_SCALE * Math.pow(SKILL_COST_FACTOR, level - 1)
+	);
 }
 
 /** A skill cannot be trained past the level of the training ground */
@@ -941,7 +973,10 @@ export function troopUpgradeCost(save: BeachheadSave, kind: TroopKind): Resource
 	if (kind === 'azov') return null;
 	const level = troopLevel(save, kind);
 	if (level >= MAX_TROOP_LEVEL) return null;
-	return resourceCost(TROOP_BASE_COST[kind], Math.pow(TROOP_COST_GROWTH, level - 1));
+	return resourceCost(
+		TROOP_BASE_COST[kind],
+		TROOP_COST_SCALE * Math.pow(TROOP_COST_GROWTH, level - 1)
+	);
 }
 
 export function canUpgradeTroop(save: BeachheadSave, kind: TroopKind): boolean {
@@ -960,9 +995,9 @@ export function applyTroopUpgrade(save: BeachheadSave, kind: TroopKind): Beachhe
 	};
 }
 
-/** How long the next level of a troop takes to research: ten minutes, and seventy percent more for every level */
+/** How long the next level of a troop takes to research: fifteen minutes, one time step more per level */
 export function troopResearchMs(level: number): number {
-	return Math.round(10 * 60_000 * Math.pow(1.7, Math.max(0, level - 1)));
+	return steppedMs(level + 1);
 }
 
 export function researchOf(save: BeachheadSave): TroopResearch | null {
@@ -1079,7 +1114,10 @@ export function heroUpgradeLocked(save: BeachheadSave): boolean {
 export function heroUpgradeCost(save: BeachheadSave): Resources | null {
 	const level = save.hero.level;
 	if (level >= MAX_HERO_LEVEL) return null;
-	return resourceCost(TROOP_BASE_COST.azov, Math.pow(HERO_COST_GROWTH, level - 1));
+	return resourceCost(
+		TROOP_BASE_COST.azov,
+		BUILDING_COST_SCALE * Math.pow(HERO_COST_GROWTH, level - 1)
+	);
 }
 
 export function canUpgradeHero(save: BeachheadSave): boolean {
@@ -1114,7 +1152,10 @@ export function skillUpgradeLocked(save: BeachheadSave): boolean {
 export function skillUpgradeCost(save: BeachheadSave): Resources | null {
 	const level = save.hero.skill;
 	if (level >= MAX_HERO_SKILL_LEVEL) return null;
-	return resourceCost(TROOP_BASE_COST.azov, Math.pow(SKILL_COST_GROWTH, level - 1) * 0.7);
+	return resourceCost(
+		TROOP_BASE_COST.azov,
+		BUILDING_COST_SCALE * Math.pow(SKILL_COST_GROWTH, level - 1) * 0.7
+	);
 }
 
 export function skillCardCost(save: BeachheadSave): number | null {
@@ -1867,8 +1908,8 @@ export function defenseUpgradeCostOf(save: BeachheadSave, id: number): Resources
 
 /** How long raising a placed defence takes on a builder: guns take longest, obstacles are quick */
 export function defenseUpgradeMs(kind: string, level: number): number {
-	const base = kind === 'hedgehog' ? 30_000 : kind.startsWith('mine-') ? 45_000 : 150_000;
-	return Math.round(base * Math.pow(1.6, Math.max(0, level - 1)));
+	const offset = kind === 'hedgehog' ? 0 : kind.startsWith('mine-') ? 1 : 2;
+	return steppedMs(level - 1 + offset);
 }
 
 /** Whether a builder is already raising this defence */

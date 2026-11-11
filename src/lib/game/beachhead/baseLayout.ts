@@ -4,7 +4,7 @@
  * the mines a single cell. The landing craft are moored in the water beside the island, so they have
  * no cell. Pure data and rules, so the placement can be tested without a canvas.
  */
-import { MINE_KINDS, type MineKind } from './config.js';
+import { MINE_KINDS, roundPrice, type MineKind } from './config.js';
 
 /** The guns from the other game modes that the headquarters unlocks for your own base */
 export type GuardKind =
@@ -63,13 +63,13 @@ export function defenseUpgradeCost(
 	level: number
 ): Record<LayoutResource, number> | null {
 	if (level >= MAX_DEFENSE_LEVEL) return null;
-	const factor = 1.5 * Math.pow(1.6, level - 1);
+	const factor = 2 * Math.pow(1.6, level - 1);
 	const base = DEFENSE_COST[kind];
 	return {
-		wood: Math.round(base.wood * factor),
-		stone: Math.round(base.stone * factor),
-		iron: Math.round(base.iron * factor),
-		gold: Math.round(base.gold * factor)
+		wood: roundPrice(base.wood * factor),
+		stone: roundPrice(base.stone * factor),
+		iron: roundPrice(base.iron * factor),
+		gold: roundPrice(base.gold * factor)
 	};
 }
 

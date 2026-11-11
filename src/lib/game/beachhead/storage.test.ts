@@ -139,7 +139,7 @@ describe('troop research', () => {
 	it('takes minutes at first and hours later, one troop at a time, and finishes on its own', async () => {
 		const { finishResearch, researchOf, startTroopResearch, troopResearchMs, troopLevel } =
 			await import('./campaign');
-		expect(troopResearchMs(1)).toBe(10 * 60_000);
+		expect(troopResearchMs(1)).toBe(15 * 60_000);
 		expect(troopResearchMs(7)).toBeGreaterThan(3 * 3_600_000);
 		const save = {
 			...newSave(0),
@@ -148,20 +148,20 @@ describe('troop research', () => {
 		};
 		const started = startTroopResearch(save, 'assault', 0)!;
 		expect(started.resources.wood).toBeLessThan(save.resources.wood);
-		expect(researchOf(started)!.endsAt).toBe(10 * 60_000);
+		expect(researchOf(started)!.endsAt).toBe(15 * 60_000);
 		expect(startTroopResearch(started, 'tank', 1)).toBeNull();
 		expect(finishResearch(started, 5 * 60_000)).toBe(started);
-		const done = finishResearch(started, 10 * 60_000);
+		const done = finishResearch(started, 15 * 60_000);
 		expect(troopLevel(done, 'assault')).toBe(2);
 		expect(researchOf(done)).toBeNull();
-		expect(startTroopResearch(done, 'tank', 10 * 60_000)).not.toBeNull();
+		expect(startTroopResearch(done, 'tank', 15 * 60_000)).not.toBeNull();
 	});
 });
 
 describe('a fresh base', () => {
 	it('stores only what the headquarters holds, secures nothing and pays one cottage until they are built', () => {
 		const save = freshSave(0);
-		expect(storageCapacity(save, 'wood')).toBe(300);
+		expect(storageCapacity(save, 'wood')).toBe(600);
 		expect(securedShare(save)).toBe(0);
 		expect(isBuilt(save, 'warehouse-wood-0')).toBe(false);
 		expect(isBuilt(save, 'house-0')).toBe(true);
@@ -178,7 +178,7 @@ describe('a fresh base', () => {
 		expect(started.builders).toHaveLength(1);
 		const done = finishBuilds(started, started.builders[0].endsAt);
 		expect(isBuilt(done, 'warehouse-wood-0')).toBe(true);
-		expect(storageCapacity(done, 'wood')).toBe(800);
+		expect(storageCapacity(done, 'wood')).toBe(1800);
 	});
 
 	it('only allows a boat once the headquarters is high enough for it', () => {

@@ -1017,3 +1017,16 @@ export const ISLAND_IDS: readonly string[] = ISLANDS.map((island) => island.id);
 
 /** Total landing party of one attack */
 export const LANDING_PARTY = SQUADS * TROOPS_PER_SQUAD;
+
+/** Rounds a price to a round number (1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6 or 8 times a power of ten) */
+export function roundPrice(value: number): number {
+	if (value <= 10) return Math.max(0, Math.round(value));
+	const power = Math.pow(10, Math.floor(Math.log10(value)));
+	const steps = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+	const mantissa = value / power;
+	let best = steps[0];
+	for (const step of steps) {
+		if (Math.abs(step - mantissa) < Math.abs(best - mantissa)) best = step;
+	}
+	return Math.round(best * power);
+}

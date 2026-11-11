@@ -10,7 +10,8 @@ import {
 	MAX_TRAINING_LEVEL,
 	MAX_WAREHOUSE_LEVEL,
 	STARTING_BOATS,
-	TROOPS
+	TROOPS,
+	roundPrice
 } from './config';
 import {
 	ACHIEVEMENTS,
@@ -33,6 +34,10 @@ import {
 	boatUnlocked,
 	boatsAtHq,
 	buildDurationMs,
+	defenseUpgradeMs,
+	steppedMs,
+	troopResearchMs,
+	TIME_STEPS_MS,
 	builderSlots,
 	canUpgrade,
 	canUpgradeTroop,
@@ -489,7 +494,64 @@ describe('buildings and builders', () => {
 	it('takes longer for every level and family', () => {
 		expect(buildDurationMs('hq', 2)).toBeGreaterThan(buildDurationMs('hq', 1));
 		expect(buildDurationMs('hq', 1)).toBeGreaterThan(buildDurationMs('training', 1));
-		expect(buildDurationMs('training', 1)).toBeGreaterThan(buildDurationMs('boat-0', 1));
+		expect(buildDurationMs('dojo', 1)).toBeGreaterThan(buildDurationMs('hq', 1));
+	});
+
+	it('keeps every timer on the steps of 1, 5, 15 and 30 minutes, then 1, 1.5, 2 hours and on', () => {
+		expect(TIME_STEPS_MS.slice(0, 7)).toEqual([
+			60_000,
+			5 * 60_000,
+			15 * 60_000,
+			30 * 60_000,
+			3_600_000,
+			1.5 * 3_600_000,
+			2 * 3_600_000
+		]);
+		expect(buildDurationMs('boat-0', 1)).toBe(60_000);
+		expect(buildDurationMs('boat-0', 2)).toBe(5 * 60_000);
+		expect(buildDurationMs('hq', 1)).toBe(5 * 60_000);
+		expect(buildDurationMs('hq', 5)).toBe(1.5 * 3_600_000);
+		expect(steppedMs(TIME_STEPS_MS.length)).toBe(48 * 3_600_000);
+		for (const key of ['hq', 'training', 'radar', 'dojo', 'bunker', 'sawmill'] as const) {
+			for (let level = 0; level < 8; level++) {
+				expect(TIME_STEPS_MS).toContain(buildDurationMs(key, level));
+			}
+		}
+		for (let level = 1; level < 8; level++) {
+			expect(TIME_STEPS_MS).toContain(troopResearchMs(level));
+			expect(TIME_STEPS_MS).toContain(defenseUpgradeMs('sniper', level));
+		}
+	});
+
+	it('prices every upgrade in round numbers that grow level by level', () => {
+		expect([roundPrice(1234), roundPrice(178), roundPrice(26), roundPrice(7)]).toEqual([
+			1200, 200, 25, 7
+		]);
+		const rich = withEverythingBuilt(newSave(NOW));
+		const round = (value: number): boolean => value <= 10 || roundPrice(value) === value;
+		let previous = 0;
+		for (let level = 1; level < MAX_HQ_LEVEL; level++) {
+			const save = { ...rich, levels: { ...rich.levels, hq: level } };
+			const cost = upgradeCost(save, 'hq')!;
+			expect(Object.values(cost).every(round)).toBe(true);
+			expect(cost.wood).toBeGreaterThan(previous);
+			previous = cost.wood;
+		}
+	});
+
+	it('keeps the storage big enough for the dearest upgrade the headquarters allows', () => {
+		const base = withEverythingBuilt(newSave(NOW));
+		for (let hq = 1; hq < MAX_HQ_LEVEL; hq++) {
+			const top = Math.min(MAX_WAREHOUSE_LEVEL, hq + 1);
+			const save = {
+				...base,
+				levels: { ...base.levels, hq, warehouses: base.levels.warehouses.map(() => top) }
+			};
+			const cost = upgradeCost(save, 'hq')!;
+			for (const kind of ['wood', 'stone', 'iron', 'gold'] as const) {
+				expect(cost[kind]).toBeLessThanOrEqual(storageCapacity(save, kind));
+			}
+		}
 	});
 
 	it('only lets training and boats outgrow the headquarters by one level', () => {

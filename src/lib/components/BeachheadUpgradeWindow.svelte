@@ -135,9 +135,10 @@
 		const total = Math.ceil(ms / 1000);
 		const hours = Math.floor(total / 3600);
 		const minutes = Math.floor((total % 3600) / 60);
-		return hours > 0
-			? `${hours}h ${minutes}m`
-			: `${minutes}m ${String(total % 60).padStart(2, '0')}s`;
+		const seconds = total % 60;
+		// The timers sit on round steps, so "1h 30m" and "5m" read better than trailing zeros
+		if (hours > 0) return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+		return seconds > 0 ? `${minutes}m ${String(seconds).padStart(2, '0')}s` : `${minutes}m`;
 	};
 
 	/** The numbers an upgrade changes, as a list of "from → to" rows */
