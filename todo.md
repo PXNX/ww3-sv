@@ -192,3 +192,57 @@ To continue: resume the workflow with `MODES.slice(0, 8)` (the four finished mod
 Coalition Tower (Italy), Carnival Rush (Brazil), Last Train (Japan), Douze Points (Eurovision), Sauna Sisu (Finland), Sisyphus Bailout (Greece), Rubber Army (USA 1944), Baltic Elves (Lithuania), Phishing Trip (Estonia), Six Fingers (Ukraine), DMZ Sort (South Korea), Rooftop Dish (Iran).
 
 - [ ] Per-game depth pass: six candidates and their effort are in `improvements.md` §9.3. Blocks objective cards + cascade and Whack statement categories are done; next are Convoy fuel and the Maze daily.
+
+## 9. Depth, variety, joy and physics pass (planned 2026-11-11)
+
+The per-game depth ideas for the first 35 modes are in `improvements.md` §9.2, with the order in §9.3. This section adds the modes that came later, a shared "juice" kit so every game can feel joyful without its own effects code, and the places where real physics would make a game better. Work through it one mode at a time: each item should ship with rule tests, a balance note and a check on a phone.
+
+### 9.1 Shared kit first (it makes every later item cheaper)
+
+- [ ] **Juice helpers** in `src/lib/game/juice.ts` plus a `JuiceLayer.svelte`: screen shake with decay, hit-stop (freeze a few frames on a big hit), squash and stretch on landing or tapping, floating score numbers that pop and drift, particle bursts (sparks, smoke, confetti, splash) and a combo banner. One API for canvas and DOM games, all switched off under `prefers-reduced-motion`.
+- [ ] **Haptics** through one helper: Telegram `HapticFeedback` inside the Mini App, `navigator.vibrate` elsewhere, a setting to turn it off. Several stores call haptics directly today (grain, curling, sabotage, hackers, purrpentagram, gpsliar, slider, killswitch, recon, shuffle); move them onto the helper and add it to the older modes.
+- [ ] **Shared physics wrapper** around `planck` (already a dependency for Fury): fixed time step, deterministic seed, sleep handling and a debug overlay, so other modes can use it without copying `furyWorld.ts`.
+- [ ] **Result sheet celebration**: stars that slam in one by one with a sound, a new-best ribbon, and coins that fly to the wallet counter. Today most modes just show the numbers.
+- [ ] **Sound ids** that many items below need: whoosh, thud, splash, crunch, combo up, star, coin, level up.
+- [ ] **Run modifiers**: a small list of daily twists (double speed, fog, one life, golden items) that any arcade mode can opt into, shown as a card at the start. This is cheap variety for every mode with runs.
+
+### 9.2 Physics where it pays
+
+- [ ] **Curling**: move the stones onto the shared planck wrapper (mass, friction that changes with sweeping, stone-to-stone collisions that keep spin) instead of the hand-rolled rules, and let the seals and the penguin be real bodies that get knocked aside.
+- [ ] **Fury**: destructible structures made of several bodies that crumble, with dust and debris particles and a slow-motion replay of the last collapse.
+- [ ] **Blocks / Merge**: falling and settling with a bounce when a line clears, and pieces that wobble while dragged (cosmetic springs only, the rules stay on the grid).
+- [ ] **Balloon**: wind as a force field with gusts and the balloon swinging on ropes (pendulum physics) so photo framing takes skill.
+- [ ] **Flamingo / Shootdown / Dome / Slice**: debris that tumbles and bounces off the ground after a hit, ragdoll-style falling for downed drones.
+- [ ] **Fleet Hunt / Grain**: buoyancy for sinking ships and floating mines that drift with the current, waves that rock the hull.
+- [ ] **Beachhead**: buildings that crumble into chunks when destroyed, shells on ballistic arcs with a lead on moving troops, and craters that stay for the battle.
+- [ ] **Run Comrade / Convoy**: obstacles that get knocked away on a boost instead of disappearing.
+
+### 9.3 Depth and variety for the modes that came after `improvements.md` §9.2
+
+- [ ] **Beachhead**: stepped build times (1 min, 5 min, 15 min, 30 min, 1 h, 1.5 h, 2 h, ...), exponential but stepped costs, dearer troops and bigger storage to match; operations events (a fleet of special islands for a weekend); troop and defence synergies; a replay of defences against attacks on your base.
+- [ ] **Hackers**: hacker-vs-hacker PvP with a firewall log, hack-back and a dossier with avatar and user name; new puzzle types between the Mastermind and Lights Out stages (a wiring puzzle, a log-reading puzzle); tools that carry over between banks.
+- [ ] **Curling**: a career of opponents with their own styles, stone types (heavy, spinning, bouncing) and an ice editor for daily challenges.
+- [ ] **Shuffle**: covers that hide decoys, a double-cover round, sailors who bluff, and a boss tanker per week.
+- [ ] **Slider**: event cards to choose between rallies (each with a side effect), a rival campaign that plays its own cards, and endings that differ by how you won.
+- [ ] **Grain**: routes to choose on a map with risk and reward, ship upgrades between runs, convoys of several ships to escort.
+- [ ] **Kill Switch**: drone types that need different responses, Musk posts as random rule changes with a timer, a geofence you draw yourself.
+- [ ] **Sabotage**: more ways through each level (disguises, distractions, timing), a gadget shop between levels, and an alternative quiet or loud ending per level.
+- [ ] **Recon**: photo targets with optional secondary objectives, fuel and weather as a second resource, a camera upgrade tree.
+- [ ] **Red Square**: parade pieces you can arrange, crowd reactions to mistakes, and a bigger firework finale that you compose from what went well.
+- [ ] **Petrobras**: events that hit both fronts at once and choices that trade between them, plus named rivals with their own tells.
+- [ ] **Border Shift**: new convoy kinds and tools per night, consequences that carry into the next night's press conference, and a campaign of nights.
+- [ ] **Droneworks**: production chains with alternative recipes, a factory layout that matters (belts, distance), strikes you can predict from intel.
+- [ ] **Falklands**: weather fronts on the map, ship classes with their own roles, and the diplomatic track as a real alternative with its own events.
+- [ ] **War Room**: generals with traits, fog of war, terrain bonuses and a few scenario maps.
+
+### 9.4 Joy pass per mode (animations)
+
+Go through every mode once and check these five moments. Each is a small task; tick a mode when all five feel good on a phone.
+
+- [ ] **Start**: a short intro beat (countdown, unit sliding in, camera zoom) instead of a hard cut.
+- [ ] **Every hit or match**: feedback within 50 ms (pop, squash, particles, sound, haptic).
+- [ ] **Combos and streaks**: something that grows (banner, colour, music layer) the longer the streak runs.
+- [ ] **Mistakes**: a funny reaction (shake, cameo face, wobble) rather than only a lost heart.
+- [ ] **End**: the result-sheet celebration from 9.1, and a near-miss line ("12 points to your best").
+
+Order: the modes people open most (blocks, convoy, merge, whack, beachhead), then the group games in `GROUP_GAME_ROUTES`, then the rest.
