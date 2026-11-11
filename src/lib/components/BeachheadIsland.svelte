@@ -63,6 +63,7 @@
 	import BeachheadTakeoverNotice from '#lib/components/BeachheadTakeoverNotice.svelte';
 	import ResourceIcon from '#lib/components/ResourceIcon.svelte';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
+	import IconArrowBigUp from '~icons/lucide/arrow-big-up';
 	import IconCheck from '~icons/lucide/check';
 	import IconCrosshair from '~icons/lucide/crosshair';
 	import IconFlag from '~icons/lucide/flag-triangle-right';
@@ -786,14 +787,15 @@
 							<IconInfo class="size-7" aria-hidden="true" />
 						</button>
 						{#if tag.cost}
-							<div class="flex flex-col items-center gap-0.5">
-								<BeachheadUpgradeButton
-									label={m.beachhead_upgrade_button()}
-									short={!game.canAfford(tag.cost)}
-									size="lg"
-									onclick={() => openWindow('upgrade')}
-								/>
-							</div>
+							<button
+								type="button"
+								class="btn-chunky flex size-12 items-center justify-center rounded-full p-0 text-[#2f9a4a]"
+								aria-label={m.beachhead_upgrade_button()}
+								title={m.beachhead_upgrade_button()}
+								onclick={() => openWindow('upgrade')}
+							>
+								<IconArrowBigUp class="size-8 fill-current" aria-hidden="true" />
+							</button>
 						{/if}
 						{#if panel?.type === 'building' && panel.row.remainingMs !== null && game.canCutBuild(panel.row.key)}
 							{@const key = panel.row.key}
