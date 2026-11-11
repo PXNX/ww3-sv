@@ -98,6 +98,20 @@ CREATE TABLE IF NOT EXISTS referrals (
 );
 CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals (referrer_id);
 
+-- Friends, one row per direction: made whenever someone starts the bot through a player's invite
+-- link, whether or not that earned a reward (an invitee who already played, or one past the cap)
+CREATE TABLE IF NOT EXISTS friendships (
+    user_id bigint NOT NULL,
+    friend_id bigint NOT NULL,
+    created_at bigint NOT NULL,
+    PRIMARY KEY (user_id, friend_id)
+);
+-- Invites from before friendships were kept are friendships too
+INSERT INTO friendships (user_id, friend_id, created_at)
+SELECT referrer_id, invitee_id, created_at FROM referrals
+UNION ALL SELECT invitee_id, referrer_id, created_at FROM referrals
+ON CONFLICT DO NOTHING;
+
 -- A press on a game message's Play button. The id is in the game page's URL and comes back with
 -- every score; it is the only proof of who plays (a game page has no Mini App initData), so it is
 -- long and random. Sessions older than a day are deleted when the next one is opened.

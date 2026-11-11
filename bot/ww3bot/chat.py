@@ -12,7 +12,7 @@ from telegram import Bot, CallbackQuery, Chat, InlineKeyboardButton, InlineKeybo
 from telegram.constants import ParseMode
 from telegram.error import TelegramError
 
-from ww3bot import config, games, ledger, referrals, reminders
+from ww3bot import config, friends, games, ledger, referrals, reminders
 from ww3bot.catalogue import PRODUCTS, localized, product
 from ww3bot.legal import CONSENT_TEXT, CONSENT_VERSION, PAGES, escape_html, legal_messages, page_url
 from ww3bot.texts import lang_of_user, t
@@ -54,6 +54,8 @@ async def start(bot: Bot, chat_id: int, user, param: str | None) -> None:
     if invited:
         await thank_referrer(bot, referrer)
     await ledger.upsert_account(user)
+    # Friends either way, also when the invitee played before or the inviter is past the reward cap
+    await friends.befriend(referrer, user)
     if invited:
         await send(bot, chat_id, t(lang, "invited"))
     if param == "shop":

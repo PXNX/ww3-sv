@@ -1,4 +1,4 @@
-"""Texts, legal pages, invite codes, the games list and the initData check: no database needed."""
+"""Texts, legal pages, invite codes, friends presence, the games list and the initData check: no database needed."""
 import hashlib
 import hmac
 import json
@@ -8,7 +8,8 @@ from urllib.parse import urlencode
 
 import pytest
 
-from ww3bot import games, legal, referrals
+from ww3bot import friends, games, legal, referrals
+from ww3bot.endpoints import ENDPOINTS
 from ww3bot.api import verify_init_data
 from ww3bot.handlers import parse_command
 from ww3bot.texts import LANGUAGES, TEXTS, lang_of, t
@@ -119,3 +120,17 @@ def test_init_data_is_checked_like_telegram_does():
     old = signed("tok", {"auth_date": str(now - 2 * 86400), "user": json.dumps({"id": 5})})
     assert verify_init_data(old, "tok") is None
     assert verify_init_data("", "tok") is None
+
+
+def test_friends_are_served_to_the_game_with_presence():
+    assert "friends" in ENDPOINTS and "presence" in ENDPOINTS
+    friends.report_presence(7, True, now=1000)
+    friends.report_presence(8, False, now=1000)
+    assert friends.presence_of(7, now=1030) == (True, True)
+    assert friends.presence_of(8, now=1030) == (True, False)
+    assert friends.presence_of(7, now=1000 + friends.ONLINE_WINDOW + 1) == (False, False)
+    assert friends.presence_of(9, now=1000) == (False, False)
+    entry = friends.friend_entry({"friend_id": 7, "first_name": " Ada ", "username": None}, now=1010)
+    assert entry == {"id": "7", "name": "Ada", "online": True, "in_raid": True}
+    assert friends.friend_entry({"friend_id": 9, "first_name": "", "username": "nick"})["name"] == "nick"
+    assert friends.friend_entry({"friend_id": 9, "first_name": None, "username": None})["name"] == "Player"

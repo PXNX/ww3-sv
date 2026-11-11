@@ -1,6 +1,6 @@
 """
-What the game calls: `me`, `invoice`, `spend` and `streak` from the Mini App (with verified
-initData), and `gamescore` from a game page opened by a group's Play button (with its session id
+What the game calls: `me`, `invoice`, `spend`, `streak`, `friends` and `presence` from the Mini App
+(with verified initData), and `gamescore` from a game page opened by a group's Play button (with its session id
 instead, since Telegram's game browser has no initData).
 """
 import logging
@@ -10,7 +10,7 @@ from types import SimpleNamespace
 
 from telegram import Bot
 
-from ww3bot import chat, games, ledger, reminders
+from ww3bot import chat, friends as friendships, games, ledger, reminders
 from ww3bot.catalogue import PRODUCTS, localized, product
 from ww3bot.legal import CONSENT_TEXT, CONSENT_VERSION, page_url
 from ww3bot.referrals import invite_stats
@@ -100,6 +100,19 @@ async def streak(bot: Bot, data: dict, init_data: dict) -> dict:
         raise EndpointError(str(error), "INVALID_INPUT") from error
 
 
+async def friends(bot: Bot, data: dict, init_data: dict) -> dict:
+    """`{}` → `{ friends }`: the players this one is friends with, and who of them is online."""
+    user = player(init_data)
+    return {"friends": await friendships.friends_of(user.id)}
+
+
+async def presence(bot: Bot, data: dict, init_data: dict) -> dict:
+    """`{ in_raid }` → `{}`: the app is open; friends see the player online for the next minute."""
+    user = player(init_data)
+    friendships.report_presence(user.id, data.get("in_raid") is True)
+    return {}
+
+
 async def gamescore(bot: Bot, data: dict, init_data: None) -> dict:
     """`{ session, game, score }` → `{ new_best, best, rank, overtaken, leaderboard }`; the session is the credential."""
     try:
@@ -115,6 +128,6 @@ async def gamescore(bot: Bot, data: dict, init_data: None) -> dict:
     return {key: result[key] for key in ("new_best", "best", "rank", "overtaken", "leaderboard")}
 
 
-ENDPOINTS = {"me": me, "invoice": invoice, "spend": spend, "streak": streak}
+ENDPOINTS = {"me": me, "invoice": invoice, "spend": spend, "streak": streak, "friends": friends, "presence": presence}
 # Called by the game page of a Telegram game, which has a session id instead of initData
 OPEN_ENDPOINTS = {"gamescore": gamescore}

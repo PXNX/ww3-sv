@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 
 from conftest import blocked
-from ww3bot import db, ledger, referrals, reminders
+from ww3bot import db, friends, ledger, referrals, reminders
 from ww3bot.catalogue import product
 
 pytestmark = pytest.mark.usefixtures("database")
@@ -118,3 +118,26 @@ async def test_a_refused_message_blocks_until_the_player_is_reachable_again(bot)
     assert await reminders.send_due_reminders(bot) == 0
     await reminders.unblock(9)
     assert await reminders.send_due_reminders(bot) == 1
+
+
+async def test_an_invite_makes_friends_on_both_sides_even_without_a_reward():
+    assert not await friends.befriend(100, person(200))  # inviter unknown
+    await ledger.upsert_account(person(100, first_name="Host"))
+    assert not await friends.befriend(100, person(100))  # yourself
+    assert not await friends.befriend(100, SimpleNamespace(id=201, is_bot=True))
+
+    await ledger.upsert_account(person(202, first_name="Old"))  # played before: no reward, still a friend
+    assert not await referrals.record_referral(100, person(202))
+    assert await friends.befriend(100, person(202))
+    assert not await friends.befriend(100, person(202))  # already friends
+
+    assert [entry["id"] for entry in await friends.friends_of(100)] == ["202"]
+    assert [(entry["id"], entry["name"]) for entry in await friends.friends_of(202)] == [("100", "Host")]
+
+
+async def test_earlier_invites_become_friendships():
+    await db.execute("INSERT INTO referrals (invitee_id, referrer_id, revives, created_at) VALUES (8, 7, 1, 0)")
+    async with db.connection() as conn:
+        await conn.execute(db.SCHEMA)
+    assert [entry["id"] for entry in await friends.friends_of(7)] == ["8"]
+    assert [entry["id"] for entry in await friends.friends_of(8)] == ["7"]
