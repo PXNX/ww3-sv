@@ -12,6 +12,7 @@
 	import { haptic } from '#lib/haptic/haptic.svelte.js';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
 	import IconMoon from '~icons/lucide/moon';
+	import IconRadar from '~icons/lucide/radar';
 	import IconSun from '~icons/lucide/sun';
 	import IconVolume1 from '~icons/lucide/volume-1';
 	import IconVolume2 from '~icons/lucide/volume-2';
@@ -152,5 +153,17 @@
 			<span class="font-display text-lg leading-tight font-bold">{m.language_label()}</span>
 			<LanguageSelect />
 		</div>
+
+		<!-- Local-only diagnostics -->
+		<a
+			href={resolve('/telemetry')}
+			class="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-sand/60"
+		>
+			<span>
+				<span class="block font-display text-lg leading-tight font-bold">{m.telemetry_link()}</span>
+				<span class="block text-xs leading-snug opacity-70">{m.telemetry_subtitle()}</span>
+			</span>
+			<IconRadar class="size-6 shrink-0" aria-hidden="true" />
+		</a>
 	</section>
 </main>

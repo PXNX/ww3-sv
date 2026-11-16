@@ -6,6 +6,7 @@
 	import { career } from '#lib/game/career/store.svelte.js';
 	import { pickOne } from '#lib/game/random.js';
 	import { m } from '#lib/paraglide/messages.js';
+	import { telemetry } from '#lib/services/telemetry.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { MODES, modeById } from '#lib/modes/registry.js';
 	import { PLAY_STYLES, STYLE_OF_MODE, type PlayStyle } from '#lib/modes/styles.js';
@@ -65,6 +66,7 @@
 	const contestModeId = $derived(careerState.profile.contest?.mode ?? null);
 
 	function surprise() {
+		telemetry.track('surprise');
 		const playable = MODES.filter((mode) => mode.status === 'playable');
 		const mode = pickOne(Math.random, playable);
 		if (mode.status !== 'playable') return;
@@ -78,7 +80,10 @@
 			type="button"
 			class="btn-chunky inline-flex items-center gap-2 bg-explosion-yellow"
 			aria-label={m.home_filter_clear()}
-			onclick={() => (leader = null)}
+			onclick={() => {
+				leader = null;
+				telemetry.track('filter_clear');
+			}}
 		>
 			<img
 				src={leaderById(leader).flag}
@@ -169,6 +174,7 @@
 				contestModeId
 					? ' ring-4 ring-explosion-yellow ring-offset-2'
 					: ''}"
+				onclick={() => telemetry.track('mode_select', { mode: mode.id })}
 				style:--tilt="{tilt}deg">{@render card()}</a
 			>
 		{:else}

@@ -19,6 +19,7 @@
 	import { receive } from '#lib/stores/crossover.svelte.js';
 	import { ARCHIVE_COINS } from '#lib/game/crossover/gifts.js';
 	import { telegram } from '#lib/stores/telegram.svelte.js';
+	import { telemetry } from '#lib/services/telemetry.js';
 
 	let { children } = $props();
 
@@ -47,7 +48,14 @@
 		void account.syncStreak(profile.streak, streakDeadline(profile));
 	});
 
+	// Every route change is a diagnostic event, so opening any of the modes is recorded without
+	// touching 50 game pages. The log stays on this device; see /telemetry.
+	$effect(() => {
+		telemetry.track('page_view', { path: page.url.pathname });
+	});
+
 	onMount(() => {
+		telemetry.track('app_open');
 		// Gifts from the games for the career: the Fake News coins of a full mail archive
 		receive('career', (ids) =>
 			ids.includes('hackers-archive') && careerState.grantCoins(ARCHIVE_COINS) > 0

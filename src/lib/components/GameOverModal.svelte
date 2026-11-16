@@ -37,6 +37,7 @@
 	} from '#lib/theme/cameos.js';
 	import { CHARACTER_NAME } from '#lib/theme/character.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
+	import { telemetry } from '#lib/services/telemetry.js';
 	import '#lib/styles/hackers.css';
 	import Confetti from './Confetti.svelte';
 	import GroupLeaderboard from './GroupLeaderboard.svelte';
@@ -229,6 +230,7 @@
 		}
 		if (awarded) return;
 		awarded = true;
+		telemetry.track('game_end', { mode, outcome, score });
 		// Opened from a chat's game message: the run also counts on that chat's leaderboard
 		void untrack(() => account.reportGroupScore(mode, score));
 		const careerMode = isCareerMode(mode) ? mode : null;

@@ -18,11 +18,13 @@
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { onDestroy } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import { enterLandscape, leaveLandscape } from '#lib/game/landscape.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
+	import { telemetry } from '#lib/services/telemetry.js';
 	import '#lib/styles/hackers.css';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
 
@@ -70,6 +72,14 @@
 		fitKeyboard?: boolean;
 		children: Snippet;
 	} = $props();
+
+	// One game_open event per mode visit, from the frame every play page already shares
+	onMount(() => {
+		const path = page.url.pathname;
+		if (path.startsWith('/play/')) {
+			telemetry.track('game_open', { mode: path.split('/')[2] ?? 'unknown' });
+		}
+	});
 
 	const CONFIRM_MS = 3000;
 	let confirmingLeave = $state(false);
