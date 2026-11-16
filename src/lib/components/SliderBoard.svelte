@@ -64,18 +64,18 @@
 	let shakeTimer: ReturnType<typeof setTimeout> | undefined;
 	let bannerTimer: ReturnType<typeof setTimeout> | undefined;
 
-	const state = $derived(game.state);
-	const approval = $derived(Math.round(state.approval));
-	const lineValue = $derived(reducedMotion ? state.approval : state.shown);
+	const run = $derived(game.state);
+	const approval = $derived(Math.round(run.approval));
+	const lineValue = $derived(reducedMotion ? run.approval : run.shown);
 	const lineColor = $derived(
-		state.approval <= RESIGN_LINE + 12
+		run.approval <= RESIGN_LINE + 12
 			? 'var(--color-tie-red)'
-			: state.approval >= STAR_LINES[0]
+			: run.approval >= STAR_LINES[0]
 				? 'var(--color-khaki)'
 				: 'var(--color-ink)'
 	);
 	const wobbleAmp = $derived(
-		reducedMotion ? 0 : 0.8 + state.week * 0.25 + Math.min(4, Math.abs(state.velocity) * 0.15)
+		reducedMotion ? 0 : 0.8 + run.week * 0.25 + Math.min(4, Math.abs(run.velocity) * 0.15)
 	);
 	const linePath = $derived.by(() => {
 		const base = yOf(lineValue);
@@ -87,16 +87,16 @@
 		return points.join(' ');
 	});
 	const historyPath = $derived(
-		state.history
+		run.history
 			.map((value, index) => {
 				const x = (index / 69) * CHART_W * 0.97;
 				return `${index === 0 ? 'M' : 'L'}${x.toFixed(1)},${yOf(value).toFixed(1)}`;
 			})
 			.join(' ')
 	);
-	const weekProgress = $derived(Math.min(1, state.elapsed / (WEEKS_TOTAL * WEEK_SECONDS)));
-	const pressReady = $derived(state.pressCooldown <= 0);
-	const pressFill = $derived(1 - state.pressCooldown / PRESS_COOLDOWN);
+	const weekProgress = $derived(Math.min(1, run.elapsed / (WEEKS_TOTAL * WEEK_SECONDS)));
+	const pressReady = $derived(run.pressCooldown <= 0);
+	const pressFill = $derived(1 - run.pressCooldown / PRESS_COOLDOWN);
 	const thresholds = $derived([
 		{ line: STAR_LINES[2], label: m.slider_th_landslide(), stars: 3 },
 		{ line: STAR_LINES[1], label: m.slider_th_comfort(), stars: 2 },
@@ -251,7 +251,7 @@
 	<div class="flex items-stretch gap-2 font-display">
 		<div class="flex-1 rounded-md border-2 border-ink bg-paper px-2 py-1">
 			<div class="flex items-baseline justify-between text-xs font-bold">
-				<span>{m.slider_week({ week: state.week, total: WEEKS_TOTAL })}</span>
+				<span>{m.slider_week({ week: run.week, total: WEEKS_TOTAL })}</span>
 			</div>
 			<div class="mt-1 h-2 overflow-hidden rounded-full border border-ink bg-sand">
 				<div class="h-full bg-khaki" style:width="{weekProgress * 100}%"></div>
@@ -274,7 +274,7 @@
 		>
 			<div class="text-[10px] leading-none font-bold uppercase">{m.slider_streak()}</div>
 			<div class="text-2xl leading-tight font-bold tabular-nums">
-				{state.combo}<span class="text-xs">&nbsp;x{game.multiplier}</span>
+				{run.combo}<span class="text-xs">&nbsp;x{game.multiplier}</span>
 			</div>
 		</div>
 	</div>
@@ -350,7 +350,7 @@
 		class="relative h-72 w-full touch-manipulation overflow-hidden rounded-md border-3 border-ink bg-sand select-none sm:h-80"
 		style="background-image: radial-gradient(var(--color-ink) 1px, transparent 1px); background-size: 18px 18px; background-position: 0 0;"
 	>
-		{#each state.targets as target (target.id)}
+		{#each run.targets as target (target.id)}
 			{@const left = 1 - target.age / target.ttl}
 			<button
 				type="button"
@@ -416,7 +416,7 @@
 			</div>
 		{/if}
 
-		{#if state.targets.length === 0 && state.elapsed < 1.2}
+		{#if run.targets.length === 0 && run.elapsed < 1.2}
 			<p class="absolute inset-0 grid place-items-center font-display text-lg font-bold">
 				{m.slider_ready()}
 			</p>
@@ -449,7 +449,7 @@
 		<span class="relative font-display font-bold">
 			{pressReady
 				? m.slider_press_ready()
-				: m.slider_press_cooldown({ seconds: Math.ceil(state.pressCooldown) })}
+				: m.slider_press_cooldown({ seconds: Math.ceil(run.pressCooldown) })}
 		</span>
 		<span class="relative hidden text-xs sm:inline">{m.slider_press_hint()}</span>
 	</button>

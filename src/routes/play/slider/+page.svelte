@@ -45,12 +45,12 @@
 		game.resume();
 	}
 
-	const state = $derived(game.state);
+	const run = $derived(game.state);
 </script>
 
 <GameShell
 	title={modeName}
-	score={state.score}
+	score={run.score}
 	best={game.best}
 	confirmLeave={!game.over}
 	onQuit={() => game.forfeit()}
@@ -104,22 +104,22 @@
 
 	<GameOverModal
 		open={game.over}
-		score={state.score}
+		score={run.score}
 		mode="slider"
 		{modeName}
-		outcome={state.won ? 'won' : 'lost'}
+		outcome={run.won ? 'won' : 'lost'}
 		isNewBest={game.isNewBest}
-		title={state.won ? m.slider_result_won() : m.slider_result_lost()}
+		title={run.won ? m.slider_result_won() : m.slider_result_lost()}
 		onRetry={() => game.start()}
 	>
 		<div
 			class="mb-2 flex justify-center gap-1"
 			role="img"
-			aria-label={m.slider_stars_label({ stars: state.stars })}
+			aria-label={m.slider_stars_label({ stars: run.stars })}
 		>
 			{#each [1, 2, 3] as n (n)}
 				<IconStar
-					class="size-9 {n <= state.stars ? 'fill-explosion-yellow' : 'opacity-30'}"
+					class="size-9 {n <= run.stars ? 'fill-explosion-yellow' : 'opacity-30'}"
 					aria-hidden="true"
 				/>
 			{/each}
@@ -127,20 +127,20 @@
 		<dl class="grid grid-cols-3 gap-2 font-display text-sm">
 			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
 				<dt class="text-center font-bold">{m.slider_stat_approval()}</dt>
-				<dd class="text-2xl font-bold tabular-nums">{Math.round(state.approval)}%</dd>
+				<dd class="text-2xl font-bold tabular-nums">{Math.round(run.approval)}%</dd>
 			</div>
 			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
 				<dt class="text-center font-bold">{m.slider_stat_combo()}</dt>
-				<dd class="text-2xl font-bold tabular-nums">{state.bestCombo}</dd>
+				<dd class="text-2xl font-bold tabular-nums">{run.bestCombo}</dd>
 			</div>
 			<div class="flex flex-col items-center rounded-md border-2 border-ink bg-sand p-2">
 				<dt class="text-center font-bold">{m.slider_stat_countered()}</dt>
-				<dd class="text-2xl font-bold tabular-nums">{state.countered}</dd>
+				<dd class="text-2xl font-bold tabular-nums">{run.countered}</dd>
 			</div>
 		</dl>
-		{#if !state.won}
+		{#if !run.won}
 			<p class="mt-2 text-center font-display text-sm" dir="auto">
-				{m.slider_lost_hint({ week: state.week })}
+				{m.slider_lost_hint({ week: run.week })}
 			</p>
 		{/if}
 	</GameOverModal>
