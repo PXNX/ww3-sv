@@ -173,6 +173,60 @@
 		animation: pop-in 450ms var(--ease-spring) both;
 	}
 
+	/* The juice layer: tiny physics particles, drifting numbers and a combo banner */
+	.juice-particle {
+		box-shadow: 0 1px 0 rgb(0 0 0 / 0.18);
+		will-change: transform;
+	}
+
+	.juice-float {
+		font-size: 1.4rem;
+		transform: translate(-50%, -50%);
+		text-shadow:
+			2px 2px 0 var(--color-ink),
+			-2px -2px 0 var(--color-ink),
+			2px -2px 0 var(--color-ink),
+			-2px 2px 0 var(--color-ink);
+	}
+
+	.juice-combo {
+		z-index: 1;
+	}
+
+	/* The shared game frame follows the shake written by JuiceLayer */
+	.juice-shake {
+		translate: var(--juice-shake-x, 0px) var(--juice-shake-y, 0px);
+	}
+
+	/* A gentle intro beat for every game banner and board, without moving hit targets */
+	@keyframes banner-in {
+		from {
+			scale: 0.96;
+			opacity: 0;
+		}
+		to {
+			scale: 1;
+			opacity: 1;
+		}
+	}
+
+	@keyframes board-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	.game-banner {
+		animation: banner-in 380ms var(--ease-spring) both;
+	}
+
+	.game-enter {
+		animation: board-in 260ms ease-out both;
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		.sticker,
 		.btn-chunky {
@@ -193,8 +247,14 @@
 			scale: none;
 		}
 
-		.pop-in {
+		.pop-in,
+		.game-banner,
+		.game-enter {
 			animation: none;
+		}
+
+		.juice-shake {
+			translate: none;
 		}
 	}
 }

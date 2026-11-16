@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-	createTelemetry,
-	MAX_EVENTS,
-	TELEMETRY_KEY,
-	sanitizeProps
-} from './telemetry.js';
+import { createTelemetry, MAX_EVENTS, TELEMETRY_KEY, sanitizeProps } from './telemetry.js';
 import type { KeyValueStorage } from './storage.js';
 
 function memory(): KeyValueStorage {
@@ -20,7 +15,12 @@ function setup(storage = memory()) {
 	let time = 1_700_000_000_000;
 	let seed = 1;
 	const log = createTelemetry(storage, { now: () => time, random: () => (seed++ % 997) / 997 });
-	return { log, storage, advance: (ms: number) => (time += ms), setTime: (t: number) => (time = t) };
+	return {
+		log,
+		storage,
+		advance: (ms: number) => (time += ms),
+		setTime: (t: number) => (time = t)
+	};
 }
 
 describe('local telemetry', () => {

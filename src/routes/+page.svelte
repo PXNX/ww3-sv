@@ -71,7 +71,9 @@
 	<CloudSaveHint />
 
 	<!-- The two daily cards sit side by side on a wide screen, stacked on a phone -->
-	<div class="grid grid-cols-[minmax(0,1fr)] items-start gap-4 [&>*]:min-w-0 lg:grid-cols-2"><DailyPanel /></div>
+	<div class="grid grid-cols-[minmax(0,1fr)] items-start gap-4 lg:grid-cols-2 [&>*]:min-w-0">
+		<DailyPanel />
+	</div>
 
 	<section class="flex flex-col gap-4" aria-labelledby="choose-mode">
 		<h2 id="choose-mode" class="flex items-center gap-2 font-display text-2xl font-bold">

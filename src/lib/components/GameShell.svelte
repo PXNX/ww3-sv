@@ -220,8 +220,8 @@
 	style:height={viewport ? `${viewport.height}px` : undefined}
 	style:bottom={viewport ? 'auto' : undefined}
 	class={immersive
-		? 'fixed inset-0 overflow-hidden [--hud-left:calc(0.5rem+var(--top-left-inset))] [--hud-right:calc(0.5rem+var(--top-right-inset))] [--hud-top:calc(3.25rem+var(--top-inset))]'
-		: `mx-auto flex h-dvh ${wide ? 'max-w-none' : 'max-w-3xl'} flex-col gap-2 overflow-hidden px-2 pt-[calc(0.5rem+var(--top-inset))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] [--hud-left:0.5rem] [--hud-right:0.5rem] [--hud-top:0.5rem] sm:gap-3 sm:px-3 sm:pt-[calc(0.75rem+var(--top-inset))] sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]`}
+		? 'juice-shake fixed inset-0 overflow-hidden [--hud-left:calc(0.5rem+var(--top-left-inset))] [--hud-right:calc(0.5rem+var(--top-right-inset))] [--hud-top:calc(3.25rem+var(--top-inset))]'
+		: `juice-shake mx-auto flex h-dvh ${wide ? 'max-w-none' : 'max-w-3xl'} flex-col gap-2 overflow-hidden px-2 pt-[calc(0.5rem+var(--top-inset))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] [--hud-left:0.5rem] [--hud-right:0.5rem] [--hud-top:0.5rem] sm:gap-3 sm:px-3 sm:pt-[calc(0.75rem+var(--top-inset))] sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]`}
 >
 	<!-- Without a back link or actions the row above the banner would only be empty space -->
 	{#if immersive || (!compact && (back || actions))}
@@ -256,7 +256,7 @@
 		<h1 class="sr-only">{title}</h1>
 	{:else if compact}
 		<header
-			class="game-banner ms-(--top-left-inset) me-(--top-right-inset) flex items-center gap-2 rounded-[14px_8px_16px_10px] border-3 border-ink bg-banner-slate pt-2.5 pb-1 ps-1.5 pe-3 text-paper shadow-[4px_4px_0_var(--color-ink)] sm:gap-3 sm:pt-3 sm:ps-2 sm:pe-4"
+			class="game-banner ms-(--top-left-inset) me-(--top-right-inset) flex items-center gap-2 rounded-[14px_8px_16px_10px] border-3 border-ink bg-banner-slate ps-1.5 pe-3 pt-2.5 pb-1 text-paper shadow-[4px_4px_0_var(--color-ink)] sm:gap-3 sm:ps-2 sm:pe-4 sm:pt-3"
 		>
 			{@render backLink()}
 			<h1
@@ -302,8 +302,8 @@
 
 	<div
 		class={immersive
-			? 'absolute inset-0 flex flex-col overflow-hidden'
-			: 'flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto sm:gap-3'}
+			? 'game-enter absolute inset-0 flex flex-col overflow-hidden'
+			: 'game-enter flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto sm:gap-3'}
 	>
 		{@render children()}
 	</div>

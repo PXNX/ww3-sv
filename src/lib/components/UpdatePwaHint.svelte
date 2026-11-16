@@ -37,7 +37,7 @@
 	onclose={() => (dismissed = true)}
 >
 	<div
-		class="modal-box relative border-3 border-ink bg-mustard px-4 pt-5 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center shadow-(--shadow-hard) sm:pb-5"
+		class="relative modal-box border-3 border-ink bg-mustard px-4 pt-5 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center shadow-(--shadow-hard) sm:pb-5"
 	>
 		<p id="update-hint-title" class="px-8 text-lg leading-snug font-bold">
 			{m.update_app_hint()}

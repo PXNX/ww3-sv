@@ -37,7 +37,8 @@ interface Log {
 
 const NAME = /^[a-z][a-z0-9_]{1,39}$/;
 // Never store credentials, launch parameters, contact details or free text
-const SENSITIVE = /(token|secret|password|initdata|auth|email|phone|address|query|hash|message|text)/i;
+const SENSITIVE =
+	/(token|secret|password|initdata|auth|email|phone|address|query|hash|message|text)/i;
 
 function memoryStorage(): KeyValueStorage {
 	const values = new Map<string, string>();
@@ -177,7 +178,9 @@ export function createTelemetry(
 		counts() {
 			const totals = new Map<string, number>();
 			for (const event of read().events) totals.set(event.name, (totals.get(event.name) ?? 0) + 1);
-			return [...totals].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+			return [...totals]
+				.map(([name, count]) => ({ name, count }))
+				.sort((a, b) => b.count - a.count);
 		},
 		session() {
 			return read().session;

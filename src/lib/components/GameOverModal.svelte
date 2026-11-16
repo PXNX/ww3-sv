@@ -38,6 +38,7 @@
 	import { CHARACTER_NAME } from '#lib/theme/character.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import { telemetry } from '#lib/services/telemetry.js';
+	import { juice } from '#lib/game/juice.svelte.js';
 	import '#lib/styles/hackers.css';
 	import Confetti from './Confetti.svelte';
 	import GroupLeaderboard from './GroupLeaderboard.svelte';
@@ -193,6 +194,11 @@
 			dragOffset = null;
 			dialog.showModal();
 			soundManager().play(isNewBest ? 'new-best' : 'game-over');
+			// Every result gets a small pop of confetti; a new best gets a full celebration
+			const x = window.innerWidth / 2;
+			const y = window.innerHeight * 0.32;
+			if (isNewBest) juice.celebrate(x, y, `+${score}`);
+			else juice.burst(x, y, 'confetti', 12);
 		} else if (!open && dialog.open) {
 			dialog.close();
 		}

@@ -92,7 +92,9 @@
 					<dt class="text-xs font-bold uppercase opacity-70">{m.telemetry_session()}</dt>
 					<dd class="truncate font-mono text-xs leading-6" title={session}>{session}</dd>
 				</div>
-				<p class="col-span-2 rounded-lg border-2 border-ink bg-sand/60 p-2 text-xs font-bold sm:col-span-1">
+				<p
+					class="col-span-2 rounded-lg border-2 border-ink bg-sand/60 p-2 text-xs font-bold sm:col-span-1"
+				>
 					{m.telemetry_since({ time: stamp(startedAt) })}
 				</p>
 			</dl>
@@ -108,8 +110,7 @@
 							class="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-explosion-yellow/30 px-2.5 py-1 text-sm font-bold"
 						>
 							<code class="font-mono text-xs">{name}</code>
-							<span
-								class="rounded-full border-2 border-ink bg-mustard px-1.5 text-xs tabular-nums"
+							<span class="rounded-full border-2 border-ink bg-mustard px-1.5 text-xs tabular-nums"
 								>{count}</span
 							>
 						</span>
@@ -121,7 +122,9 @@
 		<section class="flex flex-col gap-2">
 			<h3 class="font-display text-xl font-bold">{m.telemetry_recent()}</h3>
 			{#if events.length === 0}
-				<p class="rounded-xl border-3 border-dashed border-ink/40 bg-paper/60 p-6 text-center text-sm">
+				<p
+					class="rounded-xl border-3 border-dashed border-ink/40 bg-paper/60 p-6 text-center text-sm"
+				>
 					{m.telemetry_empty()}
 				</p>
 			{:else}
@@ -130,10 +133,10 @@
 						<li
 							class="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl border-2 border-ink bg-paper px-3 py-2 text-sm"
 						>
-							<span class="font-mono text-xs opacity-60 tabular-nums">{stamp(event.at)}</span>
+							<span class="font-mono text-xs tabular-nums opacity-60">{stamp(event.at)}</span>
 							<code class="font-mono text-sm font-bold">{event.name}</code>
 							{#if propsOf(event)}
-								<span class="min-w-0 break-all font-mono text-xs opacity-75">{propsOf(event)}</span>
+								<span class="min-w-0 font-mono text-xs break-all opacity-75">{propsOf(event)}</span>
 							{/if}
 						</li>
 					{/each}
