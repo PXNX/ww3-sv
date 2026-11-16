@@ -139,7 +139,7 @@ export interface GroupGame {
 /**
  * The modes offered as Telegram games in groups: quick arcade runs that end on the shared result
  * sheet with one score where higher is better, and no levels or variants that would mix on one
- * board (see todo.md). The bot's list of games has to match.
+ * board (see docs/planning/todo.md). The bot's list of games has to match.
  */
 const GROUP_GAME_ROUTES = {
 	blocks: '/play/blocks',

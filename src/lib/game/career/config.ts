@@ -8,7 +8,7 @@ import type { ModeId } from '#lib/modes/registry.js';
 /**
  * Modes that end a run and pay out a career reward through the shared game-over sheet. The
  * puzzle modes with their own win panels (Belt & Road, Maze, Parking), the endless Tycoon and
- * Fleet Hunt games and the daily Wordle are not part of the career layer; see improvements.md
+ * Fleet Hunt games and the daily Wordle are not part of the career layer; see docs/planning/improvements.md
  * for how they could be added.
  */
 export const CAREER_MODES = [

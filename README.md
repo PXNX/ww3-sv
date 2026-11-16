@@ -1,9 +1,9 @@
 # World War 3
 
 A satirical cartoon puzzle and arcade collection about oil, shipping, and geopolitics, built as a
-SvelteKit Progressive Web App. Nine game modes are planned; they are added one commit at a time
-(see the commit plan below). There is no backend, no database, and no account system: scores and
-settings stay in the browser's local storage.
+SvelteKit Progressive Web App with 50 playable modes. Scores and settings stay in the browser's
+local storage; inside Telegram the optional cloud save mirrors progress to the bot's database in
+`bot/`. Diagnostics are recorded locally too and never leave the device.
 
 ## Tech stack
 
@@ -12,7 +12,8 @@ settings stay in the browser's local storage.
 - unplugin-icons with the Fluent, Lucide, Fluent Emoji, and Circle Flags icon sets (bundled locally)
 - inlang Paraglide JS for English, German, Ukrainian, Russian, Persian, and Arabic (Persian and Arabic are right-to-left)
 - Vitest for pure logic unit tests
-- Bun 1.4.2 as package manager and local runtime
+- Planck for the shared rigid-body physics wrapper
+- Bun 1.4.4 as package manager and local runtime
 - Self-hosted Baloo 2 display font (SIL Open Font License) under `static/fonts/`
 
 ## Setup
@@ -65,18 +66,31 @@ Before every commit, all of these must pass: `bun install --frozen-lockfile`, `b
 ## Project layout
 
 ```
-messages/{en,de,fa,ar,uk,ru}.json translatable strings (key parity is enforced by a unit test)
-project.inlang/settings.json   inlang project configuration
-src/lib/modes/registry.ts      single list of game modes; the start screen renders from it
-src/lib/theme/character.ts     swappable mascot configuration (name, poses, asset paths)
-src/lib/styles/tokens.css      design tokens and font faces
-src/lib/styles/playful.css     tilt, bounce, and press interaction styles
-src/lib/components/            shared components (mode select, mascot, locale switcher)
-src/routes/+page.svelte        start screen
-static/assets/mascot/          mascot artwork, one SVG per pose
-static/assets/cameos/          cameo portraits, one SVG per cameo id
-static/fonts/                  self-hosted font files and license
+messages/{en,de,fa,ar,uk,ru}.json  translatable strings (key parity is enforced by a unit test)
+project.inlang/settings.json      inlang project configuration
+src/lib/modes/registry.ts         single list of game modes; the start screen renders from it
+src/lib/game/                     per-mode rules plus the shared juice and physics helpers
+src/lib/services/telemetry.ts     local-only event log; /telemetry reads the same store
+src/lib/theme/                    mascot, cameos, leaders and sprite configuration
+src/lib/styles/tokens.css         design tokens and font faces
+src/lib/styles/playful.css        sticker, button, banner and juice animations
+src/lib/components/               shared components (mode select, game shell, overlays)
+src/routes/+page.svelte           start screen
+src/routes/play/<mode>/           one route per game mode
+bot/                              Telegram Mini App bot (Python, its own database)
+brand/                            canonical logo sources and Telegram artwork
+docs/                             API contracts and planning documents
+scripts/                          generators for cards, OG images, brand and level data
+static/cards/                     gameplay backgrounds for the mode cards (one per mode)
+static/og/                        link-preview images (one per mode)
+static/icons/                     PWA and touch icons rendered from brand/
+static/assets/mascot/             mascot artwork, one SVG per pose
+static/assets/cameos/             cameo portraits, one SVG per cameo id
+static/fonts/                     self-hosted font files and license
 ```
+
+Planning notes live in `docs/planning/` (`todo.md` is the short open-work list and `improvements.md`
+is the idea catalogue). API contracts for the Mini App are in `docs/`.
 
 ### Internationalization and right-to-left
 
@@ -93,6 +107,36 @@ Every pose and every cameo ships with an original SVG caricature. The generic pl
 a pose with the owner-supplied artwork, add the file to `static/assets/mascot/` and point the pose
 in `POSE_FILES` in `src/lib/theme/character.ts` at it; cameo portraits work the same way in
 `src/lib/theme/cameos.ts`.
+
+### Local diagnostics
+
+`/telemetry` shows a bounded log of app opens, page and mode visits, results and dashboard actions.
+`src/lib/services/telemetry.ts` keeps it under its own localStorage key so it never joins the cloud
+save and nothing is sent over the network. Events are sanitized to small primitives: no free text,
+contact details or Telegram launch parameters. Export and clear are available on the dashboard.
+
+### Juice and physics
+
+`src/lib/game/juice.ts` holds the pure particle physics (gravity, drag, floor bounce), drifting score
+numbers and screen-shake decay; `juice.svelte.ts` is its reactive front end and `JuiceLayer.svelte`
+is mounted once in the root layout. Any mode can call `juice.burst()`, `juice.float()` or
+`juice.shake()` without its own effects code. `src/lib/game/physics.ts` wraps planck with a fixed
+time step, sleeping bodies and a debug draw for modes that need rigid bodies. Both respect
+`prefers-reduced-motion`.
+
+### Generated artwork
+
+The pictures under `static/cards/`, `static/og/` and `static/icons/` are generated, not hand-edited:
+
+```sh
+bun run dev                                  # in one terminal
+bun scripts/generate-card-screenshots.ts http://localhost:3021
+bun scripts/generate-og-images.ts
+```
+
+`brand/app-icon.svg` and `brand/app-icon-maskable.svg` are the single source for the PWA icons; see
+`brand/README.md` for the rest of the Telegram artwork. Card captures hide the shared game shell so
+only gameplay shows in the background of a mode card.
 
 ## Commit plan
 
