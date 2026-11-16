@@ -150,6 +150,9 @@ export class SliderGame {
 				sound.play('wave-horn');
 				vibrate.play(0.3);
 				break;
+			case 'rival':
+				vibrate.play(0.2);
+				break;
 			case 'end':
 				sound.play(event.won ? 'chime-big' : 'game-over');
 				vibrate.play(event.won ? 0.6 : 0.8);

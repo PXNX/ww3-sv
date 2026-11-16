@@ -4622,5 +4622,7 @@
 	"convoy_fuel": "Treibstoff",
 	"convoy_out_of_fuel": "Treibstoff leer",
 	"maze_daily": "Tagesgebäude",
-	"maze_daily_hint": "Heute für alle dasselbe mittlere Labyrinth. Den ganzen Tag, mit eigener Bestzeit."
+	"maze_daily_hint": "Heute für alle dasselbe mittlere Labyrinth. Den ganzen Tag, mit eigener Bestzeit.",
+	"slider_rival": "Rivale",
+	"slider_rival_hint": "Jede Woche wird die Kampagne des Rivalen stärker. Eine Pressekonferenz drängt sie zurück."
 }

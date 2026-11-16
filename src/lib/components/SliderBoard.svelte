@@ -8,6 +8,7 @@
 	import { onMount } from 'svelte';
 	import {
 		MAX_APPROVAL,
+		MAX_RIVAL,
 		PRESS_COOLDOWN,
 		RESIGN_LINE,
 		STAR_LINES,
@@ -192,6 +193,13 @@
 				bannerTimer = setTimeout(() => (banner = null), 2400);
 				break;
 			}
+			case 'rival':
+				if (event.pressure >= 2) {
+					banner = { week: run.week, hint: m.slider_rival_hint() };
+					clearTimeout(bannerTimer);
+					bannerTimer = setTimeout(() => (banner = null), 2400);
+				}
+				break;
 		}
 	}
 
@@ -276,6 +284,16 @@
 			<div class="text-2xl leading-tight font-bold tabular-nums">
 				{run.combo}<span class="text-xs">&nbsp;x{game.multiplier}</span>
 			</div>
+		</div>
+		<div
+			class="min-w-16 rounded-md border-2 border-ink px-2 py-1 text-center"
+			class:bg-tie-red={run.rival > 0}
+			class:bg-paper={run.rival === 0}
+			class:text-paper={run.rival > 0}
+			title={m.slider_rival_hint()}
+		>
+			<div class="text-[10px] leading-none font-bold uppercase">{m.slider_rival()}</div>
+			<div class="text-xl leading-tight font-bold tabular-nums">{run.rival}/{MAX_RIVAL}</div>
 		</div>
 	</div>
 

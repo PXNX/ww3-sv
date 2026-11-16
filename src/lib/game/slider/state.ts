@@ -22,6 +22,10 @@ export const DECOY_PENALTY = 6;
 export const SCANDAL_PENALTY = 9;
 export const PRESS_GAIN = 2;
 export const STAR_BONUS = 400;
+/** Each week the rival gains one level of pressure; a press conference takes one level back */
+export const MAX_RIVAL = 4;
+export const RIVAL_DRIFT = 0.08;
+export const RIVAL_SCANDAL = 0.6;
 
 const SPRING = 60;
 const DAMPING = 7;
@@ -46,10 +50,11 @@ export type SliderEvent =
 	| { type: 'decoy'; x: number; y: number; loss: number }
 	| { type: 'scandal'; x: number; y: number; loss: number }
 	| { type: 'missed'; kind: 'rally'; x: number; y: number }
-	| { type: 'press'; cleared: number; gain: number }
+	| { type: 'press'; cleared: number; gain: number; rivalCleared: boolean }
 	| { type: 'press-not-ready' }
 	| { type: 'spawn'; kind: TargetKind }
 	| { type: 'week'; week: number }
+	| { type: 'rival'; pressure: number }
 	| { type: 'end'; won: boolean };
 
 export interface SliderState {
@@ -62,6 +67,8 @@ export interface SliderState {
 	targets: Target[];
 	elapsed: number;
 	week: number;
+	/** How hard the rival is pushing this week: faster drift and nastier scandals */
+	rival: number;
 	combo: number;
 	bestCombo: number;
 	score: number;
@@ -84,6 +91,7 @@ export function createSlider(): SliderState {
 		targets: [],
 		elapsed: 0,
 		week: 1,
+		rival: 0,
 		combo: 0,
 		bestCombo: 0,
 		score: 0,
@@ -98,9 +106,9 @@ export function createSlider(): SliderState {
 	};
 }
 
-/** Approval lost per second to the news cycle */
-export function driftPerSecond(week: number): number {
-	return 0.5 + (week - 1) * 0.25;
+/** Approval lost per second to the news cycle and the rival's campaign */
+export function driftPerSecond(week: number, rival = 0): number {
+	return 0.5 + (week - 1) * 0.25 + rival * RIVAL_DRIFT;
 }
 
 /** Seconds between new tap targets */
@@ -201,12 +209,14 @@ export function tick(state: SliderState, dt: number, random: Random): SliderEven
 
 	state.elapsed += dt;
 	state.pressCooldown = Math.max(0, state.pressCooldown - dt);
-	shift(state, -driftPerSecond(state.week) * dt, 0);
+	shift(state, -driftPerSecond(state.week, state.rival) * dt, 0);
 
 	const week = Math.min(WEEKS_TOTAL, 1 + Math.floor(state.elapsed / WEEK_SECONDS));
 	if (week > state.week) {
 		state.week = week;
+		state.rival = Math.min(MAX_RIVAL, state.rival + 1);
 		events.push({ type: 'week', week });
+		events.push({ type: 'rival', pressure: state.rival });
 	}
 
 	// Spring and damper: the drawn line chases the approval with a lively overshoot
@@ -226,7 +236,7 @@ export function tick(state: SliderState, dt: number, random: Random): SliderEven
 		if (target.age < target.ttl) continue;
 		state.targets = state.targets.filter((other) => other.id !== target.id);
 		if (target.kind === 'scandal') {
-			const loss = SCANDAL_PENALTY + state.week * 0.5;
+			const loss = SCANDAL_PENALTY + state.week * 0.5 + state.rival * RIVAL_SCANDAL;
 			shift(state, -loss, -loss * 3);
 			breakCombo(state);
 			events.push({ type: 'scandal', x: target.x, y: target.y, loss });
@@ -290,9 +300,12 @@ export function pressConference(state: SliderState): SliderEvent[] {
 	const cleared = state.targets.filter((target) => target.kind === 'scandal').length;
 	state.targets = state.targets.filter((target) => target.kind !== 'scandal');
 	state.countered += cleared;
-	const gain = 1 + cleared * PRESS_GAIN;
+	const gain = 1 + cleared * PRESS_GAIN + state.rival * 0.5;
 	shift(state, gain, gain * 4);
 	breakCombo(state);
 	state.pressCooldown = PRESS_COOLDOWN;
-	return [{ type: 'press', cleared, gain }];
+	// A press conference is also the counterplay to the rival: it knocks one level off their push
+	const rivalCleared = state.rival > 0;
+	if (rivalCleared) state.rival--;
+	return [{ type: 'press', cleared, gain, rivalCleared }];
 }

@@ -4622,5 +4622,7 @@
 	"convoy_fuel": "Fuel",
 	"convoy_out_of_fuel": "Out of fuel",
 	"maze_daily": "Daily building",
-	"maze_daily_hint": "One medium maze for everyone today. Same building all day, its own best."
+	"maze_daily_hint": "One medium maze for everyone today. Same building all day, its own best.",
+	"slider_rival": "Rival",
+	"slider_rival_hint": "A rival campaign grows each week. A press conference pushes it back."
 }

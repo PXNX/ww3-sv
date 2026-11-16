@@ -3,6 +3,7 @@ import { createRandom } from '#lib/game/random.js';
 import {
 	COUNTER_GAIN,
 	DECOY_PENALTY,
+	MAX_RIVAL,
 	PRESS_COOLDOWN,
 	RESIGN_LINE,
 	START_APPROVAL,
@@ -10,6 +11,7 @@ import {
 	WEEK_SECONDS,
 	comboMultiplier,
 	createSlider,
+	driftPerSecond,
 	pressConference,
 	spawnWeights,
 	starsFor,
@@ -142,5 +144,49 @@ describe('slider logic', () => {
 			peak = Math.max(peak, state.shown);
 		}
 		expect(peak).toBeGreaterThan(target);
+	});
+});
+
+describe('rival campaign', () => {
+	it('gains one level of pressure each week and shows it in the events', () => {
+		const state = createSlider();
+		state.approval = 100;
+		const events = tick(state, WEEK_SECONDS + 0.1, createRandom(5));
+		expect(state.rival).toBe(1);
+		expect(events).toContainEqual({ type: 'rival', pressure: 1 });
+		for (let week = 2; week < WEEKS_TOTAL; week++) {
+			state.approval = 100;
+			tick(state, WEEK_SECONDS, createRandom(week));
+		}
+		expect(state.rival).toBe(MAX_RIVAL);
+	});
+
+	it('makes the news cycle and scandals bite harder as it grows', () => {
+		expect(driftPerSecond(3, 2)).toBeGreaterThan(driftPerSecond(3, 0));
+		const plain = createSlider();
+		const pressed = createSlider();
+		pressed.rival = 2;
+		plain.approval = pressed.approval = 50;
+		const random = createRandom(4);
+		plain.targets = [addTarget(plain, 'scandal')];
+		pressed.targets = [addTarget(pressed, 'scandal')];
+		plain.targets[0].ttl = pressed.targets[0].ttl = 0;
+		tick(plain, 0.01, random);
+		tick(pressed, 0.01, random);
+		expect(pressed.approval).toBeLessThan(plain.approval);
+	});
+
+	it('lets a press conference push the rival back one level', () => {
+		const state = createSlider();
+		state.rival = 2;
+		const [event] = pressConference(state);
+		expect(event).toMatchObject({ type: 'press', rivalCleared: true });
+		expect(state.rival).toBe(1);
+		state.pressCooldown = 0;
+		pressConference(state);
+		expect(state.rival).toBe(0);
+		state.pressCooldown = 0;
+		const [last] = pressConference(state);
+		expect(last).toMatchObject({ rivalCleared: false });
 	});
 });
