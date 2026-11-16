@@ -4618,9 +4618,5 @@
 	"telemetry_copied": "Protokoll in die Zwischenablage kopiert",
 	"telemetry_copy_failed": "Protokoll konnte nicht kopiert werden",
 	"telemetry_link": "Diagnose",
-	"telemetry_note": "Du kannst dieses Protokoll jederzeit exportieren oder löschen. Es ist nicht Teil deiner Cloud-Speicherung.",
-	"home_search_placeholder": "Modi suchen…",
-	"home_search_clear": "Suche löschen",
-	"home_search_empty": "Keine Modi passen zu dieser Suche.",
-	"home_results": "{count} Modi"
+	"telemetry_note": "Du kannst dieses Protokoll jederzeit exportieren oder löschen. Es ist nicht Teil deiner Cloud-Speicherung."
 }

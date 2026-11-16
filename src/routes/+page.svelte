@@ -35,12 +35,11 @@
 	<ClipPreloadLine class="mx-auto w-full max-w-xs" />
 
 	<header class="flex flex-col items-center gap-3 text-center">
-		<div class="game-banner pop-in inline-block rotate-1 rounded-[16px_8px_14px_10px] border-3 border-ink bg-banner-slate px-5 pt-3 pb-1.5 text-paper shadow-[4px_4px_0_var(--color-ink)]">
-			<h1 class="text-center text-4xl leading-none font-bold sm:text-5xl">{APP_NAME}</h1>
-			<p class="mt-1 text-center text-xs font-bold tracking-wide uppercase opacity-85">
-				{m.home_tagline({ location: m.location_name() })}
-			</p>
-		</div>
+		<h1
+			class="game-banner pop-in inline-block rotate-1 rounded-[16px_8px_14px_10px] border-3 border-ink bg-banner-slate px-4 pt-2 pb-1 text-4xl leading-none font-bold text-paper shadow-[4px_4px_0_var(--color-ink)] sm:text-5xl"
+		>
+			{APP_NAME}
+		</h1>
 
 		<!-- Straight under the title: who is playing and how far they got, one tap into the profile -->
 		<a

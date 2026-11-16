@@ -4618,9 +4618,5 @@
 	"telemetry_copied": "گزارش در کلیپ بورد کپی شد",
 	"telemetry_copy_failed": "کپی گزارش ممکن نشد",
 	"telemetry_link": "تشخیص",
-	"telemetry_note": "می‌توانی این گزارش را هر زمان صادر یا پاک کنی. بخشی از ذخیره ابری تو نیست.",
-	"home_search_placeholder": "جستجوی حالت‌ها…",
-	"home_search_clear": "پاک کردن جستجو",
-	"home_search_empty": "هیچ حالتی با این جستجو مطابقت ندارد.",
-	"home_results": "{count} حالت"
+	"telemetry_note": "می‌توانی این گزارش را هر زمان صادر یا پاک کنی. بخشی از ذخیره ابری تو نیست."
 }

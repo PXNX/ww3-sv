@@ -12,7 +12,6 @@
 	import { PLAY_STYLES, STYLE_OF_MODE, type PlayStyle } from '#lib/modes/styles.js';
 	import { leaderById, type LeaderId } from '#lib/theme/leaders.js';
 	import IconHourglass from '~icons/lucide/hourglass';
-	import IconSearch from '~icons/lucide/search';
 	import IconShuffle from '~icons/lucide/shuffle';
 	import IconTrophy from '~icons/lucide/trophy';
 	import IconX from '~icons/lucide/x';
@@ -24,22 +23,16 @@
 	let { leader = $bindable(null) }: { leader?: LeaderId | null } = $props();
 
 	const careerState = career();
-	let search = $state('');
 
 	// Varied, slight tilts so the cards read like a sticker sheet rather than a dashboard
 	const TILTS = [-2.5, 1.8, -1.2, 2.6, -1.9, 1.1, -2.2, 1.6];
 
 	// Tilt follows the card, not its position in the filtered list, so cards do not jiggle on filter
-	const cards = $derived.by(() => {
-		const query = search.trim().toLowerCase();
-		return MODES.map((mode, index) => ({ mode, tilt: TILTS[index % TILTS.length] })).filter(
-			({ mode }) =>
-				(leader === null || mode.leaders.includes(leader)) &&
-				(!query ||
-					mode.id.includes(query) ||
-					mode.name().toLowerCase().includes(query))
-		);
-	});
+	const cards = $derived(
+		MODES.map((mode, index) => ({ mode, tilt: TILTS[index % TILTS.length] })).filter(
+			({ mode }) => leader === null || mode.leaders.includes(leader)
+		)
+	);
 
 	const recent = $derived(careerState.recent(1).map((id) => modeById(id)));
 
@@ -80,40 +73,6 @@
 		void goto(resolveRoute(mode.href));
 	}
 </script>
-
-<div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-	<label
-		class="panel flex min-w-0 flex-1 items-center gap-2 px-3 py-2 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-dashed has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-tie-red"
-	>
-		<IconSearch class="size-5 shrink-0 opacity-70" aria-hidden="true" />
-		<input
-			bind:value={search}
-			type="search"
-			class="min-w-0 flex-1 bg-transparent font-display text-base outline-none placeholder:opacity-55"
-			placeholder={m.home_search_placeholder()}
-			aria-label={m.home_search_placeholder()}
-			onchange={() => telemetry.track('mode_search')}
-		/>
-		{#if search}
-			<button
-				type="button"
-				class="btn-chunky size-7 shrink-0 rounded-full p-0"
-				aria-label={m.home_search_clear()}
-				onclick={() => {
-					search = '';
-					telemetry.track('mode_search_clear');
-				}}
-			>
-				<IconX class="size-4" aria-hidden="true" />
-			</button>
-		{/if}
-	</label>
-	{#if search}
-		<span class="shrink-0 text-sm font-bold opacity-70">
-			{m.home_results({ count: cards.length })}
-		</span>
-	{/if}
-</div>
 
 {#if leader}
 	<div class="mb-4 flex">
@@ -238,9 +197,7 @@
 	</li>
 {/snippet}
 
-{#if cards.length === 0}
-	<p class="panel p-6 text-center font-bold opacity-75">{m.home_search_empty()}</p>
-{:else if leader === null}
+{#if leader === null}
 	<!-- Grouped by how the games are played -->
 	<div class="flex flex-col gap-8">
 		{#each groups as group (group.style)}
