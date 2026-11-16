@@ -57,11 +57,33 @@ const colours = new Map(
 		match[2]
 	])
 );
+// Tailwind's own palette is not declared in tokens.css, but several modes use it for their tile
+const TAILWIND_TILES: Record<string, string> = {
+	'cyan-100': '#cffafe',
+	'blue-950': '#172554',
+	'slate-900': '#0f172a',
+	'amber-100': '#fef3c7'
+};
+// A few newer modes name themselves inline in the registry instead of in the message files.
+// Split into per-mode blocks so a name can never be attributed to the preceding mode.
+const inlineNames = new Map<string, string>();
+const modeStarts = [...registry.matchAll(/\n\s+id: '(\w+)'/g)];
+for (let i = 0; i < modeStarts.length; i++) {
+	const start = modeStarts[i].index!;
+	const end = i + 1 < modeStarts.length ? modeStarts[i + 1].index! : registry.length;
+	const name = registry.slice(start, end).match(/name: \(\) => '([^']+)'/)?.[1];
+	if (name) inlineNames.set(modeStarts[i][1], name);
+}
+
 const games = [
 	...registry.matchAll(
 		/id: '(\w+)',\s*status: 'playable'[\s\S]*?icon: (\w+),\s*tileClass: 'bg-([\w-]+)'/g
 	)
-].map(([, id, icon, tile]) => ({ id, icon: iconFiles.get(icon), tile: colours.get(tile) }));
+].map(([, id, icon, tile]) => ({
+	id,
+	icon: iconFiles.get(icon),
+	tile: colours.get(tile) ?? TAILWIND_TILES[tile]
+}));
 
 const expected = [...registry.matchAll(/^\s+status: 'playable',/gm)].length;
 if (games.length !== expected) throw new Error(`Read ${games.length} of ${expected} games`);
@@ -96,7 +118,7 @@ const work = mkdtempSync(join(tmpdir(), 'og-'));
 try {
 	for (const { id, icon, tile } of games) {
 		if (only && id !== only) continue;
-		const name = names[`mode_${id}_name`];
+		const name = names[`mode_${id}_name`] ?? inlineNames.get(id);
 		const body = icon && lucide.icons[icon]?.body;
 		if (!name || !body || !tile) throw new Error(`Incomplete data for ${id}`);
 		// The icon bodies set their own stroke attributes on a group; strip them so ours apply
