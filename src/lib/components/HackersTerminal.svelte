@@ -367,7 +367,7 @@
 		}
 	}
 
-	function effect(id: HardwareId): string {
+	function hardwareEffectText(id: HardwareId): string {
 		const effects = hardwareEffects(game.hardware);
 		switch (id) {
 			case 'cpu':
@@ -588,7 +588,7 @@
 								{m.hackers_shop_level({ level, max: part.maxLevel })}
 							</span>
 							<span class="min-w-0 flex-1 truncate opacity-80">
-								{level === 0 ? m.hackers_hw_stock() : effect(part.id)}
+								{level === 0 ? m.hackers_hw_stock() : hardwareEffectText(part.id)}
 							</span>
 							<button
 								type="button"
