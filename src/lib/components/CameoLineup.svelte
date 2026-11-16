@@ -10,10 +10,13 @@
 	let { selected = $bindable(null) }: { selected?: LeaderId | null } = $props();
 </script>
 
-<ul class="grid grid-cols-6 gap-2 p-3" aria-label={m.home_filter_label()}>
+<ul
+	class="flex snap-x gap-2 overflow-x-auto p-3 sm:grid sm:grid-cols-6 sm:overflow-visible"
+	aria-label={m.home_filter_label()}
+>
 	{#each LEADERS as leader, index (leader.id)}
 		{@const active = selected === leader.id}
-		<li>
+		<li class="w-14 shrink-0 snap-start sm:w-auto">
 			<button
 				type="button"
 				class="block w-full cursor-pointer rounded-lg transition-[opacity,scale] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-tie-red focus-visible:outline-dashed active:scale-95 {selected &&

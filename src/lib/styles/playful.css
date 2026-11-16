@@ -111,6 +111,21 @@
 		box-shadow: none;
 	}
 
+	/* A tiny square of hazard tape, used as a bullet in front of section titles */
+	.hazard-dot {
+		width: 0.85rem;
+		height: 0.85rem;
+		flex: none;
+		border: 2px solid var(--color-ink);
+		border-radius: 4px 2px 4px 2px;
+		background: repeating-linear-gradient(
+			135deg,
+			var(--color-mustard) 0 4px,
+			var(--color-ink) 4px 8px
+		);
+		rotate: -8deg;
+	}
+
 	/* A clean paper panel for grouped controls; calmer than the tilted sticker it sits next to */
 	.panel {
 		background: var(--color-paper);

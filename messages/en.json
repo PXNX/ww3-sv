@@ -4618,5 +4618,9 @@
 	"telemetry_copied": "Log copied to the clipboard",
 	"telemetry_copy_failed": "Could not copy the log",
 	"telemetry_link": "Diagnostics",
-	"telemetry_note": "You can export or delete this log at any time. It is not part of your cloud save."
+	"telemetry_note": "You can export or delete this log at any time. It is not part of your cloud save.",
+	"home_search_placeholder": "Search the modes…",
+	"home_search_clear": "Clear search",
+	"home_search_empty": "No modes match that search.",
+	"home_results": "{count} modes"
 }

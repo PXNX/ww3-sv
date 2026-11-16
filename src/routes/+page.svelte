@@ -35,11 +35,12 @@
 	<ClipPreloadLine class="mx-auto w-full max-w-xs" />
 
 	<header class="flex flex-col items-center gap-3 text-center">
-		<h1
-			class="pop-in inline-block rotate-1 rounded-[16px_8px_14px_10px] border-3 border-ink bg-banner-slate px-4 pt-2 pb-1 text-4xl leading-none font-bold text-paper shadow-[4px_4px_0_var(--color-ink)] sm:text-5xl"
-		>
-			{APP_NAME}
-		</h1>
+		<div class="game-banner pop-in inline-block rotate-1 rounded-[16px_8px_14px_10px] border-3 border-ink bg-banner-slate px-5 pt-3 pb-1.5 text-paper shadow-[4px_4px_0_var(--color-ink)]">
+			<h1 class="text-center text-4xl leading-none font-bold sm:text-5xl">{APP_NAME}</h1>
+			<p class="mt-1 text-center text-xs font-bold tracking-wide uppercase opacity-85">
+				{m.home_tagline({ location: m.location_name() })}
+			</p>
+		</div>
 
 		<!-- Straight under the title: who is playing and how far they got, one tap into the profile -->
 		<a
@@ -70,10 +71,14 @@
 
 	<CloudSaveHint />
 
-	<DailyPanel />
+	<!-- The two daily cards sit side by side on a wide screen, stacked on a phone -->
+	<div class="grid grid-cols-[minmax(0,1fr)] items-start gap-4 [&>*]:min-w-0 lg:grid-cols-2"><DailyPanel /></div>
 
 	<section class="flex flex-col gap-4" aria-labelledby="choose-mode">
-		<h2 id="choose-mode" class="text-2xl font-bold">{m.home_choose_mode()}</h2>
+		<h2 id="choose-mode" class="flex items-center gap-2 font-display text-2xl font-bold">
+			<span class="hazard-dot" aria-hidden="true"></span>
+			{m.home_choose_mode()}
+		</h2>
 		<ModeSelect bind:leader />
 	</section>
 

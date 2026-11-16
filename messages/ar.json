@@ -4618,5 +4618,9 @@
 	"telemetry_copied": "نُسخ السجل إلى الحافظة",
 	"telemetry_copy_failed": "تعذّر نسخ السجل",
 	"telemetry_link": "التشخيص",
-	"telemetry_note": "يمكنك تصدير هذا السجل أو حذفه في أي وقت. ليس جزءًا من حفظك السحابي."
+	"telemetry_note": "يمكنك تصدير هذا السجل أو حذفه في أي وقت. ليس جزءًا من حفظك السحابي.",
+	"home_search_placeholder": "ابحث في الأوضاع…",
+	"home_search_clear": "مسح البحث",
+	"home_search_empty": "لا توجد أوضاع تطابق هذا البحث.",
+	"home_results": "{count} وضع"
 }
