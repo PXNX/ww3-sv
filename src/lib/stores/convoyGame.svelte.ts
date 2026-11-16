@@ -3,7 +3,7 @@
  * the canvas every frame; only the numbers the page displays are reactive, and they are synced
  * after each step so the interface does not re-render sixty times a second.
  */
-import { MAX_HULL } from '#lib/game/convoy/constants.js';
+import { FUEL_START, MAX_HULL } from '#lib/game/convoy/constants.js';
 import type { ConvoyEffect } from '#lib/game/convoy/drawScene.js';
 import {
 	createRunner,
@@ -65,6 +65,9 @@ export class ConvoyGame {
 	status = $state<ConvoyStatus>('ready');
 	score = $state(0);
 	hull = $state(MAX_HULL);
+	/** Fuel left in percent; barrels refill it and an empty tank ends the run */
+	fuel = $state(FUEL_START);
+	outOfFuel = $state(false);
 	/** Distance in nautical miles, rounded to a tenth */
 	distance = $state(0);
 	barrels = $state(0);
@@ -223,6 +226,8 @@ export class ConvoyGame {
 		const runner = this.runner;
 		this.score = runnerScore(runner);
 		this.hull = runner.hull;
+		this.fuel = runner.fuel;
+		this.outOfFuel = runner.outOfFuel;
 		this.distance = Math.floor(runnerNauticalMiles(runner) * 10) / 10;
 		this.barrels = runner.barrels;
 		this.multiplier = multiplierFor(runner.nearMissStreak);

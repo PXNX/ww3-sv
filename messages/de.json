@@ -4618,5 +4618,7 @@
 	"telemetry_copied": "Protokoll in die Zwischenablage kopiert",
 	"telemetry_copy_failed": "Protokoll konnte nicht kopiert werden",
 	"telemetry_link": "Diagnose",
-	"telemetry_note": "Du kannst dieses Protokoll jederzeit exportieren oder löschen. Es ist nicht Teil deiner Cloud-Speicherung."
+	"telemetry_note": "Du kannst dieses Protokoll jederzeit exportieren oder löschen. Es ist nicht Teil deiner Cloud-Speicherung.",
+	"convoy_fuel": "Treibstoff",
+	"convoy_out_of_fuel": "Treibstoff leer"
 }

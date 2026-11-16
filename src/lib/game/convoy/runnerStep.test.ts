@@ -4,6 +4,9 @@ import {
 	BARREL_POINTS,
 	ESCORT_BONUS_POINTS,
 	FIRST_PATTERN_AT,
+	FUEL_MAX,
+	FUEL_PER_UNIT,
+	FUEL_START,
 	INVULNERABLE_MS,
 	LANE_CHANGE_MS,
 	LANE_COUNT,
@@ -532,5 +535,50 @@ describe('spawning', () => {
 		const state = run(createRunner(), 60_000, 7);
 		expect(state.obstacles.length).toBeLessThan(40);
 		expect(state.obstacles.every((obstacle) => obstacle.y > state.distance - 3)).toBe(true);
+	});
+});
+
+describe('fuel', () => {
+	it('starts with a full tank and burns fuel as it travels', () => {
+		const start = createRunner();
+		expect(start.fuel).toBe(FUEL_START);
+		const after = run(start, 2000);
+		expect(after.fuel).toBeLessThan(FUEL_START);
+		expect(after.fuel).toBeCloseTo(FUEL_START - after.distance * FUEL_PER_UNIT, 2);
+	});
+
+	it('tops up on barrels without going over the tank', () => {
+		const withBarrel = runnerWith([{ kind: 'barrel', lane: 1, ahead: 0 }], {
+			fuel: FUEL_MAX - 3
+		});
+		const after = stepRunner(withBarrel, STEP, createRandom(1));
+		expect(after.fuel).toBe(FUEL_MAX);
+		expect(after.events.map((event) => event.type)).toContain('refuel');
+	});
+
+	it('ends the run when the tank runs dry', () => {
+		const empty = runnerWith([], { fuel: 0 });
+		const after = stepRunner(empty, STEP, createRandom(1));
+		expect(after.over).toBe(true);
+		expect(after.outOfFuel).toBe(true);
+		expect(after.events.map((event) => event.type)).toContain('out-of-fuel');
+		expect(after.hull).toBe(MAX_HULL);
+	});
+
+	it('lets a barrel collected on the last step save the run', () => {
+		const saved = runnerWith([{ kind: 'barrel', lane: 1, ahead: 0 }], { fuel: 0 });
+		const after = stepRunner(saved, STEP, createRandom(1));
+		expect(after.over).toBe(false);
+		expect(after.outOfFuel).toBe(false);
+		expect(after.fuel).toBeGreaterThan(0);
+	});
+
+	it('gives a revived tanker enough fuel to get going again', () => {
+		const sunk = stepRunner(runnerWith([], { fuel: 0.01 }), STEP, createRandom(1));
+		expect(sunk.over).toBe(true);
+		const revived = reviveRunner(sunk);
+		expect(revived.over).toBe(false);
+		expect(revived.outOfFuel).toBe(false);
+		expect(revived.fuel).toBeGreaterThanOrEqual(FUEL_START / 2);
 	});
 });

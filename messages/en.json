@@ -4618,5 +4618,7 @@
 	"telemetry_copied": "Log copied to the clipboard",
 	"telemetry_copy_failed": "Could not copy the log",
 	"telemetry_link": "Diagnostics",
-	"telemetry_note": "You can export or delete this log at any time. It is not part of your cloud save."
+	"telemetry_note": "You can export or delete this log at any time. It is not part of your cloud save.",
+	"convoy_fuel": "Fuel",
+	"convoy_out_of_fuel": "Out of fuel"
 }

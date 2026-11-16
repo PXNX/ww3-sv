@@ -8,7 +8,7 @@
 	import GameShell from '#lib/components/GameShell.svelte';
 	import LivesBar from '#lib/components/LivesBar.svelte';
 	import PauseOverlay from '#lib/components/PauseOverlay.svelte';
-	import { MAX_HULL } from '#lib/game/convoy/constants.js';
+	import { FUEL_LOW, MAX_HULL } from '#lib/game/convoy/constants.js';
 	import { drawConvoyBoard } from '#lib/game/convoy/drawScene.js';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
@@ -71,6 +71,24 @@
 			class="rounded-[12px_8px_10px_6px] border-3 border-ink bg-mustard px-2 py-0.5 tabular-nums"
 		>
 			{m.convoy_barrels()}: {game.barrels}
+		</span>
+		<span
+			class="inline-flex items-center gap-1.5 rounded-[8px_12px_8px_10px] border-3 border-ink bg-paper px-2 py-0.5 tabular-nums"
+			role="meter"
+			aria-label={m.convoy_fuel()}
+			aria-valuemin={0}
+			aria-valuemax={100}
+			aria-valuenow={Math.round(game.fuel)}
+		>
+			{m.convoy_fuel()}
+			<span class="h-2 w-12 overflow-hidden rounded-full border-2 border-ink bg-sand">
+				<span
+					class="block h-full transition-[width] duration-150 {game.fuel <= FUEL_LOW
+						? 'bg-tie-red'
+						: 'bg-khaki'}"
+					style:width="{game.fuel}%"
+				></span>
+			</span>
 		</span>
 		<!-- The bonus chips always take their space (hidden while inactive) so the HUD never shifts -->
 		{#key game.multiplier}
@@ -181,6 +199,9 @@
 			</dd>
 		</div>
 	</dl>
+	{#if game.outOfFuel}
+		<p class="text-center text-sm font-bold text-tie-red">{m.convoy_out_of_fuel()}</p>
+	{/if}
 </GameOverModal>
 
 <style>

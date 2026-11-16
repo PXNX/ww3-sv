@@ -60,6 +60,15 @@ export const REDUCED_MOTION_RAMP_FACTOR = 0.5;
 
 // Hull and power-ups
 export const MAX_HULL = 3;
+/**
+ * Fuel drains with distance, so a faster tanker burns through it sooner. Oil barrels top it back
+ * up: collecting them is now both points and the only way to keep the engine running.
+ */
+export const FUEL_MAX = 100;
+export const FUEL_START = 70;
+export const FUEL_PER_UNIT = 0.3;
+export const FUEL_PER_BARREL = 14;
+export const FUEL_LOW = 25;
 export const INVULNERABLE_MS = 1400;
 export const ESCORT_INVULNERABLE_MS = 600;
 /** A bought revival: a longer grace period than a normal hit, so the player can find their bearings */

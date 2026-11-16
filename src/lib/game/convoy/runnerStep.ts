@@ -10,6 +10,10 @@ import {
 	ESCORT_BONUS_POINTS,
 	ESCORT_INVULNERABLE_MS,
 	FIRST_PATTERN_AT,
+	FUEL_MAX,
+	FUEL_PER_BARREL,
+	FUEL_PER_UNIT,
+	FUEL_START,
 	GUNBOAT_DRIFT_END,
 	GUNBOAT_DRIFT_START,
 	INVULNERABLE_MS,
@@ -73,7 +77,16 @@ export interface Obstacle {
 }
 
 export type RunnerEventType =
-	'hit' | 'shield' | 'barrel' | 'escort' | 'escortBonus' | 'slick' | 'nearMiss' | 'sunk';
+	| 'hit'
+	| 'shield'
+	| 'barrel'
+	| 'refuel'
+	| 'escort'
+	| 'escortBonus'
+	| 'slick'
+	| 'nearMiss'
+	| 'sunk'
+	| 'out-of-fuel';
 
 export interface RunnerEvent {
 	type: RunnerEventType;
@@ -99,6 +112,10 @@ export interface RunnerState {
 	/** Sliding on an oil slick: steering is locked until the slide ends */
 	slipping: boolean;
 	hull: number;
+	/** Fuel left in percent; running dry ends the run just as a sunk hull does */
+	fuel: number;
+	/** Whether the run ended because the tanker ran out of fuel */
+	outOfFuel: boolean;
 	invulnerableMs: number;
 	escort: boolean;
 	nearMissStreak: number;
@@ -141,6 +158,8 @@ export function createRunner(): RunnerState {
 		dragX: null,
 		slipping: false,
 		hull: MAX_HULL,
+		fuel: FUEL_START,
+		outOfFuel: false,
 		invulnerableMs: 0,
 		escort: false,
 		nearMissStreak: 0,
@@ -395,6 +414,7 @@ export function stepRunner(
 	draft.speed = speedAt(draft.distance, reducedMotion);
 	const travelled = (draft.speed * dtMs) / 1000;
 	draft.distance += travelled;
+	draft.fuel = Math.max(0, draft.fuel - travelled * FUEL_PER_UNIT);
 
 	stepShore(draft, dtMs, random);
 
@@ -440,12 +460,15 @@ export function stepRunner(
 
 		if (overlaps(draft, obstacle)) {
 			switch (obstacle.kind) {
-				case 'barrel':
+				case 'barrel': {
 					draft.barrels++;
 					draft.points += BARREL_POINTS * multiplier;
+					draft.fuel = Math.min(FUEL_MAX, draft.fuel + FUEL_PER_BARREL);
 					event('barrel', obstacle.x, obstacle.y);
+					event('refuel', obstacle.x, obstacle.y);
 					removed.add(obstacle.id);
 					break;
+				}
 				case 'escort':
 					if (draft.escort) {
 						draft.points += ESCORT_BONUS_POINTS * multiplier;
@@ -516,6 +539,13 @@ export function stepRunner(
 	draft.obstacles = draft.obstacles.filter(
 		(obstacle) => !removed.has(obstacle.id) && obstacle.y > draft.distance - TANKER_OFFSET - 1
 	);
+
+	// Checked after pickups so a barrel collected on this very step can still save the run
+	if (draft.fuel <= 0 && !draft.over) {
+		draft.over = true;
+		draft.outOfFuel = true;
+		event('out-of-fuel', draft.x, draft.distance);
+	}
 	return draft;
 }
 
@@ -529,6 +559,8 @@ export function reviveRunner(state: RunnerState): RunnerState {
 	return {
 		...state,
 		hull: 1,
+		fuel: Math.max(state.fuel, FUEL_START / 2),
+		outOfFuel: false,
 		over: false,
 		invulnerableMs: REVIVE_INVULNERABLE_MS,
 		// Settled in its lane and back in the player's hands
