@@ -2,7 +2,6 @@
  * Botnet + data economy: nodes earn data each second. Cable speeds downloads.
  * Downloads purchase botnet nodes and software the player hasn't bought yet.
  */
-import { downloadSpeed } from './hardware';
 
 export type Botnet = { nodes: number; data: number };
 
@@ -42,7 +41,7 @@ export function rawDownloadTime(kind: string): number {
 /** Cable-shrunk download time in ms */
 export function downloadTime(kind: string, cableLevel: number): number {
 	const base = rawDownloadTime(kind);
-	return Math.round(base / downloadSpeed({ cable }));
+	return Math.round(base / (1 + 0.3 * cableLevel));
 }
 
 /** How many nodes unlock each bruteforce level */

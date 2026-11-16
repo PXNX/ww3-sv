@@ -27,7 +27,6 @@ import {
 	scoreOf,
 	setFocus,
 	skillCost,
-	starsOf,
 	stepBattle,
 	timeLeftMs,
 	troopsAlive,
@@ -41,7 +40,6 @@ import {
 	applyCasualties,
 	applyHeroUpgrade,
 	applySkillUpgrade,
-	applyTroopUpgrade,
 	armyCapacity as armyCapacityOf,
 	azovCommand,
 	boatLoads as boatLoadsOf,
@@ -55,7 +53,6 @@ import {
 	canUpgradeSupportSkill,
 	canUpgradeSkill,
 	canUpgradeTroop as canUpgradeTroopAt,
-	changeTroop as changeTroopIn,
 	chartedCount as chartedCountOf,
 	claimAchievements,
 	canCutBuild,
@@ -584,6 +581,8 @@ export class BeachheadGame {
 	#applyTakebacks(save: BeachheadSave): BeachheadSave {
 		const result = processTakebacks(save, ISLAND_IDS, this.#now(), this.#random);
 		if (result.lost.length > 0) {
+			// Plain Set used once to deduplicate before writing the reactive array
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity
 			this.recentTakeovers = [...new Set([...this.recentTakeovers, ...result.lost])];
 		}
 		return result.save;

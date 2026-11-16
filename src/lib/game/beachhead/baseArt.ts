@@ -51,7 +51,6 @@ import {
 	MUSTARD,
 	PAPER,
 	SAND,
-	SAND_DARK,
 	SEA,
 	SEA_DARK,
 	STEEL,
@@ -1364,7 +1363,7 @@ function drawBuilder(
 			let vy = -2.6 - Math.abs(spread) * 0.9 - (chip % 2) * 0.8;
 			let x = wallX;
 			let y = wallY;
-			let t = sinceHit;
+			const t = sinceHit;
 			let bounces = 0;
 			// Step the flight under gravity, reflecting off the ground a couple of times
 			const g = 9.5;

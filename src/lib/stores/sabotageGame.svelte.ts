@@ -117,6 +117,8 @@ export class SabotageGame {
 
 	#scores: Highscores;
 	#store: () => Store;
+	// Input keys are read per frame, never rendered, so a plain Set is the right tool here
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
 	#keys = new Set<string>();
 	#stick = { x: 0, y: 0 };
 	#sprintButton = false;

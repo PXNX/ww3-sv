@@ -33,7 +33,7 @@
 		PRODUCERS,
 		STEP_MS
 	} from '#lib/game/tycoon/config.js';
-	import { upgradeDef, prestigeMultiplier } from '#lib/game/tycoon/economy.js';
+	import { upgradeDef } from '#lib/game/tycoon/economy.js';
 	import {
 		formatBig,
 		formatCount,

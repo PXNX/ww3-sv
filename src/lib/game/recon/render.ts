@@ -187,9 +187,17 @@ function drawTerrain(c: CanvasRenderingContext2D, terrain: Terrain, sensor: Sens
 		c.strokeStyle = p.furrow;
 		c.lineWidth = 1;
 		c.beginPath();
-		if (f.vertical)
-			for (let x = f.x + 9; x < f.x + f.w; x += 9) (c.moveTo(x, f.y), c.lineTo(x, f.y + f.h));
-		else for (let y = f.y + 9; y < f.y + f.h; y += 9) (c.moveTo(f.x, y), c.lineTo(f.x + f.w, y));
+		if (f.vertical) {
+			for (let x = f.x + 9; x < f.x + f.w; x += 9) {
+				c.moveTo(x, f.y);
+				c.lineTo(x, f.y + f.h);
+			}
+		} else {
+			for (let y = f.y + 9; y < f.y + f.h; y += 9) {
+				c.moveTo(f.x, y);
+				c.lineTo(f.x + f.w, y);
+			}
+		}
 		c.stroke();
 		c.strokeStyle = p.field;
 		c.lineWidth = p.line;
@@ -237,7 +245,7 @@ function drawTerrain(c: CanvasRenderingContext2D, terrain: Terrain, sensor: Sens
 	}
 
 	// Building blocks near soldiers become highlighted targets
-	for (const b of (terrain as any).blocks ?? []) {
+	for (const b of terrain.blocks) {
 		const nearSoldier = run.tracks.some(
 			(t) =>
 				t.status === 'open' &&

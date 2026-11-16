@@ -10,7 +10,7 @@
 	import GameShell from '#lib/components/GameShell.svelte';
 	import ReconCanvas from '#lib/components/ReconCanvas.svelte';
 	import TutorialModal from '#lib/components/TutorialModal.svelte';
-	import { MAX_SORTIES, VIEWS } from '#lib/game/recon/config.js';
+	import { MAX_SORTIES } from '#lib/game/recon/config.js';
 	import { SENSORS } from '#lib/game/recon/contacts.js';
 	import { RECON_TEXT } from '#lib/game/recon/text.js';
 	import { m } from '#lib/paraglide/messages.js';

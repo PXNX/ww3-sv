@@ -117,7 +117,7 @@
 
 			<!-- Subtle floating specks in the background -->
 			<div class="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
-				{#each [1, 2, 3, 4, 5] as i}
+				{#each [1, 2, 3, 4, 5] as i (i)}
 					<span
 						class="speck absolute rounded-full bg-paper/40"
 						style="width:{8 + i * 3}px;height:{8 + i * 3}px;left:{10 + i * 15}%;top:{15 +

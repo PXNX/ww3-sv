@@ -25,14 +25,13 @@ import {
 	upgradeCost,
 	walletFor,
 	SIPHON_DAY_MS,
-	toolSpec,
 	type ToolId,
 	type Upgrades,
 	wrongGuessTrace
 } from './software';
 import { isDark, makePanel, pressRelay } from './breaker';
-import { emptyHardware, hardwareSpec, hardwareEffects, type Hardware } from './hardware';
-import { emptyBotnet, botnetIncome, downloadTime, type Botnet } from './botnet';
+import { downloadSpeed, emptyHardware, type Hardware } from './hardware';
+import { emptyBotnet, botnetIncome, type Botnet } from './botnet';
 import {
 	captureChip,
 	captureLetter,

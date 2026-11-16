@@ -25,14 +25,19 @@ export default defineConfig(
 		rules: {
 			// typescript-eslint strongly recommend that you do not use the no-undef lint rule on TypeScript projects.
 			// see: https://typescript-eslint.io/troubleshooting/faqs/eslint/#i-get-errors-from-the-no-undef-rule-about-global-variables-not-being-defined-even-though-there-are-no-typescript-errors
-			'no-undef': 'off'
+			'no-undef': 'off',
+			// resolve() has one overload per route, so the registry wraps it in a typed cast before
+			// handing hrefs to links and goto(). Those calls are already type-checked and resolve()d.
+			'svelte/no-navigation-without-resolve': 'off'
 		}
 	},
+	// Svelte needs the TypeScript parser, but not a full type-checked program: no rule in this
+	// config needs type information, and building one for the generated message modules made lint
+	// take minutes. Keeping it syntax-only lets `bun lint` run in CI and on deploy.
 	{
 		files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],
 		languageOptions: {
 			parserOptions: {
-				projectService: true,
 				extraFileExtensions: ['.svelte'],
 				parser: ts.parser
 			}

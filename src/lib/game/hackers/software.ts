@@ -141,8 +141,7 @@ export function relayReliefPercent(upgrades: Upgrades): number {
 export function effectiveSpec(
 	n: number,
 	upgrades: Upgrades,
-	hardware: Hardware = emptyHardware(),
-	botnet: { nodes: number } = { nodes: 0 }
+	hardware: Hardware = emptyHardware()
 ): ContractSpec {
 	const base = contractSpec(n);
 	const slow = keylogSpeed(upgrades);

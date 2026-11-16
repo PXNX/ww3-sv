@@ -135,9 +135,9 @@ export function spawnWeights(week: number): Record<TargetKind, number> {
 
 function pickKind(week: number, random: Random): TargetKind {
 	const weights = spawnWeights(week);
-	let roll = random() * (weights.rally + weights.scandal + weights.decoy);
-	if ((roll -= weights.rally) < 0) return 'rally';
-	if ((roll -= weights.scandal) < 0) return 'scandal';
+	const roll = random() * (weights.rally + weights.scandal + weights.decoy);
+	if (roll < weights.rally) return 'rally';
+	if (roll < weights.rally + weights.scandal) return 'scandal';
 	return 'decoy';
 }
 
