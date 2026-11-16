@@ -98,6 +98,17 @@ try {
 	await sleep(3000);
 	await send('Runtime.evaluate', { expression: seen });
 
+	// The card is a picture of the *gameplay*, not of the shared game shell. Hide the banner and
+	// the floating back/action row with visibility (not display) so the board keeps its position.
+	const hideShell = `
+		if (!document.getElementById('card-shell-hider')) {
+			const style = document.createElement('style');
+			style.id = 'card-shell-hider';
+			style.textContent = 'header.game-banner, main > h1.sr-only, main > div:first-child:not(.game-enter) { visibility: hidden !important; }';
+			document.head.append(style);
+		}
+	`;
+
 	mkdirSync(outDir, { recursive: true });
 	for (const id of games) {
 		// A blank page or the error page means the game had not loaded yet (a dev server compiles a
@@ -110,10 +121,15 @@ try {
 				expression: `document.body.innerText.trim().length > 0 && !/^Error \\d{3}/.test(document.title)`
 			});
 			if (!(result as { value?: boolean }).value) continue;
+			await send('Runtime.evaluate', { expression: hideShell });
 			const { data } = await send('Page.captureScreenshot', { format: 'webp', quality: 60 });
 			image = Buffer.from(String(data), 'base64');
 		}
-		if (!image) throw new Error(`${id} did not load`);
+		if (!image) {
+			// One broken route must not stop the whole sheet; an existing card stays in place
+			console.warn(`${id} did not load, skipped`);
+			continue;
+		}
 		writeFileSync(join(outDir, `${id}.webp`), image);
 		console.log(`${id}.webp`);
 	}
