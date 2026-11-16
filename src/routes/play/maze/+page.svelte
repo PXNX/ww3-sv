@@ -52,7 +52,9 @@
 	};
 
 	const playing = $derived(game.screen === 'play');
-	const title = $derived(playing ? `${modeName} · ${sizeName[game.size]()}` : modeName);
+	const title = $derived(
+		playing ? (game.isDaily ? m.maze_daily() : `${modeName} · ${sizeName[game.size]()}`) : modeName
+	);
 	/** The documents this maze hides, in a fixed order, found or not */
 	const slots = $derived(
 		[...game.needed]

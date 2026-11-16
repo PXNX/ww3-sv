@@ -56,6 +56,32 @@ describe('MazeGame', () => {
 		expect(JSON.stringify(first.maze.doors)).toBe(mazes[1]);
 	});
 
+	it('gives everyone the same daily building on the same day', () => {
+		const doors = (date: Date) => {
+			const game = newGame().game;
+			game.startDaily(date, false);
+			return JSON.stringify(game.maze.doors);
+		};
+		const today = new Date(2026, 0, 2);
+		expect(doors(today)).toBe(doors(new Date(2026, 0, 2, 23)));
+		expect(doors(today)).not.toBe(doors(new Date(2026, 0, 3)));
+	});
+
+	it('keeps the daily best separate from the open sizes and repeats the same building', () => {
+		const { game } = newGame();
+		game.startDaily(new Date(2026, 0, 2), false);
+		expect(game.isDaily).toBe(true);
+		expect(game.size).toBe('medium');
+		const first = JSON.stringify(game.maze.doors);
+		playSolution(game);
+		expect(game.bestFor('medium', true)).toBe(game.steps);
+		expect(game.bestFor('medium')).toBeNull();
+		expect(highscoreParts('medium', true)).toEqual(['maze', 'daily', 'steps']);
+		game.again();
+		expect(JSON.stringify(game.maze.doors)).toBe(first);
+		expect(game.isDaily).toBe(true);
+	});
+
 	it('counts bumps as steps but plain walls as nothing', () => {
 		const { game } = newGame();
 		game.start('small', 11);

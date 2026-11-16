@@ -16,7 +16,7 @@ import {
 	type PlayState
 } from '#lib/game/maze/play.js';
 import { parSteps } from '#lib/game/maze/solver.js';
-import { randomSeed } from '#lib/game/random.js';
+import { dailySeed, randomSeed } from '#lib/game/random.js';
 import { highscores, type Highscores } from '#lib/services/highscore.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
 
@@ -35,8 +35,8 @@ function isPortraitScreen(): boolean {
 	return typeof window !== 'undefined' && window.innerHeight > window.innerWidth;
 }
 
-export function highscoreParts(size: SizeId): string[] {
-	return ['maze', size, 'steps'];
+export function highscoreParts(size: SizeId, daily = false): string[] {
+	return daily ? ['maze', 'daily', 'steps'] : ['maze', size, 'steps'];
 }
 
 export interface MazeGameOptions {
@@ -48,6 +48,8 @@ export interface MazeGameOptions {
 export class MazeGame {
 	screen = $state<MazeScreen>('select');
 	size = $state<SizeId>('small');
+	/** True for the shared daily building, which keeps its own best and its own seed */
+	isDaily = $state(false);
 	maze = $state.raw<Maze>(generateMaze(1, SIZES.small));
 	play = $state.raw<PlayState>(startState(this.maze));
 	notice = $state.raw<MazeNotice | null>(null);
@@ -61,6 +63,7 @@ export class MazeGame {
 
 	#scores: Highscores;
 	#newSeed: () => number;
+	#dailySeed = 0;
 
 	constructor({ scores = highscores(), newSeed = randomSeed }: MazeGameOptions = {}) {
 		this.#scores = scores;
@@ -88,8 +91,8 @@ export class MazeGame {
 		return seenRooms(this.maze, this.play);
 	}
 
-	bestFor(size: SizeId): number | null {
-		return this.#scores.get(highscoreParts(size));
+	bestFor(size: SizeId, daily = false): number | null {
+		return this.#scores.get(highscoreParts(size, daily));
 	}
 
 	/**
@@ -97,7 +100,13 @@ export class MazeGame {
 	 * portrait screen the building stands upright (more rows than columns, same number of offices),
 	 * so it fills the height of a phone instead of leaving half of it empty.
 	 */
-	start(size: SizeId, seed: number = this.#newSeed(), portrait: boolean = isPortraitScreen()) {
+	start(
+		size: SizeId,
+		seed: number = this.#newSeed(),
+		portrait: boolean = isPortraitScreen(),
+		daily = false
+	) {
+		this.isDaily = daily;
 		this.size = size;
 		const config = SIZES[size];
 		this.maze = generateMaze(
@@ -109,6 +118,15 @@ export class MazeGame {
 		this.screen = 'play';
 	}
 
+	/** Opens the shared building for today: the same maze for every player, with its own best */
+	// The date is only read to derive a seed; it is never rendered, so a plain Date is enough
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
+	startDaily(date: Date = new Date(), portrait: boolean = isPortraitScreen()) {
+		const seed = dailySeed('maze', date);
+		this.#dailySeed = seed;
+		this.start('medium', seed, portrait, true);
+	}
+
 	/** Walks the same maze again from the start */
 	restart() {
 		this.play = startState(this.maze);
@@ -116,12 +134,13 @@ export class MazeGame {
 		this.noticeCount = 0;
 		this.stars = 0;
 		this.isNewBest = false;
-		this.best = this.bestFor(this.size);
+		this.best = this.bestFor(this.size, this.isDaily);
 	}
 
-	/** A new maze of the same size */
+	/** A new maze of the same size, or a fresh walk of today's daily building */
 	again() {
-		this.start(this.size);
+		if (this.isDaily) this.start(this.size, this.#dailySeed, isPortraitScreen(), true);
+		else this.start(this.size);
 	}
 
 	backToSelect() {
@@ -171,7 +190,11 @@ export class MazeGame {
 
 	#finish() {
 		this.stars = starsFor(this.play.steps, this.par);
-		const result = this.#scores.submit(highscoreParts(this.size), this.play.steps, 'lower');
+		const result = this.#scores.submit(
+			highscoreParts(this.size, this.isDaily),
+			this.play.steps,
+			'lower'
+		);
 		this.isNewBest = result.isNewBest;
 		this.best = result.best;
 		soundManager().play(this.stars === 3 ? 'chime-big' : 'chime');

@@ -4620,5 +4620,7 @@
 	"telemetry_link": "Diagnostics",
 	"telemetry_note": "You can export or delete this log at any time. It is not part of your cloud save.",
 	"convoy_fuel": "Fuel",
-	"convoy_out_of_fuel": "Out of fuel"
+	"convoy_out_of_fuel": "Out of fuel",
+	"maze_daily": "Daily building",
+	"maze_daily_hint": "One medium maze for everyone today. Same building all day, its own best."
 }

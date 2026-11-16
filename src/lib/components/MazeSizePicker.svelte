@@ -3,6 +3,7 @@
 	import { SIZE_IDS, SIZES, type SizeId } from '#lib/game/maze/difficulty.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import type { MazeGame } from '#lib/stores/mazeGame.svelte.js';
+	import IconCalendarDays from '~icons/lucide/calendar-days';
 	import IconCalendarX from '~icons/lucide/calendar-x';
 	import IconFileText from '~icons/lucide/file-text';
 	import IconGrid from '~icons/lucide/layout-grid';
@@ -20,6 +21,26 @@
 
 <section class="flex flex-col gap-4" aria-labelledby="maze-size-title">
 	<p class="leading-snug">{m.maze_intro()}</p>
+
+	<button
+		type="button"
+		class="sticker sticker-interactive flex w-full flex-col items-start gap-1 bg-explosion-yellow/70 p-4 text-start active:scale-95"
+		style:--tilt="-1deg"
+		onclick={() => game.startDaily()}
+	>
+		<span class="flex items-center gap-2 font-display text-2xl leading-none font-bold">
+			<IconCalendarDays class="size-6" aria-hidden="true" />
+			{m.maze_daily()}
+		</span>
+		<span class="text-sm leading-snug">{m.maze_daily_hint()}</span>
+		{#if game.bestFor('medium', true) !== null}
+			<span class="mt-1 flex items-center gap-1.5 text-sm font-bold">
+				<IconTrophy class="size-4" aria-hidden="true" />
+				{m.maze_best_steps({ steps: game.bestFor('medium', true)! })}
+			</span>
+		{/if}
+	</button>
+
 	<h2 id="maze-size-title" class="text-2xl font-bold">{m.maze_choose_size()}</h2>
 	<ul class="grid gap-4 sm:grid-cols-3">
 		{#each SIZE_IDS as id (id)}
