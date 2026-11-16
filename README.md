@@ -24,6 +24,27 @@ bun run dev
 
 The development server runs on <http://localhost:3021>.
 
+## Deployment
+
+[`vercel.json`](vercel.json) holds the deploy configuration. Vercel installs with
+`bun install --frozen-lockfile` and builds with `bun run lint && bun run build`, so a deploy fails
+if formatting (`bun fmt --check`) or ESLint fails. `bun run lint` is the one command that runs both;
+use `bun fmt` to fix formatting and `bun lint --fix` for the linter's own fixes. The SvelteKit
+Vercel adapter (configured in `vite.config.ts`) builds the serverless function, so no extra output
+settings are needed here.
+
+Pushing to `main` deploys the web app automatically. Before pushing, run the same commands locally:
+
+```sh
+bun install --frozen-lockfile
+bun run lint
+bun run check
+bun run test
+bun run build
+```
+
+The Telegram bot in `bot/` is not deployed by Vercel; it runs as a container on the server.
+
 ## Scripts
 
 | Script                 | Purpose                                                           |
