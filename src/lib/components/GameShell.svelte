@@ -256,7 +256,7 @@
 		<h1 class="sr-only">{title}</h1>
 	{:else if compact}
 		<header
-			class="ms-(--top-left-inset) me-(--top-right-inset) flex items-center gap-2 rounded-[14px_8px_16px_10px] border-3 border-ink bg-banner-slate py-1 ps-1.5 pe-3 text-paper shadow-[4px_4px_0_var(--color-ink)] sm:gap-3 sm:py-1.5 sm:ps-2 sm:pe-4"
+			class="game-banner ms-(--top-left-inset) me-(--top-right-inset) flex items-center gap-2 rounded-[14px_8px_16px_10px] border-3 border-ink bg-banner-slate pt-2.5 pb-1 ps-1.5 pe-3 text-paper shadow-[4px_4px_0_var(--color-ink)] sm:gap-3 sm:pt-3 sm:ps-2 sm:pe-4"
 		>
 			{@render backLink()}
 			<h1
@@ -268,7 +268,7 @@
 			</h1>
 			{@render actions?.()}
 			{#if score !== undefined}
-				<div class="flex items-baseline gap-2 font-display leading-none">
+				<div class="score-pod flex-row items-baseline gap-2 font-display leading-none">
 					{#if best}
 						<span class="text-xs font-bold opacity-90">{m.game_best()}: {best}</span>
 					{/if}
@@ -281,14 +281,14 @@
 		</header>
 	{:else}
 		<header
-			class="{wide
+			class="game-banner {wide
 				? '[@media(max-height:520px)]:hidden'
-				: ''} flex items-center justify-between gap-3 rounded-[14px_8px_16px_10px] border-3 border-ink bg-banner-slate px-3 py-1.5 text-paper shadow-[4px_4px_0_var(--color-ink)] sm:px-4 sm:py-2"
+				: ''} flex items-center justify-between gap-3 rounded-[14px_8px_16px_10px] border-3 border-ink bg-banner-slate px-3 pt-2.5 pb-1.5 text-paper shadow-[4px_4px_0_var(--color-ink)] sm:px-4 sm:pt-3 sm:pb-2"
 		>
 			<h1 class="text-xl leading-tight font-bold sm:text-2xl lg:text-3xl">{title}</h1>
 			{#if score !== undefined}
-				<div class="flex flex-col items-end font-display leading-none">
-					<span class="text-xs font-bold tracking-wide uppercase opacity-90">{m.game_score()}</span>
+				<div class="score-pod font-display leading-none">
+					<span class="eyebrow">{m.game_score()}</span>
 					{#key score}
 						<span class="pop-in text-3xl font-bold tabular-nums">{score}</span>
 					{/key}

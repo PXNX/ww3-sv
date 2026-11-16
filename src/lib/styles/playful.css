@@ -58,10 +58,74 @@
 			box-shadow 180ms var(--ease-spring);
 	}
 
+	.btn-chunky:hover {
+		translate: 0 -2px;
+		box-shadow: 5px 6px 0 var(--color-ink);
+	}
+
 	.btn-chunky:active {
 		scale: 1.06 0.9;
 		translate: 2px 2px;
 		box-shadow: var(--shadow-hard-small);
+	}
+
+	[data-theme='dark'] .btn-chunky:hover {
+		box-shadow: var(--shadow-raised);
+	}
+
+	/* Shared game banner: a strip of hazard tape under the ink border, then the title and score */
+	.game-banner {
+		position: relative;
+		isolation: isolate;
+		background-image: linear-gradient(180deg, rgb(255 255 255 / 0.08), transparent 65%);
+	}
+
+	.game-banner::before {
+		content: '';
+		position: absolute;
+		inset: 0 0 auto;
+		z-index: -1;
+		height: 5px;
+		background: repeating-linear-gradient(
+			115deg,
+			var(--color-mustard) 0 11px,
+			var(--color-ink) 11px 22px
+		);
+		opacity: 0.9;
+	}
+
+	/* Score capsule: a little sticker of its own, so the number reads at a glance in every mode */
+	.score-pod {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		padding: 0.25rem 0.6rem 0.3rem;
+		border: 2px solid var(--color-ink);
+		border-radius: 12px 6px 11px 7px / 7px 11px 6px 12px;
+		background: color-mix(in srgb, var(--color-paper) 88%, var(--color-mustard));
+		box-shadow: var(--shadow-hard-small);
+	}
+
+	[data-theme='dark'] .score-pod {
+		border-color: var(--color-line);
+		box-shadow: none;
+	}
+
+	/* A clean paper panel for grouped controls; calmer than the tilted sticker it sits next to */
+	.panel {
+		background: var(--color-paper);
+		border: var(--outline);
+		border-radius: 16px 9px 15px 8px / 9px 15px 8px 16px;
+		box-shadow: var(--shadow-hard);
+	}
+
+	/* Small uppercase label above numbers and section headings */
+	.eyebrow {
+		font-size: 0.7rem;
+		font-weight: 800;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		opacity: 0.75;
 	}
 
 	/* Visible, on-style focus ring */
@@ -103,6 +167,10 @@
 		.sticker-interactive:hover,
 		.sticker-interactive:focus-visible,
 		.sticker-interactive:focus-within {
+			translate: none;
+		}
+
+		.btn-chunky:hover {
 			translate: none;
 		}
 

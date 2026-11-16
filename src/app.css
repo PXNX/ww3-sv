@@ -68,6 +68,22 @@
 html,
 body {
 	overscroll-behavior-y: none;
+	/* Tilted stickers and full-bleed canvases must never leave a sideways scrollbar on a phone */
+	overflow-x: clip;
+}
+
+/* A faint newsprint grain warms the flat paper without costing a background image request */
+body {
+	background-image: radial-gradient(circle at 1px 1px, rgb(17 17 17 / 0.045) 1px, transparent 1.2px);
+	background-size: 18px 18px;
+}
+
+[data-theme='dark'] body {
+	background-image: radial-gradient(
+		circle at 1px 1px,
+		rgb(236 230 207 / 0.035) 1px,
+		transparent 1.2px
+	);
 }
 
 /*
