@@ -105,8 +105,7 @@ export function createPhysicsWorld({
 		world,
 		bodies,
 		random,
-		addBox: (x, y, width, height, options) =>
-			add(Box(width / 2, height / 2), x, y, options),
+		addBox: (x, y, width, height, options) => add(Box(width / 2, height / 2), x, y, options),
 		addCircle: (x, y, radius, options) => add(Circle(radius), x, y, options),
 		addGround: (y, width = 200) =>
 			add(Edge({ x: -width, y }, { x: width, y }), 0, 0, {
