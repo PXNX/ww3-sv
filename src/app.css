@@ -134,14 +134,17 @@ body {
 
 [data-theme='dark'] {
 	color-scheme: dark;
-	--color-ink: #ece6cf;
+	--color-ink: #f2ecda;
 	/* Three steps of night sky: the page is deepest, cards sit a step above it */
-	--color-paper: #18243f;
+	--color-paper: #1b2b4b;
 	--color-sand: #0e1628;
 	/* Still the muted chip it is by day, only deep enough for cream text to sit on */
-	--color-banner-slate: #33456b;
+	--color-banner-slate: #3a507b;
 	--color-tie-red: #ee6a70;
 	--color-khaki: #86996a;
+	/* Deep red hearts vanish on navy; lift them to a bright red with a pale outline */
+	--color-heart: #f0566a;
+	--color-heart-outline: #ffd9dd;
 	/* The daisyUI pieces (the Stars checkbox) follow the same tones */
 	--color-base-100: #0e1628;
 	--color-base-200: #18243f;
@@ -150,8 +153,8 @@ body {
 	--color-neutral: #ece6cf;
 	--color-neutral-content: #0e1628;
 
-	/* Outlines are cream turned down, so the thick strokes frame things without glaring */
-	--color-line: rgb(236 230 207 / 0.42);
+	/* Outlines are cream turned down, just enough to frame cards without glaring */
+	--color-line: rgb(242 236 218 / 0.58);
 	--outline: 3px solid var(--color-line);
 	/* Hard offset shadows turn into deep shade on the dark page instead of a cream copy */
 	--shadow-hard: 4px 4px 0 #060b17;
@@ -195,6 +198,51 @@ body {
 /* Ink borders are the same cream as the text; by night they soften to the line tone */
 [data-theme='dark'] .border-ink {
 	border-color: var(--color-line);
+}
+
+/*
+ * White icons on a bright chip are hard to read in either theme. The chip already gives its own
+ * text a dark colour; do the same for icons and labels that force white or cream explicitly.
+ */
+:is(.bg-explosion-yellow, .bg-mustard, .bg-khaki, .bg-flag-blue):is(.text-white, .dark\:text-white),
+:is(.bg-explosion-yellow, .bg-mustard, .bg-khaki, .bg-flag-blue)
+	:is(.text-white, .dark\:text-white) {
+	color: #141414;
+}
+
+/* Red counts on a yellow reward chip need a much deeper red than the accent tone */
+:is(.bg-explosion-yellow, .bg-mustard) :is(.text-tie-red, .dark\:text-tie-red),
+:is(.bg-explosion-yellow, .bg-mustard).text-tie-red {
+	color: #7a0f18;
+}
+
+/* Helper text that is dimmed on paper stays readable on the dark ground */
+[data-theme='dark'] .opacity-60 {
+	opacity: 0.82;
+}
+[data-theme='dark'] .opacity-70 {
+	opacity: 0.88;
+}
+[data-theme='dark'] .opacity-75 {
+	opacity: 0.9;
+}
+[data-theme='dark'] .opacity-80 {
+	opacity: 0.92;
+}
+
+/* Scrollbars follow the night palette instead of leaving a bright strip in a dark card */
+[data-theme='dark'] {
+	scrollbar-color: #3a507b var(--color-sand);
+	scrollbar-width: thin;
+}
+[data-theme='dark'] ::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+[data-theme='dark'] ::-webkit-scrollbar-thumb {
+	background: #3a507b;
+	border: 2px solid var(--color-sand);
+	border-radius: 999px;
 }
 
 /*
