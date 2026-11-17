@@ -17,6 +17,7 @@
 	import { firstPlay } from '#lib/services/tutorial.js';
 	import { ParkingGame } from '#lib/stores/parkingGame.svelte.js';
 	import IconHelp from '~icons/lucide/circle-help';
+	import IconLightbulb from '~icons/lucide/lightbulb';
 	import IconList from '~icons/lucide/list';
 	import IconRotate from '~icons/lucide/rotate-ccw';
 	import IconUndo from '~icons/lucide/undo-2';
@@ -127,7 +128,25 @@
 
 			<ParkingBoard {game} {reducedMotion} />
 
+			{#if game.hint}
+				<p
+					role="status"
+					class="rounded-md border-2 border-explosion-yellow bg-paper px-3 py-1 text-center text-sm font-bold"
+				>
+					{m.parking_hint_text()}
+				</p>
+			{/if}
+
 			<div class="flex flex-wrap items-center justify-center gap-2">
+				<button
+					type="button"
+					class="btn-chunky px-3 py-1 text-sm"
+					disabled={game.hintsLeft === 0 || game.won || game.hint !== null}
+					onclick={() => game.showHint()}
+				>
+					<IconLightbulb class="size-4" aria-hidden="true" />
+					{m.parking_hint_button({ count: game.hintsLeft })}
+				</button>
 				<button
 					type="button"
 					class="btn-chunky px-3 py-1 text-sm"

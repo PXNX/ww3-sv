@@ -18,6 +18,19 @@
 	const puzzle = $derived(game.puzzle);
 	const exitRow = $derived(puzzle.pieces[TANKER_INDEX].line);
 
+	/** Where the hinted ship should slide to, in board cells */
+	const hintTarget = $derived.by(() => {
+		const hint = game.hint;
+		const piece = hint && puzzle.pieces[hint.piece];
+		if (!hint || !piece) return null;
+		return {
+			left: piece.axis === 'h' ? hint.to : piece.line,
+			top: piece.axis === 'h' ? piece.line : hint.to,
+			width: piece.axis === 'h' ? piece.length : 1,
+			height: piece.axis === 'h' ? 1 : piece.length
+		};
+	});
+
 	let boardElement: HTMLDivElement | undefined = $state();
 	/** The ship being dragged and where it is along its axis, in (fractional) cells */
 	let drag = $state<{ index: number; pos: number } | null>(null);
@@ -218,17 +231,30 @@
 			</svg>
 		{/each}
 
+		{#if hintTarget}
+			<div
+				class="parking-hint-target pointer-events-none absolute rounded-md"
+				style:left={percent(hintTarget.left, puzzle.width)}
+				style:top={percent(hintTarget.top, puzzle.height)}
+				style:width={percent(hintTarget.width, puzzle.width)}
+				style:height={percent(hintTarget.height, puzzle.height)}
+				aria-hidden="true"
+			></div>
+		{/if}
+
 		{#each puzzle.pieces as piece, index (index)}
 			{@const at = shown(index)}
 			{@const dragging = drag?.index === index}
+			{@const hinted = game.hint?.piece === index}
 			<div
 				role="button"
 				tabindex={game.won ? -1 : 0}
-				aria-label={shipName(index)}
+				aria-label={shipName(index) + (hinted ? m.parking_hint_ship() : '')}
 				class="parking-ship absolute cursor-grab rounded-md p-[2%] focus-visible:outline-3 focus-visible:outline-offset-1 focus-visible:outline-ink {dragging
 					? 'z-10 cursor-grabbing'
-					: ''} {reducedMotion || dragging ? '' : 'parking-ship-glide'} {game.won &&
-				index === TANKER_INDEX
+					: ''} {hinted ? 'parking-ship-hint' : ''} {reducedMotion || dragging
+					? ''
+					: 'parking-ship-glide'} {game.won && index === TANKER_INDEX
 					? 'parking-ship-leaving'
 					: ''}"
 				style:left={piece.axis === 'h'
@@ -277,6 +303,25 @@
 			top 120ms ease-out;
 	}
 
+	/* The one hinted ship glows, and a dashed marker shows where it can slide to */
+	.parking-ship-hint {
+		outline: 4px solid var(--color-explosion-yellow);
+		outline-offset: 2px;
+	}
+
+	.parking-hint-target {
+		background: color-mix(in srgb, var(--color-explosion-yellow) 35%, transparent);
+		outline: 3px dashed var(--color-ink);
+		outline-offset: -3px;
+		animation: parking-hint-pulse 1.2s ease-in-out infinite;
+	}
+
+	@keyframes parking-hint-pulse {
+		50% {
+			opacity: 0.3;
+		}
+	}
+
 	.parking-ship-leaving {
 		transition:
 			left 650ms ease-in,
@@ -289,6 +334,10 @@
 		.parking-ship-glide,
 		.parking-ship-leaving {
 			transition: none;
+		}
+
+		.parking-hint-target {
+			animation: none;
 		}
 	}
 </style>

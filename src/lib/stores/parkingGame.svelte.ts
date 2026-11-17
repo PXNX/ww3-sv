@@ -17,6 +17,7 @@ import {
 	type Range
 } from '#lib/game/parking/board.js';
 import { LEVELS, levelAt } from '#lib/game/parking/levels.js';
+import { solve } from '#lib/game/parking/solver.js';
 import {
 	EMPTY_PROGRESS,
 	PROGRESS_KEY,
@@ -33,6 +34,12 @@ import { soundManager } from '#lib/sound/soundManager.svelte.js';
 export type ParkingScreen = 'select' | 'play';
 
 export const LEVEL_IDS: readonly string[] = LEVELS.map((level) => level.id);
+
+/** Hints per level: the solver points out one next slide, then the player is on their own */
+export const HINTS_PER_LEVEL = 1;
+
+/** A hint search is capped so the biggest harbours cannot freeze the UI while it thinks */
+const MAX_HINT_STATES = 200_000;
 
 /** Fewest moves per level; lower is better */
 export function highscoreParts(levelId: string): string[] {
@@ -51,6 +58,9 @@ export class ParkingGame {
 	positions = $state.raw<Positions>(this.puzzle.start);
 	/** The positions before each move, newest last; its length is the move counter */
 	history = $state.raw<Positions[]>([]);
+	/** Ship and target of the hint the solver is showing, cleared on the next move */
+	hint = $state<{ piece: number; to: number } | null>(null);
+	hintsLeft = $state(HINTS_PER_LEVEL);
 	won = $state(false);
 	stars = $state(0);
 	isNewBest = $state(false);
@@ -118,6 +128,8 @@ export class ParkingGame {
 		this.puzzle = createPuzzle(LEVELS[index]);
 		this.positions = this.puzzle.start;
 		this.history = [];
+		this.hint = null;
+		this.hintsLeft = HINTS_PER_LEVEL;
 		this.won = false;
 		this.stars = 0;
 		this.isNewBest = false;
@@ -136,12 +148,28 @@ export class ParkingGame {
 	backToSelect() {
 		// Leaving a won level also closes its win panel, which is open while `won` is set
 		this.won = false;
+		this.hint = null;
 		this.screen = 'select';
 	}
 
 	/** How far a ship can slide from where it is (the free span along its axis) */
 	rangeOf(index: number): Range {
 		return slideRange(this.puzzle, this.positions, index);
+	}
+
+	/**
+	 * Asks the solver for the next slide from where the player is now and shows it on the board.
+	 * One hint per level: a refused or stalled search does not spend it.
+	 */
+	showHint(): boolean {
+		if (this.screen !== 'play' || this.won || this.hintsLeft <= 0 || this.hint) return false;
+		const solution = solve(this.puzzle, { from: this.positions, maxStates: MAX_HINT_STATES });
+		const step = solution?.path[0];
+		if (!step) return false;
+		this.hint = { piece: step.piece, to: step.to };
+		this.hintsLeft -= 1;
+		soundManager().play('click');
+		return true;
 	}
 
 	/**
@@ -158,6 +186,7 @@ export class ParkingGame {
 		}
 		this.history = [...this.history, this.positions];
 		this.positions = withMove(this.positions, index, to);
+		this.hint = null;
 		if (isSolved(this.puzzle, this.positions)) this.#finish();
 		else soundManager().play(index === TANKER_INDEX ? 'whoosh' : 'thud');
 		return true;
@@ -168,6 +197,7 @@ export class ParkingGame {
 		if (this.won || this.history.length === 0) return false;
 		this.positions = this.history[this.history.length - 1];
 		this.history = this.history.slice(0, -1);
+		this.hint = null;
 		soundManager().play('click');
 		return true;
 	}

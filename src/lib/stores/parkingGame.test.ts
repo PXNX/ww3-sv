@@ -4,7 +4,7 @@ import { solve } from '#lib/game/parking/solver.js';
 import { createHighscores } from '#lib/services/highscore.js';
 import { createStore, type KeyValueStorage } from '#lib/services/storage.js';
 import { missingMessages } from '#lib/testing/messages.js';
-import { ParkingGame, highscoreParts } from './parkingGame.svelte';
+import { HINTS_PER_LEVEL, ParkingGame, highscoreParts } from './parkingGame.svelte';
 
 function memoryStorage(): KeyValueStorage {
 	const data = new Map<string, string>();
@@ -171,5 +171,65 @@ describe('ParkingGame', () => {
 
 	it('has messages in every language', () => {
 		expect(missingMessages(['parking_', 'mode_parking_'])).toEqual([]);
+	});
+});
+
+describe('hints', () => {
+	it('starts a level with one hint and shows the solver’s next slide', () => {
+		const { game } = newGame();
+		game.openLevel(0);
+		expect(game.hintsLeft).toBe(HINTS_PER_LEVEL);
+		expect(game.hint).toBeNull();
+		const first = solve(game.puzzle)?.path[0];
+		expect(first).toBeDefined();
+		expect(game.showHint()).toBe(true);
+		expect(game.hint).toEqual({ piece: first?.piece, to: first?.to });
+		expect(game.hintsLeft).toBe(0);
+	});
+
+	it('hints from the current board, not the starting position', () => {
+		const { game } = newGame();
+		game.openLevel(0);
+		const first = solve(game.puzzle)?.path[0];
+		if (!first) throw new Error('level 1 has no solution');
+		game.move(first.piece, first.to);
+		const next = solve(game.puzzle, { from: game.positions })?.path[0];
+		expect(next).toBeDefined();
+		expect(game.showHint()).toBe(true);
+		expect(game.hint).toEqual({ piece: next?.piece, to: next?.to });
+	});
+
+	it('gives one hint per level and clears it on the next move', () => {
+		const { game } = newGame();
+		game.openLevel(0);
+		expect(game.showHint()).toBe(true);
+		expect(game.showHint()).toBe(false);
+		const hint = game.hint;
+		if (!hint) throw new Error('no hint was shown');
+		expect(game.move(hint.piece, hint.to)).toBe(true);
+		expect(game.hint).toBeNull();
+	});
+
+	it('does not spend a hint outside play or after a win', () => {
+		const { game } = newGame();
+		expect(game.showHint()).toBe(false);
+		game.openLevel(0);
+		playSolution(game);
+		expect(game.showHint()).toBe(false);
+		expect(game.hintsLeft).toBe(HINTS_PER_LEVEL);
+	});
+
+	it('clears the hint on undo and restores it on retry', () => {
+		const { game } = newGame();
+		game.openLevel(0);
+		const first = solve(game.puzzle)?.path[0];
+		if (!first) throw new Error('level 1 has no solution');
+		game.move(first.piece, first.to);
+		expect(game.showHint()).toBe(true);
+		expect(game.undo()).toBe(true);
+		expect(game.hint).toBeNull();
+		game.retry();
+		expect(game.hint).toBeNull();
+		expect(game.hintsLeft).toBe(HINTS_PER_LEVEL);
 	});
 });
