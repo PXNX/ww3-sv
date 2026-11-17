@@ -20,6 +20,7 @@
 		balloon: m.flamingo_crash_balloon,
 		radar: m.flamingo_crash_radar,
 		pantsir: m.flamingo_crash_pantsir,
+		bridge: m.flamingo_crash_bridge,
 		ground: m.flamingo_crash_ground,
 		flare: m.flamingo_crash_flare,
 		mast: m.flamingo_crash_mast,
