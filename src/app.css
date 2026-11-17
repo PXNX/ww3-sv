@@ -140,6 +140,8 @@ body {
 	--color-sand: #0e1628;
 	/* Still the muted chip it is by day, only deep enough for cream text to sit on */
 	--color-banner-slate: #3a507b;
+	/* Card grounds and scrims stay dark at night, one step below the night-sky page */
+	--color-stage: #070d19;
 	--color-tie-red: #ee6a70;
 	--color-khaki: #86996a;
 	/* Deep red hearts vanish on navy; lift them to a bright red with a pale outline */
@@ -204,8 +206,11 @@ body {
  * White icons on a bright chip are hard to read in either theme. The chip already gives its own
  * text a dark colour; do the same for icons and labels that force white or cream explicitly.
  */
-:is(.bg-explosion-yellow, .bg-mustard, .bg-khaki, .bg-flag-blue):is(.text-white, .dark\:text-white),
-:is(.bg-explosion-yellow, .bg-mustard, .bg-khaki, .bg-flag-blue)
+:is(.bg-explosion-yellow, .bg-mustard, .bg-khaki, .bg-flag-blue, .bg-sky, .bg-skin):is(
+	.text-white,
+	.dark\:text-white
+),
+:is(.bg-explosion-yellow, .bg-mustard, .bg-khaki, .bg-flag-blue, .bg-sky, .bg-skin)
 	:is(.text-white, .dark\:text-white) {
 	color: #141414;
 }

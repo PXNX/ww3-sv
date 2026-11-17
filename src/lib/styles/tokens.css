@@ -87,6 +87,11 @@
 	--color-mustard: #ddb93c;
 	--color-banner-slate: #6a7c9b;
 	--color-explosion-yellow: #f5c83a;
+	/*
+	 * A surface that stays dark in both themes: game-card grounds, screenshots and scrims sit on
+	 * this instead of ink, which turns to cream at night and would wash them out.
+	 */
+	--color-stage: #101827;
 	/* Lives: deep red hearts with a darker outline (LivesBar) */
 	--color-heart: #8b0a1a;
 	--color-heart-outline: #4a0510;

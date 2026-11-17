@@ -97,7 +97,7 @@
 		<span
 			class="inline-flex shrink-0 items-center gap-1 rounded-[8px_4px_7px_5px] border-2 border-ink bg-explosion-yellow px-1.5 py-0.5 text-xs leading-none font-bold"
 		>
-			<IconFlame class="size-3.5 text-tie-red" aria-hidden="true" />
+			<IconFlame class="flame-flicker size-3.5 text-tie-red" aria-hidden="true" />
 			{#if streak > 0}
 				{m.daily_streak({ count: streak })}
 			{:else}
@@ -120,7 +120,7 @@
 			{@const collected = active && claimedToday}
 			<li
 				class="flex min-w-0 flex-col items-center justify-center rounded-[6px_3px_5px_4px] border-2 border-ink px-0.5 py-1 leading-none {collected
-					? 'bg-khaki text-paper'
+					? 'bg-khaki text-[#141414]'
 					: active
 						? 'bg-explosion-yellow'
 						: 'bg-paper/70'}"
@@ -148,7 +148,11 @@
 		<span
 			class="grid size-8 shrink-0 place-items-center rounded-[7px_4px_6px_5px] border-2 border-ink {challenge.tileClass}"
 		>
-			<ChallengeIcon class="size-4" stroke-width="2.5" aria-hidden="true" />
+			<ChallengeIcon
+				class="size-4 text-white dark:text-white"
+				stroke-width="2.5"
+				aria-hidden="true"
+			/>
 		</span>
 		<div class="min-w-0 flex-1">
 			<p class="truncate text-sm leading-tight font-bold">
@@ -182,7 +186,7 @@
 		{:else if step === 'ready'}
 			<button
 				type="button"
-				class="btn-chunky shrink-0 bg-explosion-yellow px-2.5 py-1 text-xs whitespace-nowrap"
+				class="btn-chunky ready-nudge shrink-0 bg-explosion-yellow px-2.5 py-1 text-xs whitespace-nowrap"
 				onclick={claim}
 			>
 				<IconGift class="size-3.5" aria-hidden="true" />
@@ -190,7 +194,7 @@
 			</button>
 		{:else if step === 'claimed'}
 			<span
-				class="grid size-7 shrink-0 place-items-center rounded-full border-2 border-ink bg-khaki text-paper"
+				class="grid size-7 shrink-0 place-items-center rounded-full border-2 border-ink bg-khaki text-[#141414]"
 			>
 				<IconCheck class="size-4" aria-hidden="true" />
 			</span>

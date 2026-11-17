@@ -124,16 +124,29 @@
 	{@const progress = progressFor(mode.id)}
 	<li class="flex">
 		{#snippet card()}
+			<!-- The mode's own colour stays visible under the screenshot, so a slow or failed image
+			     still leaves every card with a background -->
+			<span
+				class="pointer-events-none absolute inset-0 -z-20 {mode.tileClass} opacity-25"
+				aria-hidden="true"
+			></span>
 			<img
 				src="/cards/{mode.id}.webp"
 				alt=""
-				class="pointer-events-none absolute inset-0 -z-10 size-full object-cover object-top opacity-45"
+				class="pointer-events-none absolute inset-0 -z-10 size-full object-cover object-top opacity-[0.55]"
 				decoding="async"
 				loading="lazy"
 				draggable="false"
+				onerror={(event) => {
+					// A transient network error used to leave the card blank until a reload; ask once more
+					const image = event.currentTarget as HTMLImageElement;
+					if (image.dataset.retried) return;
+					image.dataset.retried = 'true';
+					image.src = `/cards/${mode.id}.webp?retry=1`;
+				}}
 			/>
 			<span
-				class="pointer-events-none absolute inset-0 -z-10 bg-linear-to-r from-ink/80 via-ink/40 to-transparent"
+				class="pointer-events-none absolute inset-0 -z-10 bg-linear-to-r from-stage/85 via-stage/45 to-transparent"
 				aria-hidden="true"
 			></span>
 			{#if mode.leaders.length > 0}
@@ -159,18 +172,16 @@
 				</span>
 			{/if}
 			<span class="mt-auto rounded-xl border-3 border-ink p-3 {mode.tileClass}" aria-hidden="true">
-				<Icon class="size-12 text-white dark:text-white" stroke-width="2.5" />
+				<Icon class="card-icon size-12 text-white dark:text-white" stroke-width="2.5" />
 			</span>
-			<h4
-				class="text-lg leading-tight font-bold text-paper [text-shadow:0_2px_0_var(--color-ink)] dark:text-black"
-			>
+			<h4 class="text-lg leading-tight font-bold text-paper [text-shadow:0_2px_0_var(--color-ink)]">
 				{mode.name()}
 			</h4>
 		{/snippet}
 		{#if mode.status === 'playable'}
 			<a
 				href={resolveRoute(mode.href)}
-				class="sticker sticker-interactive relative isolate flex min-h-40 w-full flex-col items-start gap-2 overflow-hidden bg-ink p-3 active:scale-95{mode.id ===
+				class="sticker sticker-interactive card-sheen relative isolate flex min-h-40 w-full flex-col items-start gap-2 overflow-hidden bg-stage p-3 active:scale-95{mode.id ===
 				contestModeId
 					? ' ring-4 ring-explosion-yellow ring-offset-2'
 					: ''}"
@@ -179,7 +190,7 @@
 			>
 		{:else}
 			<div
-				class="sticker relative isolate flex min-h-40 w-full flex-col items-start gap-2 overflow-hidden bg-ink p-3 opacity-80{mode.id ===
+				class="sticker relative isolate flex min-h-40 w-full flex-col items-start gap-2 overflow-hidden bg-stage p-3 opacity-80{mode.id ===
 				contestModeId
 					? ' ring-4 ring-explosion-yellow ring-offset-2'
 					: ''}"
@@ -200,8 +211,12 @@
 {#if leader === null}
 	<!-- Grouped by how the games are played -->
 	<div class="flex flex-col gap-8">
-		{#each groups as group (group.style)}
-			<section class="flex flex-col gap-3" aria-labelledby="style-{group.style}">
+		{#each groups as group, index (group.style)}
+			<section
+				class="rise-in flex flex-col gap-3"
+				style:--i={Math.min(index, 6)}
+				aria-labelledby="style-{group.style}"
+			>
 				<div class="flex flex-col gap-0.5">
 					<h3 id="style-{group.style}" class="font-display text-xl leading-tight font-bold">
 						{STYLE_TEXT[group.style].name()}

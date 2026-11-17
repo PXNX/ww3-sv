@@ -14,7 +14,8 @@
 		rotate: var(--tilt, 0deg);
 		transition:
 			rotate 250ms var(--ease-spring),
-			translate 250ms var(--ease-spring);
+			translate 250ms var(--ease-spring),
+			scale 250ms var(--ease-spring);
 	}
 
 	[data-theme='dark'] .sticker,
@@ -35,6 +36,7 @@
 	.sticker-interactive:focus-within {
 		rotate: 0deg;
 		translate: 0 -3px;
+		scale: 1.015;
 	}
 
 	/* Chunky button: irregular corners, hard shadow, squash-and-stretch on press */
@@ -132,6 +134,95 @@
 		border: var(--outline);
 		border-radius: 16px 9px 15px 8px / 9px 15px 8px 16px;
 		box-shadow: var(--shadow-hard);
+	}
+
+	/* A soft band of light crossing a game card on hover, like tilting a trading card */
+	.card-sheen::after {
+		content: '';
+		position: absolute;
+		inset: -40% -70%;
+		z-index: 1;
+		pointer-events: none;
+		background: linear-gradient(
+			105deg,
+			transparent 42%,
+			rgb(255 255 255 / 0.16) 50%,
+			transparent 58%
+		);
+		translate: -125% 0;
+		transition: translate 750ms ease-out;
+	}
+
+	.card-sheen:hover::after,
+	.card-sheen:focus-visible::after {
+		translate: 125% 0;
+	}
+
+	/* The icon tile leans in with the card, a small reward for pointing at a game */
+	.card-icon {
+		transition:
+			rotate 300ms var(--ease-spring),
+			scale 300ms var(--ease-spring);
+	}
+
+	.card-sheen:hover .card-icon,
+	.card-sheen:focus-visible .card-icon {
+		rotate: -5deg;
+		scale: 1.06;
+	}
+
+	/* Sections come up one after another when the start screen opens */
+	@keyframes rise-in {
+		from {
+			opacity: 0;
+			translate: 0 10px;
+		}
+		to {
+			opacity: 1;
+			translate: 0 0;
+		}
+	}
+
+	.rise-in {
+		animation: rise-in 420ms var(--ease-spring) both;
+		animation-delay: calc(var(--i, 0) * 60ms);
+	}
+
+	/* A reward that is ready deserves a tiny, occasional nudge, never a constant shake */
+	@keyframes ready-nudge {
+		0%,
+		88%,
+		100% {
+			rotate: 0deg;
+		}
+		92% {
+			rotate: -2.5deg;
+		}
+		96% {
+			rotate: 2.5deg;
+		}
+	}
+
+	.ready-nudge {
+		animation: ready-nudge 3.4s ease-in-out infinite;
+	}
+
+	/* The streak flame breathes instead of burning still */
+	@keyframes flame-flicker {
+		0%,
+		100% {
+			scale: 1;
+			opacity: 1;
+		}
+		50% {
+			scale: 1.12;
+			opacity: 0.85;
+		}
+	}
+
+	.flame-flicker {
+		animation: flame-flicker 2.6s ease-in-out infinite;
+		transform-origin: center bottom;
 	}
 
 	/* Small uppercase label above numbers and section headings */
@@ -237,6 +328,27 @@
 		.sticker-interactive:focus-visible,
 		.sticker-interactive:focus-within {
 			translate: none;
+			scale: none;
+		}
+
+		.card-sheen::after,
+		.card-sheen:hover::after,
+		.card-sheen:focus-visible::after {
+			display: none;
+		}
+
+		.card-icon,
+		.card-sheen:hover .card-icon,
+		.card-sheen:focus-visible .card-icon {
+			rotate: none;
+			scale: none;
+			transition: none;
+		}
+
+		.rise-in,
+		.ready-nudge,
+		.flame-flicker {
+			animation: none;
 		}
 
 		.btn-chunky:hover {
