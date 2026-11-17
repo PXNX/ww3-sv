@@ -5,8 +5,18 @@
  * configured, for a game hosted on Telegram Serverless. Either way the game never handles the bot
  * token. Telegram's script is injected only when the page was opened as a Mini App (the launch puts
  * `tgWebAppData` in the URL hash); a browser visit loads nothing extra. The initData is never read
- * into storage or logs here.
+ * into storage or logs here. A development stand-in for all of this, behind the opt-in
+ * `?telegram=mock` flag, lives in telegramMock.ts.
  */
+
+import {
+	mockCall,
+	mockInvoice,
+	mockPostGroupScore,
+	mockWebApp,
+	mockWriteAccess,
+	useMockTelegram
+} from './telegramMock.js';
 
 const SCRIPT_URL = 'https://telegram.org/js/telegram-web-app.js';
 
@@ -35,7 +45,7 @@ interface ServerlessApi {
 /** What Telegram reports when the invoice sheet closes; only `paid` means money moved */
 export type InvoiceStatus = 'paid' | 'cancelled' | 'failed' | 'pending';
 
-interface TelegramWebApp {
+export interface TelegramWebApp {
 	initData?: string;
 	initDataUnsafe?: { start_param?: string; user?: unknown };
 	ready?: () => void;
@@ -92,6 +102,11 @@ function prepare(app: TelegramWebApp): void {
 export function loadTelegram(): Promise<TelegramWebApp | null> {
 	if (loading) return loading;
 	if (typeof window === 'undefined') return Promise.resolve(null);
+	if (useMockTelegram()) {
+		const app = mockWebApp();
+		prepare(app);
+		return (loading = Promise.resolve(app));
+	}
 	const existing = webApp();
 	if (existing?.initData) {
 		prepare(existing);
@@ -225,6 +240,7 @@ export interface GroupScoreResult {
  * initData goes along; without the server (VITE_TELEGRAM_API_URL) the run is not reported.
  */
 export async function postGroupScore(game: GroupGame, score: number): Promise<GroupScoreResult> {
+	if (useMockTelegram()) return mockPostGroupScore(game, score);
 	const url = apiUrl();
 	if (!url) throw new TelegramCallError('UNAVAILABLE');
 	let response: Response;
@@ -315,6 +331,13 @@ async function postToApi<T>(
  * no such endpoints. The bridge is for a game hosted on Telegram Serverless, where none is set.
  */
 export async function call<T>(name: string, input: unknown = {}): Promise<T> {
+	if (useMockTelegram()) {
+		try {
+			return (await mockCall(name, input)) as T;
+		} catch (error) {
+			throw toCallError(error);
+		}
+	}
 	const app = await loadTelegram();
 	if (!app?.initData) throw new TelegramCallError('UNAVAILABLE');
 	const url = apiUrl();
@@ -338,6 +361,7 @@ export async function call<T>(name: string, input: unknown = {}): Promise<T> {
  * granted by the bot on `successful_payment`, so a `paid` result is followed by asking `me` again.
  */
 export async function openInvoice(url: string): Promise<InvoiceStatus> {
+	if (useMockTelegram()) return mockInvoice();
 	const app = await loadTelegram();
 	if (!app?.openInvoice) throw new TelegramCallError('UNAVAILABLE');
 	const open = app.openInvoice;
@@ -458,6 +482,7 @@ export async function launchUser(): Promise<TelegramUser | null> {
  * resolves true when it may. Players who already started the bot are not asked again by Telegram.
  */
 export async function requestWriteAccess(): Promise<boolean> {
+	if (useMockTelegram()) return mockWriteAccess();
 	const app = await loadTelegram();
 	const request = app?.requestWriteAccess;
 	if (!request) return false;
