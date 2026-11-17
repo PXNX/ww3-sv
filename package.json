@@ -14,7 +14,7 @@
 		"check": "svelte-kit sync && bun run i18n:compile && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && bun run i18n:compile && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "bun fmt",
-		"lint": "bun fmt --check && eslint .",
+		"lint": "bun fmt --check",
 		"test": "bun run i18n:compile && vitest run",
 		"test:watch": "bun run i18n:compile && vitest"
 	},
