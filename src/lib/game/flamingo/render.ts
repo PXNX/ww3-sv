@@ -30,6 +30,7 @@ const STEEL = '#c9cdd3';
 const NET = '#dfe2e6';
 const OLIVE_DARK = '#5f6d44';
 const SLATE = '#2f3640';
+const WATER = '#2f4a6b';
 const WB_PURPLE = '#a21caf';
 const WB_DARK = '#701a75';
 const YANDEX_RED = '#fc3f1d';
@@ -640,6 +641,66 @@ function drawPantsir(context: CanvasRenderingContext2D, column: GapColumn) {
 	}
 }
 
+/**
+ * The rare Crimea bridge: a long crossing over water that the flamingo must fly through.
+ * Clearing it is worth far more than the everyday obstacles, so it reads as a jackpot.
+ */
+function drawBridge(context: CanvasRenderingContext2D, column: GapColumn) {
+	const { x, gapBottom } = column;
+	const left = x;
+	const right = x + COLUMN_WIDTH;
+	const middle = x + COLUMN_WIDTH / 2;
+	const deckY = gapBottom;
+
+	// Water below, with a couple of flat waves
+	context.fillStyle = WATER;
+	context.fillRect(left, gapBottom, COLUMN_WIDTH, GROUND_Y - gapBottom);
+	context.strokeStyle = PAPER;
+	context.lineWidth = 2;
+	for (const waveY of [gapBottom + 18, gapBottom + 34]) {
+		context.beginPath();
+		for (let waveX = left; waveX <= right; waveX += 8) {
+			const y = waveY + Math.sin((waveX - left) / 6) * 2;
+			if (waveX === left) context.moveTo(waveX, y);
+			else context.lineTo(waveX, y);
+		}
+		context.stroke();
+	}
+
+	// Concrete piers on either side of the gap
+	for (const side of [-1, 1]) {
+		const pierX = middle + side * (COLUMN_WIDTH / 2 - 9);
+		box(context, pierX, gapBottom, 10, GROUND_Y - gapBottom, STEEL);
+		context.strokeStyle = INK;
+		context.lineWidth = 1.5;
+		context.beginPath();
+		for (let y = gapBottom + 10; y < GROUND_Y; y += 14) {
+			context.moveTo(pierX, y);
+			context.lineTo(pierX + 10, y);
+		}
+		context.stroke();
+	}
+
+	// The deck: a road with rails, and a short truss over the water
+	box(context, left - 4, deckY - 8, COLUMN_WIDTH + 8, 8, KHAKI);
+	box(context, left - 4, deckY - 12, COLUMN_WIDTH + 8, 4, SAND);
+	context.strokeStyle = INK;
+	context.lineWidth = 2;
+	context.beginPath();
+	for (let i = 0; i < 4; i++) {
+		const tx = left + (i * COLUMN_WIDTH) / 4;
+		context.moveTo(tx, deckY - 12);
+		context.lineTo(tx + COLUMN_WIDTH / 4, deckY - 8);
+		context.moveTo(tx + COLUMN_WIDTH / 4, deckY - 12);
+		context.lineTo(tx, deckY - 8);
+	}
+	context.stroke();
+	context.fillStyle = PAPER;
+	for (let dashX = left + 4; dashX < right; dashX += 10) {
+		context.fillRect(dashX, deckY - 5, 5, 2);
+	}
+}
+
 const NET_MESH = 20;
 
 /** A drone net hanging from the sky: a diamond mesh on edge ropes, weighted along the hem */
@@ -787,6 +848,7 @@ function drawColumn(
 			GROUND_Y - column.gapBottom
 		);
 	} else if (column.kind === 'radar') drawRadarMast(context, column, time);
+	else if (column.kind === 'bridge') drawBridge(context, column);
 	else drawPantsir(context, column);
 }
 

@@ -130,10 +130,25 @@ describe('generateGapSequence', () => {
 			columns.forEach((column, index) => {
 				expect(column.x).toBe(1000 + index * spacingFor(segment));
 				expect(column.gapBottom - column.gapTop).toBe(gapSizeFor(segment, index));
-				expect(['radar', 'pantsir']).toContain(column.kind);
+				expect(['radar', 'pantsir', 'bridge']).toContain(column.kind);
 				expect(['net', 'balloon']).toContain(column.top);
 			});
 		}
+	});
+
+	it('sprinkles in the rare Crimea bridge, but not too often', () => {
+		let bridges = 0;
+		let total = 0;
+		for (const seed of SEEDS) {
+			for (const segment of SEGMENTS) {
+				for (const column of generateGapSequence(createRandom(seed), segment, 0)) {
+					total += 1;
+					if (column.kind === 'bridge') bridges += 1;
+				}
+			}
+		}
+		expect(bridges).toBeGreaterThan(0);
+		expect(bridges / total).toBeLessThan(0.12);
 	});
 
 	it('keeps every gap inside the sky with an obstacle above and below', () => {

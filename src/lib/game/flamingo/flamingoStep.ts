@@ -8,6 +8,7 @@
 import { createRandom } from '../random';
 import {
 	COLUMN_WIDTH,
+	BRIDGE_POINTS,
 	bottomRect,
 	generateGapSequence,
 	topRect,
@@ -254,10 +255,12 @@ function fly(state: FlamingoState, flap: boolean, dt: number): void {
 		segment.passed < segment.columns.length &&
 		state.x - FLAMINGO_RADIUS > segment.columns[segment.passed].x + COLUMN_WIDTH
 	) {
+		const column = segment.columns[segment.passed];
+		const points = column.kind === 'bridge' ? BRIDGE_POINTS : GAP_POINTS;
 		segment.passed += 1;
 		state.gapsPassed += 1;
-		state.score += GAP_POINTS;
-		state.events.push({ type: 'gap', points: GAP_POINTS });
+		state.score += points;
+		state.events.push({ type: 'gap', points });
 	}
 	if (state.stage === 'gaps' && segment.passed === segment.columns.length) {
 		state.stage = 'approach';

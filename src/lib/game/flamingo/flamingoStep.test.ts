@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { COLUMN_WIDTH, TAP_INTERVAL_SECONDS, gapCenter, gapCountFor } from './gapSequence';
+import {
+	BRIDGE_POINTS,
+	COLUMN_WIDTH,
+	TAP_INTERVAL_SECONDS,
+	gapCenter,
+	gapCountFor
+} from './gapSequence';
 import {
 	FIRST_COLUMN_X,
 	GAP_POINTS,
@@ -269,6 +275,31 @@ describe('gaps and segment progression', () => {
 		// The last gap of the segment starts the refinery approach
 		expect(state.stage).toBe('approach');
 		expect(events).toContainEqual({ type: 'approach' });
+	});
+
+	it('scores the rare Crimea bridge far above an everyday gap', () => {
+		const state = flyingState({
+			x: 100,
+			y: 250,
+			segments: [
+				segmentWith({
+					columns: [{ x: 200, gapTop: 150, gapBottom: 350, kind: 'bridge', top: 'net' }]
+				})
+			]
+		});
+		let sinceTap = TAP_STEPS;
+		const events = runUntil(
+			state,
+			(s) => s.x > 300,
+			(s) => {
+				const tap = sinceTap >= TAP_STEPS && s.y > 270;
+				sinceTap = tap ? 0 : sinceTap + 1;
+				return tap;
+			}
+		);
+		expect(state.gapsPassed).toBe(1);
+		expect(state.score).toBe(BRIDGE_POINTS);
+		expect(events).toContainEqual({ type: 'gap', points: BRIDGE_POINTS });
 	});
 
 	it('gives every segment its own layout and a slightly harder gap sequence', () => {

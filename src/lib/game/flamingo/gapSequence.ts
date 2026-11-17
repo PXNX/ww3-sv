@@ -4,7 +4,7 @@
  * shrink to a fixed minimum; the vertical shift between consecutive gaps is capped by what the
  * fixed flap strength and gravity can actually cover in the time between two columns.
  */
-import { pickOne, type Random } from '../random';
+import { pickOne, pickWeighted, type Random } from '../random';
 import {
 	FLAMINGO_RADIUS,
 	FLAP_VELOCITY,
@@ -41,10 +41,14 @@ export const TAP_INTERVAL_SECONDS = 0.25;
 /** Only this share of the physically possible shift is ever used */
 export const REACH_SAFETY = 0.7;
 
-/** Bottom obstacles are radar masts or Pantsir towers */
-export type ColumnKind = 'radar' | 'pantsir';
+/** Bottom obstacles are radar masts or Pantsir towers; the rare Crimea bridge is worth a lot */
+export type ColumnKind = 'radar' | 'pantsir' | 'bridge';
 /** The top obstacle hangs from the sky: a drone net or a stack of barrage balloons */
 export type TopKind = 'net' | 'balloon';
+/** Chance per column that it is the rare Crimea bridge instead of a mast or tower */
+export const BRIDGE_CHANCE = 0.06;
+/** Points for clearing a bridge column, versus GAP_POINTS for the everyday obstacles */
+export const BRIDGE_POINTS = 150;
 
 export interface GapColumn {
 	/** Left edge in world units */
@@ -141,7 +145,11 @@ export function generateGapSequence(random: Random, segment: number, firstX: num
 			x: firstX + index * spacing,
 			gapTop: center - size / 2,
 			gapBottom: center + size / 2,
-			kind: pickOne(random, ['radar', 'pantsir'] as const),
+			kind: pickWeighted(random, [
+				{ item: 'radar', weight: (1 - BRIDGE_CHANCE) / 2 },
+				{ item: 'pantsir', weight: (1 - BRIDGE_CHANCE) / 2 },
+				{ item: 'bridge', weight: BRIDGE_CHANCE }
+			]),
 			top: 'net'
 		});
 	}
