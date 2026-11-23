@@ -15,6 +15,236 @@ The version history is now part of the game, grouped by change type and scope.
 - An in-app version history sheet and a public changelog page
 - Entries grouped by change type and by the part of the game they touch
 
+## v1.5.0 - 2026-11-17
+
+A mission-board home screen, small new toys in several modes and a fresh art pass.
+
+### New
+
+#### home
+
+- The start screen is now a mission board, with games grouped by playstyle and a leaner profile
+- Game cards stay on a dark stage and the start screen no longer scrolls sideways
+
+#### physics
+
+- A shared fixed-step physics world that every game mode builds on
+- Particle effects and joyful feedback shared across all modes
+
+#### convoy
+
+- A fuel meter that tankers refill by driving through barrels
+
+#### maze
+
+- A shared daily building with its own best time
+
+#### slider
+
+- A rival campaign the press conference can push back
+
+#### flamingo
+
+- A rare Crimea bridge that is worth a lot of points
+
+#### parking
+
+- One hint per level, now finished
+
+#### telegram
+
+- A mock login with a fake bot database for local development
+
+#### ui
+
+- A refreshed game frame without sideways scrollbars
+
+#### assets
+
+- The canonical brand bomb for the PWA, regenerated game cards and missing link previews
+
+#### telemetry
+
+- A local-only event log with an in-app dashboard
+
+### Fixed
+
+#### flamingo
+
+- Crashes into the Crimea bridge are labelled
+
+#### dark
+
+- Better contrast and readability in the night theme
+
+## v1.4.0 - 2026-11-11
+
+Crossovers between the games, group play with chat leaderboards and a full Beachhead base builder.
+
+### New
+
+#### beachhead
+
+- A sea-map base builder: place, move and upgrade buildings and defences, train troops and heroes, socket crystals and raid other players' islands
+- Hero screens for the Azov commander and Prigozhin, with troop and support skills upgraded in the lab
+- Round timers, rising prices, bigger storage, expeditions with reward chests and a defence test for your own base
+
+#### hackers
+
+- A green terminal with a boot sequence and typed output, contracts against systems from the other modes and a bank of DogeLite
+- Hardware and software shops, favourites, a mail archive and terminal easter eggs
+- Other players' dossiers, a firewall log with a hack-back button and thefts taken from their banks
+
+#### telegram
+
+- Group games with chat leaderboards across sixteen more arcade modes
+- A rewritten bot with payments, invites, streak reminders and its own server for raids and hacks between players
+- When a group run beats someone's best, your agent runs past them on the result sheet's leaderboard
+
+#### crossover
+
+- Gifts between the games: Prigozhin's hammer for the raids, crystals for Beachhead, Fake News and DogeLite from hacking
+- The Matrix coat for finding the whole hacker network
+
+#### cloud
+
+- Mirror progress to your Telegram account, with a transfer link that carries browser progress over
+
+#### rivals
+
+- A server contract and a validated client for raiding and hacking other players
+
+### Fixed
+
+#### rivals
+
+- Skip a rival entry the client cannot read instead of dropping the whole list
+
+#### bot
+
+- An invite link makes two players friends, and the bot answers the friends and presence calls the app already makes
+
+## v1.3.0 - 2026-11-04
+
+The five-mode pass: the new arcades made playable, animated and translated.
+
+### New
+
+#### games
+
+- New modes: Grain Corridor, Shadow Fleet Shuffle, Iceberg Curling, Starlink Kill Switch, Recon, Iron Dome, Falklands, Fleet Hunt, GPS Liar and Purrpentagram
+- Curling gets two stones per end with sweep, curl, gambles, hazards and scored rings
+- Slice is reworked into an approval-rating survival game with rallies, scandals and a press conference
+- Warroom gets a crisis desk, council directives, escalating pacts and a ranked result screen
+- Grain Corridor, Shadow Fleet Shuffle and Kill Switch get canvas playfields, waves and star ratings
+
+#### hackers
+
+- A fullscreen green terminal with a boot sequence, typed output, glitches and flashes
+- A persistent profile with a bank, hardware and favourites, plus a shop for software and upgrades
+
+#### recon
+
+- FPV, satellite and UAV views with their own zoom, HUD and camera controls
+- Thermal vision, artillery barrages, ground orders, moving contacts and hidden bunkers
+
+#### sound
+
+- Sounds and haptics for the remaining effects and every mode in the pass
+
+#### pwa
+
+- A new-version nudge that appears as a bottom sheet
+
+#### i18n
+
+- Missing strings for the new modes in all six languages
+
+## v1.2.0 - 2026-10-31
+
+A wave of rebuilt classics and a first set of brand-new modes.
+
+### New
+
+#### recon
+
+- Procedural terrain and solvable sorties that scale with the sortie number
+- A sortie engine with lock-on, strikes, collateral damage, AA fire and scoring
+
+#### hackers
+
+- Hermit Hackers rebuilt around breaking into a system, with a retro terminal and a crypto wallet
+
+#### killswitch
+
+- Starlink Kill Switch rebuilt as a canvas reaction game
+
+#### games
+
+- Shadow Fleet Shuffle, plus fresh cards for every new mode on the play page
+
+#### tycoon
+
+- Producer tiers, new events, a turbo perk and a fullscreen offline earnings overview
+
+### Fixed
+
+#### i18n
+
+- Missing Oil Tycoon translations in all six languages
+
+## v1.1.0 - 2026-10-29
+
+Telegram sign-in, a custom agent, the raid and Oil Tycoon.
+
+### New
+
+#### telegram
+
+- A bot with Stars payments, invites, streak reminders and legal pages
+- Mini App sign-in, with the Telegram profile and streak passed to the bot
+- Group games with chat leaderboards, starting with Block Puzzle
+
+#### profile
+
+- A customizable cartoon agent and a profile page to dress it up
+- Looks unlocked by playing, by streaks and by levelling, plus ready-made presets
+- Invite friends from the profile and earn a revival token for each one who starts the bot
+
+#### raid
+
+- A mo.co-style HUD, leave and result screens, weapon pages and a minimap
+- New weapons, skills and armour perks, elite bosses and sandstorms
+- Squad links shared through Telegram and a season of rewards
+
+#### tycoon
+
+- Oil Tycoon with producers, upgrade tiers, achievements and avatar hats
+- Producer countdowns and rates, critical taps and nationalisation
+
+#### career
+
+- Revivals bought with Telegram Stars, a daily reward and double XP for Pro players
+- A near-miss offer of a revival instead of an advert
+
+#### social
+
+- Gift codes in a leaner shop, with referrals, squads and friends kept apart
+
+#### legal
+
+- Imprint, privacy, terms and withdrawal pages, each with its own link preview
+
+#### brand
+
+- A globe-bomb app icon and a Telegram splash icon
+
+### Fixed
+
+#### layout
+
+- Game controls stay clear of Telegram's fullscreen buttons
+
 ## v1.0.0 - 2026-10-27
 
 The first public build: the game collection, the career and the Telegram bot.
@@ -24,28 +254,11 @@ The first public build: the game collection, the career and the Telegram bot.
 #### games
 
 - Dozens of playable modes, from chess and maze to Beachhead and the supply convoys
-- A shared daily building with its own best in the maze
-- A rival campaign the press conference can push back in the slider
 
 #### bot
 
 - Telegram play with friends, raids on Beachhead bases and hacking other players' rigs
-- Mock login with a fake bot database for local development
-
-#### physics
-
-- Shared fixed-step physics and joyful feedback for every mode
 
 #### career
 
 - Personal records, streaks, coins and a shop across every mode
-
-### Fixed
-
-#### home
-
-- Game cards stay on a dark stage and the start screen no longer scrolls sideways
-
-#### dark
-
-- Better contrast and readability in the night theme
