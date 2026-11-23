@@ -56,6 +56,10 @@
 		</ul>
 	</section>
 
+	<a href={resolve('/changelog')} class="btn-chunky self-start px-3 py-1.5 text-sm">
+		{m.changelog_all()}
+	</a>
+
 	<p class="text-center text-xs font-semibold opacity-60">
 		{APP_NAME} v{__APP_VERSION__}
 	</p>

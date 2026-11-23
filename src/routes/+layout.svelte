@@ -17,6 +17,7 @@
 	import CloudImportDialog from '#lib/components/CloudImportDialog.svelte';
 	import CrossoverToast from '#lib/components/CrossoverToast.svelte';
 	import JuiceLayer from '#lib/components/JuiceLayer.svelte';
+	import WhatsNewSheet from '#lib/components/WhatsNewSheet.svelte';
 	import { receive } from '#lib/stores/crossover.svelte.js';
 	import { ARCHIVE_COINS } from '#lib/game/crossover/gifts.js';
 	import { telegram } from '#lib/stores/telegram.svelte.js';
@@ -104,3 +105,4 @@
 <CloudImportDialog />
 <CrossoverToast />
 <JuiceLayer />
+<WhatsNewSheet />

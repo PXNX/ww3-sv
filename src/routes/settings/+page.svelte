@@ -10,7 +10,9 @@
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import { appearance, THEME_CHOICES, type ThemeChoice } from '#lib/stores/appearance.svelte.js';
 	import { haptic } from '#lib/haptic/haptic.svelte.js';
+	import { changelogSheet } from '#lib/stores/changelog.svelte.js';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
+	import IconClock from '~icons/lucide/clock';
 	import IconMoon from '~icons/lucide/moon';
 	import IconRadar from '~icons/lucide/radar';
 	import IconSun from '~icons/lucide/sun';
@@ -153,6 +155,20 @@
 			<span class="font-display text-lg leading-tight font-bold">{m.language_label()}</span>
 			<LanguageSelect />
 		</div>
+
+		<!-- Version history: opens the same sheet as the automatic "what's new" nudge -->
+		<button
+			type="button"
+			class="flex w-full items-center justify-between gap-3 p-4 text-start transition-colors hover:bg-sand/60"
+			onclick={() => changelogSheet.show()}
+		>
+			<span>
+				<span class="block font-display text-lg leading-tight font-bold">{m.changelog_title()}</span
+				>
+				<span class="block text-xs leading-snug opacity-70">{m.changelog_settings_hint()}</span>
+			</span>
+			<IconClock class="size-6 shrink-0" aria-hidden="true" />
+		</button>
 
 		<!-- Local-only diagnostics -->
 		<a

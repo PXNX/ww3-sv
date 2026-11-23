@@ -237,7 +237,7 @@ Not covered yet, each for a specific reason:
 - [ ] Seasonal events with a temporary mode modifier.
 - [ ] Rotating shop cosmetics; no gameplay advantage.
 - [ ] Community challenges with a shared goal ("players finish 10,000 runs this week").
-- [ ] A public changelog and "what's new" sheet after an update.
+- [x] A public changelog and "what's new" sheet after an update.
 - [ ] Revisit the game balance of the modes that were only tested with bots.
 
 ### 3.4 Bringing players back

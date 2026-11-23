@@ -42,6 +42,10 @@ function buildPages(): Map<string, PageMeta> {
 		title: `${m.shop_title()} | ${APP_NAME}`,
 		description: shorten(m.shop_intro())
 	});
+	pages.set('/changelog', {
+		title: `${m.changelog_page_title()} | ${APP_NAME}`,
+		description: shorten(m.changelog_intro())
+	});
 	for (const page of LEGAL_PAGES) {
 		pages.set(page.path, {
 			title: `${page.title()} | ${APP_NAME}`,

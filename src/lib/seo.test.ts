@@ -5,10 +5,11 @@ import { MODES } from '#lib/modes/registry.js';
 import { metaTags, pageMeta } from './seo';
 
 describe('page metadata', () => {
-	it('covers the start screen, the about page, the shop and every playable game', () => {
+	it('covers the start screen, the about page, the shop, the changelog and every playable game', () => {
 		expect(pageMeta('/')?.title).toBe('World War 3');
 		expect(pageMeta('/about')?.title).toBe('About | World War 3');
 		expect(pageMeta('/shop')?.title).toBe('Supply depot | World War 3');
+		expect(pageMeta('/changelog')?.title).toBe('Version history | World War 3');
 		for (const mode of MODES) {
 			if (mode.status === 'playable') expect(pageMeta(mode.href), mode.id).toBeDefined();
 		}

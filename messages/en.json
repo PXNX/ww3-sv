@@ -4628,5 +4628,12 @@
 	"maze_daily": "Daily building",
 	"maze_daily_hint": "One medium maze for everyone today. Same building all day, its own best.",
 	"slider_rival": "Rival",
-	"slider_rival_hint": "A rival campaign grows each week. A press conference pushes it back."
+	"slider_rival_hint": "A rival campaign grows each week. A press conference pushes it back.",
+	"changelog_title": "What’s new",
+	"changelog_page_title": "Version history",
+	"changelog_intro": "Every update, newest first, grouped by what changed and which part of the game it touched.",
+	"changelog_close": "Close",
+	"changelog_unseen": "New",
+	"changelog_all": "Full version history",
+	"changelog_settings_hint": "See what changed in the latest updates"
 }

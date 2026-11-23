@@ -4628,5 +4628,12 @@
 	"maze_daily": "Tagesgebäude",
 	"maze_daily_hint": "Heute für alle dasselbe mittlere Labyrinth. Den ganzen Tag, mit eigener Bestzeit.",
 	"slider_rival": "Rivale",
-	"slider_rival_hint": "Jede Woche wird die Kampagne des Rivalen stärker. Eine Pressekonferenz drängt sie zurück."
+	"slider_rival_hint": "Jede Woche wird die Kampagne des Rivalen stärker. Eine Pressekonferenz drängt sie zurück.",
+	"changelog_title": "Neuigkeiten",
+	"changelog_page_title": "Versionsverlauf",
+	"changelog_intro": "Jedes Update, zuerst das neueste, gruppiert nach Änderungstyp und dem betroffenen Spielbereich.",
+	"changelog_close": "Schließen",
+	"changelog_unseen": "Neu",
+	"changelog_all": "Gesamter Versionsverlauf",
+	"changelog_settings_hint": "Siehe, was sich in den letzten Updates geändert hat"
 }
