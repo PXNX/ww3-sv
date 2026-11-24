@@ -105,7 +105,7 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
         "records": "🏆 <b>Rekorde in diesem Chat</b>\n\n{lines}\n\nDie ganze Liste eines Spiels: /top {example}",
         "records_none": "In diesem Chat hat noch niemand gespielt. Los geht’s mit /games.",
         "record": "👑 <b>Neuer Rekord in {game}!</b> {name} holt {score} Punkte und überholt {previous} ({previousScore}).",
-        "legal_footer": '<a href="{agb}">AGB</a> · <a href="{widerruf}">Widerruf</a> · <a href="{datenschutz}">Datenschutz</a> · <a href="{impressum}">Impressum</a>',
+        "legal_footer": '<a href="{agb}">AGB</a> · <a href="{widerruf}">Widerrufsbelehrung</a> · <a href="{datenschutz}">Datenschutzerklärung</a> · <a href="{impressum}">Impressum</a>',
         "legal_footer_commands": "/agb · /widerruf · /datenschutz · /impressum",
     },
     "en": {
@@ -203,7 +203,7 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
         "records": "🏆 <b>Records in this chat</b>\n\n{lines}\n\nThe full list of one game: /top {example}",
         "records_none": "Nobody has played in this chat yet. Start with /games.",
         "record": "👑 <b>New record in {game}!</b> {name} scores {score} and overtakes {previous} ({previousScore}).",
-        "legal_footer": '<a href="{agb}">Terms</a> · <a href="{widerruf}">Withdrawal</a> · <a href="{datenschutz}">Privacy</a> · <a href="{impressum}">Legal notice</a> (German)',
+        "legal_footer": '<a href="{agb}">Terms of sale</a> · <a href="{widerruf}">Right of withdrawal</a> · <a href="{datenschutz}">Privacy policy</a> · <a href="{impressum}">Legal notice</a> (German)',
         "legal_footer_commands": "/agb · /widerruf · /datenschutz · /impressum (German)",
     },
 }

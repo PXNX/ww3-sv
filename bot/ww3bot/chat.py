@@ -14,7 +14,7 @@ from telegram.error import TelegramError
 
 from ww3bot import config, friends, games, ledger, referrals, reminders
 from ww3bot.catalogue import PRODUCTS, is_cosmetic, localized, product
-from ww3bot.legal import CONSENT_TEXT, CONSENT_VERSION, PAGES, escape_html, legal_messages, page_url, telegram_contact
+from ww3bot.legal import CONSENT_TEXT, CONSENT_VERSION, PAGES, escape_html, legal_messages, page_link_name, page_url, telegram_contact
 from ww3bot.texts import lang_of_user, t
 
 logger = logging.getLogger(__name__)
@@ -93,9 +93,11 @@ async def show_wallet(bot: Bot, chat_id: int, user) -> None:
     await send(bot, chat_id, t(lang, "wallet", revives=current["revives"], pro=pro))
 
 
-def _legal_buttons() -> list[InlineKeyboardButton]:
+def _legal_buttons(lang: str) -> list[InlineKeyboardButton]:
     return [
-        InlineKeyboardButton(PAGES[page], url=page_url(page)) if page_url(page) else InlineKeyboardButton(PAGES[page], callback_data=f"legal:{page}")
+        InlineKeyboardButton(page_link_name(page, lang), url=page_url(page))
+        if page_url(page)
+        else InlineKeyboardButton(page_link_name(page, lang), callback_data=f"legal:{page}")
         for page in ("agb", "widerruf")
     ]
 
@@ -118,7 +120,7 @@ async def offer(bot: Bot, chat_id: int, user, sku: str) -> None:
             f"<b>{escape_html(item['title'])} · {item['stars']} ⭐</b>\n{escape_html(item['description'])}\n\n<i>{escape_html(CONSENT_TEXT)}</i>",
             [
                 [InlineKeyboardButton(t(lang, "agree"), callback_data=f"consent:{item['sku']}")],
-                _legal_buttons(),
+                _legal_buttons(lang),
                 [InlineKeyboardButton(t(lang, "cancel"), callback_data="cancel")],
             ],
         )
@@ -141,13 +143,14 @@ async def consent(bot: Bot, chat_id: int, user, sku: str) -> None:
     await offer(bot, chat_id, user, sku)
 
 
-async def send_legal(bot: Bot, chat_id: int, page: str) -> None:
+async def send_legal(bot: Bot, chat_id: int, page: str, lang: str = "de") -> None:
     """A link to the legal page on the web; its full text in the chat only while no page URL is set."""
     if page not in PAGES:
         return
     url = page_url(page)
     if url:
-        return await send(bot, chat_id, f'📄 <a href="{escape_html(url)}">{PAGES[page]}</a>', [[InlineKeyboardButton(PAGES[page], url=url)]])
+        name = page_link_name(page, lang)
+        return await send(bot, chat_id, f'📄 <a href="{escape_html(url)}">{escape_html(name)}</a>', [[InlineKeyboardButton(name, url=url)]])
     for text in legal_messages(page):
         await send(bot, chat_id, text)
 

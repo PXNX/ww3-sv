@@ -103,7 +103,7 @@ async def on_message(bot: Bot, message: Message) -> None:
     chat_id = message.chat.id
 
     if command in LEGAL_COMMANDS:
-        return await chat.send_legal(bot, chat_id, LEGAL_COMMANDS[command])
+        return await chat.send_legal(bot, chat_id, LEGAL_COMMANDS[command], lang_of_user(user))
     # Games are played together, so the private chat only points to a group
     if command in GAME_COMMANDS:
         return await chat.group_only(bot, chat_id, user)
@@ -159,7 +159,7 @@ async def on_callback(bot: Bot, query: CallbackQuery) -> None:
     elif action == "buy":
         await chat.offer(bot, chat_id, user, value)
     elif action == "legal":
-        await chat.send_legal(bot, chat_id, value)
+        await chat.send_legal(bot, chat_id, value, lang_of_user(user))
     elif action == "reminders":
         await chat.toggle_reminders(bot, chat_id, user, value == "on", message.message_id if message else None)
     elif action == "game":
