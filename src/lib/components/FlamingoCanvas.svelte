@@ -60,6 +60,8 @@
 		strikeBiggestSite: m.flamingo_strike_biggest_site(),
 		strikeBuildings: (count) => m.flamingo_strike_buildings({ count }),
 		slogan: m.flamingo_strike_slogan(),
+		bridge: m.flamingo_bridge_label(),
+		strikeBridge: m.flamingo_strike_bridge(),
 		direction: textDirection(getLocale())
 	};
 

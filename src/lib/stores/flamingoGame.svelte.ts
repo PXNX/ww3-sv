@@ -25,6 +25,7 @@ const SOUNDS: Partial<Record<FlamingoEvent['type'], SoundId>> = {
 	gap: 'ding',
 	approach: 'alarm',
 	strike: 'chime',
+	bridge: 'chime-big',
 	crash: 'hit'
 };
 
@@ -43,6 +44,7 @@ export class FlamingoGame {
 	gapsPassed = $state(0);
 	refineriesStruck = $state(0);
 	tanksDestroyed = $state(0);
+	bridgesStruck = $state(0);
 	crash = $state<CrashCause | null>(null);
 	best = $state<number | null>(null);
 	bestRefineries = $state<number | null>(null);
@@ -114,7 +116,8 @@ export class FlamingoGame {
 				event.type === 'crash' && event.cause !== 'flare' && event.cause !== 'mast';
 			const sound = crashedDumb ? 'fart' : SOUNDS[event.type];
 			if (sound) soundManager().play(sound);
-			if (event.type === 'strike') soundManager().play('slava-ukraini');
+			if (event.type === 'strike' || event.type === 'bridge') soundManager().play('slava-ukraini');
+			if (event.type === 'bridge') soundManager().play('explosion-big');
 		}
 		this.sync();
 		if (this.sim.phase === 'over') this.finish();
@@ -130,6 +133,7 @@ export class FlamingoGame {
 		this.gapsPassed = sim.gapsPassed;
 		this.refineriesStruck = sim.refineriesStruck;
 		this.tanksDestroyed = sim.tanksDestroyed;
+		this.bridgesStruck = sim.bridgesStruck;
 		this.crash = sim.crash;
 	}
 

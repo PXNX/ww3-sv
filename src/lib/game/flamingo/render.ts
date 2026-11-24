@@ -6,7 +6,7 @@
  */
 import { createRandom, type Random } from '../random';
 import type { FlamingoAssetId } from './assets';
-import { COLUMN_WIDTH, type GapColumn } from './gapSequence';
+import { BRIDGE_OVERHANG, COLUMN_WIDTH, bridgeRect, type GapColumn } from './gapSequence';
 import {
 	currentSegment,
 	predictDive,
@@ -62,6 +62,9 @@ export interface RenderLabels {
 	strikeBuildings: (count: number) => string;
 	/** Cheered over every struck tank, in the Ukrainian flag's own blue and yellow */
 	slogan: string;
+	/** Marker over the Crimea bridge, and the pop-up when it comes down */
+	bridge: string;
+	strikeBridge: string;
 	direction: 'ltr' | 'rtl';
 }
 
@@ -212,6 +215,33 @@ export class FlamingoEffects {
 					tone: 'slogan'
 				});
 				if (!this.reducedMotion) this.shake = event.result.biggestHit ? 12 : 7;
+			} else if (event.type === 'bridge') {
+				// The span blows up from the middle outwards, and the water smokes
+				const { x: left, width } = bridgeRect(event.column);
+				const middle = left + width / 2;
+				const deckY = event.column.gapBottom;
+				for (const offset of [0, -0.32, 0.32]) {
+					this.fireballs.push({
+						x: middle + offset * width,
+						y: deckY - 6,
+						size: offset === 0 ? 110 : 80,
+						age: 0,
+						delay: this.reducedMotion ? 0 : Math.abs(offset) * 0.35,
+						duration: this.reducedMotion ? 0.4 : 0.9
+					});
+				}
+				const puffs = this.reducedMotion ? 2 : 6;
+				for (let i = 0; i < puffs; i++) this.puff(middle, deckY, width * 0.6);
+				this.popups.push({ x: middle, y: deckY - 50, text: `+${event.points}`, age: 0 });
+				this.popups.push({ x: middle, y: deckY - 80, text: labels.strikeBridge, age: 0 });
+				this.popups.push({
+					x: middle,
+					y: deckY - 110,
+					text: labels.slogan,
+					age: 0,
+					tone: 'slogan'
+				});
+				if (!this.reducedMotion) this.shake = 14;
 			} else if (event.type === 'crash') {
 				const count = this.reducedMotion ? 3 : 7;
 				for (let i = 0; i < count; i++) {
@@ -261,6 +291,13 @@ export class FlamingoEffects {
 			this.smokeTimer = 0;
 			const cameraX = state.x - FLAMINGO_SCREEN_X;
 			for (const segment of state.segments) {
+				for (const column of segment.columns) {
+					if (!column.struck) continue;
+					const middle = column.x + COLUMN_WIDTH / 2;
+					if (middle < cameraX + view.left - 40 - BRIDGE_OVERHANG) continue;
+					if (middle > cameraX + view.right + 40 + BRIDGE_OVERHANG) continue;
+					this.puff(middle, column.gapBottom + 10, COLUMN_WIDTH);
+				}
 				if (!segment.strike) continue;
 				for (const index of segment.strike.destroyed) {
 					const tank = segment.refinery.tanks[index];
@@ -641,64 +678,141 @@ function drawPantsir(context: CanvasRenderingContext2D, column: GapColumn) {
 	}
 }
 
-/**
- * The rare Crimea bridge: a long crossing over water that the flamingo must fly through.
- * Clearing it is worth far more than the everyday obstacles, so it reads as a jackpot.
- */
-function drawBridge(context: CanvasRenderingContext2D, column: GapColumn) {
-	const { x, gapBottom } = column;
-	const left = x;
-	const right = x + COLUMN_WIDTH;
-	const middle = x + COLUMN_WIDTH / 2;
-	const deckY = gapBottom;
-
-	// Water below, with a couple of flat waves
+/** Water under the bridge, with a couple of flat waves */
+function drawWater(context: CanvasRenderingContext2D, left: number, width: number, top: number) {
 	context.fillStyle = WATER;
-	context.fillRect(left, gapBottom, COLUMN_WIDTH, GROUND_Y - gapBottom);
+	context.fillRect(left, top, width, GROUND_Y - top);
 	context.strokeStyle = PAPER;
 	context.lineWidth = 2;
-	for (const waveY of [gapBottom + 18, gapBottom + 34]) {
+	for (const waveY of [top + 22, top + 40]) {
+		if (waveY > GROUND_Y - 4) continue;
 		context.beginPath();
-		for (let waveX = left; waveX <= right; waveX += 8) {
-			const y = waveY + Math.sin((waveX - left) / 6) * 2;
-			if (waveX === left) context.moveTo(waveX, y);
-			else context.lineTo(waveX, y);
+		for (let step = 0; step <= width; step += 8) {
+			const y = waveY + Math.sin(step / 6) * 2;
+			if (step === 0) context.moveTo(left + step, y);
+			else context.lineTo(left + step, y);
 		}
 		context.stroke();
 	}
+}
 
-	// Concrete piers on either side of the gap
-	for (const side of [-1, 1]) {
-		const pierX = middle + side * (COLUMN_WIDTH / 2 - 9);
-		box(context, pierX, gapBottom, 10, GROUND_Y - gapBottom, STEEL);
-		context.strokeStyle = INK;
-		context.lineWidth = 1.5;
-		context.beginPath();
-		for (let y = gapBottom + 10; y < GROUND_Y; y += 14) {
-			context.moveTo(pierX, y);
-			context.lineTo(pierX + 10, y);
-		}
-		context.stroke();
-	}
-
-	// The deck: a road with rails, and a short truss over the water
-	box(context, left - 4, deckY - 8, COLUMN_WIDTH + 8, 8, KHAKI);
-	box(context, left - 4, deckY - 12, COLUMN_WIDTH + 8, 4, SAND);
+/** A concrete pier from the deck down into the water, up to the given top */
+function drawPier(context: CanvasRenderingContext2D, x: number, top: number) {
+	box(context, x - 6, top, 12, GROUND_Y - top, STEEL);
 	context.strokeStyle = INK;
-	context.lineWidth = 2;
+	context.lineWidth = 1.5;
 	context.beginPath();
-	for (let i = 0; i < 4; i++) {
-		const tx = left + (i * COLUMN_WIDTH) / 4;
-		context.moveTo(tx, deckY - 12);
-		context.lineTo(tx + COLUMN_WIDTH / 4, deckY - 8);
-		context.moveTo(tx + COLUMN_WIDTH / 4, deckY - 12);
-		context.lineTo(tx, deckY - 8);
+	for (let y = top + 10; y < GROUND_Y; y += 14) {
+		context.moveTo(x - 6, y);
+		context.lineTo(x + 6, y);
 	}
 	context.stroke();
+}
+
+/** One span of deck: a road on a khaki girder, drawn from 0 to length along the x axis */
+function drawDeck(context: CanvasRenderingContext2D, length: number) {
+	box(context, 0, 0, length, 10, KHAKI);
+	box(context, 0, -4, length, 4, SAND);
 	context.fillStyle = PAPER;
-	for (let dashX = left + 4; dashX < right; dashX += 10) {
-		context.fillRect(dashX, deckY - 5, 5, 2);
+	for (let dashX = 4; dashX < length - 4; dashX += 10) context.fillRect(dashX, 4, 5, 2);
+}
+
+/** A pulsing red crosshair: this one is meant to be hit */
+function drawCrosshair(
+	context: CanvasRenderingContext2D,
+	x: number,
+	y: number,
+	radius: number,
+	time: number
+) {
+	const pulse = radius * (1 + Math.sin(time * 6) * 0.08);
+	context.save();
+	context.lineWidth = 3;
+	context.strokeStyle = TIE_RED;
+	context.beginPath();
+	context.arc(x, y, pulse, 0, Math.PI * 2);
+	context.stroke();
+	context.beginPath();
+	context.arc(x, y, pulse * 0.45, 0, Math.PI * 2);
+	context.stroke();
+	context.beginPath();
+	for (const [dx, dy] of [
+		[1, 0],
+		[-1, 0],
+		[0, 1],
+		[0, -1]
+	]) {
+		context.moveTo(x + dx * pulse * 0.7, y + dy * pulse * 0.7);
+		context.lineTo(x + dx * pulse * 1.3, y + dy * pulse * 1.3);
 	}
+	context.stroke();
+	context.restore();
+}
+
+/**
+ * The rare Crimea bridge: not an obstacle but a big bonus target, wider than a column, with open
+ * sky above and a crosshair on it. Once struck, its spans hang broken into the water.
+ */
+function drawBridge(
+	context: CanvasRenderingContext2D,
+	column: GapColumn,
+	time: number,
+	label: string
+) {
+	const { x: left, y: archTop, width } = bridgeRect(column);
+	const right = left + width;
+	const middle = left + width / 2;
+	const deckY = column.gapBottom;
+
+	drawWater(context, left, width, deckY + 10);
+
+	if (column.struck) {
+		// The middle pier is a stump, and the two spans hang from the outer piers into the water
+		drawPier(context, middle, deckY + 34);
+		for (const side of [-1, 1]) {
+			const pierX = side < 0 ? left + 10 : right - 10;
+			drawPier(context, pierX, deckY + 10);
+			context.save();
+			context.translate(pierX, deckY);
+			context.rotate(-side * 0.55);
+			context.scale(-side, 1);
+			drawDeck(context, width / 2 - 4);
+			context.restore();
+		}
+		return;
+	}
+
+	for (const pierX of [left + 10, middle, right - 10]) drawPier(context, pierX, deckY + 10);
+
+	// The steel arch over the deck, with hangers down to the road
+	context.save();
+	context.lineWidth = 2;
+	context.strokeStyle = INK;
+	context.beginPath();
+	for (let i = 1; i < 8; i++) {
+		const hx = left + (i * width) / 8;
+		const t = (hx - middle) / (width / 2);
+		context.moveTo(hx, deckY - 4);
+		context.lineTo(hx, archTop + 4 + t * t * (deckY - archTop - 4));
+	}
+	context.stroke();
+	context.beginPath();
+	context.moveTo(left + 2, deckY - 2);
+	context.quadraticCurveTo(middle, archTop - (deckY - archTop) + 8, right - 2, deckY - 2);
+	context.lineWidth = 7;
+	context.stroke();
+	context.lineWidth = 4;
+	context.strokeStyle = STEEL;
+	context.stroke();
+	context.restore();
+
+	context.save();
+	context.translate(left, deckY);
+	drawDeck(context, width);
+	context.restore();
+
+	drawCrosshair(context, middle, deckY - 2, 18, time);
+	drawTargetMarker(context, middle, archTop - 16, time, label);
 }
 
 const NET_MESH = 20;
@@ -831,8 +945,13 @@ function drawColumn(
 	time: number,
 	assets: RenderAssets,
 	/** Top of the screen: the hanging obstacles reach all the way up to it */
-	top: number
+	top: number,
+	labels: RenderLabels
 ) {
+	if (column.kind === 'bridge') {
+		drawBridge(context, column, time, labels.bridge);
+		return;
+	}
 	const net = assets.supplied.droneNet;
 	if (column.top === 'balloon') drawBalloonStack(context, column, top);
 	else if (net) context.drawImage(net, column.x, top, COLUMN_WIDTH, column.gapTop - top);
@@ -848,7 +967,6 @@ function drawColumn(
 			GROUND_Y - column.gapBottom
 		);
 	} else if (column.kind === 'radar') drawRadarMast(context, column, time);
-	else if (column.kind === 'bridge') drawBridge(context, column);
 	else drawPantsir(context, column);
 }
 
@@ -1126,11 +1244,22 @@ function drawBiggestMarker(
 	time: number,
 	label: string
 ) {
-	const y = GROUND_Y - tank.height - 34 + Math.sin(time * 5) * 4;
+	drawTargetMarker(context, tank.x, GROUND_Y - tank.height - 20, time, label);
+}
+
+/** A bobbing yellow arrow with a label, pointing down at a target whose top is at bottom */
+function drawTargetMarker(
+	context: CanvasRenderingContext2D,
+	x: number,
+	bottom: number,
+	time: number,
+	label: string
+) {
+	const y = bottom - 14 + Math.sin(time * 5) * 4;
 	context.beginPath();
-	context.moveTo(tank.x - 10, y);
-	context.lineTo(tank.x + 10, y);
-	context.lineTo(tank.x, y + 14);
+	context.moveTo(x - 10, y);
+	context.lineTo(x + 10, y);
+	context.lineTo(x, y + 14);
 	context.closePath();
 	outlined(context, YELLOW);
 	context.font = `700 12px ${DISPLAY_FONT}`;
@@ -1138,9 +1267,9 @@ function drawBiggestMarker(
 	context.textBaseline = 'bottom';
 	context.lineWidth = 4;
 	context.strokeStyle = PAPER;
-	context.strokeText(label, tank.x, y - 2);
+	context.strokeText(label, x, y - 2);
 	context.fillStyle = INK;
-	context.fillText(label, tank.x, y - 2);
+	context.fillText(label, x, y - 2);
 }
 
 function drawRefinery(
@@ -1446,7 +1575,7 @@ export function drawScene(
 		drawRefinery(context, segment, segment === current ? target : null, state.time, assets, labels);
 		for (const column of segment.columns) {
 			if (column.x + COLUMN_WIDTH < left || column.x > right) continue;
-			drawColumn(context, column, state.time, assets, painted.top);
+			drawColumn(context, column, state.time, assets, painted.top, labels);
 		}
 	}
 	context.restore();

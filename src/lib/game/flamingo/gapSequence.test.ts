@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createRandom } from '../random';
 import {
+	BRIDGE_ARCH,
+	BRIDGE_OVERHANG,
 	COLUMN_WIDTH,
 	EDGE_MARGIN,
 	MAX_GAP_COUNT,
@@ -9,6 +11,7 @@ import {
 	START_GAP_COUNT,
 	TAP_INTERVAL_SECONDS,
 	bottomRect,
+	bridgeRect,
 	climbReach,
 	dropReach,
 	gapCenter,
@@ -39,7 +42,8 @@ const TAP_STEPS = Math.round(TAP_INTERVAL_SECONDS / STEP_SECONDS);
 /**
  * Flies from just past column a through column b with a simple, human-paced autopilot: tap
  * (at most four times per second) whenever the flamingo is below a line a little under the
- * center of the next gap. Returns whether it got through without touching anything.
+ * center of the next gap. Returns whether it got through without touching anything, or into the
+ * bridge, which is a target.
  */
 function autopilotTraverses(
 	a: GapColumn,
@@ -60,6 +64,12 @@ function autopilotTraverses(
 		sinceTap = tap ? 0 : sinceTap + 1;
 		if (body.y < r) body = { y: r, vy: Math.max(0, body.vy) };
 		x += SCROLL_SPEED * STEP_SECONDS;
+		// The bridge is a target, not an obstacle: flying into it is a hit, not a crash
+		if (b.kind === 'bridge') {
+			if (circleHitsRect(x, body.y, r, bridgeRect(b))) return true;
+			if (body.y + r >= GROUND_Y) return false;
+			continue;
+		}
 		if (circleHitsRect(x, body.y, r, topRect(b))) return false;
 		if (circleHitsRect(x, body.y, r, bottomRect(b))) return false;
 		if (body.y + r >= GROUND_Y) return false;
@@ -149,6 +159,17 @@ describe('generateGapSequence', () => {
 		}
 		expect(bridges).toBeGreaterThan(0);
 		expect(bridges / total).toBeLessThan(0.12);
+	});
+
+	it('draws the bridge as a target wider than a column, with nothing hanging above it', () => {
+		const bridge: GapColumn = { x: 300, gapTop: 150, gapBottom: 350, kind: 'bridge', top: 'net' };
+		const rect = bridgeRect(bridge);
+		expect(bottomRect(bridge)).toEqual(rect);
+		expect(rect.x).toBe(300 - BRIDGE_OVERHANG);
+		expect(rect.width).toBe(COLUMN_WIDTH + 2 * BRIDGE_OVERHANG);
+		expect(rect.y).toBe(350 - BRIDGE_ARCH);
+		expect(rect.y + rect.height).toBe(GROUND_Y);
+		expect(topRect(bridge).height).toBe(0);
 	});
 
 	it('keeps every gap inside the sky with an obstacle above and below', () => {

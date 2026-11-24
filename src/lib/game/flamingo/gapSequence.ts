@@ -41,14 +41,23 @@ export const TAP_INTERVAL_SECONDS = 0.25;
 /** Only this share of the physically possible shift is ever used */
 export const REACH_SAFETY = 0.7;
 
-/** Bottom obstacles are radar masts or Pantsir towers; the rare Crimea bridge is worth a lot */
+/**
+ * Bottom obstacles are radar masts or Pantsir towers. The rare Crimea bridge is not an obstacle
+ * but a target: it has open sky above it, and flying into it brings a span down for a lot of points
+ */
 export type ColumnKind = 'radar' | 'pantsir' | 'bridge';
+/** The column kinds that end the run when touched */
+export type ObstacleKind = Exclude<ColumnKind, 'bridge'>;
 /** The top obstacle hangs from the sky: a drone net or a stack of barrage balloons */
 export type TopKind = 'net' | 'balloon';
 /** Chance per column that it is the rare Crimea bridge instead of a mast or tower */
 export const BRIDGE_CHANCE = 0.06;
-/** Points for clearing a bridge column, versus GAP_POINTS for the everyday obstacles */
+/** Points for striking a bridge, versus GAP_POINTS for clearing an everyday column */
 export const BRIDGE_POINTS = 150;
+/** The bridge reaches this far past its column on either side, to make it a big target */
+export const BRIDGE_OVERHANG = 24;
+/** Height of the truss arch above the bridge deck, which counts as part of the target */
+export const BRIDGE_ARCH = 22;
 
 export interface GapColumn {
 	/** Left edge in world units */
@@ -56,7 +65,10 @@ export interface GapColumn {
 	gapTop: number;
 	gapBottom: number;
 	kind: ColumnKind;
+	/** Ignored on a bridge, which has open sky above it */
 	top: TopKind;
+	/** Set once a bridge has been struck: its span is down and it is no longer a target */
+	struck?: boolean;
 }
 
 export function gapCountFor(segment: number): number {
@@ -113,16 +125,30 @@ export function gapCenter(column: GapColumn): number {
 	return (column.gapTop + column.gapBottom) / 2;
 }
 
+/** The hanging obstacle above the gap; a bridge has none, so its rect is empty */
 export function topRect(column: GapColumn): Rect {
+	if (column.kind === 'bridge') return { x: column.x, y: 0, width: COLUMN_WIDTH, height: 0 };
 	return { x: column.x, y: 0, width: COLUMN_WIDTH, height: column.gapTop };
 }
 
 export function bottomRect(column: GapColumn): Rect {
+	if (column.kind === 'bridge') return bridgeRect(column);
 	return {
 		x: column.x,
 		y: column.gapBottom,
 		width: COLUMN_WIDTH,
 		height: GROUND_Y - column.gapBottom
+	};
+}
+
+/** The whole bridge, arch and piers included: wider than a column and a big target */
+export function bridgeRect(column: GapColumn): Rect {
+	const top = column.gapBottom - BRIDGE_ARCH;
+	return {
+		x: column.x - BRIDGE_OVERHANG,
+		y: top,
+		width: COLUMN_WIDTH + 2 * BRIDGE_OVERHANG,
+		height: GROUND_Y - top
 	};
 }
 

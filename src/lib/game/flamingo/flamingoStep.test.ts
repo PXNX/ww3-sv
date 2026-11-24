@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
+	BRIDGE_ARCH,
+	BRIDGE_OVERHANG,
 	BRIDGE_POINTS,
 	COLUMN_WIDTH,
 	TAP_INTERVAL_SECONDS,
+	bridgeRect,
 	gapCenter,
-	gapCountFor
+	gapCountFor,
+	type GapColumn
 } from './gapSequence';
 import {
+	BRIDGE_BOUNCE_VELOCITY,
 	FIRST_COLUMN_X,
 	GAP_POINTS,
 	NEXT_SEGMENT_CLEARANCE,
@@ -89,6 +94,16 @@ function runUntil(
 		events.push(...state.events);
 	}
 	return events;
+}
+
+/** Taps at a human pace whenever the flamingo sinks below the given height */
+function tapBelow(y: number) {
+	let sinceTap = TAP_STEPS;
+	return (state: FlamingoState) => {
+		const tap = sinceTap >= TAP_STEPS && state.y > y;
+		sinceTap = tap ? 0 : sinceTap + 1;
+		return tap;
+	};
 }
 
 /**
@@ -277,7 +292,36 @@ describe('gaps and segment progression', () => {
 		expect(events).toContainEqual({ type: 'approach' });
 	});
 
-	it('scores the rare Crimea bridge far above an everyday gap', () => {
+	it('scores the rare Crimea bridge as a big target, without ending the run', () => {
+		const bridge: GapColumn = { x: 200, gapTop: 150, gapBottom: 350, kind: 'bridge', top: 'net' };
+		const state = flyingState({
+			x: 100,
+			y: 250,
+			segments: [segmentWith({ columns: [bridge] })]
+		});
+		// No flapping: the flamingo drops straight onto the bridge
+		const events = runUntil(state, (s) => s.bridgesStruck > 0);
+		expect(state.phase).toBe('flying');
+		expect(state.crash).toBeNull();
+		expect(bridge.struck).toBe(true);
+		expect(state.score).toBe(BRIDGE_POINTS);
+		expect(BRIDGE_POINTS).toBeGreaterThan(10 * GAP_POINTS);
+		expect(events.some((event) => event.type === 'crash')).toBe(false);
+		const hit = events.find((event) => event.type === 'bridge');
+		expect(hit).toMatchObject({ type: 'bridge', column: bridge, points: BRIDGE_POINTS });
+		// It bounces up off the span, clear of the bridge
+		expect(state.vy).toBe(BRIDGE_BOUNCE_VELOCITY);
+		expect(state.y + FLAMINGO_RADIUS).toBeLessThanOrEqual(bridgeRect(bridge).y);
+
+		// The brought-down bridge is no longer a target, and the run carries on past it
+		runUntil(state, (s) => s.x > 300 || s.phase !== 'flying', tapBelow(270));
+		expect(state.phase).toBe('flying');
+		expect(state.bridgesStruck).toBe(1);
+		expect(state.gapsPassed).toBe(1);
+		expect(state.score).toBe(BRIDGE_POINTS + GAP_POINTS);
+	});
+
+	it('pays only the everyday gap points for flying over the bridge without hitting it', () => {
 		const state = flyingState({
 			x: 100,
 			y: 250,
@@ -287,19 +331,32 @@ describe('gaps and segment progression', () => {
 				})
 			]
 		});
-		let sinceTap = TAP_STEPS;
-		const events = runUntil(
-			state,
-			(s) => s.x > 300,
-			(s) => {
-				const tap = sinceTap >= TAP_STEPS && s.y > 270;
-				sinceTap = tap ? 0 : sinceTap + 1;
-				return tap;
-			}
-		);
-		expect(state.gapsPassed).toBe(1);
-		expect(state.score).toBe(BRIDGE_POINTS);
-		expect(events).toContainEqual({ type: 'gap', points: BRIDGE_POINTS });
+		const events = runUntil(state, (s) => s.x > 300, tapBelow(270));
+		expect(state.bridgesStruck).toBe(0);
+		expect(state.score).toBe(GAP_POINTS);
+		expect(events.some((event) => event.type === 'bridge')).toBe(false);
+	});
+
+	it('makes the bridge a wide target with open sky above it', () => {
+		const bridge: GapColumn = { x: 200, gapTop: 150, gapBottom: 350, kind: 'bridge', top: 'net' };
+		const segment = segmentWith({ columns: [bridge] });
+		// Nothing hangs above a bridge, where a radar column would have its net
+		expect(findContact(segment, 228, 100)).toBeNull();
+		expect(findContact(segmentWith(), 228, 100)).toEqual({ kind: 'column', cause: 'net' });
+		// It reaches past its column on both sides, and its arch rises above the deck
+		const edge = bridge.x - BRIDGE_OVERHANG + 2;
+		expect(findContact(segment, edge, 360)).toEqual({ kind: 'bridge', column: bridge });
+		expect(findContact(segment, bridge.x + COLUMN_WIDTH + BRIDGE_OVERHANG - 2, 360)).toEqual({
+			kind: 'bridge',
+			column: bridge
+		});
+		expect(findContact(segment, 228, 350 - BRIDGE_ARCH)).toEqual({
+			kind: 'bridge',
+			column: bridge
+		});
+		// Once it is down, there is nothing left to hit but the ground
+		bridge.struck = true;
+		expect(findContact(segment, 228, 360)).toBeNull();
 	});
 
 	it('gives every segment its own layout and a slightly harder gap sequence', () => {

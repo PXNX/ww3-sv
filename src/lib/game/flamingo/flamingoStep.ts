@@ -2,22 +2,27 @@
  * Fixed-timestep simulation for Flamingo Flight (requirements Section 8). A run is a series of
  * segments: a row of obstacle gaps, then a refinery approach where the player stops flapping to
  * dive onto a storage tank. A strike bounces the flamingo up into the next, slightly harder
- * segment; any other contact sends it tumbling into the ground and ends the run.
+ * segment. The rare Crimea bridge among the columns is a bonus target: flying into it brings a
+ * span down and bounces the flamingo on. Any other contact sends it tumbling into the ground and
+ * ends the run.
  * Everything here is deterministic for a given seed and sequence of flaps.
  */
 import { createRandom } from '../random';
 import {
 	COLUMN_WIDTH,
+	BRIDGE_OVERHANG,
 	BRIDGE_POINTS,
 	bottomRect,
+	bridgeRect,
 	generateGapSequence,
 	topRect,
-	type ColumnKind,
+	type ObstacleKind,
 	type TopKind,
 	type GapColumn
 } from './gapSequence';
 import {
 	FLAMINGO_RADIUS,
+	FLAP_VELOCITY,
 	GROUND_Y,
 	SCROLL_SPEED,
 	STEP_SECONDS,
@@ -47,6 +52,8 @@ export const NEXT_SEGMENT_CLEARANCE = 160;
 export const OVERSHOOT_MARGIN = 30;
 export const READY_Y = 250;
 export const STRIKE_BOUNCE_VELOCITY = -560;
+/** Striking the bridge bounces the flamingo up as hard as a flap, so the next gap stays reachable */
+export const BRIDGE_BOUNCE_VELOCITY = FLAP_VELOCITY;
 export const CRASH_HOP_VELOCITY = -240;
 /** How long the flamingo lies on the ground before the run is over */
 export const OVER_DELAY_SECONDS = 0.8;
@@ -59,7 +66,7 @@ export type Phase = 'ready' | 'flying' | 'tumbling' | 'over';
 export type Stage = 'gaps' | 'approach';
 /** The flare stack at a refinery is a 'flare', the mast at the other sites a 'mast' */
 export type CrashCause =
-	TopKind | ColumnKind | 'ground' | 'flare' | 'mast' | 'missed' | 'overshoot';
+	TopKind | ObstacleKind | 'ground' | 'flare' | 'mast' | 'missed' | 'overshoot';
 
 export interface Segment {
 	index: number;
@@ -75,6 +82,8 @@ export type FlamingoEvent =
 	| { type: 'gap'; points: number }
 	| { type: 'approach' }
 	| { type: 'strike'; result: StrikeResult; segment: Segment; x: number; y: number }
+	/** A span of the Crimea bridge came down; x and y are where the flamingo hit it */
+	| { type: 'bridge'; column: GapColumn; points: number; x: number; y: number }
 	| { type: 'crash'; cause: CrashCause }
 	| { type: 'landed' }
 	| { type: 'over' };
@@ -95,6 +104,7 @@ export interface FlamingoState {
 	gapsPassed: number;
 	refineriesStruck: number;
 	tanksDestroyed: number;
+	bridgesStruck: number;
 	crash: CrashCause | null;
 	/** Seconds spent lying on the ground after a crash */
 	landedSeconds: number | null;
@@ -103,7 +113,8 @@ export interface FlamingoState {
 }
 
 export type Contact =
-	| { kind: 'column'; cause: TopKind | ColumnKind }
+	| { kind: 'column'; cause: TopKind | ObstacleKind }
+	| { kind: 'bridge'; column: GapColumn }
 	| { kind: 'tank'; index: number }
 	| { kind: 'flare' }
 	| { kind: 'ground' }
@@ -141,6 +152,7 @@ export function createFlamingoState(seed: number): FlamingoState {
 		gapsPassed: 0,
 		refineriesStruck: 0,
 		tanksDestroyed: 0,
+		bridgesStruck: 0,
 		crash: null,
 		landedSeconds: null,
 		events: []
@@ -155,7 +167,16 @@ export function currentSegment(state: FlamingoState): Segment {
 export function findContact(segment: Segment, x: number, y: number): Contact | null {
 	const r = FLAMINGO_RADIUS;
 	for (const column of segment.columns) {
-		if (column.x > x + r || column.x + COLUMN_WIDTH < x - r) continue;
+		if (column.x - BRIDGE_OVERHANG > x + r || column.x + COLUMN_WIDTH + BRIDGE_OVERHANG < x - r) {
+			continue;
+		}
+		if (column.kind === 'bridge') {
+			// Open sky above, and a brought-down bridge is no longer in the way
+			if (!column.struck && circleHitsRect(x, y, r, bridgeRect(column))) {
+				return { kind: 'bridge', column };
+			}
+			continue;
+		}
 		if (circleHitsRect(x, y, r, topRect(column))) return { kind: 'column', cause: column.top };
 		if (circleHitsRect(x, y, r, bottomRect(column))) return { kind: 'column', cause: column.kind };
 	}
@@ -235,6 +256,17 @@ function strike(state: FlamingoState, segment: Segment, hitIndex: number): void 
 	];
 }
 
+function strikeBridge(state: FlamingoState, column: GapColumn): void {
+	column.struck = true;
+	state.score += BRIDGE_POINTS;
+	state.bridgesStruck += 1;
+	state.events.push({ type: 'bridge', column, points: BRIDGE_POINTS, x: state.x, y: state.y });
+
+	// The flamingo bounces off the falling span and flies on
+	state.y = Math.min(state.y, bridgeRect(column).y - FLAMINGO_RADIUS);
+	state.vy = BRIDGE_BOUNCE_VELOCITY;
+}
+
 function fly(state: FlamingoState, flap: boolean, dt: number): void {
 	state.x += SCROLL_SPEED * dt;
 	const body = integrate(state, flap, dt);
@@ -255,12 +287,10 @@ function fly(state: FlamingoState, flap: boolean, dt: number): void {
 		segment.passed < segment.columns.length &&
 		state.x - FLAMINGO_RADIUS > segment.columns[segment.passed].x + COLUMN_WIDTH
 	) {
-		const column = segment.columns[segment.passed];
-		const points = column.kind === 'bridge' ? BRIDGE_POINTS : GAP_POINTS;
 		segment.passed += 1;
 		state.gapsPassed += 1;
-		state.score += points;
-		state.events.push({ type: 'gap', points });
+		state.score += GAP_POINTS;
+		state.events.push({ type: 'gap', points: GAP_POINTS });
 	}
 	if (state.stage === 'gaps' && segment.passed === segment.columns.length) {
 		state.stage = 'approach';
@@ -269,7 +299,8 @@ function fly(state: FlamingoState, flap: boolean, dt: number): void {
 
 	const contact = findContact(segment, state.x, state.y);
 	if (!contact) return;
-	if (contact.kind === 'tank') strike(state, segment, contact.index);
+	if (contact.kind === 'bridge') strikeBridge(state, contact.column);
+	else if (contact.kind === 'tank') strike(state, segment, contact.index);
 	else crash(state, crashCause(contact, state.stage, segment));
 }
 

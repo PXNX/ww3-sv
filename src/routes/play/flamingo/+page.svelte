@@ -20,7 +20,6 @@
 		balloon: m.flamingo_crash_balloon,
 		radar: m.flamingo_crash_radar,
 		pantsir: m.flamingo_crash_pantsir,
-		bridge: m.flamingo_crash_bridge,
 		ground: m.flamingo_crash_ground,
 		flare: m.flamingo_crash_flare,
 		mast: m.flamingo_crash_mast,
@@ -86,6 +85,10 @@
 		<dd class="text-end tabular-nums">{game.refineriesStruck}</dd>
 		<dt class="font-bold">{m.flamingo_stat_tanks()}</dt>
 		<dd class="text-end tabular-nums">{game.tanksDestroyed}</dd>
+		{#if game.bridgesStruck > 0}
+			<dt class="font-bold">{m.flamingo_stat_bridges()}</dt>
+			<dd class="text-end tabular-nums">{game.bridgesStruck}</dd>
+		{/if}
 		<dt class="font-bold">{m.flamingo_stat_best_refineries()}</dt>
 		<dd class="text-end tabular-nums">{game.bestRefineries ?? 0}</dd>
 	</dl>
