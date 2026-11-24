@@ -30,7 +30,7 @@ PAGE_LINKS: Final[dict[str, str]] = {
 def page_link_name(page: str, lang: str = "en") -> str:
     return PAGE_LINKS.get(page, PAGES.get(page, page))
 
-# Bump when the AGB or the Widerrufsbelehrung change; buyers consent again on their next purchase
+# Stored with each consent to record which wording was agreed to; buyers are asked only once per account
 CONSENT_VERSION: Final[str] = "2026-11-24"
 
 # The wording § 356 Abs. 4 and 5 BGB asks for, shown before the first purchase of a version

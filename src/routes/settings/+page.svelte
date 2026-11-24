@@ -11,6 +11,8 @@
 	import { appearance, THEME_CHOICES, type ThemeChoice } from '#lib/stores/appearance.svelte.js';
 	import { haptic } from '#lib/haptic/haptic.svelte.js';
 	import { changelogSheet } from '#lib/stores/changelog.svelte.js';
+	import { telegram } from '#lib/stores/telegram.svelte.js';
+	import IconChart from '~icons/lucide/chart-column';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
 	import IconClock from '~icons/lucide/clock';
 	import IconMoon from '~icons/lucide/moon';
@@ -24,6 +26,7 @@
 	const look = appearance();
 	const sound = soundManager();
 	const hapticFeedback = haptic();
+	const account = telegram();
 
 	const THEME_LABELS: Record<ThemeChoice, () => string> = {
 		light: m.settings_theme_light,
@@ -181,5 +184,18 @@
 			</span>
 			<IconRadar class="size-6 shrink-0" aria-hidden="true" />
 		</a>
+
+		{#if account.admin}
+			<a
+				href={resolve('/admin')}
+				class="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-sand/60"
+			>
+				<span>
+					<span class="block font-display text-lg leading-tight font-bold">{m.admin_link()}</span>
+					<span class="block text-xs leading-snug opacity-70">{m.admin_link_hint()}</span>
+				</span>
+				<IconChart class="size-6 shrink-0" aria-hidden="true" />
+			</a>
+		{/if}
 	</section>
 </main>

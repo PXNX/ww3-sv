@@ -1,0 +1,94 @@
+{
+	"version": 1,
+	"ads": [
+		{
+			"id": "mnchat",
+			"emoji": "🔰",
+			"url": "https://t.me/mnchat",
+			"weight": 2,
+			"text": {
+				"en": {
+					"title": "Militär-News chat",
+					"body": "Talk about the news of the day with the community.",
+					"cta": "Join the chat"
+				},
+				"de": {
+					"title": "Militär-News Chat",
+					"body": "Diskutiere die Nachrichten des Tages mit der Community.",
+					"cta": "Zum Chat"
+				},
+				"ru": {
+					"title": "Чат Militär-News",
+					"body": "Обсуждай новости дня вместе с сообществом.",
+					"cta": "В чат"
+				},
+				"uk": {
+					"title": "Чат Militär-News",
+					"body": "Обговорюй новини дня разом зі спільнотою.",
+					"cta": "До чату"
+				},
+				"ar": {
+					"title": "دردشة Militär-News",
+					"body": "ناقش أخبار اليوم مع المجتمع.",
+					"cta": "انضم إلى الدردشة"
+				},
+				"fa": {
+					"title": "گفتگوی Militär-News",
+					"body": "درباره خبرهای روز با جامعه گفتگو کن.",
+					"cta": "ورود به گفتگو"
+				}
+			},
+			"categories": ["news", "military", "community"],
+			"style": {
+				"variant": "card",
+				"background": "#0c3a6b",
+				"color": "#e6f6ff",
+				"accent": "#2ec5ff"
+			}
+		},
+		{
+			"id": "ww3-groups",
+			"emoji": "🏆",
+			"url": "https://t.me/game_ww3_bot?startgroup=games",
+			"text": {
+				"en": {
+					"title": "Play World War 3 in your group",
+					"body": "Add the bot to a group chat and fight over the group's leaderboard.",
+					"cta": "Add to a group"
+				},
+				"de": {
+					"title": "World War 3 in deiner Gruppe",
+					"body": "Füge den Bot einer Gruppe hinzu und kämpft um die Bestenliste.",
+					"cta": "Zur Gruppe hinzufügen"
+				},
+				"ru": {
+					"title": "World War 3 в твоей группе",
+					"body": "Добавь бота в группу и сражайтесь за таблицу лидеров.",
+					"cta": "Добавить в группу"
+				},
+				"uk": {
+					"title": "World War 3 у твоїй групі",
+					"body": "Додай бота до групи й змагайтеся за таблицю лідерів.",
+					"cta": "Додати до групи"
+				},
+				"ar": {
+					"title": "العب World War 3 في مجموعتك",
+					"body": "أضف البوت إلى مجموعة وتنافسوا على لوحة الصدارة.",
+					"cta": "أضف إلى مجموعة"
+				},
+				"fa": {
+					"title": "World War 3 در گروه تو",
+					"body": "ربات را به یک گروه اضافه کن و برای جدول برترین‌ها رقابت کنید.",
+					"cta": "افزودن به گروه"
+				}
+			},
+			"categories": ["gaming"],
+			"style": {
+				"variant": "card",
+				"background": "#0c3a6b",
+				"color": "#e6f6ff",
+				"accent": "#2ec5ff"
+			}
+		}
+	]
+}

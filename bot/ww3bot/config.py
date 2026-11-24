@@ -27,6 +27,11 @@ CONTAINER: Final[bool] = getenv("CONTAINER", "false").lower() == "true"
 # PostgreSQL, e.g. postgresql://user:password@host:5432/ww3
 DATABASE_URL: Final[str] = getenv("DATABASE_URL", "")
 
+# The feed of house adverts on a litfass server; empty shows the game's bundled adverts only
+LITFASS_FEED_URL: Final[str] = getenv("LITFASS_FEED_URL", "")
+# Unlocks the litfass network statistics on the admin page
+LITFASS_STATS_TOKEN: Final[str] = getenv("LITFASS_STATS_TOKEN", "")
+
 # The Mini App endpoints and the legal pages are served on this port
 API_PORT: Final[int] = int(getenv("API_PORT") or 3790)
 # Origins the game may call the endpoints from (CORS)

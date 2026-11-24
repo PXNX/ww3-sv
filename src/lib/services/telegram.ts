@@ -559,6 +559,8 @@ export interface TelegramMe {
 	proUntil: string | null;
 	/** Whether the player already agreed to immediate delivery (needed before a purchase) */
 	consented: boolean;
+	/** Whether the player may open the statistics page */
+	admin: boolean;
 	consent: PurchaseConsent | null;
 	catalogue: CatalogueItem[];
 	/** Skus of the cosmetics bought, which stay unlocked on every device */
@@ -625,6 +627,7 @@ export function parseMe(value: unknown): TelegramMe | null {
 		pro,
 		proUntil: proUntil ?? null,
 		consented: consented ?? false,
+		admin: value.admin === true,
 		consent: toConsent(value.consent),
 		catalogue: items as CatalogueItem[],
 		owned: Array.isArray(value.owned)

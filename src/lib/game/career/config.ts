@@ -188,5 +188,5 @@ export const AD_COINS = 10;
 export const ADS_PER_DAY = 5;
 /** A single advert never pays more than this, however good the run was */
 export const MAX_AD_COINS = 150;
-/** Length of the demo advert in seconds */
+/** Length of a house advert in seconds */
 export const AD_SECONDS = 5;

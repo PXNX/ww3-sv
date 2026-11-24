@@ -24,6 +24,10 @@ async def test_booking_wallet_and_spending():
     await ledger.record_consent(42, "bot")
     assert await ledger.has_consent(42)
 
+    # Consent is asked once per account: a newer wording does not ask again
+    await db.execute("UPDATE consents SET version = 'older' WHERE user_id = 42")
+    assert await ledger.has_consent(42)
+
     await db.execute("INSERT INTO invoices (id, user_id, sku, stars, created_at) VALUES ('inv1', 42, 'pro_30d', 250, %s)", (db.now(),))
     assert (await ledger.find_invoice("inv1"))["user_id"] == 42
 
@@ -160,3 +164,37 @@ async def test_earlier_invites_become_friendships():
         await conn.execute(db.SCHEMA)
     assert [entry["id"] for entry in await friends.friends_of(7)] == ["8"]
     assert [entry["id"] for entry in await friends.friends_of(8)] == ["7"]
+
+
+async def test_gift_code_once_per_account():
+    from ww3bot import gifts
+
+    await ledger.upsert_account(person(77))
+    assert gifts.normalize("gift_mn-5") == "MN5"
+    assert gifts.normalize("NOPE") is None
+    assert await gifts.redeem(77, "mn5") == ("ok", 5)
+    assert await gifts.redeem(77, "MN5") == ("used", 5)
+    assert await gifts.redeem(77, "nope") == ("unknown", 0)
+    assert (await ledger.wallet(77))["revives"] == 5
+
+
+async def test_admin_report_and_endpoint(bot, monkeypatch):
+    from ww3bot import ads, endpoints, gifts
+
+    await ledger.upsert_account(person(91))
+    await gifts.redeem(91, "MN5")
+    report = await ledger.admin_report()
+    assert report["totals"]["accounts"] >= 1 and report["totals"]["accounts_7d"] >= 1
+    assert {"code": "MN5", "redeemed": 1, "revives": 5} in report["gifts"]
+    assert sum(report["signups"].values()) >= 1
+
+    async def no_ads():
+        return {"placement": None, "network": None}
+
+    monkeypatch.setattr(ads, "stats", no_ads)
+    monkeypatch.setattr(endpoints, "player", lambda init_data: SimpleNamespace(id=init_data["id"]))
+    monkeypatch.setattr(config, "ADMIN_IDS", [91])
+    result = await endpoints.admin_stats(bot, {}, {"id": 91})
+    assert result["ww3"]["totals"]["accounts"] >= 1 and result["ads"]["network"] is None
+    with pytest.raises(endpoints.EndpointError):
+        await endpoints.admin_stats(bot, {}, {"id": 92})

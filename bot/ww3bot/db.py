@@ -89,6 +89,15 @@ CREATE TABLE IF NOT EXISTS streaks (
 );
 CREATE INDEX IF NOT EXISTS idx_streaks_expires ON streaks (expires_at);
 
+-- Gift codes redeemed through the bot or the Mini App: once per account and code
+CREATE TABLE IF NOT EXISTS gifts (
+    user_id bigint NOT NULL,
+    code text NOT NULL,
+    revives integer NOT NULL,
+    created_at bigint NOT NULL,
+    PRIMARY KEY (user_id, code)
+);
+
 -- Who invited whom with their invite link; one row per invited player
 CREATE TABLE IF NOT EXISTS referrals (
     invitee_id bigint PRIMARY KEY,

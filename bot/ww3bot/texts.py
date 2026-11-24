@@ -24,6 +24,8 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
             "{footer}"
         ),
         "invited": "🎉 Ein Freund hat dich eingeladen – schön, dass du da bist!",
+        "gift_ok": "🎁 Geschenkt: {count} Revival-Token liegen jetzt in deinem Konto.",
+        "gift_used": "Diesen Geschenkcode hast du schon eingelöst.",
         "open_app": "🎮 World War 3 spielen",
         "open_profile": "🎮 Anmelden und spielen",
         "back_to_game": "🎮 Zurück zum Spiel",
@@ -122,6 +124,8 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
             "{footer}"
         ),
         "invited": "🎉 A friend invited you – great to have you here!",
+        "gift_ok": "🎁 A gift: {count} revival tokens are now in your account.",
+        "gift_used": "You have already redeemed this gift code.",
         "open_app": "🎮 Play World War 3",
         "open_profile": "🎮 Log in and play",
         "back_to_game": "🎮 Back to the game",

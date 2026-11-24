@@ -19,8 +19,23 @@ export interface GiftCode {
 
 export const GIFT_CODES: readonly GiftCode[] = [
 	{ code: 'WW3GIFT', reward: 'revive', value: 1 },
-	{ code: 'OILBOOM', reward: 'coins', value: 100 }
+	{ code: 'OILBOOM', reward: 'coins', value: 100 },
+	// Also an account code: inside Telegram the bot credits it once per account (ACCOUNT_GIFT_CODES)
+	{ code: 'MN5', reward: 'revive', value: 5 }
 ];
+
+/**
+ * Codes the bot redeems once per Telegram account, as `t.me/<bot>?start=MN5`, as a Mini App link
+ * `?startapp=MN5` or typed in the depot. Outside Telegram they work like the codes above.
+ */
+export const ACCOUNT_GIFT_CODES: readonly string[] = ['MN5'];
+
+/** The account code in a start parameter or typed text (`MN5`, `gift_MN5`, `mn-5`), else null */
+export function accountGiftCode(input: string | null | undefined): string | null {
+	if (!input) return null;
+	const code = normalizeCode(input).replace(/^GIFT_/, '');
+	return ACCOUNT_GIFT_CODES.includes(code) ? code : null;
+}
 
 /** A code as typed: spaces and dashes do not matter, nor does the case */
 export function normalizeCode(input: string): string {

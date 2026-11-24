@@ -218,7 +218,12 @@
 	);
 	let reward = $state<RunReward | null>(null);
 	let adOpen = $state(false);
+	/** What the open advert pays: Fake News after a win, or continuing the run */
+	let adReward = $state<'coins' | 'continue'>('coins');
 	let adCoins = $state(0);
+	// An advert continues a run once; the flag outlives the sheet closing on the revival and is
+	// cleared when the player starts a new run with Retry
+	let adContinueUsed = $state(false);
 	let awarded = false;
 	// The best before this run; the award below raises it, so the near-miss test needs the old one
 	let previousBest = $state<number | null>(null);
@@ -265,7 +270,24 @@
 		onRevive?.();
 	}
 
+	function openAd(reward: 'coins' | 'continue') {
+		adReward = reward;
+		adOpen = true;
+	}
+
+	function retry() {
+		adContinueUsed = false;
+		onRetry();
+	}
+
 	function claimAd() {
+		if (adReward === 'continue') {
+			adOpen = false;
+			adContinueUsed = true;
+			soundManager().play('ui-toggle');
+			onRevive?.();
+			return;
+		}
 		const result = careerState.watchAd(AD_COINS);
 		adOpen = false;
 		adCoins = result.coins;
@@ -449,14 +471,26 @@
 							{m.gameover_revive()}
 						{/if}
 					</button>
-				{:else if account.status === 'verified' && account.reviveItem}
-					<!-- One tap inside Telegram: once the revival arrives, the button above takes over -->
-					<StarsOffer item={account.reviveItem} compact />
-				{:else if !groupGame}
-					<a href={resolve('/shop')} class="btn-chunky bg-khaki text-lg">
-						<IconHeartPulse class="size-5" aria-hidden="true" />
-						{m.gameover_revive_none()}
-					</a>
+				{:else}
+					{#if !adContinueUsed}
+						<button
+							type="button"
+							class="btn-chunky text-lg {nearBest ? 'bg-explosion-yellow' : 'bg-khaki'}"
+							onclick={() => openAd('continue')}
+						>
+							<IconTv class="size-5" aria-hidden="true" />
+							{m.gameover_continue_ad()}
+						</button>
+					{/if}
+					{#if account.status === 'verified' && account.reviveItem}
+						<!-- One tap inside Telegram: once the revival arrives, the button above takes over -->
+						<StarsOffer item={account.reviveItem} compact />
+					{:else if !groupGame}
+						<a href={resolve('/shop')} class="btn-chunky bg-khaki text-lg">
+							<IconHeartPulse class="size-5" aria-hidden="true" />
+							{m.gameover_revive_none()}
+						</a>
+					{/if}
 				{/if}
 			{/if}
 
@@ -464,7 +498,7 @@
 				<button
 					type="button"
 					class="btn-chunky bg-explosion-yellow px-3 py-1 text-sm"
-					onclick={() => (adOpen = true)}
+					onclick={() => openAd('coins')}
 				>
 					<IconTv class="size-4" aria-hidden="true" />
 					{m.gameover_double({ coins: AD_COINS })}
@@ -483,7 +517,7 @@
 					type="button"
 					class="btn-chunky bg-tie-red text-lg focus-visible:outline-none"
 					autofocus
-					onclick={onRetry}
+					onclick={retry}
 				>
 					<IconRotate class="size-5" aria-hidden="true" />
 					{m.gameover_try_again()}
@@ -505,6 +539,7 @@
 <RewardedAdModal
 	open={adOpen}
 	coins={AD_COINS}
+	claimLabel={adReward === 'continue' ? m.ad_claim_continue() : undefined}
 	onClaim={claimAd}
 	onClose={() => (adOpen = false)}
 />

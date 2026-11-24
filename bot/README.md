@@ -10,13 +10,17 @@ repository; paths below are relative to `bot/`.
   a Stars subscription: 10 revival tokens per period, and no adverts once the game has them), plus looks for the
   player's agent (30–50 Stars each, bought once and kept for good; `look` in the catalogue names the avatar part
   and value). Goods are granted only on `successful_payment`, once per charge id.
-- **No refunds** beyond the statutory rights. Before the first purchase of a terms version the buyer consents to
-  immediate delivery and acknowledges losing the right of withdrawal (§ 356 Abs. 4 and 5 BGB); the consent is
-  stored and repeated in the purchase confirmation sent to the chat.
+- **No refunds** beyond the statutory rights. Before the first purchase the buyer consents once to immediate
+  delivery and acknowledges losing the right of withdrawal (§ 356 Abs. 4 and 5 BGB); the consent is stored with
+  the version of its wording and repeated in every purchase confirmation sent to the chat.
+- **Sales stay closed** while the operator data in `config.local.json` is missing or still the example: the
+  catalogue in `me` is then empty, so the game shows no Stars offers, and `invoice` answers `SALES_CLOSED`.
 - **Legal pages for German law**: Impressum, Datenschutzerklärung, AGB and Widerrufsbelehrung as web pages at
   `/legal/<page>.html`. `/impressum`, `/datenschutz`, `/agb`, `/widerruf` (aliases `/imprint`, `/privacy`, `/terms`,
   `/withdrawal`) link them once `legalUrl` is set, and only send the text into the chat while it is not.
   `operator.telegram` adds a Telegram contact to the Impressum and `/paysupport`. `/paysupport` is the support contact Telegram requires for bots that sell.
+- **Gift codes**: `t.me/game_ww3_bot?start=MN5` (bot chat), `?startapp=MN5` (straight into the Mini App) or MN5 typed in
+  the supply depot inside Telegram put 5 revival tokens into the account wallet, once per account (`ww3bot/gifts.py`).
 - **Invites and streak reminders**: `/invite` links earn revival tokens, and the game reports its daily streak so
   the bot can remind two hours before it breaks (`/reminders` to switch).
 - **Group leaderboards** through [Telegram's gaming platform](https://core.telegram.org/bots/games): added to a
@@ -34,6 +38,7 @@ repository; paths below are relative to `bot/`.
 | `ww3bot/games.py` | The Telegram games, Play sessions, scores and the groups' leaderboards |
 | `ww3bot/ledger.py`, `ww3bot/catalogue.py` | Accounts, consent, invoices, purchases, the revival wallet; items and Stars prices |
 | `ww3bot/referrals.py`, `ww3bot/reminders.py` | Invite rewards; streak reminders |
+| `ww3bot/ads.py` | House adverts: fetches the litfass feed (`LITFASS_FEED_URL` in `.env`) and forwards the counts, so browsers never contact the advert server |
 | `ww3bot/db.py` | PostgreSQL pool and schema (created on start, additions only) |
 | `ww3bot/texts.py`, `ww3bot/legal.py`, `legal/*.txt` | Every bot text in German and English; the legal pages with `{placeholders}` for the operator data |
 | `ww3bot/profile.py`, `res/` | Name, descriptions, command menus and profile photo, applied by `/set_cmd` |
@@ -50,8 +55,11 @@ are `{ ok: true, result }`, or `{ ok: false, type, description, parameters: { co
 | `me` | `{}` | `user`, `wallet.revives`, `pro`, `pro_until`, `consented`, `invite`, `consent`, `catalogue`, `owned` (skus of the looks bought) |
 | `invoice` | `{ sku, consent? }` | `{ url }` for `Telegram.WebApp.openInvoice`; `CONSENT_REQUIRED`, `RATE_LIMITED`, `UNKNOWN_SKU`, `SALES_CLOSED`, `ALREADY_OWNED` |
 | `spend` | `{ mode }` | takes one revival token: `{ wallet, pro }`; `NO_REVIVES` |
+| `redeem` | `{ code }` | `{ status: ok \| used, revives, wallet }`; `UNKNOWN_GIFT` |
 | `streak` | `{ streak, expires_at, write_access? }` | `{ reminder }` (unix seconds or null); `INVALID_INPUT` |
 | `gamescore` | `{ session, game, score }` | no initData, the session is the credential: `{ new_best, best, rank, overtaken, leaderboard }`; `INVALID_INPUT`, `SESSION_UNKNOWN`, `SESSION_EXPIRED` |
+| `ads` | `{}`, no initData | the house adverts (`{ version, ads }`, litfass feed format without images); empty without `LITFASS_FEED_URL` |
+| `adevent` | `{ events: [{ ad, event }] }`, no initData | forwards up to 20 `view`/`click`/`reward` counts: `{ counted }` |
 
 The `paid` callback of `openInvoice` only refreshes the UI; call `me` again until the `successful_payment` has
 been booked. The game reads the endpoints' address from `VITE_TELEGRAM_API_URL`.

@@ -82,6 +82,7 @@ describe('the me endpoint', () => {
 			pro: false,
 			proUntil: null,
 			consented: true,
+			admin: false,
 			consent: null,
 			catalogue: [{ ...REVIVE, look: null }],
 			owned: [],
@@ -90,6 +91,8 @@ describe('the me endpoint', () => {
 		expect(
 			parseMe({ ...body, user: { id: 1, first_name: 'A', username: null } })?.user.username
 		).toBeNull();
+		expect(parseMe({ ...body, admin: true })?.admin).toBe(true);
+		expect(parseMe({ ...body, admin: 'yes' })?.admin).toBe(false);
 		expect(parseMe({ ...body, pro: true, pro_until: '2026-11-27T00:00:00Z' })?.proUntil).toBe(
 			'2026-11-27T00:00:00Z'
 		);

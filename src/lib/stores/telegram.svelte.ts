@@ -94,6 +94,8 @@ class TelegramStore {
 	proUntil = $state<string | null>(null);
 	/** Whether the player already agreed to immediate delivery, which a purchase needs */
 	consented = $state(false);
+	/** Admins get the statistics page */
+	admin = $state(false);
 	/** The wording the player agrees to before the first purchase, and the legal links */
 	consent = $state<PurchaseConsent | null>(null);
 	/** What the bot sells, as the server prices it */
@@ -265,6 +267,24 @@ class TelegramStore {
 		}
 	}
 
+	/** The outcome of an account gift code redeemed from a link, shown once in the supply depot */
+	giftNotice = $state<{ status: 'ok' | 'used'; revives: number } | null>(null);
+
+	/** Redeems an account gift code with the bot; 'error' when the bot cannot be reached */
+	async redeemGift(code: string): Promise<{ status: 'ok' | 'used' | 'unknown' | 'error'; revives: number }> {
+		try {
+			const result = await call<{ status?: unknown; revives?: unknown; wallet?: { revives?: unknown } }>(
+				'redeem',
+				{ code }
+			);
+			const revives = typeof result?.revives === 'number' ? result.revives : 0;
+			if (typeof result?.wallet?.revives === 'number') this.wallet = { revives: result.wallet.revives };
+			return { status: result?.status === 'used' ? 'used' : 'ok', revives };
+		} catch (error) {
+			return { status: endpointCode(error) === 'UNKNOWN_GIFT' ? 'unknown' : 'error', revives: 0 };
+		}
+	}
+
 	/** Uses one revival bought with Stars; false when there is none or the bot cannot be reached */
 	async spendRevive(mode: string): Promise<boolean> {
 		if (this.wallet.revives <= 0) return false;
@@ -303,6 +323,7 @@ class TelegramStore {
 				this.pro = me.pro;
 				this.proUntil = me.proUntil;
 				this.consented = me.consented;
+				this.admin = me.admin;
 				this.consent = me.consent;
 				this.catalogue = me.catalogue;
 				this.owned = me.owned;

@@ -36,21 +36,25 @@ Jede Spielerin und jeder Spieler erhält einen persönlichen Einladungslink, der
 
 Fügen Sie den Bot einer Gruppe hinzu, kann er dort Spiele posten. Tippen Sie bei einem solchen Spiel auf „Spielen“, speichern wir eine Spielsitzung mit Ihrer Telegram-Nutzer-ID, Ihrem Vornamen, Ihrer Spracheinstellung, dem Spiel, der Gruppe und der Nachricht, damit Ihr Ergebnis in die Bestenliste genau dieser Gruppe kommt; nach einem Tag wird sie gelöscht. Am Ende einer Runde meldet das Spiel Ihr Ergebnis. Ist es Ihre neue Bestleistung in dieser Gruppe, tragen wir es bei Telegram in die Bestenliste des Spiels ein, und Telegram zeigt in der Gruppe eine Nachricht mit Ihrem Namen und Ergebnis. Wir speichern Ihre Bestleistung je Spiel und Gruppe mit Ihrem Vornamen, damit /top die Bestenliste der Gruppe anzeigen kann; holen Sie den Rekord der Gruppe, schreibt der Bot das mit Ihrem Vornamen und dem der bisherigen Rekordhalterin oder des bisherigen Rekordhalters in die Gruppe. Diese Angaben sehen alle Mitglieder der Gruppe. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (die Bestenliste ist Teil des Spiels, das Sie aus der Gruppe heraus öffnen). Spielen Sie das Spiel nicht aus einer Gruppe heraus, wird nichts davon gespeichert.
 
-## 9. Hosting des Bots, der Schnittstelle und der Datenbank
+## 9. Eigenwerbung
+
+Das Spiel zeigt ausschließlich Eigenwerbung, also Hinweise auf unsere eigenen Kanäle und Funktionen. Ein Werbenetzwerk wird nicht eingebunden, und es werden keine Cookies gesetzt. Die aktuellen Anzeigen holt die Schnittstelle des Bots (Abschnitt 10) von unserem eigenen Anzeigenserver, sodass Ihr Browser diesen nicht selbst aufruft. Sehen Sie eine Anzeige, tippen Sie darauf oder schauen Sie sie bis zum Ende an, meldet das Spiel der Schnittstelle nur die Kennung der Anzeige und die Art des Ereignisses. Daraus werden Tagessummen je Anzeige gebildet. Ihre IP-Adresse, Ihre Telegram-Nutzer-ID oder andere Angaben zu Ihrer Person werden dabei weder weitergegeben noch gespeichert. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (unser berechtigtes Interesse, zu erfahren, wie gut unsere Hinweise ankommen).
+
+## 10. Hosting des Bots, der Schnittstelle und der Datenbank
 
 Der Bot, die Schnittstelle, über die die Mini App Ihr Konto, Ihre Käufe und Ihre Serie abfragt, und die Datenbank mit Konten, Käufen, Zustimmungen, Serien und Bestenlisten laufen auf einem von uns selbst betriebenen Server. Verbindungen zur Schnittstelle werden über Tailscale Funnel der Tailscale Inc. (Kanada) weitergeleitet; Tailscale sieht dabei Ihre IP-Adresse und den Zeitpunkt, die Inhalte bleiben verschlüsselt (https://tailscale.com/privacy-policy). Für Kanada besteht ein Angemessenheitsbeschluss der EU-Kommission. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b und f DSGVO. Fehlerprotokolle enthalten technische Angaben (Zeitpunkt, Fehlermeldung, gegebenenfalls Ihre Telegram-Nutzer-ID) und dienen der Fehlerbehebung.
 
-## 10. Speicherdauer
+## 11. Speicherdauer
 
 Die Seriendaten und Ihre Einträge in Bestenlisten löschen wir auf Anfrage sofort; Spielsitzungen löschen wir nach einem Tag. Kauf- und Zustimmungsdaten bewahren wir auf, solange Sie das Spiel nutzen, und darüber hinaus so lange, wie es gesetzliche Aufbewahrungspflichten erfordern (bis zu zehn Jahre nach § 147 AO und § 257 HGB). Kontodaten ohne Käufe löschen wir auf Anfrage sofort.
 
-## 11. Ihre Rechte
+## 12. Ihre Rechte
 
 Sie haben das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch gegen Verarbeitungen auf Grundlage berechtigter Interessen (Art. 21). Wenden Sie sich dazu an {email}.
 
 Sie haben außerdem das Recht, sich bei einer Datenschutz-Aufsichtsbehörde zu beschweren (Art. 77 DSGVO), insbesondere in dem Mitgliedstaat Ihres Aufenthaltsorts.
 
-## 12. Keine automatisierte Entscheidung
+## 13. Keine automatisierte Entscheidung
 
 Eine automatisierte Entscheidungsfindung einschließlich Profiling findet nicht statt.
 

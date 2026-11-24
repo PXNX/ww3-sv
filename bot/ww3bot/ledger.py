@@ -24,6 +24,7 @@ INVOICES_PER_MINUTE = 5
 BALANCE = """
     COALESCE((SELECT SUM(revives) FROM purchases WHERE user_id = %(user)s), 0)
     + COALESCE((SELECT SUM(revives) FROM referrals WHERE referrer_id = %(user)s), 0)
+    + COALESCE((SELECT SUM(revives) FROM gifts WHERE user_id = %(user)s), 0)
     - COALESCE((SELECT SUM(revives) FROM spends WHERE user_id = %(user)s), 0)
 """
 
@@ -52,7 +53,9 @@ async def account_language(user_id: int) -> str:
 
 
 async def has_consent(user_id: int) -> bool:
-    row = await db.fetchone("SELECT 1 FROM consents WHERE user_id = %s AND version = %s", (user_id, CONSENT_VERSION))
+    # Asked once per account: a consent of any version counts, so a buyer is not asked again when
+    # the wording is touched up. CONSENT_VERSION still records which text was agreed to.
+    row = await db.fetchone("SELECT 1 FROM consents WHERE user_id = %s", (user_id,))
     return row is not None
 
 
@@ -196,3 +199,52 @@ async def stats() -> dict:
         """,
         (db.now(),),
     )
+
+
+async def admin_report() -> dict:
+    """Counts for the admin page: totals and per-day series, nothing that names a player."""
+    now = db.now()
+    day = 86400
+    totals = await db.fetchone(
+        """
+        SELECT
+            (SELECT COUNT(*) FROM accounts) AS accounts,
+            (SELECT COUNT(*) FROM accounts WHERE first_seen > %(d1)s) AS accounts_1d,
+            (SELECT COUNT(*) FROM accounts WHERE first_seen > %(d7)s) AS accounts_7d,
+            (SELECT COUNT(*) FROM accounts WHERE first_seen > %(d30)s) AS accounts_30d,
+            (SELECT COUNT(*) FROM accounts WHERE pro_until > %(now)s) AS pro,
+            (SELECT COUNT(*) FROM purchases) AS purchases,
+            (SELECT COALESCE(SUM(stars), 0) FROM purchases) AS stars,
+            (SELECT COALESCE(SUM(stars), 0) FROM purchases WHERE created_at > %(d30)s) AS stars_30d,
+            (SELECT COALESCE(SUM(revives), 0) FROM spends WHERE created_at > %(d7)s) AS revives_spent_7d,
+            (SELECT COALESCE(SUM(revives), 0) FROM spends WHERE created_at > %(d30)s) AS revives_spent_30d,
+            (SELECT COUNT(*) FROM referrals) AS referrals,
+            (SELECT COUNT(*) FROM referrals WHERE created_at > %(d30)s) AS referrals_30d,
+            (SELECT COUNT(*) FROM streaks WHERE expires_at > %(now)s) AS active_streaks,
+            (SELECT COUNT(*) FROM streaks WHERE muted) AS reminders_muted,
+            (SELECT COUNT(*) FROM game_sessions WHERE created_at > %(d1)s) AS group_sessions_1d,
+            (SELECT COUNT(DISTINCT user_id) FROM group_scores WHERE updated_at > %(d7)s) AS group_players_7d,
+            (SELECT COUNT(DISTINCT chat_id) FROM group_scores WHERE updated_at > %(d7)s) AS group_chats_7d,
+            (SELECT COUNT(DISTINCT chat_id) FROM group_scores) AS group_chats
+        """,
+        {"now": now, "d1": now - day, "d7": now - 7 * day, "d30": now - 30 * day},
+    )
+    signups = await db.fetchall(
+        """
+        SELECT to_char(to_timestamp(first_seen) AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS day, COUNT(*) AS n
+        FROM accounts WHERE first_seen > %s GROUP BY day
+        """,
+        (now - 30 * day,),
+    )
+    games = await db.fetchall(
+        "SELECT game, COUNT(DISTINCT chat_id) AS chats, COUNT(DISTINCT user_id) AS players FROM group_scores "
+        "WHERE updated_at > %s GROUP BY game ORDER BY players DESC LIMIT 10",
+        (now - 7 * day,),
+    )
+    gifts = await db.fetchall("SELECT code, COUNT(*) AS redeemed, SUM(revives) AS revives FROM gifts GROUP BY code ORDER BY code")
+    return {
+        "totals": {key: int(value or 0) for key, value in totals.items()},
+        "signups": {row["day"]: int(row["n"]) for row in signups},
+        "group_games": [{"game": row["game"], "chats": int(row["chats"]), "players": int(row["players"])} for row in games],
+        "gifts": [{"code": row["code"], "redeemed": int(row["redeemed"]), "revives": int(row["revives"])} for row in gifts],
+    }

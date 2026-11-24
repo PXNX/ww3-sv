@@ -11,7 +11,7 @@ from types import SimpleNamespace
 
 from telegram import Bot
 
-from ww3bot import chat, friends as friendships, games, ledger, reminders, rivals
+from ww3bot import ads, chat, config, db, friends as friendships, games, gifts, ledger, reminders, rivals
 from ww3bot.catalogue import PRODUCTS, localized, product
 from ww3bot.legal import CONSENT_TEXT, CONSENT_VERSION, page_url
 from ww3bot.referrals import invite_stats
@@ -53,12 +53,17 @@ async def me(bot: Bot, data: dict, init_data: dict) -> dict:
         "pro": current["pro"],
         "pro_until": datetime.fromtimestamp(pro_until, timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z") if pro_until else None,
         "consented": await ledger.has_consent(user.id),
+        # Admins see the statistics page in the game
+        "admin": user.id in config.ADMIN_IDS,
         "invite": {"link": invite["link"], "friends": invite["friends"], "cap": invite["cap"], "revives_per_friend": invite["per_friend"]},
         "consent": {"version": CONSENT_VERSION, "text": CONSENT_TEXT, "terms": page_url("agb"), "withdrawal": page_url("widerruf")},
+        # Empty while sales are closed, so the game shows no offer that could only be refused
         "catalogue": [
             {key: item[key] for key in ("sku", "title", "description", "stars", "revives", "subscription", "look") if key in item}
             for item in PRODUCTS
-        ],
+        ]
+        if config.SALES_OPEN
+        else [],
         # The cosmetics bought, so the game unlocks those looks on every device
         "owned": await ledger.owned_looks(user.id),
     }
@@ -201,12 +206,31 @@ async def hackers_firewall(bot: Bot, data: dict, init_data: dict) -> dict:
     return {"entries": await rivals.firewall_log(player(init_data).id)}
 
 
+async def admin_stats(bot: Bot, data: dict, init_data: dict) -> dict:
+    """Counts for the game's admin page: the game itself and the house adverts; admins only."""
+    user = player(init_data)
+    if user.id not in config.ADMIN_IDS:
+        raise EndpointError("Admins only", "FORBIDDEN")
+    return {"ww3": await ledger.admin_report(), "ads": await ads.stats(), "generated_at": db.now()}
+
+
+async def redeem(bot: Bot, data: dict, init_data: dict) -> dict:
+    """`{ code }` → `{ status: ok | used, revives, wallet }`; `UNKNOWN_GIFT` for anything else."""
+    user = player(init_data)
+    await ledger.upsert_account(user)
+    status, revives = await gifts.redeem(user.id, str(data.get("code") or ""))
+    if status == "unknown":
+        raise EndpointError("Unknown gift code", "UNKNOWN_GIFT")
+    current = await ledger.wallet(user.id)
+    return {"status": status, "revives": revives, "wallet": {"revives": current["revives"]}}
+
+
 ENDPOINTS = {
-    "me": me, "invoice": invoice, "spend": spend, "streak": streak, "friends": friends, "presence": presence,
+    "me": me, "invoice": invoice, "spend": spend, "redeem": redeem, "admin_stats": admin_stats, "streak": streak, "friends": friends, "presence": presence,
     "beachhead_publish": beachhead_publish, "beachhead_rivals": beachhead_rivals, "beachhead_attack": beachhead_attack,
     "beachhead_result": beachhead_result, "beachhead_log": beachhead_log,
     "hackers_publish": hackers_publish, "hackers_targets": hackers_targets, "hackers_lookup": hackers_lookup,
     "hackers_hack": hackers_hack, "hackers_result": hackers_result, "hackers_firewall": hackers_firewall,
 }
 # Called by the game page of a Telegram game, which has a session id instead of initData
-OPEN_ENDPOINTS = {"gamescore": gamescore}
+OPEN_ENDPOINTS = {"gamescore": gamescore, "ads": ads.feed, "adevent": ads.event}

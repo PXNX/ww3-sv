@@ -12,7 +12,7 @@ from telegram import Bot, CallbackQuery, Chat, InlineKeyboardButton, InlineKeybo
 from telegram.constants import ParseMode
 from telegram.error import TelegramError
 
-from ww3bot import config, friends, games, ledger, referrals, reminders
+from ww3bot import config, friends, games, gifts, ledger, referrals, reminders
 from ww3bot.catalogue import PRODUCTS, is_cosmetic, localized, product
 from ww3bot.legal import CONSENT_TEXT, CONSENT_VERSION, PAGES, escape_html, legal_messages, page_link_name, page_url, telegram_contact
 from ww3bot.texts import lang_of_user, t
@@ -60,6 +60,10 @@ async def start(bot: Bot, chat_id: int, user, param: str | None) -> None:
         await send(bot, chat_id, t(lang, "invited"))
     if param == "shop":
         return await shop(bot, chat_id, user)
+    if gifts.normalize(param):
+        status, revives = await gifts.redeem(user.id, param)
+        key = "gift_ok" if status == "ok" else "gift_used"
+        return await send(bot, chat_id, t(lang, key, count=revives), [play_button(t(lang, "open_app"))])
     await send(
         bot,
         chat_id,

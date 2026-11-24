@@ -7,6 +7,7 @@
 	import { APP_NAME } from '#lib/config.js';
 	import { streakDeadline } from '#lib/game/career/profile.js';
 	import { career } from '#lib/game/career/store.svelte.js';
+	import { accountGiftCode } from '#lib/game/giftcode/config.js';
 	import { groupGameFromUrl, launchStartParam, startRoute } from '#lib/services/telegram.js';
 	import { squadCodeOf, squadStartParam } from '#lib/services/squad.js';
 	import { squad } from '#lib/stores/squad.svelte.js';
@@ -81,6 +82,18 @@
 			if (code) {
 				squad().offerJoin(code);
 				if (page.url.pathname !== resolve('/play/raid')) void goto(resolve('/play/raid'));
+				return;
+			}
+			// A gift link (`startapp=MN5`) credits the code to the account and opens the depot, which
+			// shows the outcome
+			const gift = accountGiftCode(param);
+			if (gift) {
+				void account.redeemGift(gift).then((result) => {
+					if (result.status === 'ok' || result.status === 'used') {
+						account.giftNotice = { status: result.status, revives: result.revives };
+					}
+				});
+				void goto(resolve('/shop'));
 				return;
 			}
 			const route = startRoute(param);

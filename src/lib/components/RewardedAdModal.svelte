@@ -1,12 +1,21 @@
 <!--
-	A clearly labelled demo advert: a short countdown, then the reward can be collected. The coins
-	are paid by the caller through onClaim, so the same sheet serves the supply depot and the
-	double-up button on the result screen. No network request and no tracking.
+	A clearly labelled house advert from litfass (our own channels and features): a short
+	countdown, then the reward can be collected. The reward is paid by the caller through onClaim,
+	so the same sheet serves the supply depot, the double-up button and continuing a run. The feed
+	is bundled with the game: no network request and no tracking.
 -->
 <script lang="ts">
+	import {
+		loadHouseAds,
+		nextHouseAd,
+		openHouseAd,
+		reportHouseAd,
+		type HouseAd
+	} from '#lib/ads/houseAds.js';
 	import { AD_SECONDS } from '#lib/game/career/config.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
+	import IconExternalLink from '~icons/lucide/external-link';
 	import IconNewspaper from '~icons/lucide/newspaper';
 	import IconTv from '~icons/lucide/tv';
 
@@ -29,6 +38,12 @@
 	let dialog: HTMLDialogElement | undefined = $state();
 	let secondsLeft = $state(AD_SECONDS);
 	let claimed = $state(false);
+	let houseAd = $state<HouseAd | null>(null);
+
+	// The current adverts are fetched in the background; until then the bundled ones are shown
+	$effect(() => {
+		void loadHouseAds();
+	});
 
 	const ready = $derived(secondsLeft <= 0);
 	const progress = $derived(Math.min(100, Math.max(0, 100 - (secondsLeft / AD_SECONDS) * 100)));
@@ -38,6 +53,8 @@
 		if (open && !dialog.open) {
 			secondsLeft = AD_SECONDS;
 			claimed = false;
+			houseAd = nextHouseAd();
+			if (houseAd) reportHouseAd(houseAd.ad, 'view');
 			dialog.showModal();
 		} else if (!open && dialog.open) {
 			dialog.close();
@@ -61,6 +78,7 @@
 	function claim() {
 		if (!ready || claimed) return;
 		claimed = true;
+		if (houseAd) reportHouseAd(houseAd.ad, 'reward');
 		soundManager().play('chime-big');
 		onClaim();
 	}
@@ -85,11 +103,39 @@
 	>
 		<h2 id="ad-title" class="font-display text-2xl font-bold">{m.ad_title()}</h2>
 
+		<!-- The advert's own colours come from litfass as --litfass-* variables -->
 		<div
-			class="flex aspect-video w-full flex-col items-center justify-center gap-1 rounded-[12px_6px_14px_8px] border-3 border-ink bg-banner-slate p-3 text-paper"
+			class="relative flex aspect-video w-full flex-col items-center justify-center gap-1 rounded-[12px_6px_14px_8px] border-3 border-ink bg-(--litfass-bg,var(--color-banner-slate)) p-3 text-(--litfass-fg,var(--color-paper))"
+			style={houseAd
+				? Object.entries(houseAd.style)
+						.map(([name, value]) => `${name}:${value}`)
+						.join(';')
+				: undefined}
 		>
-			<IconTv class="size-10" stroke-width="2.5" aria-hidden="true" />
-			<span class="font-display text-xl font-bold">{m.ad_demo()}</span>
+			{#if houseAd}
+				<!-- Adverts must be recognisable as such (§ 6 DDG) -->
+				<span
+					class="absolute start-2 top-1.5 rounded-sm bg-paper/90 px-1.5 text-xs font-bold tracking-wide text-ink uppercase"
+				>
+					{m.ad_label()}
+				</span>
+				{#if houseAd.ad.emoji}
+					<span class="text-4xl leading-none" aria-hidden="true">{houseAd.ad.emoji}</span>
+				{/if}
+				<span class="font-display text-xl leading-tight font-bold">{houseAd.text.title}</span>
+				<span class="text-sm leading-snug">{houseAd.text.body}</span>
+				<button
+					type="button"
+					class="btn-chunky mt-1 bg-(--litfass-accent,var(--color-paper)) px-3 py-1 text-sm text-(--litfass-bg,var(--color-ink))"
+					onclick={() => houseAd && openHouseAd(houseAd)}
+				>
+					<IconExternalLink class="size-4" aria-hidden="true" />
+					{houseAd.text.cta}
+				</button>
+			{:else}
+				<IconTv class="size-10" stroke-width="2.5" aria-hidden="true" />
+				<span class="font-display text-xl font-bold">{m.ad_demo()}</span>
+			{/if}
 		</div>
 
 		<div class="w-full">

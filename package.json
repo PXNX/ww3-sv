@@ -21,7 +21,8 @@
 	"dependencies": {
 		"@fontsource/aref-ruqaa": "5.3.0",
 		"@fontsource/cinzel-decorative": "5.3.0",
-		"@fontsource/kurale": "5.3.0"
+		"@fontsource/kurale": "5.3.0",
+		"@militaernews/litfass": "github:militaernews/litfass#v0.2.0"
 	},
 	"devDependencies": {
 		"@eslint/compat": "2.1.1",
