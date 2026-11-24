@@ -3130,6 +3130,7 @@
 	"shop_gift_expired": "This code has expired.",
 	"shop_pro_name": "Monthly Pro",
 	"shop_pro_body": "10 revival tokens every month, and no adverts once the game shows them.",
+	"shop_stars_revives": "{count} × revival token",
 	"stars_title": "Telegram Stars",
 	"stars_intro": "Bought with Stars and kept on your Telegram account, so they follow you to every device. Revivals you earned are used first.",
 	"stars_owned": "Revival tokens bought with Stars: {count}",

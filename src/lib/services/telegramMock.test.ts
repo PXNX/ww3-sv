@@ -74,11 +74,11 @@ describe('the mock Telegram login', () => {
 
 	it('books an invoice and shows it in the wallet', async () => {
 		const { call, endpointCode, parseMe } = await import('./telegram.js');
-		const refused = await call('invoice', { sku: 'revive-1' }).catch((caught: unknown) => caught);
+		const refused = await call('invoice', { sku: 'revive_1' }).catch((caught: unknown) => caught);
 		expect(endpointCode(refused)).toBe('CONSENT_REQUIRED');
 
-		const invoice = await call<{ url: string }>('invoice', { sku: 'revive-1', consent: true });
-		expect(invoice.url).toContain('revive-1');
+		const invoice = await call<{ url: string }>('invoice', { sku: 'revive_1', consent: true });
+		expect(invoice.url).toContain('revive_1');
 		expect(parseMe(await call('me'))?.revives).toBe(4);
 	});
 
@@ -121,7 +121,7 @@ describe('the mock Telegram login', () => {
 
 	it('closes the invoice as paid', async () => {
 		const { openInvoice } = await import('./telegram.js');
-		await expect(openInvoice('https://mock.example/invoice/revive-1')).resolves.toBe('paid');
+		await expect(openInvoice('https://mock.example/invoice/revive_1')).resolves.toBe('paid');
 	});
 
 	it('verifies the account through the store, wallet and all', async () => {
@@ -132,8 +132,8 @@ describe('the mock Telegram login', () => {
 		expect(account.user?.firstName).toBe('Mock');
 		expect(account.wallet.revives).toBe(3);
 
-		expect(await account.buy('revive-1')).toBe('consent');
-		expect(await account.buy('revive-1', true)).toBe('done');
+		expect(await account.buy('revive_1')).toBe('consent');
+		expect(await account.buy('revive_1', true)).toBe('done');
 		expect(account.wallet.revives).toBe(4);
 		expect(await account.spendRevive('blocks')).toBe(true);
 		expect(account.wallet.revives).toBe(3);

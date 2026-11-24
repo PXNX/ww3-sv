@@ -194,6 +194,11 @@ class TelegramStore {
 		return this.catalogue.find((entry) => !entry.subscription && entry.revives === 1);
 	}
 
+	/** The bundle of several revivals at a lower price per token, offered in the shop */
+	get revivePackItem(): CatalogueItem | undefined {
+		return this.catalogue.find((entry) => !entry.subscription && entry.revives > 1);
+	}
+
 	get proItem(): CatalogueItem | undefined {
 		return this.catalogue.find((entry) => entry.subscription);
 	}

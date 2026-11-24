@@ -6,7 +6,7 @@ repository; paths below are relative to `bot/`.
 
 - **Login**: inside Telegram the player is signed in through the Mini App's `initData`, which the bot's
   endpoints verify (HMAC with the bot token) before anything runs. `/start` and `/login` open the game.
-- **Payments with Telegram Stars**: a revival token (25 Stars) and World War 3 Pro (250 Stars every 30 days as
+- **Payments with Telegram Stars**: a revival token (25 Stars), a pack of five (100 Stars) and World War 3 Pro (250 Stars every 30 days as
   a Stars subscription: 10 revival tokens per period, and no adverts once the game has them), plus looks for the
   player's agent (30–50 Stars each, bought once and kept for good; `look` in the catalogue names the avatar part
   and value). Goods are granted only on `successful_payment`, once per charge id.

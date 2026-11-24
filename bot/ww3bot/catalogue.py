@@ -20,6 +20,15 @@ PRODUCTS: Final[list[dict]] = [
         "subscription": False,
     },
     {
+        "sku": "revive_5",
+        "title": "Revival token pack",
+        "description": "Five revival tokens for World War 3 at a bundle price.",
+        "de": {"title": "Revival-Token-Paket", "description": "Fünf Revival-Token für World War 3 zum Paketpreis."},
+        "stars": 100,
+        "revives": 5,
+        "subscription": False,
+    },
+    {
         "sku": "pro_30d",
         "title": "World War 3 Pro",
         "description": "10 revival tokens every 30 days, and no adverts once the game shows them. Renews monthly until cancelled in Telegram.",

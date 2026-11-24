@@ -3130,6 +3130,7 @@
 	"shop_gift_expired": "Dieser Code ist abgelaufen.",
 	"shop_pro_name": "Monatliches Pro",
 	"shop_pro_body": "10 Wiederbelebungen jeden Monat und keine Werbung, sobald das Spiel welche zeigt.",
+	"shop_stars_revives": "{count} × Revival-Token",
 	"stars_title": "Telegram Stars",
 	"stars_intro": "Mit Stars gekauft und an dein Telegram-Konto gebunden, also auf jedem Gerät dabei. Verdiente Wiederbelebungen werden zuerst verbraucht.",
 	"stars_owned": "Mit Stars gekaufte Wiederbelebungen: {count}",

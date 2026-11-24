@@ -54,6 +54,9 @@
 		})
 	);
 
+	/** One consent box serves the single revival and the pack */
+	let reviveAgreed = $state(false);
+
 	/** One consent box serves every look on the list */
 	let lookAgreed = $state(false);
 	const lookConsent = $derived(!account.consented && looks.some((item) => !account.owns(item.sku)));
@@ -202,7 +205,22 @@
 						<IconStar class="size-4 text-mustard" aria-hidden="true" />
 						{m.stars_title()}
 					</span>
-					<StarsOffer item={account.reviveItem} />
+					{#if account.revivePackItem}
+						<!-- One consent box for the single token and the pack -->
+						{#if !account.consented && account.consent !== null}
+							<StarsConsent bind:agreed={reviveAgreed} />
+						{/if}
+						{#each [account.reviveItem, account.revivePackItem] as item (item.sku)}
+							<div class="flex flex-wrap items-center justify-between gap-2">
+								<span class="text-sm font-semibold">
+									{m.shop_stars_revives({ count: item.revives })}
+								</span>
+								<StarsOffer {item} showConsent={false} bind:agreed={reviveAgreed} />
+							</div>
+						{/each}
+					{:else}
+						<StarsOffer item={account.reviveItem} />
+					{/if}
 					<span class="text-xs leading-snug opacity-75">{m.stars_intro()}</span>
 				</li>
 			{/if}

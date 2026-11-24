@@ -35,9 +35,9 @@ const CATALOGUE: {
 	subscription: boolean;
 	look?: { part: string; value: string };
 }[] = [
-	{ sku: 'revive-1', title: 'One revival', stars: 100, revives: 1, subscription: false },
-	{ sku: 'revive-5', title: 'Five revivals', stars: 400, revives: 5, subscription: false },
-	{ sku: 'pro-month', title: 'Pro for a month', stars: 500, revives: 0, subscription: true },
+	{ sku: 'revive_1', title: 'Revival token', stars: 25, revives: 1, subscription: false },
+	{ sku: 'revive_5', title: 'Revival token pack', stars: 100, revives: 5, subscription: false },
+	{ sku: 'pro_30d', title: 'World War 3 Pro', stars: 250, revives: 0, subscription: true },
 	// The same looks and skus the real bot sells
 	{
 		sku: 'look_tinfoil',
