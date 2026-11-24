@@ -190,6 +190,16 @@
 		<circle cx="48" cy="61" r="3.5" fill={INK} stroke="none" />
 		<circle cx="72" cy="61" r="3.5" fill={INK} stroke="none" />
 		<path d="M40 50 L55 55 M80 50 L65 55" fill="none" stroke-width="3.5" />
+	{:else if current.eyes === 'laser'}
+		<!-- Glowing red eyes with a beam out of each, the meme -->
+		<path d="M48 60 L4 76 L4 70 Z" fill="#ff2d2d" stroke="none" opacity="0.55" />
+		<path d="M72 60 L116 76 L116 70 Z" fill="#ff2d2d" stroke="none" opacity="0.55" />
+		<circle cx="48" cy="60" r="8" fill="#ff2d2d" stroke="none" opacity="0.35" />
+		<circle cx="72" cy="60" r="8" fill="#ff2d2d" stroke="none" opacity="0.35" />
+		<circle cx="48" cy="60" r="4.5" fill="#ff2d2d" stroke-width="2" />
+		<circle cx="72" cy="60" r="4.5" fill="#ff2d2d" stroke-width="2" />
+		<circle cx="47" cy="59" r="1.5" fill="#ffffff" stroke="none" />
+		<circle cx="71" cy="59" r="1.5" fill="#ffffff" stroke="none" />
 	{:else}
 		<path d="M36 55 L84 55" fill="none" stroke-width="3" />
 		<rect x="38" y="54" width="19" height="12" rx="5" fill={INK} />
@@ -462,5 +472,28 @@
 			fill="#e1a53c"
 		/>
 		<circle cx="60" cy={head.top - 8} r="4" fill="#111" stroke-width="2" />
+	{:else if current.hat === 'tinfoil'}
+		<!-- A crumpled tinfoil cone against the mind-control rays -->
+		<path
+			d="M{left + 2} {head.top + 16} L{60 - 6} {head.top - 26} L60 {head.top - 30} L{60 +
+				5} {head.top - 25} L{right - 2} {head.top + 16} Q60 {head.top + 22} {left + 2} {head.top +
+				16} Z"
+			fill="#c9ced6"
+		/>
+		<path
+			d="M{60 - 14} {head.top - 2} L{60 - 4} {head.top + 6} L{60 + 6} {head.top - 6} M{60 -
+				8} {head.top - 16} L{60 + 2} {head.top - 10} M{60 + 10} {head.top + 6} L{60 +
+				18} {head.top + 12}"
+			fill="none"
+			stroke="#7d8591"
+			stroke-width="1.8"
+		/>
+		<path
+			d="M{60 - 3} {head.top - 22} L{60 - 12} {head.top + 10}"
+			fill="none"
+			stroke="#ffffff"
+			stroke-width="2.5"
+			opacity="0.7"
+		/>
 	{/if}
 </svg>

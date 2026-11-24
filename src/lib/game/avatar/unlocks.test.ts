@@ -9,6 +9,9 @@ import {
 } from './look';
 import {
 	LOOK_UNLOCKS,
+	PAID_LOOKS,
+	isPaid,
+	paidLookFor,
 	firstLockedPart,
 	isUnlocked,
 	nextUnlock,
@@ -80,6 +83,25 @@ describe('the extra looks', () => {
 			expect(LOOK_PARTS[unlock.part]).toContain(unlock.value);
 		}
 		expect(unlockableValues('hat')).toContain('beret');
+	});
+
+	it('sells looks for Stars apart from the collection, open only once owned', () => {
+		for (const look of PAID_LOOKS) {
+			expect(LOOK_PARTS[look.part]).toContain(look.value);
+			expect(
+				LOOK_UNLOCKS.some((unlock) => unlock.part === look.part && unlock.value === look.value)
+			).toBe(false);
+			expect(isPaid(look)).toBe(true);
+			expect(isUnlocked(look.part, look.value, progress({ level: 99 }))).toBe(false);
+			const sku = look.requirement.kind === 'stars' ? look.requirement.sku : '';
+			expect(paidLookFor(sku)).toBe(look);
+			expect(isUnlocked(look.part, look.value, progress({ owned: [sku] }))).toBe(true);
+		}
+		// Buying never counts towards the collection that is earned by playing
+		const owned = PAID_LOOKS.map((look) =>
+			look.requirement.kind === 'stars' ? look.requirement.sku : ''
+		);
+		expect(unlockedCount(progress({ owned }))).toBe(0);
 	});
 
 	it('never lists the same part value or id twice', () => {
@@ -182,7 +204,9 @@ describe('the extra looks', () => {
 			bestStreak: 4,
 			modes: profile.modes,
 			tycoon: [],
-			games: undefined
+			games: undefined,
+			referralCount: undefined,
+			owned: []
 		});
 	});
 

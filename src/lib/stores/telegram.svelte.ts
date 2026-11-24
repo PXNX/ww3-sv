@@ -50,6 +50,16 @@ const ME_RETRY_MS = 700;
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** The last list of looks the bot said this player owns */
+const OWNED_KEY = 'telegram:owned-looks';
+
+function storedOwned(): string[] {
+	const stored = localStore().read<unknown>(OWNED_KEY, []);
+	return Array.isArray(stored)
+		? stored.filter((sku): sku is string => typeof sku === 'string')
+		: [];
+}
+
 /** Set once Telegram's "allow messages" dialog was shown on this device, so it is asked only once */
 const WRITE_ACCESS_KEY = 'telegram:write-access-asked';
 
@@ -88,6 +98,11 @@ class TelegramStore {
 	consent = $state<PurchaseConsent | null>(null);
 	/** What the bot sells, as the server prices it */
 	catalogue = $state<CatalogueItem[]>([]);
+	/**
+	 * Skus of the looks bought with Stars. Kept on the device as well, so a bought look stays
+	 * open while the bot cannot be reached; the bot's list replaces it on every check.
+	 */
+	owned = $state<string[]>(storedOwned());
 	/** The invite link and how many friends joined through it */
 	invite = $state<TelegramInvite | null>(null);
 	/** True while an invoice is open or a payment is being booked */
@@ -183,6 +198,15 @@ class TelegramStore {
 		return this.catalogue.find((entry) => entry.subscription);
 	}
 
+	/** The cosmetics on sale, in the bot's order */
+	get lookItems(): CatalogueItem[] {
+		return this.catalogue.filter((entry) => entry.look !== null);
+	}
+
+	owns(sku: string): boolean {
+		return this.owned.includes(sku);
+	}
+
 	/**
 	 * Buys an item with Stars: asks the bot for an invoice, opens it, and after a `paid` sheet
 	 * waits for the bot to book the payment. `agreed` carries the consent checkbox for a player who
@@ -192,7 +216,11 @@ class TelegramStore {
 		if (this.busy) return 'busy';
 		this.busy = true;
 		try {
-			const before = { revives: this.wallet.revives, proUntil: this.proUntil };
+			const before = {
+				revives: this.wallet.revives,
+				proUntil: this.proUntil,
+				owned: this.owned.length
+			};
 			let url: string;
 			try {
 				({ url } = await call<{ url: string }>('invoice', { sku, consent: agreed }));
@@ -200,6 +228,11 @@ class TelegramStore {
 				const code = endpointCode(error);
 				if (code === 'CONSENT_REQUIRED') return 'consent';
 				if (code === 'RATE_LIMITED') return 'busy';
+				// Bought on another device since the last check: show it as owned
+				if (code === 'ALREADY_OWNED') {
+					await this.#load();
+					return 'done';
+				}
 				return 'failed';
 			}
 			if (agreed) this.consented = true;
@@ -211,7 +244,11 @@ class TelegramStore {
 			for (let attempt = 0; attempt < BOOKING_POLLS; attempt += 1) {
 				await wait(BOOKING_POLL_MS);
 				await this.#load();
-				if (this.wallet.revives > before.revives || this.proUntil !== before.proUntil) {
+				if (
+					this.wallet.revives > before.revives ||
+					this.proUntil !== before.proUntil ||
+					this.owned.length > before.owned
+				) {
 					return 'done';
 				}
 			}
@@ -263,6 +300,8 @@ class TelegramStore {
 				this.consented = me.consented;
 				this.consent = me.consent;
 				this.catalogue = me.catalogue;
+				this.owned = me.owned;
+				localStore().write(OWNED_KEY, me.owned);
 				this.invite = me.invite;
 				this.status = 'verified';
 				this.problem = null;

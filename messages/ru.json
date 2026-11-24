@@ -4637,5 +4637,16 @@
 	"changelog_close": "Закрыть",
 	"changelog_unseen": "Новое",
 	"changelog_all": "Полная история версий",
-	"changelog_settings_hint": "Смотрите, что изменилось в последних обновлениях"
+	"changelog_settings_hint": "Смотрите, что изменилось в последних обновлениях",
+	"avatar_unlock_stars": "Продаётся за Telegram Stars на складе снабжения",
+	"shop_looks_name": "Образы агента",
+	"shop_looks_body": "Дополнения для агента: покупаются один раз за Telegram Stars и навсегда остаются на твоём аккаунте Telegram.",
+	"shop_look_wear": "Надеть",
+	"shop_look_worn": "Надето",
+	"avatar_paid_title": "{name} для твоего агента",
+	"avatar_paid_browser": "Образы продаются за Telegram Stars в приложении Telegram.",
+	"look_tinfoil": "Шапочка из фольги",
+	"look_laser": "Лазерные глаза",
+	"look_gold": "Золотая рубашка",
+	"look_neon": "Неоново-розовые волосы"
 }

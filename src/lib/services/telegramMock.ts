@@ -27,10 +27,50 @@ const MOCK_USER: TelegramUser = {
 };
 
 /** What the bot sells in the mock, priced in whole Stars like the real catalogue */
-const CATALOGUE = [
+const CATALOGUE: {
+	sku: string;
+	title: string;
+	stars: number;
+	revives: number;
+	subscription: boolean;
+	look?: { part: string; value: string };
+}[] = [
 	{ sku: 'revive-1', title: 'One revival', stars: 100, revives: 1, subscription: false },
 	{ sku: 'revive-5', title: 'Five revivals', stars: 400, revives: 5, subscription: false },
-	{ sku: 'pro-month', title: 'Pro for a month', stars: 500, revives: 0, subscription: true }
+	{ sku: 'pro-month', title: 'Pro for a month', stars: 500, revives: 0, subscription: true },
+	// The same looks and skus the real bot sells
+	{
+		sku: 'look_tinfoil',
+		title: 'Tinfoil hat',
+		stars: 50,
+		revives: 0,
+		subscription: false,
+		look: { part: 'hat', value: 'tinfoil' }
+	},
+	{
+		sku: 'look_laser',
+		title: 'Laser eyes',
+		stars: 50,
+		revives: 0,
+		subscription: false,
+		look: { part: 'eyes', value: 'laser' }
+	},
+	{
+		sku: 'look_gold',
+		title: 'Gold shirt',
+		stars: 30,
+		revives: 0,
+		subscription: false,
+		look: { part: 'shirtColor', value: '#d4a017' }
+	},
+	{
+		sku: 'look_neon',
+		title: 'Neon pink hair',
+		stars: 30,
+		revives: 0,
+		subscription: false,
+		look: { part: 'hairColor', value: '#ff4fa3' }
+	}
 ];
 
 /** The § 356 BGB wording the server would send, shortened for the mock */
@@ -61,6 +101,8 @@ interface MockDb {
 	pro: boolean;
 	proUntil: string | null;
 	consented: boolean;
+	/** Skus of the looks bought */
+	owned: string[];
 	streak: { streak: number; expires_at: number | null };
 	boards: Record<string, { name: string; score: number; me: boolean }[]>;
 }
@@ -73,6 +115,7 @@ function seedDb(): MockDb {
 		pro: false,
 		proUntil: null,
 		consented: false,
+		owned: [],
 		streak: { streak: 0, expires_at: null },
 		boards: {}
 	};
@@ -88,7 +131,8 @@ function loadDb(): MockDb {
 		...seedDb(),
 		...stored,
 		streak: { ...seedDb().streak, ...(stored.streak ?? {}) },
-		boards: (stored.boards ?? {}) as MockDb['boards']
+		boards: (stored.boards ?? {}) as MockDb['boards'],
+		owned: Array.isArray(stored.owned) ? stored.owned : []
 	};
 	return db;
 }
@@ -152,6 +196,7 @@ function mePayload(db: MockDb): Record<string, unknown> {
 		consented: db.consented,
 		consent: CONSENT,
 		catalogue: CATALOGUE,
+		owned: db.owned,
 		invite: INVITE
 	};
 }
@@ -170,7 +215,10 @@ export async function mockCall(name: string, input: unknown): Promise<unknown> {
 			if (consent !== true && !db.consented) throw endpointError('CONSENT_REQUIRED');
 			const item = CATALOGUE.find((entry) => entry.sku === sku);
 			if (!item) throw endpointError('UNKNOWN_SKU');
-			if (item.subscription) {
+			if (item.look) {
+				if (db.owned.includes(item.sku)) throw endpointError('ALREADY_OWNED');
+				db.owned.push(item.sku);
+			} else if (item.subscription) {
 				db.pro = true;
 				db.proUntil = new Date(Date.now() + 30 * 86_400_000).toISOString();
 			} else {

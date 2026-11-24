@@ -4637,5 +4637,16 @@
 	"changelog_close": "Close",
 	"changelog_unseen": "New",
 	"changelog_all": "Full version history",
-	"changelog_settings_hint": "See what changed in the latest updates"
+	"changelog_settings_hint": "See what changed in the latest updates",
+	"avatar_unlock_stars": "Sold for Telegram Stars in the supply depot",
+	"shop_looks_name": "Agent looks",
+	"shop_looks_body": "Extras for your agent, bought once with Telegram Stars and kept on your Telegram account for good.",
+	"shop_look_wear": "Wear it",
+	"shop_look_worn": "Wearing",
+	"avatar_paid_title": "{name} for your agent",
+	"avatar_paid_browser": "Looks are sold for Telegram Stars inside the Telegram app.",
+	"look_tinfoil": "Tinfoil hat",
+	"look_laser": "Laser eyes",
+	"look_gold": "Gold shirt",
+	"look_neon": "Neon pink hair"
 }

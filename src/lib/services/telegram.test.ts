@@ -83,7 +83,8 @@ describe('the me endpoint', () => {
 			proUntil: null,
 			consented: true,
 			consent: null,
-			catalogue: [REVIVE],
+			catalogue: [{ ...REVIVE, look: null }],
+			owned: [],
 			invite: null
 		});
 		expect(
@@ -106,6 +107,20 @@ describe('the me endpoint', () => {
 			withdrawal: ''
 		});
 		expect(parseMe({ ...body, consent: { version: '1', text: '' } })?.consent).toBeNull();
+	});
+
+	it('reads the looks on sale and the ones owned', () => {
+		const hat = {
+			sku: 'look_tinfoil',
+			title: 'Tinfoil hat',
+			stars: 50,
+			revives: 0,
+			subscription: false,
+			look: { part: 'hat', value: 'tinfoil' }
+		};
+		const me = parseMe({ ...body, catalogue: [REVIVE, hat], owned: ['look_tinfoil', 3] });
+		expect(me?.catalogue[1].look).toEqual({ part: 'hat', value: 'tinfoil' });
+		expect(me?.owned).toEqual(['look_tinfoil']);
 	});
 
 	it('treats a missing consent or catalogue as none', () => {

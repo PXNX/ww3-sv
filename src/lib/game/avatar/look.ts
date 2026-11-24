@@ -19,7 +19,8 @@ export const FACE_SHAPES = ['round', 'oval', 'square', 'long'] as const;
 export const NOSES = ['button', 'pointy', 'potato', 'hook', 'beak'] as const;
 /** Hair on the face; the mustache is an extra look */
 export const FACIAL_HAIR = ['none', 'mustache'] as const;
-export const EYE_TYPES = ['dots', 'wide', 'sleepy', 'angry', 'shades'] as const;
+/** Laser eyes are sold for Telegram Stars */
+export const EYE_TYPES = ['dots', 'wide', 'sleepy', 'angry', 'shades', 'laser'] as const;
 export const HAIRSTYLES = [
 	'bald',
 	'buzz',
@@ -42,7 +43,8 @@ export const HATS = [
 	'monocle',
 	'cylinder',
 	'cat-ears',
-	'propeller'
+	'propeller',
+	'tinfoil'
 ] as const;
 
 /** Skin tones from light to deep; the first matches the game's caricature skin token */
@@ -64,7 +66,8 @@ export const SHIRT_COLORS = [
 	'#111111',
 	'#ffffff',
 	'#b45cd6',
-	'#8a5a33'
+	'#8a5a33',
+	'#d4a017'
 ] as const;
 export const HAIR_COLORS = [
 	'#111111',
@@ -73,7 +76,8 @@ export const HAIR_COLORS = [
 	'#e8c35a',
 	'#d9d9d9',
 	'#e5484d',
-	'#4fa8d8'
+	'#4fa8d8',
+	'#ff4fa3'
 ] as const;
 
 export type ShirtType = (typeof SHIRT_TYPES)[number];
@@ -131,13 +135,13 @@ export const DEFAULT_LOOK: AvatarLook = {
 /** A ready-made agent that sets every part at once; the editor shows these as shortcuts */
 export interface LookPreset {
 	id: string;
-	/** A name of its own, the same in every language: both are well-known characters */
+	/** A name of its own, the same in every language */
 	name: string;
 	look: AvatarLook;
 }
 
 /**
- * Two familiar faces built from the same parts as any other agent. They are shortcuts, not a
+ * Two ready-made characters built from the same parts as any other agent. They are shortcuts, not a
  * separate unlock: each still needs every part it uses to be open, so the suit still asks for the
  * career level and the green skin still asks for the top one.
  */
@@ -161,7 +165,7 @@ export const LOOK_PRESETS: readonly LookPreset[] = [
 	},
 	{
 		id: 'ogre',
-		name: 'Shrek',
+		name: 'Troll',
 		look: {
 			version: 1,
 			shirt: 'tee',

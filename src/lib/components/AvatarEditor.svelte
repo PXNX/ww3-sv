@@ -7,6 +7,9 @@
 	reward streak or climbing the career levels. On the profile the full collection is shown in
 	place, dimmed with a lock, so the player can see what is still missing; tapping one says what
 	unlocks it. The small editor on the start screen only offers what is already open.
+
+	A few more are sold for Telegram Stars: they carry a star instead of a lock, and tapping one
+	opens the purchase right under the choices (inside Telegram) and puts the look on once it is paid.
 -->
 <script lang="ts">
 	import { onDestroy } from 'svelte';
@@ -34,8 +37,12 @@
 	} from '#lib/game/avatar/unlocks.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
-	import { requirementText } from './unlockText.js';
+	import { paidLookName, paidSku, requirementText } from './unlockText.js';
+	import { telegramAppLink } from '#lib/services/telegram.js';
 	import Avatar from './Avatar.svelte';
+	import StarsOffer from './StarsOffer.svelte';
+	import IconStar from '~icons/lucide/star';
+	import IconSend from '~icons/lucide/send';
 	import PlayCubeIcon from './PlayCubeIcon.svelte';
 	import IconLock from '~icons/lucide/lock';
 	import IconRotateCcw from '~icons/lucide/rotate-ccw';
@@ -87,16 +94,23 @@
 	const tycoonAchievements = Array.isArray(tycoonSave?.achievements)
 		? tycoonSave.achievements.filter((id): id is string => typeof id === 'string')
 		: [];
-	const referralCount = $derived(telegram().invite?.friends ?? 0);
+	const account = telegram();
+	const referralCount = $derived(account.invite?.friends ?? 0);
 	const progress = $derived(
 		unlockProgress(
 			careerState.profile,
 			careerState.level,
 			tycoonAchievements,
 			gameProgress,
-			referralCount
+			referralCount,
+			account.owned
 		)
 	);
+
+	/** The look sold for Stars whose purchase is open under the choices */
+	let offer = $state<LookUnlock | null>(null);
+	const offerSku = $derived(paidSku(offer ?? undefined));
+	const offerItem = $derived(offerSku ? account.item(offerSku) : undefined);
 	const collected = $derived(unlockedCount(progress));
 
 	const options = $derived(
@@ -120,7 +134,22 @@
 
 	function showLocked(value: string) {
 		const unlock = unlockFor(part, value);
-		if (unlock) showUnlock(unlock);
+		if (!unlock) return;
+		if (paidSku(unlock)) {
+			offer = unlock;
+			lockNote = '';
+			soundManager().play('ui-tap');
+			return;
+		}
+		showUnlock(unlock);
+	}
+
+	/** The bought look goes on at once */
+	function bought() {
+		if (!offer) return;
+		avatarState.set(offer.part, offer.value);
+		offer = null;
+		changed('sparkle');
 	}
 
 	function showUnlock(unlock: LookUnlock) {
@@ -135,6 +164,7 @@
 			showLocked(value);
 			return;
 		}
+		offer = null;
 		if (avatarState.look[part] === value) return;
 		avatarState.set(part, value);
 		lockNote = '';
@@ -315,7 +345,11 @@
 					>
 						{#if locked}
 							<span class="absolute inset-0 grid place-items-center">
-								<IconLock class="size-4 text-paper drop-shadow" aria-hidden="true" />
+								{#if paidSku(unlock)}
+									<IconStar class="size-4 fill-mustard text-ink drop-shadow" aria-hidden="true" />
+								{:else}
+									<IconLock class="size-4 text-paper drop-shadow" aria-hidden="true" />
+								{/if}
 							</span>
 						{/if}
 					</button>
@@ -337,13 +371,43 @@
 						</span>
 						{#if locked}
 							<span class="absolute inset-0 grid place-items-center bg-paper/45">
-								<IconLock class="size-5 text-ink" aria-hidden="true" />
+								{#if paidSku(unlock)}
+									<IconStar class="size-5 fill-mustard text-ink" aria-hidden="true" />
+								{:else}
+									<IconLock class="size-5 text-ink" aria-hidden="true" />
+								{/if}
 							</span>
 						{/if}
 					</button>
 				{/if}
 			{/each}
 		</div>
+
+		{#if offer && offerSku}
+			<div
+				class="pop-in flex flex-col gap-2 rounded-[10px_5px_9px_6px] border-2 border-ink bg-sand p-2"
+				aria-live="polite"
+			>
+				<p class="flex items-center gap-1.5 text-sm font-bold">
+					<IconStar class="size-4 shrink-0 text-mustard" aria-hidden="true" />
+					{m.avatar_paid_title({ name: paidLookName(offerSku) })}
+				</p>
+				{#if account.status === 'verified' && offerItem}
+					{#key offerSku}
+						<StarsOffer item={offerItem} compact onDone={bought} />
+					{/key}
+				{:else}
+					<p class="text-xs leading-snug">{m.avatar_paid_browser()}</p>
+					{#if !account.inTelegram}
+						<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external page -->
+						<a href={telegramAppLink('shop')} class="btn-chunky self-start bg-flag-blue text-sm">
+							<IconSend class="size-4" aria-hidden="true" />
+							{m.profile_telegram_open()}
+						</a>
+					{/if}
+				{/if}
+			</div>
+		{/if}
 
 		{#if lockNote}
 			<p class="lock-note flex items-center gap-1.5 text-xs font-bold text-tie-red" role="status">

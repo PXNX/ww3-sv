@@ -30,7 +30,9 @@ export type UnlockRequirement =
 	/** An achievement of Beachhead, which keeps its own save outside the career */
 	| { kind: 'beachhead'; achievement: string }
 	/** Systems of the cast's network found in Hermit Hackers */
-	| { kind: 'hackers'; network: number };
+	| { kind: 'hackers'; network: number }
+	/** Bought with Telegram Stars; the sku is the bot's catalogue entry */
+	| { kind: 'stars'; sku: string };
 
 export interface LookUnlock {
 	id: string;
@@ -185,6 +187,50 @@ export const LOOK_UNLOCKS: readonly LookUnlock[] = [
 	}
 ];
 
+/**
+ * The looks sold for Telegram Stars. They are kept apart from the earned ones above, so the
+ * collection a player can finish by playing stays the same; the bot's catalogue names the same
+ * part and value under each sku and lists the skus a player owns.
+ */
+export const PAID_LOOKS: readonly LookUnlock[] = [
+	{
+		id: 'tinfoil-hat',
+		part: 'hat',
+		value: 'tinfoil',
+		requirement: { kind: 'stars', sku: 'look_tinfoil' }
+	},
+	{
+		id: 'laser-eyes',
+		part: 'eyes',
+		value: 'laser',
+		requirement: { kind: 'stars', sku: 'look_laser' }
+	},
+	{
+		id: 'gold-shirt',
+		part: 'shirtColor',
+		value: '#d4a017',
+		requirement: { kind: 'stars', sku: 'look_gold' }
+	},
+	{
+		id: 'neon-hair',
+		part: 'hairColor',
+		value: '#ff4fa3',
+		requirement: { kind: 'stars', sku: 'look_neon' }
+	}
+];
+
+/** The paid look sold under a sku of the bot's catalogue */
+export function paidLookFor(sku: string): LookUnlock | undefined {
+	return PAID_LOOKS.find(
+		(look) => look.requirement.kind === 'stars' && look.requirement.sku === sku
+	);
+}
+
+/** True for a look that is bought rather than earned */
+export function isPaid(unlock: LookUnlock): boolean {
+	return unlock.requirement.kind === 'stars';
+}
+
 /** What the unlock rules need to know about the player */
 export interface UnlockProgress {
 	level: number;
@@ -197,6 +243,8 @@ export interface UnlockProgress {
 	games?: GameProgress;
 	/** How many friends joined through the referral link */
 	referralCount?: number;
+	/** Skus of the looks bought with Telegram Stars */
+	owned?: readonly string[];
 }
 
 /**
@@ -208,7 +256,8 @@ export function unlockProgress(
 	level: number,
 	tycoon: readonly string[] = [],
 	games?: GameProgress,
-	referralCount?: number
+	referralCount?: number,
+	owned: readonly string[] = []
 ): UnlockProgress {
 	return {
 		level,
@@ -216,13 +265,16 @@ export function unlockProgress(
 		modes: profile.modes,
 		tycoon,
 		games,
-		referralCount
+		referralCount,
+		owned
 	};
 }
 
 /** The unlock that guards a part value, or undefined when the option is free */
 export function unlockFor(part: LookPart, value: string): LookUnlock | undefined {
-	return LOOK_UNLOCKS.find((unlock) => unlock.part === part && unlock.value === value);
+	return [...LOOK_UNLOCKS, ...PAID_LOOKS].find(
+		(unlock) => unlock.part === part && unlock.value === value
+	);
 }
 
 export function requirementMet(requirement: UnlockRequirement, progress: UnlockProgress): boolean {
@@ -251,6 +303,8 @@ export function requirementMet(requirement: UnlockRequirement, progress: UnlockP
 			return (progress.games?.beachheadAchievements ?? []).includes(requirement.achievement);
 		case 'hackers':
 			return (progress.games?.hackersNetwork ?? 0) >= requirement.network;
+		case 'stars':
+			return progress.owned?.includes(requirement.sku) ?? false;
 	}
 }
 
@@ -334,6 +388,8 @@ export function requirementShare(requirement: UnlockRequirement, progress: Unloc
 				: 0;
 		case 'hackers':
 			return Math.min(1, (progress.games?.hackersNetwork ?? 0) / requirement.network);
+		case 'stars':
+			return progress.owned?.includes(requirement.sku) ? 1 : 0;
 	}
 }
 

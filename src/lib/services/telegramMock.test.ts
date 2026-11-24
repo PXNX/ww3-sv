@@ -68,7 +68,7 @@ describe('the mock Telegram login', () => {
 		const me = parseMe(await call('me'));
 		expect(me?.user.firstName).toBe('Mock');
 		expect(me?.revives).toBe(3);
-		expect(me?.catalogue).toHaveLength(3);
+		expect(me?.catalogue).toHaveLength(7);
 		expect(me?.invite?.link).toContain('https://t.me/');
 	});
 
@@ -80,6 +80,19 @@ describe('the mock Telegram login', () => {
 		const invoice = await call<{ url: string }>('invoice', { sku: 'revive-1', consent: true });
 		expect(invoice.url).toContain('revive-1');
 		expect(parseMe(await call('me'))?.revives).toBe(4);
+	});
+
+	it('sells a look once and lists it as owned', async () => {
+		const { call, endpointCode, parseMe } = await import('./telegram.js');
+		await call('invoice', { sku: 'look_tinfoil', consent: true });
+		const me = parseMe(await call('me'));
+		expect(me?.owned).toEqual(['look_tinfoil']);
+		expect(me?.catalogue.find((item) => item.sku === 'look_tinfoil')?.look).toEqual({
+			part: 'hat',
+			value: 'tinfoil'
+		});
+		const again = await call('invoice', { sku: 'look_tinfoil' }).catch((caught: unknown) => caught);
+		expect(endpointCode(again)).toBe('ALREADY_OWNED');
 	});
 
 	it('spends revivals until the wallet is empty, then refuses', async () => {

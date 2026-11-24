@@ -505,6 +505,8 @@ export interface CatalogueItem {
 	revives: number;
 	/** True for the monthly Pro subscription */
 	subscription: boolean;
+	/** For a cosmetic: the avatar part and value it unlocks for good */
+	look: { part: string; value: string } | null;
 }
 
 /**
@@ -559,6 +561,8 @@ export interface TelegramMe {
 	consented: boolean;
 	consent: PurchaseConsent | null;
 	catalogue: CatalogueItem[];
+	/** Skus of the cosmetics bought, which stay unlocked on every device */
+	owned: string[];
 	invite: TelegramInvite | null;
 }
 
@@ -567,12 +571,16 @@ const isCount = (value: unknown): value is number =>
 
 function toCatalogueItem(value: unknown): CatalogueItem | null {
 	if (!isRecord(value)) return null;
-	const { sku, title, stars, revives, subscription } = value;
+	const { sku, title, stars, revives, subscription, look } = value;
 	if (typeof sku !== 'string' || sku === '' || typeof title !== 'string') return null;
 	if (!isCount(stars) || stars === 0 || !isCount(revives) || typeof subscription !== 'boolean') {
 		return null;
 	}
-	return { sku, title, stars, revives, subscription };
+	const cosmetic =
+		isRecord(look) && typeof look.part === 'string' && typeof look.value === 'string'
+			? { part: look.part, value: look.value }
+			: null;
+	return { sku, title, stars, revives, subscription, look: cosmetic };
 }
 
 function toConsent(value: unknown): PurchaseConsent | null {
@@ -619,6 +627,9 @@ export function parseMe(value: unknown): TelegramMe | null {
 		consented: consented ?? false,
 		consent: toConsent(value.consent),
 		catalogue: items as CatalogueItem[],
+		owned: Array.isArray(value.owned)
+			? value.owned.filter((sku): sku is string => typeof sku === 'string' && sku !== '')
+			: [],
 		invite: toInvite(value.invite)
 	};
 }

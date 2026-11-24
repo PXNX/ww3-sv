@@ -70,7 +70,7 @@ describe('an avatar look', () => {
 	it('rejects broken or foreign data from storage', () => {
 		expect(parseLook(null)).toBeNull();
 		expect(parseLook({ ...DEFAULT_LOOK, version: 2 })).toBeNull();
-		expect(parseLook({ ...DEFAULT_LOOK, eyes: 'laser' })).toBeNull();
+		expect(parseLook({ ...DEFAULT_LOOK, eyes: 'x-ray' })).toBeNull();
 		const missing: Record<string, unknown> = { ...DEFAULT_LOOK };
 		delete missing.nose;
 		expect(parseLook(missing)).toBeNull();

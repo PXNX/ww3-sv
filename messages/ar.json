@@ -4637,5 +4637,16 @@
 	"changelog_close": "إغلاق",
 	"changelog_unseen": "جديد",
 	"changelog_all": "سجل الإصدارات الكامل",
-	"changelog_settings_hint": "اطّلع على ما تغيّر في التحديثات الأخيرة"
+	"changelog_settings_hint": "اطّلع على ما تغيّر في التحديثات الأخيرة",
+	"avatar_unlock_stars": "يُباع مقابل نجوم تيليجرام في مستودع الإمداد",
+	"shop_looks_name": "مظاهر العميل",
+	"shop_looks_body": "إضافات لعميلك، تُشترى مرة واحدة بنجوم تيليجرام وتبقى في حسابك على تيليجرام إلى الأبد.",
+	"shop_look_wear": "ارتدِه",
+	"shop_look_worn": "مرتدى",
+	"avatar_paid_title": "{name} لعميلك",
+	"avatar_paid_browser": "تُباع المظاهر مقابل نجوم تيليجرام داخل تطبيق تيليجرام.",
+	"look_tinfoil": "قبعة من ورق القصدير",
+	"look_laser": "عيون ليزر",
+	"look_gold": "قميص ذهبي",
+	"look_neon": "شعر وردي نيون"
 }

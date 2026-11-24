@@ -1,8 +1,8 @@
 <!--
 	The supply depot. A short wallet strip on top, then one card per thing the player can get:
 	revival tokens (with every way to pay in one place: Fake News, a crate of five, or Telegram Stars
-	inside the Mini App), the Pro subscription (Stars), free Fake News from the sponsor break, and a
-	gift code. Outside Telegram the Stars offers are replaced by one note that points to Telegram.
+	inside the Mini App), the Pro subscription (Stars), looks for the agent (Stars, bought once),
+	free Fake News from the sponsor break, and a gift code. Outside Telegram the Stars offers are replaced by one note that points to Telegram.
 -->
 <script lang="ts">
 	import { resolve } from '$app/paths';
@@ -19,10 +19,18 @@
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import GiftCodeCard from '#lib/components/GiftCodeCard.svelte';
 	import RewardedAdModal from '#lib/components/RewardedAdModal.svelte';
+	import Avatar from '#lib/components/Avatar.svelte';
+	import StarsConsent from '#lib/components/StarsConsent.svelte';
 	import StarsOffer from '#lib/components/StarsOffer.svelte';
+	import { paidLookName } from '#lib/components/unlockText.js';
+	import { LOOK_PARTS, withPart, type LookPart } from '#lib/game/avatar/look.js';
+	import { avatar } from '#lib/game/avatar/store.svelte.js';
+	import type { CatalogueItem } from '#lib/services/telegram.js';
 	import { telegram } from '#lib/stores/telegram.svelte.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
+	import IconCheck from '~icons/lucide/check';
+	import IconShirt from '~icons/lucide/shirt';
 	import IconHeartPulse from '~icons/lucide/heart-pulse';
 	import IconNewspaper from '~icons/lucide/newspaper';
 	import IconSend from '~icons/lucide/send';
@@ -32,6 +40,33 @@
 
 	const careerState = career();
 	const account = telegram();
+	const avatarState = avatar();
+
+	/** The looks on sale whose part and value this game version can draw */
+	const looks = $derived(
+		account.lookItems.filter((item) => {
+			const look = item.look;
+			return (
+				look !== null &&
+				look.part in LOOK_PARTS &&
+				(LOOK_PARTS[look.part as LookPart] as readonly string[]).includes(look.value)
+			);
+		})
+	);
+
+	/** One consent box serves every look on the list */
+	let lookAgreed = $state(false);
+	const lookConsent = $derived(!account.consented && looks.some((item) => !account.owns(item.sku)));
+
+	function wearing(item: CatalogueItem): boolean {
+		return item.look !== null && avatarState.look[item.look.part as LookPart] === item.look.value;
+	}
+
+	function wear(item: CatalogueItem) {
+		if (!item.look) return;
+		avatarState.set(item.look.part as LookPart, item.look.value);
+		soundManager().play('sparkle');
+	}
 
 	const verified = $derived(account.status === 'verified');
 	// Earned on this device plus bought with Stars, which live on the Telegram account
@@ -196,6 +231,61 @@
 					<StarsOffer item={account.proItem} />
 				{/if}
 				<p class="text-xs leading-snug opacity-70">{m.stars_pro_renews()}</p>
+			</section>
+		{/if}
+		{#if looks.length > 0}
+			<section class="sticker flex flex-col gap-3 p-4" aria-labelledby="shop-looks">
+				<h2 id="shop-looks" class="flex items-center gap-2 font-display text-xl font-bold">
+					<IconShirt class="size-5 text-mustard" aria-hidden="true" />
+					{m.shop_looks_name()}
+				</h2>
+				<p class="text-sm leading-snug">{m.shop_looks_body()}</p>
+				{#if lookConsent}
+					<StarsConsent bind:agreed={lookAgreed} />
+				{/if}
+				<ul class="grid gap-2 sm:grid-cols-2">
+					{#each looks as item (item.sku)}
+						{@const look = item.look!}
+						<li class="flex items-center gap-3 rounded-xl border-2 border-ink bg-sand/70 p-2">
+							<span class="shrink-0 rounded-lg border-2 border-ink bg-flag-blue/25 p-0.5">
+								<Avatar
+									look={withPart(avatarState.look, look.part as LookPart, look.value)}
+									size={56}
+								/>
+							</span>
+							<span class="flex min-w-0 flex-1 flex-col gap-1.5">
+								<span class="font-bold">{paidLookName(item.sku)}</span>
+								{#if account.owns(item.sku)}
+									{#if wearing(item)}
+										<span
+											class="inline-flex items-center gap-1 self-start rounded-md border-2 border-ink bg-khaki px-2 py-0.5 text-xs font-bold text-paper"
+										>
+											<IconCheck class="size-3.5" aria-hidden="true" />
+											{m.shop_look_worn()}
+										</span>
+									{:else}
+										<button
+											type="button"
+											class="btn-chunky self-start bg-khaki px-3 py-1 text-sm"
+											onclick={() => wear(item)}
+										>
+											<IconShirt class="size-4" aria-hidden="true" />
+											{m.shop_look_wear()}
+										</button>
+									{/if}
+								{:else}
+									<StarsOffer
+										{item}
+										compact
+										showConsent={false}
+										bind:agreed={lookAgreed}
+										onDone={() => wear(item)}
+									/>
+								{/if}
+							</span>
+						</li>
+					{/each}
+				</ul>
 			</section>
 		{/if}
 	{:else}

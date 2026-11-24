@@ -6,7 +6,24 @@ import { modeById } from '#lib/modes/registry.js';
 import { m } from '#lib/paraglide/messages.js';
 import { achievementName as beachheadAchievementName } from './beachheadText.js';
 import { achievementName } from './tycoonText.js';
-import type { UnlockRequirement } from '#lib/game/avatar/unlocks.js';
+import type { LookUnlock, UnlockRequirement } from '#lib/game/avatar/unlocks.js';
+
+const PAID_NAMES: Record<string, () => string> = {
+	look_tinfoil: m.look_tinfoil,
+	look_laser: m.look_laser,
+	look_gold: m.look_gold,
+	look_neon: m.look_neon
+};
+
+/** The translated name of a look sold for Stars, by its sku */
+export function paidLookName(sku: string): string {
+	return PAID_NAMES[sku]?.() ?? sku;
+}
+
+/** The sku of a look sold for Stars, or null for an earned one */
+export function paidSku(unlock: LookUnlock | undefined): string | null {
+	return unlock?.requirement.kind === 'stars' ? unlock.requirement.sku : null;
+}
 
 /** One sentence naming what unlocks the look, for the editor's lock hints */
 export function requirementText(requirement: UnlockRequirement): string {
@@ -47,5 +64,7 @@ export function requirementText(requirement: UnlockRequirement): string {
 				game: modeById('hackers').name(),
 				count: requirement.network
 			});
+		case 'stars':
+			return m.avatar_unlock_stars();
 	}
 }
