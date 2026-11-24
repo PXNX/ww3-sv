@@ -34,4 +34,12 @@ describe('backgrounds', () => {
 	it('treats a negative level index like the first level', () => {
 		expect(backgroundFor(-3)).toBe(backgroundFor(0));
 	});
+
+	it('brings different weather and the Crimea bridge across the strait into the cycle', () => {
+		expect(new Set(BACKGROUNDS.map((theme) => theme.weather))).toEqual(
+			new Set(['clear', 'rain', 'snow', 'fog', 'wind'])
+		);
+		expect(BACKGROUNDS.filter((theme) => theme.scenery === 'kerchBridge')).toHaveLength(1);
+		for (const theme of BACKGROUNDS) expect(theme.weatherColor).toMatch(/^#[0-9a-f]{6}$/);
+	});
 });

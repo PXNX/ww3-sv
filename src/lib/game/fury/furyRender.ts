@@ -194,6 +194,220 @@ function drawGround(
 	context.stroke();
 }
 
+/** Deterministic pseudo-random value in [0, 1) for scattering weather */
+function scatter(n: number): number {
+	const s = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+	return s - Math.floor(s);
+}
+
+function wrapTo(value: number, length: number): number {
+	return ((value % length) + length) % length;
+}
+
+/** Height of the far horizon over the sea of the Kerch strait */
+const STRAIT_HORIZON = 2.6;
+const KERCH_DECK = 3.0;
+const KERCH_PIER_FOOT = 1.7;
+const KERCH_ARCH_HALF = 2.6;
+const KERCH_ARCH_RISE = 1.5;
+
+/** A trussed steel arch springing from the deck, in world meters: two chords and zigzag bracing */
+function drawKerchArch(
+	context: CanvasRenderingContext2D,
+	camera: Camera,
+	middle: number,
+	base: number,
+	rise: number,
+	fill: string
+) {
+	const steps = 12;
+	const depth = 0.24;
+	const at = (i: number, under: boolean) => {
+		const t = -1 + (2 * i) / steps;
+		return worldToScreen(camera, {
+			x: middle + t * KERCH_ARCH_HALF,
+			y: base + rise * (1 - t * t) - (under ? depth * (1 - t * t * 0.6) : 0)
+		});
+	};
+	context.fillStyle = fill;
+	context.beginPath();
+	for (let i = 0; i <= steps; i++) {
+		const p = at(i, false);
+		if (i === 0) context.moveTo(p.x, p.y);
+		else context.lineTo(p.x, p.y);
+	}
+	for (let i = steps; i >= 0; i--) {
+		const p = at(i, true);
+		context.lineTo(p.x, p.y);
+	}
+	context.closePath();
+	context.fill();
+	context.stroke();
+	context.beginPath();
+	for (let i = 0; i < steps; i++) {
+		const a = at(i, i % 2 === 1);
+		const b = at(i + 1, i % 2 === 0);
+		context.moveTo(a.x, a.y);
+		context.lineTo(b.x, b.y);
+	}
+	context.stroke();
+}
+
+/**
+ * The Crimea bridge far off across the Kerch strait: a long, low road and rail viaduct on many
+ * slim piers from one edge of the view to the other, with the twin steel arches (the railway's
+ * behind, the road's in front) over the shipping channel. Scenery only, never part of the level.
+ */
+function drawKerchBridge(context: CanvasRenderingContext2D, camera: Camera, fieldWidth: number) {
+	const s = camera.scale;
+	const left = screenToWorld(camera, { x: 0, y: 0 }).x - 1;
+	const right = screenToWorld(camera, { x: camera.width, y: 0 }).x + 1;
+	const arch = fieldWidth * 0.58;
+	const rect = (x0: number, y0: number, x1: number, y1: number, fill: string) => {
+		const a = worldToScreen(camera, { x: x0, y: y1 });
+		const b = worldToScreen(camera, { x: x1, y: y0 });
+		context.fillStyle = fill;
+		context.beginPath();
+		context.rect(a.x, a.y, b.x - a.x, b.y - a.y);
+		context.fill();
+		context.stroke();
+	};
+	context.save();
+	context.lineWidth = Math.max(1, s * 0.035);
+	context.strokeStyle = INK;
+	context.lineJoin = 'round';
+
+	// Sea up to the horizon, with a few flat waves
+	rect(left, KERCH_PIER_FOOT - 1, right, STRAIT_HORIZON, '#4f6f8f');
+
+	// The viaduct's piers, slim and many; heavy ones under the ends of the arches
+	const spacing = 0.9;
+	for (let x = Math.floor((left - arch) / spacing) * spacing + arch; x <= right; x += spacing) {
+		if (Math.abs(x - arch) < KERCH_ARCH_HALF + 0.3) continue;
+		rect(x - 0.07, KERCH_PIER_FOOT, x + 0.07, KERCH_DECK, '#b9bec6');
+	}
+	for (const side of [-1, 1]) {
+		const x = arch + side * KERCH_ARCH_HALF;
+		rect(x - 0.16, KERCH_PIER_FOOT, x + 0.16, KERCH_DECK, '#b9bec6');
+	}
+	context.strokeStyle = PAPER;
+	context.beginPath();
+	for (let x = Math.floor(left); x <= right; x += 1.3) {
+		for (const [y, shift] of [
+			[2.25, 0],
+			[1.95, 0.6]
+		]) {
+			const a = worldToScreen(camera, { x: x + shift, y });
+			context.moveTo(a.x, a.y);
+			context.lineTo(a.x + 0.4 * s, a.y);
+		}
+	}
+	context.stroke();
+	context.strokeStyle = INK;
+
+	// The railway behind, a little higher, and its arch
+	rect(left, KERCH_DECK + 0.1, right, KERCH_DECK + 0.26, '#9aa3ad');
+	drawKerchArch(context, camera, arch + 0.25, KERCH_DECK + 0.26, KERCH_ARCH_RISE - 0.12, '#9aa3ad');
+
+	// Hangers, the road deck in front and the road's white arch over the channel
+	context.beginPath();
+	for (let i = 1; i < 8; i++) {
+		const t = -1 + (i * 2) / 8;
+		const top = worldToScreen(camera, {
+			x: arch + t * KERCH_ARCH_HALF,
+			y: KERCH_DECK + KERCH_ARCH_RISE * (1 - t * t) - 0.2
+		});
+		const foot = worldToScreen(camera, { x: arch + t * KERCH_ARCH_HALF, y: KERCH_DECK });
+		context.moveTo(top.x, top.y);
+		context.lineTo(foot.x, foot.y);
+	}
+	context.stroke();
+	rect(left, KERCH_DECK - 0.14, right, KERCH_DECK + 0.1, '#d3d7dd');
+	drawKerchArch(context, camera, arch, KERCH_DECK + 0.1, KERCH_ARCH_RISE, '#f3f4f6');
+	context.restore();
+}
+
+/**
+ * Rain, snow, fog or gusts over the scenery, behind every piece. Screen-space and cheap: a few
+ * dozen strokes or squares a frame. With reduced motion they hold still and thin out.
+ */
+function drawWeather(
+	context: CanvasRenderingContext2D,
+	camera: Camera,
+	backdrop: Backdrop,
+	time: number,
+	reducedMotion: boolean
+) {
+	if (backdrop.weather === 'clear') return;
+	const { width, height } = camera;
+	const t = reducedMotion ? 0 : time;
+	const thin = reducedMotion ? 0.5 : 1;
+	const unit = Math.max(1, camera.scale);
+	context.save();
+	context.strokeStyle = backdrop.weatherColor;
+	context.fillStyle = backdrop.weatherColor;
+	context.lineCap = 'round';
+	if (backdrop.weather === 'rain') {
+		context.globalAlpha = 0.55;
+		context.lineWidth = Math.max(1, unit * 0.05);
+		context.beginPath();
+		const drops = Math.round(80 * thin);
+		for (let i = 0; i < drops; i++) {
+			const speed = (0.9 + scatter(i + 1) * 0.4) * height;
+			const x = wrapTo(scatter(i + 50) * width - t * 0.15 * height, width + 20) - 10;
+			const y = wrapTo(scatter(i + 100) * height + t * speed, height + 30) - 30;
+			context.moveTo(x, y);
+			context.lineTo(x - unit * 0.12, y + unit * 0.5);
+		}
+		context.stroke();
+	} else if (backdrop.weather === 'snow') {
+		context.globalAlpha = 0.9;
+		const flakes = Math.round(70 * thin);
+		const size = Math.max(2, unit * 0.09);
+		for (let i = 0; i < flakes; i++) {
+			const speed = (0.05 + scatter(i + 1) * 0.05) * height;
+			const sway = Math.sin(t * 1.3 + i) * unit * 0.3;
+			const x = wrapTo(scatter(i + 50) * width + sway, width);
+			const y = wrapTo(scatter(i + 100) * height + t * speed, height);
+			context.fillRect(x, y, size, size);
+		}
+	} else if (backdrop.weather === 'fog') {
+		context.globalAlpha = 0.14;
+		context.fillRect(0, 0, width, height);
+		context.globalAlpha = 0.4;
+		for (let k = 0; k < 4; k++) {
+			const x = wrapTo(scatter(k + 7) * width + t * unit * 0.25 * (1 + k * 0.3), width + 6 * unit);
+			const p = worldToScreen(camera, { x: 0, y: 0.8 + k * 0.9 });
+			context.beginPath();
+			context.ellipse(x - 3 * unit, p.y, 3.5 * unit, 0.35 * unit, 0, 0, Math.PI * 2);
+			context.fill();
+		}
+	} else if (backdrop.weather === 'wind') {
+		// Gusts streaking across: thin lines, and a few tumbling flecks of leaf or sand
+		context.globalAlpha = 0.6;
+		context.lineWidth = Math.max(1, unit * 0.04);
+		context.beginPath();
+		const gusts = Math.round(18 * thin);
+		for (let i = 0; i < gusts; i++) {
+			const speed = (0.6 + scatter(i + 1) * 0.5) * width;
+			const x = wrapTo(scatter(i + 50) * width + t * speed, width + 2 * unit) - unit;
+			const y = scatter(i + 100) * camera.groundY;
+			context.moveTo(x, y);
+			context.lineTo(x + unit * (0.5 + scatter(i + 150)), y);
+		}
+		context.stroke();
+		const flecks = Math.round(14 * thin);
+		const size = Math.max(2, unit * 0.1);
+		for (let i = 0; i < flecks; i++) {
+			const speed = (0.35 + scatter(i + 200) * 0.3) * width;
+			const x = wrapTo(scatter(i + 250) * width + t * speed, width);
+			const y = scatter(i + 300) * camera.groundY + Math.sin(t * 3 + i) * unit * 0.4;
+			context.fillRect(x, y, size, size * 0.6);
+		}
+	}
+	context.restore();
+}
+
 function drawBackground(
 	context: CanvasRenderingContext2D,
 	camera: Camera,
@@ -255,12 +469,17 @@ function drawBackground(
 		drawCloud(context, camera, x, sy * fieldWidth, r);
 	});
 
-	drawRidge(
-		context,
-		camera,
-		backdrop.hillFar,
-		(x) => 2.7 + Math.sin(x * 0.22 + 2) * 0.9 + Math.sin(x * 0.6) * 0.25
-	);
+	if (backdrop.scenery === 'kerchBridge') {
+		drawKerchBridge(context, camera, fieldWidth);
+		outline(context, camera);
+	} else {
+		drawRidge(
+			context,
+			camera,
+			backdrop.hillFar,
+			(x) => 2.7 + Math.sin(x * 0.22 + 2) * 0.9 + Math.sin(x * 0.6) * 0.25
+		);
+	}
 	drawRidge(
 		context,
 		camera,
@@ -268,6 +487,7 @@ function drawBackground(
 		(x) => 1.4 + Math.sin(x * 0.35) * 0.6 + Math.sin(x * 0.9 + 1) * 0.25
 	);
 	drawGround(context, camera, hills, backdrop.ground);
+	drawWeather(context, camera, backdrop, time, reducedMotion);
 }
 
 function drawSlingshotBack(context: CanvasRenderingContext2D, camera: Camera) {

@@ -1,10 +1,22 @@
 /*
  * Background themes of Magyar's Birds. The scenery changes every few levels and cycles through
  * the themes forever, so the generated levels keep changing their look too. A theme is only flat
- * colors plus an optional sun, moon or stars; the renderer draws it in the usual thick-outline style.
+ * colors plus an optional sun, moon or stars, a kind of weather and, now and then, a landmark far
+ * off; the renderer draws it in the usual thick-outline style. All of it is scenery: nothing here
+ * touches the physics or the level.
  */
 
-export type BackgroundId = 'meadow' | 'sunset' | 'night' | 'desert' | 'winter' | 'storm';
+export type BackgroundId =
+	'meadow' | 'sunset' | 'strait' | 'night' | 'desert' | 'winter' | 'dawn' | 'storm' | 'autumn';
+
+/** Weather drawn over the scenery, behind every piece */
+export type FuryWeather = 'clear' | 'rain' | 'snow' | 'fog' | 'wind';
+
+/**
+ * What stands in the far distance: the usual ridge of hills, or the Kerch strait with the Crimea
+ * bridge and its twin steel arches across it
+ */
+export type Scenery = 'hills' | 'kerchBridge';
 
 export type Celestial = 'sun' | 'lowSun' | 'moon' | 'none';
 
@@ -20,6 +32,10 @@ export interface Backdrop {
 	celestial: Celestial;
 	celestialColor: string;
 	stars: boolean;
+	weather: FuryWeather;
+	scenery: Scenery;
+	/** Color of the weather: rain streaks, flakes, fog banks or gusts */
+	weatherColor: string;
 }
 
 export const BACKGROUNDS: readonly Backdrop[] = [
@@ -32,7 +48,10 @@ export const BACKGROUNDS: readonly Backdrop[] = [
 		ground: '#e8e1bc',
 		celestial: 'sun',
 		celestialColor: '#fbe38e',
-		stars: false
+		stars: false,
+		weather: 'clear',
+		weatherColor: '#ffffff',
+		scenery: 'hills'
 	},
 	{
 		id: 'sunset',
@@ -43,7 +62,24 @@ export const BACKGROUNDS: readonly Backdrop[] = [
 		ground: '#dcbf93',
 		celestial: 'lowSun',
 		celestialColor: '#f27a3d',
-		stars: false
+		stars: false,
+		weather: 'wind',
+		weatherColor: '#fde8d2',
+		scenery: 'hills'
+	},
+	{
+		id: 'strait',
+		sky: '#f2b48c',
+		cloud: '#fbd9c0',
+		hillFar: '#4f6f8f',
+		hillNear: '#8c7a5a',
+		ground: '#d8c79c',
+		celestial: 'lowSun',
+		celestialColor: '#f0643a',
+		stars: false,
+		weather: 'clear',
+		weatherColor: '#ffffff',
+		scenery: 'kerchBridge'
 	},
 	{
 		id: 'night',
@@ -54,7 +90,10 @@ export const BACKGROUNDS: readonly Backdrop[] = [
 		ground: '#5d6488',
 		celestial: 'moon',
 		celestialColor: '#f4efd0',
-		stars: true
+		stars: true,
+		weather: 'clear',
+		weatherColor: '#ffffff',
+		scenery: 'hills'
 	},
 	{
 		id: 'desert',
@@ -65,7 +104,10 @@ export const BACKGROUNDS: readonly Backdrop[] = [
 		ground: '#efd89f',
 		celestial: 'sun',
 		celestialColor: '#f5c83a',
-		stars: false
+		stars: false,
+		weather: 'wind',
+		weatherColor: '#e4bd7a',
+		scenery: 'hills'
 	},
 	{
 		id: 'winter',
@@ -76,7 +118,24 @@ export const BACKGROUNDS: readonly Backdrop[] = [
 		ground: '#fafcff',
 		celestial: 'none',
 		celestialColor: '#ffffff',
-		stars: false
+		stars: false,
+		weather: 'snow',
+		weatherColor: '#ffffff',
+		scenery: 'hills'
+	},
+	{
+		id: 'dawn',
+		sky: '#efd3cb',
+		cloud: '#fff3ee',
+		hillFar: '#b8a7b4',
+		hillNear: '#8f9a7a',
+		ground: '#e3dcc0',
+		celestial: 'lowSun',
+		celestialColor: '#f9a66c',
+		stars: false,
+		weather: 'fog',
+		weatherColor: '#ffffff',
+		scenery: 'hills'
 	},
 	{
 		id: 'storm',
@@ -87,7 +146,24 @@ export const BACKGROUNDS: readonly Backdrop[] = [
 		ground: '#cfc8aa',
 		celestial: 'none',
 		celestialColor: '#ffffff',
-		stars: false
+		stars: false,
+		weather: 'rain',
+		weatherColor: '#5d6e86',
+		scenery: 'hills'
+	},
+	{
+		id: 'autumn',
+		sky: '#e3d2b4',
+		cloud: '#f7eddc',
+		hillFar: '#c98d4e',
+		hillNear: '#9c5f33',
+		ground: '#d9b98a',
+		celestial: 'sun',
+		celestialColor: '#f5c83a',
+		stars: false,
+		weather: 'wind',
+		weatherColor: '#c4572a',
+		scenery: 'hills'
 	}
 ];
 
