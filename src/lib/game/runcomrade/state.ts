@@ -123,7 +123,7 @@ export type RunEvent =
 	| { type: 'duck' }
 	| { type: 'land'; airMs: number }
 	| { type: 'lane'; lane: Lane }
-	| { type: 'stumble'; kind: ObstacleKind; lane: Lane; gap: number }
+	| { type: 'stumble'; kind: ObstacleKind; lane: Lane; gap: number; lives: number }
 	| { type: 'smash'; kind: ObstacleKind; lane: Lane }
 	| { type: 'shield-block'; source: 'obstacle' | 'drone' }
 	| { type: 'pickup'; kind: PickupKind; lane: Lane }

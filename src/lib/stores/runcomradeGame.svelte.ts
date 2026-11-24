@@ -182,8 +182,19 @@ export class RunComradeGame {
 			});
 		switch (event.type) {
 			case 'stumble':
+				// Every stumble costs a heart, so it gets the same hurt flash and -1 as a drone contact
+				this.hurtCount += 1;
 				this.effects.push({ kind: 'poof', x, y: y + 30, ageMs: 0, durationMs: 520 * short + 80 });
 				popup(m.runcomrade_popup_stumble(), false);
+				this.effects.push({
+					kind: 'popup',
+					x,
+					y: y - 28,
+					text: '-1 ♥',
+					big: true,
+					ageMs: 0,
+					durationMs: 900 * short + 150
+				});
 				this.#play(
 					event.kind === 'mine' ? 'mine-explosion' : event.kind === 'ditch' ? 'thud' : 'hit'
 				);

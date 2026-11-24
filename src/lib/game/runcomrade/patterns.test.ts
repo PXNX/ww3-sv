@@ -39,7 +39,8 @@ function course(seed: number, until: number): Field {
 }
 
 /** Course distance that takes the given time at the starting speed */
-const unitsFor = (ms: number) => (ms / 1000) * START_SPEED;
+/** Units covered at the start speed; the tiny extra keeps a gap of exactly `ms` from rounding below it */
+const unitsFor = (ms: number) => (ms / 1000) * START_SPEED + 1e-9;
 
 describe('speed and density', () => {
 	it('speeds up with distance and levels off', () => {

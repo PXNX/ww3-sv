@@ -41,6 +41,11 @@ export const LANE_OVERLAP = 0.55;
 
 export type PickupKind = 'helmet' | 'rice' | 'coin';
 export const PICKUP_HALF_DEPTH = 0.8;
+/** Distance between two power-ups (helmet or rice bowl), at least and at most */
+export const POWERUP_GAP_MIN = 90;
+export const POWERUP_GAP_SPAN = 70;
+/** Share of power-ups that are a helmet; the rest are rice bowls, the only spare hearts there are */
+export const HELMET_SHARE = 0.55;
 
 // Runner moves
 export const JUMP_MS = 620;
@@ -50,12 +55,15 @@ export const LANE_CHANGE_MS = 130;
 
 // Speed (units per second): starts gentle, climbs with distance, then levels off
 export const BASE_SPEED = 7;
-export const MAX_SPEED = 15;
-export const SPEED_RAMP = 0.012;
+export const MAX_SPEED = 17;
+export const SPEED_RAMP = 0.014;
 /** After a stumble the runner is slowed to this share of its speed and recovers over SLOW_MS */
 export const STUMBLE_SPEED = 0.6;
 export const SLOW_MS = 1300;
-/** Brief protection after a stumble so one obstacle cannot count twice */
+/**
+ * Brief protection after a stumble so one obstacle cannot count twice. It is well under MIN_GAP_MS,
+ * so the next row of obstacles always counts again.
+ */
 export const STUMBLE_GRACE_MS = 700;
 export const STUMBLE_ANIM_MS = 650;
 
@@ -110,8 +118,8 @@ export const FIRST_ROW_Z = 30;
 export const GENERATE_AHEAD = 60;
 /** How far ahead of the runner the screen shows the course */
 export const VIEW_AHEAD = 40;
-/** Distance at which the field reaches its full density */
-export const FULL_DENSITY_DISTANCE = 600;
+/** Distance at which the field reaches its full density (about 40 seconds in) */
+export const FULL_DENSITY_DISTANCE = 480;
 /** Kinds appear one by one so the first stretch is easy to learn */
 export const KIND_UNLOCK: Record<ObstacleKind, number> = { ditch: 0, arm: 35, mine: 70 };
 
@@ -123,7 +131,7 @@ export const LANE_COST_MS = 140;
 /** A jump or duck leaves the runner unable to act again for about this long */
 export const ACTION_COST_MS = Math.max(JUMP_MS, DUCK_MS);
 /** The tightest gap between two obstacle rows, in time at the speed of the second row */
-export const MIN_GAP_MS = 1350;
+export const MIN_GAP_MS = 1200;
 export const START_GAP_MS = 2300;
 
 // Scoring

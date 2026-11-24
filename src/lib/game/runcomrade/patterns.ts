@@ -18,11 +18,14 @@ import {
 	COIN_GAP_SPAN,
 	FIRST_ROW_Z,
 	FULL_DENSITY_DISTANCE,
+	HELMET_SHARE,
 	KIND_UNLOCK,
 	LANES,
 	LANE_COST_MS,
 	MAX_SPEED,
 	MIN_GAP_MS,
+	POWERUP_GAP_MIN,
+	POWERUP_GAP_SPAN,
 	OBSTACLE_KINDS,
 	REACTION_MS,
 	REQUIRED_ACTION,
@@ -266,9 +269,9 @@ function placeRow(
 			const middle = (previous.z + z) / 2;
 			if (free.length > 0 && middle - previous.z >= PICKUP_CLEARANCE) {
 				const lane = free[randomInt(random, 0, free.length)];
-				const kind: PickupKind = random() < 0.45 ? 'helmet' : 'rice';
+				const kind: PickupKind = random() < HELMET_SHARE ? 'helmet' : 'rice';
 				field.pickups.push({ id: generator.nextId++, kind, lane, z: middle, taken: false });
-				generator.nextPickupZ = z + 55 + random() * 55;
+				generator.nextPickupZ = z + POWERUP_GAP_MIN + random() * POWERUP_GAP_SPAN;
 			}
 		}
 	}

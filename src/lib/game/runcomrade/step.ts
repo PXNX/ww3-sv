@@ -6,6 +6,7 @@
 import type { Random } from '#lib/game/random.js';
 import {
 	COIN_SCORE,
+	DRONE_CONTACT_GAP,
 	DUCK_MS,
 	GENERATE_AHEAD,
 	HIDE_TAIL,
@@ -218,6 +219,12 @@ function collideWithObstacles(state: RunState, events: RunEvent[]) {
 	}
 }
 
+/**
+ * A hit: every obstacle the runner does not clear costs a heart. The short grace that follows only
+ * keeps one obstacle (or the neighbouring cell of the same row) from counting twice. The drone
+ * closes in as well; if that brings it onto the runner it is part of the same hit, so the drone is
+ * knocked back instead of taking a second heart.
+ */
 function stumble(state: RunState, kind: ObstacleKind, lane: Lane, events: RunEvent[]) {
 	const runner = state.runner;
 	const before = state.drone.gap;
@@ -226,7 +233,8 @@ function stumble(state: RunState, kind: ObstacleKind, lane: Lane, events: RunEve
 	runner.slowMs = SLOW_MS;
 	runner.graceMs = STUMBLE_GRACE_MS;
 	state.stumbles += 1;
-	events.push({ type: 'stumble', kind, lane, gap: state.drone.gap });
+	state.lives = Math.max(0, state.lives - 1);
+	events.push({ type: 'stumble', kind, lane, gap: state.drone.gap, lives: state.lives });
 	// The drone dives at the runner; a stumble that brings it through a swoop distance is a swoop
 	events.push({
 		type: 'drone-maneuver',
@@ -234,6 +242,7 @@ function stumble(state: RunState, kind: ObstacleKind, lane: Lane, events: RunEve
 		gap: state.drone.gap,
 		x: state.drone.x
 	});
+	if (state.drone.gap <= DRONE_CONTACT_GAP) knockBack(state.drone);
 }
 
 function collectPickups(state: RunState, events: RunEvent[]) {

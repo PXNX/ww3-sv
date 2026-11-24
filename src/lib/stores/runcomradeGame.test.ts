@@ -80,6 +80,22 @@ describe('RunComradeGame', () => {
 		expect(game.lives).toBe(0);
 	});
 
+	it('loses a heart and flashes the field on every stumble', () => {
+		const { game } = newGame();
+		startQuiet(game);
+		const z = game.state.distance + 0.2;
+		game.state.field.rows.push({
+			id: 999,
+			z,
+			cells: [null, 'mine', null],
+			spent: [false, false, false]
+		});
+		game.update(STEP);
+		expect(game.lives).toBe(STARTING_LIVES - 1);
+		expect(game.hurtCount).toBe(1);
+		expect(game.stumbles).toBe(1);
+	});
+
 	it('mirrors the helmet boost and the rice shield for the HUD', () => {
 		const { game } = newGame();
 		startQuiet(game);

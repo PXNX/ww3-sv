@@ -822,7 +822,7 @@
 	"runcomrade_arm_hint": "Duck dich darunter durch.",
 	"runcomrade_mine_name": "Mine",
 	"runcomrade_mine_hint": "Lässt sich nicht überspringen. Wechsle die Spur.",
-	"runcomrade_tutorial_drone": "Jeder Stolperer lässt die Drohne näher kommen. Erreicht sie dich, verlierst du ein Herz und sie fällt ein Stück zurück. Sauberes Laufen schüttelt sie langsam ab. Achte auf das Summen: Es wird schneller und lauter, wenn die Drohne nah ist.",
+	"runcomrade_tutorial_drone": "Jedes Hindernis, gegen das du läufst, kostet ein Herz und lässt die Drohne näher kommen. Sauberes Laufen schüttelt sie langsam ab. Achte auf das Summen: Es wird schneller und lauter, wenn die Drohne nah ist.",
 	"runcomrade_drone_name": "FPV-Drohne",
 	"runcomrade_drone_hint": "Jagt dich von hinten. Stolperer bringen sie näher.",
 	"runcomrade_tall_name": "Hohe Sonnenblumen",

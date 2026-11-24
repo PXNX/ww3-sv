@@ -822,7 +822,7 @@
 	"runcomrade_arm_hint": "Duck under it.",
 	"runcomrade_mine_name": "Mine",
 	"runcomrade_mine_hint": "Cannot be jumped. Change lane.",
-	"runcomrade_tutorial_drone": "Every stumble lets the drone close in. When it reaches you, you lose a heart, then it falls back a little. Running cleanly slowly shakes it off. Listen for the buzz: it gets quicker and louder when the drone is near.",
+	"runcomrade_tutorial_drone": "Every obstacle you hit costs a heart and lets the drone close in. Running cleanly slowly shakes it off. Listen for the buzz: it gets quicker and louder when the drone is near.",
 	"runcomrade_drone_name": "FPV drone",
 	"runcomrade_drone_hint": "Chases you from behind. Stumbles bring it closer.",
 	"runcomrade_tall_name": "Tall sunflowers",

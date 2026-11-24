@@ -7,10 +7,12 @@ import {
 	DRONE_START_GAP,
 	DUCK_MS,
 	JUMP_MS,
+	MIN_GAP_MS,
 	PICKUP_SCORE,
 	STARTING_LIVES,
 	STUMBLE_CLOSE,
 	STUMBLE_GRACE_MS,
+	STUMBLE_SPEED,
 	type Lane,
 	type ObstacleKind,
 	type PickupKind
@@ -246,22 +248,26 @@ describe('obstacles', () => {
 		expect(state.stumbles).toBe(0);
 	});
 
-	it('a stumble lets the drone close in, slows the runner and counts only once', () => {
+	it('a stumble costs a heart, lets the drone close in, slows the runner and counts only once', () => {
 		const state = emptyRun();
 		addObstacle(state, 'ditch', 1, 12);
 		const events = runTo(state, 13.5);
-		expect(events.filter((event) => event.type === 'stumble')).toHaveLength(1);
+		const stumbles = events.filter((event) => event.type === 'stumble');
+		expect(stumbles).toHaveLength(1);
+		expect(stumbles[0]).toMatchObject({ kind: 'ditch', lives: STARTING_LIVES - 1 });
 		expect(state.stumbles).toBe(1);
+		expect(state.lives).toBe(STARTING_LIVES - 1);
 		expect(state.drone.gap).toBeLessThan(DRONE_START_GAP - STUMBLE_CLOSE.ditch + 1.5);
 		expect(state.speed).toBeLessThan(7);
-		expect(state.lives).toBe(STARTING_LIVES);
 	});
 
-	it('a stumble does not cost a heart by itself', () => {
-		const state = emptyRun();
-		addObstacle(state, 'ditch', 1, 12);
-		runTo(state, 20);
-		expect(state.lives).toBe(STARTING_LIVES);
+	it('every kind of obstacle costs a heart when it is not cleared', () => {
+		for (const kind of ['ditch', 'arm', 'mine'] as const) {
+			const state = emptyRun();
+			addObstacle(state, kind, 1, 12);
+			runTo(state, 20);
+			expect(state.lives, kind).toBe(STARTING_LIVES - 1);
+		}
 	});
 
 	it('ignores a second obstacle during the grace time after a stumble', () => {
@@ -270,7 +276,28 @@ describe('obstacles', () => {
 		addObstacle(state, 'mine', 1, 12.8);
 		runTo(state, 15);
 		expect(state.stumbles).toBe(1);
+		expect(state.lives).toBe(STARTING_LIVES - 1);
+	});
+
+	it('the grace is short: the next row at the tightest spacing counts again', () => {
 		expect(STUMBLE_GRACE_MS).toBeGreaterThan(0);
+		expect(STUMBLE_GRACE_MS).toBeLessThan(MIN_GAP_MS * STUMBLE_SPEED);
+		const state = emptyRun();
+		addObstacle(state, 'ditch', 1, 12);
+		// The runner is slowed after the first hit, so the second row is even further away in time
+		addObstacle(state, 'ditch', 1, 12 + speedAt(12) * (MIN_GAP_MS / 1000));
+		runTo(state, 12 + speedAt(12) * (MIN_GAP_MS / 1000) + 2);
+		expect(state.stumbles).toBe(2);
+		expect(state.lives).toBe(STARTING_LIVES - 2);
+	});
+
+	it('three hits end the run', () => {
+		const state = emptyRun();
+		for (const z of [12, 24, 36, 48]) addObstacle(state, 'ditch', 1, z);
+		const events = runTo(state, 60);
+		expect(state.stumbles).toBe(STARTING_LIVES);
+		expect(state.over).toBe(true);
+		expect(types(events).at(-1)).toBe('game-over');
 	});
 });
 
@@ -286,20 +313,15 @@ describe('drone contact', () => {
 		expect(state.over).toBe(false);
 	});
 
-	it('three quick stumbles are survived, a fourth loses a heart', () => {
-		const three = emptyRun();
-		for (const z of [12, 18, 24]) addObstacle(three, 'ditch', 1, z);
-		runTo(three, 28);
-		expect(three.stumbles).toBe(3);
-		expect(three.lives).toBe(STARTING_LIVES);
-		expect(three.drone.gap).toBeLessThan(2);
-
-		const four = emptyRun();
-		for (const z of [12, 18, 24, 30]) addObstacle(four, 'ditch', 1, z);
-		runTo(four, 34);
-		expect(four.stumbles).toBe(4);
-		expect(four.contacts).toBe(1);
-		expect(four.lives).toBe(STARTING_LIVES - 1);
+	it('a stumble that brings the drone onto the runner costs only one heart', () => {
+		const state = emptyRun();
+		state.drone.gap = 2;
+		addObstacle(state, 'mine', 1, 12);
+		const events = runTo(state, 16);
+		expect(state.stumbles).toBe(1);
+		expect(types(events)).not.toContain('contact');
+		expect(state.lives).toBe(STARTING_LIVES - 1);
+		expect(state.drone.gap).toBeGreaterThan(DRONE_RESET_GAP - 0.5);
 	});
 
 	it('ends the run when the last heart goes', () => {
