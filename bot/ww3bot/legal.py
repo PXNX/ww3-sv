@@ -18,15 +18,17 @@ PAGES: Final[dict[str, str]] = {
     "widerruf": "Widerruf",
 }
 
-# What a link to each page is called, in the reader's language
-PAGE_LINKS: Final[dict[str, dict[str, str]]] = {
-    "de": {"impressum": "Impressum", "datenschutz": "Datenschutzerklärung", "agb": "AGB", "widerruf": "Widerrufsbelehrung"},
-    "en": {"impressum": "Legal notice", "datenschutz": "Privacy policy", "agb": "Terms of sale", "widerruf": "Right of withdrawal"},
+# What a link to each page is called: English for every reader, whatever language the page is in
+PAGE_LINKS: Final[dict[str, str]] = {
+    "impressum": "Legal notice",
+    "datenschutz": "Privacy policy",
+    "agb": "Terms of sale",
+    "widerruf": "Right of withdrawal",
 }
 
 
-def page_link_name(page: str, lang: str) -> str:
-    return PAGE_LINKS["de" if lang == "de" else "en"].get(page, PAGES.get(page, page))
+def page_link_name(page: str, lang: str = "en") -> str:
+    return PAGE_LINKS.get(page, PAGES.get(page, page))
 
 # Bump when the AGB or the Widerrufsbelehrung change; buyers consent again on their next purchase
 CONSENT_VERSION: Final[str] = "2026-11-24"
