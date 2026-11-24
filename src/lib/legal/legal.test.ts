@@ -21,7 +21,9 @@ describe('legal pages', () => {
 
 	it('keeps a TODO in every operator field until the real data arrives', () => {
 		for (const [field, value] of Object.entries(LEGAL_OPERATOR)) {
-			expect(value, field).toMatch(/^TODO:/);
+			// The Telegram contact is real already
+			if (field === 'telegram') expect(value).toMatch(/^https:\/\/t\.me\/\w+$/);
+			else expect(value, field).toMatch(/^TODO:/);
 		}
 		expect(LEGAL_UPDATED).toMatch(/^\d{4}-\d{2}-\d{2}$/);
 	});

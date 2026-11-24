@@ -11,6 +11,8 @@ export const LEGAL_OPERATOR = {
 	city: 'TODO: city',
 	country: 'TODO: country',
 	email: 'TODO: contact email address',
+	/** A Telegram contact for legal and purchase questions, next to the email */
+	telegram: 'https://t.me/MilitaernewsKontakt',
 	responsible: 'TODO: name of the person responsible for the content',
 	vatId: 'TODO: VAT ID, or "not applicable" if there is none',
 	hosting: 'TODO: hosting provider and server location'

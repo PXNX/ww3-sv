@@ -37,6 +37,13 @@
 				{LEGAL_OPERATOR.email}
 			{/if}
 		</p>
+		<p>
+			Telegram:
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external page -->
+			<a class="underline decoration-2 underline-offset-2" href={LEGAL_OPERATOR.telegram}>
+				{LEGAL_OPERATOR.telegram.replace('https://', '')}
+			</a>
+		</p>
 	</LegalSection>
 
 	<LegalSection heading={m.legal_imprint_responsible_heading()}>
