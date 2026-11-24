@@ -105,6 +105,8 @@
 		border: 2px solid var(--color-ink);
 		border-radius: 12px 6px 11px 7px / 7px 11px 6px 12px;
 		background: color-mix(in srgb, var(--color-paper) 88%, var(--color-mustard));
+		/* The banner around it sets paper-coloured text, which would vanish on this paper tile */
+		color: var(--color-ink);
 		box-shadow: var(--shadow-hard-small);
 	}
 

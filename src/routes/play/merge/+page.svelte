@@ -99,8 +99,8 @@
 
 	<div class="mx-auto flex w-full max-w-md flex-col gap-3">
 		<!-- The mascot reacts to the board and announces mines, combos and clears -->
-		<div class="flex min-h-14 items-center gap-3">
-			<CharacterMascot pose={game.mood} class="w-16 shrink-0 -rotate-3" />
+		<div class="flex min-h-12 items-center gap-3">
+			<CharacterMascot pose={game.mood} class="w-11 shrink-0 -rotate-3 sm:w-16" />
 			<div class="flex-1" role="status" aria-live="polite">
 				{#key game.noticeKey}
 					{#if game.notices.length > 0}

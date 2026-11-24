@@ -183,7 +183,7 @@
 	bind:this={frame}
 	data-playfield
 	class="mx-auto w-full rounded-[16px_10px_18px_12px] border-3 border-ink bg-khaki p-2 shadow-[4px_4px_0_var(--color-ink)]"
-	style:max-width="max(16rem, min(34rem, calc((100dvh - 15rem) * 0.75)))"
+	style:max-width="max(15rem, min(34rem, calc((100cqh - 6rem) * 0.73)))"
 >
 	<!-- The cells are the accessible controls; the container only maps pointer positions to cells
 	     (so a finger can slide to aim) and moves the keyboard focus between cells with arrow keys -->

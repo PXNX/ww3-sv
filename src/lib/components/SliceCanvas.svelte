@@ -127,7 +127,12 @@
 	onpointercancel={(event) => dragger.pointerCancel(event)}
 />
 
-<div data-playfield class="flex w-full flex-col gap-3 select-none">
+<!-- Capped by the height the game area leaves, so a short phone sees the whole radar -->
+<div
+	data-playfield
+	class="mx-auto flex w-full flex-col gap-3 select-none"
+	style:max-width="max(14rem, min(100%, calc((100cqh - 4rem) * 9 / 14)))"
+>
 	<div class="relative">
 		<canvas
 			bind:this={canvas}

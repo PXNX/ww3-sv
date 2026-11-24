@@ -200,8 +200,9 @@
 	<div
 		role="group"
 		aria-label={m.rareearth_board_label()}
-		class="relative w-full overflow-hidden rounded-md border-3 border-ink bg-[#cfe3ea]"
+		class="relative mx-auto w-full overflow-hidden rounded-md border-3 border-ink bg-[#cfe3ea]"
 		style:aspect-ratio="{MAP_WIDTH} / {MAP_HEIGHT}"
+		style:max-width="max(14rem, calc((100cqh - 9rem) * {MAP_WIDTH / MAP_HEIGHT}))"
 	>
 		<svg
 			viewBox="0 0 {MAP_WIDTH} {MAP_HEIGHT}"

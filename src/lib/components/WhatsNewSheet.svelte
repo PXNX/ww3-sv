@@ -1,6 +1,6 @@
 <!--
 	Global "what's new" sheet mounted once in the root layout. Returning players with a newer release
-	get it automatically; a fresh install is left alone. Settings and the About page can open the same
+	get it automatically; a fresh install and a game opened from a group chat are left alone. Settings and the About page can open the same
 	sheet at any time. Opening it marks the newest release as seen, so it is shown only once.
 -->
 <script lang="ts">
@@ -11,6 +11,7 @@
 	import { lastSeenVersion, markVersionSeen } from '#lib/changelogSeen.js';
 	import { releases } from '#lib/releases.js';
 	import { changelogSheet } from '#lib/stores/changelog.svelte.js';
+	import { telegram } from '#lib/stores/telegram.svelte.js';
 	import ChangelogList from './ChangelogList.svelte';
 	import IconX from '~icons/lucide/x';
 
@@ -18,6 +19,8 @@
 	let unseen = $state<Set<string>>(new Set());
 
 	onMount(() => {
+		// A game opened from a group chat is a quick round in Telegram's game browser, not a visit
+		if (telegram().groupGame) return;
 		const lastSeen = lastSeenVersion();
 		if (lastSeen && unseenReleases(releases, lastSeen).length) changelogSheet.show();
 	});

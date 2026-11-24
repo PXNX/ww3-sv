@@ -147,10 +147,10 @@
 
 		{#if game.status === 'ready'}
 			<div
-				class="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-[14px_8px_16px_10px] bg-ink/35 p-4"
+				class="absolute inset-0 flex flex-col items-center justify-center-safe gap-4 overflow-y-auto rounded-[14px_8px_16px_10px] bg-ink/35 p-2 sm:p-4"
 			>
 				<div
-					class="sticker pop-in flex w-full max-w-xs flex-col items-center gap-3 p-4 text-center"
+					class="sticker pop-in flex w-full max-w-xs flex-col items-center gap-2 p-3 text-center sm:gap-3 sm:p-4"
 					style:--tilt="-1.5deg"
 				>
 					<p dir="auto" class="text-sm leading-snug font-semibold">{m.whack_ready_hint()}</p>

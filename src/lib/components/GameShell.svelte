@@ -15,6 +15,10 @@
 	choice passes `backTo` while playing, so the back link returns to that choice instead of the
 	start screen. `backStyle="terminal"` draws the back link as a green-on-black terminal button
 	(`< menu`, always with its text) for games with their own full-screen look.
+	A page opened from a chat's game message runs in Telegram's game browser, where every pixel of
+	height counts and there is no start screen: it always gets the slim banner and no back link.
+	The game area is a size container, so a playfield with a fixed aspect ratio can cap its width
+	with `100cqh` and always fit the height that is left under the banner.
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
@@ -25,6 +29,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import { telemetry } from '#lib/services/telemetry.js';
+	import { telegram } from '#lib/stores/telegram.svelte.js';
 	import '#lib/styles/hackers.css';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
 
@@ -38,8 +43,8 @@
 		wide = false,
 		immersive = false,
 		landscape = false,
-		compact = false,
-		back = true,
+		compact: compactProp = false,
+		back: backProp = true,
 		backTo,
 		backStyle = 'default',
 		fitKeyboard = false,
@@ -72,6 +77,11 @@
 		fitKeyboard?: boolean;
 		children: Snippet;
 	} = $props();
+
+	// Telegram's game browser: nowhere to go back to, and the board needs the height
+	const groupGame = telegram().groupGame !== null;
+	const compact = $derived(compactProp || groupGame);
+	const back = $derived(backProp && !groupGame);
 
 	// One game_open event per mode visit, from the frame every play page already shares
 	onMount(() => {
@@ -303,7 +313,7 @@
 	<div
 		class={immersive
 			? 'game-enter absolute inset-0 flex flex-col overflow-hidden'
-			: 'game-enter flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto sm:gap-3'}
+			: 'game-enter [container-type:size] flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto sm:gap-3'}
 	>
 		{@render children()}
 	</div>

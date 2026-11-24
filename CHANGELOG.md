@@ -15,6 +15,27 @@ The version history is now part of the game, grouped by change type and scope.
 - An in-app version history sheet and a public changelog page
 - Entries grouped by change type and by the part of the game they touch
 
+#### shop
+
+- Agent looks for Telegram Stars: a tinfoil hat, laser eyes, a gold shirt and neon pink hair, bought once
+  and kept on the Telegram account
+
+#### flamingo
+
+- The Crimea bridge is now a big target: fly into it to bring a span down for 150 points
+
+### Fixed
+
+#### runcomrade
+
+- Every obstacle you hit now costs a heart, and runs get faster and busier sooner
+
+#### telegram
+
+- Games opened from a group chat drop the back button and use a slimmer banner, and their playfields fit
+  the height of Telegram's game browser instead of running off the bottom
+- The score in a game's banner is readable again
+
 ## v1.5.0 - 2026-11-17
 
 A mission-board home screen, small new toys in several modes and a fresh art pass.

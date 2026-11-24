@@ -59,7 +59,8 @@
 
 <div
 	data-playfield
-	class="board relative aspect-square w-full touch-none rounded-[16px_10px_18px_8px] border-3 border-ink bg-khaki p-[2%] shadow-[4px_4px_0_var(--color-ink)] select-none"
+	style:max-width="max(14rem, calc(100cqh - 9rem))"
+	class="board relative mx-auto aspect-square w-full touch-none rounded-[16px_10px_18px_8px] border-3 border-ink bg-khaki p-[2%] shadow-[4px_4px_0_var(--color-ink)] select-none"
 	role="group"
 	aria-label={m.merge_board_label({ size })}
 	onpointerdown={onPointerDown}
