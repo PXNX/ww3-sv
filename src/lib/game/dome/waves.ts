@@ -15,6 +15,7 @@ import {
 	WORLD_WIDTH
 } from './config.js';
 import { pickWeighted, type Random } from '#lib/game/random.js';
+import { BASE_FIELD, type DomeField } from './field.js';
 import { highestPoint, type Flight } from './trajectory.js';
 
 export type RocketKind = 'normal' | 'fast';
@@ -64,24 +65,25 @@ function harmlessImpact(random: Random): number {
 	return FIELD_START + 16 + random() * (WORLD_WIDTH - FIELD_START - 32);
 }
 
-function buildFlight(impactX: number, flightMs: number, random: Random): Flight {
+/** On a taller field the rocket starts higher and arcs higher, in the same flight time */
+function buildFlight(impactX: number, flightMs: number, random: Random, field: DomeField): Flight {
 	// Rockets come in from either side, whichever gives a clearly visible arc
 	let startX = random() < 0.5 ? -24 : WORLD_WIDTH + 24;
 	if (Math.abs(impactX - startX) < 180) startX = impactX < WORLD_WIDTH / 2 ? WORLD_WIDTH + 24 : -24;
-	const startY = 20 + random() * 90;
+	const startY = field.top + (20 + random() * 90) * field.stretch;
 	const flight: Flight = {
 		startX,
 		startY,
 		impactX,
-		lift: 70 + random() * 90,
+		lift: (70 + random() * 90) * field.stretch,
 		flightMs
 	};
-	while (highestPoint(flight) < TOP_MARGIN && flight.lift > 10) flight.lift *= 0.9;
+	while (highestPoint(flight) < field.top + TOP_MARGIN && flight.lift > 10) flight.lift *= 0.9;
 	return flight;
 }
 
 /** Plans the launches of one wave, in time order */
-export function planWave(wave: number, random: Random): Spawn[] {
+export function planWave(wave: number, random: Random, field: DomeField = BASE_FIELD): Spawn[] {
 	const params = waveParams(wave);
 	const spawns: Spawn[] = [];
 	let atMs = 0;
@@ -105,7 +107,7 @@ export function planWave(wave: number, random: Random): Spawn[] {
 		spawns.push({
 			atMs: Math.round(atMs),
 			kind,
-			flight: buildFlight(impactX, flightMs, random),
+			flight: buildFlight(impactX, flightMs, random, field),
 			targetIndex
 		});
 		// Now and then a rocket follows right behind the last one (a salvo)

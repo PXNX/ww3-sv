@@ -20,6 +20,7 @@ import {
 	WAVE_PAUSE_MS,
 	type TargetKind
 } from './config.js';
+import { BASE_FIELD, type DomeField } from './field.js';
 import { launchInterceptor, stepInterceptor, type Interceptor } from './intercept.js';
 import { interceptScore, pickRocket, rankThreats } from './priority.js';
 import { flightPoint, timeToImpact, type Flight, type Point } from './trajectory.js';
@@ -40,6 +41,8 @@ export interface Rocket {
 export type Phase = 'pause' | 'wave' | 'over';
 
 export interface DomeState {
+	/** The shape of the playfield, fixed for the whole run */
+	field: DomeField;
 	phase: Phase;
 	/** Current wave, 0 before the first one starts */
 	wave: number;
@@ -95,8 +98,9 @@ export type DomeEvent =
 	| { type: 'wave-clear'; wave: number; bonus: number; perfect: boolean; heartBack: boolean }
 	| { type: 'game-over' };
 
-export function createGame(): DomeState {
+export function createGame(field: DomeField = BASE_FIELD): DomeState {
 	return {
+		field,
 		phase: 'pause',
 		wave: 0,
 		pauseMs: 600,
@@ -131,7 +135,7 @@ export function rocketValue(state: DomeState, rocket: Rocket): number {
 function startWave(state: DomeState, random: Random): DomeEvent {
 	state.wave += 1;
 	state.phase = 'wave';
-	state.queue = planWave(state.wave, random);
+	state.queue = planWave(state.wave, random, state.field);
 	state.waveElapsedMs = -FIRST_SPAWN_MS;
 	state.waveHit = false;
 	return { type: 'wave-start', wave: state.wave, count: state.queue.length };
@@ -290,7 +294,14 @@ function launchAt(state: DomeState, rocket: Rocket): DomeEvent[] {
 		return state.ammo.loaded <= 0 ? [{ type: 'no-ammo' }] : [];
 	}
 	fire(state.ammo);
-	const interceptor = launchInterceptor(state.nextId++, rocket.id, rocket.flight, rocket.elapsedMs);
+	const interceptor = launchInterceptor(
+		state.nextId++,
+		rocket.id,
+		rocket.flight,
+		rocket.elapsedMs,
+		undefined,
+		state.field.interceptorSpeed
+	);
 	rocket.interceptorId = interceptor.id;
 	state.interceptors.push(interceptor);
 	return [{ type: 'launch', x: interceptor.x, y: interceptor.y, heading: interceptor.heading }];

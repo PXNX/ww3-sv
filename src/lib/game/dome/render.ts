@@ -4,6 +4,7 @@
  * incoming rockets with their faint dotted trajectory and landing marker, interceptors, and short
  * effects. Everything is original cartoon art: the rockets, the interceptors and the battery are
  * made-up designs without any real markings, and nothing is hurt: impacts are smoke and dust.
+ * A taller field (see field.ts) only adds sky above the standard picture, at negative world y.
  */
 import {
 	BATTERY_X,
@@ -15,6 +16,7 @@ import {
 	WORLD_WIDTH,
 	type TargetKind
 } from './config.js';
+import type { DomeField } from './field.js';
 import type { Interceptor } from './intercept.js';
 import { WOBBLE_MS, type Particle, type Ring } from './fx.js';
 import { rocketPosition, type DomeState, type Rocket } from './state.js';
@@ -135,14 +137,15 @@ function cloud(ctx: CanvasRenderingContext2D, x: number, y: number, scale: numbe
 	}
 }
 
-function drawSky(ctx: CanvasRenderingContext2D, extras: SceneExtras) {
+function drawSky(ctx: CanvasRenderingContext2D, field: DomeField, extras: SceneExtras) {
+	const { top, stretch } = field;
 	ctx.fillStyle = SKY;
-	ctx.fillRect(0, 0, WORLD_WIDTH, GROUND_Y);
+	ctx.fillRect(0, top, WORLD_WIDTH, GROUND_Y - top);
 	ctx.fillStyle = SKY_LOW;
 	ctx.fillRect(0, GROUND_Y - 70, WORLD_WIDTH, 70);
 	// A cartoon sun
 	ctx.beginPath();
-	ctx.arc(560, 62, 24, 0, Math.PI * 2);
+	ctx.arc(560, top + 62, 24, 0, Math.PI * 2);
 	fillOutlined(ctx, YELLOW, 3);
 	const drift = extras.reducedMotion ? 0 : (extras.timeMs / 1000) * 4;
 	const wrap = WORLD_WIDTH + 120;
@@ -151,7 +154,7 @@ function drawSky(ctx: CanvasRenderingContext2D, extras: SceneExtras) {
 		[300, 96, 0.8],
 		[470, 170, 0.9]
 	] as const) {
-		cloud(ctx, ((x + drift) % wrap) - 60, y, s);
+		cloud(ctx, ((x + drift) % wrap) - 60, top + y * stretch, s);
 	}
 }
 
@@ -588,7 +591,8 @@ function drawRings(ctx: CanvasRenderingContext2D, rings: readonly Ring[]) {
 function drawBanner(
 	ctx: CanvasRenderingContext2D,
 	effect: Extract<Effect, { kind: 'banner' }>,
-	reduced: boolean
+	reduced: boolean,
+	top: number
 ) {
 	const t = Math.min(1, effect.ageMs / effect.durationMs);
 	const enter = Math.min(1, effect.ageMs / 260);
@@ -597,7 +601,7 @@ function drawBanner(
 	const fade = t > 0.8 ? Math.max(0, (1 - t) / 0.2) : 1;
 	ctx.save();
 	ctx.globalAlpha = fade;
-	ctx.translate(WORLD_WIDTH / 2, 76 + drop);
+	ctx.translate(WORLD_WIDTH / 2, top + 76 + drop);
 	ctx.rotate(-0.018);
 	ctx.font = `bold 24px ${DISPLAY_FONT}`;
 	const width = Math.min(
@@ -621,7 +625,12 @@ function drawBanner(
 	ctx.restore();
 }
 
-function drawEffects(ctx: CanvasRenderingContext2D, effects: readonly Effect[], reduced: boolean) {
+function drawEffects(
+	ctx: CanvasRenderingContext2D,
+	effects: readonly Effect[],
+	reduced: boolean,
+	top: number
+) {
 	ctx.textAlign = 'center';
 	ctx.textBaseline = 'middle';
 	for (const effect of effects) {
@@ -632,7 +641,7 @@ function drawEffects(ctx: CanvasRenderingContext2D, effects: readonly Effect[], 
 			starburst(ctx, effect.x, effect.y, effect.radius * (0.4 + 0.6 * Math.min(1, t * 3)));
 			fillOutlined(ctx, effect.color, 2.5);
 		} else if (effect.kind === 'banner') {
-			drawBanner(ctx, effect, reduced);
+			drawBanner(ctx, effect, reduced, top);
 		} else {
 			// A popup lands with a small overshoot, then drifts up and fades
 			const appear = Math.min(1, effect.ageMs / 150);
@@ -651,13 +660,16 @@ function drawEffects(ctx: CanvasRenderingContext2D, effects: readonly Effect[], 
 	}
 }
 
-/** Draws the whole scene; the context must already be scaled so that one unit is one world unit */
+/**
+ * Draws the whole scene; the context must already be scaled so that one unit is one world unit and
+ * moved so that the field's top edge (state.field.top) is the top of the canvas
+ */
 export function drawScene(
 	ctx: CanvasRenderingContext2D,
 	state: DomeState,
 	extras: SceneExtras = NO_EXTRAS
 ) {
-	drawSky(ctx, extras);
+	drawSky(ctx, state.field, extras);
 	drawSea(ctx, extras);
 	drawGround(ctx);
 	drawBattery(ctx, state, extras.recoil);
@@ -667,10 +679,10 @@ export function drawScene(
 	for (const interceptor of state.interceptors) drawInterceptor(ctx, interceptor);
 	drawParticles(ctx, extras.particles ?? []);
 	drawRings(ctx, extras.rings ?? []);
-	drawEffects(ctx, extras.effects, extras.reducedMotion);
+	drawEffects(ctx, extras.effects, extras.reducedMotion, state.field.top);
 }
 
-/** Draws the final scene onto the shared score card, centred on the city */
+/** Draws the final scene onto the shared score card, centred on the city (the standard field's part of a taller sky) */
 export function drawScenePreview(
 	ctx: CanvasRenderingContext2D,
 	state: DomeState,

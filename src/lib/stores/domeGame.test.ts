@@ -198,6 +198,35 @@ describe('DomeGame', () => {
 	});
 });
 
+describe('DomeGame field shape', () => {
+	it('follows a portrait box before the first run and keeps the shape during a run', () => {
+		const { game } = newGame();
+		expect(game.fieldHeight).toBe(400);
+		game.fitBox(344, 430);
+		expect(game.fieldHeight).toBe(800);
+		expect(game.state.field.top).toBe(-400);
+		game.start();
+		expect(game.state.field.height).toBe(800);
+		// Turning the phone mid-run changes nothing until the next run
+		game.fitBox(768, 480);
+		expect(game.state.field.height).toBe(800);
+		game.forfeit();
+		game.start();
+		expect(game.fieldHeight).toBe(400);
+		expect(game.state.field.top).toBe(0);
+	});
+
+	it('keeps popups inside the taller picture', () => {
+		const { game } = newGame();
+		game.fitBox(344, 430);
+		game.start();
+		play(game, 3000);
+		for (const effect of game.effects) {
+			if (effect.kind === 'popup') expect(effect.y).toBeGreaterThanOrEqual(game.state.field.top);
+		}
+	});
+});
+
 describe('Iron Dome Juggler messages', () => {
 	it('has messages in every language', () => {
 		expect(missingMessages(['dome_', 'mode_dome_'])).toEqual([]);

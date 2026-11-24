@@ -2,6 +2,7 @@
  * Iron Dome Juggler game store: wraps the pure rules with tap input, popups, sounds and personal
  * bests. The simulation state is a plain object the canvas reads every frame; only what the page
  * chrome shows (score, hearts, wave, combo, interceptors) is reactive, synced after each step.
+ * The canvas reports the box it may fill; a portrait box gets a taller field from the next run on.
  */
 import {
 	MAX_AMMO,
@@ -9,8 +10,10 @@ import {
 	WORLD_WIDTH,
 	SEA_END,
 	BATTERY_X,
-	BATTERY_Y
+	BATTERY_Y,
+	WORLD_HEIGHT
 } from '#lib/game/dome/config.js';
+import { domeField, fieldHeightFor } from '#lib/game/dome/field.js';
 import { reloadProgress } from '#lib/game/dome/ammo.js';
 import {
 	createFx,
@@ -83,6 +86,8 @@ export class DomeGame {
 	best = $state<number | null>(null);
 	bestWave = $state<number | null>(null);
 	isNewBest = $state(false);
+	/** World height of the current field, which the canvas sizes itself to */
+	fieldHeight = $state(WORLD_HEIGHT);
 
 	/** Simulation state, deliberately not reactive */
 	state: DomeState;
@@ -96,6 +101,8 @@ export class DomeGame {
 	#random: Random = createRandom(1);
 	#scores: () => Highscores;
 	#seed: () => number;
+	/** The field height the canvas's box asks for, used from the next run on */
+	#wantedHeight = WORLD_HEIGHT;
 
 	constructor({ reducedMotion = false, scores = highscores, seed = randomSeed }: DomeOptions = {}) {
 		this.reducedMotion = reducedMotion;
@@ -112,9 +119,22 @@ export class DomeGame {
 		this.bestWave = this.#scores().get(WAVE_KEY);
 	}
 
+	/**
+	 * The canvas's box in CSS pixels. Before the first run the field follows it right away; during
+	 * and after a run the shape stays put, and the next run starts with the new one.
+	 */
+	fitBox(width: number, height: number) {
+		this.#wantedHeight = fieldHeightFor(width, height);
+		if (this.status === 'ready' && this.#wantedHeight !== this.state.field.height) {
+			this.state = createGame(domeField(this.#wantedHeight));
+			this.fieldHeight = this.state.field.height;
+		}
+	}
+
 	start() {
 		this.#random = createRandom(this.#seed());
-		this.state = createGame();
+		this.state = createGame(domeField(this.#wantedHeight));
+		this.fieldHeight = this.state.field.height;
 		this.effects = [];
 		this.fx = createFx(this.reducedMotion);
 		this.#trailMs = 0;
@@ -245,7 +265,13 @@ export class DomeGame {
 				this.#handleImpact(event);
 				break;
 			case 'blackout':
-				this.#popup(WORLD_WIDTH / 2, 90, m.dome_popup_blackout(), true, GOLD);
+				this.#popup(
+					WORLD_WIDTH / 2,
+					this.state.field.top + 90,
+					m.dome_popup_blackout(),
+					true,
+					GOLD
+				);
 				this.#play('alarm', 0.9);
 				haptic().play(0.45);
 				break;
@@ -256,7 +282,13 @@ export class DomeGame {
 					'#ffffff'
 				);
 				if (event.heartBack) {
-					this.#popup(WORLD_WIDTH / 2, 150, m.dome_popup_clear_heart(), false, GOLD);
+					this.#popup(
+						WORLD_WIDTH / 2,
+						this.state.field.top + 150,
+						m.dome_popup_clear_heart(),
+						false,
+						GOLD
+					);
 				}
 				this.#play(event.perfect ? 'chime-big' : 'chime');
 				haptic().play(event.perfect ? 0.5 : 0.3);
@@ -329,7 +361,7 @@ export class DomeGame {
 		this.effects.push({
 			kind: 'popup',
 			x: Math.max(70, Math.min(WORLD_WIDTH - 70, x)),
-			y: Math.max(24, y),
+			y: Math.max(this.state.field.top + 24, y),
 			text,
 			big,
 			color,

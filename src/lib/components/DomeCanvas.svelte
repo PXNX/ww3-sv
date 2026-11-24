@@ -2,11 +2,13 @@
 	Iron Dome Juggler playfield: a crisp high-DPI canvas driven by the fixed-step loop. The only
 	control is a tap on an incoming rocket (or Space / Enter for the most urgent one). The playfield
 	never mirrors in right-to-left languages and never scrolls (touch-action: none).
+	The playfield fills the box that the page leaves it: it tells the game the box's size, and the
+	game picks a taller field on a portrait box (see field.ts); the canvas is then fitted into the box.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
-	import { WORLD_HEIGHT, WORLD_WIDTH } from '#lib/game/dome/config.js';
+	import { WORLD_WIDTH } from '#lib/game/dome/config.js';
 	import { drawScene } from '#lib/game/dome/render.js';
 	import { createFixedLoop, onAppHidden } from '#lib/game/loop.js';
 	import { clientToLocal } from '#lib/game/pointerDrag.js';
@@ -21,28 +23,47 @@
 	/** CSS pixels per world unit */
 	let scale = 1;
 
+	/** The box the page leaves for the playfield, in CSS pixels */
+	let box: HTMLDivElement | undefined = $state();
+	let boxSize = $state({ width: 0, height: 0 });
+	/** The canvas border (both sides) and its hard shadow, which the box has to fit as well */
+	const BORDER = 6;
+	const SHADOW = 4;
+	/** The field fitted into the box, never narrower than 14rem (the page scrolls on a tiny screen) */
+	const size = $derived.by(() => {
+		const width = boxSize.width - SHADOW;
+		const height = boxSize.height - SHADOW;
+		if (width <= 0 || height <= 0) return null;
+		const fit = ((height - BORDER) * WORLD_WIDTH) / game.fieldHeight + BORDER;
+		const outer = Math.max(Math.min(width, 224), Math.min(width, fit));
+		return { width: outer, height: ((outer - BORDER) * game.fieldHeight) / WORLD_WIDTH + BORDER };
+	});
+
 	function draw() {
 		if (!canvas || !context) return;
 		const ratio = window.devicePixelRatio || 1;
-		context.setTransform(scale * ratio, 0, 0, scale * ratio, 0, 0);
+		const { top, height } = game.state.field;
+		// The field's top edge (negative on a taller sky) is the top of the canvas
+		context.setTransform(scale * ratio, 0, 0, scale * ratio, 0, -top * scale * ratio);
 		const fx = game.fx;
 		const shake = !game.reducedMotion && fx.shakeMs > 0 ? fx.shakeStrength : 0;
 		context.save();
 		if (shake > 0) {
 			// A little zoom around the centre keeps a shaken frame from showing the canvas edge
+			const middle = top + height / 2;
 			context.translate(
 				WORLD_WIDTH / 2 + (Math.random() * 2 - 1) * shake,
-				WORLD_HEIGHT / 2 + (Math.random() * 2 - 1) * shake
+				middle + (Math.random() * 2 - 1) * shake
 			);
 			context.scale(1.03, 1.03);
-			context.translate(-WORLD_WIDTH / 2, -WORLD_HEIGHT / 2);
+			context.translate(-WORLD_WIDTH / 2, -middle);
 		}
 		drawScene(context, game.state, game.sceneExtras());
 		context.restore();
 		if (fx.flashMs > 0) {
 			// A warm flash over the field when a building is hit, still drawn in world units
 			context.fillStyle = `rgba(255, 227, 160, ${(fx.flashMs / fx.flashMaxMs) * 0.16})`;
-			context.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+			context.fillRect(0, top, WORLD_WIDTH, height);
 		}
 	}
 
@@ -52,7 +73,7 @@
 		const width = canvas.clientWidth;
 		scale = width / WORLD_WIDTH;
 		canvas.width = Math.round(width * ratio);
-		canvas.height = Math.round(((width * WORLD_HEIGHT) / WORLD_WIDTH) * ratio);
+		canvas.height = Math.round(((width * game.state.field.height) / WORLD_WIDTH) * ratio);
 		draw();
 	}
 
@@ -63,10 +84,17 @@
 		context = canvas.getContext('2d');
 		const observer = new ResizeObserver(resize);
 		observer.observe(canvas);
+		const boxObserver = new ResizeObserver(() => {
+			if (!box) return;
+			boxSize = { width: box.clientWidth, height: box.clientHeight };
+			game.fitBox(boxSize.width, boxSize.height);
+		});
+		if (box) boxObserver.observe(box);
 		const stopHidden = onAppHidden(() => game.pause());
 		return () => {
 			loop.pause();
 			observer.disconnect();
+			boxObserver.disconnect();
 			stopHidden();
 		};
 	});
@@ -79,15 +107,22 @@
 		draw();
 	});
 
+	// A new field shape resizes the canvas right away, before the next frame is drawn
+	$effect(() => {
+		void size;
+		resize();
+	});
+
 	function onDown(event: PointerEvent) {
 		if (game.status !== 'playing' || !canvas) return;
 		if (event.pointerType === 'mouse' && event.button !== 0) return;
+		const { top, height } = game.state.field;
 		const point = clientToLocal(
 			canvas.getBoundingClientRect(),
 			{ x: event.clientX, y: event.clientY },
-			{ width: WORLD_WIDTH, height: WORLD_HEIGHT }
+			{ width: WORLD_WIDTH, height }
 		);
-		game.tapAt(point);
+		game.tapAt({ x: point.x, y: point.y + top });
 		event.preventDefault();
 	}
 
@@ -114,11 +149,20 @@
 
 <svelte:window onkeydown={onKeyDown} />
 
-<div data-playfield class="flex w-full flex-col gap-3 select-none">
-	<div class="relative">
+<div
+	bind:this={box}
+	data-playfield
+	class="flex min-h-0 w-full flex-1 flex-col items-center select-none"
+>
+	<div
+		class="relative w-full shrink-0"
+		style:width={size ? `${size.width}px` : undefined}
+		style:height={size ? `${size.height}px` : undefined}
+		style:aspect-ratio={size ? undefined : `${WORLD_WIDTH} / ${game.fieldHeight}`}
+	>
 		<canvas
 			bind:this={canvas}
-			class="block aspect-[8/5] w-full touch-none rounded-[14px_8px_16px_10px] border-3 border-ink shadow-[4px_4px_0_var(--color-ink)]"
+			class="block size-full touch-none rounded-[14px_8px_16px_10px] border-3 border-ink shadow-[4px_4px_0_var(--color-ink)]"
 			style:touch-action="none"
 			aria-label={m.dome_playfield_label()}
 			onpointerdown={onDown}
