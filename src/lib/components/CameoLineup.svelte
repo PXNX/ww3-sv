@@ -1,7 +1,7 @@
 <!--
 	Start screen hero: every leader side by side as tilted portrait cards, each in front of their
 	country's flag. Tapping a leader filters the game list to the games that feature them; tapping
-	again (or the chip above the game list) shows every game.
+	again shows every game; the highlighted portrait is the only marker of the filter.
 -->
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages.js';

@@ -26,8 +26,6 @@
 	"leader_musk_name": "Elon Musk",
 	"home_filter_label": "Spiele nach Staatsoberhaupt filtern",
 	"home_filter_leader": "Nur Spiele mit {name} zeigen",
-	"home_filter_active": "Spiele mit {name}",
-	"home_filter_clear": "Alle Spiele zeigen",
 	"mode_features": "Mit {names}",
 	"install_app_hint": "Installiere die App für schnellen Zugriff und Spiel ohne Internet.",
 	"install_app_button": "Installieren",

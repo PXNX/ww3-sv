@@ -26,8 +26,6 @@
 	"leader_musk_name": "ایلان ماسک",
 	"home_filter_label": "فیلتر بازی‌ها بر اساس رهبر",
 	"home_filter_leader": "فقط بازی‌های دارای {name} را نشان بده",
-	"home_filter_active": "بازی‌های دارای {name}",
-	"home_filter_clear": "نمایش همه بازی‌ها",
 	"mode_features": "شخصیت‌ها: {names}",
 	"install_app_hint": "این برنامه را برای دسترسی سریع و بازی آفلاین نصب کنید.",
 	"install_app_button": "نصب",

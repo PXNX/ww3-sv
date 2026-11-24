@@ -62,10 +62,6 @@
 			</span>
 			<IconChevronRight class="size-5 shrink-0 opacity-70 rtl:rotate-180" aria-hidden="true" />
 		</a>
-
-		<div class="sticker mt-2 w-full max-w-2xl bg-sand p-0" style:--tilt="-1deg">
-			<CameoLineup bind:selected={leader} />
-		</div>
 	</header>
 
 	<CloudSaveHint />
@@ -80,6 +76,10 @@
 			<span class="hazard-dot" aria-hidden="true"></span>
 			{m.home_choose_mode()}
 		</h2>
+		<!-- Tapping a leader narrows the list to their games; the highlight is the only marker -->
+		<div class="sticker w-full bg-sand p-0" style:--tilt="-1deg">
+			<CameoLineup bind:selected={leader} />
+		</div>
 		<ModeSelect bind:leader />
 	</section>
 
@@ -104,7 +104,10 @@
 	<div
 		class="relative z-50 mx-auto w-full max-w-5xl px-4 pt-2 pb-[calc(2rem+env(safe-area-inset-bottom))]"
 	>
-		<InstallPwaHint />
-		<UpdatePwaHint />
+		<!-- Telegram installs and updates the Mini App itself -->
+		{#if !account.inTelegram}
+			<InstallPwaHint />
+			<UpdatePwaHint />
+		{/if}
 	</div>
 </main>

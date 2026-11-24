@@ -26,8 +26,6 @@
 	"leader_musk_name": "Ілон Маск",
 	"home_filter_label": "Фільтр ігор за лідером",
 	"home_filter_leader": "Показати лише ігри з {name}",
-	"home_filter_active": "Ігри з {name}",
-	"home_filter_clear": "Показати всі ігри",
 	"mode_features": "У грі: {names}",
 	"install_app_hint": "Встанови застосунок для швидкого доступу та гри без інтернету.",
 	"install_app_button": "Встановити",

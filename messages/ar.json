@@ -26,8 +26,6 @@
 	"leader_musk_name": "إيلون ماسك",
 	"home_filter_label": "تصفية الألعاب حسب الزعيم",
 	"home_filter_leader": "أظهر فقط الألعاب التي يظهر فيها {name}",
-	"home_filter_active": "ألعاب يظهر فيها {name}",
-	"home_filter_clear": "أظهر كل الألعاب",
 	"mode_features": "يظهر فيها: {names}",
 	"install_app_hint": "ثبّت هذا التطبيق للوصول السريع واللعب بدون اتصال.",
 	"install_app_button": "تثبيت",

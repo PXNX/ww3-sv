@@ -14,7 +14,6 @@
 	import IconHourglass from '~icons/lucide/hourglass';
 	import IconShuffle from '~icons/lucide/shuffle';
 	import IconTrophy from '~icons/lucide/trophy';
-	import IconX from '~icons/lucide/x';
 
 	// resolve() has one overload per route, and TypeScript gives up on matching a union of more than
 	// 25 routes against them. The registry already type-checks every href against RouteId.
@@ -73,29 +72,6 @@
 		void goto(resolveRoute(mode.href));
 	}
 </script>
-
-{#if leader}
-	<div class="mb-4 flex">
-		<button
-			type="button"
-			class="btn-chunky inline-flex items-center gap-2 bg-explosion-yellow"
-			aria-label={m.home_filter_clear()}
-			onclick={() => {
-				leader = null;
-				telemetry.track('filter_clear');
-			}}
-		>
-			<img
-				src={leaderById(leader).flag}
-				alt=""
-				class="h-4 w-6 rounded-sm border-2 border-ink object-cover"
-				draggable="false"
-			/>
-			{m.home_filter_active({ name: leaderById(leader).name() })}
-			<IconX class="size-4 text-white dark:text-white" aria-hidden="true" />
-		</button>
-	</div>
-{/if}
 
 <div class="mb-4 flex flex-wrap items-center gap-2">
 	<button type="button" class="btn-chunky bg-explosion-yellow px-3 py-1 text-sm" onclick={surprise}>

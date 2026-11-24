@@ -26,8 +26,6 @@
 	"leader_musk_name": "Elon Musk",
 	"home_filter_label": "Filter games by leader",
 	"home_filter_leader": "Show only games featuring {name}",
-	"home_filter_active": "Games featuring {name}",
-	"home_filter_clear": "Show all games",
 	"mode_features": "Features {names}",
 	"install_app_hint": "Install this app for quick access and offline play.",
 	"install_app_button": "Install",
