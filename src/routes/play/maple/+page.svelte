@@ -82,7 +82,9 @@
 		{#if playing}
 			<button
 				type="button"
-				class="btn-chunky px-3 py-1 text-sm"
+				class="btn-chunky px-2 py-1 text-sm sm:px-3"
+				aria-label={m.maple_back_to_levels()}
+				title={m.maple_back_to_levels()}
 				onclick={() => game.backToSelect()}
 			>
 				<IconList class="size-4" aria-hidden="true" />

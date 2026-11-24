@@ -109,12 +109,16 @@
 		</button>
 		<button
 			type="button"
-			class="btn-chunky px-3 py-1 text-sm"
+			class="btn-chunky px-2 py-1 text-sm sm:px-3"
 			class:bg-explosion-yellow={confirmingRestart}
+			aria-label={confirmingRestart ? m.chess_new_game_confirm() : m.chess_new_game()}
+			title={confirmingRestart ? m.chess_new_game_confirm() : m.chess_new_game()}
 			onclick={newGame}
 		>
 			<IconRotate class="size-4" aria-hidden="true" />
-			{confirmingRestart ? m.chess_new_game_confirm() : m.chess_new_game()}
+			<span class="hidden sm:inline">
+				{confirmingRestart ? m.chess_new_game_confirm() : m.chess_new_game()}
+			</span>
 		</button>
 	{/snippet}
 

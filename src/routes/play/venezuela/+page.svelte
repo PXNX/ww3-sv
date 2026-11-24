@@ -68,20 +68,28 @@
 			<span class="hidden sm:inline">{m.venezuela_help_button()}</span>
 		</button>
 		{#if playing && running}
-			<button type="button" class="btn-chunky px-3 py-1 text-sm" onclick={() => game.togglePause()}>
+			<button
+				type="button"
+				class="btn-chunky px-2 py-1 text-sm sm:px-3"
+				aria-label={game.status === 'paused' ? m.game_resume() : m.game_pause()}
+				title={game.status === 'paused' ? m.game_resume() : m.game_pause()}
+				onclick={() => game.togglePause()}
+			>
 				{#if game.status === 'paused'}
 					<IconPlay class="size-4" aria-hidden="true" />
-					{m.game_resume()}
+					<span class="hidden sm:inline">{m.game_resume()}</span>
 				{:else}
 					<IconPause class="size-4" aria-hidden="true" />
-					{m.game_pause()}
+					<span class="hidden sm:inline">{m.game_pause()}</span>
 				{/if}
 			</button>
 		{/if}
 		{#if playing && !running}
 			<button
 				type="button"
-				class="btn-chunky px-3 py-1 text-sm"
+				class="btn-chunky px-2 py-1 text-sm sm:px-3"
+				aria-label={m.venezuela_back_to_levels()}
+				title={m.venezuela_back_to_levels()}
 				onclick={() => game.backToSelect()}
 			>
 				<IconList class="size-4" aria-hidden="true" />

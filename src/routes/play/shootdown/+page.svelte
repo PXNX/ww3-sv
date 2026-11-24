@@ -43,12 +43,14 @@
 	{#snippet actions()}
 		<button
 			type="button"
-			class="btn-chunky px-3 py-1 text-sm {game.autoFire ? 'bg-explosion-yellow' : ''}"
+			class="btn-chunky px-2 py-1 text-sm sm:px-3 {game.autoFire ? 'bg-explosion-yellow' : ''}"
 			aria-pressed={game.autoFire}
+			aria-label={m.shootdown_auto_fire()}
+			title={m.shootdown_auto_fire()}
 			onclick={() => game.setAutoFire(!game.autoFire)}
 		>
 			<IconRepeat class="size-4" aria-hidden="true" />
-			{m.shootdown_auto_fire()}
+			<span class="hidden sm:inline">{m.shootdown_auto_fire()}</span>
 			<span
 				class="rounded border-2 border-ink px-1 text-xs {game.autoFire ? 'bg-ink text-paper' : ''}"
 				aria-hidden="true"
@@ -57,13 +59,19 @@
 			</span>
 		</button>
 		{#if game.status === 'playing' || game.status === 'paused'}
-			<button type="button" class="btn-chunky px-3 py-1 text-sm" onclick={() => game.togglePause()}>
+			<button
+				type="button"
+				class="btn-chunky px-2 py-1 text-sm sm:px-3"
+				aria-label={game.status === 'paused' ? m.game_resume() : m.game_pause()}
+				title={game.status === 'paused' ? m.game_resume() : m.game_pause()}
+				onclick={() => game.togglePause()}
+			>
 				{#if game.status === 'paused'}
 					<IconPlay class="size-4" aria-hidden="true" />
-					{m.game_resume()}
+					<span class="hidden sm:inline">{m.game_resume()}</span>
 				{:else}
 					<IconPause class="size-4" aria-hidden="true" />
-					{m.game_pause()}
+					<span class="hidden sm:inline">{m.game_pause()}</span>
 				{/if}
 			</button>
 		{/if}

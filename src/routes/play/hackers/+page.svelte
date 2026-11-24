@@ -141,19 +141,31 @@
 >
 	{#snippet actions()}
 		{#if game.rival && playing && !booting}
-			<button type="button" class="hk-btn text-sm" onclick={() => game.abandonRival()}>
+			<button
+				type="button"
+				class="hk-btn text-sm"
+				aria-label={m.hackers_rival_disconnect()}
+				title={m.hackers_rival_disconnect()}
+				onclick={() => game.abandonRival()}
+			>
 				<IconUnplug class="size-4" aria-hidden="true" />
-				{m.hackers_rival_disconnect()}
+				<span class="hidden sm:inline">{m.hackers_rival_disconnect()}</span>
 			</button>
 		{/if}
 		{#if playing && !booting}
-			<button type="button" class="hk-btn text-sm" onclick={() => game.togglePause()}>
+			<button
+				type="button"
+				class="hk-btn text-sm"
+				aria-label={game.status === 'paused' ? m.game_resume() : m.game_pause()}
+				title={game.status === 'paused' ? m.game_resume() : m.game_pause()}
+				onclick={() => game.togglePause()}
+			>
 				{#if game.status === 'paused'}
 					<IconPlay class="size-4" aria-hidden="true" />
-					{m.game_resume()}
+					<span class="hidden sm:inline">{m.game_resume()}</span>
 				{:else}
 					<IconPause class="size-4" aria-hidden="true" />
-					{m.game_pause()}
+					<span class="hidden sm:inline">{m.game_pause()}</span>
 				{/if}
 			</button>
 		{/if}
