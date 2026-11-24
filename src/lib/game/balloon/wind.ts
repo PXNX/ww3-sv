@@ -4,7 +4,8 @@
  * the same however the balloon wanders, and the renderer can show the next chunk's pattern early.
  */
 import { createRandom, shuffle } from '#lib/game/random.js';
-import { CHUNK_LENGTH, LAYER_COUNT, LAYER_HEIGHT, TRACK_LENGTH, WIND_SPEEDS } from './config.js';
+import { CHUNK_LENGTH, LAYER_COUNT, TRACK_LENGTH, WIND_SPEEDS } from './config.js';
+import { BASE_FIELD, type BalloonField } from './field.js';
 
 /** The first chunk is fixed and gentle, so the first seconds teach the layers */
 const FIRST_PATTERN: readonly number[] = [76, 44, 12, 108, -36];
@@ -14,12 +15,13 @@ export function chunkOf(trackX: number): number {
 }
 
 /** Layer index (0 is the top) for an altitude, clamped to the sky */
-export function layerOf(y: number): number {
-	return Math.min(LAYER_COUNT - 1, Math.max(0, Math.floor(y / LAYER_HEIGHT)));
+export function layerOf(y: number, field: BalloonField = BASE_FIELD): number {
+	const layer = Math.floor((y - field.top) / field.layerHeight);
+	return Math.min(LAYER_COUNT - 1, Math.max(0, layer));
 }
 
-export function layerCentre(layer: number): number {
-	return (layer + 0.5) * LAYER_HEIGHT;
+export function layerCentre(layer: number, field: BalloonField = BASE_FIELD): number {
+	return field.top + (layer + 0.5) * field.layerHeight;
 }
 
 /** The wind speed of every layer in one chunk */
@@ -29,8 +31,13 @@ export function windPattern(seed: number, chunk: number): readonly number[] {
 }
 
 /** Wind speed at a track position and altitude, in track units per second */
-export function windAt(seed: number, trackX: number, y: number): number {
-	return windPattern(seed, chunkOf(trackX))[layerOf(y)];
+export function windAt(
+	seed: number,
+	trackX: number,
+	y: number,
+	field: BalloonField = BASE_FIELD
+): number {
+	return windPattern(seed, chunkOf(trackX))[layerOf(y, field)];
 }
 
 /** Share of the run that is done, 0 to 1 */

@@ -2,8 +2,10 @@
  * Wandering Balloon game store: wraps the pure rules with the burner input, popups, sounds and
  * personal bests. The simulation state is a plain object the canvas reads every frame; only what
  * the page chrome shows (score, hearts, fuel, progress, photos) is reactive, synced after each step.
+ * The canvas reports the box it may fill; a portrait box gets a taller field from the next run on.
  */
-import { BALLOON_X, FLOOR_Y, STARTING_LIVES, TRACK_LENGTH } from '#lib/game/balloon/config.js';
+import { BALLOON_X, STARTING_LIVES, TRACK_LENGTH, WORLD_HEIGHT } from '#lib/game/balloon/config.js';
+import { balloonField, fieldHeightFor } from '#lib/game/balloon/field.js';
 import { drawScenePreview, type Effect, type SceneExtras } from '#lib/game/balloon/render.js';
 import {
 	createGame,
@@ -51,6 +53,8 @@ export class BalloonGame {
 	/** Whether the run ended at the east coast rather than in the sky */
 	finished = $state(false);
 	finishBonus = $state(0);
+	/** World height of the current field, which the canvas sizes itself to */
+	fieldHeight = $state(WORLD_HEIGHT);
 
 	/** Simulation state, deliberately not reactive */
 	state: BalloonState;
@@ -61,6 +65,8 @@ export class BalloonGame {
 	#scores: () => Highscores;
 	#seed: () => number;
 	#held = false;
+	/** The field height the canvas's box asks for, used from the next run on */
+	#wantedHeight = WORLD_HEIGHT;
 
 	constructor({
 		reducedMotion = false,
@@ -80,9 +86,23 @@ export class BalloonGame {
 		this.bestDistance = this.#scores().get(DISTANCE_KEY);
 	}
 
+	/**
+	 * The canvas's box in CSS pixels. Before the first run the field follows it right away; during
+	 * and after a run the shape stays put, and the next run starts with the new one.
+	 */
+	fitBox(width: number, height: number) {
+		this.#wantedHeight = fieldHeightFor(width, height);
+		if (this.status === 'ready' && this.#wantedHeight !== this.state.field.height) {
+			this.state = createGame(createRandom(1), undefined, balloonField(this.#wantedHeight));
+			this.fieldHeight = this.state.field.height;
+			this.#syncChrome();
+		}
+	}
+
 	start() {
 		this.#random = createRandom(this.#seed());
-		this.state = createGame(this.#random);
+		this.state = createGame(this.#random, undefined, balloonField(this.#wantedHeight));
+		this.fieldHeight = this.state.field.height;
 		this.effects = [];
 		this.isNewBest = false;
 		this.hurtCount = 0;
@@ -179,7 +199,7 @@ export class BalloonGame {
 		this.effects.push({
 			kind: 'popup',
 			x: BALLOON_X,
-			y: Math.max(40, Math.min(FLOOR_Y, this.state.y - 36)),
+			y: Math.max(this.state.field.top + 40, Math.min(this.state.field.floorY, this.state.y - 36)),
 			text,
 			big,
 			ageMs: 0,
@@ -191,7 +211,7 @@ export class BalloonGame {
 		this.effects.push({
 			kind: 'bubble',
 			x: BALLOON_X + 40,
-			y: Math.max(24, this.state.y - 70),
+			y: Math.max(this.state.field.top + 24, this.state.y - 70),
 			text,
 			ageMs: 0,
 			durationMs: 1800 * (this.reducedMotion ? 0.7 : 1) + 200

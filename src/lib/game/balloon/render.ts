@@ -3,7 +3,8 @@
  * caller: the stacked wind layers with their streaks and arrows, the scrolling ground with its
  * points of interest and the east coast, the hazards, the hot-air puffs, the patrol jets, the
  * balloon with its burner flame, and short popups. Everything is original cartoon art: the
- * balloon, the missile and the jets are made-up designs without any real markings.
+ * balloon, the missile and the jets are made-up designs without any real markings. A taller field
+ * (see field.ts) adds sky above the standard picture, at negative world y, with taller layers.
  */
 import {
 	BALLOON_RADIUS,
@@ -13,7 +14,6 @@ import {
 	JET_HALF_LENGTH,
 	JET_WARN_MS,
 	LAYER_COUNT,
-	LAYER_HEIGHT,
 	PHOTO_DWELL_MS,
 	PHOTO_RANGE,
 	PUFF_RADIUS,
@@ -22,6 +22,7 @@ import {
 	WORLD_WIDTH
 } from './config.js';
 import type { Hazard, Poi, Puff } from './course.js';
+import { jetRows, layerTop } from './field.js';
 import { isBurning, missilePosition, screenX, type BalloonState, type Jet } from './state.js';
 import { chunkOf, layerCentre, windPattern } from './wind.js';
 
@@ -102,9 +103,11 @@ function arrow(ctx: CanvasRenderingContext2D, x: number, y: number, speed: numbe
 }
 
 function drawSky(ctx: CanvasRenderingContext2D, state: BalloonState, still: boolean) {
+	const { field } = state;
+	const { layerHeight } = field;
 	for (let layer = 0; layer < LAYER_COUNT; layer++) {
 		ctx.fillStyle = LAYER_TINTS[layer];
-		ctx.fillRect(0, layer * LAYER_HEIGHT, WORLD_WIDTH, LAYER_HEIGHT + 1);
+		ctx.fillRect(0, layerTop(layer, field), WORLD_WIDTH, layerHeight + 1);
 	}
 	// Dashed lines between the layers
 	ctx.strokeStyle = 'rgba(255,255,255,0.7)';
@@ -112,8 +115,8 @@ function drawSky(ctx: CanvasRenderingContext2D, state: BalloonState, still: bool
 	ctx.setLineDash([10, 8]);
 	ctx.beginPath();
 	for (let layer = 1; layer < LAYER_COUNT; layer++) {
-		ctx.moveTo(0, layer * LAYER_HEIGHT);
-		ctx.lineTo(WORLD_WIDTH, layer * LAYER_HEIGHT);
+		ctx.moveTo(0, layerTop(layer, field));
+		ctx.lineTo(WORLD_WIDTH, layerTop(layer, field));
 	}
 	ctx.stroke();
 	ctx.setLineDash([]);
@@ -121,6 +124,8 @@ function drawSky(ctx: CanvasRenderingContext2D, state: BalloonState, still: bool
 	const first = chunkOf(state.progress - BALLOON_X);
 	const last = chunkOf(state.progress + WORLD_WIDTH);
 	const time = still ? 0 : state.timeMs / 1000;
+	// Taller layers get more streaks, so they look as windy as the standard ones
+	const streaks = Math.round(5 * field.stretch);
 	for (let chunk = first; chunk <= last; chunk++) {
 		const pattern = windPattern(state.seed, chunk);
 		const start = chunk * CHUNK_LENGTH;
@@ -129,10 +134,10 @@ function drawSky(ctx: CanvasRenderingContext2D, state: BalloonState, still: bool
 			ctx.strokeStyle = wind < 0 ? BACK_STREAK : STREAK;
 			ctx.lineWidth = 3;
 			ctx.lineCap = 'round';
-			for (let k = 0; k < 5; k++) {
+			for (let k = 0; k < streaks; k++) {
 				const along = (hash(chunk, layer, k) * CHUNK_LENGTH + wind * time) % CHUNK_LENGTH;
 				const x = screenX(state, start + (along < 0 ? along + CHUNK_LENGTH : along));
-				const y = layer * LAYER_HEIGHT + 14 + hash(layer, k, chunk) * (LAYER_HEIGHT - 28);
+				const y = layerTop(layer, field) + 14 + hash(layer, k, chunk) * (layerHeight - 28);
 				if (x < -60 || x > WORLD_WIDTH + 60) continue;
 				const length = 14 + Math.abs(wind) * 0.35;
 				ctx.beginPath();
@@ -149,12 +154,18 @@ function drawSky(ctx: CanvasRenderingContext2D, state: BalloonState, still: bool
 				ctx.lineWidth = 2;
 				ctx.setLineDash([3, 7]);
 				ctx.beginPath();
-				ctx.moveTo(x, 0);
+				ctx.moveTo(x, field.top);
 				ctx.lineTo(x, GROUND_Y);
 				ctx.stroke();
 				ctx.setLineDash([]);
 				for (let layer = 0; layer < LAYER_COUNT; layer++) {
-					arrow(ctx, x + 10, layerCentre(layer), pattern[layer], arrowColour(pattern[layer]));
+					arrow(
+						ctx,
+						x + 10,
+						layerCentre(layer, field),
+						pattern[layer],
+						arrowColour(pattern[layer])
+					);
 				}
 			}
 		}
@@ -162,7 +173,7 @@ function drawSky(ctx: CanvasRenderingContext2D, state: BalloonState, still: bool
 	// The winds of the current stretch, always visible at the left edge
 	const current = windPattern(state.seed, chunkOf(state.progress));
 	for (let layer = 0; layer < LAYER_COUNT; layer++) {
-		arrow(ctx, 10, layerCentre(layer), current[layer], arrowColour(current[layer]));
+		arrow(ctx, 10, layerCentre(layer, field), current[layer], arrowColour(current[layer]));
 	}
 }
 
@@ -422,25 +433,32 @@ function drawPuff(ctx: CanvasRenderingContext2D, state: BalloonState, puff: Puff
 }
 
 function drawJet(ctx: CanvasRenderingContext2D, state: BalloonState, jet: Jet, still: boolean) {
-	const y = layerCentre(jet.layer);
+	const { field } = state;
+	const rows = jetRows(jet.layer, field);
 	if (jet.ageMs < JET_WARN_MS) {
-		// The warning: the whole layer blinks red and an arrow points in from the right
+		// The warning: the whole layer blinks red and an arrow points in from the right for every jet
 		const blink = still || Math.floor(jet.ageMs / 160) % 2 === 0;
 		if (blink) {
 			ctx.fillStyle = 'rgba(229,72,77,0.22)';
-			ctx.fillRect(0, jet.layer * LAYER_HEIGHT, WORLD_WIDTH, LAYER_HEIGHT);
+			ctx.fillRect(0, layerTop(jet.layer, field), WORLD_WIDTH, field.layerHeight);
 		}
-		ctx.fillStyle = RED;
-		ctx.beginPath();
-		ctx.moveTo(WORLD_WIDTH - 40, y);
-		ctx.lineTo(WORLD_WIDTH - 12, y - 14);
-		ctx.lineTo(WORLD_WIDTH - 12, y + 14);
-		ctx.closePath();
-		ctx.fill();
-		outline(ctx);
+		for (const y of rows) {
+			ctx.fillStyle = RED;
+			ctx.beginPath();
+			ctx.moveTo(WORLD_WIDTH - 40, y);
+			ctx.lineTo(WORLD_WIDTH - 12, y - 14);
+			ctx.lineTo(WORLD_WIDTH - 12, y + 14);
+			ctx.closePath();
+			ctx.fill();
+			outline(ctx);
+		}
 		return;
 	}
-	const tail = jet.x;
+	for (const y of rows) drawJetAt(ctx, jet.x, y);
+}
+
+/** One jet flying west, its tail at x */
+function drawJetAt(ctx: CanvasRenderingContext2D, tail: number, y: number) {
 	const nose = tail - JET_HALF_LENGTH * 2;
 	ctx.fillStyle = '#9aa3b0';
 	ctx.beginPath();
@@ -647,14 +665,15 @@ export function drawScenePreview(
 	y: number,
 	size: number
 ) {
-	const scale = size / WORLD_HEIGHT;
+	// A taller field shows whole, a little smaller
+	const scale = size / state.field.height;
 	ctx.save();
 	ctx.beginPath();
 	ctx.rect(x, y, size, size);
 	ctx.clip();
 	ctx.fillStyle = SAND;
 	ctx.fillRect(x, y, size, size);
-	ctx.translate(x + size / 2 - BALLOON_X * scale, y);
+	ctx.translate(x + size / 2 - BALLOON_X * scale, y - state.field.top * scale);
 	ctx.scale(scale, scale);
 	drawScene(ctx, state, NO_EXTRAS);
 	ctx.restore();

@@ -159,3 +159,22 @@ describe('BalloonGame', () => {
 		expect(missingMessages(['balloon_', 'mode_balloon_'])).toEqual([]);
 	});
 });
+
+describe('BalloonGame field shape', () => {
+	it('follows a portrait box before the first run and keeps the shape during a run', () => {
+		const { game } = newGame();
+		expect(game.fieldHeight).toBe(400);
+		game.fitBox(344, 430);
+		expect(game.fieldHeight).toBe(800);
+		expect(game.state.field.top).toBe(-400);
+		game.start();
+		expect(game.state.field.height).toBe(800);
+		expect(game.state.y).toBeLessThan(game.state.field.floorY);
+		// Turning the phone mid-run changes nothing until the next run
+		game.fitBox(768, 480);
+		expect(game.state.field.height).toBe(800);
+		game.forfeit();
+		game.start();
+		expect(game.fieldHeight).toBe(400);
+	});
+});

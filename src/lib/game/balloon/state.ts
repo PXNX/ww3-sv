@@ -9,12 +9,10 @@ import {
 	ACTIVATE_DISTANCE,
 	BALLOON_RADIUS,
 	BALLOON_X,
-	CEILING_Y,
 	CROW_BOB,
 	CROW_SPEED,
 	DISTANCE_PER_POINT,
 	FINALE_MS,
-	FLOOR_Y,
 	FUEL_BURN_PER_SECOND,
 	HEART_BONUS,
 	INVULNERABLE_MS,
@@ -41,6 +39,7 @@ import {
 	WORLD_WIDTH
 } from './config.js';
 import { generateCourse, type Course, type HazardKind, type PoiKind } from './course.js';
+import { BASE_FIELD, jetRows, type BalloonField } from './field.js';
 import { layerCentre, runFraction, windAt } from './wind.js';
 
 export type BalloonPhase = 'fly' | 'finale' | 'over';
@@ -56,6 +55,8 @@ export interface Jet {
 }
 
 export interface BalloonState {
+	/** The shape of the playfield, fixed for the whole run */
+	field: BalloonField;
 	phase: BalloonPhase;
 	/** Run seed: the wind patterns are derived from it */
 	seed: number;
@@ -93,16 +94,21 @@ export type BalloonEvent =
 	| { type: 'popped'; bonus: number }
 	| { type: 'game-over'; finished: boolean };
 
-export function createGame(random: Random, seed = Math.floor(random() * 4294967296)): BalloonState {
+export function createGame(
+	random: Random,
+	seed = Math.floor(random() * 4294967296),
+	field: BalloonField = BASE_FIELD
+): BalloonState {
 	return {
+		field,
 		phase: 'fly',
 		seed,
 		timeMs: 0,
 		progress: 0,
 		distance: 0,
-		y: layerCentre(2),
+		y: layerCentre(2, field),
 		vy: 0,
-		wind: windAt(seed, 0, layerCentre(2)),
+		wind: windAt(seed, 0, layerCentre(2, field), field),
 		burning: false,
 		fuel: 1,
 		lives: STARTING_LIVES,
@@ -110,7 +116,7 @@ export function createGame(random: Random, seed = Math.floor(random() * 42949672
 		photos: 0,
 		finishBonus: 0,
 		score: 0,
-		course: generateCourse(random),
+		course: generateCourse(random, field),
 		jets: [],
 		nextJetMs: JET_FIRST_MS,
 		finaleMs: 0,
@@ -142,7 +148,7 @@ export function missilePosition(state: BalloonState): { x: number; y: number } {
 	const t = Math.min(1, state.finaleMs / FINALE_MS);
 	return {
 		x: WORLD_WIDTH + 30 + (BALLOON_X - WORLD_WIDTH - 30) * t,
-		y: FLOOR_Y + 40 + (state.y - FLOOR_Y - 40) * t
+		y: state.field.floorY + 40 + (state.y - state.field.floorY - 40) * t
 	};
 }
 
@@ -186,22 +192,24 @@ export function step(state: BalloonState, dtMs: number, random: Random): Balloon
 		return events;
 	}
 
-	// Vertical flight: the burner lifts while there is fuel, gravity-like sinking otherwise
+	// Vertical flight: the burner lifts while there is fuel, gravity-like sinking otherwise. A
+	// taller sky scales it all, so a climb from layer to layer takes as long as on the standard one.
+	const { field } = state;
 	const burning = isBurning(state);
 	if (burning) state.fuel = Math.max(0, state.fuel - FUEL_BURN_PER_SECOND * dt);
-	state.vy += (burning ? -RISE_ACCEL : SINK_ACCEL) * dt;
-	state.vy = Math.min(MAX_SINK, Math.max(-MAX_RISE, state.vy));
+	state.vy += (burning ? -RISE_ACCEL : SINK_ACCEL) * field.stretch * dt;
+	state.vy = Math.min(MAX_SINK * field.stretch, Math.max(-MAX_RISE * field.stretch, state.vy));
 	state.y += state.vy * dt;
-	if (state.y < CEILING_Y) {
-		state.y = CEILING_Y;
+	if (state.y < field.ceilingY) {
+		state.y = field.ceilingY;
 		state.vy = Math.max(0, state.vy);
-	} else if (state.y > FLOOR_Y) {
-		state.y = FLOOR_Y;
+	} else if (state.y > field.floorY) {
+		state.y = field.floorY;
 		state.vy = Math.min(0, state.vy);
 	}
 
 	// Horizontal flight: whatever the wind of this layer and this stretch of track does
-	state.wind = windAt(state.seed, state.progress, state.y);
+	state.wind = windAt(state.seed, state.progress, state.y, field);
 	state.progress = Math.max(0, state.progress + state.wind * dt);
 	state.distance = Math.max(state.distance, Math.min(TRACK_LENGTH, state.progress));
 
@@ -265,7 +273,9 @@ function stepJets(state: BalloonState, dtMs: number, random: Random, events: Bal
 		const nearX =
 			jet.x >= BALLOON_X - BALLOON_RADIUS &&
 			jet.x - JET_HALF_LENGTH * 2 <= BALLOON_X + BALLOON_RADIUS;
-		const nearY = Math.abs(layerCentre(jet.layer) - state.y) <= JET_HALF_HEIGHT + BALLOON_RADIUS;
+		const nearY = jetRows(jet.layer, state.field).some(
+			(row) => Math.abs(row - state.y) <= JET_HALF_HEIGHT + BALLOON_RADIUS
+		);
 		if (nearX && nearY) {
 			jet.spent = true;
 			hurt(state, 'jet', events);

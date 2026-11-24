@@ -5,10 +5,8 @@
  */
 import { pickOne, pickWeighted, type Random } from '#lib/game/random.js';
 import {
-	CEILING_Y,
 	CLOUD_RADIUS,
 	CROW_RADIUS,
-	FLOOR_Y,
 	HAZARD_FIRST_X,
 	HAZARD_GAP_END,
 	HAZARD_GAP_START,
@@ -20,6 +18,7 @@ import {
 	PUFF_GAP,
 	TRACK_LENGTH
 } from './config.js';
+import { BASE_FIELD, type BalloonField } from './field.js';
 
 export type HazardKind = 'crow' | 'cloud' | 'kite';
 export type PoiKind = (typeof POI_KINDS)[number];
@@ -77,15 +76,23 @@ export function hazardGap(x: number): number {
 	return HAZARD_GAP_START + (HAZARD_GAP_END - HAZARD_GAP_START) * t;
 }
 
-function randomY(random: Random, margin: number): number {
-	return CEILING_Y + margin + random() * (FLOOR_Y - CEILING_Y - margin * 2);
+function randomY(random: Random, margin: number, field: BalloonField): number {
+	return field.ceilingY + margin + random() * (field.floorY - field.ceilingY - margin * 2);
 }
 
-export function generateCourse(random: Random): Course {
+/**
+ * A taller field spreads the hazards over more sky, so it gets more of them: the balloon meets one
+ * as often as on the standard field
+ */
+export function generateCourse(random: Random, field: BalloonField = BASE_FIELD): Course {
 	const hazards: Hazard[] = [];
-	for (let x = HAZARD_FIRST_X; x < TRACK_LENGTH - 200; x += hazardGap(x) * (0.8 + random() * 0.4)) {
+	for (
+		let x = HAZARD_FIRST_X;
+		x < TRACK_LENGTH - 200;
+		x += (hazardGap(x) / field.stretch) * (0.8 + random() * 0.4)
+	) {
 		const kind = pickWeighted(random, HAZARDS);
-		const baseY = randomY(random, 10);
+		const baseY = randomY(random, 10, field);
 		hazards.push({
 			kind,
 			x,
@@ -100,7 +107,7 @@ export function generateCourse(random: Random): Course {
 
 	const puffs: Puff[] = [];
 	for (let x = PUFF_GAP * 0.6; x < TRACK_LENGTH - 100; x += PUFF_GAP * (0.8 + random() * 0.4)) {
-		puffs.push({ x, y: randomY(random, 20), taken: false });
+		puffs.push({ x, y: randomY(random, 20, field), taken: false });
 	}
 
 	const pois: Poi[] = [];
