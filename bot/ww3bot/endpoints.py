@@ -41,7 +41,7 @@ def player(init_data: dict) -> SimpleNamespace:
 
 
 async def me(bot: Bot, data: dict, init_data: dict) -> dict:
-    """The signed-in player, the wallet, Pro, consent and the catalogue; this is also 'restore purchase'."""
+    """The signed-in player, the wallet, Pro, owned looks, consent and the catalogue; this is also 'restore purchase'."""
     user = player(init_data)
     await ledger.upsert_account(user)
     current = await ledger.wallet(user.id)
@@ -56,8 +56,11 @@ async def me(bot: Bot, data: dict, init_data: dict) -> dict:
         "invite": {"link": invite["link"], "friends": invite["friends"], "cap": invite["cap"], "revives_per_friend": invite["per_friend"]},
         "consent": {"version": CONSENT_VERSION, "text": CONSENT_TEXT, "terms": page_url("agb"), "withdrawal": page_url("widerruf")},
         "catalogue": [
-            {key: item[key] for key in ("sku", "title", "description", "stars", "revives", "subscription")} for item in PRODUCTS
+            {key: item[key] for key in ("sku", "title", "description", "stars", "revives", "subscription", "look") if key in item}
+            for item in PRODUCTS
         ],
+        # The cosmetics bought, so the game unlocks those looks on every device
+        "owned": await ledger.owned_looks(user.id),
     }
 
 

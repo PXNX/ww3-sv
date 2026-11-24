@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 
 from conftest import blocked
-from ww3bot import db, friends, ledger, referrals, reminders
+from ww3bot import config, db, friends, ledger, referrals, reminders
 from ww3bot.catalogue import product
 
 pytestmark = pytest.mark.usefixtures("database")
@@ -41,6 +41,25 @@ async def test_booking_wallet_and_spending():
         assert await ledger.spend_revive(42, "test") is not None
     assert await ledger.spend_revive(42, "test") is None
     assert (await ledger.stats())["purchases"] == 1
+
+
+async def test_a_look_is_bought_once_and_owned_for_good(bot, monkeypatch):
+    monkeypatch.setattr(config, "SALES_OPEN", True)
+    await ledger.upsert_account(person(5))
+    assert await ledger.owned_looks(5) == []
+    created = await ledger.create_invoice(bot, 5, product("look_tinfoil"))
+    payment = SimpleNamespace(
+        telegram_payment_charge_id="look1", provider_payment_charge_id="", total_amount=50, invoice_payload=created["id"],
+        is_recurring=False, subscription_expiration_date=None,
+    )
+    assert (await ledger.book_payment(5, product("look_tinfoil"), payment))["granted"]
+    assert await ledger.owned_looks(5) == ["look_tinfoil"]
+    # A look grants no revivals, and it cannot be bought a second time
+    assert (await ledger.wallet(5))["revives"] == 0
+    with pytest.raises(ledger.LedgerError) as refused:
+        await ledger.create_invoice(bot, 5, product("look_tinfoil"))
+    assert refused.value.code == "ALREADY_OWNED"
+    assert (await ledger.create_invoice(bot, 5, product("look_laser")))["url"]
 
 
 async def test_concurrent_spends_never_overdraw():

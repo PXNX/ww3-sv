@@ -13,8 +13,8 @@ from telegram.constants import ParseMode
 from telegram.error import TelegramError
 
 from ww3bot import config, friends, games, ledger, referrals, reminders
-from ww3bot.catalogue import PRODUCTS, localized, product
-from ww3bot.legal import CONSENT_TEXT, CONSENT_VERSION, PAGES, escape_html, legal_messages, page_url
+from ww3bot.catalogue import PRODUCTS, is_cosmetic, localized, product
+from ww3bot.legal import CONSENT_TEXT, CONSENT_VERSION, PAGES, escape_html, legal_messages, page_url, telegram_contact
 from ww3bot.texts import lang_of_user, t
 
 logger = logging.getLogger(__name__)
@@ -123,7 +123,11 @@ async def offer(bot: Bot, chat_id: int, user, sku: str) -> None:
             ],
         )
 
-    invoice = await ledger.create_invoice(bot, user.id, item)
+    try:
+        invoice = await ledger.create_invoice(bot, user.id, item)
+    except ledger.LedgerError as error:
+        key = {"ALREADY_OWNED": "already_owned", "RATE_LIMITED": "rate_limited"}.get(error.code, "sales_closed")
+        return await send(bot, chat_id, t(lang, key))
     label = t(lang, "subscribe" if item["subscription"] else "pay", stars=item["stars"])
     text = f"<b>{escape_html(item['title'])}</b>\n{escape_html(item['description'])}"
     if item["subscription"]:
@@ -138,8 +142,12 @@ async def consent(bot: Bot, chat_id: int, user, sku: str) -> None:
 
 
 async def send_legal(bot: Bot, chat_id: int, page: str) -> None:
+    """A link to the legal page on the web; its full text in the chat only while no page URL is set."""
     if page not in PAGES:
         return
+    url = page_url(page)
+    if url:
+        return await send(bot, chat_id, f'📄 <a href="{escape_html(url)}">{PAGES[page]}</a>', [[InlineKeyboardButton(PAGES[page], url=url)]])
     for text in legal_messages(page):
         await send(bot, chat_id, text)
 
@@ -148,7 +156,7 @@ async def confirm_purchase(bot: Bot, chat_id: int, user, entry: dict, payment, p
     """The confirmation on a durable medium (§ 312f Abs. 3 BGB), including the consent given."""
     lang = lang_of_user(user)
     item = localized(entry, lang)
-    grants = [t(lang, "grant_revives", count=item["revives"])]
+    grants = [t(lang, "grant_look", title=escape_html(item["title"]))] if is_cosmetic(item) else [t(lang, "grant_revives", count=item["revives"])]
     if pro_until:
         grants.append(t(lang, "grant_pro", date=format_date(pro_until)))
     operator = config.OPERATOR
@@ -173,7 +181,12 @@ async def confirm_purchase(bot: Bot, chat_id: int, user, entry: dict, payment, p
 
 
 async def paysupport(bot: Bot, chat_id: int, user) -> None:
-    await send(bot, chat_id, t(lang_of_user(user), "paysupport", email=escape_html(config.OPERATOR.get("email", ""))))
+    lang = lang_of_user(user)
+    contact = escape_html(config.OPERATOR.get("email", ""))
+    telegram = telegram_contact(config.OPERATOR)
+    if telegram:
+        contact = t(lang, "contact_or_telegram", email=contact, telegram=escape_html(telegram))
+    await send(bot, chat_id, t(lang, "paysupport", email=contact))
 
 
 async def notify_admins(bot: Bot, text: str) -> None:

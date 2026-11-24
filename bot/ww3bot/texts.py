@@ -39,6 +39,9 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
         "pro_active": "aktiv bis {date}",
         "pro_none": "nicht aktiv",
         "sales_closed": "Käufe sind bald möglich. Bis dahin ist jedes Spiel kostenlos spielbar.",
+        "contact_or_telegram": "{email} oder auf Telegram an {telegram}",
+        "already_owned": "Diesen Look hast du schon. Du findest ihn im Spiel unter Profil → Agent.",
+        "rate_limited": "Zu viele Rechnungen auf einmal. Bitte warte eine Minute.",
         "agree": "✅ Zustimmen und weiter",
         "cancel": "Abbrechen",
         "pay": "{stars} ⭐ bezahlen",
@@ -68,6 +71,7 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
         "every_30_days": " alle 30 Tage",
         "grant_revives": "❤️ {count} Revival-Token",
         "grant_pro": "⭐ Pro bis {date}",
+        "grant_look": "🎩 {title} für deinen Agenten",
         "invite": (
             "📨 <b>Freunde einladen</b>\n\n"
             "Für jeden Freund, der den Bot zum ersten Mal über deinen Link startet, bekommst du ❤️ {perFriend} Revival-Token (bis zu {cap} Freunde).\n\n"
@@ -133,6 +137,9 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
         "pro_active": "active until {date}",
         "pro_none": "not active",
         "sales_closed": "Purchases open soon. Until then every game is free to play.",
+        "contact_or_telegram": "{email} or on Telegram to {telegram}",
+        "already_owned": "This look is already yours. Find it in the game under Profile → Agent.",
+        "rate_limited": "Too many invoices at once. Please wait a minute.",
         "agree": "✅ Agree and continue",
         "cancel": "Cancel",
         "pay": "Pay {stars} ⭐",
@@ -162,6 +169,7 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
         "every_30_days": " every 30 days",
         "grant_revives": "❤️ {count} revival tokens",
         "grant_pro": "⭐ Pro until {date}",
+        "grant_look": "🎩 {title} for your agent",
         "invite": (
             "📨 <b>Invite friends</b>\n\n"
             "For every friend who starts the bot for the first time with your link you get ❤️ {perFriend} revival token (up to {cap} friends).\n\n"

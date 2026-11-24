@@ -7,14 +7,16 @@ repository; paths below are relative to `bot/`.
 - **Login**: inside Telegram the player is signed in through the Mini App's `initData`, which the bot's
   endpoints verify (HMAC with the bot token) before anything runs. `/start` and `/login` open the game.
 - **Payments with Telegram Stars**: a revival token (25 Stars) and World War 3 Pro (250 Stars every 30 days as
-  a Stars subscription: 10 revival tokens per period, and no adverts once the game has them). Goods are granted
-  only on `successful_payment`, once per charge id.
+  a Stars subscription: 10 revival tokens per period, and no adverts once the game has them), plus looks for the
+  player's agent (30–50 Stars each, bought once and kept for good; `look` in the catalogue names the avatar part
+  and value). Goods are granted only on `successful_payment`, once per charge id.
 - **No refunds** beyond the statutory rights. Before the first purchase of a terms version the buyer consents to
   immediate delivery and acknowledges losing the right of withdrawal (§ 356 Abs. 4 and 5 BGB); the consent is
   stored and repeated in the purchase confirmation sent to the chat.
-- **Legal pages for German law**: Impressum, Datenschutzerklärung, AGB and Widerrufsbelehrung as `/impressum`,
-  `/datenschutz`, `/agb`, `/widerruf` (aliases `/imprint`, `/privacy`, `/terms`, `/withdrawal`) and as web pages at
-  `/legal/<page>.html`. `/paysupport` is the support contact Telegram requires for bots that sell.
+- **Legal pages for German law**: Impressum, Datenschutzerklärung, AGB and Widerrufsbelehrung as web pages at
+  `/legal/<page>.html`. `/impressum`, `/datenschutz`, `/agb`, `/widerruf` (aliases `/imprint`, `/privacy`, `/terms`,
+  `/withdrawal`) link them once `legalUrl` is set, and only send the text into the chat while it is not.
+  `operator.telegram` adds a Telegram contact to the Impressum and `/paysupport`. `/paysupport` is the support contact Telegram requires for bots that sell.
 - **Invites and streak reminders**: `/invite` links earn revival tokens, and the game reports its daily streak so
   the bot can remind two hours before it breaks (`/reminders` to switch).
 - **Group leaderboards** through [Telegram's gaming platform](https://core.telegram.org/bots/games): added to a
@@ -45,8 +47,8 @@ are `{ ok: true, result }`, or `{ ok: false, type, description, parameters: { co
 
 | Endpoint | Input | Result |
 | --- | --- | --- |
-| `me` | `{}` | `user`, `wallet.revives`, `pro`, `pro_until`, `consented`, `invite`, `consent`, `catalogue` |
-| `invoice` | `{ sku, consent? }` | `{ url }` for `Telegram.WebApp.openInvoice`; `CONSENT_REQUIRED`, `RATE_LIMITED`, `UNKNOWN_SKU`, `SALES_CLOSED` |
+| `me` | `{}` | `user`, `wallet.revives`, `pro`, `pro_until`, `consented`, `invite`, `consent`, `catalogue`, `owned` (skus of the looks bought) |
+| `invoice` | `{ sku, consent? }` | `{ url }` for `Telegram.WebApp.openInvoice`; `CONSENT_REQUIRED`, `RATE_LIMITED`, `UNKNOWN_SKU`, `SALES_CLOSED`, `ALREADY_OWNED` |
 | `spend` | `{ mode }` | takes one revival token: `{ wallet, pro }`; `NO_REVIVES` |
 | `streak` | `{ streak, expires_at, write_access? }` | `{ reminder }` (unix seconds or null); `INVALID_INPUT` |
 | `gamescore` | `{ session, game, score }` | no initData, the session is the credential: `{ new_best, best, rank, overtaken, leaderboard }`; `INVALID_INPUT`, `SESSION_UNKNOWN`, `SESSION_EXPIRED` |

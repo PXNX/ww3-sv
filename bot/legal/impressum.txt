@@ -10,6 +10,7 @@
 ## Kontakt
 
 E-Mail: {email}
+{telegram_line}
 {phone_line}
 
 {vat_line}

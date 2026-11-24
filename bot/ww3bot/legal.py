@@ -41,6 +41,12 @@ def page_url(page: str) -> str:
     return f"{config.LEGAL_URL}/{page}.html" if config.LEGAL_URL else ""
 
 
+def telegram_contact(operator: dict) -> str:
+    """The operator's Telegram contact as a t.me link, or empty when none is configured."""
+    handle = str(operator.get("telegram") or "").strip().removeprefix("https://").removeprefix("t.me/").lstrip("@")
+    return f"https://t.me/{handle}" if handle else ""
+
+
 def fill_text(source: str, settings: dict) -> str:
     operator = settings.get("operator") or {}
     for key in REQUIRED:
@@ -50,6 +56,7 @@ def fill_text(source: str, settings: dict) -> str:
         **operator,
         "updated": settings.get("legalUpdated") or "",
         "phone_line": f"Telefon: {operator['phone']}" if operator.get("phone") else "",
+        "telegram_line": f"Telegram: {telegram_contact(operator)}" if telegram_contact(operator) else "",
         "vat_line": (
             f"Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG: {operator['vat_id']}" if operator.get("vat_id") else ""
         ),

@@ -12,7 +12,7 @@ import time
 from telegram import Bot, LabeledPrice
 
 from ww3bot import config, db
-from ww3bot.catalogue import CURRENCY, SUBSCRIPTION_PERIOD
+from ww3bot.catalogue import CURRENCY, PRODUCTS, SUBSCRIPTION_PERIOD, is_cosmetic
 from ww3bot.legal import CONSENT_VERSION
 from ww3bot.texts import lang_of_user
 
@@ -105,6 +105,8 @@ async def create_invoice(bot: Bot, user_id: int, item: dict) -> dict:
     )
     if recent["n"] >= INVOICES_PER_MINUTE:
         raise LedgerError("RATE_LIMITED", "Too many invoices, please wait a minute.")
+    if is_cosmetic(item) and item["sku"] in await owned_looks(user_id):
+        raise LedgerError("ALREADY_OWNED", "This look is already yours.")
     new_id = invoice_id()
     await db.execute(
         "INSERT INTO invoices (id, user_id, sku, stars, created_at) VALUES (%s, %s, %s, %s, %s)",
@@ -119,6 +121,13 @@ async def create_invoice(bot: Bot, user_id: int, item: dict) -> dict:
         subscription_period=SUBSCRIPTION_PERIOD if item["subscription"] else None,
     )
     return {"id": new_id, "url": url}
+
+
+async def owned_looks(user_id: int) -> list[str]:
+    """The skus of the cosmetics this user has paid for, in catalogue order."""
+    rows = await db.fetchall("SELECT DISTINCT sku FROM purchases WHERE user_id = %s", (user_id,))
+    bought = {row["sku"] for row in rows}
+    return [item["sku"] for item in PRODUCTS if is_cosmetic(item) and item["sku"] in bought]
 
 
 async def find_invoice(invoice: str) -> dict | None:
