@@ -36,6 +36,8 @@ const WB_DARK = '#701a75';
 const YANDEX_RED = '#fc3f1d';
 const RAIN = '#5d6e86';
 const CHAR = '#3a3a3a';
+const BRIDGE_GREY = '#9aa3ad';
+const ASPHALT = '#4a525c';
 const SMOKE = '#1c1c1c';
 const PINK = '#f28db2';
 const PINK_DARK = '#d9608e';
@@ -339,24 +341,41 @@ function hash(n: number): number {
 /** How much of each kind of weather is in the air, from 0 to 1 */
 export interface Weather {
 	rain: number;
+	/** Wind-blown sand streaks */
 	dust: number;
+	/** Fog banks */
 	haze: number;
+	snow: number;
+	/** A low, grey lid of cloud that hides the sun */
+	overcast: number;
 }
 
-export const CLEAR_WEATHER: Weather = { rain: 0, dust: 0, haze: 0 };
+export const CLEAR_WEATHER: Weather = { rain: 0, dust: 0, haze: 0, snow: 0, overcast: 0 };
+
+const WEATHER_KINDS = ['rain', 'dust', 'haze', 'snow', 'overcast'] as const;
 
 /** Distance in world units between the centers of two weather zones */
 const WEATHER_ZONE = 1500;
 
+/** Each zone gets one kind of weather, or none; the chances add up to the share of zones with any */
+const WEATHER_CHANCE: Record<(typeof WEATHER_KINDS)[number], number> = {
+	rain: 0.18,
+	dust: 0.16,
+	haze: 0.14,
+	snow: 0.12,
+	overcast: 0.12
+};
+
 function zoneWeather(seed: number, zone: number): Weather {
-	// The take-off area is always clear; after that each zone gets one kind of weather, or none
+	// The take-off area is always clear
 	if (zone <= 0) return CLEAR_WEATHER;
-	const roll = hash((seed % 9973) + zone * 17.3);
+	let roll = hash((seed % 9973) + zone * 17.3);
 	const strength = 0.6 + 0.4 * hash((seed % 9973) + zone * 5.1);
-	if (roll < 0.34) return CLEAR_WEATHER;
-	if (roll < 0.58) return { rain: strength, dust: 0, haze: 0 };
-	if (roll < 0.8) return { rain: 0, dust: strength, haze: 0 };
-	return { rain: 0, dust: 0, haze: strength };
+	for (const kind of WEATHER_KINDS) {
+		roll -= WEATHER_CHANCE[kind];
+		if (roll < 0) return { ...CLEAR_WEATHER, [kind]: strength };
+	}
+	return CLEAR_WEATHER;
 }
 
 /** The weather over a world position: it drifts smoothly from one zone's weather to the next */
@@ -367,25 +386,127 @@ export function weatherAt(seed: number, worldX: number): Weather {
 	const t = f * f * (3 - 2 * f);
 	const from = zoneWeather(seed, zone);
 	const to = zoneWeather(seed, zone + 1);
+	const weather = { ...CLEAR_WEATHER };
+	for (const kind of WEATHER_KINDS) weather[kind] = from[kind] + (to[kind] - from[kind]) * t;
+	return weather;
+}
+
+export type TimeOfDay = 'dawn' | 'day' | 'dusk' | 'night';
+
+/** The colors of the sky and the scenery behind the obstacles at one time of day */
+export interface SkyPalette {
+	sky: string;
+	/** The faraway skyline, a flat silhouette */
+	far: string;
+	hill: string;
+	cloud: string;
+	sun: string;
+	/** How high the sun stands: 1 at noon, 0 down on the horizon */
+	sunHeight: number;
+	/** How much night it is, 0 to 1: the moon and stars show and the ground darkens */
+	night: number;
+}
+
+export const SKY_PALETTES: Record<TimeOfDay, SkyPalette> = {
+	dawn: {
+		sky: '#e7bfb4',
+		far: '#c49a9c',
+		hill: '#cfac93',
+		cloud: '#fdebe2',
+		sun: '#f9a66c',
+		sunHeight: 0.25,
+		night: 0
+	},
+	day: {
+		sky: SKY,
+		far: '#c3c2b2',
+		hill: SAND_DARK,
+		cloud: PAPER,
+		sun: YELLOW,
+		sunHeight: 1,
+		night: 0
+	},
+	dusk: {
+		sky: '#dd9473',
+		far: '#9b6b6f',
+		hill: '#b0835f',
+		cloud: '#f6cdb0',
+		sun: '#ef6a3c',
+		sunHeight: 0.15,
+		night: 0
+	},
+	night: {
+		sky: '#28324d',
+		far: '#3c4767',
+		hill: '#58607a',
+		cloud: '#5d6782',
+		sun: '#f4efd0',
+		sunHeight: 1,
+		night: 1
+	}
+};
+
+/** The times of day in the order a long flight goes through them */
+const DAY_CYCLE: readonly TimeOfDay[] = ['dawn', 'day', 'dusk', 'night'];
+/** World units flown before the sky moves on to the next time of day */
+export const DAY_PHASE_LENGTH = 6000;
+/** The last stretch of a phase over which the sky blends into the next one */
+const DAY_BLEND = 1500;
+
+/** The time of day a run starts at: day most often, the others now and then */
+export function startTimeOfDay(seed: number): TimeOfDay {
+	const roll = hash((seed % 9973) * 0.37 + 3.1);
+	if (roll < 0.4) return 'day';
+	if (roll < 0.6) return 'dawn';
+	if (roll < 0.8) return 'dusk';
+	return 'night';
+}
+
+function blendPalette(from: SkyPalette, to: SkyPalette, t: number): SkyPalette {
+	if (t <= 0) return from;
+	const number = (a: number, b: number) => a + (b - a) * t;
 	return {
-		rain: from.rain + (to.rain - from.rain) * t,
-		dust: from.dust + (to.dust - from.dust) * t,
-		haze: from.haze + (to.haze - from.haze) * t
+		sky: mixColor(from.sky, to.sky, t),
+		far: mixColor(from.far, to.far, t),
+		hill: mixColor(from.hill, to.hill, t),
+		cloud: mixColor(from.cloud, to.cloud, t),
+		sun: mixColor(from.sun, to.sun, t),
+		sunHeight: number(from.sunHeight, to.sunHeight),
+		night: number(from.night, to.night)
 	};
+}
+
+/**
+ * The sky over a world position: a run starts at its seed's time of day, and the sky slowly moves
+ * on through the day as the flamingo flies, so a long flight sees dusk and night fall
+ */
+export function skyAt(seed: number, worldX: number): SkyPalette {
+	const start = DAY_CYCLE.indexOf(startTimeOfDay(seed));
+	const position = Math.max(0, worldX) / DAY_PHASE_LENGTH;
+	const phase = Math.floor(position);
+	const into = (position - phase) * DAY_PHASE_LENGTH;
+	const from = SKY_PALETTES[DAY_CYCLE[(start + phase) % DAY_CYCLE.length]];
+	const to = SKY_PALETTES[DAY_CYCLE[(start + phase + 1) % DAY_CYCLE.length]];
+	const f = Math.max(0, (into - (DAY_PHASE_LENGTH - DAY_BLEND)) / DAY_BLEND);
+	return blendPalette(from, to, f * f * (3 - 2 * f));
 }
 
 function wrap(value: number, length: number): number {
 	return ((value % length) + length) % length;
 }
 
-/** Blends two #rrggbb colors */
+/** Blends two #rrggbb colors into a #rrggbb color */
 function mixColor(from: string, to: string, t: number): string {
 	const channel = (hex: string, index: number) =>
 		parseInt(hex.slice(1 + index * 2, 3 + index * 2), 16);
-	const mixed = [0, 1, 2].map((index) =>
-		Math.round(channel(from, index) + (channel(to, index) - channel(from, index)) * t)
-	);
-	return `rgb(${mixed.join(',')})`;
+	let mixed = '#';
+	for (let index = 0; index < 3; index++) {
+		const value = Math.round(
+			channel(from, index) + (channel(to, index) - channel(from, index)) * t
+		);
+		mixed += value.toString(16).padStart(2, '0');
+	}
+	return mixed;
 }
 
 function drawCloud(
@@ -414,9 +535,12 @@ function drawCloud(
 	}
 }
 
-function drawSun(context: CanvasRenderingContext2D, time: number) {
+/** The sun, high at noon and low and big at dawn and dusk */
+function drawSun(context: CanvasRenderingContext2D, time: number, fill = YELLOW, height = 1) {
 	context.save();
-	context.translate(WORLD_WIDTH - 66, 72);
+	context.translate(WORLD_WIDTH - 66, GROUND_Y - 110 - height * 402);
+	const size = 1 + (1 - height) * 0.35;
+	context.scale(size, size);
 	context.rotate(time * 0.25);
 	context.lineWidth = LINE;
 	context.strokeStyle = INK;
@@ -430,11 +554,95 @@ function drawSun(context: CanvasRenderingContext2D, time: number) {
 	context.stroke();
 	context.beginPath();
 	context.arc(0, 0, 22, 0, Math.PI * 2);
-	outlined(context, YELLOW);
+	outlined(context, fill);
 	context.restore();
 }
 
-/** Streaks, dust and haze drawn behind the obstacles, so they never hide what can be hit */
+/** A crescent moon and a scatter of stars, for the night */
+function drawNightSky(
+	context: CanvasRenderingContext2D,
+	palette: SkyPalette,
+	cameraX: number,
+	time: number,
+	view: View
+) {
+	const width = view.right - view.left;
+	context.save();
+	context.globalAlpha = palette.night;
+	context.fillStyle = PAPER;
+	const stars = Math.ceil((40 * width) / WORLD_WIDTH);
+	for (let i = 0; i < stars; i++) {
+		const x = view.left + wrap(hash(i + 700) * width - cameraX * 0.05, width);
+		const y = view.top + hash(i + 720) * (GROUND_Y - 200 - view.top);
+		const size = hash(i + 740) < 0.2 ? 3 : 2;
+		context.globalAlpha = palette.night * (0.55 + 0.45 * Math.sin(time * 2 + i * 1.7));
+		context.fillRect(x, y, size, size);
+	}
+	context.globalAlpha = palette.night;
+	context.translate(WORLD_WIDTH - 70, 84);
+	context.beginPath();
+	context.arc(0, 0, 20, 0, Math.PI * 2);
+	outlined(context, palette.sun);
+	// The dark side of the crescent, in the color of the sky
+	context.beginPath();
+	context.arc(9, -5, 17, 0, Math.PI * 2);
+	context.fillStyle = palette.sky;
+	context.fill();
+	context.restore();
+}
+
+/** A far skyline of steppe, silos, chimneys, pylons and cranes, in one flat color */
+function drawSkyline(context: CanvasRenderingContext2D, cameraX: number, fill: string, view: View) {
+	const offset = cameraX * 0.18;
+	const tile = 90;
+	const first = Math.floor((offset + view.left - tile) / tile);
+	const last = Math.ceil((offset + view.right + tile) / tile);
+	context.fillStyle = fill;
+	context.strokeStyle = fill;
+	context.lineWidth = 2;
+	const base = GROUND_Y - 34;
+	context.fillRect(view.left, base, view.right - view.left, GROUND_Y - base);
+	for (let k = first; k <= last; k++) {
+		const x = k * tile - offset + hash(k + 900) * 40;
+		const roll = hash(k + 910);
+		context.beginPath();
+		if (roll < 0.22) {
+			// A grain elevator: a row of silos with a tower
+			for (let s = 0; s < 4; s++) context.rect(x + s * 9, base - 46, 8, 46);
+			context.rect(x + 36, base - 62, 12, 62);
+			context.fill();
+		} else if (roll < 0.4) {
+			// Two factory chimneys
+			context.rect(x, base - 70, 7, 70);
+			context.rect(x + 16, base - 54, 7, 54);
+			context.rect(x - 6, base - 20, 36, 20);
+			context.fill();
+		} else if (roll < 0.58) {
+			// A power pylon
+			context.moveTo(x - 10, base);
+			context.lineTo(x, base - 66);
+			context.lineTo(x + 10, base);
+			context.moveTo(x - 12, base - 50);
+			context.lineTo(x + 12, base - 50);
+			context.moveTo(x - 9, base - 36);
+			context.lineTo(x + 9, base - 36);
+			context.stroke();
+		} else if (roll < 0.72) {
+			// A harbor crane
+			context.rect(x, base - 58, 6, 58);
+			context.rect(x - 22, base - 60, 46, 4);
+			context.rect(x - 22, base - 56, 3, 16);
+			context.fill();
+		} else {
+			// A gentle rise of steppe
+			context.moveTo(x - 30, base);
+			context.quadraticCurveTo(x + 15, base - 26 - hash(k + 920) * 20, x + 60, base);
+			context.fill();
+		}
+	}
+}
+
+/** Fog, wind-blown sand, rain and snow, drawn behind the obstacles so they never hide what can be hit */
 function drawWeather(
 	context: CanvasRenderingContext2D,
 	weather: Weather,
@@ -445,6 +653,24 @@ function drawWeather(
 	const width = view.right - view.left;
 	const sky = GROUND_Y - view.top;
 	context.save();
+	if (weather.overcast > 0.01) {
+		// A low grey lid of cloud along the top of the sky
+		context.fillStyle = '#8c939f';
+		context.globalAlpha = 0.18 * weather.overcast;
+		context.fillRect(view.left, view.top, width, sky);
+		context.globalAlpha = 0.55 * weather.overcast;
+		const offset = cameraX * 0.35 + time * 4;
+		const first = Math.floor((offset + view.left - 120) / 90);
+		const last = Math.ceil((offset + view.right + 120) / 90);
+		context.beginPath();
+		for (let k = first; k <= last; k++) {
+			const x = k * 90 - offset;
+			context.moveTo(x + 70, 30);
+			context.ellipse(x, 30 + hash(k + 600) * 26, 70, 26 + hash(k + 610) * 12, 0, 0, Math.PI * 2);
+		}
+		context.rect(view.left, view.top, width, 30 - view.top);
+		context.fill();
+	}
 	if (weather.haze > 0.01) {
 		context.fillStyle = PAPER;
 		context.globalAlpha = 0.14 * weather.haze;
@@ -514,6 +740,24 @@ function drawWeather(
 		}
 		context.stroke();
 	}
+	if (weather.snow > 0.01) {
+		context.fillStyle = '#d8dde6';
+		context.globalAlpha = 0.12 * weather.snow;
+		context.fillRect(view.left, view.top, width, sky);
+		// Square flakes drifting down and swaying, a cheap fillRect each
+		context.globalAlpha = 0.9 * weather.snow;
+		context.fillStyle = PAPER;
+		const flakes = Math.ceil((60 * weather.snow * width * sky) / (WORLD_WIDTH * GROUND_Y));
+		for (let i = 0; i < flakes; i++) {
+			const speed = 30 + hash(i + 800) * 30;
+			const sway = Math.sin(time * 1.3 + i) * 8;
+			const x =
+				view.left + wrap(hash(i + 810) * (width + 40) - cameraX * 0.5 + sway, width + 40) - 20;
+			const y = view.top + wrap(hash(i + 820) * sky + time * speed, sky + 10) - 10;
+			const size = hash(i + 830) < 0.3 ? 4 : 3;
+			context.fillRect(x, y, size, size);
+		}
+	}
 	context.restore();
 }
 
@@ -522,20 +766,29 @@ function drawBackdrop(
 	cameraX: number,
 	weather: Weather = CLEAR_WEATHER,
 	time = 0,
-	view: View = FIELD_VIEW
+	view: View = FIELD_VIEW,
+	palette: SkyPalette = SKY_PALETTES.day
 ) {
-	context.fillStyle = SKY;
+	context.fillStyle = palette.sky;
 	context.fillRect(view.left, view.top, view.right - view.left, view.bottom - view.top);
 
-	// The sun only shows through when it is neither raining nor hazy
-	const sun = 1 - Math.min(1, weather.rain + weather.haze * 0.6);
+	// The sun and moon only show through when it is neither raining nor hazy nor overcast
+	const clearSky = 1 - Math.min(1, weather.rain + weather.haze * 0.6 + weather.overcast);
+	if (palette.night > 0.02) drawNightSky(context, palette, cameraX, time, view);
+	const sun = clearSky * (1 - palette.night);
 	if (sun > 0.02) {
 		context.globalAlpha = sun;
-		drawSun(context, time);
+		drawSun(context, time, palette.sun, palette.sunHeight);
 		context.globalAlpha = 1;
 	}
 
-	const cloudFill = mixColor(PAPER, '#a7aeba', weather.rain);
+	drawSkyline(context, cameraX, palette.far, view);
+
+	const cloudFill = mixColor(
+		palette.cloud,
+		'#a7aeba',
+		Math.min(1, weather.rain + weather.overcast * 0.7) * (1 - palette.night * 0.6)
+	);
 	const cloudOffset = cameraX * 0.3;
 	const first = Math.floor((cloudOffset + view.left - 120) / 200);
 	const last = Math.ceil((cloudOffset + view.right) / 200);
@@ -559,16 +812,28 @@ function drawBackdrop(
 		context.beginPath();
 		context.moveTo(x - 20, GROUND_Y);
 		context.quadraticCurveTo(x + 70, GROUND_Y - height * 2, x + 160, GROUND_Y);
-		outlined(context, SAND_DARK);
+		outlined(context, palette.hill);
 	}
 
 	drawWeather(context, weather, cameraX, time, view);
 }
 
-function drawGround(context: CanvasRenderingContext2D, cameraX: number, view: View = FIELD_VIEW) {
+function drawGround(
+	context: CanvasRenderingContext2D,
+	cameraX: number,
+	view: View = FIELD_VIEW,
+	palette: SkyPalette = SKY_PALETTES.day,
+	weather: Weather = CLEAR_WEATHER
+) {
 	const width = view.right - view.left;
-	box(context, view.left - LINE, GROUND_Y, width + LINE * 2, view.bottom - GROUND_Y + LINE, SAND);
-	context.fillStyle = MUSTARD;
+	// Darker at night, and dusted white where snow is falling
+	const ground = mixColor(
+		mixColor(SAND, '#8e8f99', palette.night * 0.45),
+		PAPER,
+		weather.snow * 0.6
+	);
+	box(context, view.left - LINE, GROUND_Y, width + LINE * 2, view.bottom - GROUND_Y + LINE, ground);
+	context.fillStyle = mixColor(MUSTARD, '#8a8160', palette.night * 0.45);
 	// One row of dashes in the field; ground showing below it gets more rows, staggered
 	for (let row = 0; GROUND_Y + 16 + row * 48 < view.bottom; row++) {
 		const start = view.left - wrap(cameraX + view.left + (row % 2) * 20, 40) - 40;
@@ -678,43 +943,119 @@ function drawPantsir(context: CanvasRenderingContext2D, column: GapColumn) {
 	}
 }
 
-/** Water under the bridge, with a couple of flat waves */
-function drawWater(context: CanvasRenderingContext2D, left: number, width: number, top: number) {
-	context.fillStyle = WATER;
-	context.fillRect(left, top, width, GROUND_Y - top);
+/** The Kerch strait under the bridge: a band of sea along the ground, with a couple of flat waves */
+function drawStrait(context: CanvasRenderingContext2D, left: number, width: number, top: number) {
+	box(context, left, top, width, GROUND_Y - top + LINE, WATER);
 	context.strokeStyle = PAPER;
 	context.lineWidth = 2;
-	for (const waveY of [top + 22, top + 40]) {
+	for (const [waveY, phase] of [
+		[top + 10, 0],
+		[top + 24, 3]
+	]) {
 		if (waveY > GROUND_Y - 4) continue;
 		context.beginPath();
-		for (let step = 0; step <= width; step += 8) {
-			const y = waveY + Math.sin(step / 6) * 2;
-			if (step === 0) context.moveTo(left + step, y);
+		for (let step = 6; step <= width - 6; step += 6) {
+			const y = waveY + Math.sin((step + phase) / 5) * 1.5;
+			if (step === 6) context.moveTo(left + step, y);
 			else context.lineTo(left + step, y);
 		}
 		context.stroke();
 	}
 }
 
-/** A concrete pier from the deck down into the water, up to the given top */
-function drawPier(context: CanvasRenderingContext2D, x: number, top: number) {
-	box(context, x - 6, top, 12, GROUND_Y - top, STEEL);
-	context.strokeStyle = INK;
+/** A slim concrete pier of the long viaduct, from the deck down into the sea */
+function drawPier(context: CanvasRenderingContext2D, x: number, top: number, halfWidth = 4) {
+	box(context, x - halfWidth, top, halfWidth * 2, GROUND_Y - top, STEEL);
+}
+
+/** A heavy pier under an end of the arch: wider, with a cap the arch rests on */
+function drawArchPier(context: CanvasRenderingContext2D, x: number, top: number) {
+	box(context, x - 7, top + 4, 14, GROUND_Y - top - 4, STEEL);
+	box(context, x - 10, top, 20, 6, BRIDGE_GREY);
+}
+
+/** The far, railway deck: a thinner girder with sleepers, drawn from 0 to length along the x axis */
+function drawRailDeck(context: CanvasRenderingContext2D, length: number, fill = BRIDGE_GREY) {
+	box(context, 0, 0, length, 6, fill);
+	context.fillStyle = INK;
+	for (let tieX = 3; tieX < length - 2; tieX += 6) context.fillRect(tieX, -2, 2, 2);
+}
+
+/** The near, road deck: a grey girder carrying the asphalt, drawn from 0 to length along the x axis */
+function drawDeck(context: CanvasRenderingContext2D, length: number) {
+	box(context, 0, 0, length, 9, BRIDGE_GREY);
+	box(context, 0, -4, length, 4, ASPHALT);
+	context.fillStyle = PAPER;
+	for (let dashX = 4; dashX < length - 4; dashX += 10) context.fillRect(dashX, -2.5, 5, 1.5);
+}
+
+/** Height of the arch's top chord above its springing points, for t from -1 (left) to 1 (right) */
+function archRise(t: number, rise: number): number {
+	return rise * (1 - t * t);
+}
+
+/**
+ * One trussed steel arch of the Kerch bridge, springing from the deck at middle - half and
+ * middle + half: a top and a bottom chord with zigzag bracing between them. Only the part from
+ * t0 to t1 is drawn, so a broken arch can be drawn half by half.
+ */
+function drawArch(
+	context: CanvasRenderingContext2D,
+	middle: number,
+	baseY: number,
+	half: number,
+	rise: number,
+	fill: string,
+	t0 = -1,
+	t1 = 1
+) {
+	const steps = 12;
+	const point = (t: number, depth: number) => ({
+		x: middle + t * half,
+		y: baseY - archRise(t, rise) + depth * (1 - t * t * 0.6)
+	});
+	const along = (i: number) => t0 + ((t1 - t0) * i) / steps;
+	context.beginPath();
+	for (let i = 0; i <= steps; i++) {
+		const p = point(along(i), 0);
+		if (i === 0) context.moveTo(p.x, p.y);
+		else context.lineTo(p.x, p.y);
+	}
+	for (let i = steps; i >= 0; i--) {
+		const p = point(along(i), 5);
+		context.lineTo(p.x, p.y);
+	}
+	context.closePath();
+	outlined(context, fill);
+	// The bracing that makes it read as a truss
 	context.lineWidth = 1.5;
 	context.beginPath();
-	for (let y = top + 10; y < GROUND_Y; y += 14) {
-		context.moveTo(x - 6, y);
-		context.lineTo(x + 6, y);
+	for (let i = 0; i < steps; i++) {
+		const a = point(along(i), i % 2 === 0 ? 0 : 5);
+		const b = point(along(i + 1), i % 2 === 0 ? 5 : 0);
+		context.moveTo(a.x, a.y);
+		context.lineTo(b.x, b.y);
 	}
 	context.stroke();
 }
 
-/** One span of deck: a road on a khaki girder, drawn from 0 to length along the x axis */
-function drawDeck(context: CanvasRenderingContext2D, length: number) {
-	box(context, 0, 0, length, 10, KHAKI);
-	box(context, 0, -4, length, 4, SAND);
-	context.fillStyle = PAPER;
-	for (let dashX = 4; dashX < length - 4; dashX += 10) context.fillRect(dashX, 4, 5, 2);
+/** Vertical hangers from the arch down to the deck */
+function drawHangers(
+	context: CanvasRenderingContext2D,
+	middle: number,
+	deckY: number,
+	half: number,
+	rise: number
+) {
+	context.strokeStyle = INK;
+	context.lineWidth = 1.5;
+	context.beginPath();
+	for (let i = 1; i < 8; i++) {
+		const t = -1 + (i * 2) / 8;
+		context.moveTo(middle + t * half, deckY - 4);
+		context.lineTo(middle + t * half, deckY - archRise(t, rise) + 5 * (1 - t * t * 0.6));
+	}
+	context.stroke();
 }
 
 /** A pulsing red crosshair: this one is meant to be hit */
@@ -749,9 +1090,44 @@ function drawCrosshair(
 	context.restore();
 }
 
+/** How far the long, low viaduct visibly runs on past the target on either side; scenery only */
+const VIADUCT_RUN = 60;
+/** Distance between two piers of the viaduct */
+const PIER_SPACING = 15;
+/** Half the span of the steel arches over the shipping channel */
+const ARCH_HALF = 38;
+
+/** The viaduct running on into the distance on one side, fading out pier by pier */
+function drawViaductRun(
+	context: CanvasRenderingContext2D,
+	from: number,
+	direction: 1 | -1,
+	deckY: number
+) {
+	context.save();
+	for (let k = 0; k < VIADUCT_RUN / PIER_SPACING; k++) {
+		context.globalAlpha = 0.55 * (1 - k / (VIADUCT_RUN / PIER_SPACING));
+		const start = from + direction * k * PIER_SPACING;
+		const end = start + direction * PIER_SPACING;
+		drawPier(context, (start + end) / 2, deckY + 2, 3);
+		context.save();
+		context.translate(Math.min(start, end), deckY - 7);
+		drawRailDeck(context, PIER_SPACING);
+		context.restore();
+		context.save();
+		context.translate(Math.min(start, end), deckY);
+		drawDeck(context, PIER_SPACING);
+		context.restore();
+	}
+	context.restore();
+}
+
 /**
- * The rare Crimea bridge: not an obstacle but a big bonus target, wider than a column, with open
- * sky above and a crosshair on it. Once struck, its spans hang broken into the water.
+ * The rare Crimea (Kerch) bridge: not an obstacle but a big bonus target, wider than a column,
+ * with open sky above and a crosshair on it. It reads as the real one: a long, low road and rail
+ * viaduct on many slim piers across the strait, with the twin steel arches (the railway's behind,
+ * the road's in front) over the shipping channel. Once struck, the road arch is broken in two,
+ * the road spans hang into the sea and the rail deck is burnt through.
  */
 function drawBridge(
 	context: CanvasRenderingContext2D,
@@ -763,53 +1139,96 @@ function drawBridge(
 	const right = left + width;
 	const middle = left + width / 2;
 	const deckY = column.gapBottom;
+	const rise = deckY - archTop - 2;
+	const seaTop = Math.max(deckY + 16, GROUND_Y - 40);
+	const springLeft = middle - ARCH_HALF;
+	const springRight = middle + ARCH_HALF;
 
-	drawWater(context, left, width, deckY + 10);
+	drawViaductRun(context, left, -1, deckY);
+	drawViaductRun(context, right, 1, deckY);
+	for (const pierX of [left + 7, right - 7]) drawPier(context, pierX, deckY + 2);
+	for (const pierX of [springLeft, springRight]) drawArchPier(context, pierX, deckY + 2);
+	drawStrait(context, left - VIADUCT_RUN, width + VIADUCT_RUN * 2, seaTop);
 
 	if (column.struck) {
-		// The middle pier is a stump, and the two spans hang from the outer piers into the water
-		drawPier(context, middle, deckY + 34);
-		for (const side of [-1, 1]) {
-			const pierX = side < 0 ? left + 10 : right - 10;
-			drawPier(context, pierX, deckY + 10);
+		// The railway: its arch still stands, scorched, but its deck is burnt through in the middle
+		drawArch(context, middle + 4, deckY - 7, ARCH_HALF, rise - 4, CHAR);
+		for (const [from, to] of [
+			[left, middle - 12],
+			[middle + 16, right]
+		]) {
 			context.save();
-			context.translate(pierX, deckY);
-			context.rotate(-side * 0.55);
-			context.scale(-side, 1);
-			drawDeck(context, width / 2 - 4);
+			context.translate(from, deckY - 7);
+			drawRailDeck(context, to - from, CHAR);
 			context.restore();
 		}
+		// The road approaches still stand up to the arch piers
+		for (const [from, to] of [
+			[left, springLeft],
+			[springRight, right]
+		]) {
+			context.save();
+			context.translate(from, deckY);
+			drawDeck(context, to - from);
+			context.restore();
+		}
+		// The road arch is snapped at the crown, each half sagging off its pier
+		for (const side of [-1, 1] as const) {
+			const springX = side < 0 ? springLeft : springRight;
+			context.save();
+			context.translate(springX, deckY);
+			context.rotate(-side * 0.32);
+			context.translate(-springX, -deckY);
+			if (side < 0) drawArch(context, middle, deckY, ARCH_HALF, rise, STEEL, -1, -0.12);
+			else drawArch(context, middle, deckY, ARCH_HALF, rise, STEEL, 0.12, 1);
+			context.restore();
+		}
+		// And the road spans under it hang from the arch piers down into the sea
+		const length = ARCH_HALF - 3;
+		const drop = Math.min(1.3, Math.atan2(seaTop + 8 - deckY, length));
+		for (const side of [-1, 1] as const) {
+			context.save();
+			context.translate(side < 0 ? springLeft : springRight, deckY);
+			// Mirrored on the right, so both spans tip towards the channel and down
+			if (side > 0) context.scale(-1, 1);
+			context.rotate(drop);
+			drawDeck(context, length);
+			context.restore();
+		}
+		// A thin plume of smoke still rising from the break
+		context.save();
+		context.globalAlpha = 0.55;
+		context.fillStyle = SMOKE;
+		for (let i = 0; i < 3; i++) {
+			const rising = (time * 0.4 + i / 3) % 1;
+			context.beginPath();
+			context.arc(
+				middle + Math.sin(time + i * 2) * 4 + rising * 10,
+				deckY - 10 - rising * 60,
+				5 + rising * 9,
+				0,
+				Math.PI * 2
+			);
+			context.fill();
+		}
+		context.restore();
 		return;
 	}
 
-	for (const pierX of [left + 10, middle, right - 10]) drawPier(context, pierX, deckY + 10);
-
-	// The steel arch over the deck, with hangers down to the road
+	// The railway, behind: its deck and its arch, set a little higher and further back
 	context.save();
-	context.lineWidth = 2;
-	context.strokeStyle = INK;
-	context.beginPath();
-	for (let i = 1; i < 8; i++) {
-		const hx = left + (i * width) / 8;
-		const t = (hx - middle) / (width / 2);
-		context.moveTo(hx, deckY - 4);
-		context.lineTo(hx, archTop + 4 + t * t * (deckY - archTop - 4));
-	}
-	context.stroke();
-	context.beginPath();
-	context.moveTo(left + 2, deckY - 2);
-	context.quadraticCurveTo(middle, archTop - (deckY - archTop) + 8, right - 2, deckY - 2);
-	context.lineWidth = 7;
-	context.stroke();
-	context.lineWidth = 4;
-	context.strokeStyle = STEEL;
-	context.stroke();
+	context.translate(left, deckY - 7);
+	drawRailDeck(context, width);
 	context.restore();
+	drawArch(context, middle + 4, deckY - 7, ARCH_HALF, rise - 4, BRIDGE_GREY);
 
+	// The road, in front: hangers, deck and its arch over the shipping channel
+	drawHangers(context, middle, deckY, ARCH_HALF, rise);
 	context.save();
 	context.translate(left, deckY);
 	drawDeck(context, width);
 	context.restore();
+	drawArch(context, middle, deckY, ARCH_HALF, rise, PAPER);
 
 	drawCrosshair(context, middle, deckY - 2, 18, time);
 	drawTargetMarker(context, middle, archTop - 16, time, label);
@@ -1562,7 +1981,8 @@ export function drawScene(
 	context.translate(shakeX, shakeY);
 	// Weather depends on how far the flamingo has flown, so it is the same on every run of a seed
 	const weather = weatherAt(state.seed, cameraX + WORLD_WIDTH / 2);
-	drawBackdrop(context, cameraX, weather, effects.reducedMotion ? 0 : state.time, painted);
+	const palette = skyAt(state.seed, cameraX + WORLD_WIDTH / 2);
+	drawBackdrop(context, cameraX, weather, effects.reducedMotion ? 0 : state.time, painted, palette);
 
 	context.save();
 	context.translate(-cameraX, 0);
@@ -1574,13 +1994,15 @@ export function drawScene(
 	for (const segment of state.segments) {
 		drawRefinery(context, segment, segment === current ? target : null, state.time, assets, labels);
 		for (const column of segment.columns) {
-			if (column.x + COLUMN_WIDTH < left || column.x > right) continue;
+			// A bridge reaches past its column, and its viaduct further still
+			const reach = column.kind === 'bridge' ? BRIDGE_OVERHANG + VIADUCT_RUN : 0;
+			if (column.x + COLUMN_WIDTH + reach < left || column.x - reach > right) continue;
 			drawColumn(context, column, state.time, assets, painted.top, labels);
 		}
 	}
 	context.restore();
 
-	drawGround(context, cameraX, painted);
+	drawGround(context, cameraX, painted, palette, weather);
 
 	context.save();
 	context.translate(-cameraX, 0);
