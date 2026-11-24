@@ -25,7 +25,6 @@ class FakeBot:
     def __init__(self):
         self.calls: list[tuple[str, tuple, dict]] = []
         self.refuse = None
-        self.high_scores: list = []
         self.username = "game_ww3_bot"
 
     def methods(self) -> list[str]:
@@ -38,8 +37,6 @@ class FakeBot:
                 error = self.refuse(method, args, kwargs)
                 if error:
                     raise error
-            if method == "get_game_high_scores":
-                return self.high_scores
             if method == "send_message":
                 return SimpleNamespace(message_id=len(self.calls))
             if method == "create_invoice_link":

@@ -1,7 +1,7 @@
 <!--
-	The leaderboard of the chat a game was opened from, shown on the result sheet: the rows Telegram
-	ranks for this player (the top three, the player and two neighbours on each side), with the
-	player's own row picked out and a gap marked where positions are skipped.
+	The leaderboard of the chat a game was opened from, shown on the result sheet: every player of the
+	chat across all its game messages (in a big chat the top three and the player with two neighbours
+	on each side), with the player's own row picked out and a gap marked where positions are skipped.
 
 	When the run beat another player's best, the player's own agent rushes up from beside that
 	player's row, brushes past it and lands next to the player's new place. With reduced motion the

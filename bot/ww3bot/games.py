@@ -5,9 +5,10 @@ sendGame. Pressing Play stores a session (player, chat, message, game) and opens
 the session id in its URL; Telegram opens a game's URL in its own browser, without the Mini App's
 initData, so the id (128 random bits, given only to the player who pressed Play, valid for a day) is
 what proves who plays. At the end of a run the game sends the score back with it, and setGameScore
-puts it on that chat's scoreboard: Telegram keeps one table per chat and posts its own message on
-every new personal best. The bot keeps a copy of the bests for /top and announces when someone takes
-the record.
+puts the player's best on the scoreboard of the game message they played from, where Telegram shows
+it and posts its own message on every new personal best. Telegram's boards belong to single
+messages, so the bot keeps the chat's bests across all of them: for /top, for the leaderboard on the
+result screen, and to announce when someone takes the record.
 """
 import logging
 import re
@@ -52,6 +53,9 @@ SESSION_TTL: Final[int] = 24 * 3600
 MAX_SCORE: Final[int] = 2**31 - 1
 # Lines in /top
 TOP_LIMIT: Final[int] = 10
+# The result screen lists every player up to this many; a bigger chat shows its top three and the
+# player with two neighbours on each side
+BOARD_ALL: Final[int] = 10
 
 
 class GameScoreError(Exception):
@@ -125,7 +129,7 @@ async def report_score(bot: Bot, data: dict) -> dict:
     if isinstance(score, bool) or not isinstance(score, int) or not 0 <= score <= MAX_SCORE:
         raise GameScoreError("INVALID_INPUT", "The score must be a whole number.")
     result = await _set_score(bot, session, score)
-    return {**result, "session": session, "leaderboard": await _leaderboard(bot, session)}
+    return {**result, "session": session, "leaderboard": await _leaderboard(session)}
 
 
 async def _set_score(bot: Bot, session: dict, score: int) -> dict:
@@ -134,6 +138,8 @@ async def _set_score(bot: Bot, session: dict, score: int) -> dict:
         "SELECT score FROM group_scores WHERE chat_id = %s AND game = %s AND user_id = %s", (chat_id, game, user_id)
     )
     if mine and score <= mine["score"]:
+        # Telegram's board belongs to the message played from: put the player's best on this one too
+        await _put_on_message(bot, session, mine["score"])
         return {"new_best": False, "best": mine["score"], "rank": await _rank(chat_id, game, mine["score"]), "overtook": None, "overtaken": None}
 
     try:
@@ -182,37 +188,39 @@ async def _set_score(bot: Bot, session: dict, score: int) -> dict:
     }
 
 
-async def _leaderboard(bot: Bot, session: dict) -> list[dict]:
+async def _put_on_message(bot: Bot, session: dict, score: int) -> None:
+    """Shows a best already known on the game message the player played from; never fails a run."""
+    try:
+        await bot.set_game_score(session["user_id"], score, chat_id=session["chat_id"], message_id=session["message_id"])
+    except TelegramError as error:
+        if not _not_modified(error):
+            logger.warning("setGameScore failed in %s: %s", session["chat_id"], error)
+
+
+async def _leaderboard(session: dict) -> list[dict]:
     """
-    The chat's leaderboard as Telegram keeps it (getGameHighScores: the player, two neighbours on
-    each side, and the top three), with the player marked; the bot's own copy when Telegram cannot
-    answer.
+    The chat's leaderboard for the result screen, from the bests the bot keeps across every game
+    message: everyone in a small chat, otherwise the top three and the player with two neighbours on
+    each side, with the player marked.
     """
     user_id = session["user_id"]
-    try:
-        rows = await bot.get_game_high_scores(user_id, chat_id=session["chat_id"], message_id=session["message_id"])
-        return [
-            {
-                "position": row.position,
-                "name": " ".join(part for part in (row.user.first_name, row.user.last_name) if part),
-                "score": row.score,
-                "me": row.user.id == user_id,
-            }
-            for row in rows
-        ]
-    except TelegramError as error:
-        logger.warning("getGameHighScores failed in %s: %s", session["chat_id"], error)
-        rows = await db.fetchall(
-            """
-            SELECT user_id, first_name, score FROM group_scores WHERE chat_id = %s AND game = %s
-            ORDER BY score DESC, updated_at ASC LIMIT %s
-            """,
-            (session["chat_id"], session["game"], TOP_LIMIT),
-        )
-        return [
-            {"position": i + 1, "name": row["first_name"], "score": row["score"], "me": row["user_id"] == user_id}
-            for i, row in enumerate(rows)
-        ]
+    rows = await db.fetchall(
+        """
+        SELECT user_id, first_name, score FROM group_scores WHERE chat_id = %s AND game = %s
+        ORDER BY score DESC, updated_at ASC
+        """,
+        (session["chat_id"], session["game"]),
+    )
+    me = next((index for index, row in enumerate(rows) if row["user_id"] == user_id), None)
+    if len(rows) <= BOARD_ALL:
+        shown = range(len(rows))
+    else:
+        around = range(max(0, me - 2), min(len(rows), me + 3)) if me is not None else range(0)
+        shown = sorted({0, 1, 2, *around})
+    return [
+        {"position": index + 1, "name": rows[index]["first_name"], "score": rows[index]["score"], "me": rows[index]["user_id"] == user_id}
+        for index in shown
+    ]
 
 
 async def _rank(chat_id: int, game: str, score: int) -> int:

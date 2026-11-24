@@ -70,10 +70,13 @@ each once with `/newgame` (title, description, a 640×360 picture) and keep **Al
    valid for a day) and answers with `<appUrl>/play/<game>?game_session=<id>`, which Telegram opens in its game
    browser. That page has no Mini App initData, so the session id (128 random bits, sent only to the player who
    pressed Play) is the credential.
-3. The game's result sheet posts the score with the session to `gamescore`. A new best goes to `setGameScore`
-   on that message, so Telegram updates that chat's scoreboard and posts the score itself; when it beats someone
-   else's record, the bot also posts a record message. The answer names the strongest player the run overtook,
-   and the result sheet shows the player's agent rushing past them.
+3. The game's result sheet posts the score with the session to `gamescore`. The player's best goes to
+   `setGameScore` on the message they played from, so Telegram shows it on that message's scoreboard and posts
+   a new best itself; when it beats someone else's record, the bot also posts a record message. Telegram's
+   scoreboards belong to single messages, so the `leaderboard` in the answer comes from the bests the bot keeps
+   across all of the chat's game messages: everyone up to ten players, otherwise the top three and the player
+   with two neighbours on each side. The answer also names the strongest player the run overtook, and the
+   result sheet shows the player's agent rushing past them.
 
 ## Setup
 

@@ -2,7 +2,6 @@
 import json
 import time
 from datetime import datetime, timezone
-from types import SimpleNamespace
 
 import pytest
 from aiohttp.test_utils import TestClient, TestServer
@@ -54,7 +53,8 @@ async def test_a_better_run_goes_onto_the_chat_scoreboard_a_worse_one_does_not(b
     bot.calls.clear()
     worse = await games.report_score(bot, {"session": session, "game": "convoy", "score": 80})
     assert (worse["new_best"], worse["best"]) == (False, 100)
-    assert bot.methods() == ["get_game_high_scores"]
+    # The best still goes onto the message played from (Telegram's boards are per message)
+    assert bot.calls == [("set_game_score", (1, 100), {"chat_id": GROUP, "message_id": 77})]
 
     # Telegram already holds a better score (set before the bot kept a copy): nothing changes
     bot.refuse = lambda method, *_: not_modified() if method == "set_game_score" else None
@@ -70,19 +70,19 @@ async def test_taking_the_record_from_someone_else_is_announced_in_the_chat(bot)
     bot.calls.clear()
     second = await gamescore(bot, {"session": bob, "game": "blocks", "score": 200}, None)
     assert (second["new_best"], second["best"], second["rank"], second["overtaken"]) == (True, 200, 2, None)
-    assert bot.methods() == ["set_game_score", "get_game_high_scores"]
+    assert bot.methods() == ["set_game_score"]
 
     bot.calls.clear()
     first = await gamescore(bot, {"session": bob, "game": "blocks", "score": 400}, None)
     assert (first["rank"], first["overtaken"]) == (1, {"name": "Ada", "score": 300})
-    assert bot.methods() == ["set_game_score", "get_game_high_scores", "send_message"]
-    _, args, _ = bot.calls[2]
+    assert bot.methods() == ["set_game_score", "send_message"]
+    _, args, _ = bot.calls[1]
     assert args[0] == GROUP and "Bob" in args[1] and "Ada (300)" in args[1]
 
     # Beating your own record is left to Telegram's own message, and overtakes nobody
     bot.calls.clear()
     assert (await gamescore(bot, {"session": bob, "game": "blocks", "score": 500}, None))["overtaken"] is None
-    assert bot.methods() == ["set_game_score", "get_game_high_scores"]
+    assert bot.methods() == ["set_game_score"]
 
     # Passing two players at once shows the stronger one
     cleo = await games.open_session(User(3, "Cleo", False), "blocks", GROUP, 77)
@@ -101,24 +101,30 @@ async def test_the_endpoint_refuses_a_bad_session_with_a_code_the_game_can_read(
     assert error.value.parameters == {"code": "INVALID_INPUT"}
 
 
-async def test_the_result_screen_gets_the_chats_leaderboard_as_telegram_keeps_it(bot):
-    session = await games.open_session(ADA, "whack", -1002, 9)
-    bot.high_scores = [
-        SimpleNamespace(position=1, user=SimpleNamespace(id=7, first_name="Cleo", last_name="Top"), score=900),
-        SimpleNamespace(position=2, user=SimpleNamespace(id=1, first_name="Ada", last_name=None), score=40),
-    ]
-    result = await gamescore(bot, {"session": session, "game": "whack", "score": 40}, None)
-    call = next(call for call in bot.calls if call[0] == "get_game_high_scores")
-    assert call[1:] == ((1,), {"chat_id": -1002, "message_id": 9})
+async def test_the_result_screen_shows_every_player_of_the_chat_across_game_messages(bot):
+    # Cleo played from an older game message, Ada from a newer one: both are on Ada's board
+    cleo = await games.open_session(User(7, "Cleo", False), "whack", -1002, 8)
+    await gamescore(bot, {"session": cleo, "game": "whack", "score": 900}, None)
+    ada = await games.open_session(ADA, "whack", -1002, 9)
+    result = await gamescore(bot, {"session": ada, "game": "whack", "score": 40}, None)
     assert result["leaderboard"] == [
-        {"position": 1, "name": "Cleo Top", "score": 900, "me": False},
+        {"position": 1, "name": "Cleo", "score": 900, "me": False},
         {"position": 2, "name": "Ada", "score": 40, "me": True},
     ]
 
-    # Telegram cannot answer: the bot's own copy of the chat's bests stands in
-    bot.refuse = lambda method, *_: not_modified() if method == "get_game_high_scores" else None
-    fallback = await gamescore(bot, {"session": session, "game": "whack", "score": 10}, None)
-    assert fallback["leaderboard"] == [{"position": 1, "name": "Ada", "score": 40, "me": True}]
+    # A worse run shows the same board, with the player's best
+    assert (await gamescore(bot, {"session": ada, "game": "whack", "score": 10}, None))["leaderboard"] == result["leaderboard"]
+
+
+async def test_a_big_chat_shows_its_top_three_and_the_players_neighbours(bot):
+    for index in range(games.BOARD_ALL + 5):
+        session = await games.open_session(User(100 + index, f"P{index}", False), "slice", -1003, 5)
+        await games.report_score(bot, {"session": session, "game": "slice", "score": 1000 - index * 10})
+    ada = await games.open_session(ADA, "slice", -1003, 5)
+    # 905 lands between P9 (910) and P10 (900): the 11th place
+    board = (await games.report_score(bot, {"session": ada, "game": "slice", "score": 905}))["leaderboard"]
+    assert [row["position"] for row in board] == [1, 2, 3, 9, 10, 11, 12, 13]
+    assert [row["name"] for row in board if row["me"]] == ["Ada"]
 
 
 async def test_games_are_played_in_groups_only(bot, monkeypatch):
