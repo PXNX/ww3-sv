@@ -16,7 +16,7 @@ Die Website außerhalb von Telegram wird bei Vercel Inc. (440 N Barranca Ave #41
 
 ## 4. Käufe mit Telegram Stars
 
-Für Käufe verarbeiten wir Ihre Telegram-Nutzer-ID, den gekauften Artikel, den Preis in Stars, den Zeitpunkt, die Zahlungskennungen von Telegram, Ihre Zustimmung zur sofortigen Lieferung (mit Zeitpunkt und Version der Bedingungen) sowie Ihr Guthaben an gekauften Revival-Token und die Laufzeit von Pro. Rechtsgrundlage ist die Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO) und, soweit Aufbewahrungspflichten bestehen, Art. 6 Abs. 1 lit. c DSGVO.
+Für Käufe verarbeiten wir Ihre Telegram-Nutzer-ID, den gekauften Artikel, den Preis in Stars, den Zeitpunkt, die Zahlungskennungen von Telegram, Ihre Zustimmung zur sofortigen Lieferung (mit Zeitpunkt und Version der Bedingungen) sowie Ihr Guthaben an gekauften Revival-Token, die gekauften Looks und die Laufzeit von Pro. Rechtsgrundlage ist die Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO) und, soweit Aufbewahrungspflichten bestehen, Art. 6 Abs. 1 lit. c DSGVO.
 
 Die Zahlung wickelt Telegram ab. Zahlungsdaten wie Kartennummern erhalten wir nicht. Für die Verarbeitung durch Telegram gilt die Datenschutzerklärung von Telegram: https://telegram.org/privacy
 

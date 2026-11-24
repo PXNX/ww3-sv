@@ -19,12 +19,12 @@ PAGES: Final[dict[str, str]] = {
 }
 
 # Bump when the AGB or the Widerrufsbelehrung change; buyers consent again on their next purchase
-CONSENT_VERSION: Final[str] = "2026-10-27"
+CONSENT_VERSION: Final[str] = "2026-11-24"
 
 # The wording § 356 Abs. 4 and 5 BGB asks for, shown before the first purchase of a version
 CONSENT_TEXT: Final[str] = (
     "Ich stimme ausdrücklich zu, dass mit der Ausführung des Vertrags vor Ablauf der Widerrufsfrist "
-    "begonnen wird. Mir ist bekannt, dass ich bei Revival-Token mit Beginn der Ausführung und bei "
+    "begonnen wird. Mir ist bekannt, dass ich bei Revival-Token und Looks für den Agenten mit Beginn der Ausführung und bei "
     "World War 3 Pro mit vollständiger Erbringung mein Widerrufsrecht verliere. Ich akzeptiere die AGB."
 )
 

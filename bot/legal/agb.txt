@@ -20,6 +20,8 @@ Alle Preise werden in Telegram Stars (XTR) angegeben und bezahlt. Telegram Stars
 
 Gekaufte Revival-Token sind virtuelle Spielgegenstände ohne Geldwert. Ein Revival-Token setzt einen gescheiterten Lauf in den Spielen fort, die das unterstützen, und wird dabei verbraucht. Revival-Token können nicht in Geld, Telegram Stars oder andere Werte zurückgetauscht, ausgezahlt oder auf andere Konten übertragen werden. Sie werden Ihrem Telegram-Konto unmittelbar nach erfolgreicher Zahlung gutgeschrieben und stehen in der Telegram Mini App zur Verfügung.
 
+Gekaufte Looks für den Agenten (zum Beispiel ein Hut, eine Augen-, Shirt- oder Haarfarbe) sind ebenfalls virtuelle Spielgegenstände ohne Geldwert. Ein Look wird einmal gekauft, Ihrem Telegram-Konto unmittelbar nach erfolgreicher Zahlung dauerhaft zugeordnet und kann in der Telegram Mini App im Agenten-Editor getragen werden, solange wir das Spiel betreiben. Looks verändern nur das Aussehen und bringen keinen spielerischen Vorteil; sie können nicht zurückgetauscht, ausgezahlt oder auf andere Konten übertragen werden.
+
 ## 5. World War 3 Pro
 
 Pro ist ein Abonnement mit einer Laufzeit von 30 Tagen, das sich über Telegram automatisch um jeweils 30 Tage verlängert, bis Sie es kündigen. Pro umfasst 10 Revival-Token je Laufzeit, die zu Beginn jeder Laufzeit gutgeschrieben werden, und – sobald das Spiel Werbung zeigt – ein Spiel ohne Werbung. Nicht genutzte Revival-Token bleiben auch nach dem Ende von Pro erhalten. Sie können jederzeit in Telegram kündigen (Einstellungen › Meine Stars › Abonnements); die Kündigung wirkt zum Ende der laufenden Laufzeit, bis dahin bleibt Pro aktiv.
