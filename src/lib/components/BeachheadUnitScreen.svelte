@@ -46,6 +46,8 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import type { TroopKind } from '#lib/game/beachhead/config.js';
 	import BeachheadPortrait from '#lib/components/BeachheadPortrait.svelte';
+	import BeachheadHeroSprite from '#lib/components/BeachheadHeroSprite.svelte';
+	import { isHeroKind } from '#lib/components/beachheadHeroArt.js';
 	import BeachheadUpgradeButton from '#lib/components/BeachheadUpgradeButton.svelte';
 	import ResourceIcon from '#lib/components/ResourceIcon.svelte';
 	import type { BeachheadGame } from '#lib/stores/beachheadGame.svelte.js';
@@ -151,7 +153,11 @@
 			class="stage relative flex aspect-square w-full max-w-48 items-center justify-center rounded-[20px] border-3 border-ink"
 		>
 			{#key kind}
-				<BeachheadPortrait type="troop" {kind} {level} size={168} animated />
+				{#if isHeroKind(kind)}
+					<BeachheadHeroSprite {kind} size={168} animated />
+				{:else}
+					<BeachheadPortrait type="troop" {kind} {level} size={168} animated />
+				{/if}
 			{/key}
 			<span
 				class="absolute -end-2 -top-2 flex size-10 items-center justify-center rounded-full border-3 border-ink bg-explosion-yellow font-display text-lg font-bold tabular-nums shadow-[2px_2px_0_var(--color-ink)]"

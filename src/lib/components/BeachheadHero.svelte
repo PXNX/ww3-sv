@@ -15,7 +15,7 @@
 		MAX_TROOP_LEVEL,
 		TROOPS
 	} from '#lib/game/beachhead/config.js';
-	import BeachheadPortrait from '#lib/components/BeachheadPortrait.svelte';
+	import BeachheadHeroSprite from '#lib/components/BeachheadHeroSprite.svelte';
 	import BeachheadUnitScreen, {
 		type UnitStat,
 		type UnitUpgrade
@@ -188,7 +188,7 @@
 			<span
 				class="flex size-11 items-center justify-center overflow-hidden rounded-[10px] bg-[#7cc4f0]"
 			>
-				<BeachheadPortrait type="troop" kind={hero.id} level={hero.level} size={44} />
+				<BeachheadHeroSprite kind={hero.id} size={44} />
 			</span>
 			<span class="flex flex-col items-start leading-tight">
 				<span class="text-sm font-bold">{hero.name}</span>
