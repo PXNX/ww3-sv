@@ -52,13 +52,6 @@ def _load(path: Path) -> dict:
         return json.load(file)
 
 
-def _sales_open(config: dict, example: dict) -> bool:
-    """Nothing is sold while the Impressum still carries the example operator data."""
-    operator = config.get("operator") or {}
-    sample = example.get("operator") or {}
-    return all(operator.get(key) and operator.get(key) != sample.get(key) for key in ("name", "street", "city", "email"))
-
-
 CONFIG: Final[dict] = _load(CONFIG_PATH if CONFIG_PATH.exists() else EXAMPLE_CONFIG_PATH)
 CONFIG_MISSING: Final[bool] = not CONFIG_PATH.exists()
 
@@ -66,5 +59,4 @@ APP_URL: Final[str] = (CONFIG.get("appUrl") or "").rstrip("/")
 # Where the legal pages are linked as web pages; empty sends them as messages
 LEGAL_URL: Final[str] = (CONFIG.get("legalUrl") or "").rstrip("/")
 ADMIN_IDS: Final[list[int]] = [int(admin) for admin in CONFIG.get("adminIds") or []]
-SALES_OPEN: Final[bool] = not CONFIG_MISSING and _sales_open(CONFIG, _load(EXAMPLE_CONFIG_PATH))
 OPERATOR: Final[dict] = CONFIG.get("operator") or {}

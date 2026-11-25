@@ -114,9 +114,6 @@ async def offer(bot: Bot, chat_id: int, user, sku: str) -> None:
         return await shop(bot, chat_id, user)
     item = localized(entry, lang)
     await ledger.upsert_account(user)
-    if not config.SALES_OPEN:
-        return await send(bot, chat_id, t(lang, "sales_closed"))
-
     if not await ledger.has_consent(user.id):
         return await send(
             bot,
@@ -132,7 +129,7 @@ async def offer(bot: Bot, chat_id: int, user, sku: str) -> None:
     try:
         invoice = await ledger.create_invoice(bot, user.id, item)
     except ledger.LedgerError as error:
-        key = {"ALREADY_OWNED": "already_owned", "RATE_LIMITED": "rate_limited"}.get(error.code, "sales_closed")
+        key = {"ALREADY_OWNED": "already_owned", "RATE_LIMITED": "rate_limited"}.get(error.code, "checkout_error")
         return await send(bot, chat_id, t(lang, key))
     label = t(lang, "subscribe" if item["subscription"] else "pay", stars=item["stars"])
     text = f"<b>{escape_html(item['title'])}</b>\n{escape_html(item['description'])}"

@@ -11,7 +11,7 @@ import time
 
 from telegram import Bot, LabeledPrice
 
-from ww3bot import config, db
+from ww3bot import db
 from ww3bot.catalogue import CURRENCY, PRODUCTS, SUBSCRIPTION_PERIOD, is_cosmetic
 from ww3bot.legal import CONSENT_VERSION
 from ww3bot.texts import lang_of_user
@@ -101,8 +101,6 @@ def invoice_id() -> str:
 
 async def create_invoice(bot: Bot, user_id: int, item: dict) -> dict:
     """An invoice link bound to this user and sku; refuses when the user asks for too many."""
-    if not config.SALES_OPEN:
-        raise LedgerError("SALES_CLOSED", "Purchases are not open yet.")
     recent = await db.fetchone(
         "SELECT COUNT(*) AS n FROM invoices WHERE user_id = %s AND created_at > %s", (user_id, db.now() - 60)
     )

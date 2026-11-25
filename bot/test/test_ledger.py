@@ -47,8 +47,7 @@ async def test_booking_wallet_and_spending():
     assert (await ledger.stats())["purchases"] == 1
 
 
-async def test_a_look_is_bought_once_and_owned_for_good(bot, monkeypatch):
-    monkeypatch.setattr(config, "SALES_OPEN", True)
+async def test_a_look_is_bought_once_and_owned_for_good(bot):
     await ledger.upsert_account(person(5))
     assert await ledger.owned_looks(5) == []
     created = await ledger.create_invoice(bot, 5, product("look_tinfoil"))
@@ -74,10 +73,11 @@ async def test_concurrent_spends_never_overdraw():
     assert (await ledger.wallet(7))["revives"] == 0
 
 
-async def test_no_invoices_while_the_operator_data_is_missing(bot):
-    with pytest.raises(ledger.LedgerError, match="not open"):
-        await ledger.create_invoice(bot, 42, product("revive_1"))
-    assert bot.calls == []
+async def test_invoices_are_open_with_the_example_operator_data(bot):
+    # The example config is what conftest loads; purchases must not depend on the Impressum data.
+    created = await ledger.create_invoice(bot, 42, product("revive_1"))
+    assert created["url"] == "https://t.me/$invoice"
+    assert [call[0] for call in bot.calls] == ["create_invoice_link"]
 
 
 async def test_only_a_new_player_earns_the_inviter_a_token_once_up_to_the_cap():

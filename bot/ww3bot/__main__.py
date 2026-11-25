@@ -62,9 +62,7 @@ def main() -> None:
     if not config.DATABASE_URL:
         sys.exit("DATABASE_URL is not set")
     if config.CONFIG_MISSING:
-        logger.warning("config.local.json is missing: legal pages show the example operator and sales stay closed")
-    elif not config.SALES_OPEN:
-        logger.warning("sales closed: the operator data in config.local.json is still the example")
+        logger.warning("config.local.json is missing: legal pages show the example operator")
 
     app = (
         ApplicationBuilder()
