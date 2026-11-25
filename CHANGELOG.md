@@ -24,6 +24,11 @@ The version history is now part of the game, grouped by change type and scope.
 
 - The Crimea bridge is now a big target: fly into it to bring a span down for 150 points
 
+#### telegram
+
+- Search games from any chat in Telegram's inline mode: type `@game_ww3_bot games Flamingo` and open a
+  result, with the group's scoreboard in a group and a Mini App play button everywhere else
+
 ### Fixed
 
 #### runcomrade

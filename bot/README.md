@@ -24,6 +24,9 @@ repository; paths below are relative to `bot/`.
   the supply depot inside Telegram put 5 revival tokens into the account wallet, once per account (`ww3bot/gifts.py`).
 - **Invites and streak reminders**: `/invite` links earn revival tokens, and the game reports its daily streak so
   the bot can remind two hours before it breaks (`/reminders` to switch).
+- **Inline game search**: typing `@game_ww3_bot games Flamingo` (or just the name) in any chat offers the
+  matching games. In a group the result posts a Telegram game with that chat's scoreboard; elsewhere it
+  posts a button that opens the game as a Mini App. Enable inline mode with `/setinline` at @BotFather.
 - **Group leaderboards** through [Telegram's gaming platform](https://core.telegram.org/bots/games): added to a
   group, the bot posts a game with `/games`; Telegram keeps its scoreboard per chat and posts every new best
   there, `/top` lists the group's leaderboard, and the bot announces when someone takes the group's record.
@@ -36,7 +39,8 @@ repository; paths below are relative to `bot/`.
 | `ww3bot/handlers.py` | Messages (commands, `successful_payment`), callback queries (incl. Play), pre-checkout, joining a group |
 | `ww3bot/chat.py` | Chat flows: start, login, shop, consent, confirmation, support, invites, games and `/top` |
 | `ww3bot/endpoints.py`, `ww3bot/api.py` | The game's endpoints and the HTTP server with the initData check |
-| `ww3bot/games.py` | The Telegram games, Play sessions, scores and the groups' leaderboards |
+| `ww3bot/games.py` | The Telegram games, inline search, Play sessions, scores and the groups' leaderboards |
+| `ww3bot/inline.py` | Inline mode: search results for a chat, either a Telegram game or a Mini App button |
 | `ww3bot/ledger.py`, `ww3bot/catalogue.py` | Accounts, consent, invoices, purchases, the revival wallet; items and Stars prices |
 | `ww3bot/referrals.py`, `ww3bot/reminders.py` | Invite rewards; streak reminders |
 | `ww3bot/ads.py` | House adverts: fetches the litfass feed (`LITFASS_FEED_URL` in `.env`) and forwards the counts, so browsers never contact the advert server |
@@ -94,6 +98,7 @@ each once with `/newgame` (title, description, a 640×360 picture) and keep **Al
 3. `cp config.example.json config.local.json` and fill in the operator data (name, postal address, e-mail;
    phone and VAT id are optional) so the legal pages name the real seller. Put your Telegram user id into
    `adminIds` for `/stats`, `/set_cmd` and payment alerts.
-4. `python -m ww3bot` from this folder. It polls for updates and serves the endpoints and legal pages on
+4. At @BotFather, send `/setinline` and pick the bot to turn inline mode on; no code change is needed.
+5. `python -m ww3bot` from this folder. It polls for updates and serves the endpoints and legal pages on
    `API_PORT`; that port has to be reachable over HTTPS at the address the game is built with.
-5. `TEST_DATABASE_URL=postgresql://… python -m pytest` runs the tests against an empty database.
+6. `TEST_DATABASE_URL=postgresql://… python -m pytest` runs the tests against an empty database.
