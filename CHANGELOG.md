@@ -32,6 +32,8 @@ The version history is now part of the game, grouped by change type and scope.
 
 #### telegram
 
+- Telegram Stars purchases go through again: revival tokens, Pro and agent looks can be bought in the
+  Mini App and in the bot, with the catalogue no longer held back by the operator data
 - Games opened from a group chat drop the back button and use a slimmer banner, and their playfields fit
   the height of Telegram's game browser instead of running off the bottom
 - The score in a game's banner is readable again
