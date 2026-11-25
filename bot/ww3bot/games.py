@@ -73,6 +73,42 @@ def game_name(game_id: str, lang: str) -> str:
     return (entry.get(lang) or entry["en"]) if entry else game_id
 
 
+# Words a player may type before the name, e.g. "@bot games Flamingo"
+SEARCH_PREFIXES: Final[tuple[str, ...]] = ("games", "game", "spiel", "spiele")
+
+
+def search_games(query: str | None, limit: int = 50) -> list[dict[str, str]]:
+    """
+    Games matching an inline query, best first. Search ids and both names, so "flamingo",
+    "Flamingo Flight" and "Flamingo-Flug" all find the same game. An empty query lists them all.
+    """
+    text = re.sub(r"\s+", " ", (query or "").strip()).lower()
+    head, _, rest = text.partition(" ")
+    if head in SEARCH_PREFIXES:
+        text = rest.strip()
+    if not text:
+        return GAMES[:limit]
+
+    words = text.split()
+
+    def score(entry: dict[str, str]) -> int:
+        # Search both languages: the name a player remembers may be the other one. The reader's
+        # language only decides which name the result displays.
+        names = [entry["id"], entry["en"].lower(), (entry.get("de") or "").lower()]
+        best = 0
+        for name in names:
+            if name == text:
+                best = max(best, 3)
+            elif name.startswith(text):
+                best = max(best, 2)
+            elif text in name or all(word in name for word in words):
+                best = max(best, 1)
+        return best
+
+    ranked = sorted(enumerate(GAMES), key=lambda pair: (-score(pair[1]), pair[0]))
+    return [entry for _, entry in ranked if score(entry) > 0][:limit]
+
+
 def session_link(game: str, session: str) -> str | None:
     """The game page a Play press opens, with the session its scores are reported with."""
     return f"{config.APP_URL}/play/{game}?game_session={session}" if config.APP_URL else None

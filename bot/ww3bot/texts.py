@@ -96,6 +96,9 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
             "Telegram meldet hier jede neue Bestleistung. /top zeigt, wer vorne liegt."
         ),
         "games_menu": "🎮 <b>Welches Spiel?</b>\nJedes Spiel hat eine eigene Bestenliste für diesen Chat.",
+        "inline_play": "▶️ {game} spielen",
+        "inline_description": "World War 3 – direkt in Telegram spielen",
+        "inline_message": "🎮 {game} – World War 3",
         "game_missing": "{game} ist noch nicht als Telegram-Spiel eingerichtet.",
         "game_unavailable": "Dieses Spiel gibt es hier nicht. Hol dir mit /games ein neues.",
         "group_only": "👥 Gespielt wird zusammen: Spiele und Bestenlisten gibt es nur in Gruppen. Füge mich einer Gruppe hinzu und sende dort /games.",
@@ -195,6 +198,9 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
             "Telegram posts every new high score here. /top shows who is ahead."
         ),
         "games_menu": "🎮 <b>Which game?</b>\nEvery game has a leaderboard of its own for this chat.",
+        "inline_play": "▶️ Play {game}",
+        "inline_description": "World War 3 – play right here in Telegram",
+        "inline_message": "🎮 {game} – World War 3",
         "game_missing": "{game} is not set up as a Telegram game yet.",
         "game_unavailable": "This game is not available here. Get a new one with /games.",
         "group_only": "👥 Games are played together: games and leaderboards are only available in groups. Add me to a group and send /games there.",

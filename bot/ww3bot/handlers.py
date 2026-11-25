@@ -1,16 +1,26 @@
 """
 The updates the bot handles: messages (commands; in groups only the game commands; and
 successful_payment, the only place goods are granted), callback queries (shop buttons, consent,
-games and Play), pre-checkout queries, and the bot's own membership in a group.
+games and Play), inline queries (searching games from any chat), pre-checkout queries, and the
+bot's own membership in a group.
 
 Each on_* function takes the bot and the update's object, so tests can call them with a stand-in bot.
 """
 import logging
 
 from telegram import Bot, CallbackQuery, ChatMember, ChatMemberUpdated, Message, PreCheckoutQuery, Update
-from telegram.ext import Application, CallbackQueryHandler, ChatMemberHandler, ContextTypes, MessageHandler, PreCheckoutQueryHandler, filters
+from telegram.ext import (
+    Application,
+    CallbackQueryHandler,
+    ChatMemberHandler,
+    ContextTypes,
+    InlineQueryHandler,
+    MessageHandler,
+    PreCheckoutQueryHandler,
+    filters,
+)
 
-from ww3bot import chat, config, ledger, reminders
+from ww3bot import chat, config, inline, ledger, reminders
 from ww3bot.catalogue import CURRENCY, product
 from ww3bot.legal import escape_html
 from ww3bot.profile import BOT_NAME, apply_profile
@@ -230,6 +240,11 @@ async def _pre_checkout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     await on_pre_checkout(context.bot, update.pre_checkout_query)
 
 
+async def _inline(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if update.inline_query:
+        await inline.answer(context.bot, update.inline_query)
+
+
 async def _my_chat_member(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await on_my_chat_member(context.bot, update.my_chat_member)
 
@@ -242,6 +257,7 @@ def register_handlers(app: Application) -> None:
     app.add_handler(MessageHandler(filters.ALL & ~filters.UpdateType.EDITED, _message))
     app.add_handler(CallbackQueryHandler(_callback))
     app.add_handler(PreCheckoutQueryHandler(_pre_checkout))
+    app.add_handler(InlineQueryHandler(_inline))
     app.add_handler(ChatMemberHandler(_my_chat_member, ChatMemberHandler.MY_CHAT_MEMBER))
     app.add_error_handler(_error)
 
