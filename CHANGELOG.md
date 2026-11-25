@@ -10,6 +10,11 @@ The version history is now part of the game, grouped by change type and scope.
 
 ### New
 
+#### beachhead
+
+- The two commanders are now animated 3D renders from Blender: the Azov commander raises his pistol
+  and pennant, Prigozhin swings his hammer and heals, on their hero screens and picker cards
+
 #### changelog
 
 - An in-app version history sheet and a public changelog page
