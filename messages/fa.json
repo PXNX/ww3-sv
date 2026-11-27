@@ -1,5 +1,10 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"tutorial_step_counter": "مرحله {current} از {total}",
+	"tutorial_next": "بعدی",
+	"tutorial_back": "قبلی",
+	"tutorial_skip": "رد کردن",
+	"tutorial_tap_target": "روی المان مشخص‌شده ضربه بزن تا ادامه یابد",
 	"location_name": "تنگه هرمز",
 	"home_tagline": "هشت راه برای باز نگه داشتن {location}.",
 	"home_choose_mode": "یک حالت بازی انتخاب کنید",

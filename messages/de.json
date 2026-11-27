@@ -1,5 +1,10 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"tutorial_step_counter": "Schritt {current} von {total}",
+	"tutorial_next": "Weiter",
+	"tutorial_back": "Zurück",
+	"tutorial_skip": "Überspringen",
+	"tutorial_tap_target": "Tippe auf das markierte Element, um fortzufahren",
 	"location_name": "die Straße von Hormus",
 	"home_tagline": "Acht Wege, {location} offen zu halten.",
 	"home_choose_mode": "Wähle einen Spielmodus",

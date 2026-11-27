@@ -1,5 +1,10 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"tutorial_step_counter": "Step {current} of {total}",
+	"tutorial_next": "Next",
+	"tutorial_back": "Back",
+	"tutorial_skip": "Skip",
+	"tutorial_tap_target": "Tap the highlighted control to continue",
 	"location_name": "the Strait of Hormuz",
 	"home_tagline": "Eight ways to keep {location} open.",
 	"home_choose_mode": "Choose a game mode",

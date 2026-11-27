@@ -1,5 +1,10 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"tutorial_step_counter": "Крок {current} з {total}",
+	"tutorial_next": "Далі",
+	"tutorial_back": "Назад",
+	"tutorial_skip": "Пропустити",
+	"tutorial_tap_target": "Торкніться виділеного елемента, щоб продовжити",
 	"location_name": "Ормузька протока",
 	"home_tagline": "{location}: вісім способів не дати їй закритися.",
 	"home_choose_mode": "Обери режим гри",

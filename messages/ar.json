@@ -1,5 +1,10 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"tutorial_step_counter": "الخطوة {current} من {total}",
+	"tutorial_next": "التالي",
+	"tutorial_back": "السابق",
+	"tutorial_skip": "تخطي",
+	"tutorial_tap_target": "اضغط على العنصر المُبرز للمتابعة",
 	"location_name": "مضيق هرمز",
 	"home_tagline": "ثماني طرق لإبقاء {location} مفتوحًا.",
 	"home_choose_mode": "اختر نمط اللعب",

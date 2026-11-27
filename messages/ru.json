@@ -1,5 +1,10 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"tutorial_step_counter": "Шаг {current} из {total}",
+	"tutorial_next": "Далее",
+	"tutorial_back": "Назад",
+	"tutorial_skip": "Пропустить",
+	"tutorial_tap_target": "Коснитесь выделенного элемента, чтобы продолжить",
 	"location_name": "Ормузский пролив",
 	"home_tagline": "{location}: восемь способов не дать ему закрыться.",
 	"home_choose_mode": "Выбери режим игры",
