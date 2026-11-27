@@ -34,6 +34,13 @@ The version history is now part of the game, grouped by change type and scope.
 - Search games from any chat in Telegram's inline mode: type `@game_ww3_bot games Flamingo` and open a
   result, with the group's scoreboard in a group and a Mini App play button everywhere else
 
+### Improved
+
+#### telegram
+
+- The legal links in the bot (purchase consent, `/impressum`, `/agb`, `/widerruf` and `/datenschutz`) now open the
+  translated documents on the game website instead of pages on the bot's own server
+
 ### Fixed
 
 #### runcomrade

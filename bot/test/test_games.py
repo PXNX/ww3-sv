@@ -175,7 +175,7 @@ async def test_a_game_is_posted_with_telegrams_own_play_button(bot):
 
 
 async def test_the_api_answers_like_before(bot):
-    app = create_app(bot, "tok", ENDPOINTS, OPEN_ENDPOINTS, ["https://game.test"], {"agb": "<p>AGB</p>"})
+    app = create_app(bot, "tok", ENDPOINTS, OPEN_ENDPOINTS, ["https://game.test"])
     async with TestClient(TestServer(app)) as client:
         init = signed("tok", {"auth_date": str(int(time.time())), "user": json.dumps({"id": 5, "first_name": "Eve"})})
         post = lambda name, headers: client.post(f"/api/{name}", json={"mode": "convoy"}, headers={"origin": "https://game.test", **headers})  # noqa: E731
@@ -194,6 +194,3 @@ async def test_the_api_answers_like_before(bot):
         assert score.status == 400 and (await score.json())["parameters"]["code"] == "INVALID_INPUT"
 
         assert (await client.options("/api/me", headers={"origin": "https://game.test"})).status == 204
-        page = await client.get("/legal/agb.html")
-        assert page.status == 200 and await page.text() == "<p>AGB</p>"
-        assert (await client.get("/legal/nope.html")).status == 404

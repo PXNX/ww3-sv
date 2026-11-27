@@ -14,7 +14,6 @@ from ww3bot import config, db
 from ww3bot.api import create_app
 from ww3bot.endpoints import ENDPOINTS, OPEN_ENDPOINTS
 from ww3bot.handlers import register_handlers
-from ww3bot.legal import html_pages
 from ww3bot.profile import apply_commands
 from ww3bot.reminders import send_due_reminders
 
@@ -35,7 +34,7 @@ async def post_init(app: Application) -> None:
     await app.bot.delete_webhook(drop_pending_updates=False)
     await apply_commands(app.bot)
 
-    runner = web.AppRunner(create_app(app.bot, config.TOKEN, ENDPOINTS, OPEN_ENDPOINTS, config.API_ORIGINS, html_pages()))
+    runner = web.AppRunner(create_app(app.bot, config.TOKEN, ENDPOINTS, OPEN_ENDPOINTS, config.API_ORIGINS))
     await runner.setup()
     await web.TCPSite(runner, "0.0.0.0", config.API_PORT).start()
     app.bot_data["api"] = runner

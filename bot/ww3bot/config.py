@@ -32,7 +32,7 @@ LITFASS_FEED_URL: Final[str] = getenv("LITFASS_FEED_URL", "")
 # Unlocks the litfass network statistics on the admin page
 LITFASS_STATS_TOKEN: Final[str] = getenv("LITFASS_STATS_TOKEN", "")
 
-# The Mini App endpoints and the legal pages are served on this port
+# The Mini App endpoints are served on this port
 API_PORT: Final[int] = int(getenv("API_PORT") or 3790)
 # Origins the game may call the endpoints from (CORS)
 API_ORIGINS: Final[list[str]] = [
@@ -55,8 +55,7 @@ def _load(path: Path) -> dict:
 CONFIG: Final[dict] = _load(CONFIG_PATH if CONFIG_PATH.exists() else EXAMPLE_CONFIG_PATH)
 CONFIG_MISSING: Final[bool] = not CONFIG_PATH.exists()
 
+# The game website on Vercel; also the base of the legal links sent out by the bot
 APP_URL: Final[str] = (CONFIG.get("appUrl") or "").rstrip("/")
-# Where the legal pages are linked as web pages; empty sends them as messages
-LEGAL_URL: Final[str] = (CONFIG.get("legalUrl") or "").rstrip("/")
 ADMIN_IDS: Final[list[int]] = [int(admin) for admin in CONFIG.get("adminIds") or []]
 OPERATOR: Final[dict] = CONFIG.get("operator") or {}

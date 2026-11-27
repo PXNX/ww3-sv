@@ -1,5 +1,5 @@
 """
-The HTTP side: POST /api/<name> for the game, and the legal pages at GET /legal/<page>.html.
+The HTTP side: POST /api/<name> for the game.
 
 Mini App calls carry the raw initData in the X-Telegram-Init-Data header and the input as the JSON
 body. The initData is checked against the bot token (HMAC, as Telegram documents for Mini Apps) and
@@ -54,7 +54,7 @@ def verify_init_data(raw: str | None, token: str, now: int | None = None) -> dic
     return fields
 
 
-def create_app(bot: Bot, token: str, endpoints: dict, open_endpoints: dict, origins: list[str], pages: dict[str, str]) -> web.Application:
+def create_app(bot: Bot, token: str, endpoints: dict, open_endpoints: dict, origins: list[str]) -> web.Application:
     """`endpoints` get the verified initData; `open_endpoints` run without it and check their own credential."""
 
     def cors(request: web.Request) -> dict[str, str]:
@@ -71,12 +71,6 @@ def create_app(bot: Bot, token: str, endpoints: dict, open_endpoints: dict, orig
 
     def reply(request: web.Request, status: int, body: dict) -> web.Response:
         return web.json_response(body, status=status, headers=cors(request))
-
-    async def legal_page(request: web.Request) -> web.Response:
-        page = pages.get(request.match_info["page"])
-        if page is None:
-            raise web.HTTPNotFound()
-        return web.Response(text=page, content_type="text/html", charset="utf-8", headers={"cache-control": "public, max-age=300"})
 
     async def preflight(request: web.Request) -> web.Response:
         return web.Response(status=204, headers=cors(request))
@@ -107,7 +101,6 @@ def create_app(bot: Bot, token: str, endpoints: dict, open_endpoints: dict, orig
             return reply(request, 500, {"ok": False, "type": "UNKNOWN", "description": "Internal error"})
 
     app = web.Application(client_max_size=64 * 1024)
-    app.router.add_get(r"/legal/{page:[a-z]+}.html", legal_page)
     app.router.add_route("OPTIONS", "/{tail:.*}", preflight)
     app.router.add_post(r"/api/{name:[A-Za-z_][A-Za-z0-9_]*}", call)
     return app

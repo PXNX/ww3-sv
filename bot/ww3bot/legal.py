@@ -1,12 +1,11 @@
 """
 The legal texts German law asks for when selling digital goods: Impressum, Datenschutzerklärung, AGB
 and Widerrufsbelehrung. Their sources are legal/*.txt with {placeholders} for the operator data from
-config.local.json; this module fills them in and renders them as Telegram messages and as small web
-pages.
+config.local.json; this module fills them in and renders them as Telegram messages. The links sent out
+point to the translated versions of the same documents on the game website.
 """
 import re
 from functools import cache
-from html import escape
 from typing import Final
 
 from ww3bot import config
@@ -49,8 +48,19 @@ def escape_html(text) -> str:
     return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+# The bot's German page names and the routes of the same documents on the game website
+WEB_PAGES: Final[dict[str, str]] = {
+    "impressum": "/legal/imprint",
+    "datenschutz": "/legal/privacy",
+    "agb": "/legal/terms",
+    "widerruf": "/legal/withdrawal",
+}
+
+
 def page_url(page: str) -> str:
-    return f"{config.LEGAL_URL}/{page}.html" if config.LEGAL_URL else ""
+    """The document on the game website; empty when the site is not deployed, so the text goes into the chat."""
+    path = WEB_PAGES.get(page)
+    return f"{config.APP_URL}{path}" if config.APP_URL and path else ""
 
 
 def telegram_contact(operator: dict) -> str:
@@ -114,55 +124,3 @@ def legal_messages(page: str) -> list[str]:
     if current:
         messages.append(current)
     return messages
-
-
-def _linkify(escaped: str) -> str:
-    """Plain https URLs in the texts become links."""
-    return re.sub(r"https://[^\s<]+[^\s<.,)]", lambda m: f'<a href="{m.group(0)}">{m.group(0)}</a>', escaped)
-
-
-def render_html(page: str, source: str) -> str:
-    body = []
-    title = PAGES[page]
-    for raw in re.split(r"\n\s*\n", source):
-        block = [line for line in raw.split("\n") if line.strip()]
-        if not block:
-            continue
-        if block[0].startswith("# "):
-            title = block[0][2:]
-            body.append(f"<h1>{escape(title)}</h1>")
-            block = block[1:]
-        elif block[0].startswith("## "):
-            body.append(f"<h2>{escape(block[0][3:])}</h2>")
-            block = block[1:]
-        if not block:
-            continue
-        if all(line.startswith("- ") for line in block):
-            body.append("<ul>" + "".join(f"<li>{_linkify(escape(line[2:]))}</li>" for line in block) + "</ul>")
-        else:
-            body.append("<p>" + "<br>".join(_linkify(escape(line)) for line in block) + "</p>")
-    nav = " · ".join(f'<a href="/legal/{key}.html">{label}</a>' for key, label in PAGES.items())
-    newline = "\n"
-    return f"""<!doctype html>
-<html lang="de">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{escape(title)} · World War 3</title>
-<style>
-body {{ font: 16px/1.55 system-ui, sans-serif; max-width: 46rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; color: #1d1a16; background: #f6efe0; }}
-h1 {{ font-size: 1.7rem; }} h2 {{ font-size: 1.15rem; margin-top: 1.8rem; }}
-nav {{ font-size: .9rem; margin-bottom: 1rem; }} a {{ color: #7a4b12; overflow-wrap: anywhere; }}
-</style>
-</head>
-<body>
-<nav><a href="/">World War 3</a> · {nav}</nav>
-{newline.join(body)}
-</body>
-</html>
-"""
-
-
-def html_pages() -> dict[str, str]:
-    """Every legal page as a web page, served at /legal/<page>.html."""
-    return {page: render_html(page, text(page)) for page in PAGES}

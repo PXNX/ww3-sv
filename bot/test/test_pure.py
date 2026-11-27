@@ -35,7 +35,7 @@ def test_language_follows_telegram(code, lang):
 
 def test_placeholders_are_filled_and_the_legal_footer_is_added():
     text = t("de", "start", name="Ada")
-    assert "Ada" in text and "/impressum" in text
+    assert "Ada" in text and "/legal/imprint" in text
     assert not re.search(r"\{\w+\}", text)
 
 
@@ -59,12 +59,21 @@ def test_missing_operator_data_and_unknown_placeholders_are_refused():
         legal.fill_text("{nope}", CONFIG)
 
 
-def test_rendering_escapes_html_and_links_urls():
-    html = legal.render_html("datenschutz", "# Titel\n\n## A <b>\n\nSiehe https://telegram.org/privacy.\n\n- eins\n- zwei")
-    assert "<h1>Titel</h1>" in html
-    assert "<h2>A &lt;b&gt;</h2>" in html
-    assert '<a href="https://telegram.org/privacy">https://telegram.org/privacy</a>.' in html
-    assert "<ul><li>eins</li><li>zwei</li></ul>" in html
+def test_legal_links_point_to_the_game_website(monkeypatch):
+    monkeypatch.setattr(legal.config, "APP_URL", "https://game.test")
+    expected = {
+        "impressum": "/legal/imprint",
+        "datenschutz": "/legal/privacy",
+        "agb": "/legal/terms",
+        "widerruf": "/legal/withdrawal",
+    }
+    for page, path in expected.items():
+        assert legal.page_url(page) == f"https://game.test{path}"
+    assert legal.page_url("nope") == ""
+
+    # Without a deployed site the bot still sends the texts into the chat
+    monkeypatch.setattr(legal.config, "APP_URL", "")
+    assert all(legal.page_url(page) == "" for page in legal.PAGES)
 
 
 def test_legal_messages_stay_under_the_telegram_limit():

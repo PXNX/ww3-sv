@@ -14,12 +14,12 @@ repository; paths below are relative to `bot/`.
   delivery and acknowledges losing the right of withdrawal (§ 356 Abs. 4 and 5 BGB); the consent is stored with
   the version of its wording and repeated in every purchase confirmation sent to the chat.
 - **Sales are open** with or without `config.local.json`: `me` always lists the catalogue and `invoice`
-  creates a Stars link for any item. Fill in the operator data in `config.local.json` so the legal pages
-  name the real seller; no purchase is gated on it.
-- **Legal pages for German law**: Impressum, Datenschutzerklärung, AGB and Widerrufsbelehrung as web pages at
-  `/legal/<page>.html`. `/impressum`, `/datenschutz`, `/agb`, `/widerruf` (aliases `/imprint`, `/privacy`, `/terms`,
-  `/withdrawal`) link them once `legalUrl` is set, and only send the text into the chat while it is not.
-  `operator.telegram` adds a Telegram contact to the Impressum and `/paysupport`. `/paysupport` is the support contact Telegram requires for bots that sell.
+  creates a Stars link for any item. The operator data there names the seller on the purchase confirmation
+  and on the bot's fallback legal texts; no purchase is gated on it.
+- **Legal pages for German law**: Impressum, Datenschutzerklärung, AGB and Widerrufsbelehrung live on the game website at
+  `/legal/imprint`, `/legal/privacy`, `/legal/terms` and `/legal/withdrawal`. `/impressum`, `/datenschutz`, `/agb`, `/widerruf`
+  (aliases `/imprint`, `/privacy`, `/terms`, `/withdrawal`) link there; until the website has an `appUrl`, the bot sends the German
+  texts into the chat instead. `operator.telegram` adds a Telegram contact to `/paysupport`. `/paysupport` is the support contact Telegram requires for bots that sell.
 - **Gift codes**: `t.me/game_ww3_bot?start=MN5` (bot chat), `?startapp=MN5` (straight into the Mini App) or MN5 typed in
   the supply depot inside Telegram put 5 revival tokens into the account wallet, once per account (`ww3bot/gifts.py`).
 - **Invites and streak reminders**: `/invite` links earn revival tokens, and the game reports its daily streak so
@@ -96,9 +96,11 @@ each once with `/newgame` (title, description, a 640×360 picture) and keep **Al
 1. `python -m venv venv`, then `venv/bin/pip install -r requirements.txt` (on Windows `venv\Scripts\pip`).
 2. `cp example.env .env` and set `TELEGRAM` and `DATABASE_URL`. The tables are created on the first start.
 3. `cp config.example.json config.local.json` and fill in the operator data (name, postal address, e-mail;
-   phone and VAT id are optional) so the legal pages name the real seller. Put your Telegram user id into
-   `adminIds` for `/stats`, `/set_cmd` and payment alerts.
+   phone and VAT id are optional) so the purchase confirmation and the fallback legal texts name the real
+   seller; `appUrl` has to match the deployed website, since the legal links point there. Put your Telegram
+   user id into `adminIds` for `/stats`, `/set_cmd` and payment alerts.
 4. At @BotFather, send `/setinline` and pick the bot to turn inline mode on; no code change is needed.
-5. `python -m ww3bot` from this folder. It polls for updates and serves the endpoints and legal pages on
-   `API_PORT`; that port has to be reachable over HTTPS at the address the game is built with.
+5. `python -m ww3bot` from this folder. It polls for updates and serves the endpoints on `API_PORT`;
+   that port has to be reachable over HTTPS at the address the game is built with. The legal links in the
+   bot point at `appUrl`, so the website has to be deployed for them to resolve.
 6. `TEST_DATABASE_URL=postgresql://… python -m pytest` runs the tests against an empty database.
