@@ -22,6 +22,15 @@ export type Ammo = Record<Weapon, number>;
 /** The strikes handed out on every new day */
 export const DAILY_AMMO: Readonly<Ammo> = { neptune: 10, usv: 4, salvo: 2, depth: 1, sonar: 3 };
 
+/** Pro starts each day with a few more shots and one more scan, so a run lasts longer */
+export const PRO_AMMO_BONUS: Readonly<Ammo> = { neptune: 2, usv: 1, salvo: 0, depth: 1, sonar: 1 };
+
+export function dailyAmmo(pro = false): Ammo {
+	return pro
+		? (Object.fromEntries(WEAPONS.map((w) => [w, DAILY_AMMO[w] + PRO_AMMO_BONUS[w]])) as Ammo)
+		: { ...DAILY_AMMO };
+}
+
 /** Extra Neptune missiles the player can unlock once a day with a button */
 export const BONUS_SHOTS = 2;
 
@@ -59,9 +68,9 @@ export interface FleetHuntSave {
 }
 
 /** The save after the day has changed: fresh ammo and the bonus available again */
-export function resupply(save: FleetHuntSave, today: string): FleetHuntSave {
+export function resupply(save: FleetHuntSave, today: string, pro = false): FleetHuntSave {
 	if (save.day === today) return save;
-	return { ...save, day: today, ammo: { ...DAILY_AMMO }, bonusClaimed: false };
+	return { ...save, day: today, ammo: dailyAmmo(pro), bonusClaimed: false };
 }
 
 export function totalAmmo(ammo: Ammo): number {
@@ -148,7 +157,10 @@ function isAmmo(value: unknown): boolean {
 	return WEAPONS.every((weapon) => {
 		const left = ammo[weapon];
 		if (left === undefined) return weapon !== 'neptune' && weapon !== 'usv';
-		return isCount(left, DAILY_AMMO[weapon] + (weapon === 'neptune' ? BONUS_SHOTS : 0));
+		return isCount(
+			left,
+			DAILY_AMMO[weapon] + PRO_AMMO_BONUS[weapon] + (weapon === 'neptune' ? BONUS_SHOTS : 0)
+		);
 	});
 }
 

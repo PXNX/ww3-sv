@@ -18,6 +18,7 @@
 	import { BONUS_SHOTS, DAILY_AMMO, strikesLeft } from '#lib/game/fleethunt/save.js';
 	import { formatCountdown } from '#lib/game/wordle/daily.js';
 	import { m } from '#lib/paraglide/messages.js';
+	import { telegram } from '#lib/stores/telegram.svelte.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
 	import { FleetHuntGame } from '#lib/stores/fleethuntGame.svelte.js';
 	import IconHelp from '~icons/lucide/circle-help';
@@ -125,6 +126,12 @@
 			<p dir="auto" class="tabular-nums">{m.fleethunt_hud_fleets({ count: game.fleetsSunk })}</p>
 			<p dir="auto" class="tabular-nums">
 				{m.fleethunt_hud_strikes({ count: strikesLeft(game.ammo) })}
+				{#if telegram().pro}
+					<span
+						class="ms-1 rounded-full bg-explosion-yellow px-1 text-[0.65rem]"
+						title={m.fleethunt_pro_ammo()}>PRO</span
+					>
+				{/if}
 			</p>
 			<p dir="auto" class="flex items-center gap-1 tabular-nums">
 				<IconStar class="size-4" aria-hidden="true" />{game.stars}

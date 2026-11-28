@@ -29,7 +29,7 @@ import {
 } from '#lib/game/fleethunt/fleet.js';
 import {
 	BONUS_SHOTS,
-	DAILY_AMMO,
+	dailyAmmo,
 	SAVE_KEY,
 	isFleetHuntSave,
 	normalize,
@@ -40,6 +40,7 @@ import {
 	type Ping,
 	type StoredSave
 } from '#lib/game/fleethunt/save.js';
+import { telegram } from '#lib/stores/telegram.svelte.js';
 import {
 	fleetResult,
 	newRun,
@@ -103,7 +104,7 @@ export class FleetHuntGame {
 	shots = $state.raw<Shot[]>([]);
 	pings = $state.raw<Ping[]>([]);
 	run = $state.raw<RunStats>(newRun());
-	ammo = $state.raw<Ammo>({ ...DAILY_AMMO });
+	ammo = $state.raw<Ammo>(dailyAmmo());
 	bonusClaimed = $state(false);
 	points = $state(0);
 	fleetsSunk = $state(0);
@@ -152,7 +153,7 @@ export class FleetHuntGame {
 		const today = dayKey(this.#now());
 		const stored = this.#store().read<StoredSave | null>(SAVE_KEY, null, isFleetHuntSave);
 		if (stored) {
-			this.#apply(resupply(normalize(stored), today));
+			this.#apply(resupply(normalize(stored), today, telegram().pro));
 		} else {
 			this.#apply({
 				version: 1,
@@ -162,7 +163,7 @@ export class FleetHuntGame {
 				pings: [],
 				run: newRun(),
 				stars: 0,
-				ammo: { ...DAILY_AMMO },
+				ammo: dailyAmmo(telegram().pro),
 				bonusClaimed: false,
 				points: 0,
 				fleetsSunk: 0

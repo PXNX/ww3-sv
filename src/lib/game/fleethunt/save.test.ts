@@ -5,6 +5,7 @@ import {
 	normalize,
 	BONUS_SHOTS,
 	DAILY_AMMO,
+	dailyAmmo,
 	isFleetHuntSave,
 	resupply,
 	type FleetHuntSave
@@ -102,5 +103,20 @@ describe('isFleetHuntSave', () => {
 		['negative points', save({ points: -5 })]
 	])('rejects %s', (_, value) => {
 		expect(isFleetHuntSave(value)).toBe(false);
+	});
+});
+
+describe('pro daily ammo', () => {
+	it('hands out extra shots and a scan each day', () => {
+		const pro = dailyAmmo(true);
+		expect(pro.neptune).toBe(DAILY_AMMO.neptune + 2);
+		expect(pro.sonar).toBe(DAILY_AMMO.sonar + 1);
+		expect(pro.depth).toBe(DAILY_AMMO.depth + 1);
+		expect(dailyAmmo()).toEqual(DAILY_AMMO);
+	});
+
+	it('accepts a saved hunt that carries the pro bonus', () => {
+		const state = save({ ammo: dailyAmmo(true) });
+		expect(isFleetHuntSave(state)).toBe(true);
 	});
 });
