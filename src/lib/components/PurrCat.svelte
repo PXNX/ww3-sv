@@ -133,6 +133,33 @@
 					{:else}
 						<ellipse cx="0" cy="26" rx="22" ry="28" fill={colors.shade} opacity="0.28" />
 					{/if}
+					<!-- A tiny brand mark on the backside: the AI labs have, inexplicably, sponsored
+					     the ritual. Drawn small and flat like the rest of the cartoon, one of two
+					     parody emblems so the cats are still easy to tell apart. -->
+					{#if cat.profile.coat === 'black' || cat.profile.coat === 'grey'}
+						<!-- A looped knot, the openai-shaped mark -->
+						<g
+							transform="translate({fat ? 44 : 30} {fat ? 40 : 36}) scale(0.62)"
+							fill="none"
+							stroke="#1b1b22"
+							stroke-width="2.4"
+						>
+							<path
+								d="M0 -7 C6 -9 10 -4 8 1 C7 6 2 8 -2 6 C-6 4 -7 -1 -4 -4 C-1 -7 4 -6 5 -2 C6 1 3 3 0 2"
+							/>
+						</g>
+					{:else}
+						<!-- A bracketed A, the anthropic-shaped mark -->
+						<g
+							transform="translate({fat ? 44 : 30} {fat ? 40 : 36}) scale(0.62)"
+							fill="none"
+							stroke="#1b1b22"
+							stroke-width="2.4"
+							stroke-linecap="round"
+						>
+							<path d="M-7 6 L0 -7 L7 6 M-4 1 L4 1" />
+						</g>
+					{/if}
 					<!-- Front paws -->
 					<ellipse cx={fat ? -28 : -16} cy="56" rx="13" ry="8" fill={colors.fur} />
 					<ellipse cx={fat ? 28 : 16} cy="56" rx="13" ry="8" fill={colors.fur} />
