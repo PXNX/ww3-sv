@@ -225,3 +225,20 @@ def test_six_months_clamps_short_months():
 
     end = gifts.plus_months(6, datetime(2026, 8, 31, tzinfo=timezone.utc))
     assert (end.year, end.month, end.day) == (2027, 2, 28)
+
+
+async def test_pro_gift_stacks_on_an_active_subscription():
+    from datetime import datetime, timezone
+
+    from ww3bot import gifts
+
+    await ledger.upsert_account(person(89))
+    running = int(gifts.plus_months(2).timestamp())
+    await db.execute("UPDATE accounts SET pro_until = %s WHERE user_id = %s", (running, 89))
+    result = await gifts.redeem(89, "PRO6M")
+    expected = int(
+        gifts.plus_months(6, datetime.fromtimestamp(running, timezone.utc)).timestamp()
+    )
+    assert result.status == "ok"
+    assert abs(result.pro_until - expected) <= 2
+    assert (await ledger.wallet(89))["pro_until"] == result.pro_until

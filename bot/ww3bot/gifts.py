@@ -55,7 +55,7 @@ def plus_months(months: int, now: datetime | None = None) -> datetime:
 
 
 async def redeem(user_id: int, code: str) -> Redemption:
-    """Redeems once per account. A Pro gift extends pro_until from now or from the current end."""
+    """Redeems once per account. A Pro gift stacks on top of any Pro time already running."""
     gift_code = normalize(code)
     if not gift_code:
         return Redemption("unknown", 0)
@@ -72,11 +72,16 @@ async def redeem(user_id: int, code: str) -> Redemption:
 
     until = None
     if gift.pro_months:
-        end = plus_months(gift.pro_months)
-        until = int(end.timestamp())
+        current = await db.fetchone(
+            "SELECT pro_until FROM accounts WHERE user_id = %s", (user_id,)
+        )
+        running_until = int(current["pro_until"]) if current and current["pro_until"] else 0
+        # Stack from the later of now and the existing end: an active subscription keeps every
+        # day it has left and the gift adds six whole calendar months after that.
+        base = datetime.fromtimestamp(max(running_until, db.now()), timezone.utc)
+        until = int(plus_months(gift.pro_months, base).timestamp())
         await db.execute(
-            "UPDATE accounts SET pro_until = GREATEST(COALESCE(pro_until, 0), %s) WHERE user_id = %s",
-            (until, user_id),
+            "UPDATE accounts SET pro_until = %s WHERE user_id = %s", (until, user_id)
         )
     # Revives are credited by the gifts row inserted above; the wallet sums that table.
     return Redemption("ok", gift.revives, until)
