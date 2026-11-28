@@ -25,7 +25,7 @@
 	import GameShell from '#lib/components/GameShell.svelte';
 	import LivesBar from '#lib/components/LivesBar.svelte';
 	import PauseOverlay from '#lib/components/PauseOverlay.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { TOLERANCE, STARTING_LIVES } from '#lib/game/energiewende/grid.js';
 	import { cameoFile } from '#lib/game/energiewende/reactions.js';
 	import { SOURCE_IDS } from '#lib/game/energiewende/sources.js';
@@ -41,6 +41,7 @@
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
 	import IconZap from '~icons/lucide/zap';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new EnergiewendeGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_energiewende_name();
@@ -171,7 +172,7 @@
 		{/if}
 	{/snippet}
 
-	<section class="mx-auto flex w-full max-w-3xl flex-col gap-2">
+	<section data-tutorial="playfield" class="mx-auto flex w-full max-w-3xl flex-col gap-2">
 		<!-- HUD: clock, lives, balance and the grid stress -->
 		<div
 			class="flex flex-col gap-1.5 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1.5 shadow-[3px_3px_0_var(--color-ink)]"
@@ -358,51 +359,13 @@
 		</div>
 	</section>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.energiewende_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.energiewende_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.energiewende_tutorial_goal()}</p>
-		<p>{m.energiewende_tutorial_sliders()}</p>
-		<ul class="flex flex-col gap-2">
-			{#each SOURCE_IDS as id (id)}
-				<li class="flex items-center gap-2">
-					<span
-						class="flex size-9 shrink-0 items-center justify-center rounded-md border-2 border-ink"
-						style:background={SOURCE_COLORS[id]}
-					>
-						<EnergiewendeSourceIcon
-							{id}
-							class="size-6 {id === 'coal' || id === 'nuclear' ? 'text-paper' : 'text-ink'}"
-						/>
-					</span>
-					<span><strong>{SOURCE_NAMES[id]()}</strong> {SOURCE_HINTS[id]()}</span>
-				</li>
-			{/each}
-		</ul>
-		<p>{m.energiewende_tutorial_cold()}</p>
-		<p>{m.energiewende_tutorial_stress()}</p>
-		<p>{m.energiewende_tutorial_events()}</p>
-		<p>{m.energiewende_tutorial_critics()}</p>
-		<ul class="flex flex-col gap-2">
-			{#each ['businessman', 'woman'] as const as kind (kind)}
-				<li class="flex items-center gap-2">
-					{#each ['calm', 'annoyed', 'outraged'] as const as mood (mood)}
-						<img
-							src={cameoAsset(cameoFile(kind, mood))}
-							alt={cameoAlt(kind, mood)}
-							class="size-12 shrink-0 rounded-md border-2 border-ink bg-paper object-cover"
-						/>
-					{/each}
-					<span><strong>{cameoName(kind)}</strong></span>
-				</li>
-			{/each}
-		</ul>
-		<p>{m.energiewende_tutorial_score()}</p>
-		<p class="hidden text-sm sm:block">{m.energiewende_keyboard_hint()}</p>
-	</TutorialModal>
+	/>
 
 	<GameOverModal
 		open={game.status === 'over'}

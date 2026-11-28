@@ -8,7 +8,7 @@
 	import GameShell from '#lib/components/GameShell.svelte';
 	import PauseOverlay from '#lib/components/PauseOverlay.svelte';
 	import RotateHint from '#lib/components/RotateHint.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { furySpriteSrc } from '#lib/game/fury/assets.js';
 	import { BIRD_KINDS } from '#lib/game/fury/birds.js';
 	import { drawScene, fitCamera } from '#lib/game/fury/furyRender.js';
@@ -19,6 +19,7 @@
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
 	import IconRotate from '~icons/lucide/rotate-ccw';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new FuryGame();
 	// The how-to-play screen opens on the first visit and whenever the help button is tapped
@@ -98,7 +99,7 @@
 	{/snippet}
 
 	{#if playing}
-		<div class="relative flex min-h-0 flex-1 flex-col">
+		<div data-tutorial="playfield" class="relative flex min-h-0 flex-1 flex-col">
 			<FuryCanvas {game} />
 			<RotateHint onportrait={(upright) => upright && game.setPaused(true)} />
 			{#if game.paused}
@@ -115,31 +116,18 @@
 			{/if}
 		</div>
 	{:else}
-		<FuryLevelSelect {game} />
+		<div data-tutorial="playfield" class="flex min-h-0 flex-1 flex-col">
+			<FuryLevelSelect {game} />
+		</div>
 	{/if}
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.fury_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.fury_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.fury_intro()}</p>
-		<p>{m.fury_controls_hint()}</p>
-		<p>{m.fury_tutorial_birds()}</p>
-		<ul class="flex flex-col gap-2">
-			{#each BIRD_KINDS as kind (kind)}
-				{@const src = furySpriteSrc(kind)}
-				<li class="flex items-center gap-3">
-					{#if src}
-						<img {src} alt="" class="size-12 shrink-0 object-contain" />
-					{/if}
-					<span><strong>{birdName(kind)}:</strong> {birdHint(kind)}</span>
-				</li>
-			{/each}
-		</ul>
-		<p class="hidden text-sm sm:block">{m.fury_keyboard_hint()}</p>
-	</TutorialModal>
+	/>
 </GameShell>
 
 <FuryWinPanel

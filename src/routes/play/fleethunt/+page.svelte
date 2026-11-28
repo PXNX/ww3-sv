@@ -9,7 +9,7 @@
 	import { onMount } from 'svelte';
 	import FleetHuntGrid from '#lib/components/FleetHuntGrid.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { SHIP_NAMES, WEAPON_NAMES } from '#lib/components/fleethuntText.js';
 	import { WEAPONS } from '#lib/game/fleethunt/fleet.js';
 	import { comboMultiplier } from '#lib/game/fleethunt/scoring.js';
@@ -28,6 +28,7 @@
 	import IconStar from '~icons/lucide/star';
 	import IconZap from '~icons/lucide/zap';
 	import IconTv from '~icons/lucide/tv';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new FleetHuntGame();
 	const modeName = m.mode_fleethunt_name();
@@ -116,7 +117,7 @@
 		</button>
 	{/snippet}
 
-	<section class="mx-auto flex w-full flex-col gap-2 pb-2">
+	<section data-tutorial="playfield" class="mx-auto flex w-full flex-col gap-2 pb-2">
 		<!-- Sunk fleets and the strikes left for today, above the water they apply to -->
 		<div
 			class="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1.5 font-display text-sm font-bold shadow-[3px_3px_0_var(--color-ink)]"
@@ -279,28 +280,11 @@
 		{/if}
 	</section>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.fleethunt_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.fleethunt_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.fleethunt_tutorial_goal()}</p>
-		<p>{m.fleethunt_tutorial_weapons()}</p>
-		<p>{m.fleethunt_tutorial_arsenal()}</p>
-		<p>{m.fleethunt_tutorial_fog()}</p>
-		<p>{m.fleethunt_tutorial_tricks()}</p>
-		<p>
-			{m.fleethunt_tutorial_daily({
-				neptune: DAILY_AMMO.neptune,
-				usv: DAILY_AMMO.usv,
-				salvo: DAILY_AMMO.salvo,
-				depth: DAILY_AMMO.depth,
-				sonar: DAILY_AMMO.sonar
-			})}
-		</p>
-		<p>{m.fleethunt_tutorial_bonus({ count: BONUS_SHOTS })}</p>
-		<p>{m.fleethunt_tutorial_points()}</p>
-		<p>{m.fleethunt_tutorial_stars()}</p>
-	</TutorialModal>
+	/>
 </GameShell>

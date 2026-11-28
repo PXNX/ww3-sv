@@ -13,7 +13,7 @@
 	import GpsLiarWinPanel from '#lib/components/GpsLiarWinPanel.svelte';
 	import LivesBar from '#lib/components/LivesBar.svelte';
 	import RotateHint from '#lib/components/RotateHint.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { cargoName, levelName } from '#lib/components/gpsliarText.js';
 	import { STARTING_HEARTS } from '#lib/game/gpsliar/config.js';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
@@ -25,6 +25,7 @@
 	import IconList from '~icons/lucide/list';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new GpsLiarGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_gpsliar_name();
@@ -109,7 +110,7 @@
 
 	{#if playing}
 		<!-- The playfield fills the screen; the HUD floats over its top under the page controls -->
-		<section class="relative flex min-h-0 flex-1 flex-col">
+		<section data-tutorial="playfield" class="relative flex min-h-0 flex-1 flex-col">
 			<div
 				bind:offsetHeight={hudHeight}
 				class="pointer-events-none absolute top-(--hud-top) right-(--hud-right) left-(--hud-left) z-10 mx-auto flex max-w-xl flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1 shadow-[3px_3px_0_var(--color-ink)]"
@@ -132,28 +133,18 @@
 			<RotateHint onportrait={(upright) => upright && game.pause()} />
 		</section>
 	{:else}
-		<GpsLiarLevelSelect {game} />
+		<div data-tutorial="playfield" class="flex min-h-0 flex-1 flex-col">
+			<GpsLiarLevelSelect {game} />
+		</div>
 	{/if}
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.gpsliar_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.gpsliar_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.gpsliar_tutorial_goal()}</p>
-		<p>{m.gpsliar_tutorial_steer()}</p>
-		<p>{m.gpsliar_tutorial_chart()}</p>
-		<p>{m.gpsliar_tutorial_truth()}</p>
-		<p>{m.gpsliar_tutorial_cross_check()}</p>
-		<p>{m.gpsliar_tutorial_hazards()}</p>
-		<p>{m.gpsliar_tutorial_spoof()}</p>
-		<p>{m.gpsliar_tutorial_patrol()}</p>
-		<p>{m.gpsliar_tutorial_fuel()}</p>
-		<p>{m.gpsliar_tutorial_storm()}</p>
-		<p>{m.gpsliar_tutorial_stars()}</p>
-		<p class="hidden text-sm sm:block">{m.gpsliar_tutorial_keys()}</p>
-	</TutorialModal>
+	/>
 
 	<GpsLiarWinPanel
 		open={game.status === 'won'}
