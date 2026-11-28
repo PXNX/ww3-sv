@@ -130,7 +130,8 @@ export function stepBody(
 	holds: Hold[],
 	allowed: number,
 	startDepth: number,
-	dtMs: number = 1000 / 60
+	dtMs: number = 1000 / 60,
+	grabStrength = 1
 ): PhysicsResult & { allowed: number } {
 	const startX = body.x;
 	const startY = body.y;
@@ -168,7 +169,7 @@ export function stepBody(
 	for (let i = 0; i < SUBSTEPS; i++) {
 		// The deeper it is stuck, the slower the mud lets it move
 		const loose = 1 - Math.min(1, allowed / startDepth);
-		const reach = MAX_MOVE_PER_SUBSTEP * (MUD_FLOOR + (1 - MUD_FLOOR) * loose ** 3);
+		const reach = MAX_MOVE_PER_SUBSTEP * (MUD_FLOOR + (1 - MUD_FLOOR) * loose ** 3) * grabStrength;
 		if (bow && stern) {
 			fitEnds(body, targets.get(bow)!, targets.get(stern)!, reach);
 		} else if (bow || stern) {

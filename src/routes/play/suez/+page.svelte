@@ -22,6 +22,12 @@
 	import { tutorialSteps } from './tutorial.js';
 
 	const game = new SuezGame({ reducedMotion: prefersReducedMotion() });
+	const tideText = {
+		high: m.suez_tide_high,
+		low: m.suez_tide_low,
+		rising: m.suez_tide_rising,
+		falling: m.suez_tide_falling
+	};
 	const modeName = m.mode_suez_name();
 
 	// The how-to-play screen opens on the first visit and whenever the help button is tapped
@@ -106,6 +112,9 @@
 				</p>
 				<LivesBar lives={game.lives} max={STARTING_LIVES} class="shrink-0 text-xl" />
 			</div>
+			<p dir="auto" class="text-xs font-bold opacity-75" data-tutorial="hud-tide">
+				{tideText[game.tide]()}
+			</p>
 			<div data-tutorial="hud-stuck" class="flex items-center gap-3">
 				<div
 					class="h-3 flex-1 overflow-hidden rounded-full border-2 border-ink bg-sand"

@@ -4,6 +4,7 @@
  * what the page chrome shows (score, hearts, stuck meter, queue, excavator) is reactive, synced
  * after each step.
  */
+import { tideAt } from '#lib/game/suez/tides.js';
 import {
 	DIG_ANIMATION_MS,
 	STARTING_LIVES,
@@ -55,6 +56,8 @@ export class SuezGame {
 	/** The stuck meter, 0 to 100 */
 	stuckPercent = $state(100);
 	waiting = $state(0);
+	/** Current tide phase, mirrored for the HUD */
+	tide = $state<'low' | 'rising' | 'high' | 'falling'>('low');
 	/** Seconds until the excavator can dig again; 0 when it is ready */
 	excavatorWait = $state(0);
 	canalsCleared = $state(0);
@@ -287,6 +290,7 @@ export class SuezGame {
 		this.level = state.level;
 		this.stuckPercent = Math.round(stuckFraction(state) * 100);
 		this.waiting = state.queue.waiting;
+		this.tide = tideAt(state.levelTimeMs).phase;
 		this.excavatorWait = excavatorSeconds(state);
 		this.canalsCleared = state.canalsCleared;
 		this.shipsReleased = state.shipsReleased;

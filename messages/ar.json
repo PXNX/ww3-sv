@@ -1,5 +1,9 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"suez_tide_high": "مد عالٍ: الشد أقوى والصف ينمو أسرع",
+	"suez_tide_low": "مد منخفض: الصف يهدأ",
+	"suez_tide_rising": "مد مرتفع",
+	"suez_tide_falling": "مد منخفض",
 	"bordershift_hud_control": "ضبط الصف {value}",
 	"mode_modelhearing_name": "جلسة النماذج",
 	"mode_modelhearing_description": "أمودي يريد حظرًا وهوانغ يريد وصولًا غير محدود. ابحث عن حل وسط.",

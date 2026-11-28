@@ -1,5 +1,9 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"suez_tide_high": "Приплив: тяга сильніша, черга росте швидше",
+	"suez_tide_low": "Відплив: черга повільніша",
+	"suez_tide_rising": "Приплив зростає",
+	"suez_tide_falling": "Приплив спадає",
 	"bordershift_hud_control": "Контроль черги {value}",
 	"mode_modelhearing_name": "Слухання моделей",
 	"mode_modelhearing_description": "Амоді хоче заборони, Хуанг — безмежного доступу. Знайдіть компроміс.",

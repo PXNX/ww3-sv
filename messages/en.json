@@ -1,5 +1,9 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"suez_tide_high": "High tide: pulls bite harder, the queue grows faster",
+	"suez_tide_low": "Low tide: the queue eases off",
+	"suez_tide_rising": "Rising tide",
+	"suez_tide_falling": "Falling tide",
 	"bordershift_hud_control": "Queue control {value}",
 	"mode_modelhearing_name": "Model Hearing",
 	"mode_modelhearing_description": "Amodei wants a ban. Huang wants unlimited access. Find the compromise.",

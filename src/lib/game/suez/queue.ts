@@ -31,10 +31,11 @@ export function stepQueue(
 	queue: QueueState,
 	dtMs: number,
 	level: number,
-	capacity: number = QUEUE_CAPACITY
+	capacity: number = QUEUE_CAPACITY,
+	queueRate = 1
 ): QueueEvent[] {
 	const events: QueueEvent[] = [];
-	const interval = levelParams(level).queueIntervalMs;
+	const interval = levelParams(level).queueIntervalMs / Math.max(0.1, queueRate);
 	queue.timerMs += Math.max(0, dtMs);
 	while (queue.timerMs >= interval) {
 		queue.timerMs -= interval;

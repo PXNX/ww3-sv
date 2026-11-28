@@ -1,5 +1,9 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"suez_tide_high": "Flut: Züge greifen besser, die Schlange wächst schneller",
+	"suez_tide_low": "Ebbe: die Schlange entspannt sich",
+	"suez_tide_rising": "Steigende Flut",
+	"suez_tide_falling": "Fallende Flut",
 	"bordershift_hud_control": "Schlangen-kontrolle {value}",
 	"mode_modelhearing_name": "Modell-Anhörung",
 	"mode_modelhearing_description": "Amodei will ein Verbot. Huang will unbegrenzten Zugang. Finde den Kompromiss.",

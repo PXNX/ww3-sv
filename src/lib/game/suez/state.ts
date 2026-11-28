@@ -30,6 +30,7 @@ import {
 } from './config';
 import { isFree, jamDepth, stepBody, type Hold } from './physics';
 import { createQueue, releaseQueue, stepQueue, type QueueState } from './queue';
+import { tideAt } from './tides.js';
 
 export type SuezPhase = 'stuck' | 'sailing' | 'over';
 
@@ -257,7 +258,8 @@ export function stepGame(state: SuezState, random: Random, dtMs: number): SuezEv
 		state.holds,
 		state.allowed,
 		state.startDepth,
-		dtMs
+		dtMs,
+		tideAt(state.levelTimeMs).grabStrength
 	);
 	state.allowed = result.allowed;
 	if (result.impact > 1.2) events.push({ type: 'bump', impact: result.impact });
@@ -276,7 +278,13 @@ export function stepGame(state: SuezState, random: Random, dtMs: number): SuezEv
 		return events;
 	}
 
-	for (const event of stepQueue(state.queue, dtMs, state.level, QUEUE_CAPACITY)) {
+	for (const event of stepQueue(
+		state.queue,
+		dtMs,
+		state.level,
+		QUEUE_CAPACITY,
+		tideAt(state.levelTimeMs).queueRate
+	)) {
 		if (event.type === 'arrived') {
 			events.push({ type: 'arrived', waiting: event.waiting });
 		} else {

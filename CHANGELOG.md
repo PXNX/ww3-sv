@@ -8,6 +8,11 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 
 ### Improved
 
+#### suez
+
+- A slow tide cycle: at high water the wedged ship moves more easily but the waiting queue grows
+  faster; at low water the queue eases off
+
 #### bordershift
 
 - A queue-control meter: correct calls give the post more nerve and the next convoy waits longer;

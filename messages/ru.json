@@ -1,5 +1,9 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"suez_tide_high": "Прилив: тяга сильнее, очередь растёт быстрее",
+	"suez_tide_low": "Отлив: очередь спокойнее",
+	"suez_tide_rising": "Прилив прибывает",
+	"suez_tide_falling": "Прилив убывает",
 	"bordershift_hud_control": "Контроль очереди {value}",
 	"mode_modelhearing_name": "Слушание моделей",
 	"mode_modelhearing_description": "Амоди хочет запрета, Хуанг — безграничного доступа. Найдите компромисс.",
