@@ -13,6 +13,15 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 - A `PRO6M` gift code that grants six months of Pro once per Telegram account, redeemable from a
   bot link, a Mini App link or the supply depot
 
+#### warroom
+
+- Pro grants a second council directive every day, so a campaign can move faster without changing
+  what a directive costs
+
+#### fleethunt
+
+- Pro adds a few extra shots and one more sonar scan to each day's supply, so a hunt lasts longer
+
 #### convoy
 
 - Ship choice before a run: the tanker is balanced, the corvette trades a heart for speed and a
@@ -34,6 +43,7 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 
 - Delivery contracts: a time-limited barrel target that pays a cash reward and a small permanent
   output bonus, offered again after each run
+- Pro extends away-time earnings to a 24-hour shift credited at full speed
 - The bank now shows the active contract's progress and time, and toasts announce new, completed
   and missed contracts
 
