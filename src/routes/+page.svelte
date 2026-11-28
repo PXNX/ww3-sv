@@ -69,11 +69,13 @@
 	</header>
 
 	{#if lastGame && lastGame.status === 'playable'}
+		{@const Icon = lastGame.icon}
 		<a
 			href={lastGame.href}
 			class="btn-chunky sticker-interactive flex w-full items-center justify-center gap-2 bg-explosion-yellow px-4 py-3 text-base font-bold"
 		>
-			{m.home_continue({ game: lastGame.name() })}
+			<Icon class="size-5 shrink-0" aria-hidden="true" />
+			<span>{m.home_continue({ game: lastGame.name() })}</span>
 			<IconChevronRight class="size-5 rtl:rotate-180" aria-hidden="true" />
 		</a>
 	{/if}

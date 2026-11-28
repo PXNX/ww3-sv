@@ -8,7 +8,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { telemetry } from '#lib/services/telemetry.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { MODES, modeById } from '#lib/modes/registry.js';
+	import { MODES } from '#lib/modes/registry.js';
 	import { PLAY_STYLES, STYLE_OF_MODE, type PlayStyle } from '#lib/modes/styles.js';
 	import { leaderById, type LeaderId } from '#lib/theme/leaders.js';
 	import IconHourglass from '~icons/lucide/hourglass';
@@ -32,8 +32,6 @@
 			({ mode }) => leader === null || mode.leaders.includes(leader)
 		)
 	);
-
-	const recent = $derived(careerState.recent(1).map((id) => modeById(id)));
 
 	const featured = (ids: readonly LeaderId[]) =>
 		new Intl.ListFormat(getLocale(), { type: 'conjunction' }).format(
@@ -78,21 +76,6 @@
 		<IconShuffle class="size-4 text-white dark:text-white" aria-hidden="true" />
 		{m.home_surprise()}
 	</button>
-	{#if recent.length > 0}
-		<span class="ms-1 text-sm font-bold">{m.home_recent()}</span>
-		{#each recent as mode (mode.id)}
-			{#if mode.status === 'playable'}
-				{@const Icon = mode.icon}
-				<a
-					href={resolveRoute(mode.href)}
-					class="btn-chunky bg-paper px-2.5 py-1 text-sm text-black dark:text-white"
-				>
-					<Icon class="size-4 text-white dark:text-white" aria-hidden="true" />
-					{mode.name()}
-				</a>
-			{/if}
-		{/each}
-	{/if}
 </div>
 
 {#snippet item(mode: (typeof MODES)[number], tilt: number)}
