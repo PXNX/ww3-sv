@@ -511,6 +511,11 @@ export function playedCount(profile: CareerProfile): number {
 }
 
 /** The games played most recently, newest first */
+/** The mode a returning player most likely wants: the last one they played, if any */
+export function continueMode(profile: CareerProfile): CareerMode | null {
+	return recentModes(profile, 1)[0] ?? null;
+}
+
 export function recentModes(profile: CareerProfile, limit = 3): CareerMode[] {
 	return (Object.entries(profile.modes) as [CareerMode, ModeProgress][])
 		.sort((a, b) => b[1].lastPlayed - a[1].lastPlayed)

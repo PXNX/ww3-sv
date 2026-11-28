@@ -46,6 +46,12 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 - Strikes backed by more sensor readings now pay a bonus; firing at an unread contact is reckless
   and raises escalation
 
+### Improved
+
+#### home
+
+- A one-tap Continue button on the start screen opens the last game you played
+
 ### New
 
 #### avatar

@@ -1,5 +1,6 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"home_continue": "Weiter: {game}",
 	"gpugrid_coolant": "Kühlmittel ({count})",
 	"feedtuner_factcheck": "Faktencheck ({count})",
 	"hearing_filibuster": "Filibuster ({count})",

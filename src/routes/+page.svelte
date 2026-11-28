@@ -3,6 +3,8 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { APP_NAME } from '#lib/config.js';
 	import { career } from '#lib/game/career/store.svelte.js';
+	import { continueMode } from '#lib/game/career/profile.js';
+	import { modeById } from '#lib/modes/registry.js';
 	import { rankLabel } from '#lib/game/career/rankText.js';
 	import { telegram } from '#lib/stores/telegram.svelte.js';
 	import type { LeaderId } from '#lib/theme/leaders.js';
@@ -24,6 +26,8 @@
 
 	// The badge under the title: who is playing, how far they got, and the way into the profile
 	const playerName = $derived(account.user?.firstName || m.avatar_title());
+	const lastMode = $derived(continueMode(careerState.profile));
+	const lastGame = $derived(lastMode ? modeById(lastMode) : null);
 	const playerRank = $derived(
 		m.career_title({ rank: rankLabel(careerState.rank), level: careerState.level })
 	);
@@ -63,6 +67,16 @@
 			<IconChevronRight class="size-5 shrink-0 opacity-70 rtl:rotate-180" aria-hidden="true" />
 		</a>
 	</header>
+
+	{#if lastGame && lastGame.status === 'playable'}
+		<a
+			href={lastGame.href}
+			class="btn-chunky sticker-interactive flex w-full items-center justify-center gap-2 bg-explosion-yellow px-4 py-3 text-base font-bold"
+		>
+			{m.home_continue({ game: lastGame.name() })}
+			<IconChevronRight class="size-5 rtl:rotate-180" aria-hidden="true" />
+		</a>
+	{/if}
 
 	<CloudSaveHint />
 

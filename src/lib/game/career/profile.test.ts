@@ -28,6 +28,7 @@ import {
 	newCareer,
 	parseCareer,
 	playedCount,
+	continueMode,
 	recentModes,
 	reviveCost,
 	streakDeadline,
@@ -363,5 +364,15 @@ describe('saved profiles', () => {
 		const loaded = parseCareer(old, DAY1);
 		expect(loaded?.streak).toBe(4);
 		expect(loaded?.bestStreak).toBe(4);
+	});
+});
+
+describe('continue a run', () => {
+	it('returns the most recently played mode, or nothing for a fresh profile', () => {
+		expect(continueMode(newCareer(new Date(2026, 9, 27, 12)))).toBeNull();
+		const profile = newCareer(new Date(2026, 9, 27, 12));
+		profile.modes.blocks = { plays: 1, best: 10, lastPlayed: 100 };
+		profile.modes.convoy = { plays: 1, best: 20, lastPlayed: 200 };
+		expect(continueMode(profile)).toBe('convoy');
 	});
 });

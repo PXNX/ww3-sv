@@ -1,5 +1,6 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"home_continue": "ادامه: {game}",
 	"gpugrid_coolant": "مایع خنککننده ({count})",
 	"feedtuner_factcheck": "بررسی واقعیت ({count})",
 	"hearing_filibuster": "سخنرانی طولانی ({count})",
