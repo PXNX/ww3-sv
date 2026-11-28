@@ -14,7 +14,7 @@
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import LivesBar from '#lib/components/LivesBar.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import {
 		DEFENSE_KINDS,
 		POWERS,
@@ -35,6 +35,7 @@
 	import IconSnowflake from '~icons/lucide/snowflake';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new DroneWallGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_dronewall_name();
@@ -114,7 +115,7 @@
 
 	<!-- The HUD and the playfield share one width: the whole width on a phone; on a wide screen up
 		to 3:4 of the height, the field then scrolls a little when it is taller than the space left -->
-	<section
+	<section data-tutorial="playfield"
 		class="mx-auto flex min-h-0 w-full flex-1 flex-col items-center gap-2"
 		style:max-width="max(17rem, min(100%, calc((100dvh - 16.8rem) * 0.75)))"
 	>
@@ -212,43 +213,13 @@
 		<DroneWallCanvas {game} />
 	</section>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.dronewall_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.dronewall_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.dronewall_tutorial_goal()}</p>
-		<p>{m.dronewall_tutorial_build()}</p>
-		<p>{m.dronewall_tutorial_helmets()}</p>
-		<p>{m.dronewall_tutorial_air()}</p>
-		<p>{m.dronewall_tutorial_armor()}</p>
-		<p>{m.dronewall_tutorial_attackers()}</p>
-		<p>{m.dronewall_tutorial_weather()}</p>
-		<p>{m.dronewall_tutorial_elite()}</p>
-		<p>{m.dronewall_tutorial_powers()}</p>
-		<p>{m.dronewall_tutorial_tall()}</p>
-		<ul class="flex flex-col gap-2">
-			{#each DEFENSE_KINDS as kind (kind)}
-				<li class="flex items-center gap-2">
-					<DroneWallDefense {kind} class="size-9 shrink-0" />
-					<span>
-						<strong>{DEFENSE_NAMES[kind]()}</strong>: {DEFENSE_ROLES[kind]()}
-					</span>
-				</li>
-			{/each}
-			{#each POWER_KINDS as power (power)}
-				<li class="flex items-center gap-2">
-					<DroneWallDefense kind={power} class="size-9 shrink-0" />
-					<span>
-						<strong>{POWER_NAMES[power]()}</strong>: {POWER_ROLES[power]()}
-					</span>
-				</li>
-			{/each}
-		</ul>
-		<p>{m.dronewall_tutorial_speed()}</p>
-		<p class="hidden text-sm sm:block">{m.dronewall_keyboard_hint()}</p>
-	</TutorialModal>
+	/>
 
 	<GameOverModal
 		open={game.status === 'over'}

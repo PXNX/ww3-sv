@@ -8,7 +8,7 @@
 	import DroneworksField from '#lib/components/DroneworksField.svelte';
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
@@ -16,6 +16,7 @@
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new DroneworksGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_droneworks_name();
@@ -71,23 +72,17 @@
 		{/if}
 	{/snippet}
 
-	<section class="mx-auto flex w-full max-w-xl flex-1 flex-col items-center gap-2">
+	<section data-tutorial="playfield" class="mx-auto flex w-full max-w-xl flex-1 flex-col items-center gap-2">
 		<DroneworksField {game} />
 	</section>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.droneworks_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.droneworks_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.droneworks_tutorial_goal()}</p>
-		<p>{m.droneworks_tutorial_chain()}</p>
-		<p>{m.droneworks_tutorial_budget()}</p>
-		<p>{m.droneworks_tutorial_strikes()}</p>
-		<p>{m.droneworks_tutorial_flak()}</p>
-		<p>{m.droneworks_tutorial_keys()}</p>
-	</TutorialModal>
+	/>
 
 	<GameOverModal
 		open={game.status === 'over'}

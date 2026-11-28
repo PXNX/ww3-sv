@@ -10,7 +10,7 @@
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import LivesBar from '#lib/components/LivesBar.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { MAX_AMMO, STARTING_LIVES } from '#lib/game/dome/config.js';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -20,6 +20,7 @@
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new DomeGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_dome_name();
@@ -84,7 +85,7 @@
 		{/if}
 	{/snippet}
 
-	<section class="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col items-center gap-2">
+	<section data-tutorial="playfield" class="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col items-center gap-2">
 		<div
 			class="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
 		>
@@ -146,21 +147,13 @@
 		<DomeCanvas {game} />
 	</section>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.dome_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.dome_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.dome_tutorial_goal()}</p>
-		<p>{m.dome_tutorial_tap()}</p>
-		<p>{m.dome_tutorial_value()}</p>
-		<p>{m.dome_tutorial_harmless()}</p>
-		<p>{m.dome_tutorial_ammo()}</p>
-		<p>{m.dome_tutorial_power()}</p>
-		<p>{m.dome_tutorial_combo()}</p>
-		<p>{m.dome_tutorial_keys()}</p>
-	</TutorialModal>
+	/>
 
 	<GameOverModal
 		open={game.status === 'over'}

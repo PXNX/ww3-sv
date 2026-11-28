@@ -9,7 +9,7 @@
 	import CurlingCanvas from '#lib/components/CurlingCanvas.svelte';
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import {
 		CLEAN_ICE_BONUS,
 		ENDS_TOTAL,
@@ -31,6 +31,7 @@
 	import IconRotateCw from '~icons/lucide/rotate-cw';
 	import IconStar from '~icons/lucide/star';
 	import IconWind from '~icons/lucide/wind';
+	import { tutorialSteps } from './tutorial.js';
 
 	const reducedMotion = prefersReducedMotion();
 	const game = new CurlingGame({ reducedMotion });
@@ -133,7 +134,7 @@
 		{/if}
 	{/snippet}
 
-	<section
+	<section data-tutorial="playfield"
 		class="mx-auto flex w-full flex-col gap-2"
 		style:max-width="max(20rem, min(100%, calc((100dvh - 16rem) * 1.524)))"
 	>
@@ -329,21 +330,13 @@
 		</p>
 	</section>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.curling_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.curling_tutorial_close()}
-		onclose={closeTutorial}
-	>
-		<p>{m.curling_tutorial_goal()}</p>
-		<p>{m.curling_tutorial_aim()}</p>
-		<p>{m.curling_tutorial_sweep()}</p>
-		<p>{m.curling_tutorial_curl()}</p>
-		<p>{m.curling_tutorial_scoring()}</p>
-		<p>{m.curling_tutorial_gamble({ penalty: GAMBLE_PENALTY })}</p>
-		<p>{m.curling_tutorial_hazards()}</p>
-		<p class="hidden text-sm sm:block">{m.curling_keyboard_hint()}</p>
-	</TutorialModal>
+		onclose={() => (showTutorial = false)}
+	/>
 
 	<GameOverModal
 		open={game.phase === 'over'}

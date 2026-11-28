@@ -11,7 +11,7 @@
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import LivesBar from '#lib/components/LivesBar.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { STARTING_LIVES } from '#lib/game/chipfab/config.js';
 	import {
 		CHEER_TIER,
@@ -34,6 +34,7 @@
 	import IconPlay from '~icons/lucide/play';
 	import IconRight from '~icons/lucide/arrow-right';
 	import IconUp from '~icons/lucide/arrow-up';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new ChipFabGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_chipfab_name();
@@ -129,7 +130,7 @@
 	{/snippet}
 
 	<!-- The HUD and the playfield share one width, as wide as the height allows -->
-	<section
+	<section data-tutorial="playfield"
 		class="mx-auto flex w-full flex-col items-center gap-2"
 		style:max-width="max(17rem, min(100%, calc((100dvh - 22rem) * 0.714)))"
 	>
@@ -211,19 +212,13 @@
 		{/if}
 	</section>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.chipfab_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.chipfab_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.chipfab_tutorial_goal()}</p>
-		<p>{m.chipfab_tutorial_stack()}</p>
-		<p>{m.chipfab_tutorial_merge()}</p>
-		<p>{m.chipfab_tutorial_shortage()}</p>
-		<p>{m.chipfab_tutorial_jacket()}</p>
-		<p>{m.chipfab_tutorial_score()}</p>
-	</TutorialModal>
+	/>
 
 	<GameOverModal
 		open={game.status === 'over'}
