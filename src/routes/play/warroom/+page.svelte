@@ -88,6 +88,7 @@
 	{#snippet actions()}
 		<button
 			type="button"
+			data-tutorial="end-day"
 			class="btn-chunky bg-explosion-yellow px-2 py-1 text-sm disabled:opacity-50 sm:px-3"
 			disabled={game.status !== 'playing'}
 			onclick={() => game.endTurn()}
@@ -108,11 +109,15 @@
 	{/snippet}
 
 	<section data-tutorial="playfield" class="mx-auto grid w-full max-w-6xl gap-2 pb-3">
-		<WarRoomHud {game} />
+		<div data-tutorial="hud" class="contents">
+			<WarRoomHud {game} />
+		</div>
 
 		<div class="grid grid-cols-1 items-start gap-2 lg:grid-cols-[minmax(0,1fr)_21rem]">
 			<div class="flex min-w-0 flex-col gap-2">
-				<WarRoomMap {game} />
+				<div data-tutorial="map" class="contents">
+					<WarRoomMap {game} />
+				</div>
 
 				<WarRoomTicker {game} />
 
@@ -135,6 +140,7 @@
 						<button
 							type="button"
 							role="tab"
+							data-tutorial="tab-{entry.id}"
 							id="warroom-tab-{entry.id}"
 							aria-selected={tab === entry.id}
 							aria-controls="warroom-panel-{entry.id}"
@@ -176,7 +182,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.warroom_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.warroom_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

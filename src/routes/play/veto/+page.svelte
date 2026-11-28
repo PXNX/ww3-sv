@@ -73,15 +73,24 @@
 		{/if}
 	{/snippet}
 
-	<section data-tutorial="playfield" class="mx-auto flex w-full max-w-xl flex-col items-center gap-2">
+	<section
+		data-tutorial="playfield"
+		class="mx-auto flex w-full max-w-xl flex-col items-center gap-2"
+	>
 		<div
 			class="flex w-full items-center justify-between gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
 		>
-			<LivesBar lives={game.lives} max={STARTING_LIVES} class="shrink-0 text-xl" />
+			<span data-tutorial="hud-lives" class="shrink-0">
+				<LivesBar lives={game.lives} max={STARTING_LIVES} class="text-xl" />
+			</span>
 			<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
 				{m.veto_hud_round({ round: game.round })}
 			</p>
-			<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
+			<p
+				data-tutorial="hud-streak"
+				dir="auto"
+				class="font-display text-sm font-bold tabular-nums sm:text-base"
+			>
 				{m.veto_hud_streak({ count: game.streak })}
 				<span class="text-tie-red">{m.veto_hud_multiplier({ multiplier: game.multiplier })}</span>
 			</p>
@@ -96,7 +105,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.veto_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.veto_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

@@ -65,7 +65,8 @@
 	{/snippet}
 
 	<!-- The HUD and the playfield share one width, as wide as the height allows -->
-	<section data-tutorial="playfield"
+	<section
+		data-tutorial="playfield"
 		class="mx-auto flex w-full flex-col items-center gap-2"
 		style:max-width="max(15rem, min(100%, calc((100cqh - 6.5rem) * 0.706)))"
 	>
@@ -88,7 +89,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.whack_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.whack_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

@@ -108,12 +108,14 @@
 	{/snippet}
 
 	<!-- The HUD and the playfield share one width, as wide as the height allows -->
-	<section data-tutorial="playfield"
+	<section
+		data-tutorial="playfield"
 		class="mx-auto flex w-full flex-col items-center gap-2"
 		style:max-width="max(17rem, min(100%, calc((100dvh - 14rem) * {(game.cols * 10) /
 			(game.rows * 11)})))"
 	>
 		<div
+			data-tutorial="hud"
 			class="flex w-full gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
 		>
 			<VaultBanker
@@ -162,7 +164,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.vault_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.vault_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

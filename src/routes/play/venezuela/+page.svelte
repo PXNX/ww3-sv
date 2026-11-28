@@ -114,7 +114,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.venezuela_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.venezuela_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>
