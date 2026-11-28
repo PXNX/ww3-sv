@@ -6,6 +6,20 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 
 ## Unreleased
 
+### New
+
+#### tycoon
+
+- Delivery contracts: a time-limited barrel target that pays a cash reward and a small permanent
+  output bonus, offered again after each run
+- The bank now shows the active contract's progress and time, and toasts announce new, completed
+  and missed contracts
+
+#### beachhead
+
+- Squad synergies: boats carrying complementary troops hit harder — combined arms, fire support,
+  field medics and breach-and-clear — with the active ones listed in the landing party sheet
+
 ## v1.6.0 - 2026-11-28
 
 Interactive how-to-play walkthroughs in every game, with spotlights on the controls they describe.
