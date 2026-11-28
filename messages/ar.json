@@ -1,5 +1,7 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"hackers_proxy": "تدوير البروكسي ({count})",
+	"hackers_proxy_none": "لا توجد قفزات بروكسي متبقية",
 	"dome_interceptor_label": "اعتراضية",
 	"dome_interceptor_standard": "قياسية",
 	"dome_interceptor_swift": "سريعة",

@@ -193,6 +193,17 @@
 								<span class="hk-warn" role="alert">{m.hackers_trace_critical()}</span>
 							{/if}
 							<span class="tabular-nums">{m.hackers_trace()} {Math.floor(game.trace)}%</span>
+							<button
+								type="button"
+								class="hk-btn px-1 text-[0.65rem]"
+								disabled={game.proxies <= 0 || game.trace <= 0}
+								aria-label={m.hackers_proxy({ count: game.proxies })}
+								onclick={() => game.useProxy()}
+							>
+								{game.proxies > 0
+									? m.hackers_proxy({ count: game.proxies })
+									: m.hackers_proxy_none()}
+							</button>
 						</div>
 						<div
 							class="hk-meter mt-1 {traceTone}"

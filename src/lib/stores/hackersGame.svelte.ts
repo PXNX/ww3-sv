@@ -6,7 +6,7 @@
  * away unseen (and never on the server).
  */
 import { haptic } from '#lib/haptic/haptic.svelte.js';
-import { GLYPHS, STARTING_LIVES, TRACE_MAX } from '#lib/game/hackers/config.js';
+import { GLYPHS, PROXY_HOPS, STARTING_LIVES, TRACE_MAX } from '#lib/game/hackers/config.js';
 import type { Chip } from '#lib/game/hackers/keylog.js';
 import { emptyHardware, type Hardware, type HardwareId } from '#lib/game/hackers/hardware.js';
 import {
@@ -37,6 +37,7 @@ import {
 	flipRelay,
 	openingEvent,
 	step,
+	rotateProxy,
 	submitGuess,
 	tapChip,
 	typeLetter,
@@ -141,12 +142,19 @@ export class HackersGame {
 	lives = $state(STARTING_LIVES);
 	/** 0 to 100 */
 	trace = $state(0);
+	/** Proxy hops left to burn when the trace climbs */
+	proxies = $state(PROXY_HOPS);
 	stage = $state<Stage>('breach');
 	contractNumber = $state(1);
 	completed = $state(0);
 	ip = $state('');
 	system = $state('');
 	guesses = $state.raw<Guess[]>([]);
+	/** Burns a proxy hop to reduce the trace */
+	useProxy() {
+		for (const event of rotateProxy(this.state)) this.#handle(event);
+	}
+
 	/** The glyphs typed into the current attempt */
 	input = $state.raw<number[]>([]);
 	codeLength = $state(4);

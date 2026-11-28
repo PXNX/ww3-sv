@@ -12,6 +12,8 @@ import {
 	STARTING_LIVES,
 	TARGETS,
 	TRACE_AFTER_TRACED,
+	PROXY_HOPS,
+	PROXY_TRACE_RELIEF,
 	TRACE_MAX,
 	TRACE_RELIEF,
 	TRACE_ROTATED,
@@ -70,6 +72,8 @@ export interface HackersState {
 	contract: Contract;
 	lives: number;
 	trace: number;
+	/** Proxy hops left to burn when the trace gets close */
+	proxies: number;
 	score: number;
 	/** Contracts finished */
 	completed: number;
@@ -113,6 +117,7 @@ export type HackersEvent =
 	| { type: 'upgrade'; tool: ToolId; level: number; cost: number }
 	| { type: 'siphon'; amount: number; left: number }
 	| { type: 'traced' }
+	| { type: 'proxy'; trace: number }
 	| { type: 'game-over' };
 
 /** A system outside the target list, such as one found on a bank's network */
@@ -174,6 +179,7 @@ export function createGame(random: Random, options: GameOptions = {}): HackersSt
 		contract: newContract(level, random, upgrades, hardware, targetIndex, options.extra),
 		lives: STARTING_LIVES,
 		trace: 0,
+		proxies: PROXY_HOPS,
 		score: 0,
 		completed: 0,
 		number: level,
@@ -190,6 +196,14 @@ export function createGame(random: Random, options: GameOptions = {}): HackersSt
 		siphonMs: 0,
 		siphoned: 0
 	};
+}
+
+/** Burns a proxy hop to slip the trace, if any are left */
+export function rotateProxy(state: HackersState): HackersEvent[] {
+	if (state.proxies <= 0 || state.trace <= 0) return [];
+	state.proxies -= 1;
+	state.trace = Math.max(0, state.trace - PROXY_TRACE_RELIEF);
+	return [{ type: 'proxy', trace: state.trace }];
 }
 
 export function attemptsLeft(contract: Contract): number {
@@ -209,6 +223,7 @@ function addTrace(state: HackersState, amount: number, random: Random): HackersE
 		return events;
 	}
 	state.trace = TRACE_AFTER_TRACED;
+	state.proxies = PROXY_HOPS;
 	state.contract = newContract(
 		state.number,
 		random,

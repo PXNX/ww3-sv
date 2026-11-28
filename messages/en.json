@@ -1,5 +1,7 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"hackers_proxy": "Rotate proxy ({count})",
+	"hackers_proxy_none": "No proxy hops left",
 	"dome_interceptor_label": "Interceptor",
 	"dome_interceptor_standard": "Standard",
 	"dome_interceptor_swift": "Swift",

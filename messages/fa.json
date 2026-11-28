@@ -1,5 +1,7 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"hackers_proxy": "چرخش پروکسی ({count})",
+	"hackers_proxy_none": "پرش پروکسی باقی نمانده",
 	"dome_interceptor_label": "رهگیر",
 	"dome_interceptor_standard": "استاندارد",
 	"dome_interceptor_swift": "سریع",

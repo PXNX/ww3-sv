@@ -1,5 +1,7 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"hackers_proxy": "Proxy wechseln ({count})",
+	"hackers_proxy_none": "Keine Proxy-Sprünge mehr",
 	"dome_interceptor_label": "Abfangjäger",
 	"dome_interceptor_standard": "Standard",
 	"dome_interceptor_swift": "Schnell",

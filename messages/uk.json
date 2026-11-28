@@ -1,5 +1,7 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"hackers_proxy": "Змінити проксі ({count})",
+	"hackers_proxy_none": "Стрибків проксі більше немає",
 	"dome_interceptor_label": "Перехоплювач",
 	"dome_interceptor_standard": "Стандартний",
 	"dome_interceptor_swift": "Швидкий",

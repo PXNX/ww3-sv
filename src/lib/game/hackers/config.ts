@@ -75,3 +75,7 @@ export function contractSpec(n: number): ContractSpec {
 		}
 	};
 }
+
+/** Proxy hops: a deliberate detour that buys back some trace, once per contract stage */
+export const PROXY_HOPS = 3;
+export const PROXY_TRACE_RELIEF = 18;
