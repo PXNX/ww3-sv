@@ -8,6 +8,22 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 
 ### New
 
+#### alignment
+
+- A new AI-control game: reward precise, creative or pleasing answers across eight prompts and keep
+  the model helpful without letting it drift
+- Dario Amodei joins as an Anthropic guest, very serious about safety and even more serious about
+  the invoice
+
+#### gpugrid
+
+- A new Novideo scheduling game: send compute jobs to three racks, keeping them cool enough to
+  avoid three thermal alarms
+
+#### feedtuner
+
+- A new Meta ranking game: promote, hold or demote posts while keeping reach up and outrage down
+
 #### shop
 
 - A `PRO6M` gift code that grants six months of Pro and five revival tokens once per Telegram
