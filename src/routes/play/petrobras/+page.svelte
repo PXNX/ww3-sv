@@ -9,7 +9,7 @@
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import PetrobrasField from '#lib/components/PetrobrasField.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
@@ -17,6 +17,7 @@
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new PetrobrasGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_petrobras_name();
@@ -69,7 +70,7 @@
 		{/if}
 	{/snippet}
 
-	<section class="mx-auto flex w-full flex-col items-center gap-2">
+	<section data-tutorial="playfield" class="mx-auto flex w-full flex-col items-center gap-2">
 		<div
 			class="flex w-full items-center justify-center gap-6 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
 		>
@@ -84,18 +85,13 @@
 		<PetrobrasField {game} />
 	</section>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.petrobras_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.petrobras_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.petrobras_tutorial_goal()}</p>
-		<p>{m.petrobras_tutorial_fronts()}</p>
-		<p>{m.petrobras_tutorial_neglect()}</p>
-		<p>{m.petrobras_tutorial_boss()}</p>
-		<p>{m.petrobras_tutorial_keys()}</p>
-	</TutorialModal>
+	/>
 
 	<GameOverModal
 		open={game.status === 'over'}

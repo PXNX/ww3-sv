@@ -6,7 +6,7 @@
 	import RaidLobby from '#lib/components/RaidLobby.svelte';
 	import RaidResults from '#lib/components/RaidResults.svelte';
 	import RaidSkillIcon from '#lib/components/RaidSkillIcon.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import {
 		PERK_HINTS,
 		PERK_NAMES,
@@ -30,6 +30,7 @@
 	import { RaidGame } from '#lib/stores/raidGame.svelte.js';
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconZap from '~icons/lucide/zap';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new RaidGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_raid_name();
@@ -105,12 +106,13 @@
 	{/snippet}
 
 	{#if inRaid}
-		<div class="relative flex h-full min-h-0 flex-1 flex-col">
+		<div data-tutorial="playfield" class="relative flex h-full min-h-0 flex-1 flex-col">
 			<RaidCanvas {game} />
 		</div>
 	{:else}
 		<!-- The lobby scrolls under the floating header -->
 		<div
+			data-tutorial="playfield"
 			class="absolute inset-0 overflow-y-auto bg-[radial-gradient(ellipse_at_30%_15%,#6a4bf0,#3b23a8_50%,#1c0f5e)] ps-[calc(0.75rem+env(safe-area-inset-left))] pe-[calc(0.75rem+env(safe-area-inset-right))] pt-[calc(var(--hud-top)+0.5rem)] pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
 		>
 			<RaidLobby {game} onStart={start} />
@@ -123,47 +125,13 @@
 		onportrait={(upright) => upright && game.status === 'playing' && game.pause()}
 	/>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.raid_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.raid_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.raid_tutorial_goal()}</p>
-		<p>{m.raid_tutorial_controls()}</p>
-		<p>{m.raid_tutorial_sprint()}</p>
-		<p>{m.raid_tutorial_weapons()}</p>
-		<ul class="flex flex-col gap-3">
-			{#each WEAPON_KINDS as kind (kind)}
-				<li class="flex flex-col gap-1">
-					<span class="flex items-center gap-2">
-						<RaidItemIcon {kind} rarity="common" class="size-10 shrink-0" />
-						<span><strong>{WEAPON_NAMES[kind]()}</strong> {WEAPON_TRAITS[kind]()}</span>
-					</span>
-					{#each WEAPONS[kind].skills as skill (skill)}
-						<span class="flex items-center gap-2 ps-12 text-sm">
-							<RaidSkillIcon {skill} class="size-5 shrink-0" />
-							<span><strong>{SKILL_NAMES[skill]()}:</strong> {SKILL_HINTS[skill]()}</span>
-						</span>
-					{/each}
-				</li>
-			{/each}
-		</ul>
-		<p>{m.raid_tutorial_variants()}</p>
-		<p>{m.raid_tutorial_enemies()}</p>
-		<p>{m.raid_tutorial_loot()}</p>
-		<ul class="flex flex-col gap-1 text-sm">
-			{#each ARMOR_PERKS as perk (perk)}
-				<li><strong>{PERK_NAMES[perk]()}:</strong> {PERK_HINTS[perk]()}</li>
-			{/each}
-		</ul>
-		<p>{m.raid_tutorial_crystals()}</p>
-		<p>{m.raid_tutorial_season()}</p>
-		<p>{m.raid_tutorial_quests()}</p>
-		<p>{m.raid_tutorial_events()}</p>
-		<p>{m.raid_tutorial_revive()}</p>
-		<p class="hidden text-sm sm:block">{m.raid_keyboard_hint()}</p>
-	</TutorialModal>
+	/>
 
 	{#if game.status === 'over' && result}
 		<RaidResults

@@ -13,7 +13,7 @@
 	import PurrFinalePanel from '#lib/components/PurrFinalePanel.svelte';
 	import PurrPentagramBoard from '#lib/components/PurrPentagramBoard.svelte';
 	import PurrRiddleCard from '#lib/components/PurrRiddleCard.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { litCount } from '#lib/game/purrpentagram/candles.js';
 	import { finaleStage } from '#lib/game/purrpentagram/finale.js';
 	import { totalHearts } from '#lib/game/purrpentagram/state.js';
@@ -33,6 +33,7 @@
 	import IconCookie from '~icons/lucide/cookie';
 	import IconStar from '~icons/lucide/star';
 	import IconThunder from '~icons/lucide/cloud-lightning';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new PurrPentagramGame();
 	const modeName = m.mode_purrpentagram_name();
@@ -128,7 +129,7 @@
 		{/if}
 	{/snippet}
 
-	<section class="mx-auto flex w-full max-w-xl flex-col gap-2 pb-2">
+	<section data-tutorial="playfield" class="mx-auto flex w-full max-w-xl flex-col gap-2 pb-2">
 		<div
 			class="flex w-full items-center justify-between gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1 shadow-[3px_3px_0_var(--color-ink)]"
 		>
@@ -196,42 +197,13 @@
 		</PurrPentagramBoard>
 	</section>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.purr_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.purr_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.purr_tutorial_goal()}</p>
-		<p>{m.purr_tutorial_petting()}</p>
-		<p>{m.purr_tutorial_clues()}</p>
-		<p>{m.purr_tutorial_star()}</p>
-		<p>{m.purr_tutorial_room()}</p>
-		<ul class="flex flex-col gap-1.5 text-sm">
-			<li class="flex items-center gap-2">
-				<IconCandle class="size-5 shrink-0" aria-hidden="true" />{m.purr_event_candles()}
-			</li>
-			<li class="flex items-center gap-2">
-				<IconDim class="size-5 shrink-0" aria-hidden="true" />{m.purr_event_dim()}
-			</li>
-			<li class="flex items-center gap-2">
-				<IconDraft class="size-5 shrink-0" aria-hidden="true" />{m.purr_event_draft()}
-			</li>
-			<li class="flex items-center gap-2">
-				<IconThunder class="size-5 shrink-0" aria-hidden="true" />{m.purr_event_thunder()}
-			</li>
-			<li class="flex items-center gap-2">
-				<IconLaser class="size-5 shrink-0" aria-hidden="true" />{m.purr_event_laser()}
-			</li>
-			<li class="flex items-center gap-2">
-				<IconDoor class="size-5 shrink-0" aria-hidden="true" />{m.purr_event_creak()}
-			</li>
-		</ul>
-		<p>{m.purr_tutorial_calm()}</p>
-		<p>{m.purr_tutorial_candles()}</p>
-		<p>{m.purr_tutorial_extras()}</p>
-		<p class="hidden text-sm sm:block">{m.purr_keyboard_hint()}</p>
-	</TutorialModal>
+	/>
 
 	<GameOverModal
 		open={sheetOpen}

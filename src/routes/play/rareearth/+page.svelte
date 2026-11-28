@@ -11,7 +11,7 @@
 	import GameShell from '#lib/components/GameShell.svelte';
 	import LivesBar from '#lib/components/LivesBar.svelte';
 	import RareEarthField from '#lib/components/RareEarthField.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
 	import { STARTING_LIVES } from '#lib/game/rareearth/config.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -21,6 +21,7 @@
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new RareEarthGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_rareearth_name();
@@ -89,7 +90,7 @@
 		{/if}
 	{/snippet}
 
-	<section class="mx-auto flex w-full max-w-xl flex-col items-center gap-2">
+	<section data-tutorial="playfield" class="mx-auto flex w-full max-w-xl flex-col items-center gap-2">
 		<div
 			class="flex w-full items-center justify-between gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
 		>
@@ -113,19 +114,13 @@
 		<RareEarthField {game} />
 	</section>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.rareearth_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.rareearth_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.rareearth_tutorial_goal()}</p>
-		<p>{m.rareearth_tutorial_route()}</p>
-		<p>{m.rareearth_tutorial_rules()}</p>
-		<p>{m.rareearth_tutorial_hearts()}</p>
-		<p>{m.rareearth_tutorial_score()}</p>
-		<p>{m.rareearth_tutorial_keys()}</p>
-	</TutorialModal>
+	/>
 
 	<GameOverModal
 		open={game.status === 'over'}

@@ -9,7 +9,7 @@
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import ReconCanvas from '#lib/components/ReconCanvas.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { MAX_SORTIES } from '#lib/game/recon/config.js';
 	import { SENSORS } from '#lib/game/recon/contacts.js';
 	import { RECON_TEXT } from '#lib/game/recon/text.js';
@@ -21,6 +21,7 @@
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
 	import IconShieldCheck from '~icons/lucide/shield-check';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new ReconGame();
 	const modeName = RECON_TEXT.title;
@@ -85,7 +86,7 @@
 
 	<!-- Portrait: HUD, scope, sensors and dossier in a column. On a short (sideways phone) screen the
 	     scope sits on the left, as tall as the screen allows, and the rest stacks beside it. -->
-	<section
+	<section data-tutorial="playfield"
 		class="mx-auto grid w-full max-w-[max(17rem,min(100%,calc((100dvh-23rem)*0.857)))] gap-2 pb-2 [@media(max-height:520px)]:max-w-none [@media(max-height:520px)]:grid-cols-[auto_minmax(0,1fr)] [@media(max-height:520px)]:content-start"
 	>
 		<!-- Everything that can end the run or the sortie, above the scope it applies to -->
@@ -236,18 +237,13 @@
 		</div>
 	</section>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={RECON_TEXT.tutorial.title}
+		steps={tutorialSteps}
 		closeLabel={RECON_TEXT.helpClose}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{RECON_TEXT.tutorial.goal}</p>
-		<p>{RECON_TEXT.tutorial.controls}</p>
-		<p>{RECON_TEXT.tutorial.sensors}</p>
-		<p>{RECON_TEXT.tutorial.rules}</p>
-		<p>{RECON_TEXT.tutorial.verdict}</p>
-	</TutorialModal>
+	/>
 
 	<GameOverModal
 		open={game.status === 'over'}
