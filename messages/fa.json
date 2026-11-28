@@ -1,5 +1,6 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"falklands_spotter": "شناسایی ({count})",
 	"leakpatrol_popup_spread": "آب به {room} سرایت کرد",
 	"hackers_proxy": "چرخش پروکسی ({count})",
 	"hackers_proxy_none": "پرش پروکسی باقی نمانده",

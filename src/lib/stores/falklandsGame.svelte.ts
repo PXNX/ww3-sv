@@ -8,6 +8,7 @@ import {
 	deal,
 	enemyLeft,
 	move,
+	useSpotter,
 	repair,
 	starsFor,
 	talk,
@@ -67,6 +68,8 @@ export class FalklandsGame {
 	score = $state(0);
 	hull = $state(MAX_HULL);
 	chaff = $state(0);
+	/** Reconnaissance sorties left */
+	spotter = $state(0);
 	streak = $state(0);
 	bestStreak = $state(0);
 	stars = $state(0);
@@ -120,6 +123,12 @@ export class FalklandsGame {
 	}
 
 	/** Spend a day patching the hull */
+	/** Launches a reconnaissance sortie over the next zones */
+	spot() {
+		if (this.status !== 'playing') return;
+		this.#run(useSpotter(this.state));
+	}
+
 	repair() {
 		if (this.status !== 'playing') return;
 		this.#run(repair(this.state));
@@ -254,6 +263,7 @@ export class FalklandsGame {
 		this.score = state.score;
 		this.hull = state.hull;
 		this.chaff = state.chaff;
+		this.spotter = state.spotter;
 		this.streak = state.streak;
 		this.bestStreak = state.bestStreak;
 		this.leg = legAt(Math.min(state.playerAt + 1, state.zones.length - 1));

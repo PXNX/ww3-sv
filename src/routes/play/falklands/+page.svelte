@@ -78,6 +78,14 @@
 			>
 				{m.falklands_hud_talks({ count: game.talks, target: DIPLOMACY_TARGET })}
 			</p>
+			<button
+				type="button"
+				class="btn-chunky px-2 py-1 text-xs"
+				disabled={game.spotter <= 0}
+				onclick={() => game.spot()}
+			>
+				{m.falklands_spotter({ count: game.spotter })}
+			</button>
 		</div>
 
 		<FalklandsField {game} />

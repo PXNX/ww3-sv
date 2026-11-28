@@ -78,3 +78,8 @@ export const PEACE_HULL_POINTS = 1;
 export const STAR_HULL = 50;
 export const STAR_FUEL = 20;
 export const PEACE_STAR_HULL = 70;
+
+/** Air reconnaissance: two sorties that reveal the road ahead and soften the next hits */
+export const SPOTTER_CHARGES = 2;
+export const SPOTTER_ZONES = 3;
+export const SPOTTER_DAMAGE_SHARE = 0.5;

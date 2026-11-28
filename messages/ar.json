@@ -1,5 +1,6 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"falklands_spotter": "استطلاع ({count})",
 	"leakpatrol_popup_spread": "تسرّب الماء إلى {room}",
 	"hackers_proxy": "تدوير البروكسي ({count})",
 	"hackers_proxy_none": "لا توجد قفزات بروكسي متبقية",

@@ -8,6 +8,10 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 
 ### Improved
 
+#### falklands
+
+- Two reconnaissance sorties: the next few zones are scouted and hazard damage is halved
+
 #### leakpatrol
 
 - Floods now push water into neighbouring rooms, so one lost room puts the next one at risk

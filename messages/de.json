@@ -1,5 +1,6 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"falklands_spotter": "Aufklärung ({count})",
 	"leakpatrol_popup_spread": "Wasser floss in {room}",
 	"hackers_proxy": "Proxy wechseln ({count})",
 	"hackers_proxy_none": "Keine Proxy-Sprünge mehr",

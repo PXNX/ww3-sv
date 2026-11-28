@@ -1,5 +1,6 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"falklands_spotter": "Разведка ({count})",
 	"leakpatrol_popup_spread": "Вода попала в {room}",
 	"hackers_proxy": "Сменить прокси ({count})",
 	"hackers_proxy_none": "Прыжков прокси больше нет",

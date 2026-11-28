@@ -46,7 +46,10 @@ import {
 	PROGRESS_TALK_POINTS,
 	START_FUEL,
 	CRUISE_ZONES,
-	SLOW_ZONES
+	SLOW_ZONES,
+	SPOTTER_CHARGES,
+	SPOTTER_DAMAGE_SHARE,
+	SPOTTER_ZONES
 } from './config.js';
 import { createZones, isHazard, legAt, type Hazard, type Pickup, type Zones } from './zones.js';
 import { allowsSpeed, createWeather, moveCost, weatherAt, type Weather } from './weather.js';
@@ -79,6 +82,10 @@ export interface FalklandsState {
 	hull: number;
 	/** Chaff canisters on hand; each one soaks up a hit */
 	chaff: number;
+	/** Reconnaissance sorties left */
+	spotter: number;
+	/** Zones the current sortie still covers */
+	spotterZones: number;
 	/** Clean zones in a row */
 	streak: number;
 	bestStreak: number;
@@ -96,6 +103,7 @@ export type FalklandsEvent =
 	| { type: 'no-deal'; talks: number }
 	| { type: 'hit'; hazard: Hazard; zone: number; damage: number; hull: number }
 	| { type: 'chaff'; hazard: Hazard; zone: number }
+	| { type: 'scouted'; zone: number; damage: number }
 	| { type: 'swept'; zone: number }
 	| { type: 'pickup'; kind: Pickup; zone: number; amount: number }
 	| { type: 'combo'; streak: number; points: number }
@@ -118,6 +126,8 @@ export function createGame(random: Random): FalklandsState {
 		zones: createZones(random),
 		hull: START_HULL,
 		chaff: 0,
+		spotter: SPOTTER_CHARGES,
+		spotterZones: 0,
 		streak: 0,
 		bestStreak: 0,
 		bonus: 0,
@@ -192,6 +202,7 @@ function passZones(
 ): boolean {
 	let damaged = false;
 	for (let zone = from + 1; zone <= Math.min(state.playerAt, DISTANCE - 1); zone++) {
+		state.spotterZones = Math.max(0, state.spotterZones - 1);
 		const kind = state.zones[zone];
 		if (!kind) continue;
 		state.zones[zone] = null;
@@ -202,7 +213,10 @@ function passZones(
 				state.chaff -= 1;
 				events.push({ type: 'chaff', hazard: kind, zone });
 			} else {
-				const damage = hazardDamage(kind, speed);
+				const damage = Math.round(
+					hazardDamage(kind, speed) * (state.spotterZones > 0 ? SPOTTER_DAMAGE_SHARE : 1)
+				);
+				if (state.spotterZones > 0) events.push({ type: 'scouted', zone, damage });
 				state.hull = Math.max(0, state.hull - damage);
 				damaged = true;
 				events.push({ type: 'hit', hazard: kind, zone, damage, hull: state.hull });
@@ -294,6 +308,14 @@ export function talk(state: FalklandsState): FalklandsEvent[] {
 }
 
 /** Patch the hull at sea: a whole day, the other fleet keeps coming */
+/** Launches a reconnaissance sortie: the next few zones are softer and reveal their hazards */
+export function useSpotter(state: FalklandsState): FalklandsEvent[] {
+	if (state.phase !== 'sail' || state.spotter <= 0) return [];
+	state.spotter -= 1;
+	state.spotterZones = SPOTTER_ZONES;
+	return [{ type: 'scouted', zone: state.playerAt, damage: 0 }];
+}
+
 export function repair(state: FalklandsState): FalklandsEvent[] {
 	if (state.phase !== 'sail') return [];
 	if (state.hull >= MAX_HULL) return [{ type: 'repair-none' }];
