@@ -134,7 +134,8 @@
 		{/if}
 	{/snippet}
 
-	<section data-tutorial="playfield"
+	<section
+		data-tutorial="playfield"
 		class="mx-auto flex w-full flex-col gap-2"
 		style:max-width="max(20rem, min(100%, calc((100dvh - 16rem) * 1.524)))"
 	>
@@ -143,7 +144,11 @@
 		>
 			<span>{m.curling_hud_end({ end: game.endIndex + 1, total: ENDS_TOTAL })}</span>
 			<span>{m.curling_hud_stone({ stone: stoneNumber, total: STONES_PER_END })}</span>
-			<span class="flex items-center gap-1" aria-label={`${game.totalStars} / ${MAX_STARS}`}>
+			<span
+				class="flex items-center gap-1"
+				data-tutorial="hud-stars"
+				aria-label={`${game.totalStars} / ${MAX_STARS}`}
+			>
 				<IconStar class="size-4 fill-explosion-yellow" aria-hidden="true" />
 				<span class="tabular-nums">{game.totalStars}/{MAX_STARS}</span>
 			</span>
@@ -260,6 +265,7 @@
 			<button
 				type="button"
 				class="btn-chunky px-3 py-1 text-sm"
+				data-tutorial="curl"
 				disabled={game.phase !== 'aiming' || game.paused}
 				aria-pressed={game.spin > 0}
 				onclick={() => game.toggleSpin()}
@@ -333,7 +339,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.curling_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.curling_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

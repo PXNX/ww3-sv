@@ -130,11 +130,13 @@
 	{/snippet}
 
 	<!-- The HUD and the playfield share one width, as wide as the height allows -->
-	<section data-tutorial="playfield"
+	<section
+		data-tutorial="playfield"
 		class="mx-auto flex w-full flex-col items-center gap-2"
 		style:max-width="max(17rem, min(100%, calc((100dvh - 22rem) * 0.714)))"
 	>
 		<div
+			data-tutorial="hud"
 			class="flex w-full gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
 		>
 			<ChipFabJacket pose={game.pose} class="size-16 shrink-0 self-center sm:size-20" />
@@ -148,7 +150,7 @@
 					</p>
 					<LivesBar lives={game.lives} max={STARTING_LIVES} class="shrink-0 text-xl" />
 				</div>
-				<div class="flex items-center gap-2">
+				<div class="flex items-center gap-2" data-tutorial="hud-shortage">
 					<div
 						class="h-3 flex-1 overflow-hidden rounded-full border-2 border-ink bg-sand"
 						role="progressbar"
@@ -172,7 +174,7 @@
 						{m.chipfab_hud_shortage({ percent: game.shortage })}
 					</p>
 				</div>
-				<p dir="auto" class="font-display text-xs font-bold tabular-nums">
+				<p dir="auto" class="font-display text-xs font-bold tabular-nums" data-tutorial="hud-top">
 					{#if game.stage === 'stack'}
 						{m.chipfab_hud_layers({ layers: game.layers, target: game.layersTarget })}
 					{:else}
@@ -191,7 +193,9 @@
 			</div>
 		</div>
 
-		<ChipFabField {game} />
+		<div data-tutorial="board" class="flex w-full justify-center">
+			<ChipFabField {game} />
+		</div>
 
 		{#if game.stage === 'stack'}
 			<!-- layer drop handled by tap on field -->
@@ -215,7 +219,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.chipfab_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.chipfab_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

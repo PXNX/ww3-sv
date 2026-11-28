@@ -115,7 +115,8 @@
 
 	<!-- The HUD and the playfield share one width: the whole width on a phone; on a wide screen up
 		to 3:4 of the height, the field then scrolls a little when it is taller than the space left -->
-	<section data-tutorial="playfield"
+	<section
+		data-tutorial="playfield"
 		class="mx-auto flex min-h-0 w-full flex-1 flex-col items-center gap-2"
 		style:max-width="max(17rem, min(100%, calc((100dvh - 16.8rem) * 0.75)))"
 	>
@@ -125,6 +126,7 @@
 			<!-- One button, three speeds: x1, x2, x4 -->
 			<button
 				type="button"
+				data-tutorial="speed"
 				class="btn-chunky shrink-0 gap-1 px-2 py-0.5 text-base tabular-nums {game.speed > 1
 					? 'bg-explosion-yellow'
 					: ''}"
@@ -149,6 +151,7 @@
 		<!-- The weather (the forecast while building) and the powers the elite defenses unlock -->
 		<div class="flex w-full shrink-0 items-stretch gap-2">
 			<p
+				data-tutorial="hud-weather"
 				class="flex min-h-9 min-w-0 flex-1 items-center gap-1.5 rounded-[10px_6px_12px_8px] border-3 border-ink bg-paper px-2 py-0.5 shadow-[2px_2px_0_var(--color-ink)]"
 				aria-label={m.dronewall_weather_now({
 					weather: WEATHER_NAMES[game.weather](),
@@ -168,7 +171,11 @@
 				</span>
 			</p>
 
-			<ul class="flex shrink-0 gap-1.5" aria-label={m.dronewall_powers_label()}>
+			<ul
+				data-tutorial="powers"
+				class="flex shrink-0 gap-1.5"
+				aria-label={m.dronewall_powers_label()}
+			>
 				{#each POWER_KINDS as power (power)}
 					{@const unlocked = game.powerUnlocked[power]}
 					{@const seconds = game.powerSeconds[power]}
@@ -216,7 +223,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.dronewall_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.dronewall_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

@@ -124,10 +124,11 @@
 	{/snippet}
 
 	<!-- Everything fits the screen: the board takes whatever height the other rows leave over -->
-	<div data-tutorial="playfield" class="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-2 px-1">
+	<div class="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-2 px-1">
 		<!-- Putin comments on the game, a rookie mistake is always sold as a master plan; you play as Zelensky -->
 		<div class="flex min-h-14 items-center gap-3">
 			<img
+				data-tutorial="putin"
 				src={putinPortrait}
 				alt={putinAlt}
 				class="size-14 shrink-0 -rotate-2 rounded-lg border-3 border-ink bg-paper object-cover"
@@ -159,7 +160,7 @@
 
 		<!-- A size container: the board is the biggest square that fits its width and height -->
 		<div class="relative mx-auto min-h-24 w-full flex-1" style:container-type="size">
-			<div class="relative mx-auto size-[min(100cqw,100cqh)]">
+			<div data-tutorial="board" class="relative mx-auto size-[min(100cqw,100cqh)]">
 				<ChessBoard {game} />
 
 				{#if game.vance !== null}
@@ -196,14 +197,16 @@
 			</div>
 		</div>
 
-		<ChessCards {game} />
+		<div data-tutorial="cards" class="w-full">
+			<ChessCards {game} />
+		</div>
 	</div>
 </GameShell>
 
 <InteractiveTutorial
 	open={showTutorial}
 	title={m.chess_tutorial_title()}
-	steps={tutorialSteps}
+	steps={tutorialSteps()}
 	closeLabel={m.chess_tutorial_close()}
 	onclose={() => (showTutorial = false)}
 />

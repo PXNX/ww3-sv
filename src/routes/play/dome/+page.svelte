@@ -85,12 +85,15 @@
 		{/if}
 	{/snippet}
 
-	<section data-tutorial="playfield" class="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col items-center gap-2">
+	<section
+		data-tutorial="playfield"
+		class="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col items-center gap-2"
+	>
 		<div
 			class="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
 		>
 			<LivesBar lives={game.lives} max={STARTING_LIVES} class="shrink-0 text-xl" />
-			<div class="flex items-center gap-2">
+			<div class="flex items-center gap-2" data-tutorial="hud-ammo">
 				<p dir="auto" class="font-display text-xs font-bold sm:text-sm" aria-hidden="true">
 					{m.dome_hud_ammo()}
 				</p>
@@ -127,6 +130,7 @@
 			{#key game.combo}
 				<p
 					dir="auto"
+					data-tutorial="hud-combo"
 					class="dome-pop font-display text-sm font-bold tabular-nums sm:text-base"
 					class:opacity-40={game.combo === 0}
 				>
@@ -150,7 +154,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.dome_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.dome_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>
