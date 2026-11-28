@@ -77,7 +77,8 @@
 	{/snippet}
 
 	<!-- The HUD and the playfield share one width, as wide as the height allows -->
-	<section data-tutorial="playfield"
+	<section
+		data-tutorial="playfield"
 		class="mx-auto flex w-full flex-col items-center gap-2"
 		style:max-width="max(17rem, min(100%, calc((100dvh - 14rem) * 0.643)))"
 	>
@@ -115,7 +116,9 @@
 					</p>
 				{/if}
 			</div>
-			<LivesBar lives={game.lives} max={STARTING_LIVES} class="shrink-0 text-xl" />
+			<div data-tutorial="lives" class="shrink-0">
+				<LivesBar lives={game.lives} max={STARTING_LIVES} class="text-xl" />
+			</div>
 		</div>
 
 		<RunComradeCanvas {game} />
@@ -124,7 +127,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.runcomrade_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.runcomrade_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

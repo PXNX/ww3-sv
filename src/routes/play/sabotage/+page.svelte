@@ -86,14 +86,16 @@
 	{/snippet}
 
 	{#if !inJob}
-		<SabotageSelect {game} onpick={(index) => game.startRun(index)} />
+		<div data-tutorial="start" class="w-full">
+			<SabotageSelect {game} onpick={(index) => game.startRun(index)} />
+		</div>
 	{:else}
-		<section data-tutorial="playfield" class="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-2">
+		<section class="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-2">
 			<!-- Suspicion, targets, time and strikes, above the site they apply to -->
 			<div
 				class="flex items-center gap-2 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-2 py-1 font-display text-xs font-bold shadow-[3px_3px_0_var(--color-ink)]"
 			>
-				<div class="flex min-w-0 flex-1 flex-col gap-0.5">
+				<div data-tutorial="hud-suspicion" class="flex min-w-0 flex-1 flex-col gap-0.5">
 					<span class="leading-none">{SABOTAGE_TEXT.suspicion}</span>
 					<div
 						class="h-3 overflow-hidden rounded-full border-2 border-ink bg-sand"
@@ -249,7 +251,9 @@
 				{/if}
 			</SabotageCanvas>
 
-			<SabotagePad {game} />
+			<div data-tutorial="pad" class="w-full">
+				<SabotagePad {game} />
+			</div>
 		</section>
 	{/if}
 
@@ -282,7 +286,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={SABOTAGE_TEXT.tutorialTitle}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={SABOTAGE_TEXT.helpClose}
 		onclose={() => (showTutorial = false)}
 	/>

@@ -78,11 +78,17 @@
 		<div
 			class="flex w-full items-center justify-between gap-2 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
 		>
-			<LivesBar lives={game.mood} max={STARTING_MOOD} class="shrink-0 text-xl" />
+			<div class="shrink-0" data-tutorial="hud-mood">
+				<LivesBar lives={game.mood} max={STARTING_MOOD} class="text-xl" />
+			</div>
 			<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
 				{m.redsquare_hud_round({ round: game.round })}
 			</p>
-			<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
+			<p
+				dir="auto"
+				class="font-display text-sm font-bold tabular-nums sm:text-base"
+				data-tutorial="hud-wave"
+			>
 				{m.redsquare_hud_wave({ wave: game.wave })}
 			</p>
 			<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
@@ -96,7 +102,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.redsquare_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.redsquare_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

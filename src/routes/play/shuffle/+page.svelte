@@ -94,32 +94,41 @@
 		</button>
 	{/snippet}
 
-	<section data-tutorial="playfield" class="mx-auto flex w-full max-w-3xl flex-col gap-3 p-3">
+	<section class="mx-auto flex w-full max-w-3xl flex-col gap-3 p-3">
 		<div
 			class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
 		>
-			<p dir="auto" class="font-display text-base font-bold tabular-nums sm:text-lg">
+			<p
+				dir="auto"
+				data-tutorial="hud-round"
+				class="font-display text-base font-bold tabular-nums sm:text-lg"
+			>
 				{m.shuffle_hud_round({ round: game.round, total: TOTAL_ROUNDS })}
 			</p>
 			<p
 				dir="auto"
+				data-tutorial="hud-streak"
 				class="font-display text-sm font-bold tabular-nums"
 				class:text-tie-red={game.streak >= 2}
 			>
 				{m.shuffle_hud_streak({ streak: game.streak, multiplier: game.multiplier })}
 			</p>
-			<LivesBar lives={game.lives} max={STARTING_LIVES} class="text-xl" />
+			<span data-tutorial="hud-lives" class="inline-flex">
+				<LivesBar lives={game.lives} max={STARTING_LIVES} class="text-xl" />
+			</span>
 		</div>
 
-		<ShuffleBoard
-			{game}
-			{reducedMotion}
-			sanctioned={m.shuffle_stamp_sanctioned()}
-			escaped={m.shuffle_stamp_escaped()}
-			combo={(streak) => m.shuffle_combo({ streak })}
-			aisOff={m.shuffle_ais_off()}
-			slotLabel={(slot, total) => m.shuffle_slot_label({ slot, total })}
-		/>
+		<div data-tutorial="board">
+			<ShuffleBoard
+				{game}
+				{reducedMotion}
+				sanctioned={m.shuffle_stamp_sanctioned()}
+				escaped={m.shuffle_stamp_escaped()}
+				combo={(streak) => m.shuffle_combo({ streak })}
+				aisOff={m.shuffle_ais_off()}
+				slotLabel={(slot, total) => m.shuffle_slot_label({ slot, total })}
+			/>
+		</div>
 
 		<div class="flex items-center justify-between gap-3">
 			<p dir="auto" class="min-w-0 flex-1 font-display text-lg font-bold" aria-live="polite">
@@ -127,6 +136,7 @@
 			</p>
 			<button
 				type="button"
+				data-tutorial="ping"
 				class="btn-chunky shrink-0 bg-explosion-yellow text-sm"
 				disabled={game.phase !== 'guessing' || game.pinged || game.pings <= 0}
 				onclick={() => game.ping()}
@@ -140,7 +150,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.shuffle_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.shuffle_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

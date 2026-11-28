@@ -86,11 +86,12 @@
 
 	<!-- Portrait: HUD, scope, sensors and dossier in a column. On a short (sideways phone) screen the
 	     scope sits on the left, as tall as the screen allows, and the rest stacks beside it. -->
-	<section data-tutorial="playfield"
+	<section
 		class="mx-auto grid w-full max-w-[max(17rem,min(100%,calc((100dvh-23rem)*0.857)))] gap-2 pb-2 [@media(max-height:520px)]:max-w-none [@media(max-height:520px)]:grid-cols-[auto_minmax(0,1fr)] [@media(max-height:520px)]:content-start"
 	>
 		<!-- Everything that can end the run or the sortie, above the scope it applies to -->
 		<div
+			data-tutorial="hud"
 			class="grid grid-cols-4 gap-2 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1.5 font-display shadow-[3px_3px_0_var(--color-ink)] [@media(max-height:520px)]:col-start-2"
 		>
 			<div class="flex flex-col leading-tight">
@@ -146,12 +147,14 @@
 		</div>
 
 		<div
+			data-tutorial="scope"
 			class="[@media(max-height:520px)]:row-span-4 [@media(max-height:520px)]:row-start-1 [@media(max-height:520px)]:w-[calc((100dvh-8rem)*0.857)]"
 		>
 			<ReconCanvas {game} />
 		</div>
 
 		<div
+			data-tutorial="sensors"
 			class="grid grid-cols-3 gap-2 [@media(max-height:520px)]:col-start-2"
 			role="group"
 			aria-label={RECON_TEXT.hud.sortie}
@@ -240,7 +243,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={RECON_TEXT.tutorial.title}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={RECON_TEXT.helpClose}
 		onclose={() => (showTutorial = false)}
 	/>
