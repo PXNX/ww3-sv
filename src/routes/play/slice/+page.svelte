@@ -6,7 +6,7 @@
 	import MazeStars from '#lib/components/MazeStars.svelte';
 	import SliceCanvas from '#lib/components/SliceCanvas.svelte';
 	import SliceIcon from '#lib/components/SliceIcon.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
 	import { STARTING_LIVES, WAVE_COUNT } from '#lib/game/slice/config.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -15,6 +15,7 @@
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new SliceGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_slice_name();
@@ -65,7 +66,7 @@
 	{/snippet}
 
 	<!-- The HUD and the playfield share one width, as wide as the height allows -->
-	<section
+	<section data-tutorial="playfield"
 		class="mx-auto flex w-full flex-col items-center gap-2"
 		style:max-width="max(17rem, min(100%, calc(100dvh - 8rem)))"
 	>
@@ -101,64 +102,13 @@
 		<SliceCanvas {game} />
 	</section>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.slice_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.slice_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.slice_tutorial_goal()}</p>
-		<ul class="flex flex-col gap-2">
-			<li class="flex items-center gap-2">
-				<SliceIcon kind="zircon" class="size-10 shrink-0" />
-				<span><strong>{m.slice_zircon_name()}</strong></span>
-			</li>
-			<li class="flex items-center gap-2">
-				<SliceIcon kind="kinzhal" class="size-10 shrink-0" />
-				<span><strong>{m.slice_kinzhal_name()}</strong></span>
-			</li>
-			<li class="flex items-center gap-2">
-				<SliceIcon kind="geran" class="size-10 shrink-0" />
-				<span><strong>{m.slice_geran_name()}</strong></span>
-			</li>
-			<li class="flex items-center gap-2">
-				<SliceIcon kind="kalibr" class="size-10 shrink-0" />
-				<span><strong>{m.slice_kalibr_name()}</strong></span>
-			</li>
-		</ul>
-		<p>{m.slice_tutorial_miss()}</p>
-		<ul class="flex flex-col gap-2">
-			<li class="flex items-center gap-2">
-				<SliceIcon kind="iskander" class="size-10 shrink-0" />
-				<span><strong>{m.slice_iskander_name()}</strong>: {m.slice_tutorial_armor()}</span>
-			</li>
-			<li class="flex items-center gap-2">
-				<SliceIcon kind="cluster" class="size-10 shrink-0" />
-				<span><strong>{m.slice_cluster_name()}</strong>: {m.slice_tutorial_split()}</span>
-			</li>
-		</ul>
-		<p>{m.slice_tutorial_decoys()}</p>
-		<ul class="flex items-center gap-3">
-			<li><SliceIcon kind="tanker" class="size-10" /></li>
-			<li><SliceIcon kind="balloon" class="size-10" /></li>
-			<li><SliceIcon kind="gull" class="size-10" /></li>
-			<li><SliceIcon kind="mine" class="size-10" /></li>
-		</ul>
-		<p>{m.slice_tutorial_mine()}</p>
-		<ul class="flex flex-col gap-2">
-			<li class="flex items-center gap-2">
-				<SliceIcon kind="focus" class="size-10 shrink-0" />
-				<span><strong>{m.slice_focus_name()}</strong>: {m.slice_tutorial_focus()}</span>
-			</li>
-			<li class="flex items-center gap-2">
-				<SliceIcon kind="repair" class="size-10 shrink-0" />
-				<span><strong>{m.slice_repair_name()}</strong>: {m.slice_tutorial_repair()}</span>
-			</li>
-		</ul>
-		<p>{m.slice_tutorial_combo()}</p>
-		<p>{m.slice_tutorial_waves({ total: WAVE_COUNT })}</p>
-		<p class="hidden text-sm sm:block">{m.slice_keyboard_hint()}</p>
-	</TutorialModal>
+	/>
 
 	<GameOverModal
 		open={game.status === 'over'}

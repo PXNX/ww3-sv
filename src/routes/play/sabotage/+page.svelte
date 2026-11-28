@@ -13,7 +13,7 @@
 	import SabotageCanvas from '#lib/components/SabotageCanvas.svelte';
 	import SabotagePad from '#lib/components/SabotagePad.svelte';
 	import SabotageSelect from '#lib/components/SabotageSelect.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { STRIKES } from '#lib/game/sabotage/config.js';
 	import { STAR_NAMES, SABOTAGE_TEXT } from '#lib/game/sabotage/text.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
@@ -27,6 +27,7 @@
 	import IconSend from '~icons/lucide/send';
 	import IconStar from '~icons/lucide/star';
 	import IconTimer from '~icons/lucide/timer';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new SabotageGame();
 	const modeName = SABOTAGE_TEXT.title;
@@ -87,7 +88,7 @@
 	{#if !inJob}
 		<SabotageSelect {game} onpick={(index) => game.startRun(index)} />
 	{:else}
-		<section class="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-2">
+		<section data-tutorial="playfield" class="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-2">
 			<!-- Suspicion, targets, time and strikes, above the site they apply to -->
 			<div
 				class="flex items-center gap-2 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-2 py-1 font-display text-xs font-bold shadow-[3px_3px_0_var(--color-ink)]"
@@ -278,18 +279,11 @@
 		</dl>
 	</GameOverModal>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={SABOTAGE_TEXT.tutorialTitle}
+		steps={tutorialSteps}
 		closeLabel={SABOTAGE_TEXT.helpClose}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{SABOTAGE_TEXT.tutorialGoal}</p>
-		<p>{SABOTAGE_TEXT.tutorialMove}</p>
-		<p>{SABOTAGE_TEXT.tutorialWatch}</p>
-		<p>{SABOTAGE_TEXT.tutorialNoise}</p>
-		<p>{SABOTAGE_TEXT.tutorialSabotage}</p>
-		<p>{SABOTAGE_TEXT.tutorialPhone}</p>
-		<p>{SABOTAGE_TEXT.tutorialStars}</p>
-	</TutorialModal>
+	/>
 </GameShell>

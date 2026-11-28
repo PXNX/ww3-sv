@@ -5,7 +5,7 @@
 	import LivesBar from '#lib/components/LivesBar.svelte';
 	import RunComradeCanvas from '#lib/components/RunComradeCanvas.svelte';
 	import RunComradeIcon from '#lib/components/RunComradeIcon.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
 	import { STARTING_LIVES } from '#lib/game/runcomrade/config.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -15,6 +15,7 @@
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new RunComradeGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_runcomrade_name();
@@ -76,7 +77,7 @@
 	{/snippet}
 
 	<!-- The HUD and the playfield share one width, as wide as the height allows -->
-	<section
+	<section data-tutorial="playfield"
 		class="mx-auto flex w-full flex-col items-center gap-2"
 		style:max-width="max(17rem, min(100%, calc((100dvh - 14rem) * 0.643)))"
 	>
@@ -120,59 +121,13 @@
 		<RunComradeCanvas {game} />
 	</section>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.runcomrade_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.runcomrade_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.runcomrade_tutorial_goal()}</p>
-		<p>{m.runcomrade_tutorial_controls()}</p>
-		<p>{m.runcomrade_tutorial_obstacles()}</p>
-		<ul class="flex flex-col gap-2">
-			<li class="flex items-center gap-2">
-				<RunComradeIcon kind="ditch" class="size-10 shrink-0" />
-				<span><strong>{m.runcomrade_ditch_name()}</strong> {m.runcomrade_ditch_hint()}</span>
-			</li>
-			<li class="flex items-center gap-2">
-				<RunComradeIcon kind="arm" class="size-10 shrink-0" />
-				<span><strong>{m.runcomrade_arm_name()}</strong> {m.runcomrade_arm_hint()}</span>
-			</li>
-			<li class="flex items-center gap-2">
-				<RunComradeIcon kind="mine" class="size-10 shrink-0" />
-				<span><strong>{m.runcomrade_mine_name()}</strong> {m.runcomrade_mine_hint()}</span>
-			</li>
-		</ul>
-		<p>{m.runcomrade_tutorial_drone()}</p>
-		<ul class="flex flex-col gap-2">
-			<li class="flex items-center gap-2">
-				<RunComradeIcon kind="drone" class="size-10 shrink-0" />
-				<span><strong>{m.runcomrade_drone_name()}</strong> {m.runcomrade_drone_hint()}</span>
-			</li>
-			<li class="flex items-center gap-2">
-				<RunComradeIcon kind="sunflower" class="size-10 shrink-0" />
-				<span><strong>{m.runcomrade_tall_name()}</strong> {m.runcomrade_tall_hint()}</span>
-			</li>
-		</ul>
-		<p>{m.runcomrade_tutorial_pickups()}</p>
-		<ul class="flex flex-col gap-2">
-			<li class="flex items-center gap-2">
-				<RunComradeIcon kind="helmet" class="size-10 shrink-0" />
-				<span><strong>{m.runcomrade_helmet_name()}</strong> {m.runcomrade_helmet_hint()}</span>
-			</li>
-			<li class="flex items-center gap-2">
-				<RunComradeIcon kind="rice" class="size-10 shrink-0" />
-				<span><strong>{m.runcomrade_rice_name()}</strong> {m.runcomrade_rice_hint()}</span>
-			</li>
-			<li class="flex items-center gap-2">
-				<RunComradeIcon kind="coin" class="size-10 shrink-0" />
-				<span><strong>{m.runcomrade_coin_name()}</strong> {m.runcomrade_coin_hint()}</span>
-			</li>
-		</ul>
-		<p>{m.runcomrade_tutorial_field()}</p>
-		<p>{m.runcomrade_tutorial_weather()}</p>
-		<p class="hidden text-sm sm:block">{m.runcomrade_keyboard_hint()}</p>
-	</TutorialModal>
+	/>
 
 	<GameOverModal
 		open={game.status === 'over'}

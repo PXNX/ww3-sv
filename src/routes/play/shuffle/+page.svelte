@@ -11,7 +11,7 @@
 	import LivesBar from '#lib/components/LivesBar.svelte';
 	import MazeStars from '#lib/components/MazeStars.svelte';
 	import ShuffleBoard from '#lib/components/ShuffleBoard.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
 	import { MAX_PINGS, STARTING_LIVES, TOTAL_ROUNDS } from '#lib/game/shuffle/config.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -19,6 +19,7 @@
 	import { ShuffleGame } from '#lib/stores/shuffleGame.svelte.js';
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconSatellite from '~icons/lucide/satellite-dish';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new ShuffleGame();
 	const modeName = m.mode_shuffle_name();
@@ -93,7 +94,7 @@
 		</button>
 	{/snippet}
 
-	<section class="mx-auto flex w-full max-w-3xl flex-col gap-3 p-3">
+	<section data-tutorial="playfield" class="mx-auto flex w-full max-w-3xl flex-col gap-3 p-3">
 		<div
 			class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
 		>
@@ -136,18 +137,13 @@
 		</div>
 	</section>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.shuffle_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.shuffle_tutorial_close()}
-		onclose={closeTutorial}
-	>
-		<p>{m.shuffle_tutorial_goal()}</p>
-		<p>{m.shuffle_tutorial_tricks()}</p>
-		<p>{m.shuffle_tutorial_ping()}</p>
-		<p>{m.shuffle_tutorial_lives()}</p>
-		<p>{m.shuffle_tutorial_score()}</p>
-	</TutorialModal>
+		onclose={() => (showTutorial = false)}
+	/>
 
 	<GameOverModal
 		open={game.phase === 'over'}
