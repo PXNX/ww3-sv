@@ -12,7 +12,7 @@ from types import SimpleNamespace
 from telegram import Bot
 
 from ww3bot import ads, chat, config, db, friends as friendships, games, gifts, ledger, lookgifts, reminders, rivals
-from ww3bot.catalogue import PRODUCTS, localized, product
+from ww3bot.catalogue import PRODUCTS, effective_price, localized, product, weekly_sku
 from ww3bot.legal import CONSENT_TEXT, CONSENT_VERSION, page_url
 from ww3bot.referrals import invite_stats
 from ww3bot.texts import lang_of_user
@@ -60,11 +60,28 @@ async def me(bot: Bot, data: dict, init_data: dict) -> dict:
         # The server's prices and goods, so the game only shows offers the bot can honour
         "giftedLooks": await lookgifts.pending(user.id),
         "catalogue": [
-            {key: item[key] for key in ("sku", "title", "description", "stars", "revives", "subscription", "look") if key in item}
+            {
+                **{
+                    key: item[key]
+                    for key in (
+                        "sku", "title", "description", "revives", "subscription", "look",
+                        "pro_days", "one_time", "gift"
+                    )
+                    if key in item
+                },
+                "stars": effective_price(item),
+                "weekly": item["sku"] == weekly_sku(),
+            }
             for item in PRODUCTS
         ],
         # The cosmetics bought, so the game unlocks those looks on every device
         "owned": await ledger.owned_looks(user.id),
+        "starterBought": bool(
+            await db.fetchone(
+                "SELECT 1 FROM purchases WHERE user_id = %s AND sku = 'starter_pack' LIMIT 1",
+                (user.id,),
+            )
+        ),
     }
 
 

@@ -89,6 +89,16 @@ CREATE TABLE IF NOT EXISTS streaks (
 );
 CREATE INDEX IF NOT EXISTS idx_streaks_expires ON streaks (expires_at);
 
+-- Pro months bought as a gift, claimed once by the recipient
+CREATE TABLE IF NOT EXISTS pro_gifts (
+    code text PRIMARY KEY,
+    from_user bigint NOT NULL,
+    days integer NOT NULL,
+    created_at bigint NOT NULL,
+    claimed_at bigint,
+    claimed_by bigint
+);
+
 -- Cosmetic gifts: one code per wrapped look, claimed at most once
 CREATE TABLE IF NOT EXISTS look_gifts (
     code text PRIMARY KEY,

@@ -2,12 +2,31 @@
 The server-owned catalogue. Prices are whole Telegram Stars (currency XTR); the Mini App only shows
 what `me` returns, so a price never comes from a request.
 """
+from datetime import datetime, timezone
 from typing import Final
 
 CURRENCY: Final[str] = "XTR"
 
 # The only period Telegram Stars subscriptions support: 30 days
 SUBSCRIPTION_PERIOD: Final[int] = 30 * 24 * 3600
+WEEKLY_DISCOUNT: Final[float] = 0.3
+LOOK_SKUS: Final[tuple[str, ...]] = (
+    "look_tinfoil", "look_laser", "look_gold", "look_neon", "look_cowboy", "look_beard", "look_clown"
+)
+
+
+def weekly_sku(now: datetime | None = None) -> str:
+    """One cosmetic per calendar week, chosen by the week number so everyone sees the same deal."""
+    day = now or datetime.now(timezone.utc)
+    year, week, _ = day.isocalendar()
+    return LOOK_SKUS[(year * 53 + week) % len(LOOK_SKUS)]
+
+
+def effective_price(item: dict, now: datetime | None = None) -> int:
+    """The fixed weekly discount, applied server-side so a client cannot invent a price."""
+    if item.get("sku") == weekly_sku(now):
+        return max(1, round(item["stars"] * (1 - WEEKLY_DISCOUNT)))
+    return item["stars"]
 
 PRODUCTS: Final[list[dict]] = [
     {
@@ -111,6 +130,28 @@ PRODUCTS: Final[list[dict]] = [
         "revives": 0,
         "subscription": False,
         "look": {"part": "nose", "value": "clown"},
+    },
+    {
+        "sku": "starter_pack",
+        "title": "Starter Pack",
+        "description": "Five revival tokens, seven days of Pro and no ads for a week. One time only.",
+        "de": {"title": "Starter-Paket", "description": "Fünf Revival-Token, sieben Tage Pro und eine Woche ohne Werbung. Nur einmalig."},
+        "stars": 60,
+        "revives": 5,
+        "pro_days": 7,
+        "one_time": True,
+        "subscription": False,
+    },
+    {
+        "sku": "pro_gift",
+        "title": "Gift a month of Pro",
+        "description": "Send 30 days of Pro to a friend. You get a gift link to share after paying.",
+        "de": {"title": "Ein Monat Pro verschenken", "description": "Schicke einem Freund 30 Tage Pro. Nach der Zahlung erhältst du einen Geschenklink."},
+        "stars": 250,
+        "revives": 0,
+        "pro_days": 30,
+        "gift": True,
+        "subscription": False,
     },
 ]
 

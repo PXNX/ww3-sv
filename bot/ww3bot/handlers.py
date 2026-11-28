@@ -20,7 +20,7 @@ from telegram.ext import (
     filters,
 )
 
-from ww3bot import chat, config, inline, ledger, reminders
+from ww3bot import chat, config, inline, ledger, pro_gifts, reminders
 from ww3bot.catalogue import CURRENCY, product
 from ww3bot.legal import escape_html
 from ww3bot.profile import BOT_NAME, apply_profile
@@ -58,7 +58,7 @@ async def _paid(bot: Bot, message: Message) -> None:
     # Renewals of a subscription carry the first invoice's payload, so the invoice row still matches
     invoice = await ledger.find_invoice(payment.invoice_payload)
     item = product(invoice["sku"]) if invoice else None
-    if not invoice or not item or invoice["user_id"] != user.id or payment.currency != CURRENCY or payment.total_amount != item["stars"]:
+    if not invoice or not item or invoice["user_id"] != user.id or payment.currency != CURRENCY or payment.total_amount != invoice["stars"]:
         logger.error("unmatched payment %s from %s (%s)", payment.telegram_payment_charge_id, user.id, payment.invoice_payload)
         await chat.send(bot, message.chat.id, t(lang_of_user(user), "unmatched_payment"))
         await chat.notify_admins(bot, f"⚠️ Unmatched payment {escape_html(payment.telegram_payment_charge_id)} from {user.id}")
@@ -70,6 +70,10 @@ async def _paid(bot: Bot, message: Message) -> None:
         logger.info("duplicate payment ignored: %s", payment.telegram_payment_charge_id)
         return
     logger.info("granted %s to %s (%s)", item["sku"], user.id, payment.telegram_payment_charge_id)
+    if item.get("gift"):
+        code = await pro_gifts.create(user.id, item["pro_days"])
+        link = pro_gifts.link(code)
+        await chat.send(bot, message.chat.id, t(lang_of_user(user), "pro_gift_link", link=link))
     await chat.confirm_purchase(bot, message.chat.id, user, item, payment, booked["pro_until"])
     username = f"@{escape_html(user.username)}, " if user.username else ""
     renewal = " – renewal" if payment.is_recurring and not payment.is_first_recurring else ""

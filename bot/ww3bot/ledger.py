@@ -12,7 +12,7 @@ import time
 from telegram import Bot, LabeledPrice
 
 from ww3bot import db
-from ww3bot.catalogue import CURRENCY, PRODUCTS, SUBSCRIPTION_PERIOD, is_cosmetic
+from ww3bot.catalogue import CURRENCY, PRODUCTS, SUBSCRIPTION_PERIOD, effective_price, is_cosmetic
 from ww3bot.legal import CONSENT_VERSION
 from ww3bot.texts import lang_of_user
 
@@ -108,17 +108,22 @@ async def create_invoice(bot: Bot, user_id: int, item: dict) -> dict:
         raise LedgerError("RATE_LIMITED", "Too many invoices, please wait a minute.")
     if is_cosmetic(item) and item["sku"] in await owned_looks(user_id):
         raise LedgerError("ALREADY_OWNED", "This look is already yours.")
+    if item.get("one_time") and await db.fetchone(
+        "SELECT 1 FROM purchases WHERE user_id = %s AND sku = %s LIMIT 1", (user_id, item["sku"])
+    ):
+        raise LedgerError("ALREADY_BOUGHT", "You have already bought this once.")
+    price = effective_price(item)
     new_id = invoice_id()
     await db.execute(
         "INSERT INTO invoices (id, user_id, sku, stars, created_at) VALUES (%s, %s, %s, %s, %s)",
-        (new_id, user_id, item["sku"], item["stars"], db.now()),
+        (new_id, user_id, item["sku"], price, db.now()),
     )
     url = await bot.create_invoice_link(
         title=item["title"],
         description=item["description"],
         payload=new_id,
         currency=CURRENCY,
-        prices=[LabeledPrice(item["title"], item["stars"])],
+        prices=[LabeledPrice(item["title"], price)],
         subscription_period=SUBSCRIPTION_PERIOD if item["subscription"] else None,
     )
     return {"id": new_id, "url": url}
@@ -164,6 +169,9 @@ async def book_payment(user_id: int, item: dict, payment) -> dict:
     if item["subscription"]:
         expiration = payment.subscription_expiration_date
         pro_until = int(expiration.timestamp()) if expiration else db.now() + SUBSCRIPTION_PERIOD
+    elif item.get("pro_days"):
+        pro_until = db.now() + item["pro_days"] * 24 * 3600
+    if pro_until:
         await db.execute(
             "UPDATE accounts SET pro_until = GREATEST(COALESCE(pro_until, 0), %s) WHERE user_id = %s", (pro_until, user_id)
         )

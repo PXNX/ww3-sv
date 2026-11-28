@@ -12,7 +12,7 @@ from telegram import Bot, CallbackQuery, Chat, InlineKeyboardButton, InlineKeybo
 from telegram.constants import ParseMode
 from telegram.error import TelegramError
 
-from ww3bot import lookgifts, db
+from ww3bot import lookgifts, pro_gifts, db
 from ww3bot import config, friends, games, gifts, ledger, referrals, reminders
 from ww3bot.catalogue import PRODUCTS, is_cosmetic, localized, product
 from ww3bot.legal import CONSENT_TEXT, CONSENT_VERSION, PAGES, escape_html, legal_messages, page_link_name, page_url, telegram_contact
@@ -61,6 +61,14 @@ async def start(bot: Bot, chat_id: int, user, param: str | None) -> None:
         await send(bot, chat_id, t(lang, "invited"))
     if param == "shop":
         return await shop(bot, chat_id, user)
+    pro_code = pro_gifts.code_from_param(param)
+    if pro_code:
+        days = await pro_gifts.claim(pro_code, user.id)
+        if days:
+            await send(bot, chat_id, t(lang, "pro_gift_received", days=days), [play_button(t(lang, "open_app"))])
+        else:
+            await send(bot, chat_id, t(lang, "gift_look_gone"), [play_button(t(lang, "open_app"))])
+        return
     gift_code = lookgifts.code_from_param(param)
     if gift_code:
         claimed = await lookgifts.claim(gift_code, user.id)
