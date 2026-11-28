@@ -59,6 +59,8 @@ export interface WarRoomState {
 	flags: string[];
 	/** One directive per day */
 	directiveUsed: DirectiveId | null;
+	/** Pro's second directive of the day, after the regular one */
+	proDirectiveUsed: DirectiveId | null;
 	/** Days of counter-intelligence left: the Pact attacks more carefully */
 	intelDays: number;
 	history: HistoryPoint[];

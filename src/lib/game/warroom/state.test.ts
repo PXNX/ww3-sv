@@ -419,6 +419,16 @@ describe('War Room council', () => {
 		expect(canUseDirective(state, 'austerity')).toBe(true);
 	});
 
+	it('gives Pro a second directive each day', () => {
+		const state = clearEnemy();
+		useDirective(state, 'propaganda');
+		expect(canUseDirective(state, 'austerity')).toBe(false);
+		expect(canUseDirective(state, 'austerity', { pro: true })).toBe(true);
+		useDirective(state, 'austerity', { pro: true });
+		expect(state.proDirectiveUsed).toBe('austerity');
+		expect(canUseDirective(state, 'mobilise', { pro: true })).toBe(false);
+	});
+
 	it('makes counter-intelligence hold the Pact back for a while', () => {
 		const state = game();
 		useDirective(state, 'counterintel');

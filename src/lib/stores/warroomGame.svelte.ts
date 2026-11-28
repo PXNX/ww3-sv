@@ -63,6 +63,7 @@ import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
 import { m } from '#lib/paraglide/messages.js';
 import { highscores, type Highscores } from '#lib/services/highscore.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
+import { telegram } from '#lib/stores/telegram.svelte.js';
 import type { SoundId } from '#lib/sound/sounds.js';
 
 export type WarRoomStatus = 'ready' | 'playing' | 'over';
@@ -108,6 +109,8 @@ export class WarRoomGame {
 	tier = $state(0);
 	crisis = $state.raw<CrisisId | null>(null);
 	directiveUsed = $state.raw<DirectiveId | null>(null);
+	/** Pro's second directive of the day, mirrored from the rules state */
+	proDirectiveUsed = $state.raw<DirectiveId | null>(null);
 	intelDays = $state(0);
 	history = $state.raw<HistoryPoint[]>([]);
 	crisesHandled = $state(0);
@@ -244,15 +247,16 @@ export class WarRoomGame {
 
 	useDirective(id: DirectiveId) {
 		if (this.status !== 'playing') return;
-		if (!canUseDirectiveRule(this.state, id)) {
+		const pro = { pro: telegram().pro };
+		if (!canUseDirectiveRule(this.state, id, pro)) {
 			this.#play('ui-error', 0.6);
 			return;
 		}
-		this.#run(useDirectiveRule(this.state, id));
+		this.#run(useDirectiveRule(this.state, id, pro));
 	}
 
 	canUseDirective(id: DirectiveId): boolean {
-		return canUseDirectiveRule(this.state, id);
+		return canUseDirectiveRule(this.state, id, { pro: telegram().pro });
 	}
 
 	/** Advances the particles; the map calls it every frame */
@@ -478,6 +482,7 @@ export class WarRoomGame {
 		this.tier = escalationTier(state.day);
 		this.crisis = state.crisis;
 		this.directiveUsed = state.directiveUsed;
+		this.proDirectiveUsed = state.proDirectiveUsed;
 		this.intelDays = state.intelDays;
 		this.history = [...state.history];
 		this.crisesHandled = state.crisesHandled;

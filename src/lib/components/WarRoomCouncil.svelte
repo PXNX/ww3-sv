@@ -5,11 +5,22 @@
 <script lang="ts">
 	import { DIRECTIVES } from '#lib/game/warroom/council.js';
 	import { m } from '#lib/paraglide/messages.js';
+	import { telegram } from '#lib/stores/telegram.svelte.js';
 	import type { WarRoomGame } from '#lib/stores/warroomGame.svelte.js';
 	import { directiveName, directiveNote, effectLabel, resourceCost } from './warroomText.js';
 	import IconStamp from '~icons/lucide/stamp';
 
 	let { game }: { game: WarRoomGame } = $props();
+	const pro = $derived(telegram().pro);
+	const hint = $derived(
+		game.proDirectiveUsed
+			? m.warroom_council_used_pro()
+			: game.directiveUsed
+				? m.warroom_council_used()
+				: pro
+					? m.warroom_council_pro_hint()
+					: m.warroom_council_hint()
+	);
 </script>
 
 <section
@@ -20,7 +31,7 @@
 			{m.warroom_council_title()}
 		</h2>
 		<p dir="auto" class="text-xs leading-snug font-semibold opacity-80">
-			{game.directiveUsed ? m.warroom_council_used() : m.warroom_council_hint()}
+			{hint}
 		</p>
 	</div>
 	<ul class="grid grid-cols-1 gap-1.5 sm:grid-cols-2">

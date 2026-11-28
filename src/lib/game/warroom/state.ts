@@ -96,6 +96,7 @@ export function createWarRoom(): WarRoomState {
 		crisesHandled: 0,
 		flags: [],
 		directiveUsed: null,
+		proDirectiveUsed: null,
 		intelDays: 0,
 		history: []
 	};
@@ -617,6 +618,7 @@ export function endTurn(state: WarRoomState, random: Random): WarRoomEvent[] {
 	state.day += 1;
 	state.moved = [];
 	state.directiveUsed = null;
+	state.proDirectiveUsed = null;
 	events.push({ type: 'day', day: state.day });
 
 	const held = heldRegions(state);
@@ -730,20 +732,30 @@ export function resolveCrisis(state: WarRoomState, option: number): WarRoomEvent
 	return events;
 }
 
-export function canUseDirective(state: WarRoomState, id: DirectiveId): boolean {
-	return (
-		state.outcome === null && state.directiveUsed === null && canPay(state, directiveDef(id).cost)
-	);
+export function canUseDirective(
+	state: WarRoomState,
+	id: DirectiveId,
+	{ pro = false }: { pro?: boolean } = {}
+): boolean {
+	if (state.outcome !== null || !canPay(state, directiveDef(id).cost)) return false;
+	// Pro grants a second directive every day, after the regular one has been spent
+	if (state.directiveUsed === null) return true;
+	return pro && state.proDirectiveUsed === null;
 }
 
 /** One directive a day: the council's standing orders, each at a price */
-export function useDirective(state: WarRoomState, id: DirectiveId): WarRoomEvent[] {
-	if (!canUseDirective(state, id)) return [{ type: 'blocked' }];
+export function useDirective(
+	state: WarRoomState,
+	id: DirectiveId,
+	{ pro = false }: { pro?: boolean } = {}
+): WarRoomEvent[] {
+	if (!canUseDirective(state, id, { pro })) return [{ type: 'blocked' }];
 	const def = directiveDef(id);
 	const before = state.stability;
 	payCost(state, def.cost);
 	applyEffects(state, def.effects);
-	state.directiveUsed = id;
+	if (state.directiveUsed === null) state.directiveUsed = id;
+	else state.proDirectiveUsed = id;
 	const events: WarRoomEvent[] = [{ type: 'directive', id }];
 	if (state.stability !== before) {
 		events.push({ type: 'stability', value: state.stability, delta: state.stability - before });
