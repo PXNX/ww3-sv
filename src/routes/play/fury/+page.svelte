@@ -124,7 +124,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.fury_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.fury_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

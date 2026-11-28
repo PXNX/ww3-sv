@@ -117,7 +117,7 @@
 		</button>
 	{/snippet}
 
-	<section data-tutorial="playfield" class="mx-auto flex w-full flex-col gap-2 pb-2">
+	<section class="mx-auto flex w-full flex-col gap-2 pb-2">
 		<!-- Sunk fleets and the strikes left for today, above the water they apply to -->
 		<div
 			class="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1.5 font-display text-sm font-bold shadow-[3px_3px_0_var(--color-ink)]"
@@ -141,7 +141,7 @@
 
 		<!-- The board is the game, so it takes the whole width and sits between the status line and
 		     the result of the last strike -->
-		<div data-playfield dir="ltr" style:touch-action="manipulation">
+		<div data-playfield data-tutorial="board" dir="ltr" style:touch-action="manipulation">
 			<FleetHuntGrid
 				ships={game.ships}
 				decoys={game.decoys}
@@ -238,6 +238,7 @@
 			<!-- The armory under the board, within reach of the thumb that just fired -->
 			<div
 				class="grid grid-cols-3 gap-2 sm:grid-cols-5"
+				data-tutorial="armory"
 				role="group"
 				aria-label={m.fleethunt_weapons_label()}
 			>
@@ -283,7 +284,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.fleethunt_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.fleethunt_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

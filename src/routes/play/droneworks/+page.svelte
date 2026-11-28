@@ -72,14 +72,17 @@
 		{/if}
 	{/snippet}
 
-	<section data-tutorial="playfield" class="mx-auto flex w-full max-w-xl flex-1 flex-col items-center gap-2">
+	<section
+		data-tutorial="playfield"
+		class="mx-auto flex w-full max-w-xl flex-1 flex-col items-center gap-2"
+	>
 		<DroneworksField {game} />
 	</section>
 
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.droneworks_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.droneworks_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

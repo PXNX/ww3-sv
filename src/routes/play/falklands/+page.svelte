@@ -57,14 +57,25 @@
 		</button>
 	{/snippet}
 
-	<section data-tutorial="playfield" class="mx-auto flex w-full max-w-xl flex-1 flex-col items-center gap-2">
+	<section
+		data-tutorial="playfield"
+		class="mx-auto flex w-full max-w-xl flex-1 flex-col items-center gap-2"
+	>
 		<div
 			class="flex w-full items-center justify-between gap-2 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
 		>
-			<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
+			<p
+				dir="auto"
+				data-tutorial="hud-day"
+				class="font-display text-sm font-bold tabular-nums sm:text-base"
+			>
 				{m.falklands_hud_day({ day: game.day })}
 			</p>
-			<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
+			<p
+				dir="auto"
+				data-tutorial="hud-talks"
+				class="font-display text-sm font-bold tabular-nums sm:text-base"
+			>
 				{m.falklands_hud_talks({ count: game.talks, target: DIPLOMACY_TARGET })}
 			</p>
 		</div>
@@ -75,7 +86,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.falklands_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.falklands_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

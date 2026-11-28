@@ -172,9 +172,10 @@
 		{/if}
 	{/snippet}
 
-	<section data-tutorial="playfield" class="mx-auto flex w-full max-w-3xl flex-col gap-2">
+	<section class="mx-auto flex w-full max-w-3xl flex-col gap-2">
 		<!-- HUD: clock, lives, balance and the grid stress -->
 		<div
+			data-tutorial="hud"
 			class="flex flex-col gap-1.5 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1.5 shadow-[3px_3px_0_var(--color-ink)]"
 		>
 			<div class="flex items-center justify-between gap-3">
@@ -307,7 +308,7 @@
 				</div>
 			</div>
 
-			<div class="grid grid-cols-3 gap-1.5 sm:gap-2">
+			<div data-tutorial="sources" class="grid grid-cols-3 gap-1.5 sm:gap-2">
 				{#each game.sources as view (view.id)}
 					<EnergiewendeSourceCard
 						{view}
@@ -362,7 +363,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.energiewende_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.energiewende_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>
