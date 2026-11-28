@@ -9,7 +9,7 @@
 	import PauseOverlay from '#lib/components/PauseOverlay.svelte';
 	import ResourceIcon from '#lib/components/ResourceIcon.svelte';
 	import RotateHint from '#lib/components/RotateHint.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { buildingName, islandName } from '#lib/components/beachheadText.js';
 	import type { SkillId } from '#lib/game/beachhead/config.js';
 	import {
@@ -42,6 +42,7 @@
 	import IconShip from '~icons/lucide/ship';
 	import IconUsers from '~icons/lucide/users';
 	import IconZap from '~icons/lucide/zap';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new BeachheadGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_beachhead_name();
@@ -183,7 +184,7 @@
 
 	{#if playing}
 		<!-- Played sideways: the island fills the screen and the HUD floats over it -->
-		<div class="relative flex min-h-0 flex-1 flex-col">
+		<div data-tutorial="playfield" class="relative flex min-h-0 flex-1 flex-col">
 			<BeachheadCanvas {game} />
 
 			<div
@@ -334,24 +335,21 @@
 	{:else if game.screen === 'base'}
 		<BeachheadIsland {game} />
 	{:else}
-		<BeachheadMap {game} />
+		<div data-tutorial="playfield" class="flex min-h-0 flex-1 flex-col">
+			<BeachheadMap {game} />
+		</div>
 	{/if}
 
 	<!-- The whole mode is played sideways: held upright, a card covers every screen and the game waits -->
 	<RotateHint onportrait={(portrait) => portrait && game.pause()} />
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.beachhead_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.beachhead_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.beachhead_tutorial_goal()}</p>
-		<p>{m.beachhead_tutorial_deploy()}</p>
-		<p>{m.beachhead_tutorial_focus()}</p>
-		<p>{m.beachhead_tutorial_skills()}</p>
-		<p>{m.beachhead_tutorial_base()}</p>
-	</TutorialModal>
+	/>
 
 	<BeachheadWinPanel
 		open={game.status === 'won'}

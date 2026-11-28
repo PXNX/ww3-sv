@@ -4,7 +4,7 @@
 	import ChessCards from '#lib/components/ChessCards.svelte';
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
 	import { cardName, ChessGame, quipText, VANCE_CHANCE } from '#lib/stores/chessGame.svelte.js';
@@ -17,6 +17,7 @@
 	} from '#lib/theme/cameos.js';
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconRotate from '~icons/lucide/rotate-ccw';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new ChessGame();
 	onDestroy(() => game.destroy());
@@ -123,7 +124,7 @@
 	{/snippet}
 
 	<!-- Everything fits the screen: the board takes whatever height the other rows leave over -->
-	<div class="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-2 px-1">
+	<div data-tutorial="playfield" class="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-2 px-1">
 		<!-- Putin comments on the game, a rookie mistake is always sold as a master plan; you play as Zelensky -->
 		<div class="flex min-h-14 items-center gap-3">
 			<img
@@ -199,17 +200,13 @@
 	</div>
 </GameShell>
 
-<TutorialModal
+<InteractiveTutorial
 	open={showTutorial}
 	title={m.chess_tutorial_title()}
+	steps={tutorialSteps}
 	closeLabel={m.chess_tutorial_close()}
 	onclose={() => (showTutorial = false)}
->
-	<p>{m.chess_instructions()}</p>
-	<p>{m.chess_tutorial_cards()}</p>
-	<p>{m.chess_tutorial_vance({ percent: Math.round(VANCE_CHANCE * 100) })}</p>
-	<p>{m.chess_tutorial_putin()}</p>
-</TutorialModal>
+/>
 
 <GameOverModal
 	open={game.over}

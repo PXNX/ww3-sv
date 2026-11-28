@@ -12,7 +12,7 @@
 	import BeltRoadStars from '#lib/components/BeltRoadStars.svelte';
 	import BeltRoadWinPanel from '#lib/components/BeltRoadWinPanel.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { type PortId } from '#lib/game/beltroad/board.js';
 	import { portStyle } from '#lib/game/beltroad/ports.js';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
@@ -24,6 +24,7 @@
 	import IconList from '~icons/lucide/list';
 	import IconRotate from '~icons/lucide/rotate-ccw';
 	import IconUndo from '~icons/lucide/undo-2';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new BeltRoadGame();
 	const reducedMotion = prefersReducedMotion();
@@ -125,7 +126,7 @@
 
 	{#if playing}
 		<!-- The HUD, the grid and the buttons share one width, as wide as the height allows -->
-		<section
+		<section data-tutorial="playfield"
 			class="mx-auto flex w-full flex-col items-center gap-2"
 			style:max-width="max(16rem, min(100%, calc((100dvh - 22rem) * {game.level.width /
 				game.level.height})))"
@@ -207,21 +208,18 @@
 			</div>
 		</section>
 	{:else}
-		<BeltRoadLevelSelect {game} />
+		<div data-tutorial="playfield" class="flex min-h-0 flex-1 flex-col">
+			<BeltRoadLevelSelect {game} />
+		</div>
 	{/if}
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.beltroad_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.beltroad_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.beltroad_tutorial_goal()}</p>
-		<p>{m.beltroad_tutorial_draw()}</p>
-		<p>{m.beltroad_tutorial_cut()}</p>
-		<p>{m.beltroad_tutorial_stars()}</p>
-		<p class="hidden text-sm sm:block">{m.beltroad_keyboard_hint()}</p>
-	</TutorialModal>
+	/>
 </GameShell>
 
 <BeltRoadWinPanel
