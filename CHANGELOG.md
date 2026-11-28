@@ -13,6 +13,12 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 - Ship choice before a run: the tanker is balanced, the corvette trades a heart for speed and a
   narrower silhouette, and the tug is slow but efficient and starts with an escort
 
+#### vault
+
+- A heist timer: the vault locks when time runs out even with hearts left; matches buy time, the
+  bonus pair buys more, and mismatches cost it
+- The banker glances towards the side of the grid hiding the gold-and-cheese pair until it is found
+
 #### tycoon
 
 - Delivery contracts: a time-limited barrel target that pays a cash reward and a small permanent
