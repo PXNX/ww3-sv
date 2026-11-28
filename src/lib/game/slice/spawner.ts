@@ -38,17 +38,23 @@ export interface Launch {
 }
 
 /** Plans one arc for the given kind; consumes a fixed number of random values */
-export function launchFlyer(random: Random, kind: FlyerKind): Launch {
+export function launchFlyer(
+	random: Random,
+	kind: FlyerKind,
+	apex?: { x: number; y: number }
+): Launch {
 	const spec = specOf(kind);
 	const gravity = GRAVITY * spec.gravityScale;
 	const startX = WORLD_WIDTH * (LAUNCH_MARGIN + random() * (1 - 2 * LAUNCH_MARGIN));
 	const startY = WORLD_HEIGHT + spec.radius;
-	const apexY = WORLD_HEIGHT * (APEX_MIN + random() * (APEX_MAX - APEX_MIN));
+	const apexY = apex?.y ?? WORLD_HEIGHT * (APEX_MIN + random() * (APEX_MAX - APEX_MIN));
 
 	// The landing spot (mirror of the start around the peak) must stay on the field
 	const low = Math.max(WORLD_WIDTH * APEX_X_MIN, (startX + spec.radius) / 2);
 	const high = Math.min(WORLD_WIDTH * APEX_X_MAX, (WORLD_WIDTH - spec.radius + startX) / 2);
-	const apexX = low + random() * Math.max(0, high - low);
+	const apexX = apex
+		? Math.min(high, Math.max(low, apex.x))
+		: low + random() * Math.max(0, high - low);
 
 	const vy = -Math.sqrt(2 * gravity * (startY - apexY));
 	const riseSeconds = -vy / gravity;
@@ -146,6 +152,40 @@ function pickKind(random: Random, group: readonly FlyerKind[], wave: number): Fl
 	);
 }
 
+export type Formation = 'none' | 'vee' | 'cross';
+
+/** Later waves mix in volleys whose arcs are laid out for one planned swipe */
+export function formationAt(wave: number, random: Random): Formation {
+	if (wave < 2) return 'none';
+	const chance = Math.min(0.45, 0.15 + (wave - 2) * 0.05);
+	if (random() >= chance) return 'none';
+	return random() < 0.5 ? 'vee' : 'cross';
+}
+
+/** Apex positions for a formation of n flyers, or null when the volley is too small */
+export function formationApexes(
+	formation: Formation,
+	count: number
+): { x: number; y: number }[] | null {
+	const midX = WORLD_WIDTH / 2;
+	const highY = WORLD_HEIGHT * (APEX_MIN + 0.08);
+	const lowY = WORLD_HEIGHT * (APEX_MAX - 0.08);
+	if (formation === 'cross' && count >= 2) {
+		return [
+			{ x: midX - WORLD_WIDTH * 0.18, y: lowY },
+			{ x: midX + WORLD_WIDTH * 0.18, y: lowY }
+		];
+	}
+	if (formation === 'vee' && count >= 3) {
+		return [
+			{ x: midX - WORLD_WIDTH * 0.16, y: highY + 60 },
+			{ x: midX, y: highY },
+			{ x: midX + WORLD_WIDTH * 0.16, y: highY + 60 }
+		];
+	}
+	return null;
+}
+
 /**
  * One volley: always at least one threat, the rest are threats or decoys, and now and then a
  * floating supply (a repair only while a heart is missing).
@@ -154,10 +194,14 @@ export function planVolley(random: Random, wave: number, lives = STARTING_LIVES)
 	const difficulty = difficultyAt(wave);
 	const count =
 		random() < difficulty.burstChance ? randomInt(random, 2, difficulty.maxBurst + 1) : 1;
+	const formation = formationAt(wave, random);
+	const apexes = formationApexes(formation, count);
 	const launches: Launch[] = [];
 	for (let i = 0; i < count; i++) {
 		const decoy = i > 0 && random() < difficulty.decoyChance;
-		launches.push(launchFlyer(random, pickKind(random, decoy ? DECOY_KINDS : THREAT_KINDS, wave)));
+		launches.push(
+			launchFlyer(random, pickKind(random, decoy ? DECOY_KINDS : THREAT_KINDS, wave), apexes?.[i])
+		);
 	}
 	if (random() < difficulty.pickupChance) {
 		const repair = lives < STARTING_LIVES && random() < 0.45;

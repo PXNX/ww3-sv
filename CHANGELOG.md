@@ -77,6 +77,11 @@ Interactive how-to-play walkthroughs in every game, with spotlights on the contr
 
 ### Improved
 
+#### slice
+
+- Later waves mix in formation volleys: crossing pairs and V shapes whose arcs are laid out for
+  one well-planned swipe
+
 #### merge
 
 - Three optional run goals, drawn each game and paid out on completion: reach a ship tier, clear

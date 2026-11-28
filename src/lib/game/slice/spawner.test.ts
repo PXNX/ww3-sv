@@ -23,6 +23,8 @@ import {
 	beginWave,
 	createSpawner,
 	difficultyAt,
+	formationApexes,
+	formationAt,
 	launchFlyer,
 	planVolley,
 	stepSpawner,
@@ -182,5 +184,30 @@ describe('stepSpawner', () => {
 		expect(spawner.volleysLeft).toBe(waveVolleys(3));
 		expect(spawner.announce).toBe(true);
 		expect(stepSpawner(spawner, createRandom(1), 10)).toEqual([]);
+	});
+});
+
+describe('formation volleys', () => {
+	it('lays out a crossing pair and a V for a planned swipe', () => {
+		const cross = formationApexes('cross', 2)!;
+		expect(cross).toHaveLength(2);
+		expect(cross[0]!.x).toBeLessThan(cross[1]!.x);
+		expect(cross[0]!.y).toBe(cross[1]!.y);
+
+		const vee = formationApexes('vee', 3)!;
+		expect(vee).toHaveLength(3);
+		expect(vee[1]!.y).toBeLessThan(vee[0]!.y);
+		expect(vee[1]!.y).toBeLessThan(vee[2]!.y);
+	});
+
+	it('does not attempt a formation in a single-flyer volley', () => {
+		expect(formationApexes('vee', 2)).toBeNull();
+		expect(formationApexes('cross', 1)).toBeNull();
+		expect(formationApexes('none', 4)).toBeNull();
+	});
+
+	it('never offers a formation in the first wave', () => {
+		const always = () => 0;
+		expect(formationAt(1, always)).toBe('none');
 	});
 });
