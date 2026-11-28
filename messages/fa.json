@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"merge_objectives_label": "اهداف مسابقه",
+	"merge_objective_ferry": "ساخت کشتی مسافربری",
+	"merge_objective_oil_tanker": "ساخت نفتکش",
+	"merge_objective_clear_mines": "پاکسازی سه مین",
+	"merge_objective_triple": "ادغام سهگانه",
+	"merge_objective_rich": "کسب ۱۰۰۰ امتیاز",
+	"merge_event_objective": "هدف انجام شد: {name} +{points}",
 	"balloon_popup_photo_detail": "عکس +{points} · ارتفاع {altitude}% · کادر {framing}% · آب و هوا {weather}%",
 	"balloon_forecast_title": "پیش بینی",
 	"vault_popup_timeout": "زمان تمام شد — گاوصندوق قفل میشود",

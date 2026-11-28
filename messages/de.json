@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"merge_objectives_label": "Laufziele",
+	"merge_objective_ferry": "Eine Fähre bauen",
+	"merge_objective_oil_tanker": "Einen Öltanker bauen",
+	"merge_objective_clear_mines": "Drei Minen räumen",
+	"merge_objective_triple": "Dreifach-Merge schaffen",
+	"merge_objective_rich": "1.000 Punkte erreichen",
+	"merge_event_objective": "Ziel erreich: {name} +{points}",
 	"balloon_popup_photo_detail": "Foto +{points} · Höhe {altitude}% · Bildausschnitt {framing}% · Wetter {weather}%",
 	"balloon_forecast_title": "Wettervorhersage",
 	"vault_popup_timeout": "Die Zeit ist um — der Tresor schließt",

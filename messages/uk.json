@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"merge_objectives_label": "Цілі заходу",
+	"merge_objective_ferry": "Побудувати пором",
+	"merge_objective_oil_tanker": "Побудувати нафтовик",
+	"merge_objective_clear_mines": "Знищити три міни",
+	"merge_objective_triple": "Зробити потрійне злиття",
+	"merge_objective_rich": "Набрати 1000 очок",
+	"merge_event_objective": "Ціль виконано: {name} +{points}",
 	"balloon_popup_photo_detail": "Фото +{points} · висота {altitude}% · кадр {framing}% · погода {weather}%",
 	"balloon_forecast_title": "Прогноз",
 	"vault_popup_timeout": "Час вийшов — сховище зачиняється",

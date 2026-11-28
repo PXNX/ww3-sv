@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"merge_objectives_label": "أهداف الجولة",
+	"merge_objective_ferry": "ابنِ عبّارة",
+	"merge_objective_oil_tanker": "ابنِ ناقلة نفط",
+	"merge_objective_clear_mines": "أزل ثلاث ألغام",
+	"merge_objective_triple": "اصنع دمجًا ثلاثيًا",
+	"merge_objective_rich": "احصل على ١٠٠٠ نقطة",
+	"merge_event_objective": "تم الهدف: {name} +{points}",
 	"balloon_popup_photo_detail": "صورة +{points} · الارتفاع {altitude}% · التكوين {framing}% · الطقس {weather}%",
 	"balloon_forecast_title": "توقعات الطقس",
 	"vault_popup_timeout": "انتهى الوقت — الخزنة تُغلق",

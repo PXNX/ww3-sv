@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"merge_objectives_label": "Run goals",
+	"merge_objective_ferry": "Build a ferry",
+	"merge_objective_oil_tanker": "Build an oil tanker",
+	"merge_objective_clear_mines": "Clear three mines",
+	"merge_objective_triple": "Make a triple merge",
+	"merge_objective_rich": "Score 1,000 points",
+	"merge_event_objective": "Goal done: {name} +{points}",
 	"balloon_popup_photo_detail": "Photo +{points} · altitude {altitude}% · framing {framing}% · weather {weather}%",
 	"balloon_forecast_title": "Forecast",
 	"vault_popup_timeout": "Time is up — the vault locks",

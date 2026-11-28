@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"merge_objectives_label": "Цели забега",
+	"merge_objective_ferry": "Построить паром",
+	"merge_objective_oil_tanker": "Построить танкер",
+	"merge_objective_clear_mines": "Уничтожить три мины",
+	"merge_objective_triple": "Сделать тройное слияние",
+	"merge_objective_rich": "Набрать 1000 очков",
+	"merge_event_objective": "Цель выполнена: {name} +{points}",
 	"balloon_popup_photo_detail": "Фото +{points} · высота {altitude}% · кадр {framing}% · погода {weather}%",
 	"balloon_forecast_title": "Прогноз",
 	"vault_popup_timeout": "Время вышло — хранилище закрывается",
