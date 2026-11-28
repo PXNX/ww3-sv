@@ -21,6 +21,8 @@
 
 	const KEY = ['alignment', 'score'] as const;
 	const modeName = m.mode_alignment_name();
+	const amodeiLines = [m.amodei_line_1, m.amodei_line_2, m.amodei_line_3];
+	const amodeiSays = amodeiLines[Math.floor(createRandom(randomSeed())() * amodeiLines.length)]!();
 
 	let game = $state(createAlignment(createRandom(randomSeed())));
 	let best = $state<number | null>(null);
@@ -124,6 +126,7 @@
 				<h2 class="font-display text-2xl font-bold" dir="auto">
 					{game.status === 'won' ? m.alignment_result_win() : m.alignment_result_lose()}
 				</h2>
+				<p class="text-sm leading-snug italic" dir="auto">{amodeiSays}</p>
 				{#if isNewBest}
 					<p class="text-sm font-bold text-khaki" dir="auto">{m.game_best()}: {best}</p>
 				{/if}
