@@ -36,6 +36,7 @@ import {
 import { generateSortie, type Sortie } from './sortie.js';
 import type { Terrain } from './terrain.js';
 import type { Random } from '../random.js';
+import { confidenceBonus, isReckless, RECKLESS_ESCALATION } from './confidence.js';
 
 export type TrackStatus = 'open' | 'struck' | 'cleared';
 
@@ -273,6 +274,8 @@ export function strike(run: Run, id: number): boolean {
 	const t = track(run, id);
 	if (!t || t.status !== 'open') return false;
 	const { contact } = t;
+	const bonus = confidenceBonus(t.dossier);
+	const reckless = isReckless(t.dossier);
 	run.ordnance -= 1;
 	t.status = 'struck';
 	t.struckAt = run.clock + MISSILE_FLIGHT_S;
@@ -283,7 +286,8 @@ export function strike(run: Run, id: number): boolean {
 
 	if (contact.role === 'hostile') {
 		run.counts.hostilesStruck += 1;
-		award(run, contact.kind === 'aa' ? POINTS.aaStruck : POINTS.hostileStruck);
+		award(run, (contact.kind === 'aa' ? POINTS.aaStruck : POINTS.hostileStruck) + bonus);
+		if (reckless) run.escalation = Math.min(ESCALATION_LIMIT, run.escalation + RECKLESS_ESCALATION);
 	} else if (contact.role === 'civilian') {
 		run.counts.civiliansStruck += 1;
 		run.collateral += 1;

@@ -12,6 +12,7 @@
 	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { MAX_SORTIES } from '#lib/game/recon/config.js';
 	import { SENSORS } from '#lib/game/recon/contacts.js';
+	import { confidenceBonus, confidence as sensorConfidence } from '#lib/game/recon/confidence.js';
 	import { RECON_TEXT } from '#lib/game/recon/text.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
@@ -40,6 +41,11 @@
 					reading: game.dossier?.[sensor] ?? null
 				}))
 			: []
+	);
+	const confidenceLine = $derived(
+		game.dossier
+			? RECON_TEXT.dossier.confidence(sensorConfidence(game.dossier), confidenceBonus(game.dossier))
+			: ''
 	);
 	const hint = $derived.by(() => {
 		if (game.selectedNumber === null) return RECON_TEXT.dossier.idle;
@@ -209,6 +215,9 @@
 					{/each}
 				</div>
 			</div>
+			{#if confidenceLine}
+				<p class="text-xs font-bold opacity-70" dir="auto">{confidenceLine}</p>
+			{/if}
 			<p
 				class="min-h-5 text-sm leading-tight font-semibold"
 				role="status"

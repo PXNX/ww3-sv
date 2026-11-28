@@ -6,6 +6,13 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 
 ## Unreleased
 
+### Improved
+
+#### recon
+
+- Strikes backed by more sensor readings now pay a bonus; firing at an unread contact is reckless
+  and raises escalation
+
 ### New
 
 #### modelhearing

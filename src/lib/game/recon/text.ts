@@ -52,6 +52,8 @@ export const RECON_TEXT = {
 		locking: 'Locking…',
 		needs: (sensor: Sensor) => `Check next: ${SENSOR_TEXT[sensor].name}`,
 		settled: 'Picture complete. Your call.',
+		confidence: (read: number, bonus: number) =>
+			`${read}/3 sensors read${bonus > 0 ? ` · +${bonus} strike bonus` : ' · strike now is reckless'}`,
 		strike: 'Strike',
 		clear: 'Clear'
 	},

@@ -184,6 +184,8 @@ describe('ending a sortie', () => {
 
 	it('withholds the clean bonus after collateral damage and bleeds off escalation only when clean', () => {
 		const run = newRun();
+		for (const t of run.tracks)
+			for (const sensor of ['eo', 'ir', 'sar'] as const) t.dossier[sensor] = 'clear';
 		strike(run, idsWhere(run, 'civilian')[0]);
 		for (const id of idsWhere(run, 'hostile')) strike(run, id);
 		for (const t of run.tracks) if (t.status === 'open') clear(run, t.contact.id);
@@ -192,6 +194,8 @@ describe('ending a sortie', () => {
 		expect(run.escalation).toBe(ESCALATION.civilianStruck);
 
 		nextSortie(run);
+		for (const t of run.tracks)
+			for (const sensor of ['eo', 'ir', 'sar'] as const) t.dossier[sensor] = 'clear';
 		for (const t of [...run.tracks]) {
 			if (t.contact.role === 'hostile') strike(run, t.contact.id);
 			else clear(run, t.contact.id);
