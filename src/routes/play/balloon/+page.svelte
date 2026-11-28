@@ -11,7 +11,7 @@
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import LivesBar from '#lib/components/LivesBar.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { STARTING_LIVES } from '#lib/game/balloon/config.js';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -21,6 +21,7 @@
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new BalloonGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_balloon_name();
@@ -82,7 +83,9 @@
 		<div
 			class="flex w-full items-center justify-between gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
 		>
-			<LivesBar lives={game.lives} max={STARTING_LIVES} class="shrink-0 text-xl" />
+			<div data-tutorial="lives" class="shrink-0">
+				<LivesBar lives={game.lives} max={STARTING_LIVES} class="text-xl" />
+			</div>
 			<div class="flex min-w-0 flex-1 items-center gap-2">
 				<p dir="auto" class="font-display text-xs font-bold sm:text-sm" aria-hidden="true">
 					{m.balloon_hud_fuel()}
@@ -103,7 +106,7 @@
 					></div>
 				</div>
 			</div>
-			<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
+			<p data-tutorial="photos" dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
 				{m.balloon_hud_photos({ count: game.photos })}
 			</p>
 			<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
@@ -114,20 +117,13 @@
 		<BalloonCanvas {game} />
 	</section>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.balloon_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.balloon_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.balloon_tutorial_goal()}</p>
-		<p>{m.balloon_tutorial_burner()}</p>
-		<p>{m.balloon_tutorial_wind()}</p>
-		<p>{m.balloon_tutorial_hazards()}</p>
-		<p>{m.balloon_tutorial_photos()}</p>
-		<p>{m.balloon_tutorial_coast()}</p>
-		<p>{m.balloon_tutorial_keys()}</p>
-	</TutorialModal>
+	/>
 
 	<GameOverModal
 		open={game.status === 'over'}

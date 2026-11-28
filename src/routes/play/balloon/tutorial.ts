@@ -19,13 +19,13 @@ export const tutorialSteps: TutorialStep[] = [
 	{
 		title: m.balloon_tutorial_hazards(),
 		text: m.balloon_tutorial_hazards(),
-		target: '[data-tutorial="hazard"]',
+		target: '[data-tutorial="lives"]',
 		action: 'tap',
 	},
 	{
 		title: m.balloon_tutorial_photos(),
 		text: m.balloon_tutorial_photos(),
-		target: '[data-tutorial="photo"]',
+		target: '[data-tutorial="photos"]',
 		action: 'tap',
 	},
 ];

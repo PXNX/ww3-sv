@@ -157,6 +157,7 @@
 	>
 		<canvas
 			bind:this={canvas}
+			data-tutorial="burner"
 			class="block size-full touch-none rounded-[14px_8px_16px_10px] border-3 border-ink shadow-[4px_4px_0_var(--color-ink)]"
 			style:touch-action="none"
 			aria-label={m.balloon_playfield_label()}
