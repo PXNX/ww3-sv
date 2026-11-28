@@ -51,6 +51,8 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 #### home
 
 - A one-tap Continue button on the start screen opens the last game you played
+- A single wallet strip in the supply depot (coins, revives and ads left), with Pro kept to its own card
+- A short "why did that happen?" hint on lost result sheets, chosen by the game's play style
 
 ### New
 

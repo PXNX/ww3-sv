@@ -38,6 +38,7 @@
 	import { CHARACTER_NAME } from '#lib/theme/character.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import { telemetry } from '#lib/services/telemetry.js';
+	import { resultTip } from '#lib/game/resultTips.js';
 	import { juice } from '#lib/game/juice.svelte.js';
 	import '#lib/styles/hackers.css';
 	import Confetti from './Confetti.svelte';

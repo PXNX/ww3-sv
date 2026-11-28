@@ -129,22 +129,27 @@
 		<p class="max-w-xl text-sm leading-snug">{m.shop_intro()}</p>
 	</div>
 
-	<!-- The wallet: what there is to spend and what it buys -->
-	<div class="grid grid-cols-2 gap-3">
-		<div
-			class="flex items-center gap-2 rounded-2xl border-3 border-ink bg-explosion-yellow px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
-		>
+	<!-- One wallet strip: what there is to spend today. Pro has its own card further down. -->
+	<div
+		class="flex flex-wrap items-center justify-around gap-3 rounded-2xl border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
+		aria-label={m.shop_wallet_label()}
+	>
+		<div class="flex items-center gap-2">
 			<IconNewspaper class="size-6 shrink-0" aria-hidden="true" />
 			<span class="font-display text-lg leading-tight font-bold tabular-nums">
 				{m.career_coins({ count: careerState.profile.coins })}
 			</span>
 		</div>
-		<div
-			class="flex items-center gap-2 rounded-2xl border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
-		>
+		<div class="flex items-center gap-2">
 			<IconHeartPulse class="size-6 shrink-0 text-tie-red" aria-hidden="true" />
 			<span class="font-display text-lg leading-tight font-bold tabular-nums">
 				{m.career_revives({ count: revives })}
+			</span>
+		</div>
+		<div class="flex items-center gap-2">
+			<IconTv class="size-6 shrink-0" aria-hidden="true" />
+			<span class="font-display text-lg leading-tight font-bold tabular-nums">
+				{m.shop_wallet_ads({ left: careerState.adsLeft, max: ADS_PER_DAY })}
 			</span>
 		</div>
 	</div>
