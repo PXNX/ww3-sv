@@ -27,7 +27,8 @@ describe('mode leaders', () => {
 			'beltroad',
 			'veto',
 			'balloon',
-			'rareearth'
+			'rareearth',
+			'modelhearing'
 		]);
 		expect(modesFeaturing('trump').map((mode) => mode.id)).toEqual([
 			'blocks',

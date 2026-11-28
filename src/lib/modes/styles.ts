@@ -84,5 +84,6 @@ export const STYLE_OF_MODE: Record<ModeId, PlayStyle> = {
 	sabotage: 'tactics',
 	alignment: 'riddle',
 	gpugrid: 'management',
-	feedtuner: 'management'
+	feedtuner: 'management',
+	modelhearing: 'riddle'
 };

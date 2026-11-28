@@ -101,7 +101,8 @@ export type ModeId =
 	| 'beachhead'
 	| 'alignment'
 	| 'gpugrid'
-	| 'feedtuner';
+	| 'feedtuner'
+	| 'modelhearing';
 
 interface ModeBase {
 	id: ModeId;
@@ -657,6 +658,16 @@ export const MODES: readonly GameMode[] = [
 		leaders: ['zuckerberg'],
 		name: m.mode_feedtuner_name,
 		description: m.mode_feedtuner_description
+	},
+	{
+		id: 'modelhearing',
+		status: 'playable',
+		href: '/play/modelhearing',
+		icon: IconLandmark,
+		tileClass: 'bg-explosion-yellow',
+		leaders: ['amodei', 'huang', 'xi'],
+		name: m.mode_modelhearing_name,
+		description: m.mode_modelhearing_description
 	}
 ];
 
