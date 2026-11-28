@@ -8,7 +8,7 @@
 	"fleethunt_pro_ammo": "Запаси Pro: додаткові постріли та сканування щодня.",
 	"warroom_council_used_pro": "Обидві директиви використано — завтра будуть нові.",
 	"warroom_council_pro_hint": "Pro: друга директива щодня.",
-	"shop_gift_done_pro": "Шість місяців Pro тепер активні на вашому акаунті.",
+	"shop_gift_done_pro": "Pro активний до {date}, а також {count} токенів відродження вже на вашому акаунті.",
 	"shop_gift_telegram_only": "Цей код працює лише в Telegram — відкрийте гру там, щоб активувати його.",
 	"merge_objectives_label": "Цілі заходу",
 	"merge_objective_ferry": "Побудувати пором",

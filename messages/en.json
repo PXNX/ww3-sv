@@ -8,7 +8,7 @@
 	"fleethunt_pro_ammo": "Pro supply: extra shots and a scan each day.",
 	"warroom_council_used_pro": "Both directives used today — another comes tomorrow.",
 	"warroom_council_pro_hint": "Pro: a second directive every day.",
-	"shop_gift_done_pro": "Six months of Pro are now active on your account.",
+	"shop_gift_done_pro": "Pro is active until {date}, plus {count} revival tokens are now on your account.",
 	"shop_gift_telegram_only": "This code works in Telegram only — open the game there to redeem it.",
 	"merge_objectives_label": "Run goals",
 	"merge_objective_ferry": "Build a ferry",
