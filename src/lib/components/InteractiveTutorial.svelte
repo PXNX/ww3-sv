@@ -8,7 +8,7 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
-	import type { TutorialStep } from '#lib/services/tutorial.js';
+	import { tutorialTapHits, type TutorialStep } from '#lib/services/tutorial.js';
 
 	let {
 		open,
@@ -49,10 +49,14 @@
 		const frame = requestAnimationFrame(measure);
 		window.addEventListener('resize', measure);
 		window.addEventListener('scroll', measure, true);
+		// A tap can start the game and swap the screen behind the wizard: the same selector then
+		// points at a different element, so re-measure after the pointer is released.
+		window.addEventListener('pointerup', measure);
 		return () => {
 			cancelAnimationFrame(frame);
 			window.removeEventListener('resize', measure);
 			window.removeEventListener('scroll', measure, true);
+			window.removeEventListener('pointerup', measure);
 		};
 	});
 
@@ -104,12 +108,16 @@
 	}
 
 	// Any real use of the highlighted control counts as doing the step. Capture phase so a game's
-	// own pointer handler still runs afterwards and the tap has its normal effect.
+	// own pointer handler still runs afterwards and the tap has its normal effect. Hit-testing the
+	// spotlight rectangle as well as the selector matters on the first visit: a game's Start or
+	// Resume overlay often sits on top of the target, so the tap lands on that overlay instead of
+	// the element behind it. Tapping the highlighted spot still counts, and the overlay's own
+	// button starts or resumes the game at the same time.
 	function onPointerDown(event: PointerEvent) {
 		if (!open || step?.action !== 'tap' || !step.target) return;
-		const fromCallout = card?.contains(event.target as Node);
-		const hit = (event.target as Element | null)?.closest?.(step.target);
-		if (!fromCallout && hit) advance();
+		if (card?.contains(event.target as Node)) return;
+		const onTarget = (event.target as Element | null)?.closest?.(step.target) !== null;
+		if (tutorialTapHits({ x: event.clientX, y: event.clientY }, onTarget, spot)) advance();
 	}
 
 	function onKeyDown(event: KeyboardEvent) {

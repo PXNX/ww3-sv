@@ -341,7 +341,7 @@
 		title={m.curling_tutorial_title()}
 		steps={tutorialSteps()}
 		closeLabel={m.curling_tutorial_close()}
-		onclose={() => (showTutorial = false)}
+		onclose={closeTutorial}
 	/>
 
 	<GameOverModal

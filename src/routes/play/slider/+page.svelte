@@ -97,7 +97,7 @@
 		title={m.slider_tutorial_title()}
 		steps={tutorialSteps()}
 		closeLabel={m.slider_tutorial_close()}
-		onclose={() => (showTutorial = false)}
+		onclose={closeTutorial}
 	/>
 
 	<GameOverModal

@@ -22,6 +22,30 @@ export function firstPlay(mode: string): boolean {
 	return !seen;
 }
 
+export type TutorialRect = { left: number; top: number; right: number; bottom: number };
+
+/**
+ * Whether a tap counts as doing a spotlight step. A tap on the highlighted control counts, and so
+ * does a tap anywhere in the spotlight — a game's Start or Resume overlay often covers the
+ * target on the first visit, and the tap lands on that overlay rather than on the control itself.
+ */
+export function tutorialTapHits(
+	point: { x: number; y: number },
+	onTarget: boolean,
+	spot: TutorialRect | null
+): boolean {
+	if (onTarget) return true;
+	if (!spot) return false;
+	// The visible spotlight border sits 6px outside the measured element
+	const pad = 6;
+	return (
+		point.x >= spot.left - pad &&
+		point.x <= spot.right + pad &&
+		point.y >= spot.top - pad &&
+		point.y <= spot.bottom + pad
+	);
+}
+
 export type TutorialStep = {
 	/** Short heading. Use an existing translated `<mode>_tutorial_*` message. */
 	title: string;

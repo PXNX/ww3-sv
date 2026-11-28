@@ -500,7 +500,7 @@
 		title={m.tycoon_tutorial_title()}
 		steps={tutorialSteps()}
 		closeLabel={m.tycoon_tutorial_close()}
-		onclose={() => (showTutorial = false)}
+		onclose={closeHelp}
 	/>
 </GameShell>
 

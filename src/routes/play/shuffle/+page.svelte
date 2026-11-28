@@ -152,7 +152,7 @@
 		title={m.shuffle_tutorial_title()}
 		steps={tutorialSteps()}
 		closeLabel={m.shuffle_tutorial_close()}
-		onclose={() => (showTutorial = false)}
+		onclose={closeTutorial}
 	/>
 
 	<GameOverModal
