@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"avatar_gift_title": "Send a look to a friend",
+	"avatar_gift_hint": "Unlocked looks can be wrapped and delivered by your own agent.",
+	"avatar_gift_anyone": "Anyone with the link",
+	"avatar_gift_link": "Copy gift link",
+	"gift_friend_generic": "a friend",
+	"gift_delivered": "Delivered: {name}!",
+	"gift_delivering": "Your agent is on the way…",
 	"shop_gift_done_look": "Unlocked a new look: {name}. Find it in the dress-up screen.",
 	"avatar_unlock_game": "Play {game}",
 	"avatar_unlock_gift": "Redeem the gift code {code}",

@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"avatar_gift_title": "Ein Aussehen verschenken",
+	"avatar_gift_hint": "Freigeschaltete Looks kannst du verpacken und von deinem Agenten zustellen lassen.",
+	"avatar_gift_anyone": "Jeder mit dem Link",
+	"avatar_gift_link": "Geschenklink kopieren",
+	"gift_friend_generic": "ein Freund",
+	"gift_delivered": "Zugestellt: {name}!",
+	"gift_delivering": "Dein Agent ist unterwegs…",
 	"shop_gift_done_look": "Neuer Look freigeschaltet: {name}. Finde ihn im Ankleidebildschirm.",
 	"avatar_unlock_game": "Spiele {game}",
 	"avatar_unlock_gift": "Löse den Geschenkcode {code} ein",

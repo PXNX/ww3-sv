@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"avatar_gift_title": "Подарить образ",
+	"avatar_gift_hint": "Открытые образы можно упаковать — ваш агент доставит их.",
+	"avatar_gift_anyone": "Любой со ссылкой",
+	"avatar_gift_link": "Скопировать ссылку",
+	"gift_friend_generic": "друг",
+	"gift_delivered": "Доставлено: {name}!",
+	"gift_delivering": "Ваш агент в пути…",
 	"shop_gift_done_look": "Открыт новый образ: {name}. Найдите его в меню одежды.",
 	"avatar_unlock_game": "Играй в {game}",
 	"avatar_unlock_gift": "Используй подарочный код {code}",

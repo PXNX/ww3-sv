@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"avatar_gift_title": "هدیه دادن یک ظاهر",
+	"avatar_gift_hint": "ظاهرهای بازشده را میتوانید بپیچید و عاملتان تحویل دهد.",
+	"avatar_gift_anyone": "هرکس با لینک",
+	"avatar_gift_link": "کپی لینک هدیه",
+	"gift_friend_generic": "یک دوست",
+	"gift_delivered": "تحویل شد: {name}!",
+	"gift_delivering": "عاملت در راه است…",
 	"shop_gift_done_look": "ظاهر جدید باز شد: {name}. آن را در صفحه پوشش پیدا کنید.",
 	"avatar_unlock_game": "بازی {game}",
 	"avatar_unlock_gift": "کد هدیه {code} را redeem کنید",

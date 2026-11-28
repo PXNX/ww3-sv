@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"avatar_gift_title": "أرسل إطلالة لصديق",
+	"avatar_gift_hint": "يمكن تغليف الإطلالات المفتوحة وإرسالها مع عميلك.",
+	"avatar_gift_anyone": "أي شخص لديه الرابط",
+	"avatar_gift_link": "نسخ رابط الهدية",
+	"gift_friend_generic": "صديق",
+	"gift_delivered": "تم التسليم: {name}!",
+	"gift_delivering": "عميلك في الطريق…",
 	"shop_gift_done_look": "تم فتح إطلالة جديدة: {name}. ابحث عنها في شاشة الملابس.",
 	"avatar_unlock_game": "العب {game}",
 	"avatar_unlock_gift": "استبدل رمز الهدية {code}",
