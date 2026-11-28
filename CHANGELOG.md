@@ -65,6 +65,11 @@ Interactive how-to-play walkthroughs in every game, with spotlights on the contr
 
 ### Improved
 
+#### maze
+
+- A faint breadcrumb trail shows the route already walked, with the last step picked out
+- Bumping into a wall or a locked door now flashes that edge, so a blocked move reads at a glance
+
 #### telegram
 
 - The legal links in the bot (purchase consent, `/impressum`, `/agb`, `/widerruf` and `/datenschutz`) now open the
