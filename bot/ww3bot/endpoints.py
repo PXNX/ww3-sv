@@ -213,14 +213,19 @@ async def admin_stats(bot: Bot, data: dict, init_data: dict) -> dict:
 
 
 async def redeem(bot: Bot, data: dict, init_data: dict) -> dict:
-    """`{ code }` → `{ status: ok | used, revives, wallet }`; `UNKNOWN_GIFT` for anything else."""
+    """`{ code }` → `{ status, revives, pro_until, wallet }`; `UNKNOWN_GIFT` for anything else."""
     user = player(init_data)
     await ledger.upsert_account(user)
-    status, revives = await gifts.redeem(user.id, str(data.get("code") or ""))
-    if status == "unknown":
+    result = await gifts.redeem(user.id, str(data.get("code") or ""))
+    if result.status == "unknown":
         raise EndpointError("Unknown gift code", "UNKNOWN_GIFT")
     current = await ledger.wallet(user.id)
-    return {"status": status, "revives": revives, "wallet": {"revives": current["revives"]}}
+    return {
+        "status": result.status,
+        "revives": result.revives,
+        "pro_until": result.pro_until,
+        "wallet": {"revives": current["revives"], "pro": current["pro"], "pro_until": current["pro_until"]},
+    }
 
 
 ENDPOINTS = {

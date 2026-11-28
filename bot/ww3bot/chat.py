@@ -61,9 +61,12 @@ async def start(bot: Bot, chat_id: int, user, param: str | None) -> None:
     if param == "shop":
         return await shop(bot, chat_id, user)
     if gifts.normalize(param):
-        status, revives = await gifts.redeem(user.id, param)
-        key = "gift_ok" if status == "ok" else "gift_used"
-        return await send(bot, chat_id, t(lang, key, count=revives), [play_button(t(lang, "open_app"))])
+        result = await gifts.redeem(user.id, param)
+        if result.status == "ok" and result.pro_until:
+            key, count = "gift_pro_ok", format_date(result.pro_until)
+        else:
+            key, count = ("gift_ok" if result.status == "ok" else "gift_used"), result.revives
+        return await send(bot, chat_id, t(lang, key, count=count), [play_button(t(lang, "open_app"))])
     await send(
         bot,
         chat_id,

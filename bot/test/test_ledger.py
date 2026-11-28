@@ -172,9 +172,9 @@ async def test_gift_code_once_per_account():
     await ledger.upsert_account(person(77))
     assert gifts.normalize("gift_mn-5") == "MN5"
     assert gifts.normalize("NOPE") is None
-    assert await gifts.redeem(77, "mn5") == ("ok", 5)
-    assert await gifts.redeem(77, "MN5") == ("used", 5)
-    assert await gifts.redeem(77, "nope") == ("unknown", 0)
+    assert await gifts.redeem(77, "mn5") == gifts.Redemption("ok", 5)
+    assert await gifts.redeem(77, "MN5") == gifts.Redemption("used", 5)
+    assert await gifts.redeem(77, "nope") == gifts.Redemption("unknown", 0)
     assert (await ledger.wallet(77))["revives"] == 5
 
 
@@ -198,3 +198,29 @@ async def test_admin_report_and_endpoint(bot, monkeypatch):
     assert result["ww3"]["totals"]["accounts"] >= 1 and result["ads"]["network"] is None
     with pytest.raises(endpoints.EndpointError):
         await endpoints.admin_stats(bot, {}, {"id": 92})
+
+
+async def test_pro_gift_grants_six_months_once():
+    from ww3bot import gifts
+
+    await ledger.upsert_account(person(88))
+    result = await gifts.redeem(88, "PRO6M")
+    assert result.status == "ok"
+    assert result.revives == 0
+    assert result.pro_until is not None
+    # Six calendar months from now, clamped to a valid day
+    expected = int(gifts.plus_months(6).timestamp())
+    assert abs(result.pro_until - expected) <= 2
+    wallet = await ledger.wallet(88)
+    assert wallet["pro"] is True
+    assert wallet["pro_until"] == result.pro_until
+    assert await gifts.redeem(88, "pro6m") == gifts.Redemption("used", 0)
+
+
+def test_six_months_clamps_short_months():
+    from datetime import datetime, timezone
+
+    from ww3bot import gifts
+
+    end = gifts.plus_months(6, datetime(2026, 8, 31, tzinfo=timezone.utc))
+    assert (end.year, end.month, end.day) == (2027, 2, 28)

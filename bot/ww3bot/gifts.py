@@ -1,14 +1,37 @@
 """
-Gift codes that put revival tokens into the account wallet, once per Telegram account. They work as a
-bot link (t.me/<bot>?start=MN5), as a Mini App link (?startapp=MN5) and typed in the supply depot.
+Gift codes that credit an account once per Telegram user. A code either puts revival tokens into the
+wallet or grants Pro for a fixed number of months. They work as a bot link (t.me/<bot>?start=MN5),
+as a Mini App link (?startapp=MN5) and typed in the supply depot.
 """
+import calendar
 import re
+from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Final
 
 from ww3bot import db
 
-# Code → revival tokens
-GIFT_CODES: Final[dict[str, int]] = {"MN5": 5}
+
+@dataclass(frozen=True)
+class Gift:
+    """Exactly one reward per code. Pro months are calendar months, not a fixed number of days."""
+
+    revives: int = 0
+    pro_months: int = 0
+
+
+# Code → reward
+GIFT_CODES: Final[dict[str, Gift]] = {
+    "MN5": Gift(revives=5),
+    "PRO6M": Gift(pro_months=6),
+}
+
+
+@dataclass(frozen=True)
+class Redemption:
+    status: str  # "ok" | "used" | "unknown"
+    revives: int
+    pro_until: int | None = None
 
 
 def normalize(code: str | None) -> str | None:
@@ -20,15 +43,38 @@ def normalize(code: str | None) -> str | None:
     return value if value in GIFT_CODES else None
 
 
-async def redeem(user_id: int, code: str) -> tuple[str, int]:
-    """("ok" | "used" | "unknown", revival tokens of the code)."""
-    gift = normalize(code)
-    if not gift:
-        return "unknown", 0
-    revives = GIFT_CODES[gift]
+def plus_months(months: int, now: datetime | None = None) -> datetime:
+    """Adds calendar months to now, clamping the day to the end of a shorter month."""
+    now = now or datetime.now(timezone.utc)
+    index = now.month - 1 + months
+    year = now.year + index // 12
+    month = index % 12 + 1
+    day = min(now.day, calendar.monthrange(year, month)[1])
+    return now.replace(year=year, month=month, day=day)
+
+
+async def redeem(user_id: int, code: str) -> Redemption:
+    """Redeems once per account. A Pro gift extends pro_until from now or from the current end."""
+    gift_code = normalize(code)
+    if not gift_code:
+        return Redemption("unknown", 0)
+    gift = GIFT_CODES[gift_code]
+
+    # The gifts table is the one-per-account guard for every kind of reward
     row = await db.fetchone(
         "INSERT INTO gifts (user_id, code, revives, created_at) VALUES (%s, %s, %s, %s) "
         "ON CONFLICT (user_id, code) DO NOTHING RETURNING 1 AS added",
-        (user_id, gift, revives, db.now()),
+        (user_id, gift_code, gift.revives, db.now()),
     )
-    return ("ok" if row else "used"), revives
+    if not row:
+        return Redemption("used", gift.revives)
+
+    if gift.revives:
+        return Redemption("ok", gift.revives)
+
+    until = plus_months(gift.pro_months)
+    await db.execute(
+        "UPDATE accounts SET pro_until = GREATEST(COALESCE(pro_until, 0), %s) WHERE user_id = %s",
+        (int(until.timestamp()), user_id),
+    )
+    return Redemption("ok", 0, int(until.timestamp()))
