@@ -2,6 +2,7 @@
  * One fixed step of Spokesperson Whack: pop-ups, statements running out, taps, scoring and
  * hearts. Pure apart from the state it mutates, so tests drive it with a seeded Random.
  */
+import { FOLLOWUP_BONUS, FOLLOWUP_DELAY_MS, FOLLOWUP_LIFE_MS } from './config.js';
 import {
 	CORRECTION_POINTS,
 	FACT_CHECK_BONUS,
@@ -94,11 +95,19 @@ export function tapHole(state: WhackState, hole: number): WhackEvent[] {
 
 	startPhase(mole, 'whacked');
 	const { streak, multiplier } = registerHit(state.combo, state.timeMs);
-	const points = hitScore(specOf(mole.kind).points, multiplier);
+	const points =
+		hitScore(specOf(mole.kind).points, multiplier) + (mole.followUp ? FOLLOWUP_BONUS : 0);
+	if (mole.followUp) {
+		state.followUpPoints += FOLLOWUP_BONUS;
+		events.push({ type: 'follow-up', hole, points: FOLLOWUP_BONUS });
+	}
 	state.score += points;
 	state.hits += 1;
 	state.bestStreak = Math.max(state.bestStreak, streak);
 	events.push({ type: 'hit', kind: mole.kind, hole, x, y, points, streak, multiplier });
+	// Some liars have a follow-up line queued for the same podium a moment later
+	if (state.followUps.length < 3 && state.hits % 3 === 0)
+		state.followUps.push({ hole, atMs: state.timeMs + FOLLOWUP_DELAY_MS });
 	return events;
 }
 
@@ -211,6 +220,26 @@ export function stepGame(state: WhackState, random: Random, dtMs: number): Whack
 			finished: false
 		});
 		events.push({ type: 'spawned', kind: spawn.kind, hole: spawn.hole });
+	}
+	const due = state.followUps.filter((follow) => follow.atMs <= state.timeMs);
+	state.followUps = state.followUps.filter((follow) => follow.atMs > state.timeMs);
+	for (const follow of due) {
+		if (state.moles.some((mole) => mole.hole === follow.hole && mole.phase !== 'leaving')) continue;
+		state.moles.push({
+			id: state.nextId++,
+			hole: follow.hole,
+			kind: 'talkinghead',
+			statement: 'lie',
+			phase: 'up',
+			ageMs: 0,
+			phaseMs: 0,
+			lifeMs: FOLLOWUP_LIFE_MS,
+			progress: 0,
+			riseFrom: 0,
+			finished: false,
+			followUp: true
+		});
+		events.push({ type: 'spawned', kind: 'talkinghead', hole: follow.hole });
 	}
 	return events;
 }

@@ -93,3 +93,9 @@ export const FACT_CHECK_MS = 600;
 export const FACT_CHECK_BONUS = 10;
 /** Points for correctly leaving a correction alone until its statement ends */
 export const CORRECTION_POINTS = 5;
+
+/** A whacked liar sometimes has one more line to deliver */
+export const FOLLOWUP_CHANCE = 0.35;
+export const FOLLOWUP_DELAY_MS = 420;
+export const FOLLOWUP_LIFE_MS = 1100;
+export const FOLLOWUP_BONUS = 40;

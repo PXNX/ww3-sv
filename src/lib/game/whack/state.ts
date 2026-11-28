@@ -36,6 +36,8 @@ export interface Mole {
 	riseFrom: number;
 	/** Whether the statement finished (the player lost a heart for it) */
 	finished: boolean;
+	/** A follow-up card from a recent hit, worth a bonus if caught */
+	followUp?: boolean;
 }
 
 /** A funding question being held for a fact-check */
@@ -55,6 +57,10 @@ export interface WhackState {
 	spawner: Spawner;
 	combo: Combo;
 	factCheck: FactCheck | null;
+	/** Follow-up cards queued for a podium after a hit, with the time they appear */
+	followUps: { hole: number; atMs: number }[];
+	/** Bonus points earned from follow-ups */
+	followUpPoints: number;
 	nextId: number;
 	/** Targets whacked */
 	hits: number;
@@ -85,6 +91,8 @@ export function createGame(board: BoardId = 'regime'): WhackState {
 		spawner: createSpawner(),
 		combo: createCombo(),
 		factCheck: null,
+		followUps: [],
+		followUpPoints: 0,
 		nextId: 1,
 		hits: 0,
 		escaped: 0,
@@ -107,6 +115,7 @@ export function riseOf(mole: Mole): number {
 
 export type WhackEvent =
 	| { type: 'spawned'; kind: MoleKind; hole: number }
+	| { type: 'follow-up'; hole: number; points: number }
 	| {
 			type: 'hit';
 			kind: MoleKind;

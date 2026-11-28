@@ -355,3 +355,33 @@ describe('riseOf', () => {
 		expect(riseOf(mole)).toBe(0);
 	});
 });
+
+describe('follow-up chains', () => {
+	it('queues a follow-up every third hit and pays a bonus for catching it', () => {
+		const state = createGame();
+		state.hits = 2;
+		state.moles = [
+			{
+				id: 1,
+				hole: 4,
+				kind: 'spokesperson',
+				statement: 'lie',
+				phase: 'up',
+				ageMs: 200,
+				phaseMs: 200,
+				lifeMs: 4000,
+				progress: 0,
+				riseFrom: 0,
+				finished: false
+			}
+		];
+		tapHole(state, 4);
+		expect(state.followUps).toHaveLength(1);
+		expect(types(quietStep(state, 500))).toContain('spawned');
+		const followUp = state.moles.find((mole) => mole.followUp);
+		expect(followUp).toBeDefined();
+		const events = tapHole(state, followUp!.hole);
+		expect(types(events)).toContain('follow-up');
+		expect(state.followUpPoints).toBeGreaterThan(0);
+	});
+});

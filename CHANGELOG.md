@@ -8,6 +8,11 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 
 ### Improved
 
+#### whack
+
+- Follow-up chains: every third hit queues one more talking head in the same podium a moment later,
+  worth a bonus if you catch it before the statement ends
+
 #### suez
 
 - A slow tide cycle: at high water the wedged ship moves more easily but the waiting queue grows
