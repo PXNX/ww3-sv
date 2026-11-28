@@ -61,7 +61,11 @@
 	const placement = $derived.by(() => {
 		const width = Math.min(360, Math.max(240, viewport.w - 24));
 		if (!spot) {
-			return { width, left: Math.round((viewport.w - width) / 2), top: Math.max(12, viewport.h - cardHeight - 20) };
+			return {
+				width,
+				left: Math.round((viewport.w - width) / 2),
+				top: Math.max(12, viewport.h - cardHeight - 20)
+			};
 		}
 		const pad = 6;
 		const left = Math.min(
@@ -70,7 +74,12 @@
 		);
 		const below = spot.bottom + pad + 12;
 		const above = spot.top - cardHeight - pad - 12;
-		const top = below + cardHeight < viewport.h - 12 ? below : above >= 12 ? above : Math.max(12, viewport.h - cardHeight - 12);
+		const top =
+			below + cardHeight < viewport.h - 12
+				? below
+				: above >= 12
+					? above
+					: Math.max(12, viewport.h - cardHeight - 12);
 		return { width, left, top };
 	});
 
@@ -111,7 +120,8 @@
 			finish();
 			return;
 		}
-		if ((event.target as Element | null)?.closest?.('input, textarea, [contenteditable="true"]')) return;
+		if ((event.target as Element | null)?.closest?.('input, textarea, [contenteditable="true"]'))
+			return;
 		let handled = true;
 		if (event.key === 'ArrowRight' || event.key === 'Enter' || event.key === ' ') advance();
 		else if (event.key === 'ArrowLeft') back();
@@ -165,9 +175,13 @@
 			style:top="{placement.top}px"
 			style:width="{placement.width}px"
 		>
-			<div class="flex items-center justify-between gap-2 font-display text-xs font-bold tracking-wide opacity-70">
+			<div
+				class="flex items-center justify-between gap-2 font-display text-xs font-bold tracking-wide opacity-70"
+			>
 				<span dir="auto">{title}</span>
-				<span class="tabular-nums">{m.tutorial_step_counter({ current: index + 1, total: steps.length })}</span>
+				<span class="tabular-nums"
+					>{m.tutorial_step_counter({ current: index + 1, total: steps.length })}</span
+				>
 			</div>
 			<div class="h-1.5 overflow-hidden rounded-full bg-ink/15" aria-hidden="true">
 				<div

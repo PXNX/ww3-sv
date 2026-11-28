@@ -25,11 +25,12 @@ Shared labels (`tutorial_step_counter`, `tutorial_next`, `tutorial_back`, `tutor
 
 ## Converting a game
 
-1. Add `src/routes/play/<mode>/tutorial.ts`, exporting `tutorialSteps(): TutorialStep[]`. Import
-   `m` from `#lib/paraglide/messages.js` and use the game's **existing** translated tutorial
-   strings. Split the old wall into **3–6 steps**, each with a short title and one short tip. If a
-   paragraph is too long, do not invent new copy — keep it as its own step and put the important
-   sentence first.
+1. Add `src/routes/play/<mode>/tutorial.ts`, exporting a **function**
+   `tutorialSteps(): TutorialStep[]`. Import `m` from `#lib/paraglide/messages.js` and use the
+   game's **existing** translated tutorial strings. Split the old wall into **3–6 steps**, each
+   with a short title and one short tip. If a paragraph is too long, do not invent new copy — keep
+   it as its own step and put the important sentence first. The page passes `steps={tutorialSteps()}`
+   (called, not the function itself).
 2. Mark real controls with `data-tutorial="<name>"` attributes in the page or its components.
    Prefer these over class or text selectors. Use names like `start`, `board`, `keyboard`,
    `hud-score`, `tab-upgrades`.
@@ -49,11 +50,16 @@ Shared labels (`tutorial_step_counter`, `tutorial_next`, `tutorial_back`, `tutor
 />
 ```
 
-   Keep the existing `showTutorial` state, `firstPlay('<mode>')` call and help button untouched.
-   Delete the now-unused `TutorialModal` import.
-5. The targets must exist **while the wizard is open**. If the tutorial opens from a level-select
-   or lobby screen, either point at controls on that screen or leave those steps targetless;
-   never point at an element that is not in the DOM.
+The spec above is the finished shape. If a game already has a mechanical conversion (a const
+array and `steps={tutorialSteps}`), review and improve it: convert the export to a function,
+call it in the page, and prefer specific `data-tutorial` controls (start button, tabs, HUD
+counters, D-pad) over a generic full-playfield container wherever those controls exist on both
+the initial and the playing screen.
+
+Keep the existing `showTutorial` state, `firstPlay('<mode>')` call and help button untouched.
+Delete the now-unused `TutorialModal` import. 5. The targets must exist **while the wizard is open**. If the tutorial opens from a level-select
+or lobby screen, either point at controls on that screen or leave those steps targetless;
+never point at an element that is not in the DOM.
 
 ## Rules for parallel work
 
