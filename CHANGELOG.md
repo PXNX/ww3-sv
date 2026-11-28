@@ -34,12 +34,26 @@ The version history is now part of the game, grouped by change type and scope.
 - Search games from any chat in Telegram's inline mode: type `@game_ww3_bot games Flamingo` and open a
   result, with the group's scoreboard in a group and a Mini App play button everywhere else
 
+#### tutorials
+
+- Every game's how-to-play screen is now an interactive walkthrough instead of a wall of text: one
+  short tip at a time, a spotlight on the real control it describes, and steps you finish by actually
+  using that control
+- The wizard has a progress bar, Back, Skip and Next, works with the arrow keys and Escape, and the
+  help button reopens it at any time
+
 ### Improved
 
 #### telegram
 
 - The legal links in the bot (purchase consent, `/impressum`, `/agb`, `/widerruf` and `/datenschutz`) now open the
   translated documents on the game website instead of pages on the bot's own server
+
+#### tutorials
+
+- Steps spotlight the control they actually describe — the board and cards in Chess, the armory in
+  Fleet Hunt, the source sliders in Energiewende, the shop tabs in Tycoon and War Room, and the HUD
+  counters in many modes — rather than a generic outline of the whole playfield
 
 ### Fixed
 
@@ -54,6 +68,13 @@ The version history is now part of the game, grouped by change type and scope.
 - Games opened from a group chat drop the back button and use a slimmer banner, and their playfields fit
   the height of Telegram's game browser instead of running off the bottom
 - The score in a game's banner is readable again
+
+#### tutorials
+
+- Tutorial steps work from the very first visit, before the game is started: tapping the highlighted
+  Start or Resume overlay counts as doing the step and starts the game at the same time
+- Closing the walkthrough in Curling, Shuffle, Slider and Tycoon resumes the game again instead of
+  leaving it paused
 
 ## v1.5.0 - 2026-11-17
 
