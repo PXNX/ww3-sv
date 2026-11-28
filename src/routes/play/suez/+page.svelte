@@ -9,7 +9,7 @@
 	import GameShell from '#lib/components/GameShell.svelte';
 	import LivesBar from '#lib/components/LivesBar.svelte';
 	import SuezCanvas from '#lib/components/SuezCanvas.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
 	import { QUEUE_CAPACITY, STARTING_LIVES } from '#lib/game/suez/config.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -19,6 +19,7 @@
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new SuezGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_suez_name();
@@ -82,7 +83,7 @@
 	{/snippet}
 
 	<!-- The HUD and the playfield share one width, as wide as the height allows -->
-	<section
+	<section data-tutorial="playfield"
 		class="mx-auto flex w-full flex-col items-center gap-2"
 		style:max-width="max(17rem, min(100%, calc((100dvh - 15rem) * 0.643)))"
 	>
@@ -130,19 +131,13 @@
 		<SuezCanvas {game} />
 	</section>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.suez_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.suez_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.suez_tutorial_goal()}</p>
-		<p>{m.suez_tutorial_drag()}</p>
-		<p>{m.suez_tutorial_banks()}</p>
-		<p>{m.suez_tutorial_excavator()}</p>
-		<p>{m.suez_tutorial_queue()}</p>
-		<p>{m.suez_tutorial_score()}</p>
-	</TutorialModal>
+	/>
 
 	<GameOverModal
 		open={game.status === 'over'}

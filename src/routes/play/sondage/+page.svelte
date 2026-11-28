@@ -23,7 +23,7 @@
 		reasonText,
 		SIDE_BACKGROUND
 	} from '#lib/components/sondageText.js';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { swingOrder } from '#lib/game/sondage/board.js';
 	import { candidateFile, candidatePose } from '#lib/game/sondage/candidate.js';
 	import { majority } from '#lib/game/sondage/rules.js';
@@ -37,6 +37,7 @@
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
 	import IconSnowflake from '~icons/lucide/snowflake';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new SondageGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_sondage_name();
@@ -115,7 +116,7 @@
 		{/if}
 	{/snippet}
 
-	<section class="mx-auto flex w-full max-w-xl flex-col gap-2">
+	<section data-tutorial="playfield" class="mx-auto flex w-full max-w-xl flex-col gap-2">
 		<!-- The poll bar: map share of each side, with the majority marker -->
 		<div
 			class="flex flex-col gap-1.5 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
@@ -224,43 +225,13 @@
 		</div>
 	</section>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.sondage_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.sondage_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.sondage_tutorial_goal()}</p>
-		<p>{m.sondage_tutorial_rally()}</p>
-		<p>{m.sondage_tutorial_flip()}</p>
-		<p>{m.sondage_tutorial_rival()}</p>
-		<img
-			src={cameoAsset(candidateFile('neutral'))}
-			alt={candidateAlt('neutral')}
-			class="mx-auto size-24 rounded-md border-2 border-ink bg-paper object-cover"
-		/>
-		<p>{m.sondage_tutorial_events()}</p>
-		<ul class="flex flex-col gap-2">
-			<li class="flex items-center gap-2">
-				<span
-					class="flex size-9 shrink-0 items-center justify-center rounded-md border-2 border-ink bg-[#bfe6ff]"
-				>
-					<IconSnowflake class="size-6" aria-hidden="true" />
-				</span>
-				<span>{m.sondage_legend_frozen()}</span>
-			</li>
-			<li class="flex items-center gap-2">
-				<span
-					class="flex size-9 shrink-0 items-center justify-center rounded-md border-2 border-ink bg-mustard"
-				>
-					<IconBan class="size-6" aria-hidden="true" />
-				</span>
-				<span>{m.sondage_legend_blocked()}</span>
-			</li>
-		</ul>
-		<p>{m.sondage_tutorial_win()}</p>
-		<p>{m.sondage_tutorial_score()}</p>
-	</TutorialModal>
+	/>
 
 	<GameOverModal
 		open={game.status === 'over'}

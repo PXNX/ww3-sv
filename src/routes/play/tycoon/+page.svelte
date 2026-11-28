@@ -8,7 +8,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import TycoonDerrick from '#lib/components/TycoonDerrick.svelte';
 	import TycoonEventCard from '#lib/components/TycoonEventCard.svelte';
 	import TycoonPrestige from '#lib/components/TycoonPrestige.svelte';
@@ -47,6 +47,7 @@
 	import IconCheck from '~icons/lucide/check';
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconTrophy from '~icons/lucide/trophy';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new TycoonGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_tycoon_name();
@@ -154,7 +155,7 @@
 		</button>
 	{/snippet}
 
-	<section class="mx-auto flex w-full max-w-none flex-col gap-3">
+	<section data-tutorial="playfield" class="mx-auto flex w-full max-w-none flex-col gap-3">
 		{#if game.welcome}
 			<div
 				class="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 backdrop-blur-md"
@@ -493,25 +494,13 @@
 		</div>
 	</section>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.tycoon_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.tycoon_tutorial_close()}
-		onclose={closeHelp}
-	>
-		<p>{m.tycoon_tutorial_goal({ percent: formatCount((COST_GROWTH - 1) * 100, locale) })}</p>
-		<p>{m.tycoon_tutorial_upgrades()}</p>
-		<p>{m.tycoon_tutorial_crises()}</p>
-		<p>
-			{m.tycoon_tutorial_offline({
-				hours: formatCount(OFFLINE_CAP_MS / 3_600_000, locale),
-				percent: formatCount(OFFLINE_EFFICIENCY * 100, locale)
-			})}
-		</p>
-		<p>
-			{m.tycoon_tutorial_prestige({ percent: formatCount(PRESTIGE_BONUS * 100, locale) })}
-		</p>
-	</TutorialModal>
+		onclose={() => (showTutorial = false)}
+	/>
 </GameShell>
 
 <style>

@@ -7,7 +7,7 @@
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import SliderBoard from '#lib/components/SliderBoard.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
 	import {
 		COUNTER_GAIN,
@@ -24,6 +24,7 @@
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
 	import IconStar from '~icons/lucide/star';
+	import { tutorialSteps } from './tutorial.js';
 
 	const reducedMotion = prefersReducedMotion();
 	let board: SliderBoard | undefined = $state();
@@ -84,29 +85,20 @@
 		{/if}
 	{/snippet}
 
-	<div class="mx-auto flex w-full max-w-xl flex-col gap-3 p-3">
+	<div data-tutorial="playfield" class="mx-auto flex w-full max-w-xl flex-col gap-3 p-3">
 		<SliderBoard bind:this={board} {game} {reducedMotion} />
 		{#if game.paused && !showTutorial && !game.over}
 			<p class="text-center font-display text-sm font-bold" role="status">{m.game_paused()}</p>
 		{/if}
 	</div>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.slider_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.slider_tutorial_close()}
-		onclose={closeTutorial}
-	>
-		<p>{m.slider_tutorial_goal({ weeks: WEEKS_TOTAL, resign: RESIGN_LINE })}</p>
-		<p>{m.slider_tutorial_rally()}</p>
-		<p>{m.slider_tutorial_scandal({ gain: COUNTER_GAIN })}</p>
-		<p>{m.slider_tutorial_decoy({ penalty: DECOY_PENALTY })}</p>
-		<p>{m.slider_tutorial_combo()}</p>
-		<p>{m.slider_tutorial_press({ seconds: PRESS_COOLDOWN })}</p>
-		<p>
-			{m.slider_tutorial_stars({ one: STAR_LINES[0], two: STAR_LINES[1], three: STAR_LINES[2] })}
-		</p>
-	</TutorialModal>
+		onclose={() => (showTutorial = false)}
+	/>
 
 	<GameOverModal
 		open={game.over}

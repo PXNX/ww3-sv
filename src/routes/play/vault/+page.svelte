@@ -9,7 +9,7 @@
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import LivesBar from '#lib/components/LivesBar.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import VaultBanker from '#lib/components/VaultBanker.svelte';
 	import VaultField from '#lib/components/VaultField.svelte';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
@@ -22,6 +22,7 @@
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new VaultGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_vault_name();
@@ -107,7 +108,7 @@
 	{/snippet}
 
 	<!-- The HUD and the playfield share one width, as wide as the height allows -->
-	<section
+	<section data-tutorial="playfield"
 		class="mx-auto flex w-full flex-col items-center gap-2"
 		style:max-width="max(17rem, min(100%, calc((100dvh - 14rem) * {(game.cols * 10) /
 			(game.rows * 11)})))"
@@ -158,18 +159,13 @@
 		<VaultField {game} />
 	</section>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.vault_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.vault_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.vault_tutorial_goal()}</p>
-		<p>{m.vault_tutorial_special()}</p>
-		<p>{m.vault_tutorial_banker()}</p>
-		<p>{m.vault_tutorial_phone()}</p>
-		<p>{m.vault_tutorial_score()}</p>
-	</TutorialModal>
+	/>
 
 	<GameOverModal
 		open={game.status === 'over'}
