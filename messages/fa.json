@@ -1,5 +1,8 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"fleethunt_pro_ammo": "تدارکات Pro: شلیکها و اسکن اضافی هر روز.",
+	"warroom_council_used_pro": "هر دو فرمان امروز استفاده شد — فردا دو فرمان جدید است.",
+	"warroom_council_pro_hint": "Pro: هر روز یک فرمان دوم.",
 	"shop_gift_done_pro": "شش ماه Pro اکنون روی حساب شما فعال است.",
 	"shop_gift_telegram_only": "این کد فقط در تلگرام کار میکند — بازی را آنجا باز کنید تا آن را redeem کنید.",
 	"merge_objectives_label": "اهداف مسابقه",
@@ -3169,7 +3172,7 @@
 	"shop_gift_used": "این کد را قبلاً استفاده کرده‌ای.",
 	"shop_gift_expired": "این کد منقضی شده است.",
 	"shop_pro_name": "Pro ماهانه",
-	"shop_pro_body": "هر ماه ۱۰ احیای دوباره، و بدون تبلیغ از وقتی بازی تبلیغ نشان دهد.",
+	"shop_pro_body": "۱۰ توکن احیا در ماه، بدون تبلیغات، شیفت ۲۴ ساعته با سرعت کامل در Oil Tycoon، فرمان دوم شورا هر روز در War Room، تدارکات اضافی روزانه در Fleet Hunt و سازندگان اضافی در Beachhead.",
 	"shop_stars_revives": "توکن احیا: {count}",
 	"stars_title": "Telegram Stars",
 	"stars_intro": "خریدهای با Stars در حساب تلگرام شما می‌مانند و روی هر دستگاهی در دسترس‌اند. ابتدا احیاهایی که به دست آورده‌اید مصرف می‌شوند.",

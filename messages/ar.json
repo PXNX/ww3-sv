@@ -1,5 +1,8 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"fleethunt_pro_ammo": "تموين Pro: طلقات إضافية ومسح كل يوم.",
+	"warroom_council_used_pro": "استُخدم المرسومان اليوم — يأتي مرسومان جديدان غدًا.",
+	"warroom_council_pro_hint": "Pro: مرسوم ثانٍ كل يوم.",
 	"shop_gift_done_pro": "أصبحت ستة أشهر من Pro نشطة على حسابك الآن.",
 	"shop_gift_telegram_only": "هذا الرمز يعمل في Telegram فقط — افتح اللعبة هناك لتفعيله.",
 	"merge_objectives_label": "أهداف الجولة",
@@ -3169,7 +3172,7 @@
 	"shop_gift_used": "لقد استخدمت هذا الرمز من قبل.",
 	"shop_gift_expired": "انتهت صلاحية هذا الرمز.",
 	"shop_pro_name": "Pro الشهري",
-	"shop_pro_body": "10 إحياءات كل شهر، ولا إعلانات بمجرد أن تعرضها اللعبة.",
+	"shop_pro_body": "١٠ رموز إحياء شهريًا، بلا إعلانات، وردية ٢٤ ساعة بأقصى سرعة في Oil Tycoon، ومرسوم ثانٍ يوميًا في War Room، وتموين يومي إضافي في Fleet Hunt، وعمال بناء إضافيون في Beachhead.",
 	"shop_stars_revives": "رموز إحياء: {count}",
 	"stars_title": "نجوم تيليجرام",
 	"stars_intro": "ما تشتريه بالنجوم يُحفظ في حسابك على تيليجرام ويرافقك على كل جهاز. تُستخدم الإحياءات التي كسبتها أولًا.",

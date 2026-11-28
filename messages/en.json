@@ -1,5 +1,8 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"fleethunt_pro_ammo": "Pro supply: extra shots and a scan each day.",
+	"warroom_council_used_pro": "Both directives used today — another comes tomorrow.",
+	"warroom_council_pro_hint": "Pro: a second directive every day.",
 	"shop_gift_done_pro": "Six months of Pro are now active on your account.",
 	"shop_gift_telegram_only": "This code works in Telegram only — open the game there to redeem it.",
 	"merge_objectives_label": "Run goals",
@@ -3169,7 +3172,7 @@
 	"shop_gift_used": "You already redeemed this code.",
 	"shop_gift_expired": "This code has expired.",
 	"shop_pro_name": "Monthly Pro",
-	"shop_pro_body": "10 revival tokens every month, and no adverts once the game shows them.",
+	"shop_pro_body": "10 revival tokens every month, no adverts, a 24-hour full-speed shift in Oil Tycoon, a second council directive each day in War Room, extra daily supply in Fleet Hunt, and extra builders in Beachhead.",
 	"shop_stars_revives": "{count} × revival token",
 	"stars_title": "Telegram Stars",
 	"stars_intro": "Bought with Stars and kept on your Telegram account, so they follow you to every device. Revivals you earned are used first.",

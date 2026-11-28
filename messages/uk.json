@@ -1,5 +1,8 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"fleethunt_pro_ammo": "Запаси Pro: додаткові постріли та сканування щодня.",
+	"warroom_council_used_pro": "Обидві директиви використано — завтра будуть нові.",
+	"warroom_council_pro_hint": "Pro: друга директива щодня.",
 	"shop_gift_done_pro": "Шість місяців Pro тепер активні на вашому акаунті.",
 	"shop_gift_telegram_only": "Цей код працює лише в Telegram — відкрийте гру там, щоб активувати його.",
 	"merge_objectives_label": "Цілі заходу",
@@ -3169,7 +3172,7 @@
 	"shop_gift_used": "Ти вже активував цей код.",
 	"shop_gift_expired": "Термін дії коду минув.",
 	"shop_pro_name": "Щомісячний Pro",
-	"shop_pro_body": "10 відроджень щомісяця і жодної реклами, щойно гра почне її показувати.",
+	"shop_pro_body": "10 токенів відродження щомісяця, без реклами, 24-годинна зміна на повній швидкості в Oil Tycoon, друга директива ради щодня у War Room, додатковий щоденний запас у Fleet Hunt і додаткові будівельники в Beachhead.",
 	"shop_stars_revives": "Жетони відродження: {count}",
 	"stars_title": "Telegram Stars",
 	"stars_intro": "Куплене за Stars зберігається у вашому акаунті Telegram і доступне на кожному пристрої. Спершу витрачаються зароблені відродження.",
