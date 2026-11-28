@@ -7,11 +7,17 @@
 	import { accountGiftCode } from '#lib/game/giftcode/config.js';
 	import { telegram } from '#lib/stores/telegram.svelte.js';
 	import { m } from '#lib/paraglide/messages.js';
+	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import IconGift from '~icons/lucide/gift';
 
 	const careerState = career();
 	const account = telegram();
+	const proMessage = (until: string, revives: number) =>
+		m.shop_gift_done_pro({
+			date: new Date(until).toLocaleDateString(getLocale(), { dateStyle: 'medium' }),
+			count: revives
+		});
 	let busy = $state(false);
 
 	// A gift link opened the app: show what the bot credited, once
@@ -23,7 +29,7 @@
 				? {
 						ok: true,
 						text: gift.proUntil
-							? m.shop_gift_done_pro()
+							? proMessage(gift.proUntil, gift.revives)
 							: m.shop_gift_done_revive({ count: gift.revives })
 					}
 				: { ok: false, text: m.shop_gift_used() };
@@ -41,7 +47,7 @@
 			notice = {
 				ok: true,
 				text: result.proUntil
-					? m.shop_gift_done_pro()
+					? proMessage(result.proUntil, result.revives)
 					: m.shop_gift_done_revive({ count: result.revives })
 			};
 			return;

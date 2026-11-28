@@ -38,6 +38,7 @@
 	$effect(() => {
 		const dark = look.dark;
 		document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+		document.documentElement.dataset.pro = String(account.pro);
 		document
 			.querySelector('meta[name="theme-color"]')
 			?.setAttribute('content', dark ? '#0e1628' : '#e8e1bc');
