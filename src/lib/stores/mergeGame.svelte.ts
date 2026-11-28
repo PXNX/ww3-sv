@@ -20,6 +20,14 @@ import {
 	type Position,
 	type Tile
 } from '#lib/game/merge/mergeBoard.js';
+import {
+	drawObjectives,
+	newlyCompleted,
+	objectiveDone,
+	objectiveProgress,
+	type ObjectiveDef,
+	type ObjectiveId
+} from '#lib/game/merge/objectives.js';
 import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
 import { prefersReducedMotion } from '#lib/game/loop.js';
 import { highscores } from '#lib/services/highscore.js';
@@ -67,7 +75,8 @@ export type MergeNotice =
 	| { kind: 'mines-cleared'; count: number }
 	| { kind: 'combo'; count: number }
 	| { kind: 'submarine' }
-	| { kind: 'submarine-earned' };
+	| { kind: 'submarine-earned' }
+	| { kind: 'objective'; name: ObjectiveId; points: number };
 
 export class MergeGame {
 	state: MergeState;
@@ -82,6 +91,10 @@ export class MergeGame {
 	best: number | null = $state(null);
 	bestTier: number | null = $state(null);
 	private mineJustDropped = $state(false);
+	/** The three goals drawn for this run, and the ones already paid out */
+	objectives = $state.raw<ObjectiveDef[]>([]);
+	awarded = $state.raw<ObjectiveId[]>([]);
+	triples = $state(0);
 
 	// Plain getters over the state stay reactive and are cheap on boards this small
 	get movesUntilMine(): number {
@@ -114,6 +127,7 @@ export class MergeGame {
 			isMergeState(value) && value.size === size && !isGameOver(value);
 		const saved = localStore().read<MergeState | null>(SAVE_KEY, null, resumable);
 		this.state = $state.raw(saved ?? createGame(this.random, size));
+		this.objectives = drawObjectives(this.random);
 		this.save();
 	}
 
@@ -142,6 +156,7 @@ export class MergeGame {
 
 		const notices: MergeNotice[] = [];
 		if (outcome.merges.length > 1) notices.push({ kind: 'combo', count: outcome.merges.length });
+		if (outcome.earnedSubmarine) this.triples += 1;
 		if (outcome.destroyedMines.length > 0) {
 			notices.push({ kind: 'mines-cleared', count: outcome.destroyedMines.length });
 		}
@@ -158,6 +173,7 @@ export class MergeGame {
 
 		this.state = outcome.state;
 		this.recordTier();
+		this.checkObjectives();
 		this.afterChange();
 		return true;
 	}
@@ -199,6 +215,9 @@ export class MergeGame {
 		this.over = false;
 		this.isNewBest = false;
 		this.mineJustDropped = false;
+		this.triples = 0;
+		this.awarded = [];
+		this.objectives = drawObjectives(this.random);
 		this.save();
 	}
 
@@ -210,6 +229,48 @@ export class MergeGame {
 
 	destroy() {
 		clearTimeout(this.leaveTimer);
+	}
+
+	/** Progress of a goal, from zero to its target */
+	objectiveValue(objective: ObjectiveDef): number {
+		return objectiveProgress(objective, {
+			highestTier: this.state.highestTier,
+			minesDestroyed: this.state.minesDestroyed,
+			triples: this.triples,
+			score: this.state.score
+		});
+	}
+
+	objectiveComplete(objective: ObjectiveDef): boolean {
+		return objectiveDone(objective, {
+			highestTier: this.state.highestTier,
+			minesDestroyed: this.state.minesDestroyed,
+			triples: this.triples,
+			score: this.state.score
+		});
+	}
+
+	private checkObjectives() {
+		const done = newlyCompleted(
+			this.objectives,
+			{
+				highestTier: this.state.highestTier,
+				minesDestroyed: this.state.minesDestroyed,
+				triples: this.triples,
+				score: this.state.score
+			},
+			this.awarded
+		);
+		for (const objective of done) {
+			this.state = { ...this.state, score: this.state.score + objective.bonus };
+			this.notices = [
+				...this.notices,
+				{ kind: 'objective', name: objective.name, points: objective.bonus }
+			];
+			this.noticeKey++;
+			soundManager().play('chime-big');
+		}
+		this.awarded = [...this.awarded, ...done.map((objective) => objective.id)];
 	}
 
 	private afterChange() {
@@ -270,5 +331,15 @@ export function noticeText(notice: MergeNotice): string {
 			return m.merge_event_submarine();
 		case 'submarine-earned':
 			return m.merge_event_submarine_earned();
+		case 'objective': {
+			const names: Record<ObjectiveId, () => string> = {
+				ferry: m.merge_objective_ferry,
+				oil_tanker: m.merge_objective_oil_tanker,
+				clear_mines: m.merge_objective_clear_mines,
+				triple: m.merge_objective_triple,
+				rich: m.merge_objective_rich
+			};
+			return m.merge_event_objective({ name: names[notice.name](), points: notice.points });
+		}
 	}
 }

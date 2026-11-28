@@ -19,6 +19,17 @@
 	import IconRotate from '~icons/lucide/rotate-ccw';
 	import { tutorialSteps } from './tutorial.js';
 
+	const objectiveName = (name: string) =>
+		name === 'oil_tanker'
+			? m.merge_objective_oil_tanker()
+			: name === 'clear_mines'
+				? m.merge_objective_clear_mines()
+				: name === 'triple'
+					? m.merge_objective_triple()
+					: name === 'rich'
+						? m.merge_objective_rich()
+						: m.merge_objective_ferry();
+
 	const game = new MergeGame();
 	onDestroy(() => game.destroy());
 
@@ -103,6 +114,27 @@
 	{/snippet}
 
 	<div class="mx-auto flex w-full max-w-md flex-col gap-3">
+		<!-- Optional goals drawn for this run, with a check as each one is paid out -->
+		<div
+			class="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border-2 border-ink bg-paper px-2 py-1 font-display text-xs font-bold"
+		>
+			<span class="opacity-70">{m.merge_objectives_label()}</span>
+			{#each game.objectives as objective (objective.id)}
+				{@const done = game.objectiveComplete(objective)}
+				<span
+					class="inline-flex items-center gap-1"
+					class:opacity-50={done}
+					class:line-through={done}
+				>
+					<span aria-hidden="true">{done ? '✓' : '○'}</span>
+					{objectiveName(objective.name)}
+					<span class="tabular-nums opacity-70"
+						>{game.objectiveValue(objective)}/{objective.target}</span
+					>
+				</span>
+			{/each}
+		</div>
+
 		<!-- The mascot reacts to the board and announces mines, combos and clears -->
 		<div class="flex min-h-12 items-center gap-3">
 			<CharacterMascot pose={game.mood} class="w-11 shrink-0 -rotate-3 sm:w-16" />
