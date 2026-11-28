@@ -11,6 +11,8 @@ export const MAX_HEAT = 100;
 export const ALARM_HEAT = 85;
 export const COOL_PER_TURN = 12;
 export const MAX_ALARMS = 3;
+export const COOLANT_CHARGES = 2;
+export const COOLANT_DROP = 22;
 
 export interface Job {
 	/** Compute units; hotter and more valuable */
@@ -26,6 +28,8 @@ export interface GpuGridState {
 	status: 'playing' | 'won' | 'lost';
 	job: Job | null;
 	last: { rack: number; heat: number; points: number } | null;
+	/** Emergency cooling charges, which drop every rack's heat */
+	coolant: number;
 }
 
 const JOB_KINDS: readonly { item: Job['label']; weight: number; size: Job['size'] }[] = [
@@ -50,7 +54,8 @@ export function createGpuGrid(random: Random): GpuGridState {
 		alarms: 0,
 		status: 'playing',
 		job: nextJob(random),
-		last: null
+		last: null,
+		coolant: COOLANT_CHARGES
 	};
 }
 
@@ -75,5 +80,15 @@ export function assign(state: GpuGridState, rack: number, random: Random): GpuGr
 		status,
 		job: status === 'playing' ? nextJob(random) : null,
 		last: { rack, heat, points }
+	};
+}
+
+/** Flushes the racks with coolant once, if any charges are left */
+export function flushCoolant(state: GpuGridState): GpuGridState {
+	if (state.status !== 'playing' || state.coolant <= 0) return state;
+	return {
+		...state,
+		coolant: state.coolant - 1,
+		heat: state.heat.map((value) => Math.max(0, value - COOLANT_DROP))
 	};
 }

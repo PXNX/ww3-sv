@@ -2,7 +2,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
-	import { ALARM_HEAT, assign, createGpuGrid, JOBS, MAX_ALARMS } from '#lib/game/gpugrid/state.js';
+	import {
+	ALARM_HEAT,
+	assign,
+	createGpuGrid,
+	flushCoolant,
+	JOBS,
+	MAX_ALARMS
+} from '#lib/game/gpugrid/state.js';
 	import { createRandom, randomSeed } from '#lib/game/random.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { highscores } from '#lib/services/highscore.js';
@@ -50,6 +57,14 @@
 			class="flex items-center justify-between gap-2 rounded-lg border-3 border-ink bg-paper px-3 py-2 font-display text-sm font-bold tabular-nums"
 		>
 			<span dir="auto">{m.gpugrid_alarms({ count: game.alarms, max: MAX_ALARMS })}</span>
+			<button
+				type="button"
+				class="btn-chunky bg-khaki px-2 py-0.5 text-xs"
+				disabled={game.coolant <= 0 || game.status !== 'playing'}
+				onclick={() => (game = flushCoolant(game))}
+			>
+				{m.gpugrid_coolant({ count: game.coolant })}
+			</button>
 			<span dir="auto">{game.turn} / {JOBS}</span>
 		</div>
 

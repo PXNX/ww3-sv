@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createRandom } from '#lib/game/random.js';
-import { ALARM_HEAT, assign, createGpuGrid, JOBS, MAX_ALARMS } from './state.js';
+import { ALARM_HEAT, assign, createGpuGrid, JOBS, MAX_ALARMS, flushCoolant } from './state.js';
 
 const random = () => createRandom(21);
 
@@ -39,5 +39,18 @@ describe('gpu grid', () => {
 		state.heat = [ALARM_HEAT, 10, 10];
 		state.job = { label: 'render', size: 3 };
 		expect(assign(state, 0, random()).status).toBe('lost');
+	});
+});
+
+describe('coolant', () => {
+	it('cools every rack twice', () => {
+		const state = createGpuGrid(random());
+		state.heat = [80, 70, 60];
+		const once = flushCoolant(state);
+		expect(once.heat[0]).toBeLessThan(80);
+		expect(once.coolant).toBe(1);
+		const twice = flushCoolant(once);
+		expect(twice.coolant).toBe(0);
+		expect(flushCoolant(twice)).toBe(twice);
 	});
 });
