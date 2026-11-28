@@ -7,6 +7,8 @@ import type { Random } from '#lib/game/random.js';
 import {
 	ACHIEVEMENTS,
 	OFFLINE_CAP_MS,
+	PRO_OFFLINE_CAP_MS,
+	PRO_OFFLINE_EFFICIENCY,
 	EVENT_AFTER_RETURN_MS,
 	MAX_OWNED,
 	PERK_IDS,
@@ -270,11 +272,16 @@ export interface OfflineReport {
 export function applyOffline(
 	state: TycoonState,
 	elapsedMs: number,
-	random: Random
+	random: Random,
+	{ pro = false }: { pro?: boolean } = {}
 ): { report: OfflineReport; events: TycoonEvent[] } {
 	const away = Number.isFinite(elapsedMs) ? Math.max(0, elapsedMs) : 0;
-	const creditedMs = Math.min(away, OFFLINE_CAP_MS);
-	const barrels = (calmProduction(state) * creditedMs * offlineEfficiency(state)) / 1000;
+	const cap = pro ? PRO_OFFLINE_CAP_MS : OFFLINE_CAP_MS;
+	const creditedMs = Math.min(away, cap);
+	const efficiency = pro
+		? Math.max(offlineEfficiency(state), PRO_OFFLINE_EFFICIENCY)
+		: offlineEfficiency(state);
+	const barrels = (calmProduction(state) * creditedMs * efficiency) / 1000;
 	state.barrels += barrels;
 	state.runTotal += barrels;
 	state.lifetime += barrels;
@@ -284,7 +291,7 @@ export function applyOffline(
 		state.nextEventMs = Math.max(nextEventDelay(random) / 2, EVENT_AFTER_RETURN_MS);
 	}
 	return {
-		report: { creditedMs, barrels, capped: away > OFFLINE_CAP_MS },
+		report: { creditedMs, barrels, capped: away > cap },
 		events: checkAchievements(state)
 	};
 }

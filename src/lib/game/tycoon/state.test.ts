@@ -437,3 +437,18 @@ describe('achievements', () => {
 		);
 	});
 });
+
+describe('pro offline shifts', () => {
+	it('credits 24 hours at full speed instead of 8 at half speed', () => {
+		const regularState = fresh();
+		regularState.owned.tanker = 10;
+		const proState = fresh();
+		proState.owned.tanker = 10;
+		const away = 24 * 60 * 60 * 1000;
+		const regular = applyOffline(regularState, away, random());
+		const pro = applyOffline(proState, away, random(), { pro: true });
+		expect(regular.report.creditedMs).toBe(8 * 60 * 60 * 1000);
+		expect(pro.report.creditedMs).toBe(away);
+		expect(pro.report.barrels).toBeGreaterThan(regular.report.barrels * 3);
+	});
+});

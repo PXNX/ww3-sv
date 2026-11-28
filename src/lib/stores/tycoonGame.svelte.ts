@@ -60,6 +60,7 @@ import { m } from '#lib/paraglide/messages.js';
 import { highscores, type Highscores } from '#lib/services/highscore.js';
 import { localStore, type Store } from '#lib/services/storage.js';
 import { soundManager } from '#lib/sound/soundManager.svelte.js';
+import { telegram } from '#lib/stores/telegram.svelte.js';
 import type { SoundId } from '#lib/sound/sounds.js';
 import { formatBig } from '#lib/game/tycoon/format.js';
 import {
@@ -362,7 +363,9 @@ export class TycoonGame {
 
 	/** Credits away time and prepares the welcome-back report */
 	#credit(elapsedMs: number) {
-		const { report, events } = applyOffline(this.state, elapsedMs, this.#random);
+		const { report, events } = applyOffline(this.state, elapsedMs, this.#random, {
+			pro: telegram().pro
+		});
 		this.#handleAll(events);
 		if (elapsedMs >= WELCOME_MIN_MS && report.barrels > 0) this.welcome = report;
 	}

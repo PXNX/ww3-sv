@@ -201,6 +201,10 @@ export const PERKS: readonly PerkDef[] = [
 /** Away time beyond this is not credited */
 export const OFFLINE_CAP_MS = 8 * 60 * 60 * 1000;
 /** Share of the normal output that is credited for away time */
+// Pro extends the away-time cap to 24 hours and credits it at full speed
+export const PRO_OFFLINE_CAP_MS = 3 * OFFLINE_CAP_MS;
+export const PRO_OFFLINE_EFFICIENCY = 1;
+
 export const OFFLINE_EFFICIENCY = 0.5;
 /** Shorter absences are not worth a welcome-back report */
 export const WELCOME_MIN_MS = 30_000;
