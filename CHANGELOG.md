@@ -10,8 +10,10 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 
 #### shop
 
-- A `PRO6M` gift code that grants six months of Pro once per Telegram account, redeemable from a
-  bot link, a Mini App link or the supply depot
+- A `PRO6M` gift code that grants six months of Pro and five revival tokens once per Telegram
+  account, redeemable from a bot link, a Mini App link or the supply depot
+- Pro players get a warm gold wash and a slow sheen on the page, and the gift confirmation names the
+  exact date Pro runs to
 
 #### warroom
 

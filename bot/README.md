@@ -22,7 +22,7 @@ repository; paths below are relative to `bot/`.
   texts into the chat instead. `operator.telegram` adds a Telegram contact to `/paysupport`. `/paysupport` is the support contact Telegram requires for bots that sell.
 - **Gift codes**: `t.me/game_ww3_bot?start=MN5` (bot chat), `?startapp=MN5` (straight into the Mini App) or MN5 typed in
   the supply depot inside Telegram put 5 revival tokens into the account wallet, once per account (`ww3bot/gifts.py`).
-  `PRO6M` grants six calendar months of Pro instead, once per account; in the browser it points players to Telegram.
+  `PRO6M` grants six calendar months of Pro plus five revival tokens, once per account; in the browser it points players to Telegram.
 - **Invites and streak reminders**: `/invite` links earn revival tokens, and the game reports its daily streak so
   the bot can remind two hours before it breaks (`/reminders` to switch).
 - **Inline game search**: typing `@game_ww3_bot games Flamingo` (or just the name) in any chat offers the
