@@ -95,7 +95,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.slider_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.slider_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

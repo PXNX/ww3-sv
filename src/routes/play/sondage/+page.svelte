@@ -119,6 +119,7 @@
 	<section data-tutorial="playfield" class="mx-auto flex w-full max-w-xl flex-col gap-2">
 		<!-- The poll bar: map share of each side, with the majority marker -->
 		<div
+			data-tutorial="poll-bar"
 			class="flex flex-col gap-1.5 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
 		>
 			<p
@@ -146,6 +147,7 @@
 
 		<!-- Whose move it is, the last rally and the round's event -->
 		<div
+			data-tutorial="status"
 			class="flex min-h-12 flex-col gap-1 rounded-[10px_6px_12px_7px] border-3 border-ink bg-sand px-2 py-1 text-sm font-semibold"
 			role="status"
 		>
@@ -181,6 +183,7 @@
 
 		<!-- The map: stays left to right -->
 		<div
+			data-tutorial="board"
 			class="relative rounded-[14px_8px_16px_10px] border-3 border-ink bg-sand p-2 shadow-[3px_3px_0_var(--color-ink)]"
 		>
 			<SondageBoard
@@ -228,7 +231,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.sondage_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.sondage_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

@@ -155,7 +155,7 @@
 		</button>
 	{/snippet}
 
-	<section data-tutorial="playfield" class="mx-auto flex w-full max-w-none flex-col gap-3">
+	<section class="mx-auto flex w-full max-w-none flex-col gap-3">
 		{#if game.welcome}
 			<div
 				class="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 backdrop-blur-md"
@@ -227,7 +227,7 @@
 			class="flex flex-col gap-2 rounded-2xl border-3 border-ink bg-paper px-4 py-3 shadow-[3px_3px_0_var(--color-ink)]"
 		>
 			<div class="flex items-end justify-between gap-3">
-				<div class="flex min-w-0 flex-col">
+				<div class="flex min-w-0 flex-col" data-tutorial="hud-barrels">
 					<p class="font-display text-xs font-bold tracking-wide uppercase">
 						{m.tycoon_hud_barrels()}
 					</p>
@@ -351,6 +351,7 @@
 					type="button"
 					role="tab"
 					id="tycoon-tab-{entry.id}"
+					data-tutorial="tab-{entry.id}"
 					aria-selected={tab === entry.id}
 					aria-controls="tycoon-panel-{entry.id}"
 					class="btn-chunky justify-center px-1 py-1.5 text-center text-xs leading-tight sm:text-sm {tab ===
@@ -497,7 +498,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.tycoon_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.tycoon_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

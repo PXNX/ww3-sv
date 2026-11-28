@@ -66,7 +66,8 @@
 	{/snippet}
 
 	<!-- The HUD and the playfield share one width, as wide as the height allows -->
-	<section data-tutorial="playfield"
+	<section
+		data-tutorial="playfield"
 		class="mx-auto flex w-full flex-col items-center gap-2"
 		style:max-width="max(17rem, min(100%, calc(100dvh - 8rem)))"
 	>
@@ -90,7 +91,9 @@
 					></span>
 				</span>
 			{/if}
-			<LivesBar lives={game.lives} max={STARTING_LIVES} class="shrink-0 text-xl" />
+			<span class="shrink-0" data-tutorial="hud-lives">
+				<LivesBar lives={game.lives} max={STARTING_LIVES} class="text-xl" />
+			</span>
 			<span
 				class="min-w-12 shrink-0 text-end font-display text-sm font-bold tabular-nums"
 				title={m.slice_hud_streak()}
@@ -105,7 +108,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.slice_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.slice_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

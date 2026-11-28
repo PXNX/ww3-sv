@@ -83,11 +83,13 @@
 	{/snippet}
 
 	<!-- The HUD and the playfield share one width, as wide as the height allows -->
-	<section data-tutorial="playfield"
+	<section
+		data-tutorial="playfield"
 		class="mx-auto flex w-full flex-col items-center gap-2"
 		style:max-width="max(17rem, min(100%, calc((100dvh - 15rem) * 0.643)))"
 	>
 		<div
+			data-tutorial="hud"
 			class="flex w-full flex-col gap-1 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1 shadow-[3px_3px_0_var(--color-ink)]"
 		>
 			<div class="flex items-center justify-between gap-3">
@@ -95,6 +97,7 @@
 					{m.suez_hud_canal({ level: game.level })}
 				</p>
 				<p
+					data-tutorial="hud-queue"
 					dir="auto"
 					class="font-display text-sm font-bold tabular-nums"
 					class:text-tie-red={crowded}
@@ -103,7 +106,7 @@
 				</p>
 				<LivesBar lives={game.lives} max={STARTING_LIVES} class="shrink-0 text-xl" />
 			</div>
-			<div class="flex items-center gap-3">
+			<div data-tutorial="hud-stuck" class="flex items-center gap-3">
 				<div
 					class="h-3 flex-1 overflow-hidden rounded-full border-2 border-ink bg-sand"
 					role="progressbar"
@@ -134,7 +137,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.suez_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.suez_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>
