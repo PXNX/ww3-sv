@@ -8,7 +8,7 @@
 	import GameShell from '#lib/components/GameShell.svelte';
 	import LivesBar from '#lib/components/LivesBar.svelte';
 	import PauseOverlay from '#lib/components/PauseOverlay.svelte';
-	import { FUEL_LOW, MAX_HULL } from '#lib/game/convoy/constants.js';
+	import { FUEL_LOW, SHIP_CLASSES } from '#lib/game/convoy/constants.js';
 	import { drawConvoyBoard } from '#lib/game/convoy/drawScene.js';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
@@ -21,6 +21,19 @@
 
 	const game = new ConvoyGame({ reducedMotion: prefersReducedMotion() });
 	let showTutorial = $state(false);
+
+	const shipName = (ship: string) =>
+		ship === 'corvette'
+			? m.convoy_ship_corvette()
+			: ship === 'tug'
+				? m.convoy_ship_tug()
+				: m.convoy_ship_tanker();
+	const shipHint = (ship: string) =>
+		ship === 'corvette'
+			? m.convoy_ship_corvette_hint()
+			: ship === 'tug'
+				? m.convoy_ship_tug_hint()
+				: m.convoy_ship_tanker_hint();
 
 	onMount(() => {
 		game.loadBest();
@@ -68,7 +81,7 @@
 		<span
 			class="inline-flex items-center rounded-[10px_6px_12px_8px] border-3 border-ink bg-paper px-2 py-0.5"
 		>
-			<LivesBar lives={game.hull} max={MAX_HULL} class="text-base" />
+			<LivesBar lives={game.hull} max={game.maxHull} class="text-base" />
 		</span>
 		<span class="rounded-[6px_12px_8px_10px] border-3 border-ink bg-paper px-2 py-0.5 tabular-nums">
 			{m.convoy_distance()}: {m.convoy_distance_value({ distance: game.distance.toFixed(1) })}
@@ -145,6 +158,26 @@
 					<p class="text-sm leading-snug">{m.convoy_how_to()}</p>
 					<p class="text-xs leading-snug">{m.convoy_how_to_keys()}</p>
 				{/if}
+				<div
+					class="grid w-full grid-cols-3 gap-1.5"
+					role="group"
+					aria-label={m.convoy_ship_label()}
+				>
+					{#each SHIP_CLASSES as ship (ship)}
+						<button
+							type="button"
+							class="btn-chunky flex flex-col items-center gap-0.5 px-1 py-1.5 text-xs {game.ship ===
+							ship
+								? 'bg-explosion-yellow'
+								: 'bg-paper'}"
+							aria-pressed={game.ship === ship}
+							onclick={() => (game.ship = ship)}
+						>
+							<span class="font-bold">{shipName(ship)}</span>
+							<span class="text-[0.65rem] leading-tight opacity-75">{shipHint(ship)}</span>
+						</button>
+					{/each}
+				</div>
 				<button type="button" class="btn-chunky bg-tie-red text-lg" onclick={() => game.start()}>
 					<IconPlay class="size-5" aria-hidden="true" />
 					{m.convoy_start()}

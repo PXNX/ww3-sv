@@ -3,7 +3,7 @@
  * the canvas every frame; only the numbers the page displays are reactive, and they are synced
  * after each step so the interface does not re-render sixty times a second.
  */
-import { FUEL_START, MAX_HULL } from '#lib/game/convoy/constants.js';
+import { FUEL_START, MAX_HULL, type ShipClass } from '#lib/game/convoy/constants.js';
 import type { ConvoyEffect } from '#lib/game/convoy/drawScene.js';
 import {
 	createRunner,
@@ -64,6 +64,8 @@ export interface ConvoyGameOptions {
 export class ConvoyGame {
 	status = $state<ConvoyStatus>('ready');
 	score = $state(0);
+	/** Hull the chosen ship starts with, for the hearts display */
+	maxHull = $state(MAX_HULL);
 	hull = $state(MAX_HULL);
 	/** Fuel left in percent; barrels refill it and an empty tank ends the run */
 	fuel = $state(FUEL_START);
@@ -86,6 +88,9 @@ export class ConvoyGame {
 	 * usable sensor (most desktops, refused permission), which keep the touch controls.
 	 */
 	tiltOn = $state(false);
+
+	/** Ship picked on the ready screen; each class changes hull, speed, silhouette and fuel burn */
+	ship = $state<ShipClass>('tanker');
 
 	/** Not reactive on purpose: read by the canvas on every frame */
 	runner: RunnerState = createRunner();
@@ -123,7 +128,8 @@ export class ConvoyGame {
 	start() {
 		this.#random = createRandom(this.#seed());
 		this.#bestBeforeRun = this.#scores().get(SCORE_KEY);
-		this.runner = createRunner();
+		this.runner = createRunner(this.ship);
+		this.maxHull = this.runner.hull;
 		this.effects = [];
 		this.shakeMs = 0;
 		this.isNewBest = false;

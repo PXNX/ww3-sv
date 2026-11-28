@@ -38,6 +38,7 @@ import {
 	SHORE_OPEN_MAX_MS,
 	SHORE_OPEN_MIN_MS,
 	SHORE_TRANSITION_MS,
+	SHIPS,
 	SLICK_SLIDE_MS,
 	SLIDE_OVERSHOOT,
 	SPAWN_AHEAD,
@@ -50,7 +51,8 @@ import {
 	isHazard,
 	isObstacle,
 	type ItemKind,
-	type Lane
+	type Lane,
+	type ShipClass
 } from './constants';
 import {
 	mirrorPattern,
@@ -96,6 +98,8 @@ export interface RunnerEvent {
 }
 
 export interface RunnerState {
+	/** Ship chosen before the run; decides hull, speed, silhouette and fuel burn */
+	ship: ShipClass;
 	elapsedMs: number;
 	/** Distance travelled, in world units; also the tanker's position along the strait */
 	distance: number;
@@ -145,8 +149,10 @@ export interface RunnerOptions {
 	reducedMotion?: boolean;
 }
 
-export function createRunner(): RunnerState {
+export function createRunner(ship: ShipClass = 'tanker'): RunnerState {
+	const stats = SHIPS[ship];
 	return {
+		ship,
 		elapsedMs: 0,
 		distance: 0,
 		speed: START_SPEED,
@@ -157,11 +163,11 @@ export function createRunner(): RunnerState {
 		slideDurationMs: LANE_CHANGE_MS,
 		dragX: null,
 		slipping: false,
-		hull: MAX_HULL,
+		hull: stats.hull,
 		fuel: FUEL_START,
 		outOfFuel: false,
 		invulnerableMs: 0,
-		escort: false,
+		escort: stats.escort,
 		nearMissStreak: 0,
 		nearMisses: 0,
 		barrels: 0,
@@ -182,9 +188,14 @@ export function createRunner(): RunnerState {
 }
 
 /** Scroll speed at a given distance; the ramp is gentler with reduced motion */
-export function speedAt(distance: number, reducedMotion = false): number {
+export function speedAt(
+	distance: number,
+	reducedMotion = false,
+	ship: ShipClass = 'tanker'
+): number {
 	const ramp = SPEED_RAMP * (reducedMotion ? REDUCED_MOTION_RAMP_FACTOR : 1);
-	return Math.min(MAX_SPEED, START_SPEED + Math.max(0, distance) * ramp);
+	const base = Math.min(MAX_SPEED, START_SPEED + Math.max(0, distance) * ramp);
+	return base * SHIPS[ship].speed;
 }
 
 export function multiplierFor(streak: number): number {
@@ -389,7 +400,7 @@ function overlaps(state: RunnerState, obstacle: Obstacle): boolean {
 	const size = ITEM_SIZE[obstacle.kind];
 	return (
 		Math.abs(obstacle.y - state.distance) < TANKER_HALF_LENGTH + size.halfLength &&
-		Math.abs(obstacle.x - state.x) < TANKER_HALF_WIDTH + size.halfWidth
+		Math.abs(obstacle.x - state.x) < SHIPS[state.ship].halfWidth + size.halfWidth
 	);
 }
 
@@ -411,10 +422,10 @@ export function stepRunner(
 
 	// Scroll
 	draft.elapsedMs += dtMs;
-	draft.speed = speedAt(draft.distance, reducedMotion);
+	draft.speed = speedAt(draft.distance, reducedMotion, draft.ship);
 	const travelled = (draft.speed * dtMs) / 1000;
 	draft.distance += travelled;
-	draft.fuel = Math.max(0, draft.fuel - travelled * FUEL_PER_UNIT);
+	draft.fuel = Math.max(0, draft.fuel - travelled * FUEL_PER_UNIT * SHIPS[draft.ship].fuel);
 
 	stepShore(draft, dtMs, random);
 

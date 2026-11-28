@@ -33,6 +33,31 @@ export const ITEM_SIZE: Record<ItemKind, { halfLength: number; halfWidth: number
 export const TANKER_HALF_LENGTH = 0.6;
 export const TANKER_HALF_WIDTH = 0.27;
 
+/**
+ * Ship classes, chosen before a run. The tanker is the balanced default; the corvette trades a
+ * hull point for speed and a smaller silhouette, the tug starts with an escort and sips fuel but
+ * is slow. All three fit the same lanes and patterns, so this changes the solution, not the rules.
+ */
+export type ShipClass = 'tanker' | 'corvette' | 'tug';
+export const SHIP_CLASSES: readonly ShipClass[] = ['tanker', 'corvette', 'tug'];
+export interface ShipStats {
+	hull: number;
+	/** Collision half-width in lanes: a narrow ship slips through gaps a tanker cannot */
+	halfWidth: number;
+	speed: number;
+	/** Multiplies fuel burned per unit of distance; below one means a more efficient engine */
+	fuel: number;
+	escort: boolean;
+}
+export const SHIPS: Record<ShipClass, ShipStats> = {
+	tanker: { hull: 3, halfWidth: TANKER_HALF_WIDTH, speed: 1, fuel: 1, escort: false },
+	corvette: { hull: 2, halfWidth: 0.2, speed: 1.15, fuel: 0.9, escort: false },
+	tug: { hull: 2, halfWidth: 0.25, speed: 0.95, fuel: 0.75, escort: true }
+};
+export function shipStats(ship: ShipClass): ShipStats {
+	return SHIPS[ship];
+}
+
 // Visible field: three lanes plus a sandy bank on each side, portrait shaped
 export const SIDE_MARGIN = 0.25;
 export const FIELD_WIDTH = LANE_COUNT + 2 * SIDE_MARGIN;
