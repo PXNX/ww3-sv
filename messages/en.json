@@ -1,5 +1,10 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"shop_starter_name": "Starter Pack",
+	"shop_starter_body": "Five revival tokens, seven days of Pro and a week without ads. One time only.",
+	"shop_pro_gift_name": "Gift a month of Pro",
+	"shop_pro_gift_body": "Buy 30 days of Pro for a friend. The bot sends you a gift link to share after paying.",
+	"shop_weekly_badge": "This week −30%",
 	"gameover_why": "Why did that happen?",
 	"result_tip_reaction": "The pattern got faster before you settled into its rhythm. Watch the warning, then move early.",
 	"result_tip_platformer": "The safe line and the fast line are rarely the same. Slow down for one obstacle and the run opens up.",

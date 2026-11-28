@@ -1,5 +1,10 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"shop_starter_name": "حزمة البداية",
+	"shop_starter_body": "خمس رموز إحياء وسبعة أيام Pro وأسبوع بلا إعلانات. مرة واحدة فقط.",
+	"shop_pro_gift_name": "أهدِ شهرًا من Pro",
+	"shop_pro_gift_body": "اشترِ ٣٠ يومًا من Pro لصديق. يرسل لك البوت رابط هدية بعد الدفع.",
+	"shop_weekly_badge": "هذا الأسبوع −٣٠٪",
 	"gameover_why": "لماذا حدث ذلك؟",
 	"result_tip_reaction": "تسارع النمط قبل أن تألف إيقاعه. انتظر التحذير وتحرك مبكرًا.",
 	"result_tip_platformer": "الطريق الآمن والطريق السريع نادرًا ما يكونان نفس الطريق. أبطئ عند عائق واحد وينفتح المسار.",

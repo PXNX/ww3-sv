@@ -1,5 +1,10 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"shop_starter_name": "Starter-Paket",
+	"shop_starter_body": "Fünf Revival-Token, sieben Tage Pro und eine Woche ohne Werbung. Nur einmalig.",
+	"shop_pro_gift_name": "Ein Monat Pro verschenken",
+	"shop_pro_gift_body": "Kaufe 30 Tage Pro für einen Freund. Du erhältst nach der Zahlung einen Geschenklink.",
+	"shop_weekly_badge": "Diese Woche −30%",
 	"gameover_why": "Warum ist das passiert?",
 	"result_tip_reaction": "Das Muster wurde schneller, bevor du drin warst. Warte auf die Warnung und bewege dich früh.",
 	"result_tip_platformer": "Sichere und schnelle Linie sind selten dieselbe. Bremse für ein Hindernis und die Strecke öffnet sich.",

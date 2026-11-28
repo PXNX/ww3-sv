@@ -1,5 +1,10 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"shop_starter_name": "بسته آغازین",
+	"shop_starter_body": "پنج توکن احیا، هفت روز Pro و یک هفته بدون تبلیغ. فقط یکبار.",
+	"shop_pro_gift_name": "هدیه یک ماه Pro",
+	"shop_pro_gift_body": "سی روز Pro برای یک دوست بخرید. ربات پس از پرداخت لینک هدیه میفرستد.",
+	"shop_weekly_badge": "این هفته ۳۰٪−",
 	"gameover_why": "چرا این اتفاق افتاد؟",
 	"result_tip_reaction": "الگوی بازی سریعتر شد پیش از اینکه به ریتم آن برسید. منتظر هشدار بمانید و زود حرکت کنید.",
 	"result_tip_platformer": "خط ایمن و خط سریع معمولاً یکی نیستند. برای یک مانع سرعت کم کنید تا مسیر باز شود.",
