@@ -60,6 +60,7 @@ const colours = new Map(
 // Tailwind's own palette is not declared in tokens.css, but several modes use it for their tile
 const TAILWIND_TILES: Record<string, string> = {
 	'cyan-100': '#cffafe',
+	'cyan-300': '#a5f3fc',
 	'blue-950': '#172554',
 	'slate-900': '#0f172a',
 	'amber-100': '#fef3c7'

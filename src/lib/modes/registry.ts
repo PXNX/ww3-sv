@@ -99,7 +99,9 @@ export type ModeId =
 	| 'sabotage'
 	| 'killswitch'
 	| 'beachhead'
-	| 'alignment';
+	| 'alignment'
+	| 'gpugrid'
+	| 'feedtuner';
 
 interface ModeBase {
 	id: ModeId;
@@ -635,6 +637,26 @@ export const MODES: readonly GameMode[] = [
 		leaders: ['altman', 'amodei'],
 		name: m.mode_alignment_name,
 		description: m.mode_alignment_description
+	},
+	{
+		id: 'gpugrid',
+		status: 'playable',
+		href: '/play/gpugrid',
+		icon: IconCpu,
+		tileClass: 'bg-mustard',
+		leaders: ['huang'],
+		name: m.mode_gpugrid_name,
+		description: m.mode_gpugrid_description
+	},
+	{
+		id: 'feedtuner',
+		status: 'playable',
+		href: '/play/feedtuner',
+		icon: IconMegaphone,
+		tileClass: 'bg-flag-blue',
+		leaders: ['zuckerberg'],
+		name: m.mode_feedtuner_name,
+		description: m.mode_feedtuner_description
 	}
 ];
 

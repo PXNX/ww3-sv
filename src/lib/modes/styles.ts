@@ -82,5 +82,7 @@ export const STYLE_OF_MODE: Record<ModeId, PlayStyle> = {
 	grain: 'platformer',
 	curling: 'platformer',
 	sabotage: 'tactics',
-	alignment: 'riddle'
+	alignment: 'riddle',
+	gpugrid: 'management',
+	feedtuner: 'management'
 };
