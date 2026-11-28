@@ -5,7 +5,8 @@
 -->
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages.js';
-	import { ARMY_KINDS } from '#lib/game/beachhead/campaign.js';
+	import { ARMY_KINDS, landingPlan } from '#lib/game/beachhead/campaign.js';
+	import { squadSynergies } from '#lib/game/beachhead/synergies.js';
 	import { TROOPS, type ArmyKind, type TroopKind } from '#lib/game/beachhead/config.js';
 	import { troopName } from '#lib/components/beachheadText.js';
 	import BeachheadPortrait from '#lib/components/BeachheadPortrait.svelte';
@@ -25,6 +26,17 @@
 		(ARMY_KINDS as readonly string[]).includes(kind);
 	const fill = $derived(game.armyCapacity > 0 ? game.armyUsed / game.armyCapacity : 0);
 	const lost = $derived(game.lost);
+	const synergyText: Record<string, () => string> = {
+		combined_arms: m.beachhead_synergy_combined_arms,
+		fire_support: m.beachhead_synergy_fire_support,
+		field_medic: m.beachhead_synergy_field_medic,
+		breach_and_clear: m.beachhead_synergy_breach_and_clear
+	};
+	const activeSynergies = $derived([
+		...new Set(
+			landingPlan(game.campaign).flatMap((squad) => squadSynergies(squad).map((s) => s.name))
+		)
+	]);
 </script>
 
 <div class="flex flex-wrap items-center gap-2">
@@ -137,3 +149,16 @@
 		</li>
 	{/each}
 </ul>
+
+{#if activeSynergies.length}
+	<div class="mt-3 rounded-xl border-3 border-ink bg-sand/60 p-3">
+		<p class="mb-1 font-display text-xs font-black tracking-widest uppercase opacity-70">
+			{m.beachhead_synergies_label()}
+		</p>
+		<ul class="ms-4 list-disc text-xs leading-snug">
+			{#each activeSynergies as synergy (synergy)}
+				<li>{synergyText[synergy]?.() ?? synergy}</li>
+			{/each}
+		</ul>
+	</div>
+{/if}

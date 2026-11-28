@@ -36,6 +36,7 @@ import {
 	type TroopKind
 } from './config.js';
 import type { BattleModifiers, SquadTroop } from './battle.js';
+import { boostLandingPlan } from './synergies.js';
 import { baseEffects, normalizeCrystals, type CrystalState } from './crystals.js';
 import type { ExpeditionState } from './expedition.js';
 import {
@@ -1303,12 +1304,14 @@ export function fortificationScale(captures: number): number {
 export function modifiersFor(save: BeachheadSave, islandId?: string): BattleModifiers {
 	const effects = baseEffects(save);
 	// The might and vigor crystals strengthen every troop that lands
-	const boosted = landingPlan(save).map((squad) =>
-		squad.map((troop) => ({
-			...troop,
-			hp: Math.round(troop.hp * (1 + effects.troopHealth)),
-			damage: Math.round(troop.damage * (1 + effects.troopDamage))
-		}))
+	const boosted = boostLandingPlan(
+		landingPlan(save).map((squad) =>
+			squad.map((troop) => ({
+				...troop,
+				hp: Math.round(troop.hp * (1 + effects.troopHealth)),
+				damage: Math.round(troop.damage * (1 + effects.troopDamage))
+			}))
+		)
 	);
 	return {
 		squads: boosted,
