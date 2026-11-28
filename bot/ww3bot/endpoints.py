@@ -11,7 +11,7 @@ from types import SimpleNamespace
 
 from telegram import Bot
 
-from ww3bot import ads, chat, config, db, friends as friendships, games, gifts, ledger, reminders, rivals
+from ww3bot import ads, chat, config, db, friends as friendships, games, gifts, ledger, lookgifts, reminders, rivals
 from ww3bot.catalogue import PRODUCTS, localized, product
 from ww3bot.legal import CONSENT_TEXT, CONSENT_VERSION, page_url
 from ww3bot.referrals import invite_stats
@@ -58,6 +58,7 @@ async def me(bot: Bot, data: dict, init_data: dict) -> dict:
         "invite": {"link": invite["link"], "friends": invite["friends"], "cap": invite["cap"], "revives_per_friend": invite["per_friend"]},
         "consent": {"version": CONSENT_VERSION, "text": CONSENT_TEXT, "terms": page_url("agb"), "withdrawal": page_url("widerruf")},
         # The server's prices and goods, so the game only shows offers the bot can honour
+        "giftedLooks": await lookgifts.pending(user.id),
         "catalogue": [
             {key: item[key] for key in ("sku", "title", "description", "stars", "revives", "subscription", "look") if key in item}
             for item in PRODUCTS
@@ -228,8 +229,30 @@ async def redeem(bot: Bot, data: dict, init_data: dict) -> dict:
     }
 
 
+async def gift_look(bot: Bot, data: dict, init_data: dict) -> dict:
+    """`{ to, part, value }` → `{ code }`: wraps a cosmetic for a friend (or everyone when to is absent)."""
+    user = player(init_data)
+    part, value = data.get("part"), data.get("value")
+    if not lookgifts.is_giftable(part, value):
+        raise EndpointError("That look cannot be gifted", "UNKNOWN_LOOK")
+    to = data.get("to")
+    to_user = int(to) if isinstance(to, int) and to > 0 else None
+    code = await lookgifts.create(user.id, to_user, str(part), str(value))
+    return {"code": code, "link": f"https://t.me/{config.BOT_USERNAME}?start=gift_{code}" if getattr(config, "BOT_USERNAME", None) else None}
+
+
+async def claim_gift(bot: Bot, data: dict, init_data: dict) -> dict:
+    """`{ code }` → the wrapped look, once, for the account that opens the link."""
+    user = player(init_data)
+    code = str(data.get("code") or "")
+    claimed = await lookgifts.claim(code, user.id)
+    if not claimed:
+        raise EndpointError("That gift is gone or not yours", "GIFT_UNAVAILABLE")
+    return {"status": "ok", **claimed}
+
+
 ENDPOINTS = {
-    "me": me, "invoice": invoice, "spend": spend, "redeem": redeem, "admin_stats": admin_stats, "streak": streak, "friends": friends, "presence": presence,
+    "me": me, "invoice": invoice, "spend": spend, "redeem": redeem, "gift_look": gift_look, "claim_gift": claim_gift, "admin_stats": admin_stats, "streak": streak, "friends": friends, "presence": presence,
     "beachhead_publish": beachhead_publish, "beachhead_rivals": beachhead_rivals, "beachhead_attack": beachhead_attack,
     "beachhead_result": beachhead_result, "beachhead_log": beachhead_log,
     "hackers_publish": hackers_publish, "hackers_targets": hackers_targets, "hackers_lookup": hackers_lookup,
