@@ -50,6 +50,8 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 
 #### avatar
 
+- Gift unlocked cosmetics to friends: your own agent carries the parcel to them in a little
+  animation; a shareable link works for anyone, and the bot credits the look once per account
 - Four free cosmetics from gift codes: `FLAMINGO` (a full pink flamingo suit), `SKY`, `ORANGE` and
   `SLATE` shirt colours
 - Every game now opens at least one agent cosmetic when you play it, and the catalogue starts with

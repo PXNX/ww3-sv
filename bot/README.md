@@ -20,6 +20,9 @@ repository; paths below are relative to `bot/`.
   `/legal/imprint`, `/legal/privacy`, `/legal/terms` and `/legal/withdrawal`. `/impressum`, `/datenschutz`, `/agb`, `/widerruf`
   (aliases `/imprint`, `/privacy`, `/terms`, `/withdrawal`) link there; until the website has an `appUrl`, the bot sends the German
   texts into the chat instead. `operator.telegram` adds a Telegram contact to `/paysupport`. `/paysupport` is the support contact Telegram requires for bots that sell.
+- **Cosmetic gifts** (`gift_look`, `claim_gift`): a player wraps an unlocked look for a friend or a
+  shareable link; the bot keeps one code per gift and credits it once to the account that claims it.
+  `?start=gift_<code>` also claims it from a chat.
 - **Gift codes**: `t.me/game_ww3_bot?start=MN5` (bot chat), `?startapp=MN5` (straight into the Mini App) or MN5 typed in
   the supply depot inside Telegram put 5 revival tokens into the account wallet, once per account (`ww3bot/gifts.py`).
   `PRO6M` grants six calendar months of Pro plus five revival tokens, once per account; in the browser it points players to Telegram.
