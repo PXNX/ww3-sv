@@ -8,6 +8,11 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 
 ### New
 
+#### modelhearing
+
+- A new hearing game: Amodei argues to ban Chinese AI models while Huang, dating a Chinese spy,
+  demands unlimited access; spend five briefings to hold the policy dial in the compromise band
+
 #### alignment
 
 - A new AI-control game: reward precise, creative or pleasing answers across eight prompts and keep
