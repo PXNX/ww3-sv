@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"shop_gift_done_look": "Unlocked a new look: {name}. Find it in the dress-up screen.",
+	"avatar_unlock_game": "Play {game}",
+	"avatar_unlock_gift": "Redeem the gift code {code}",
+	"look_flamingo_suit": "Flamingo suit",
+	"look_sky_shirt": "Sky blue shirt",
+	"look_orange_shirt": "Sunset orange shirt",
+	"look_slate_shirt": "Slate grey shirt",
 	"falklands_spotter": "Reconnaissance ({count})",
 	"leakpatrol_popup_spread": "Water spread to {room}",
 	"hackers_proxy": "Rotate proxy ({count})",

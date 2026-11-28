@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"shop_gift_done_look": "تم فتح إطلالة جديدة: {name}. ابحث عنها في شاشة الملابس.",
+	"avatar_unlock_game": "العب {game}",
+	"avatar_unlock_gift": "استبدل رمز الهدية {code}",
+	"look_flamingo_suit": "بدلة الفلامنغو",
+	"look_sky_shirt": "قميص أزرق سماوي",
+	"look_orange_shirt": "قميص برتقالي الغروب",
+	"look_slate_shirt": "قميص رمادي داكن",
 	"falklands_spotter": "استطلاع ({count})",
 	"leakpatrol_popup_spread": "تسرّب الماء إلى {room}",
 	"hackers_proxy": "تدوير البروكسي ({count})",

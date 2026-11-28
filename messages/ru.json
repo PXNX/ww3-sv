@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"shop_gift_done_look": "Открыт новый образ: {name}. Найдите его в меню одежды.",
+	"avatar_unlock_game": "Играй в {game}",
+	"avatar_unlock_gift": "Используй подарочный код {code}",
+	"look_flamingo_suit": "Костюм фламинго",
+	"look_sky_shirt": "Голубая рубашка",
+	"look_orange_shirt": "Оранжевая рубашка",
+	"look_slate_shirt": "Серая рубашка",
 	"falklands_spotter": "Разведка ({count})",
 	"leakpatrol_popup_spread": "Вода попала в {room}",
 	"hackers_proxy": "Сменить прокси ({count})",

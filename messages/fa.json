@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"shop_gift_done_look": "ظاهر جدید باز شد: {name}. آن را در صفحه پوشش پیدا کنید.",
+	"avatar_unlock_game": "بازی {game}",
+	"avatar_unlock_gift": "کد هدیه {code} را redeem کنید",
+	"look_flamingo_suit": "لباس فلامینگو",
+	"look_sky_shirt": "پیراهن آبی آسمانی",
+	"look_orange_shirt": "پیراهن نارنجی غروب",
+	"look_slate_shirt": "پیراهن خاکستری تیره",
 	"falklands_spotter": "شناسایی ({count})",
 	"leakpatrol_popup_spread": "آب به {room} سرایت کرد",
 	"hackers_proxy": "چرخش پروکسی ({count})",
