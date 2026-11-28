@@ -48,6 +48,13 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 
 ### New
 
+#### avatar
+
+- Four free cosmetics from gift codes: `FLAMINGO` (a full pink flamingo suit), `SKY`, `ORANGE` and
+  `SLATE` shirt colours
+- Every game now opens at least one agent cosmetic when you play it, and the catalogue starts with
+  only a small basic set unlocked
+
 #### modelhearing
 
 - A new hearing game: Amodei argues to ban Chinese AI models while Huang, dating a Chinese spy,
