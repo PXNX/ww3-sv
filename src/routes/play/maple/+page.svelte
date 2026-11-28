@@ -15,7 +15,7 @@
 	import MapleLevelSelect from '#lib/components/MapleLevelSelect.svelte';
 	import MapleWinPanel from '#lib/components/MapleWinPanel.svelte';
 	import MazeDpad from '#lib/components/MazeDpad.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
@@ -29,6 +29,7 @@
 	import IconLock from '~icons/lucide/lock';
 	import IconRotate from '~icons/lucide/rotate-ccw';
 	import IconUndo from '~icons/lucide/undo-2';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new MapleGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_maple_name();
@@ -95,7 +96,7 @@
 
 	{#if playing}
 		<!-- The HUD, the banner, the warehouse and the buttons share one width, as wide as the height allows -->
-		<section
+		<section data-tutorial="playfield"
 			class="mx-auto flex w-full flex-col items-center gap-2"
 			style:max-width="max(18rem, min(100%, calc((100dvh - 24rem) * {level.width / level.height})))"
 		>
@@ -194,26 +195,18 @@
 			<p class="hidden text-center text-sm sm:block">{m.maple_controls_hint()}</p>
 		</section>
 	{:else}
-		<MapleLevelSelect {game} />
+		<div data-tutorial="playfield" class="flex min-h-0 flex-1 flex-col">
+			<MapleLevelSelect {game} />
+		</div>
 	{/if}
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.maple_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.maple_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.maple_tutorial_goal()}</p>
-		<p>{m.maple_tutorial_steer()}</p>
-		<p>{m.maple_tutorial_cart()}</p>
-		<p>{m.maple_tutorial_guards()}</p>
-		<p>{m.maple_tutorial_routines()}</p>
-		<p>{m.maple_tutorial_noise()}</p>
-		<p>{m.maple_tutorial_gadgets()}</p>
-		<p>{m.maple_tutorial_spotted()}</p>
-		<p>{m.maple_tutorial_stars()}</p>
-		<p class="hidden text-sm sm:block">{m.maple_tutorial_keys()}</p>
-	</TutorialModal>
+	/>
 
 	<MapleWinPanel
 		open={playing && game.status === 'won'}

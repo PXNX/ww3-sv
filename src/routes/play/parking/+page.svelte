@@ -10,7 +10,7 @@
 	import ParkingLevelSelect from '#lib/components/ParkingLevelSelect.svelte';
 	import ParkingStars from '#lib/components/ParkingStars.svelte';
 	import ParkingWinPanel from '#lib/components/ParkingWinPanel.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { TANKER_INDEX } from '#lib/game/parking/board.js';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -21,6 +21,7 @@
 	import IconList from '~icons/lucide/list';
 	import IconRotate from '~icons/lucide/rotate-ccw';
 	import IconUndo from '~icons/lucide/undo-2';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new ParkingGame();
 	const reducedMotion = prefersReducedMotion();
@@ -104,7 +105,7 @@
 
 	{#if playing}
 		<!-- The HUD, the harbor and the buttons share one width, as wide as the height allows -->
-		<section
+		<section data-tutorial="playfield"
 			class="mx-auto flex w-full flex-col items-center gap-2"
 			style:max-width="max(16rem, min(100%, calc((100dvh - 17rem) * {game.puzzle.width /
 				game.puzzle.height} + 1.75rem)))"
@@ -176,20 +177,18 @@
 			</div>
 		</section>
 	{:else}
-		<ParkingLevelSelect {game} />
+		<div data-tutorial="playfield" class="flex min-h-0 flex-1 flex-col">
+			<ParkingLevelSelect {game} />
+		</div>
 	{/if}
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.parking_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.parking_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.parking_tutorial_goal()}</p>
-		<p>{m.parking_tutorial_drag()}</p>
-		<p>{m.parking_tutorial_stars()}</p>
-		<p class="hidden text-sm sm:block">{m.parking_keyboard_hint()}</p>
-	</TutorialModal>
+	/>
 </GameShell>
 
 <ParkingWinPanel

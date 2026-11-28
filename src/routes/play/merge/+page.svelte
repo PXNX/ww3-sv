@@ -6,7 +6,7 @@
 	import GameShell from '#lib/components/GameShell.svelte';
 	import MergeGrid from '#lib/components/MergeGrid.svelte';
 	import MergeShip from '#lib/components/MergeShip.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { MAX_SUBMARINES, MAX_TIER, type Direction } from '#lib/game/merge/mergeBoard.js';
 	import { drawMergeBoard } from '#lib/game/merge/tierStyle.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -17,6 +17,7 @@
 	import { spriteSrc } from '#lib/theme/sprites.js';
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconRotate from '~icons/lucide/rotate-ccw';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new MergeGame();
 	onDestroy(() => game.destroy());
@@ -101,7 +102,7 @@
 		</button>
 	{/snippet}
 
-	<div class="mx-auto flex w-full max-w-md flex-col gap-3">
+	<div data-tutorial="playfield" class="mx-auto flex w-full max-w-md flex-col gap-3">
 		<!-- The mascot reacts to the board and announces mines, combos and clears -->
 		<div class="flex min-h-12 items-center gap-3">
 			<CharacterMascot pose={game.mood} class="w-11 shrink-0 -rotate-3 sm:w-16" />
@@ -199,16 +200,13 @@
 	</div>
 </GameShell>
 
-<TutorialModal
+<InteractiveTutorial
 	open={showTutorial}
 	title={m.merge_tutorial_title()}
+	steps={tutorialSteps}
 	closeLabel={m.merge_tutorial_close()}
 	onclose={() => (showTutorial = false)}
->
-	<p>{m.merge_instructions()}</p>
-	<p>{m.merge_mine_rule({ characterName })}</p>
-	<p>{m.merge_tutorial_submarine({ max: MAX_SUBMARINES })}</p>
-</TutorialModal>
+/>
 
 <GameOverModal
 	open={game.over}
