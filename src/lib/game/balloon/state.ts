@@ -28,7 +28,6 @@ import {
 	MAX_RISE,
 	MAX_SINK,
 	PHOTO_DWELL_MS,
-	PHOTO_POINTS,
 	PHOTO_RANGE,
 	PUFF_RADIUS,
 	PUFF_REFILL,
@@ -41,6 +40,7 @@ import {
 import { generateCourse, type Course, type HazardKind, type PoiKind } from './course.js';
 import { BASE_FIELD, jetRows, type BalloonField } from './field.js';
 import { layerCentre, runFraction, windAt } from './wind.js';
+import { photoScore } from './photo.js';
 
 export type BalloonPhase = 'fly' | 'finale' | 'over';
 
@@ -74,6 +74,8 @@ export interface BalloonState {
 	lives: number;
 	invulnerableMs: number;
 	photos: number;
+	/** Points earned from photo composition, which varies per shot */
+	photoPoints: number;
 	/** Points added at the east coast for the hearts left */
 	finishBonus: number;
 	score: number;
@@ -88,7 +90,14 @@ export interface BalloonState {
 export type BalloonEvent =
 	| { type: 'hit'; kind: HazardKind | 'jet' }
 	| { type: 'puff' }
-	| { type: 'photo'; poi: PoiKind; points: number }
+	| {
+			type: 'photo';
+			poi: PoiKind;
+			points: number;
+			altitude: number;
+			framing: number;
+			weather: number;
+	  }
 	| { type: 'jet-warning'; layer: number }
 	| { type: 'finish' }
 	| { type: 'popped'; bonus: number }
@@ -114,6 +123,7 @@ export function createGame(
 		lives: STARTING_LIVES,
 		invulnerableMs: 0,
 		photos: 0,
+		photoPoints: 0,
 		finishBonus: 0,
 		score: 0,
 		course: generateCourse(random, field),
@@ -136,11 +146,7 @@ export function isBurning(state: BalloonState): boolean {
 
 /** Score so far: distance, photos and the finish bonus */
 export function scoreOf(state: BalloonState): number {
-	return (
-		Math.floor(state.distance / DISTANCE_PER_POINT) +
-		state.photos * PHOTO_POINTS +
-		state.finishBonus
-	);
+	return Math.floor(state.distance / DISTANCE_PER_POINT) + state.photoPoints + state.finishBonus;
 }
 
 /** Where the missile is during the finale, as a screen position: it climbs in from the east coast */
@@ -308,7 +314,16 @@ function stepPhotos(state: BalloonState, dtMs: number, events: BalloonEvent[]) {
 		if (poi.dwellMs >= PHOTO_DWELL_MS) {
 			poi.photographed = true;
 			state.photos += 1;
-			events.push({ type: 'photo', poi: poi.kind, points: PHOTO_POINTS });
+			const shot = photoScore(state, poi);
+			state.photoPoints += shot.points;
+			events.push({
+				type: 'photo',
+				poi: poi.kind,
+				points: shot.points,
+				altitude: shot.altitude,
+				framing: shot.framing,
+				weather: shot.weather
+			});
 		}
 	}
 }

@@ -13,6 +13,7 @@
 	import LivesBar from '#lib/components/LivesBar.svelte';
 	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import { STARTING_LIVES } from '#lib/game/balloon/config.js';
+	import { windPattern } from '#lib/game/balloon/wind.js';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
@@ -116,6 +117,29 @@
 			<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
 				{m.balloon_hud_progress({ percent: game.progressPercent })}
 			</p>
+		</div>
+
+		<!-- Forecast: the two upcoming wind patterns, so the climb can be planned -->
+		<div
+			class="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border-2 border-ink bg-paper px-2 py-1 font-display text-xs font-bold"
+			data-tutorial="forecast"
+		>
+			<span>{m.balloon_forecast_title()}</span>
+			{#each [0, 1] as chunk (chunk)}
+				{@const pattern = windPattern(game.state.seed, chunk)}
+				<span class="flex items-center gap-0.5" dir="ltr" aria-label={pattern.join(', ')}>
+					{#each pattern as speed (speed)}
+						<span
+							class="inline-block h-3 w-1.5 rounded-sm border border-ink {speed < 0
+								? 'bg-sky'
+								: speed > 80
+									? 'bg-tie-red'
+									: 'bg-explosion-yellow'}"
+							title={String(speed)}
+						></span>
+					{/each}
+				</span>
+			{/each}
 		</div>
 
 		<BalloonCanvas {game} />

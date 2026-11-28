@@ -251,11 +251,12 @@ describe('puffs and photos', () => {
 		const slow = windPattern(state.seed, 0).indexOf(12);
 		state.course.pois = [{ kind: 'lake', x: 30, photographed: false, dwellMs: 0 }];
 		const events = runPinned(state, random, slow, PHOTO_DWELL_MS * 3);
-		expect(events.filter((event) => event.type === 'photo')).toEqual([
-			{ type: 'photo', poi: 'lake', points: PHOTO_POINTS }
-		]);
+		const photos = events.filter((event) => event.type === 'photo');
+		expect(photos).toHaveLength(1);
+		expect(photos[0]).toMatchObject({ type: 'photo', poi: 'lake' });
+		expect(photos[0]!.points).toBeGreaterThanOrEqual(PHOTO_POINTS);
 		expect(state.photos).toBe(1);
-		expect(state.score).toBe(PHOTO_POINTS + Math.floor(state.distance / DISTANCE_PER_POINT));
+		expect(state.score).toBe(photos[0]!.points + Math.floor(state.distance / DISTANCE_PER_POINT));
 	});
 
 	it('takes no photo when a fast wind carries the balloon past too quickly', () => {

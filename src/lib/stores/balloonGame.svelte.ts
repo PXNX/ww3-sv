@@ -171,7 +171,15 @@ export class BalloonGame {
 				this.#play('pickup');
 				break;
 			case 'photo':
-				this.#popup(m.balloon_popup_photo({ points: event.points }), true);
+				this.#popup(
+					m.balloon_popup_photo_detail({
+						points: event.points,
+						altitude: event.altitude,
+						framing: event.framing,
+						weather: event.weather
+					}),
+					true
+				);
 				this.#bubble(m.balloon_caption());
 				this.#play('sparkle');
 				break;
