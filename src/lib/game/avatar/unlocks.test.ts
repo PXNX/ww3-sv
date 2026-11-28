@@ -69,6 +69,9 @@ const FINISHED: GameProgress = {
 	]
 };
 
+/** Every progress mode with a best score high enough for the score-locked looks */
+const SCORES = { dronewall: { best: 2000 }, whack: { best: 3000 } };
+
 /** A player with nothing earned yet, plus whatever the test cares about */
 const progress = (overrides: Partial<UnlockProgress> = {}): UnlockProgress => ({
 	level: 1,
@@ -125,7 +128,7 @@ describe('the extra looks', () => {
 				progress({
 					level: 30,
 					bestStreak: 7,
-					modes: { redsquare: {}, petrobras: {}, runcomrade: {} },
+					modes: { redsquare: {}, petrobras: {}, runcomrade: {}, ...SCORES },
 					tycoon: ['maxed_all', 'tycoon_king'],
 					games: FINISHED,
 					referralCount: 30
@@ -177,7 +180,7 @@ describe('the extra looks', () => {
 				progress({
 					level: 30,
 					bestStreak: 7,
-					modes: { redsquare: {}, petrobras: {}, runcomrade: {} },
+					modes: { redsquare: {}, petrobras: {}, runcomrade: {}, ...SCORES },
 					tycoon: ['maxed_all', 'tycoon_king'],
 					games: FINISHED,
 					referralCount: 30

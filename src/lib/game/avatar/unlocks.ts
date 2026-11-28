@@ -31,6 +31,8 @@ export type UnlockRequirement =
 	| { kind: 'beachhead'; achievement: string }
 	/** Systems of the cast's network found in Hermit Hackers */
 	| { kind: 'hackers'; network: number }
+	/** A best score above this in any mode that keeps one in the career profile */
+	| { kind: 'score'; mode: ModeId; score: number }
 	/** Bought with Telegram Stars; the sku is the bot's catalogue entry */
 	| { kind: 'stars'; sku: string };
 
@@ -184,6 +186,19 @@ export const LOOK_UNLOCKS: readonly LookUnlock[] = [
 		value: 'matrix-coat',
 		// Every system of the cast's network found in Hermit Hackers
 		requirement: { kind: 'hackers', network: 6 }
+	},
+	{
+		id: 'halo',
+		part: 'hat',
+		value: 'halo',
+		// A high score in Drone Wall: the halo is earned, never bought
+		requirement: { kind: 'score', mode: 'dronewall', score: 1500 }
+	},
+	{
+		id: 'star-eyes',
+		part: 'eyes',
+		value: 'stars',
+		requirement: { kind: 'score', mode: 'whack', score: 2500 }
 	}
 ];
 
@@ -216,6 +231,24 @@ export const PAID_LOOKS: readonly LookUnlock[] = [
 		part: 'hairColor',
 		value: '#ff4fa3',
 		requirement: { kind: 'stars', sku: 'look_neon' }
+	},
+	{
+		id: 'cowboy-hat',
+		part: 'hat',
+		value: 'cowboy',
+		requirement: { kind: 'stars', sku: 'look_cowboy' }
+	},
+	{
+		id: 'beard',
+		part: 'facial',
+		value: 'beard',
+		requirement: { kind: 'stars', sku: 'look_beard' }
+	},
+	{
+		id: 'clown-nose',
+		part: 'nose',
+		value: 'clown',
+		requirement: { kind: 'stars', sku: 'look_clown' }
 	}
 ];
 
@@ -277,6 +310,12 @@ export function unlockFor(part: LookPart, value: string): LookUnlock | undefined
 	);
 }
 
+/** Best score recorded in the career profile for a mode, or zero */
+function bestScore(mode: ModeId, progress: UnlockProgress): number {
+	const entry = progress.modes[mode] as { best?: unknown } | undefined;
+	return typeof entry?.best === 'number' && Number.isFinite(entry.best) ? entry.best : 0;
+}
+
 export function requirementMet(requirement: UnlockRequirement, progress: UnlockProgress): boolean {
 	switch (requirement.kind) {
 		case 'level':
@@ -303,6 +342,8 @@ export function requirementMet(requirement: UnlockRequirement, progress: UnlockP
 			return (progress.games?.beachheadAchievements ?? []).includes(requirement.achievement);
 		case 'hackers':
 			return (progress.games?.hackersNetwork ?? 0) >= requirement.network;
+		case 'score':
+			return bestScore(requirement.mode, progress) > requirement.score;
 		case 'stars':
 			return progress.owned?.includes(requirement.sku) ?? false;
 	}
@@ -388,6 +429,8 @@ export function requirementShare(requirement: UnlockRequirement, progress: Unloc
 				: 0;
 		case 'hackers':
 			return Math.min(1, (progress.games?.hackersNetwork ?? 0) / requirement.network);
+		case 'score':
+			return Math.min(1, bestScore(requirement.mode, progress) / (requirement.score + 1));
 		case 'stars':
 			return progress.owned?.includes(requirement.sku) ? 1 : 0;
 	}

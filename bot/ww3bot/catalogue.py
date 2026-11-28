@@ -82,6 +82,36 @@ PRODUCTS: Final[list[dict]] = [
         "subscription": False,
         "look": {"part": "hairColor", "value": "#ff4fa3"},
     },
+    {
+        "sku": "look_cowboy",
+        "title": "Cowboy hat",
+        "description": "A wide-brimmed cowboy hat for your agent. Yours for good.",
+        "de": {"title": "Cowboyhut", "description": "Ein Cowboyhut mit breiter Krempe für deinen Agenten. Gehört dir dauerhaft."},
+        "stars": 60,
+        "revives": 0,
+        "subscription": False,
+        "look": {"part": "hat", "value": "cowboy"},
+    },
+    {
+        "sku": "look_beard",
+        "title": "Full beard",
+        "description": "A magnificent full beard for your agent. Yours for good.",
+        "de": {"title": "Vollbart", "description": "Ein prächtiger Vollbart für deinen Agenten. Gehört dir dauerhaft."},
+        "stars": 40,
+        "revives": 0,
+        "subscription": False,
+        "look": {"part": "facial", "value": "beard"},
+    },
+    {
+        "sku": "look_clown",
+        "title": "Clown nose",
+        "description": "A bright red clown nose for your agent. Yours for good.",
+        "de": {"title": "Clown-Nase", "description": "Eine knallrote Clown-Nase für deinen Agenten. Gehört dir dauerhaft."},
+        "stars": 30,
+        "revives": 0,
+        "subscription": False,
+        "look": {"part": "nose", "value": "clown"},
+    },
 ]
 
 
