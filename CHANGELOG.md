@@ -57,8 +57,21 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 - Every game now opens at least one agent cosmetic when you play it, and the catalogue starts with
   only a small basic set unlocked
 
+#### alignment
+
+- Recalibration charges, a visible model mood and a streak bonus for steady answers
+
+#### gpugrid
+
+- Emergency coolant charges that drop the heat on every rack
+
+#### feedtuner
+
+- Fact-checks that trade reach for a much bigger drop in outrage
+
 #### modelhearing
 
+- A filibuster action that talks a witness down without spending a briefing
 - A new hearing game: Amodei argues to ban Chinese AI models while Huang, dating a Chinese spy,
   demands unlimited access; spend five briefings to hold the policy dial in the compromise band
 
