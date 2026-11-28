@@ -133,7 +133,7 @@
 			<RotateHint onportrait={(upright) => upright && game.pause()} />
 		</section>
 	{:else}
-		<div data-tutorial="playfield" class="flex min-h-0 flex-1 flex-col">
+		<div data-tutorial="levels" class="flex min-h-0 flex-1 flex-col">
 			<GpsLiarLevelSelect {game} />
 		</div>
 	{/if}
@@ -141,7 +141,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.gpsliar_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.gpsliar_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

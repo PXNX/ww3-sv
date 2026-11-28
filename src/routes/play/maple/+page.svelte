@@ -96,7 +96,8 @@
 
 	{#if playing}
 		<!-- The HUD, the banner, the warehouse and the buttons share one width, as wide as the height allows -->
-		<section data-tutorial="playfield"
+		<section
+			data-tutorial="playfield"
 			class="mx-auto flex w-full flex-col items-center gap-2"
 			style:max-width="max(18rem, min(100%, calc((100dvh - 24rem) * {level.width / level.height})))"
 		>
@@ -203,7 +204,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.maple_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.maple_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

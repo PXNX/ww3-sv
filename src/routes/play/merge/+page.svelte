@@ -102,7 +102,7 @@
 		</button>
 	{/snippet}
 
-	<div data-tutorial="playfield" class="mx-auto flex w-full max-w-md flex-col gap-3">
+	<div class="mx-auto flex w-full max-w-md flex-col gap-3">
 		<!-- The mascot reacts to the board and announces mines, combos and clears -->
 		<div class="flex min-h-12 items-center gap-3">
 			<CharacterMascot pose={game.mood} class="w-11 shrink-0 -rotate-3 sm:w-16" />
@@ -164,7 +164,7 @@
 			{/if}
 		</p>
 
-		<div class="relative">
+		<div class="relative" data-tutorial="board">
 			<MergeGrid {game} />
 
 			{#if game.celebrating}
@@ -203,7 +203,7 @@
 <InteractiveTutorial
 	open={showTutorial}
 	title={m.merge_tutorial_title()}
-	steps={tutorialSteps}
+	steps={tutorialSteps()}
 	closeLabel={m.merge_tutorial_close()}
 	onclose={() => (showTutorial = false)}
 />

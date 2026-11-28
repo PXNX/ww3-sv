@@ -104,7 +104,10 @@
 
 	{#if playing}
 		<!-- The maze takes all the height the HUD and the buttons leave, as large as fits -->
-		<section data-tutorial="playfield" class="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col items-center gap-2">
+		<section
+			data-tutorial="playfield"
+			class="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col items-center gap-2"
+		>
 			<div
 				class="flex w-full shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1.5 shadow-[3px_3px_0_var(--color-ink)]"
 			>
@@ -160,7 +163,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.maze_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.maze_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>
