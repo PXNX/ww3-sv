@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"vault_popup_timeout": "Die Zeit ist um — der Tresor schließt",
+	"vault_hud_time": "{seconds}s übrig",
+	"vault_tell_label": "Der Bankier blickt nach {direction}",
+	"vault_tell_left": "links",
+	"vault_tell_right": "rechts",
+	"vault_tell_up": "oben",
+	"vault_tell_down": "unten",
 	"convoy_ship_label": "Schiff wählen",
 	"convoy_ship_tanker": "Tanker",
 	"convoy_ship_corvette": "Korvette",

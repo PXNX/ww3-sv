@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"vault_popup_timeout": "Время вышло — хранилище закрывается",
+	"vault_hud_time": "{seconds}с осталось",
+	"vault_tell_label": "Банкир смотрит {direction}",
+	"vault_tell_left": "влево",
+	"vault_tell_right": "вправо",
+	"vault_tell_up": "вверх",
+	"vault_tell_down": "вниз",
 	"convoy_ship_label": "Выберите судно",
 	"convoy_ship_tanker": "Танкер",
 	"convoy_ship_corvette": "Корвет",

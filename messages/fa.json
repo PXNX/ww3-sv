@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"vault_popup_timeout": "زمان تمام شد — گاوصندوق قفل میشود",
+	"vault_hud_time": "{seconds}ث باقی",
+	"vault_tell_label": "بانکدار به {direction} نگاه میکند",
+	"vault_tell_left": "چپ",
+	"vault_tell_right": "راست",
+	"vault_tell_up": "بالا",
+	"vault_tell_down": "پایین",
 	"convoy_ship_label": "انتخاب کشتی",
 	"convoy_ship_tanker": "نفتکش",
 	"convoy_ship_corvette": "ناوچه",

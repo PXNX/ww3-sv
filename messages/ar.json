@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"vault_popup_timeout": "انتهى الوقت — الخزنة تُغلق",
+	"vault_hud_time": "{seconds}ث متبقية",
+	"vault_tell_label": "الصراف ينظر إلى {direction}",
+	"vault_tell_left": "اليسار",
+	"vault_tell_right": "اليمين",
+	"vault_tell_up": "الأعلى",
+	"vault_tell_down": "الأسفل",
 	"convoy_ship_label": "اختر سفينتك",
 	"convoy_ship_tanker": "ناقلة نفط",
 	"convoy_ship_corvette": "كورفيت",

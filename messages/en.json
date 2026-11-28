@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"vault_popup_timeout": "Time is up — the vault locks",
+	"vault_hud_time": "{seconds}s left",
+	"vault_tell_label": "The banker glances {direction}",
+	"vault_tell_left": "left",
+	"vault_tell_right": "right",
+	"vault_tell_up": "up",
+	"vault_tell_down": "down",
 	"convoy_ship_label": "Choose your ship",
 	"convoy_ship_tanker": "Tanker",
 	"convoy_ship_corvette": "Corvette",
