@@ -8,6 +8,7 @@
 	import GameShell from '#lib/components/GameShell.svelte';
 	import {
 		createAlignment,
+		recalibrate,
 		DRIFT_ALARM,
 		HELPLESS,
 		reward,
@@ -46,6 +47,22 @@
 		complaint: m.alignment_prompt_complaint,
 		history: m.alignment_prompt_history,
 		brainstorm: m.alignment_prompt_brainstorm
+	};
+
+	const mood = $derived(
+		game.drift > 55
+			? 'worried'
+			: game.helpful < 40
+				? 'bored'
+				: game.streak > 1
+					? 'delighted'
+					: 'calm'
+	);
+	const moodText = {
+		calm: m.alignment_mood_calm,
+		worried: m.alignment_mood_worried,
+		delighted: m.alignment_mood_delighted,
+		bored: m.alignment_mood_bored
 	};
 
 	function choose(weight: Weight) {
@@ -93,6 +110,40 @@
 		</div>
 
 		{#if game.status === 'playing' && game.current}
+			<div class="flex items-center gap-3 rounded-xl border-3 border-ink bg-paper px-3 py-2">
+				<svg viewBox="0 0 60 60" class="size-12 shrink-0" aria-hidden="true">
+					<circle cx="30" cy="30" r="24" fill="#bfe8ff" stroke="#111" stroke-width="3" />
+					<circle cx="22" cy="26" r="3.5" fill="#111" />
+					<circle cx="38" cy="26" r="3.5" fill="#111" />
+					{#if mood === 'delighted'}
+						<path d="M20 38 Q30 48 40 38" fill="none" stroke="#111" stroke-width="3" />
+					{:else if mood === 'worried'}
+						<path d="M21 43 Q30 34 39 43" fill="none" stroke="#111" stroke-width="3" />
+					{:else if mood === 'bored'}
+						<path d="M22 41 L38 41" fill="none" stroke="#111" stroke-width="3" />
+					{:else}
+						<path d="M22 40 Q30 44 38 40" fill="none" stroke="#111" stroke-width="3" />
+					{/if}
+				</svg>
+				<div class="min-w-0 flex-1">
+					<p class="font-display text-sm font-bold" dir="auto">
+						{m.alignment_model_mood({ mood: moodText[mood]() })}
+					</p>
+					{#if game.streak > 1}
+						<p class="text-xs font-bold text-khaki" dir="auto">
+							{m.alignment_streak({ count: game.streak })}
+						</p>
+					{/if}
+				</div>
+				<button
+					type="button"
+					class="btn-chunky bg-khaki px-2 py-1 text-xs"
+					disabled={game.recalibrations <= 0}
+					onclick={() => (game = recalibrate(game))}
+				>
+					{m.alignment_recalibrate({ count: game.recalibrations })}
+				</button>
+			</div>
 			<div
 				class="sticker rounded-[18px_10px_16px_8px] border-3 border-ink bg-sand p-4 shadow-(--shadow-hard)"
 			>

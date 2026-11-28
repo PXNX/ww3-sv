@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createRandom } from '#lib/game/random.js';
-import { createAlignment, DRIFT_ALARM, reward, ROUNDS, SCENARIOS } from './state.js';
+import { createAlignment, DRIFT_ALARM, recalibrate, reward, ROUNDS, SCENARIOS } from './state.js';
 
 const random = () => createRandom(12);
 
@@ -40,5 +40,26 @@ describe('alignment lab', () => {
 		const next = reward(state, 'precise');
 		expect(next.status).toBe('won');
 		expect(next.score).toBeGreaterThan(state.score);
+	});
+});
+
+describe('alignment recalibration', () => {
+	it('steadies the model twice', () => {
+		let state = createAlignment(random());
+		state.drift = 60;
+		state = recalibrate(state);
+		expect(state.drift).toBe(45);
+		expect(state.recalibrations).toBe(1);
+		state = recalibrate(state);
+		expect(state.recalibrations).toBe(0);
+		expect(recalibrate(state)).toBe(state);
+	});
+
+	it('pays a streak bonus for steady answers', () => {
+		const state = createAlignment(random());
+		state.current = SCENARIOS.find((scenario) => scenario.id === 'symptoms')!;
+		state.streak = 2;
+		const next = reward(state, 'precise');
+		expect(next.score).toBeGreaterThan(state.score + 25);
 	});
 });

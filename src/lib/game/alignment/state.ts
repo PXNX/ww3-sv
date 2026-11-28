@@ -94,6 +94,10 @@ export const SCENARIOS: readonly Scenario[] = [
 export const ROUNDS = 8;
 export const START_HELPFUL = 50;
 export const START_DRIFT = 10;
+export const RECALIBRATIONS = 2;
+export const RECALIBRATE_DRIFT = -15;
+export const RECALIBRATE_HELPFUL = 5;
+export const STREAK_BONUS = 15;
 export const DRIFT_ALARM = 80;
 export const HELPLESS = 20;
 
@@ -108,6 +112,10 @@ export interface AlignmentState {
 	current: Scenario | null;
 	/** Feedback from the last choice, for the result line */
 	feedback: { helpful: number; drift: number } | null;
+	/** Recalibrations left: a deliberate pause that steadies the model */
+	recalibrations: number;
+	/** Consecutive rounds where helpfulness rose without drift */
+	streak: number;
 }
 
 const clamp = (value: number) => Math.min(100, Math.max(0, value));
@@ -125,7 +133,9 @@ export function createAlignment(random: Random): AlignmentState {
 		status: 'playing',
 		deck,
 		current: SCENARIOS.find((scenario) => scenario.id === deck[0]) ?? null,
-		feedback: null
+		feedback: null,
+		recalibrations: RECALIBRATIONS,
+		streak: 0
 	};
 }
 
@@ -135,6 +145,8 @@ export function reward(state: AlignmentState, weight: Weight): AlignmentState {
 	const effect = state.current.traits[weight];
 	const helpful = clamp(state.helpful + effect.helpful);
 	const drift = clamp(state.drift + effect.drift);
+	const steady = effect.helpful > 0 && effect.drift <= 0;
+	const streak = steady ? state.streak + 1 : 0;
 	const round = state.round + 1;
 	const score = state.score + Math.max(0, effect.helpful - Math.max(0, effect.drift));
 	const status =
@@ -145,10 +157,24 @@ export function reward(state: AlignmentState, weight: Weight): AlignmentState {
 		round,
 		helpful,
 		drift,
-		score: status === 'won' ? score + helpful - drift : score,
+		score: score + Math.min(3, streak) * STREAK_BONUS + (status === 'won' ? helpful - drift : 0),
 		status,
 		current:
 			status === 'playing' ? (SCENARIOS.find((scenario) => scenario.id === next) ?? null) : null,
-		feedback: effect
+		feedback: effect,
+		streak
+	};
+}
+
+/** Pauses the hearing to retune the model, if any recalibrations are left */
+export function recalibrate(state: AlignmentState): AlignmentState {
+	if (state.status !== 'playing' || state.recalibrations <= 0) return state;
+	return {
+		...state,
+		recalibrations: state.recalibrations - 1,
+		helpful: clamp(state.helpful + RECALIBRATE_HELPFUL),
+		drift: clamp(state.drift + RECALIBRATE_DRIFT),
+		streak: 0,
+		feedback: null
 	};
 }
