@@ -161,7 +161,7 @@
 		</button>
 	{/snippet}
 
-	<section data-tutorial="playfield" class="mx-auto flex w-full max-w-xl flex-col gap-2 pb-2">
+	<section class="mx-auto flex w-full max-w-xl flex-col gap-2 pb-2">
 		<div class="grid grid-cols-2 gap-2" role="group" aria-label={m.wordle_tabs_label()}>
 			<button
 				type="button"
@@ -169,6 +169,7 @@
 					? 'bg-explosion-yellow'
 					: 'bg-paper'}"
 				aria-pressed={game.mode === 'daily'}
+				data-tutorial="tab-daily"
 				onclick={showDaily}
 			>
 				<IconCalendar class="size-4" aria-hidden="true" />
@@ -180,6 +181,7 @@
 					? 'bg-explosion-yellow'
 					: 'bg-paper'}"
 				aria-pressed={game.mode === 'practice'}
+				data-tutorial="tab-practice"
 				onclick={() => game.mode !== 'practice' && startPractice()}
 			>
 				<IconDice class="size-4" aria-hidden="true" />
@@ -188,6 +190,7 @@
 		</div>
 
 		<div
+			data-tutorial="hud"
 			class="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1.5 font-display text-sm font-bold shadow-[3px_3px_0_var(--color-ink)]"
 		>
 			{#if game.mode === 'daily'}
@@ -228,13 +231,17 @@
 		</p>
 
 		<div data-playfield dir="ltr" class="flex flex-col gap-4" style:touch-action="none">
-			<WordleBoard {game} />
-			<WordleKeyboard
-				{game}
-				onletter={(letter) => game.type([letter])}
-				onenter={() => game.submit()}
-				ondelete={() => game.backspace()}
-			/>
+			<div data-tutorial="board">
+				<WordleBoard {game} />
+			</div>
+			<div data-tutorial="keyboard">
+				<WordleKeyboard
+					{game}
+					onletter={(letter) => game.type([letter])}
+					onenter={() => game.submit()}
+					ondelete={() => game.backspace()}
+				/>
+			</div>
 		</div>
 
 		{#if game.finished && !showResult}
@@ -263,7 +270,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.wordle_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.wordle_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>
