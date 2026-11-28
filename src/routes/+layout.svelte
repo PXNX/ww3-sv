@@ -8,6 +8,7 @@
 	import { streakDeadline } from '#lib/game/career/profile.js';
 	import { career } from '#lib/game/career/store.svelte.js';
 	import { accountGiftCode } from '#lib/game/giftcode/config.js';
+	import { lookGiftCode } from '#lib/game/avatar/gifting.js';
 	import { groupGameFromUrl, launchStartParam, startRoute } from '#lib/services/telegram.js';
 	import { squadCodeOf, squadStartParam } from '#lib/services/squad.js';
 	import { squad } from '#lib/stores/squad.svelte.js';
@@ -83,6 +84,14 @@
 			if (code) {
 				squad().offerJoin(code);
 				if (page.url.pathname !== resolve('/play/raid')) void goto(resolve('/play/raid'));
+				return;
+			}
+			// A cosmetic someone sent: claim it and open the dress-up screen to see it
+			const lookCode = lookGiftCode(param);
+			if (lookCode) {
+				void account.claimGift(lookCode).then(() => {
+					if (page.url.pathname !== resolve('/profile')) void goto(resolve('/profile'));
+				});
 				return;
 			}
 			// A gift link (`startapp=MN5`) credits the code to the account and opens the depot, which

@@ -16,6 +16,7 @@ import {
 	requestWriteAccess,
 	toCallError,
 	type CatalogueItem,
+	type PendingLookGift,
 	type GroupBoardRow,
 	type GroupGame,
 	type GroupOvertaken,
@@ -268,6 +269,8 @@ class TelegramStore {
 	}
 
 	/** The outcome of an account gift code redeemed from a link, shown once in the supply depot */
+	/** Cosmetic gifts waiting to be claimed, from the bot */
+	giftedLooks = $state<PendingLookGift[]>([]);
 	giftNotice = $state<{ status: 'ok' | 'used'; revives: number; proUntil: string | null } | null>(
 		null
 	);
@@ -323,6 +326,34 @@ class TelegramStore {
 		}
 	}
 
+	/** Wraps a cosmetic as a gift for a friend (or for anyone when to is null) */
+	async giftLook(
+		to: number | null,
+		part: string,
+		value: string
+	): Promise<{ code: string; link: string | null } | null> {
+		try {
+			return await call('gift_look', { to, part, value });
+		} catch {
+			return null;
+		}
+	}
+
+	/** Claims a cosmetic someone sent to this account */
+	async claimGift(code: string): Promise<{ part: string; value: string } | null> {
+		try {
+			const result = await call<{ status?: unknown; part?: unknown; value?: unknown }>(
+				'claim_gift',
+				{ code }
+			);
+			if (typeof result?.part !== 'string' || typeof result?.value !== 'string') return null;
+			this.giftedLooks = this.giftedLooks.filter((gift) => gift.code !== code);
+			return { part: result.part, value: result.value };
+		} catch {
+			return null;
+		}
+	}
+
 	async refresh(): Promise<void> {
 		if (!(await loadTelegram())) return;
 		this.status = 'checking';
@@ -342,6 +373,7 @@ class TelegramStore {
 				this.user = { ...me.user, photoUrl: me.user.photoUrl ?? this.user?.photoUrl ?? null };
 				this.wallet = { revives: me.revives };
 				this.pro = me.pro;
+				this.giftedLooks = me.giftedLooks;
 				this.proUntil = me.proUntil;
 				this.consented = me.consented;
 				this.admin = me.admin;

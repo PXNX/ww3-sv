@@ -566,6 +566,15 @@ export interface TelegramMe {
 	/** Skus of the cosmetics bought, which stay unlocked on every device */
 	owned: string[];
 	invite: TelegramInvite | null;
+	/** Cosmetics waiting to be claimed from a friend */
+	giftedLooks: PendingLookGift[];
+}
+
+export interface PendingLookGift {
+	code: string;
+	part: string;
+	value: string;
+	from: number;
 }
 
 const isCount = (value: unknown): value is number =>
@@ -606,7 +615,7 @@ export function parseMe(value: unknown): TelegramMe | null {
 	if (!isRecord(value) || !isRecord(value.user) || !isRecord(value.wallet)) return null;
 	const { id, username, first_name: firstName } = value.user;
 	const { revives } = value.wallet;
-	const { pro, pro_until: proUntil, consented, catalogue } = value;
+	const { pro, pro_until: proUntil, consented, catalogue, giftedLooks } = value;
 	if (typeof id !== 'number' || !Number.isSafeInteger(id) || typeof firstName !== 'string') {
 		return null;
 	}
@@ -633,7 +642,17 @@ export function parseMe(value: unknown): TelegramMe | null {
 		owned: Array.isArray(value.owned)
 			? value.owned.filter((sku): sku is string => typeof sku === 'string' && sku !== '')
 			: [],
-		invite: toInvite(value.invite)
+		invite: toInvite(value.invite),
+		giftedLooks: Array.isArray(giftedLooks)
+			? giftedLooks.filter(
+					(entry): entry is PendingLookGift =>
+						isRecord(entry) &&
+						typeof entry.code === 'string' &&
+						typeof entry.part === 'string' &&
+						typeof entry.value === 'string' &&
+						typeof entry.from === 'number'
+					)
+				: []
 	};
 }
 

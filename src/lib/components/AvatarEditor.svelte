@@ -26,8 +26,11 @@
 	} from '#lib/game/avatar/look.js';
 	import { avatar } from '#lib/game/avatar/store.svelte.js';
 	import { telegram } from '#lib/stores/telegram.svelte.js';
+	import { squad } from '#lib/stores/squad.svelte.js';
+	import CosmeticDelivery from './CosmeticDelivery.svelte';
 	import {
 		firstLockedPart,
+		GIFT_LOOKS,
 		isUnlocked,
 		LOOK_UNLOCKS,
 		unlockFor,
@@ -116,6 +119,23 @@
 
 	/** The look sold for Stars whose purchase is open under the choices */
 	let offer = $state<LookUnlock | null>(null);
+	let giftTarget = $state<LookUnlock | null>(null);
+	let delivery = $state<{ open: boolean; name: string; friend: string }>({
+		open: false,
+		name: '',
+		friend: ''
+	});
+	let giftLink = $state('');
+
+	async function sendGift(look: LookUnlock, friendId: number | null, friendName = '') {
+		const result = await account.giftLook(friendId, look.part, look.value);
+		if (!result) return;
+		giftTarget = null;
+		giftLink = result.link ?? '';
+		const code = look.requirement.kind === 'gift' ? look.requirement.code : look.id;
+		delivery = { open: true, name: paidLookName(code), friend: friendName };
+		soundManager().play('chime');
+	}
 	const offerSku = $derived(paidSku(offer ?? undefined));
 	const offerItem = $derived(offerSku ? account.item(offerSku) : undefined);
 	const collected = $derived(unlockedCount(progress));
@@ -416,6 +436,57 @@
 			</div>
 		{/if}
 
+		{#if GIFT_LOOKS.length}
+			<div class="flex flex-col gap-2 rounded-xl border-3 border-ink bg-sand/50 p-3">
+				<h3 class="font-display text-sm font-bold">{m.avatar_gift_title()}</h3>
+				<p class="text-xs leading-snug opacity-80">{m.avatar_gift_hint()}</p>
+				<div class="flex flex-wrap gap-1.5">
+					{#each GIFT_LOOKS as look (look.id)}
+						{@const unlocked = isUnlocked(look.part, look.value, progress)}
+						<button
+							type="button"
+							class="btn-chunky px-2 py-1 text-xs {unlocked
+								? 'bg-explosion-yellow'
+								: 'bg-paper opacity-50'}"
+							disabled={!unlocked || account.status !== 'verified'}
+							onclick={() => (giftTarget = look)}
+						>
+							{paidLookName(look.requirement.kind === 'gift' ? look.requirement.code : look.id)}
+						</button>
+					{/each}
+				</div>
+				{#if giftTarget}
+					<div class="flex flex-wrap gap-1.5" role="group" aria-label={m.avatar_gift_title()}>
+						<button
+							type="button"
+							class="btn-chunky bg-paper px-2 py-1 text-xs"
+							onclick={() => sendGift(giftTarget!, null)}
+						>
+							{m.avatar_gift_anyone()}
+						</button>
+						{#each squad().friends as friend (friend.id)}
+							<button
+								type="button"
+								class="btn-chunky bg-paper px-2 py-1 text-xs"
+								onclick={() => sendGift(giftTarget!, Number(friend.id), friend.name)}
+							>
+								{friend.name}
+							</button>
+						{/each}
+					</div>
+				{/if}
+				{#if giftLink}
+					<button
+						type="button"
+						class="btn-chunky self-start bg-flag-blue px-2 py-1 text-xs"
+						onclick={() => navigator.clipboard?.writeText(giftLink)}
+					>
+						{m.avatar_gift_link()}
+					</button>
+				{/if}
+			</div>
+		{/if}
+
 		{#if lockNote}
 			<p class="lock-note flex items-center gap-1.5 text-xs font-bold text-tie-red" role="status">
 				<IconLock class="size-3.5 shrink-0" aria-hidden="true" />
@@ -424,6 +495,13 @@
 		{/if}
 	</div>
 </div>
+
+<CosmeticDelivery
+	open={delivery.open}
+	lookName={delivery.name}
+	friendName={delivery.friend}
+	onDone={() => (delivery = { ...delivery, open: false })}
+/>
 
 <style>
 	/* A rubbery wiggle when the agent changes; skipped for reduced motion */
