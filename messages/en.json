@@ -1,5 +1,9 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"dome_interceptor_label": "Interceptor",
+	"dome_interceptor_standard": "Standard",
+	"dome_interceptor_swift": "Swift",
+	"dome_interceptor_heavy": "Heavy",
 	"suez_tide_high": "High tide: pulls bite harder, the queue grows faster",
 	"suez_tide_low": "Low tide: the queue eases off",
 	"suez_tide_rising": "Rising tide",

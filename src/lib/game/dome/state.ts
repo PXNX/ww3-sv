@@ -18,7 +18,9 @@ import {
 	INTERCEPTOR_LIFETIME_MS,
 	WAVE_BONUS,
 	WAVE_PAUSE_MS,
-	type TargetKind
+	type TargetKind,
+	type InterceptorKind,
+	INTERCEPTOR_STATS
 } from './config.js';
 import { BASE_FIELD, type DomeField } from './field.js';
 import { launchInterceptor, stepInterceptor, type Interceptor } from './intercept.js';
@@ -56,6 +58,8 @@ export interface DomeState {
 	/** One flag per building: true while it lies in ruins (until the wave is over) */
 	ruined: boolean[];
 	ammo: Ammo;
+	/** Interceptor type selected for the next shot */
+	interceptor: InterceptorKind;
 	/** Time left of the reloader outage after the power plant was hit */
 	blackoutMs: number;
 	score: number;
@@ -110,6 +114,7 @@ export function createGame(field: DomeField = BASE_FIELD): DomeState {
 		interceptors: [],
 		ruined: TARGETS.map(() => false),
 		ammo: createAmmo(),
+		interceptor: 'standard',
 		blackoutMs: 0,
 		score: 0,
 		lives: STARTING_LIVES,
@@ -293,18 +298,25 @@ function launchAt(state: DomeState, rocket: Rocket): DomeEvent[] {
 		// A tap during the short cooldown between shots is simply ignored
 		return state.ammo.loaded <= 0 ? [{ type: 'no-ammo' }] : [];
 	}
-	fire(state.ammo);
+	const stats = INTERCEPTOR_STATS[state.interceptor];
+	if (!fire(state.ammo, stats.ammo)) return state.ammo.loaded <= 0 ? [{ type: 'no-ammo' }] : [];
 	const interceptor = launchInterceptor(
 		state.nextId++,
 		rocket.id,
 		rocket.flight,
 		rocket.elapsedMs,
 		undefined,
-		state.field.interceptorSpeed
+		state.field.interceptorSpeed * stats.speed,
+		stats.radius
 	);
 	rocket.interceptorId = interceptor.id;
 	state.interceptors.push(interceptor);
 	return [{ type: 'launch', x: interceptor.x, y: interceptor.y, heading: interceptor.heading }];
+}
+
+/** Switches the interceptor loaded for the next shot */
+export function setInterceptor(state: DomeState, kind: InterceptorKind): void {
+	state.interceptor = kind;
 }
 
 /** The input: a tap at a world point launches an interceptor at the rocket nearest to it */

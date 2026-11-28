@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { fire } from './ammo.js';
 import { createRandom } from '#lib/game/random.js';
 import {
 	BLACKOUT_MS,
@@ -7,10 +8,12 @@ import {
 	STARTING_LIVES,
 	TARGETS,
 	WASTE_PENALTY,
+	INTERCEPTOR_STATS,
 	WAVE_BONUS
 } from './config.js';
 import {
 	createGame,
+	setInterceptor,
 	rocketPosition,
 	rocketValue,
 	step,
@@ -415,5 +418,25 @@ describe('whole runs', () => {
 			expect(state.wave).toBeLessThan(40);
 			expect(state.intercepts).toBeGreaterThan(30);
 		}
+	});
+});
+
+describe('interceptor types', () => {
+	it('switches the loaded interceptor', () => {
+		const state = createGame();
+		expect(state.interceptor).toBe('standard');
+		setInterceptor(state, 'swift');
+		expect(state.interceptor).toBe('swift');
+	});
+
+	it('charges two rounds for a heavy interceptor', () => {
+		const state = createGame();
+		const before = state.ammo.loaded;
+		setInterceptor(state, 'heavy');
+		state.phase = 'wave';
+		state.rockets = [];
+		// A direct ammo check keeps this independent of rocket geometry
+		expect(fire(state.ammo, INTERCEPTOR_STATS.heavy.ammo)).toBe(true);
+		expect(state.ammo.loaded).toBe(before - 2);
 	});
 });

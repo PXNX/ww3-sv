@@ -32,6 +32,7 @@ import { drawScenePreview, type Effect, type SceneExtras } from '#lib/game/dome/
 import { comboMultiplier } from '#lib/game/dome/priority.js';
 import {
 	createGame,
+	setInterceptor as setInterceptorRule,
 	step,
 	tap,
 	tapMostUrgent,
@@ -39,6 +40,7 @@ import {
 	type DomeState
 } from '#lib/game/dome/state.js';
 import type { Point } from '#lib/game/dome/trajectory.js';
+import type { InterceptorKind } from '#lib/game/dome/config.js';
 import { flightPoint } from '#lib/game/dome/trajectory.js';
 import { createRandom, randomSeed, type Random } from '#lib/game/random.js';
 import { haptic } from '#lib/haptic/haptic.svelte.js';
@@ -77,6 +79,8 @@ export class DomeGame {
 	/** Interceptors loaded and the reload progress of the next one, 0 to 100 */
 	loaded = $state(MAX_AMMO);
 	reloadPercent = $state(0);
+	/** Selected interceptor type, mirrored from the rules state */
+	interceptor = $state<InterceptorKind>('standard');
 	blackout = $state(false);
 	intercepts = $state(0);
 	wasted = $state(0);
@@ -162,6 +166,12 @@ export class DomeGame {
 	forfeit() {
 		if (this.status !== 'playing' && this.status !== 'paused') return;
 		this.#finish();
+	}
+
+	/** Chooses the interceptor loaded for the next shot */
+	setInterceptor(kind: InterceptorKind) {
+		setInterceptorRule(this.state, kind);
+		this.#syncChrome();
 	}
 
 	/** A tap or click on the field, in world units */

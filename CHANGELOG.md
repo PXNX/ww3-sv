@@ -8,6 +8,11 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 
 ### Improved
 
+#### dome
+
+- Three selectable interceptors: a fast one for late leakers, a heavy one with a wide blast for
+  clusters (costing two rounds), and the balanced standard shot
+
 #### whack
 
 - Follow-up chains: every third hit queues one more talking head in the same podium a moment later,

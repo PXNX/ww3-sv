@@ -1,5 +1,9 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"dome_interceptor_label": "Abfangjäger",
+	"dome_interceptor_standard": "Standard",
+	"dome_interceptor_swift": "Schnell",
+	"dome_interceptor_heavy": "Schwer",
 	"suez_tide_high": "Flut: Züge greifen besser, die Schlange wächst schneller",
 	"suez_tide_low": "Ebbe: die Schlange entspannt sich",
 	"suez_tide_rising": "Steigende Flut",

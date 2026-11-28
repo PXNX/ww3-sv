@@ -1,5 +1,9 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"dome_interceptor_label": "اعتراضية",
+	"dome_interceptor_standard": "قياسية",
+	"dome_interceptor_swift": "سريعة",
+	"dome_interceptor_heavy": "ثقيلة",
 	"suez_tide_high": "مد عالٍ: الشد أقوى والصف ينمو أسرع",
 	"suez_tide_low": "مد منخفض: الصف يهدأ",
 	"suez_tide_rising": "مد مرتفع",

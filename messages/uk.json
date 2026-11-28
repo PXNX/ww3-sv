@@ -1,5 +1,9 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"dome_interceptor_label": "Перехоплювач",
+	"dome_interceptor_standard": "Стандартний",
+	"dome_interceptor_swift": "Швидкий",
+	"dome_interceptor_heavy": "Важкий",
 	"suez_tide_high": "Приплив: тяга сильніша, черга росте швидше",
 	"suez_tide_low": "Відплив: черга повільніша",
 	"suez_tide_rising": "Приплив зростає",

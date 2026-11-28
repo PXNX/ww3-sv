@@ -21,9 +21,9 @@ export function canFire(ammo: Ammo): boolean {
 }
 
 /** Uses one interceptor; returns false (and changes nothing) when none is ready */
-export function fire(ammo: Ammo): boolean {
-	if (!canFire(ammo)) return false;
-	ammo.loaded -= 1;
+export function fire(ammo: Ammo, cost = 1): boolean {
+	if (!canFire(ammo) || ammo.loaded < cost) return false;
+	ammo.loaded -= cost;
 	ammo.cooldownMs = SHOT_COOLDOWN_MS;
 	return true;
 }

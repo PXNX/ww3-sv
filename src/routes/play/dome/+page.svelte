@@ -23,6 +23,11 @@
 	import { tutorialSteps } from './tutorial.js';
 
 	const game = new DomeGame({ reducedMotion: prefersReducedMotion() });
+	const interceptorText = {
+		standard: m.dome_interceptor_standard,
+		swift: m.dome_interceptor_swift,
+		heavy: m.dome_interceptor_heavy
+	};
 	const modeName = m.mode_dome_name();
 
 	// The how-to-play screen opens on the first visit and whenever the help button is tapped
@@ -121,6 +126,20 @@
 						{/each}
 					</div>
 				{/key}
+			</div>
+			<div class="flex items-center gap-1" role="group" aria-label={m.dome_interceptor_label()}>
+				{#each ['standard', 'swift', 'heavy'] as kind (kind)}
+					<button
+						type="button"
+						class="btn-chunky px-1.5 py-0.5 text-[0.65rem] {game.interceptor === kind
+							? 'bg-explosion-yellow'
+							: 'bg-paper'}"
+						aria-pressed={game.interceptor === kind}
+						onclick={() => game.setInterceptor(kind as 'standard' | 'swift' | 'heavy')}
+					>
+						{interceptorText[kind as 'standard' | 'swift' | 'heavy']()}
+					</button>
+				{/each}
 			</div>
 			{#key game.wave}
 				<p dir="auto" class="dome-pop font-display text-sm font-bold tabular-nums sm:text-base">

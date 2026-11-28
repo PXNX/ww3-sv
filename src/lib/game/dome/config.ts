@@ -80,3 +80,15 @@ export const HARMLESS_SHARE_END = 0.5;
 export const FAST_SHARE_START = 0;
 export const FAST_SHARE_END = 0.3;
 export const FAST_FACTOR = 0.62;
+
+/** Three interceptors: a fast one for late leakers, a heavy one with a wide blast for clusters */
+export const INTERCEPTOR_KINDS = ['standard', 'swift', 'heavy'] as const;
+export type InterceptorKind = (typeof INTERCEPTOR_KINDS)[number];
+export const INTERCEPTOR_STATS: Record<
+	InterceptorKind,
+	{ speed: number; radius: number; ammo: number }
+> = {
+	standard: { speed: 1, radius: 1, ammo: 1 },
+	swift: { speed: 1.35, radius: 0.8, ammo: 1 },
+	heavy: { speed: 0.8, radius: 1.6, ammo: 2 }
+};

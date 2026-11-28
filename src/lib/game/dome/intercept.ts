@@ -24,6 +24,8 @@ export interface Interceptor {
 	/** World units per second */
 	speed: number;
 	ageMs: number;
+	/** Hit radius multiplier, from the interceptor type */
+	radius: number;
 }
 
 export interface Lead {
@@ -56,7 +58,8 @@ export function launchInterceptor(
 	flight: Flight,
 	rocketElapsedMs: number,
 	from: Point = { x: BATTERY_X, y: BATTERY_Y },
-	speed = INTERCEPTOR_SPEED
+	speed = INTERCEPTOR_SPEED,
+	radius = 1
 ): Interceptor {
 	const lead = leadPoint(from, flight, rocketElapsedMs, speed);
 	return {
@@ -66,7 +69,8 @@ export function launchInterceptor(
 		y: from.y,
 		heading: Math.atan2(lead.point.y - from.y, lead.point.x - from.x),
 		speed,
-		ageMs: 0
+		ageMs: 0,
+		radius
 	};
 }
 
@@ -98,5 +102,8 @@ export function stepInterceptor(
 	interceptor.x += Math.cos(interceptor.heading) * interceptor.speed * dt;
 	interceptor.y += Math.sin(interceptor.heading) * interceptor.speed * dt;
 	interceptor.ageMs += dtMs;
-	return distance(interceptor, flightPoint(flight, rocketElapsedMs)) <= INTERCEPT_RADIUS;
+	return (
+		distance(interceptor, flightPoint(flight, rocketElapsedMs)) <=
+		INTERCEPT_RADIUS * interceptor.radius
+	);
 }
