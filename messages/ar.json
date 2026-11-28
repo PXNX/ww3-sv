@@ -1,5 +1,7 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"balloon_popup_photo_detail": "صورة +{points} · الارتفاع {altitude}% · التكوين {framing}% · الطقس {weather}%",
+	"balloon_forecast_title": "توقعات الطقس",
 	"vault_popup_timeout": "انتهى الوقت — الخزنة تُغلق",
 	"vault_hud_time": "{seconds}ث متبقية",
 	"vault_tell_label": "الصراف ينظر إلى {direction}",

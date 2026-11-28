@@ -1,5 +1,7 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"balloon_popup_photo_detail": "Foto +{points} · Höhe {altitude}% · Bildausschnitt {framing}% · Wetter {weather}%",
+	"balloon_forecast_title": "Wettervorhersage",
 	"vault_popup_timeout": "Die Zeit ist um — der Tresor schließt",
 	"vault_hud_time": "{seconds}s übrig",
 	"vault_tell_label": "Der Bankier blickt nach {direction}",

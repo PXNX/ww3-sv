@@ -1,5 +1,7 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"balloon_popup_photo_detail": "عکس +{points} · ارتفاع {altitude}% · کادر {framing}% · آب و هوا {weather}%",
+	"balloon_forecast_title": "پیش بینی",
 	"vault_popup_timeout": "زمان تمام شد — گاوصندوق قفل میشود",
 	"vault_hud_time": "{seconds}ث باقی",
 	"vault_tell_label": "بانکدار به {direction} نگاه میکند",
