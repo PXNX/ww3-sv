@@ -8,6 +8,11 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 
 ### New
 
+#### shop
+
+- A `PRO6M` gift code that grants six months of Pro once per Telegram account, redeemable from a
+  bot link, a Mini App link or the supply depot
+
 #### convoy
 
 - Ship choice before a run: the tanker is balanced, the corvette trades a heart for speed and a
