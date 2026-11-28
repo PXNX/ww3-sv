@@ -130,6 +130,9 @@ export interface Target {
 	hp: number;
 	/** Counts down after a hardened drone shrugged off a cut */
 	flashMs: number;
+	/** Shared with the other drones of a swarm, for relay chain cuts */
+	relay?: string;
+	isRelay?: boolean;
 }
 
 export interface Fence {
@@ -150,6 +153,9 @@ export interface Spawn {
 	aim: number;
 	/** Vehicles: coming from the left */
 	left: boolean;
+	/** Swarms share a relay: cutting it drops the whole group */
+	relay?: string;
+	isRelay?: boolean;
 }
 
 export interface KillState {
@@ -205,6 +211,7 @@ export type KillEvent =
 			precise: boolean;
 	  }
 	| { type: 'shield'; x: number; y: number }
+	| { type: 'relay'; x: number; y: number; count: number; points: number }
 	| { type: 'combo'; x: number; y: number; multiplier: number }
 	| { type: 'no-energy'; x: number; y: number }
 	| { type: 'splash'; x: number }
@@ -320,13 +327,16 @@ export function planWave(wave: number, random: Random): Spawn[] {
 
 		if (kind === 'swarm') {
 			const size = Math.min(goal - threats, 4 + Math.floor(wave / 4));
+			const relay = `swarm-${index}-${Math.floor(at)}`;
 			for (let i = 0; i < size; i++) {
 				spawns.push({
 					atMs: at + i * 170,
 					kind,
 					y: Math.min(SKY_BOTTOM, Math.max(SKY_TOP, y + (i - size / 2) * 18)),
 					aim: aim + (i - size / 2) * 10,
-					left: true
+					left: true,
+					relay,
+					isRelay: i === 0
 				});
 			}
 			threats += size;
@@ -364,7 +374,9 @@ function newTarget(state: KillState, spawn: Spawn): Target {
 			stateMs: 0,
 			spin: 0,
 			hp: DRONE_STATS[spawn.kind].hp,
-			flashMs: 0
+			flashMs: 0,
+			relay: spawn.relay,
+			isRelay: spawn.isRelay
 		};
 	} else {
 		const speed = CIVILIAN_SPEED[spawn.kind as CivilianKind];
@@ -402,12 +414,38 @@ function loseHeart(state: KillState, events: KillEvent[]) {
 	}
 }
 
+/** A swarm's relay keeps the group online; cutting it drops every drone still on that relay. */
+function dropFollowers(
+	state: KillState,
+	target: Target,
+	events: KillEvent[],
+	how: { chain?: boolean }
+) {
+	if (!target.isRelay || !target.relay || how.chain) return;
+	const followers = state.targets.filter(
+		(other) =>
+			other !== target &&
+			other.relay === target.relay &&
+			other.state === 'flying' &&
+			!other.civilian
+	);
+	for (const follower of followers) cutDrone(state, follower, events, { free: true, chain: true });
+	if (followers.length > 0)
+		events.push({
+			type: 'relay',
+			x: target.x,
+			y: target.y,
+			count: followers.length,
+			points: followers.length * POINTS_FREE
+		});
+}
+
 /** Sends a drone into the lake. `free` cuts (a purge) pay little and do not build the streak */
 function cutDrone(
 	state: KillState,
 	target: Target,
 	events: KillEvent[],
-	how: { fenced?: boolean; free?: boolean; precise?: boolean } = {}
+	how: { fenced?: boolean; free?: boolean; precise?: boolean; chain?: boolean } = {}
 ) {
 	const kind = target.kind as DroneKind;
 	target.state = 'falling';
@@ -441,6 +479,7 @@ function cutDrone(
 			precise
 		});
 		if (mult > before) events.push({ type: 'combo', x: target.x, y: target.y, multiplier: mult });
+		dropFollowers(state, target, events, how);
 		return;
 	}
 	state.score += points;
@@ -454,6 +493,8 @@ function cutDrone(
 		fenced: false,
 		precise: false
 	});
+
+	dropFollowers(state, target, events, how);
 }
 
 /** Whether segment a to b crosses segment c to d */

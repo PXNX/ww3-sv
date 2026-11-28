@@ -519,3 +519,43 @@ describe('waves', () => {
 		expect(run(state, 200).some((event) => event.type === 'post')).toBe(true);
 	});
 });
+
+describe('swarm relay chains', () => {
+	it('drops the whole swarm when its relay is cut', () => {
+		const state = createGame();
+		state.phase = 'wave';
+		state.wave = 4;
+		const relay = add(state, {
+			civilian: false,
+			kind: 'swarm',
+			x: 300,
+			y: 120,
+			relay: 'swarm-a',
+			isRelay: true
+		});
+		const followers = [
+			add(state, { civilian: false, kind: 'swarm', x: 320, y: 130, relay: 'swarm-a' }),
+			add(state, { civilian: false, kind: 'swarm', x: 340, y: 140, relay: 'swarm-a' })
+		];
+		const events = tap(state, relay.x, relay.y);
+		expect(events.some((event) => event.type === 'relay')).toBe(true);
+		for (const follower of followers) expect(follower.state).toBe('falling');
+	});
+
+	it('leaves other swarms alone', () => {
+		const state = createGame();
+		state.phase = 'wave';
+		state.wave = 4;
+		const relay = add(state, {
+			civilian: false,
+			kind: 'swarm',
+			x: 300,
+			y: 120,
+			relay: 'swarm-a',
+			isRelay: true
+		});
+		const other = add(state, { civilian: false, kind: 'swarm', x: 400, y: 120, relay: 'swarm-b' });
+		tap(state, relay.x, relay.y);
+		expect(other.state).toBe('flying');
+	});
+});
