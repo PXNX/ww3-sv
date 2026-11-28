@@ -200,6 +200,18 @@
 		<circle cx="72" cy="60" r="4.5" fill="#ff2d2d" stroke-width="2" />
 		<circle cx="47" cy="59" r="1.5" fill="#ffffff" stroke="none" />
 		<circle cx="71" cy="59" r="1.5" fill="#ffffff" stroke="none" />
+	{:else if current.eyes === 'stars'}
+		<!-- Star-struck eyes -->
+		<path
+			d="M48 52 L51 58 L58 59 L52 64 L54 71 L48 67 L42 71 L44 64 L38 59 L45 58 Z"
+			fill="#f5c83a"
+			stroke-width="2"
+		/>
+		<path
+			d="M72 52 L75 58 L82 59 L76 64 L78 71 L72 67 L66 71 L68 64 L62 59 L69 58 Z"
+			fill="#f5c83a"
+			stroke-width="2"
+		/>
 	{:else}
 		<path d="M36 55 L84 55" fill="none" stroke-width="3" />
 		<rect x="38" y="54" width="19" height="12" rx="5" fill={INK} />
@@ -225,6 +237,10 @@
 		/>
 		<path d="M60 62 L60 92" fill="none" stroke-width="2" opacity="0.5" />
 		<path d="M54 91 Q60 102 66 91" fill="#f7c96a" stroke-width="2" />
+	{:else if current.nose === 'clown'}
+		<!-- A bright red clown ball -->
+		<circle cx="60" cy="71" r="7" fill="#e5484d" stroke-width="2.5" />
+		<circle cx="58" cy="69" r="2" fill="#ffffff" stroke="none" opacity="0.7" />
 	{:else}
 		<path d="M58 60 C70 64 72 76 62 78 C60 78 58 76 59 74" fill={current.skin} stroke-width="2.5" />
 	{/if}
@@ -259,6 +275,17 @@
 			fill={current.hairColor}
 			stroke-width="2.5"
 		/>
+	{/if}
+
+	<!-- A full beard, in the hair colour -->
+	{#if current.facial === 'beard' && !anonymous}
+		<path
+			d="M{left + 3} 78 C{left + 4} 108 {right - 4} 112 {right - 3} 78 C{right - 8} 96 {left +
+				8} 96 {left + 3} 78 Z"
+			fill={current.hairColor}
+			stroke-width="2.5"
+		/>
+		<path d="M52 85 Q60 90 68 85" fill="none" stroke-width="2" opacity="0.5" />
 	{/if}
 
 	<!-- Front hair, or the rim of the hood -->
@@ -494,6 +521,47 @@
 			stroke="#ffffff"
 			stroke-width="2.5"
 			opacity="0.7"
+		/>
+	{:else if current.hat === 'halo'}
+		<!-- A gold halo floating above the head -->
+		<ellipse
+			cx="60"
+			cy={head.top - 16}
+			rx="24"
+			ry="7"
+			fill="none"
+			stroke="#f5c83a"
+			stroke-width="5"
+		/>
+		<ellipse
+			cx="60"
+			cy={head.top - 16}
+			rx="24"
+			ry="7"
+			fill="none"
+			stroke="#ffffff"
+			stroke-width="1.5"
+			opacity="0.8"
+		/>
+	{:else if current.hat === 'cowboy'}
+		<!-- A wide-brimmed cowboy hat with a creased crown -->
+		<ellipse cx="60" cy={head.top + 12} rx="46" ry="9" fill="#8a5a33" />
+		<path
+			d="M{60 - 24} {head.top + 12} L{60 - 20} {head.top - 20} Q60 {head.top - 28} {60 +
+				20} {head.top - 20} L{60 + 24} {head.top + 12} Z"
+			fill="#a06a3c"
+		/>
+		<path
+			d="M{60 - 25} {head.top + 4} L{60 + 25} {head.top + 4}"
+			fill="none"
+			stroke="#4a2f1a"
+			stroke-width="5"
+		/>
+		<path
+			d="M{60 - 10} {head.top - 17} Q60 {head.top - 11} {60 + 10} {head.top - 17}"
+			fill="none"
+			stroke="#4a2f1a"
+			stroke-width="2.5"
 		/>
 	{/if}
 </svg>

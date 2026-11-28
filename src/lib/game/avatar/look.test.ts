@@ -81,7 +81,7 @@ describe('an avatar look', () => {
 		const { facial, ...old } = DEFAULT_LOOK;
 		expect(facial).toBe('none');
 		expect(parseLook(old)).toEqual(DEFAULT_LOOK);
-		expect(parseLook({ ...old, facial: 'beard' })).toBeNull();
+		expect(parseLook({ ...old, facial: 'beard' })).toEqual({ ...DEFAULT_LOOK, facial: 'beard' });
 	});
 
 	it('offers at least two choices for every part', () => {

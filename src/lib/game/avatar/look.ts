@@ -16,11 +16,11 @@ export const SHIRT_TYPES = [
 	'matrix-coat'
 ] as const;
 export const FACE_SHAPES = ['round', 'oval', 'square', 'long'] as const;
-export const NOSES = ['button', 'pointy', 'potato', 'hook', 'beak'] as const;
+export const NOSES = ['button', 'pointy', 'potato', 'hook', 'beak', 'clown'] as const;
 /** Hair on the face; the mustache is an extra look */
-export const FACIAL_HAIR = ['none', 'mustache'] as const;
+export const FACIAL_HAIR = ['none', 'mustache', 'beard'] as const;
 /** Laser eyes are sold for Telegram Stars */
-export const EYE_TYPES = ['dots', 'wide', 'sleepy', 'angry', 'shades', 'laser'] as const;
+export const EYE_TYPES = ['dots', 'wide', 'sleepy', 'angry', 'shades', 'laser', 'stars'] as const;
 export const HAIRSTYLES = [
 	'bald',
 	'buzz',
@@ -44,7 +44,9 @@ export const HATS = [
 	'cylinder',
 	'cat-ears',
 	'propeller',
-	'tinfoil'
+	'tinfoil',
+	'halo',
+	'cowboy'
 ] as const;
 
 /** Skin tones from light to deep; the first matches the game's caricature skin token */
@@ -204,7 +206,9 @@ export const ANONYMOUS_LOOK: AvatarLook = {
 export function randomLook(seed: number = randomSeed(), allowed?: LookAllowed): AvatarLook {
 	const random = createRandom(seed);
 	// The ogre ears belong to the ready-made green agent, not to a random passer-by
-	const randomHats = HATS.filter((hat) => hat !== 'ogre-ears');
+	const randomHats = HATS.filter(
+		(hat) => hat !== 'ogre-ears' && hat !== 'halo' && hat !== 'cowboy'
+	);
 	return {
 		version: 1,
 		shirt: pickAllowed(random, 'shirt', SHIRT_TYPES, DEFAULT_LOOK.shirt, allowed),
@@ -212,7 +216,13 @@ export function randomLook(seed: number = randomSeed(), allowed?: LookAllowed): 
 		face: pickAllowed(random, 'face', FACE_SHAPES, DEFAULT_LOOK.face, allowed),
 		// The green "alien" tone is a joke option, not something to hand out at random
 		skin: pickAllowed(random, 'skin', SKIN_COLORS.slice(0, -1), DEFAULT_LOOK.skin, allowed),
-		nose: pickAllowed(random, 'nose', NOSES, DEFAULT_LOOK.nose, allowed),
+		nose: pickAllowed(
+			random,
+			'nose',
+			NOSES.filter((nose) => nose !== 'clown'),
+			DEFAULT_LOOK.nose,
+			allowed
+		),
 		eyes: pickAllowed(random, 'eyes', EYE_TYPES, DEFAULT_LOOK.eyes, allowed),
 		hair: pickAllowed(random, 'hair', HAIRSTYLES, DEFAULT_LOOK.hair, allowed),
 		hairColor: pickAllowed(random, 'hairColor', HAIR_COLORS, DEFAULT_LOOK.hairColor, allowed),
@@ -221,11 +231,17 @@ export function randomLook(seed: number = randomSeed(), allowed?: LookAllowed): 
 			random() < 0.6
 				? 'none'
 				: pickAllowed(random, 'hat', randomHats.slice(1), DEFAULT_LOOK.hat, allowed),
-		// Few agents wear a mustache, and only one that is open to them
+		// Few agents wear facial hair, and only a kind that is open to them
 		facial:
 			random() < 0.85
 				? 'none'
-				: pickAllowed(random, 'facial', FACIAL_HAIR, DEFAULT_LOOK.facial, allowed)
+				: pickAllowed(
+						random,
+						'facial',
+						FACIAL_HAIR.filter((hair) => hair !== 'beard'),
+						DEFAULT_LOOK.facial,
+						allowed
+					)
 	};
 }
 
