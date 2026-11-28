@@ -77,6 +77,11 @@ Interactive how-to-play walkthroughs in every game, with spotlights on the contr
 
 ### Improved
 
+#### merge
+
+- Three optional run goals, drawn each game and paid out on completion: reach a ship tier, clear
+  mines, pull off a triple merge or hit a score target
+
 #### maze
 
 - A faint breadcrumb trail shows the route already walked, with the last step picked out
