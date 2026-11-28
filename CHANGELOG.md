@@ -13,6 +13,12 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 - Ship choice before a run: the tanker is balanced, the corvette trades a heart for speed and a
   narrower silhouette, and the tug is slow but efficient and starts with an escort
 
+#### balloon
+
+- Photos are now scored on altitude, framing and weather, shown after each snap, so lining up a
+  good shot pays more than a drive-by
+- A forecast strip before launch shows the first two wind patterns to help plan the climb
+
 #### vault
 
 - A heist timer: the vault locks when time runs out even with hearts left; matches buy time, the
