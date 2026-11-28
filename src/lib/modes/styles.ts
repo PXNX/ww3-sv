@@ -81,5 +81,6 @@ export const STYLE_OF_MODE: Record<ModeId, PlayStyle> = {
 	slider: 'reaction',
 	grain: 'platformer',
 	curling: 'platformer',
-	sabotage: 'tactics'
+	sabotage: 'tactics',
+	alignment: 'riddle'
 };

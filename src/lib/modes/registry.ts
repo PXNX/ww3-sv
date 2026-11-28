@@ -98,7 +98,8 @@ export type ModeId =
 	| 'curling'
 	| 'sabotage'
 	| 'killswitch'
-	| 'beachhead';
+	| 'beachhead'
+	| 'alignment';
 
 interface ModeBase {
 	id: ModeId;
@@ -624,6 +625,16 @@ export const MODES: readonly GameMode[] = [
 		leaders: ['maduro'],
 		name: m.mode_beachhead_name,
 		description: m.mode_beachhead_description
+	},
+	{
+		id: 'alignment',
+		status: 'playable',
+		href: '/play/alignment',
+		icon: IconCpu,
+		tileClass: 'bg-cyan-300',
+		leaders: ['altman', 'amodei'],
+		name: m.mode_alignment_name,
+		description: m.mode_alignment_description
 	}
 ];
 
