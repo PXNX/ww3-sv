@@ -87,12 +87,15 @@ export function parseChangelog(markdown: string): ChangelogRelease[] {
 	let section: ChangeType | null = null;
 	let scope: string | null = null;
 	let skipping = false;
+	/** The last bullet, so wrapped lines can be joined back into one entry */
+	let lastEntry: ChangeEntry | null = null;
 	for (const [index, raw] of markdown.split(/\r?\n/u).entries()) {
 		const line = raw.trimEnd();
 		const at = `line ${index + 1}`;
 		if (line.startsWith('## ')) {
 			section = null;
 			scope = null;
+			lastEntry = null;
 			if (/^## \[?unreleased\]?/iu.test(line)) {
 				current = null;
 				skipping = true;
@@ -113,14 +116,22 @@ export function parseChangelog(markdown: string): ChangelogRelease[] {
 			if (!type) throw new ChangelogError(`${at}: unknown section "${line.slice(4).trim()}"`);
 			section = type;
 			scope = null;
+			lastEntry = null;
 		} else if (line.startsWith('#### ')) {
 			if (!section) throw new ChangelogError(`${at}: scope outside a section`);
 			const name = line.slice(5).trim();
 			if (!name) throw new ChangelogError(`${at}: empty scope`);
 			scope = name;
+			lastEntry = null;
 		} else if (/^[-*] /u.test(line)) {
 			if (!section) throw new ChangelogError(`${at}: entry outside a section`);
-			(current.entries[section] ??= []).push({ scope, text: line.slice(2).trim() });
+			lastEntry = { scope, text: line.slice(2).trim() };
+			(current.entries[section] ??= []).push(lastEntry);
+		} else if (line.trim() && section && lastEntry) {
+			// Wrapped line of the previous bullet
+			lastEntry.text += ` ${line.trim()}`;
+		} else if (!line.trim()) {
+			lastEntry = null;
 		} else if (line.trim() && !section && !current.summary) {
 			current.summary = line.trim();
 		}

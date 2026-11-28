@@ -6,7 +6,9 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 
 ## Unreleased
 
-The version history is now part of the game, grouped by change type and scope.
+## v1.6.0 - 2026-11-28
+
+Interactive how-to-play walkthroughs in every game, with spotlights on the controls they describe.
 
 ### New
 

@@ -89,6 +89,24 @@ describe('changelog parsing', () => {
 		});
 	});
 
+	it('joins wrapped bullet lines into one entry', () => {
+		const releases = parseChangelog(`## v1.2.0 - 2026-11-13
+
+A release.
+
+### New
+- A long entry that wraps onto
+  a second line and keeps its scope
+#### tutorials
+- Another entry, also
+  wrapped over two lines
+`);
+		expect(releases[0]!.entries.new).toEqual([
+			{ scope: null, text: 'A long entry that wraps onto a second line and keeps its scope' },
+			{ scope: 'tutorials', text: 'Another entry, also wrapped over two lines' }
+		]);
+	});
+
 	it('rejects malformed sections, entries and scopes', () => {
 		expect(() => parseChangelog('## 2026.11 - 2026-11-12')).toThrow(ChangelogError);
 		expect(() => parseChangelog('## v1.1.0 - 2026-11-12\n### Stuff\n- x')).toThrow(
