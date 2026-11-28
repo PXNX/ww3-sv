@@ -5,7 +5,7 @@
  * synced after every event, not every frame.
  */
 import { STARTING_LIVES } from '#lib/game/vault/config.js';
-import type { BankerMood } from '#lib/game/vault/banker.js';
+import { bankerTell, type BankerMood, type TellDirection } from '#lib/game/vault/banker.js';
 import type { Card } from '#lib/game/vault/deck.js';
 import {
 	createGame,
@@ -57,6 +57,10 @@ export class VaultGame {
 	cards = $state.raw<Card[]>([]);
 	/** The banker's raised eyebrows, 0 to 2 (the third one costs a heart and resets this) */
 	eyebrows = $state(0);
+	/** Milliseconds left on the heist timer, synced every step for the HUD */
+	timeMs = $state(0);
+	/** Where the banker glances while the bonus pair is still hidden */
+	tell = $state<TellDirection | null>(null);
 	/** Whether the phone is ringing right now */
 	ringing = $state(false);
 	/** Cards that were just shuffled by a phone call and are still wobbling */
@@ -163,7 +167,7 @@ export class VaultGame {
 			this.#ringSoundMs = RING_SOUND_MS;
 			this.#play('ding', 0);
 		}
-		if (events.length > 0) this.#sync();
+		this.#sync();
 	}
 
 	/** Draws the vault onto the shared score card: matched cards gold, the others slate */
@@ -249,6 +253,9 @@ export class VaultGame {
 				this.shuffled = [];
 				this.wrong = [];
 				break;
+			case 'time-up':
+				this.#showToast(m.vault_popup_timeout());
+				break;
 			case 'game-over':
 				this.#sync();
 				this.#finish();
@@ -291,6 +298,8 @@ export class VaultGame {
 		this.rows = state.rows;
 		this.cards = state.cards.map((card) => ({ ...card }));
 		this.eyebrows = state.eyebrows;
+		this.timeMs = state.timeMs;
+		this.tell = bankerTell(state.cards, state.cols, state.rows);
 		this.ringing = state.ringMs > 0;
 		this.levelsCleared = state.levelsCleared;
 		this.specialPairs = state.specialPairs;

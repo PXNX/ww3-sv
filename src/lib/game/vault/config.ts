@@ -5,6 +5,19 @@
 
 export const STARTING_LIVES = 3;
 
+/**
+ * Heist timer: the vault locks when it runs out, even with hearts to spare. Matches buy time, so
+ * efficient clears extend the run while hunting for one last bonus pair is a gamble.
+ */
+export const TIME_START_MS = 75_000;
+export const TIME_MAX_MS = 120_000;
+export const TIME_PER_MATCH_MS = 4_000;
+export const TIME_PER_SPECIAL_MS = 9_000;
+export const TIME_PER_MISMATCH_MS = 6_000;
+export const TIME_LEVEL_BONUS_MS = 10_000;
+/** The timer turns red below this, matching the fuel warning in other modes */
+export const TIME_LOW_MS = 15_000;
+
 /** Mismatches that make the banker lose his patience: the third one costs a heart */
 export const EYEBROWS_PER_HEART = 3;
 /** Matches in a row that make the banker lower one raised eyebrow again */

@@ -18,7 +18,13 @@ import {
 	REVEAL_MS,
 	REVEAL_STEP_MS,
 	RING_MS,
-	STARTING_LIVES
+	STARTING_LIVES,
+	TIME_LEVEL_BONUS_MS,
+	TIME_MAX_MS,
+	TIME_PER_MATCH_MS,
+	TIME_PER_MISMATCH_MS,
+	TIME_PER_SPECIAL_MS,
+	TIME_START_MS
 } from './config.js';
 import { buildDeck, levelConfig, type Card } from './deck.js';
 import { nextPhoneDelay, shuffleCount, shuffleFaceDown } from './phone.js';
@@ -36,6 +42,8 @@ export interface VaultState {
 	selected: number[];
 	score: number;
 	lives: number;
+	/** Milliseconds left before the vault locks; hearts stay the hard limit */
+	timeMs: number;
 	/** Banker's raised eyebrows since the last heart or the start of the level, 0 to 2 */
 	eyebrows: number;
 	/** Matches in a row */
@@ -63,6 +71,7 @@ export type VaultEvent =
 	| { type: 'shuffle'; indices: number[] }
 	| { type: 'level-clear'; level: number; bonus: number; flawless: boolean }
 	| { type: 'level'; level: number }
+	| { type: 'time-up' }
 	| { type: 'game-over' };
 
 /** Milliseconds a mismatched pair stays visible on a level */
@@ -95,6 +104,7 @@ function fillLevel(state: VaultState, level: number, random: Random, first: bool
 	state.ringMs = 0;
 	state.clearMs = 0;
 	state.phoneMs = nextPhoneDelay(config.level, random, first);
+	state.timeMs = TIME_START_MS;
 	state.phase = 'play';
 }
 
@@ -102,6 +112,7 @@ export function createGame(random: Random): VaultState {
 	const state = {
 		score: 0,
 		lives: STARTING_LIVES,
+		timeMs: TIME_START_MS,
 		levelsCleared: 0,
 		specialPairs: 0
 	} as VaultState;
@@ -130,6 +141,10 @@ export function flipCard(state: VaultState, index: number): VaultEvent[] {
 		const special = result === 'special';
 		const points = matchPoints(special, state.streak);
 		state.score += points;
+		state.timeMs = Math.min(
+			TIME_MAX_MS,
+			state.timeMs + (special ? TIME_PER_SPECIAL_MS : TIME_PER_MATCH_MS)
+		);
 		if (special) state.specialPairs += 1;
 		events.push({ type: 'match', indices: [a, b], special, points, streak: state.streak });
 		if (state.streak % CALM_STREAK === 0 && state.eyebrows > 0) {
@@ -142,6 +157,7 @@ export function flipCard(state: VaultState, index: number): VaultEvent[] {
 
 	state.streak = 0;
 	state.mismatches += 1;
+	state.timeMs = Math.max(0, state.timeMs - TIME_PER_MISMATCH_MS);
 	state.eyebrows += 1;
 	const heartLost = state.eyebrows >= EYEBROWS_PER_HEART;
 	if (heartLost) {
@@ -149,10 +165,10 @@ export function flipCard(state: VaultState, index: number): VaultEvent[] {
 		state.lives -= 1;
 	}
 	events.push({ type: 'mismatch', indices: [a, b], eyebrows: state.eyebrows, heartLost });
-	if (state.lives <= 0) {
+	if (state.lives <= 0 || state.timeMs <= 0) {
 		state.phase = 'over';
 		state.ringMs = 0;
-		events.push({ type: 'game-over' });
+		events.push(state.timeMs <= 0 ? { type: 'time-up' } : { type: 'game-over' });
 	} else {
 		state.hideMs = revealMs(state.level);
 	}
@@ -163,6 +179,7 @@ function clearLevel(state: VaultState): VaultEvent {
 	const flawless = state.mismatches === 0;
 	const bonus = POINTS_LEVEL * state.level + (flawless ? POINTS_FLAWLESS : 0);
 	state.score += bonus;
+	state.timeMs = Math.min(TIME_MAX_MS, state.timeMs + TIME_LEVEL_BONUS_MS);
 	state.levelsCleared += 1;
 	state.phase = 'clearing';
 	state.clearMs = LEVEL_CLEAR_MS;
@@ -174,6 +191,16 @@ function clearLevel(state: VaultState): VaultEvent {
 export function stepGame(state: VaultState, dtMs: number, random: Random): VaultEvent[] {
 	const events: VaultEvent[] = [];
 	if (state.phase === 'over' || !(dtMs > 0)) return events;
+
+	if (state.phase === 'play') {
+		state.timeMs = Math.max(0, state.timeMs - dtMs);
+		if (state.timeMs <= 0) {
+			state.phase = 'over';
+			state.ringMs = 0;
+			events.push({ type: 'time-up' }, { type: 'game-over' });
+			return events;
+		}
+	}
 
 	if (state.phase === 'clearing') {
 		state.clearMs -= dtMs;

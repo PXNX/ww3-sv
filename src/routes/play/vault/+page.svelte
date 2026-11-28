@@ -14,7 +14,7 @@
 	import VaultField from '#lib/components/VaultField.svelte';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
 	import { bankerFile, bankerPortrait } from '#lib/game/vault/banker.js';
-	import { EYEBROWS_PER_HEART, STARTING_LIVES } from '#lib/game/vault/config.js';
+	import { EYEBROWS_PER_HEART, STARTING_LIVES, TIME_LOW_MS } from '#lib/game/vault/config.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { firstPlay } from '#lib/services/tutorial.js';
 	import { VaultGame } from '#lib/stores/vaultGame.svelte.js';
@@ -118,11 +118,35 @@
 			data-tutorial="hud"
 			class="flex w-full gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
 		>
-			<VaultBanker
-				eyebrows={game.eyebrows}
-				mood={game.mood}
-				class="size-16 shrink-0 self-center sm:size-20"
-			/>
+			<div class="relative shrink-0 self-center">
+				<VaultBanker eyebrows={game.eyebrows} mood={game.mood} class="size-16 sm:size-20" />
+				{#if game.tell}
+					{@const direction = game.tell}
+					<span
+						class="absolute -top-1 -right-1 flex size-6 items-center justify-center rounded-full border-2 border-ink bg-explosion-yellow text-sm font-black"
+						dir="ltr"
+						role="img"
+						aria-label={m.vault_tell_label({
+							direction:
+								direction === 'left'
+									? m.vault_tell_left()
+									: direction === 'right'
+										? m.vault_tell_right()
+										: direction === 'up'
+											? m.vault_tell_up()
+											: m.vault_tell_down()
+						})}
+					>
+						{direction === 'left'
+							? '←'
+							: direction === 'right'
+								? '→'
+								: direction === 'up'
+									? '↑'
+									: '↓'}
+					</span>
+				{/if}
+			</div>
 			<div class="flex min-w-0 flex-1 flex-col gap-1">
 				<div class="flex items-center justify-between gap-3">
 					<p dir="auto" class="font-display text-base font-bold sm:text-lg">
@@ -145,6 +169,14 @@
 					</span>
 					<p dir="auto" class="ms-auto font-display text-xs font-bold tabular-nums sm:text-sm">
 						{m.vault_hud_pairs({ count: pairsLeft })}
+					</p>
+					<p
+						dir="auto"
+						class="font-display text-xs font-bold tabular-nums sm:text-sm"
+						class:text-tie-red={game.timeMs < TIME_LOW_MS}
+						data-tutorial="timer"
+					>
+						{m.vault_hud_time({ seconds: Math.ceil(game.timeMs / 1000) })}
 					</p>
 				</div>
 				<p
