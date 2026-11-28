@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Caricature of Dario Amodei">
+	<!-- Original cartoon caricature: a safety-obsessed AI boss with a warning hardhat and a suspiciously shiny coin. Flat colours, soft oversized head, no traced reference. -->
+	<g stroke="#1c1c1c" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
+		<path d="M36 206 Q42 152 100 148 Q158 152 164 206 Z" fill="#D97757"/>
+		<path d="M74 152 Q100 176 126 152 L120 148 L80 148 Z" fill="#F7D9BF"/>
+		<rect x="86" y="126" width="28" height="28" rx="8" fill="#F7D9BF"/>
+		<ellipse cx="42" cy="92" rx="8" ry="12" fill="#F7D9BF"/>
+		<ellipse cx="158" cy="92" rx="8" ry="12" fill="#F7D9BF"/>
+		<ellipse cx="100" cy="86" rx="59" ry="55" fill="#F7D9BF"/>
+		<!-- A cautious yellow hardhat with a warning stripe -->
+		<path d="M42 72 C44 20 156 20 158 72 Z" fill="#F5C83A"/>
+		<path d="M38 72 L162 72" stroke="#1c1c1c" stroke-width="9"/>
+		<path d="M100 24 L100 68" stroke="#1c1c1c" stroke-width="4" opacity="0.4"/>
+		<path d="M60 52 L84 52 M116 52 L140 52" stroke="#E5484D" stroke-width="6"/>
+		<!-- Brows raised in permanent concern -->
+		<path d="M58 72 L90 66 M110 66 L142 72" stroke="#5A3A22" stroke-width="5"/>
+		<ellipse cx="76" cy="86" rx="10" ry="8" fill="#FFFFFF"/>
+		<ellipse cx="124" cy="86" rx="10" ry="8" fill="#FFFFFF"/>
+		<circle cx="78" cy="86" r="4" fill="#1c1c1c" stroke="none"/>
+		<circle cx="126" cy="86" r="4" fill="#1c1c1c" stroke="none"/>
+		<!-- One eye has a tiny gold glint: very serious about safety, also about the invoice -->
+		<circle cx="126" cy="84" r="2.5" fill="#F5C83A" stroke="none"/>
+		<path d="M88 100 Q100 106 112 100" fill="none" stroke-width="3"/>
+		<!-- Neat beard -->
+		<path d="M58 104 Q62 142 100 144 Q138 142 142 104 Q132 126 100 126 Q68 126 58 104 Z" fill="#5A3A22"/>
+		<path d="M84 116 Q100 122 116 116" fill="none" stroke="#3A2416" stroke-width="3"/>
+		<!-- A tiny gold coin pinned to the lapel -->
+		<circle cx="62" cy="168" r="10" fill="#F5C83A"/>
+		<path d="M62 162 L62 174 M57 168 L67 168" stroke="#8A6A1A" stroke-width="2.5"/>
+	</g>
+</svg>

@@ -12,7 +12,8 @@ describe('leaders', () => {
 			'zuckerberg',
 			'huang',
 			'altman',
-			'musk'
+			'musk',
+			'amodei'
 		]);
 	});
 

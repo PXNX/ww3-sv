@@ -24,7 +24,7 @@ export type LeaderId = CameoId | GuestLeaderId | 'trump';
 
 type GuestLeaderId = Extract<
 	GuestId,
-	'kim' | 'maduro' | 'zuckerberg' | 'huang' | 'altman' | 'musk'
+	'kim' | 'maduro' | 'zuckerberg' | 'huang' | 'altman' | 'musk' | 'amodei'
 >;
 
 export interface Leader {
@@ -84,6 +84,13 @@ export const LEADERS: readonly Leader[] = [
 		name: m.leader_musk_name,
 		flag: guestFlag('musk'),
 		portrait: guestPortrait('musk')
+	},
+	{
+		// The safety board's most frequent speaker, who also reads the invoices
+		id: 'amodei',
+		name: m.leader_amodei_name,
+		flag: guestFlag('amodei'),
+		portrait: guestPortrait('amodei')
 	}
 ];
 

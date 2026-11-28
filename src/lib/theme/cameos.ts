@@ -183,7 +183,8 @@ export function cameoPortrait(id: CameoId): string {
 }
 
 /** Guests that appear inside a mode or on the start screen rather than on the game-over roster */
-export type GuestId = 'vance' | 'kim' | 'maduro' | 'zuckerberg' | 'huang' | 'altman' | 'musk';
+export type GuestId =
+	'vance' | 'kim' | 'maduro' | 'zuckerberg' | 'huang' | 'altman' | 'musk' | 'amodei';
 
 /** Add a guest here once its portrait is in static/assets/cameos/<id>.svg */
 const SUPPLIED_GUESTS: readonly GuestId[] = [
@@ -193,7 +194,8 @@ const SUPPLIED_GUESTS: readonly GuestId[] = [
 	'zuckerberg',
 	'huang',
 	'altman',
-	'musk'
+	'musk',
+	'amodei'
 ];
 
 export function guestPortrait(id: GuestId): string {
@@ -211,7 +213,8 @@ const GUEST_FLAGS: Record<GuestId, string> = {
 	zuckerberg: 'meta',
 	huang: 'novideo',
 	altman: 'openai',
-	musk: 'spacex'
+	musk: 'spacex',
+	amodei: 'anthropic'
 };
 
 export function guestFlag(id: GuestId): string {
