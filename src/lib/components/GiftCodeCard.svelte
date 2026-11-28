@@ -49,7 +49,12 @@
 		soundManager().play('ui-error');
 		notice = {
 			ok: false,
-			text: result.status === 'used' ? m.shop_gift_used() : m.shop_gift_unknown()
+			text:
+				result.status === 'used'
+					? m.shop_gift_used()
+					: result.status === 'error'
+						? m.shop_gift_unavailable()
+						: m.shop_gift_unknown()
 		};
 	}
 

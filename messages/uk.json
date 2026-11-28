@@ -1,5 +1,6 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"shop_gift_unavailable": "Бот не зміг перевірити код зараз — спробуйте ще раз за мить.",
 	"fleethunt_pro_ammo": "Запаси Pro: додаткові постріли та сканування щодня.",
 	"warroom_council_used_pro": "Обидві директиви використано — завтра будуть нові.",
 	"warroom_council_pro_hint": "Pro: друга директива щодня.",

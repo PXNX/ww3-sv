@@ -1,5 +1,6 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"shop_gift_unavailable": "The bot could not check that code just now — try again in a moment.",
 	"fleethunt_pro_ammo": "Pro supply: extra shots and a scan each day.",
 	"warroom_council_used_pro": "Both directives used today — another comes tomorrow.",
 	"warroom_council_pro_hint": "Pro: a second directive every day.",
