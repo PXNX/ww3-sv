@@ -33,6 +33,10 @@ export type UnlockRequirement =
 	| { kind: 'hackers'; network: number }
 	/** A best score above this in any mode that keeps one in the career profile */
 	| { kind: 'score'; mode: ModeId; score: number }
+	/** Playing any of these modes opens the look */
+	| { kind: 'game'; modes: readonly ModeId[] }
+	/** Redeemed with a free gift code */
+	| { kind: 'gift'; code: string }
 	/** Bought with Telegram Stars; the sku is the bot's catalogue entry */
 	| { kind: 'stars'; sku: string };
 
@@ -199,6 +203,349 @@ export const LOOK_UNLOCKS: readonly LookUnlock[] = [
 		part: 'eyes',
 		value: 'stars',
 		requirement: { kind: 'score', mode: 'whack', score: 2500 }
+	},
+	{
+		id: 'play-blocks',
+		part: 'face',
+		value: 'square',
+		// Playing blocks opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['blocks'] }
+	},
+	{
+		id: 'play-minefield',
+		part: 'face',
+		value: 'long',
+		// Playing minefield opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['minefield'] }
+	},
+	{
+		id: 'play-convoy',
+		part: 'nose',
+		value: 'potato',
+		// Playing convoy opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['convoy'] }
+	},
+	{
+		id: 'play-merge',
+		part: 'nose',
+		value: 'hook',
+		// Playing merge opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['merge'] }
+	},
+	{
+		id: 'play-shootdown',
+		part: 'eyes',
+		value: 'sleepy',
+		// Playing shootdown opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['shootdown'] }
+	},
+	{
+		id: 'play-pipeline',
+		part: 'eyes',
+		value: 'angry',
+		// Playing pipeline opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['pipeline'] }
+	},
+	{
+		id: 'play-flamingo',
+		part: 'hair',
+		value: 'mohawk',
+		// Playing flamingo opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['flamingo'] }
+	},
+	{
+		id: 'play-fury',
+		part: 'hair',
+		value: 'bun',
+		// Playing fury opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['fury'] }
+	},
+	{
+		id: 'play-chess',
+		part: 'hair',
+		value: 'curly',
+		// Playing chess opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['chess'] }
+	},
+	{
+		id: 'play-parking',
+		part: 'hair',
+		value: 'long',
+		// Playing parking opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['parking'] }
+	},
+	{
+		id: 'play-slice',
+		part: 'hair',
+		value: 'combover',
+		// Playing slice opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['slice'] }
+	},
+	{
+		id: 'play-beltroad',
+		part: 'skin',
+		value: '#e0a878',
+		// Playing beltroad opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['beltroad'] }
+	},
+	{
+		id: 'play-maze',
+		part: 'skin',
+		value: '#c58a5a',
+		// Playing maze opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['maze'] }
+	},
+	{
+		id: 'play-purrpentagram',
+		part: 'skin',
+		value: '#9b6440',
+		// Playing purrpentagram opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['purrpentagram'] }
+	},
+	{
+		id: 'play-energiewende',
+		part: 'skin',
+		value: '#6b4128',
+		// Playing energiewende opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['energiewende'] }
+	},
+	{
+		id: 'play-centrifuge',
+		part: 'shirtColor',
+		value: '#f5c83a',
+		// Playing centrifuge opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['centrifuge'] }
+	},
+	{
+		id: 'play-venezuela',
+		part: 'shirtColor',
+		value: '#6a7c9b',
+		// Playing venezuela opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['venezuela'] }
+	},
+	{
+		id: 'play-sondage',
+		part: 'shirtColor',
+		value: '#111111',
+		// Playing sondage opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['sondage'] }
+	},
+	{
+		id: 'play-suez',
+		part: 'shirtColor',
+		value: '#ffffff',
+		// Playing suez opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['suez'] }
+	},
+	{
+		id: 'play-chipfab',
+		part: 'shirtColor',
+		value: '#8a5a33',
+		// Playing chipfab opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['chipfab'] }
+	},
+	{
+		id: 'play-vault',
+		part: 'shirtColor',
+		value: '#2ecc71',
+		// Playing vault opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['vault'] }
+	},
+	{
+		id: 'play-veto',
+		part: 'shirtColor',
+		value: '#9b59b6',
+		// Playing veto opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['veto'] }
+	},
+	{
+		id: 'play-balloon',
+		part: 'shirtColor',
+		value: '#1abc9c',
+		// Playing balloon opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['balloon'] }
+	},
+	{
+		id: 'play-dome',
+		part: 'shirtColor',
+		value: '#e67e22',
+		// Playing dome opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['dome'] }
+	},
+	{
+		id: 'play-gpsliar',
+		part: 'shirtColor',
+		value: '#34495e',
+		// Playing gpsliar opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['gpsliar'] }
+	},
+	{
+		id: 'play-leakpatrol',
+		part: 'shirtColor',
+		value: '#fd79a8',
+		// Playing leakpatrol opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['leakpatrol'] }
+	},
+	{
+		id: 'play-tycoon',
+		part: 'shirtColor',
+		value: '#00cec9',
+		// Playing tycoon opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['tycoon'] }
+	},
+	{
+		id: 'play-wordle',
+		part: 'shirtColor',
+		value: '#6c5ce7',
+		// Playing wordle opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['wordle'] }
+	},
+	{
+		id: 'play-maple',
+		part: 'shirtColor',
+		value: '#e84393',
+		// Playing maple opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['maple'] }
+	},
+	{
+		id: 'play-rareearth',
+		part: 'hairColor',
+		value: '#a8642e',
+		// Playing rareearth opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['rareearth'] }
+	},
+	{
+		id: 'play-raid',
+		part: 'hairColor',
+		value: '#e8c35a',
+		// Playing raid opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['raid'] }
+	},
+	{
+		id: 'play-fleethunt',
+		part: 'hairColor',
+		value: '#d9d9d9',
+		// Playing fleethunt opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['fleethunt'] }
+	},
+	{
+		id: 'play-bordershift',
+		part: 'hairColor',
+		value: '#e5484d',
+		// Playing bordershift opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['bordershift'] }
+	},
+	{
+		id: 'play-droneworks',
+		part: 'hairColor',
+		value: '#4fa8d8',
+		// Playing droneworks opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['droneworks'] }
+	},
+	{
+		id: 'play-falklands',
+		part: 'hairColor',
+		value: '#2d3436',
+		// Playing falklands opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['falklands'] }
+	},
+	{
+		id: 'play-warroom',
+		part: 'hairColor',
+		value: '#0984e3',
+		// Playing warroom opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['warroom'] }
+	},
+	{
+		id: 'play-hackers',
+		part: 'hairColor',
+		value: '#00b894',
+		// Playing hackers opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['hackers'] }
+	},
+	{
+		id: 'play-recon',
+		part: 'hairColor',
+		value: '#e17055',
+		// Playing recon opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['recon'] }
+	},
+	{
+		id: 'play-shuffle',
+		part: 'hairColor',
+		value: '#fdcb6e',
+		// Playing shuffle opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['shuffle'] }
+	},
+	{
+		id: 'play-slider',
+		part: 'hairColor',
+		value: '#a29bfe',
+		// Playing slider opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['slider'] }
+	},
+	{
+		id: 'play-grain',
+		part: 'hairColor',
+		value: '#b2bec3',
+		// Playing grain opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['grain'] }
+	},
+	{
+		id: 'play-curling',
+		part: 'hairColor',
+		value: '#8e44ad',
+		// Playing curling opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['curling'] }
+	},
+	{
+		id: 'play-sabotage',
+		part: 'hairColor',
+		value: '#16a085',
+		// Playing sabotage opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['sabotage'] }
+	},
+	{
+		id: 'play-killswitch',
+		part: 'hairColor',
+		value: '#d35400',
+		// Playing killswitch opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['killswitch'] }
+	},
+	{
+		id: 'play-beachhead',
+		part: 'hairColor',
+		value: '#7f8c8d',
+		// Playing beachhead opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['beachhead'] }
+	},
+	{
+		id: 'play-alignment',
+		part: 'hairColor',
+		value: '#c0392b',
+		// Playing alignment opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['alignment'] }
+	},
+	{
+		id: 'play-gpugrid',
+		part: 'hairColor',
+		value: '#2980b9',
+		// Playing gpugrid opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['gpugrid'] }
+	},
+	{
+		id: 'play-feedtuner',
+		part: 'hairColor',
+		value: '#27ae60',
+		// Playing feedtuner opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['feedtuner'] }
+	},
+	{
+		id: 'play-modelhearing',
+		part: 'hairColor',
+		value: '#f39c12',
+		// Playing modelhearing opens one more piece for the agent
+		requirement: { kind: 'game', modes: ['modelhearing'] }
 	}
 ];
 
@@ -252,6 +599,34 @@ export const PAID_LOOKS: readonly LookUnlock[] = [
 	}
 ];
 
+/** Four looks given away by free gift codes, kept out of the earned collection */
+export const GIFT_LOOKS: readonly LookUnlock[] = [
+	{
+		id: 'gift-flamingo-suit',
+		part: 'shirt',
+		value: 'flamingo',
+		requirement: { kind: 'gift', code: 'FLAMINGO' }
+	},
+	{
+		id: 'gift-sky-shirt',
+		part: 'shirtColor',
+		value: '#00a8ff',
+		requirement: { kind: 'gift', code: 'SKY' }
+	},
+	{
+		id: 'gift-orange-shirt',
+		part: 'shirtColor',
+		value: '#fa983a',
+		requirement: { kind: 'gift', code: 'ORANGE' }
+	},
+	{
+		id: 'gift-slate-shirt',
+		part: 'shirtColor',
+		value: '#78909c',
+		requirement: { kind: 'gift', code: 'SLATE' }
+	}
+];
+
 /** The paid look sold under a sku of the bot's catalogue */
 export function paidLookFor(sku: string): LookUnlock | undefined {
 	return PAID_LOOKS.find(
@@ -278,6 +653,8 @@ export interface UnlockProgress {
 	referralCount?: number;
 	/** Skus of the looks bought with Telegram Stars */
 	owned?: readonly string[];
+	/** Codes redeemed on this device, for the free gift looks */
+	giftCodes?: readonly string[];
 }
 
 /**
@@ -290,7 +667,8 @@ export function unlockProgress(
 	tycoon: readonly string[] = [],
 	games?: GameProgress,
 	referralCount?: number,
-	owned: readonly string[] = []
+	owned: readonly string[] = [],
+	giftCodes: readonly string[] = []
 ): UnlockProgress {
 	return {
 		level,
@@ -299,13 +677,14 @@ export function unlockProgress(
 		tycoon,
 		games,
 		referralCount,
-		owned
+		owned,
+		giftCodes
 	};
 }
 
 /** The unlock that guards a part value, or undefined when the option is free */
 export function unlockFor(part: LookPart, value: string): LookUnlock | undefined {
-	return [...LOOK_UNLOCKS, ...PAID_LOOKS].find(
+	return [...LOOK_UNLOCKS, ...PAID_LOOKS, ...GIFT_LOOKS].find(
 		(unlock) => unlock.part === part && unlock.value === value
 	);
 }
@@ -342,6 +721,10 @@ export function requirementMet(requirement: UnlockRequirement, progress: UnlockP
 			return (progress.games?.beachheadAchievements ?? []).includes(requirement.achievement);
 		case 'hackers':
 			return (progress.games?.hackersNetwork ?? 0) >= requirement.network;
+		case 'game':
+			return requirement.modes.some((mode) => progress.modes[mode] !== undefined);
+		case 'gift':
+			return progress.giftCodes?.includes(requirement.code) ?? false;
 		case 'score':
 			return bestScore(requirement.mode, progress) > requirement.score;
 		case 'stars':
@@ -429,6 +812,10 @@ export function requirementShare(requirement: UnlockRequirement, progress: Unloc
 				: 0;
 		case 'hackers':
 			return Math.min(1, (progress.games?.hackersNetwork ?? 0) / requirement.network);
+		case 'game':
+			return requirement.modes.some((mode) => progress.modes[mode] !== undefined) ? 1 : 0;
+		case 'gift':
+			return progress.giftCodes?.includes(requirement.code) ? 1 : 0;
 		case 'score':
 			return Math.min(1, bestScore(requirement.mode, progress) / (requirement.score + 1));
 		case 'stars':

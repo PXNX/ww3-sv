@@ -13,7 +13,8 @@ export const SHIRT_TYPES = [
 	'camo',
 	'tank',
 	'trump-suit',
-	'matrix-coat'
+	'matrix-coat',
+	'flamingo'
 ] as const;
 export const FACE_SHAPES = ['round', 'oval', 'square', 'long'] as const;
 export const NOSES = ['button', 'pointy', 'potato', 'hook', 'beak', 'clown'] as const;
@@ -69,7 +70,19 @@ export const SHIRT_COLORS = [
 	'#ffffff',
 	'#b45cd6',
 	'#8a5a33',
-	'#d4a017'
+	'#d4a017',
+	'#2ecc71',
+	'#9b59b6',
+	'#1abc9c',
+	'#e67e22',
+	'#34495e',
+	'#fd79a8',
+	'#00cec9',
+	'#6c5ce7',
+	'#e84393',
+	'#00a8ff',
+	'#fa983a',
+	'#78909c'
 ] as const;
 export const HAIR_COLORS = [
 	'#111111',
@@ -79,7 +92,22 @@ export const HAIR_COLORS = [
 	'#d9d9d9',
 	'#e5484d',
 	'#4fa8d8',
-	'#ff4fa3'
+	'#ff4fa3',
+	'#2d3436',
+	'#0984e3',
+	'#00b894',
+	'#e17055',
+	'#fdcb6e',
+	'#a29bfe',
+	'#b2bec3',
+	'#8e44ad',
+	'#16a085',
+	'#d35400',
+	'#7f8c8d',
+	'#c0392b',
+	'#2980b9',
+	'#27ae60',
+	'#f39c12'
 ] as const;
 
 export type ShirtType = (typeof SHIRT_TYPES)[number];

@@ -94,6 +94,12 @@
 	const tycoonAchievements = Array.isArray(tycoonSave?.achievements)
 		? tycoonSave.achievements.filter((id): id is string => typeof id === 'string')
 		: [];
+	const redeemedCodes = localStore().read<string[]>(
+		'career:gift-codes',
+		[],
+		(value): value is string[] =>
+			Array.isArray(value) && value.every((entry) => typeof entry === 'string')
+	);
 	const account = telegram();
 	const referralCount = $derived(account.invite?.friends ?? 0);
 	const progress = $derived(
@@ -103,7 +109,8 @@
 			tycoonAchievements,
 			gameProgress,
 			referralCount,
-			account.owned
+			account.owned,
+			redeemedCodes
 		)
 	);
 

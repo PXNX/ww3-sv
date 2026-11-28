@@ -15,7 +15,11 @@ const PAID_NAMES: Record<string, () => string> = {
 	look_neon: m.look_neon,
 	look_cowboy: m.look_cowboy,
 	look_beard: m.look_beard,
-	look_clown: m.look_clown
+	look_clown: m.look_clown,
+	FLAMINGO: m.look_flamingo_suit,
+	SKY: m.look_sky_shirt,
+	ORANGE: m.look_orange_shirt,
+	SLATE: m.look_slate_shirt
 };
 
 /** The translated name of a look sold for Stars, by its sku */
@@ -72,6 +76,12 @@ export function requirementText(requirement: UnlockRequirement): string {
 				score: requirement.score,
 				game: modeById(requirement.mode).name()
 			});
+		case 'game':
+			return m.avatar_unlock_game({
+				game: requirement.modes.map((mode) => modeById(mode).name()).join(' / ')
+			});
+		case 'gift':
+			return m.avatar_unlock_gift({ code: requirement.code });
 		case 'stars':
 			return m.avatar_unlock_stars();
 	}

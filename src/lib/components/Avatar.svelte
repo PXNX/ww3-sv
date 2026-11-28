@@ -119,7 +119,9 @@
 				? '#1c2a4a'
 				: current.shirt === 'matrix-coat'
 					? '#0d0f0d'
-					: current.shirtColor}
+					: current.shirt === 'flamingo'
+						? '#ff8fb1'
+						: current.shirtColor}
 		/>
 	{/if}
 	{#if current.shirt === 'camo'}
@@ -153,6 +155,20 @@
 			<rect x="88" y="116" width="2" height="6" />
 			<rect x="88" y="125" width="2" height="3" />
 			<rect x="94" y="120" width="2" height="5" />
+		</g>
+	{:else if current.shirt === 'flamingo'}
+		<!-- A loud pink shirt with a tiny flamingo on the chest -->
+		<path d="M46 104 C50 114 70 114 74 104" fill="none" stroke-width="2.5" />
+		<g stroke="none">
+			<ellipse cx="60" cy="124" rx="11" ry="7" fill="#ff6f91" />
+			<path
+				d="M63 120 C62 112 68 110 69 114 C70 117 67 118 66 117"
+				fill="none"
+				stroke="#ff6f91"
+				stroke-width="3"
+			/>
+			<path d="M69 114 L74 112 L69 116 Z" fill="#ffd93d" />
+			<path d="M54 129 L52 136 M62 130 L61 136" stroke="#ff6f91" stroke-width="2" />
 		</g>
 	{:else if current.shirt === 'hoodie'}
 		<path d="M52 108 L50 126 M68 108 L70 126" fill="none" stroke-width="2.5" />

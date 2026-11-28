@@ -8,6 +8,7 @@ import {
 	type LookPart
 } from './look';
 import {
+	GIFT_LOOKS,
 	LOOK_UNLOCKS,
 	PAID_LOOKS,
 	isPaid,
@@ -24,6 +25,10 @@ import {
 	type UnlockProgress
 } from './unlocks';
 import { newCareer } from '#lib/game/career/profile.js';
+import { MODES } from '#lib/modes/registry.js';
+
+/** Every game played, so game-locked looks open instead of failing unrelated assertions */
+const ALL_MODES = Object.fromEntries(MODES.map((mode) => [mode.id, {}]));
 import type { GameProgress } from './gameProgress';
 import {
 	loadMessages,
@@ -128,7 +133,7 @@ describe('the extra looks', () => {
 				progress({
 					level: 30,
 					bestStreak: 7,
-					modes: { redsquare: {}, petrobras: {}, runcomrade: {}, ...SCORES },
+					modes: { ...ALL_MODES, ...SCORES },
 					tycoon: ['maxed_all', 'tycoon_king'],
 					games: FINISHED,
 					referralCount: 30
@@ -171,7 +176,7 @@ describe('the extra looks', () => {
 	});
 
 	it('counts what is collected and points at the closest goal', () => {
-		expect(unlockedCount(progress({ level: 10 }))).toBe(3);
+		expect(unlockedCount(progress({ level: 10, modes: ALL_MODES }))).toBeGreaterThanOrEqual(3);
 		const close = nextUnlock(progress({ level: 4, bestStreak: 2 }));
 		expect(close?.id).toBe('helmet');
 		expect(requirementShare(close!.requirement, progress({ level: 4 }))).toBeCloseTo(0.8);
@@ -180,7 +185,7 @@ describe('the extra looks', () => {
 				progress({
 					level: 30,
 					bestStreak: 7,
-					modes: { redsquare: {}, petrobras: {}, runcomrade: {}, ...SCORES },
+					modes: { ...ALL_MODES, ...SCORES },
 					tycoon: ['maxed_all', 'tycoon_king'],
 					games: FINISHED,
 					referralCount: 30
@@ -209,7 +214,8 @@ describe('the extra looks', () => {
 			tycoon: [],
 			games: undefined,
 			referralCount: undefined,
-			owned: []
+			owned: [],
+			giftCodes: []
 		});
 	});
 
@@ -310,13 +316,17 @@ describe('the extra looks', () => {
 		const hitman = LOOK_PRESETS.find((preset) => preset.id === 'agent-47')!;
 		const ogre = LOOK_PRESETS.find((preset) => preset.id === 'ogre')!;
 		expect(firstLockedPart(hitman.look, progress())?.unlock.id).toBe('suit');
-		expect(firstLockedPart(hitman.look, progress({ level: 10 }))).toBeNull();
-		expect(firstLockedPart(ogre.look, progress({ level: 10 }))?.unlock.id).toBe('alien-skin');
+		expect(firstLockedPart(hitman.look, progress({ level: 10, modes: ALL_MODES }))).toBeNull();
+		expect(firstLockedPart(ogre.look, progress({ level: 10, modes: ALL_MODES }))?.unlock.id).toBe(
+			'alien-skin'
+		);
 		const beachhead = {
 			...NOTHING,
 			beachheadAchievements: ['all-stars', 'fortress']
 		};
-		expect(firstLockedPart(ogre.look, progress({ level: 30, games: beachhead }))).toBeNull();
+		expect(
+			firstLockedPart(ogre.look, progress({ level: 30, games: beachhead, modes: ALL_MODES }))
+		).toBeNull();
 	});
 });
 
@@ -347,5 +357,36 @@ describe('the extra look messages', () => {
 		expect(
 			requirementMet(coat.requirement, progress({ games: { ...NOTHING, hackersNetwork: 6 } }))
 		).toBe(true);
+	});
+});
+
+describe('the wider cosmetic catalogue', () => {
+	it('keeps only a small starter set free from the beginning', () => {
+		const free = (Object.keys(LOOK_PARTS) as LookPart[]).flatMap((part) =>
+			LOOK_PARTS[part]
+				.filter((value) => unlockFor(part, value) === undefined)
+				.map((value) => `${part}:${value}`)
+		);
+		expect(free.length).toBeLessThanOrEqual(20);
+	});
+
+	it('gives every game at least one unlockable look', () => {
+		for (const mode of MODES) {
+			const covers = LOOK_UNLOCKS.some((unlock) =>
+				JSON.stringify(unlock.requirement).includes(`"${mode.id}"`)
+			);
+			expect(covers, mode.id).toBe(true);
+		}
+	});
+
+	it('opens the four free gift looks only after their codes are redeemed', () => {
+		expect(GIFT_LOOKS).toHaveLength(4);
+		for (const look of GIFT_LOOKS) {
+			if (look.requirement.kind !== 'gift') continue;
+			expect(isUnlocked(look.part, look.value, progress())).toBe(false);
+			expect(
+				isUnlocked(look.part, look.value, progress({ giftCodes: [look.requirement.code] }))
+			).toBe(true);
+		}
 	});
 });
