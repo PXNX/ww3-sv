@@ -268,20 +268,41 @@ class TelegramStore {
 	}
 
 	/** The outcome of an account gift code redeemed from a link, shown once in the supply depot */
-	giftNotice = $state<{ status: 'ok' | 'used'; revives: number } | null>(null);
+	giftNotice = $state<{ status: 'ok' | 'used'; revives: number; proUntil: string | null } | null>(
+		null
+	);
 
 	/** Redeems an account gift code with the bot; 'error' when the bot cannot be reached */
-	async redeemGift(code: string): Promise<{ status: 'ok' | 'used' | 'unknown' | 'error'; revives: number }> {
+	async redeemGift(code: string): Promise<{
+		status: 'ok' | 'used' | 'unknown' | 'error';
+		revives: number;
+		proUntil: string | null;
+	}> {
 		try {
-			const result = await call<{ status?: unknown; revives?: unknown; wallet?: { revives?: unknown } }>(
-				'redeem',
-				{ code }
-			);
+			const result = await call<{
+				status?: unknown;
+				revives?: unknown;
+				pro_until?: unknown;
+				wallet?: { revives?: unknown; pro?: unknown; pro_until?: unknown };
+			}>('redeem', { code });
 			const revives = typeof result?.revives === 'number' ? result.revives : 0;
-			if (typeof result?.wallet?.revives === 'number') this.wallet = { revives: result.wallet.revives };
-			return { status: result?.status === 'used' ? 'used' : 'ok', revives };
+			const proUntil =
+				typeof result?.pro_until === 'string'
+					? result.pro_until
+					: typeof result?.wallet?.pro_until === 'string'
+						? result.wallet.pro_until
+						: null;
+			if (typeof result?.wallet?.revives === 'number')
+				this.wallet = { revives: result.wallet.revives };
+			if (proUntil) this.proUntil = proUntil;
+			if (typeof result?.wallet?.pro === 'boolean') this.pro = result.wallet.pro;
+			return { status: result?.status === 'used' ? 'used' : 'ok', revives, proUntil };
 		} catch (error) {
-			return { status: endpointCode(error) === 'UNKNOWN_GIFT' ? 'unknown' : 'error', revives: 0 };
+			return {
+				status: endpointCode(error) === 'UNKNOWN_GIFT' ? 'unknown' : 'error',
+				revives: 0,
+				proUntil: null
+			};
 		}
 	}
 

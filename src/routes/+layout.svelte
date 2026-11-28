@@ -90,7 +90,11 @@
 			if (gift) {
 				void account.redeemGift(gift).then((result) => {
 					if (result.status === 'ok' || result.status === 'used') {
-						account.giftNotice = { status: result.status, revives: result.revives };
+						account.giftNotice = {
+							status: result.status,
+							revives: result.revives,
+							proUntil: result.proUntil
+						};
 					}
 				});
 				void goto(resolve('/shop'));

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { newCareer } from '#lib/game/career/profile.js';
-import { GIFT_CODES, findGift, normalizeCode } from './config.js';
+import { ACCOUNT_GIFT_CODES, GIFT_CODES, findGift, normalizeCode } from './config.js';
 import { redeemGift } from './redeem.js';
 
 const profile = newCareer(new Date(2026, 9, 29, 12));
@@ -32,6 +32,12 @@ describe('gift codes', () => {
 			expect(coins.profile.coins).toBe(profile.coins + 100);
 			expect(coins.profile.revives).toBe(profile.revives);
 		}
+	});
+
+	it('keeps Pro codes account-bound and points browser players to Telegram', () => {
+		expect(ACCOUNT_GIFT_CODES).toContain('PRO6M');
+		const result = redeemGift(profile, [], 'pro-6m');
+		expect(result.status).toBe('telegram-only');
 	});
 
 	it('refuses an unknown code and one that was redeemed already', () => {

@@ -20,7 +20,12 @@
 		if (!gift) return;
 		notice =
 			gift.status === 'ok'
-				? { ok: true, text: m.shop_gift_done_revive({ count: gift.revives }) }
+				? {
+						ok: true,
+						text: gift.proUntil
+							? m.shop_gift_done_pro()
+							: m.shop_gift_done_revive({ count: gift.revives })
+					}
 				: { ok: false, text: m.shop_gift_used() };
 		account.giftNotice = null;
 	});
@@ -33,7 +38,12 @@
 		if (result.status === 'ok') {
 			code = '';
 			soundManager().play('chime-big');
-			notice = { ok: true, text: m.shop_gift_done_revive({ count: result.revives }) };
+			notice = {
+				ok: true,
+				text: result.proUntil
+					? m.shop_gift_done_pro()
+					: m.shop_gift_done_revive({ count: result.revives })
+			};
 			return;
 		}
 		soundManager().play('ui-error');
@@ -54,6 +64,11 @@
 			return;
 		}
 		const result = careerState.redeemGift(code);
+		if (result.status === 'telegram-only') {
+			soundManager().play('ui-error');
+			notice = { ok: false, text: m.shop_gift_telegram_only() };
+			return;
+		}
 		if (result.status === 'ok') {
 			code = '';
 			soundManager().play('chime-big');
@@ -97,7 +112,11 @@
 			bind:value={code}
 			oninput={() => (notice = null)}
 		/>
-		<button type="submit" class="btn-chunky bg-explosion-yellow px-4" disabled={busy || code.trim() === ''}>
+		<button
+			type="submit"
+			class="btn-chunky bg-explosion-yellow px-4"
+			disabled={busy || code.trim() === ''}
+		>
 			{m.shop_gift_redeem()}
 		</button>
 	</form>

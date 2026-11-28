@@ -4,7 +4,7 @@ import { findGift, normalizeCode, type GiftCode } from './config.js';
 
 export type RedeemResult =
 	| { status: 'ok'; gift: GiftCode; profile: CareerProfile }
-	| { status: 'unknown' | 'used' | 'expired' };
+	| { status: 'unknown' | 'used' | 'expired' | 'telegram-only' };
 
 /**
  * Checks a typed code and pays its reward. `redeemed` lists the codes this device used before; the
@@ -20,6 +20,8 @@ export function redeemGift(
 	if (!gift) return { status: 'unknown' };
 	if (redeemed.map(normalizeCode).includes(gift.code)) return { status: 'used' };
 	if (gift.expiresAt !== undefined && now > gift.expiresAt) return { status: 'expired' };
+	// Pro lives in the bot's account ledger, so a browser has nothing to credit locally
+	if (gift.reward === 'pro') return { status: 'telegram-only' };
 	const paid: CareerProfile =
 		gift.reward === 'revive'
 			? { ...profile, revives: profile.revives + gift.value }
