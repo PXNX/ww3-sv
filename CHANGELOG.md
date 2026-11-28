@@ -8,6 +8,11 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 
 ### New
 
+#### convoy
+
+- Ship choice before a run: the tanker is balanced, the corvette trades a heart for speed and a
+  narrower silhouette, and the tug is slow but efficient and starts with an escort
+
 #### tycoon
 
 - Delivery contracts: a time-limited barrel target that pays a cash reward and a small permanent
