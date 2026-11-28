@@ -20,6 +20,9 @@ repository; paths below are relative to `bot/`.
   `/legal/imprint`, `/legal/privacy`, `/legal/terms` and `/legal/withdrawal`. `/impressum`, `/datenschutz`, `/agb`, `/widerruf`
   (aliases `/imprint`, `/privacy`, `/terms`, `/withdrawal`) link there; until the website has an `appUrl`, the bot sends the German
   texts into the chat instead. `operator.telegram` adds a Telegram contact to `/paysupport`. `/paysupport` is the support contact Telegram requires for bots that sell.
+- **Weekly deal and Starter Pack**: one cosmetic per ISO week at a fixed 30% discount, and a one-time
+  `starter_pack` with revives and seven days of Pro. `pro_gift` buys 30 Pro days for a friend and
+  links are claimed through `?start=progift_<code>`.
 - **Cosmetic gifts** (`gift_look`, `claim_gift`): a player wraps an unlocked look for a friend or a
   shareable link; the bot keeps one code per gift and credits it once to the account that claims it.
   `?start=gift_<code>` also claims it from a chat.

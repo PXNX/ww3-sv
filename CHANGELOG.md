@@ -53,6 +53,10 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 - A one-tap Continue button on the start screen opens the last game you played
 - A single wallet strip in the supply depot (coins, revives and ads left), with Pro kept to its own card
 - A short "why did that happen?" hint on lost result sheets, chosen by the game's play style
+- A one-time Starter Pack in the depot: five revives, seven days of Pro and a week without ads
+- Gift a month of Pro: one Stars purchase produces a shareable link the recipient claims once
+- One cosmetic every week at a fixed 30% discount, with the price set by the bot
+- Your own agent appears on the result sheet: the worn look sparkles on a win and droops on a loss
 
 ### New
 
