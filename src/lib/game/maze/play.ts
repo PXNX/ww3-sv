@@ -25,6 +25,8 @@ export interface PlayState {
 	collected: readonly ItemKind[];
 	/** Offices entered so far */
 	visited: readonly boolean[];
+	/** Offices in the order they were entered, including the start; drawn as breadcrumbs */
+	trail: readonly number[];
 	/** Closed offices the player found out about by bumping into them, sorted */
 	knownClosed: readonly number[];
 	/** Whether Passierschein B-38 has been reached */
@@ -45,7 +47,15 @@ export interface MoveResult {
 export function startState(maze: Maze): PlayState {
 	const visited = new Array<boolean>(roomCount(maze)).fill(false);
 	visited[maze.start] = true;
-	return { room: maze.start, steps: 0, collected: [], visited, knownClosed: [], won: false };
+	return {
+		room: maze.start,
+		steps: 0,
+		collected: [],
+		visited,
+		trail: [maze.start],
+		knownClosed: [],
+		won: false
+	};
 }
 
 /** Tries to walk one step from the current office; the state is returned unchanged for a wall */
@@ -92,6 +102,7 @@ export function move(maze: Maze, state: PlayState, direction: Direction): MoveRe
 			steps: state.steps + 1,
 			collected: pickup ? [...state.collected, pickup] : state.collected,
 			visited,
+			trail: [...state.trail, door.to],
 			knownClosed: state.knownClosed,
 			won
 		},

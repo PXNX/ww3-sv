@@ -52,6 +52,16 @@ describe('move', () => {
 		expect(result.state.room).toBe(1);
 		expect(result.state.steps).toBe(1);
 		expect(result.state.visited).toEqual([true, true, false]);
+		expect(result.state.trail).toEqual([0, 1]);
+	});
+
+	it('records breadcrumbs only for rooms actually entered', () => {
+		const maze = corridor(3, {});
+		const first = move(maze, startState(maze), 'right').state;
+		const bumped = move(maze, first, 'up');
+		expect(bumped.state.trail).toEqual([0, 1]);
+		const back = move(maze, first, 'right').state;
+		expect(back.trail).toEqual([0, 1, 2]);
 	});
 
 	it('does not count a bump into a plain wall', () => {

@@ -48,6 +48,13 @@
 	const visited = $derived(game.play.visited);
 	const carried = $derived(game.collected);
 	const knownClosed = $derived(game.play.knownClosed);
+	/** Offices in walking order, so the player can see where they have already been */
+	const trail = $derived(game.play.trail);
+	/** The current room's edge in the direction of the last blocked move */
+	const bumpLine = $derived.by(() => {
+		const bump = game.lastBump;
+		return bump ? edgeOf(game.play.room, bump.direction) : null;
+	});
 
 	const left = (room: number) => colOf(maze, room) * CELL;
 	const top = (room: number) => rowOf(maze, room) * CELL;
@@ -205,6 +212,33 @@
 			{/if}
 		{/each}
 
+		<!-- Breadcrumbs: the route already walked, faint under the walls -->
+		{#if trail.length > 1}
+			<polyline
+				points={trail.map((room) => `${centerX(room)},${centerY(room)}`).join(' ')}
+				fill="none"
+				stroke="var(--color-tie-red)"
+				stroke-width="1.1"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				stroke-opacity="0.22"
+				stroke-dasharray="1.4 1.8"
+			/>
+			{#if trail.length > 2}
+				{@const previous = trail[trail.length - 2]}
+				<line
+					x1={centerX(previous)}
+					y1={centerY(previous)}
+					x2={centerX(game.play.room)}
+					y2={centerY(game.play.room)}
+					stroke="var(--color-tie-red)"
+					stroke-width="1.4"
+					stroke-opacity="0.5"
+					stroke-linecap="round"
+				/>
+			{/if}
+		{/if}
+
 		<!-- Offices found closed until Tuesday -->
 		{#each knownClosed as room (room)}
 			<g>
@@ -327,6 +361,24 @@
 			{/if}
 		{/each}
 
+		<!-- A blocked move flashes the wall or door it hit, so a bump reads as feedback -->
+		{#if bumpLine && game.lastBump}
+			{@const [x1, y1, x2, y2] = bumpLine}
+			{#key game.lastBump.count}
+				<line
+					class="maze-bump"
+					{x1}
+					{y1}
+					{x2}
+					{y2}
+					stroke="var(--color-tie-red)"
+					stroke-width="2.4"
+					stroke-linecap="round"
+					fill="none"
+				/>
+			{/key}
+		{/if}
+
 		{#key game.play.room}
 			<!-- The clerk: the player's token -->
 			<g
@@ -354,6 +406,21 @@
 </div>
 
 <style>
+	.maze-bump {
+		animation: bump-flash 450ms ease-out forwards;
+	}
+
+	@keyframes bump-flash {
+		0% {
+			stroke-opacity: 0.9;
+			stroke-width: 3.2;
+		}
+		100% {
+			stroke-opacity: 0;
+			stroke-width: 1.6;
+		}
+	}
+
 	.maze-pawn {
 		transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
 		animation: swipe-bounce 220ms ease-out forwards;
@@ -378,6 +445,10 @@
 		.maze-pawn {
 			transition: none;
 			animation: none;
+		}
+		.maze-bump {
+			animation: none;
+			stroke-opacity: 0.6;
 		}
 	}
 </style>

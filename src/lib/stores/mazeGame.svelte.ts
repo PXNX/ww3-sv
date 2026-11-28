@@ -55,6 +55,8 @@ export class MazeGame {
 	notice = $state.raw<MazeNotice | null>(null);
 	/** Counts the moves that produced a notice, so the same notice twice is still announced */
 	noticeCount = $state(0);
+	/** Where the last blocked move was aimed, so the board can flash that wall */
+	lastBump = $state<{ direction: Direction; count: number } | null>(null);
 	par = $state(0);
 	stars = $state(0);
 	isNewBest = $state(false);
@@ -132,6 +134,7 @@ export class MazeGame {
 		this.play = startState(this.maze);
 		this.notice = null;
 		this.noticeCount = 0;
+		this.lastBump = null;
 		this.stars = 0;
 		this.isNewBest = false;
 		this.best = this.bestFor(this.size, this.isDaily);
@@ -147,6 +150,7 @@ export class MazeGame {
 		// Also takes a finished run off the stage, which closes the win panel
 		this.play = startState(this.maze);
 		this.notice = null;
+		this.lastBump = null;
 		this.screen = 'select';
 	}
 
@@ -158,13 +162,16 @@ export class MazeGame {
 		const sounds = soundManager();
 		switch (result.outcome) {
 			case 'wall':
+				this.#bump(direction);
 				this.#announce({ kind: 'wall' });
 				break;
 			case 'locked':
+				this.#bump(direction);
 				this.#announce({ kind: 'locked', item: result.missing as ItemKind });
 				sounds.play('ui-error');
 				break;
 			case 'closed':
+				this.#bump(direction);
 				this.#announce({ kind: 'closed' });
 				sounds.play('thud');
 				break;
@@ -181,6 +188,10 @@ export class MazeGame {
 				break;
 		}
 		return result.outcome;
+	}
+
+	#bump(direction: Direction) {
+		this.lastBump = { direction, count: (this.lastBump?.count ?? 0) + 1 };
 	}
 
 	#announce(notice: MazeNotice) {
