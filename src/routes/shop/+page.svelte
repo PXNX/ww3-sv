@@ -71,6 +71,8 @@
 		soundManager().play('sparkle');
 	}
 
+	const starter = $derived(account.item('starter_pack'));
+	const proGift = $derived(account.item('pro_gift'));
 	const verified = $derived(account.status === 'verified');
 	// Earned on this device plus bought with Stars, which live on the Telegram account
 	const revives = $derived(careerState.profile.revives + (verified ? account.wallet.revives : 0));
@@ -234,6 +236,30 @@
 			<p class="text-xs font-semibold text-tie-red">{m.shop_not_enough()}</p>
 		{/if}
 	</section>
+
+	{#if starter && !account.starterBought}
+		<section class="sticker flex flex-col gap-2 p-4" aria-labelledby="shop-starter">
+			<h2 id="shop-starter" class="font-display text-xl font-bold">{m.shop_starter_name()}</h2>
+			<p class="text-sm leading-snug">{m.shop_starter_body()}</p>
+			{#if verified}
+				<StarsOffer item={starter} compact agreed={reviveAgreed} showConsent={false} />
+			{:else}
+				<p class="text-xs leading-snug">{m.avatar_paid_browser()}</p>
+			{/if}
+		</section>
+	{/if}
+
+	{#if proGift}
+		<section class="sticker flex flex-col gap-2 p-4" aria-labelledby="shop-pro-gift">
+			<h2 id="shop-pro-gift" class="font-display text-xl font-bold">{m.shop_pro_gift_name()}</h2>
+			<p class="text-sm leading-snug">{m.shop_pro_gift_body()}</p>
+			{#if verified}
+				<StarsOffer item={proGift} compact />
+			{:else}
+				<p class="text-xs leading-snug">{m.avatar_paid_browser()}</p>
+			{/if}
+		</section>
+	{/if}
 
 	<!-- Pro, or the one note about Telegram Stars when they cannot be used here -->
 	{#if verified}

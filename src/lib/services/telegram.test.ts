@@ -84,10 +84,11 @@ describe('the me endpoint', () => {
 			consented: true,
 			admin: false,
 			consent: null,
-			catalogue: [{ ...REVIVE, look: null }],
+			catalogue: [{ ...REVIVE, look: null, weekly: false, oneTime: false, gift: false, proDays: 0 }],
 			owned: [],
 			invite: null,
-			giftedLooks: []
+			giftedLooks: [],
+			starterBought: false
 		});
 		expect(
 			parseMe({ ...body, user: { id: 1, first_name: 'A', username: null } })?.user.username

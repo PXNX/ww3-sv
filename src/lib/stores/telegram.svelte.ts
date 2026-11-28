@@ -271,6 +271,8 @@ class TelegramStore {
 	/** The outcome of an account gift code redeemed from a link, shown once in the supply depot */
 	/** Cosmetic gifts waiting to be claimed, from the bot */
 	giftedLooks = $state<PendingLookGift[]>([]);
+	/** Whether the one-time Starter Pack has been bought */
+	starterBought = $state(false);
 	giftNotice = $state<{ status: 'ok' | 'used'; revives: number; proUntil: string | null } | null>(
 		null
 	);
@@ -374,6 +376,7 @@ class TelegramStore {
 				this.wallet = { revives: me.revives };
 				this.pro = me.pro;
 				this.giftedLooks = me.giftedLooks;
+				this.starterBought = me.starterBought;
 				this.proUntil = me.proUntil;
 				this.consented = me.consented;
 				this.admin = me.admin;

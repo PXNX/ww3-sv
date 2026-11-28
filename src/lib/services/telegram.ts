@@ -507,6 +507,13 @@ export interface CatalogueItem {
 	subscription: boolean;
 	/** For a cosmetic: the avatar part and value it unlocks for good */
 	look: { part: string; value: string } | null;
+	/** A fixed 30% discount for this calendar week, already applied to stars */
+	weekly: boolean;
+	/** Only sold once per account */
+	oneTime: boolean;
+	/** Buys Pro days for a friend rather than for the buyer */
+	gift: boolean;
+	proDays: number;
 }
 
 /**
@@ -568,6 +575,8 @@ export interface TelegramMe {
 	invite: TelegramInvite | null;
 	/** Cosmetics waiting to be claimed from a friend */
 	giftedLooks: PendingLookGift[];
+	/** Whether the one-time Starter Pack has been bought */
+	starterBought: boolean;
 }
 
 export interface PendingLookGift {
@@ -582,7 +591,7 @@ const isCount = (value: unknown): value is number =>
 
 function toCatalogueItem(value: unknown): CatalogueItem | null {
 	if (!isRecord(value)) return null;
-	const { sku, title, stars, revives, subscription, look } = value;
+	const { sku, title, stars, revives, subscription, look, weekly, one_time: oneTime, gift, pro_days: proDays } = value;
 	if (typeof sku !== 'string' || sku === '' || typeof title !== 'string') return null;
 	if (!isCount(stars) || stars === 0 || !isCount(revives) || typeof subscription !== 'boolean') {
 		return null;
@@ -591,7 +600,18 @@ function toCatalogueItem(value: unknown): CatalogueItem | null {
 		isRecord(look) && typeof look.part === 'string' && typeof look.value === 'string'
 			? { part: look.part, value: look.value }
 			: null;
-	return { sku, title, stars, revives, subscription, look: cosmetic };
+	return {
+		sku,
+		title,
+		stars,
+		revives,
+		subscription,
+		look: cosmetic,
+		weekly: weekly === true,
+		oneTime: oneTime === true,
+		gift: gift === true,
+		proDays: isCount(proDays) ? proDays : 0
+	};
 }
 
 function toConsent(value: unknown): PurchaseConsent | null {
@@ -643,6 +663,7 @@ export function parseMe(value: unknown): TelegramMe | null {
 			? value.owned.filter((sku): sku is string => typeof sku === 'string' && sku !== '')
 			: [],
 		invite: toInvite(value.invite),
+		starterBought: value.starterBought === true,
 		giftedLooks: Array.isArray(giftedLooks)
 			? giftedLooks.filter(
 					(entry): entry is PendingLookGift =>
