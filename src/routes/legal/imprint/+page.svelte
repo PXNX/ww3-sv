@@ -8,7 +8,7 @@
 	import LegalSection from '#lib/components/LegalSection.svelte';
 	import { LEGAL_OPERATOR } from '#lib/legal/config.js';
 	import { IMPRINT_PAGE } from '#lib/legal/pages.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { legalM as m } from '#lib/legal/messages.js';
 
 	// A placeholder must not turn into a broken mailto: link before the address is real
 	const contactHref = LEGAL_OPERATOR.email.startsWith('TODO')

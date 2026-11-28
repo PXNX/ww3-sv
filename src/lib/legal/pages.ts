@@ -3,7 +3,7 @@
  * the message files, so this one list feeds the About section, the cross-links on each document
  * and the link-preview metadata in `seo.ts`.
  */
-import { m } from '#lib/paraglide/messages.js';
+import { legalM as m } from '#lib/legal/messages.js';
 
 export type LegalPageId = 'imprint' | 'privacy' | 'terms' | 'withdrawal';
 

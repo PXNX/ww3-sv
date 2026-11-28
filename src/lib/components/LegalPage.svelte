@@ -11,7 +11,7 @@
 	import { LEGAL_UPDATED } from '#lib/legal/config.js';
 	import { LEGAL_PAGES, type LegalPageInfo } from '#lib/legal/pages.js';
 	import { LEGAL_HREFS } from '#lib/legal/paths.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { legalM as m } from '#lib/legal/messages.js';
 	import IconArrowLeft from '~icons/lucide/arrow-left';
 	import IconTriangleAlert from '~icons/lucide/triangle-alert';
 

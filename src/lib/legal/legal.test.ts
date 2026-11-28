@@ -11,7 +11,9 @@ import {
 	messageKeys,
 	missingMessages
 } from '#lib/testing/messages.js';
+import { getLocale, overwriteGetLocale } from '#lib/paraglide/runtime.js';
 import { LEGAL_OPERATOR, LEGAL_UPDATED } from './config.js';
+import { legalM } from './messages.js';
 import { LEGAL_PAGES } from './pages.js';
 
 describe('legal pages', () => {
@@ -26,6 +28,20 @@ describe('legal pages', () => {
 			else expect(value, field).toMatch(/^TODO:/);
 		}
 		expect(LEGAL_UPDATED).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+	});
+
+	it('renders the documents in English whatever the reader locale', () => {
+		const original = getLocale;
+		try {
+			for (const locale of ['de', 'fa', 'ar', 'uk', 'ru'] as const) {
+				overwriteGetLocale(() => locale);
+				expect(legalM.legal_imprint_title(), locale).toBe('Imprint');
+				expect(legalM.legal_terms_title(), locale).toBe('Terms and conditions');
+				expect(legalM.legal_template_notice(), locale).not.toMatch(/[؀-ۿࠀ-࠿Ѐ-ӿ]/);
+			}
+		} finally {
+			overwriteGetLocale(original);
+		}
 	});
 
 	it('lists four unique documents, each with a title, a summary and metadata', () => {

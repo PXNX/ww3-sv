@@ -8,7 +8,7 @@
 	import LegalSection from '#lib/components/LegalSection.svelte';
 	import { APP_NAME } from '#lib/config.js';
 	import { TERMS_PAGE } from '#lib/legal/pages.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { legalM as m } from '#lib/legal/messages.js';
 </script>
 
 <LegalPage page={TERMS_PAGE}>
