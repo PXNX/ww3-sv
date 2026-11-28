@@ -23,7 +23,8 @@ class Gift:
 # Code → reward
 GIFT_CODES: Final[dict[str, Gift]] = {
     "MN5": Gift(revives=5),
-    "PRO6M": Gift(pro_months=6),
+    # Six months of Pro plus a small stack of revival tokens for the same code
+    "PRO6M": Gift(revives=5, pro_months=6),
 }
 
 
@@ -69,12 +70,13 @@ async def redeem(user_id: int, code: str) -> Redemption:
     if not row:
         return Redemption("used", gift.revives)
 
-    if gift.revives:
-        return Redemption("ok", gift.revives)
-
-    until = plus_months(gift.pro_months)
-    await db.execute(
-        "UPDATE accounts SET pro_until = GREATEST(COALESCE(pro_until, 0), %s) WHERE user_id = %s",
-        (int(until.timestamp()), user_id),
-    )
-    return Redemption("ok", 0, int(until.timestamp()))
+    until = None
+    if gift.pro_months:
+        end = plus_months(gift.pro_months)
+        until = int(end.timestamp())
+        await db.execute(
+            "UPDATE accounts SET pro_until = GREATEST(COALESCE(pro_until, 0), %s) WHERE user_id = %s",
+            (until, user_id),
+        )
+    # Revives are credited by the gifts row inserted above; the wallet sums that table.
+    return Redemption("ok", gift.revives, until)

@@ -206,7 +206,7 @@ async def test_pro_gift_grants_six_months_once():
     await ledger.upsert_account(person(88))
     result = await gifts.redeem(88, "PRO6M")
     assert result.status == "ok"
-    assert result.revives == 0
+    assert result.revives == 5
     assert result.pro_until is not None
     # Six calendar months from now, clamped to a valid day
     expected = int(gifts.plus_months(6).timestamp())
@@ -214,7 +214,8 @@ async def test_pro_gift_grants_six_months_once():
     wallet = await ledger.wallet(88)
     assert wallet["pro"] is True
     assert wallet["pro_until"] == result.pro_until
-    assert await gifts.redeem(88, "pro6m") == gifts.Redemption("used", 0)
+    assert wallet["revives"] == 5
+    assert await gifts.redeem(88, "pro6m") == gifts.Redemption("used", 5)
 
 
 def test_six_months_clamps_short_months():
