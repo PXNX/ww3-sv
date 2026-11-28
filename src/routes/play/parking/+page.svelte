@@ -105,7 +105,8 @@
 
 	{#if playing}
 		<!-- The HUD, the harbor and the buttons share one width, as wide as the height allows -->
-		<section data-tutorial="playfield"
+		<section
+			data-tutorial="playfield"
 			class="mx-auto flex w-full flex-col items-center gap-2"
 			style:max-width="max(16rem, min(100%, calc((100dvh - 17rem) * {game.puzzle.width /
 				game.puzzle.height} + 1.75rem)))"
@@ -185,7 +186,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.parking_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.parking_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

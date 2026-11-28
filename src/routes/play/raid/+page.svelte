@@ -128,7 +128,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.raid_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.raid_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

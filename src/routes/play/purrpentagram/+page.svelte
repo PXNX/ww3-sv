@@ -131,6 +131,7 @@
 
 	<section data-tutorial="playfield" class="mx-auto flex w-full max-w-xl flex-col gap-2 pb-2">
 		<div
+			data-tutorial="hud-notice"
 			class="flex w-full items-center justify-between gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1 shadow-[3px_3px_0_var(--color-ink)]"
 		>
 			<p dir="auto" class="min-h-8 flex-1 text-sm leading-tight font-bold" role="status">
@@ -152,7 +153,7 @@
 					<span class="opacity-70">{m.purr_hud_hint()}</span>
 				{/if}
 			</p>
-			<div class="flex shrink-0 items-center gap-2">
+			<div data-tutorial="hud-lives" class="flex shrink-0 items-center gap-2">
 				{#if ritual.combo > 1}
 					{#key ritual.combo}
 						<span class="pop-in rounded-md border-2 border-ink bg-sand px-1.5 text-xs font-bold">
@@ -200,7 +201,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.purr_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.purr_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>
