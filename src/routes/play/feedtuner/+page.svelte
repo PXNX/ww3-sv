@@ -5,6 +5,7 @@
 	import {
 		ACTIONS,
 		createFeed,
+		factCheck,
 		MAX_OUTRAGE,
 		MIN_REACH,
 		rank,
@@ -92,6 +93,16 @@
 						risk: game.post.risk
 					})}
 				</p>
+			</div>
+			<div class="flex justify-end">
+				<button
+					type="button"
+					class="btn-chunky bg-khaki px-2 py-1 text-xs"
+					disabled={game.factChecks <= 0}
+					onclick={() => (game = factCheck(game))}
+				>
+					{m.feedtuner_factcheck({ count: game.factChecks })}
+				</button>
 			</div>
 			<div class="grid grid-cols-3 gap-2">
 				{#each ACTIONS as action (action)}

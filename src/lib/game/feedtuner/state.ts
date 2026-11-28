@@ -12,6 +12,9 @@ export const START_REACH = 55;
 export const START_OUTRAGE = 20;
 export const MIN_REACH = 30;
 export const MAX_OUTRAGE = 70;
+export const FACT_CHECKS = 2;
+export const FACT_OUTRAGE_DROP = 25;
+export const FACT_REACH_COST = 10;
 
 export interface Post {
 	label: 'deal' | 'outrage' | 'cat' | 'ad';
@@ -27,6 +30,8 @@ export interface FeedState {
 	status: 'playing' | 'won' | 'lost';
 	post: Post | null;
 	last: { reach: number; outrage: number } | null;
+	/** Fact-checks left: costly in reach, but they pull outrage down */
+	factChecks: number;
 }
 
 const POSTS: readonly { item: Post['label']; weight: number; engagement: number; risk: number }[] =
@@ -53,7 +58,8 @@ export function createFeed(random: Random): FeedState {
 		score: 0,
 		status: 'playing',
 		post: nextPost(random),
-		last: null
+		last: null,
+		factChecks: FACT_CHECKS
 	};
 }
 
@@ -79,5 +85,20 @@ export function rank(state: FeedState, action: Action, random: Random): FeedStat
 		status,
 		post: status === 'playing' ? nextPost(random) : null,
 		last: { reach, outrage }
+	};
+}
+
+/** Publishes a correction: less reach now, much less outrage */
+export function factCheck(state: FeedState): FeedState {
+	if (state.status !== 'playing' || state.factChecks <= 0) return state;
+	return {
+		...state,
+		factChecks: state.factChecks - 1,
+		reach: clamp(state.reach - FACT_REACH_COST),
+		outrage: clamp(state.outrage - FACT_OUTRAGE_DROP),
+		last: {
+			reach: clamp(state.reach - FACT_REACH_COST),
+			outrage: clamp(state.outrage - FACT_OUTRAGE_DROP)
+		}
 	};
 }

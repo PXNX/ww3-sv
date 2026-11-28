@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createRandom } from '#lib/game/random.js';
-import { createFeed, MAX_OUTRAGE, MIN_REACH, rank, TURNS } from './state.js';
+import { createFeed, MAX_OUTRAGE, MIN_REACH, rank, TURNS, factCheck } from './state.js';
 
 const random = () => createRandom(33);
 
@@ -37,5 +37,18 @@ describe('feed tuner', () => {
 		state.turn = TURNS - 1;
 		state.post = { label: 'cat', engagement: 6, risk: 1 };
 		expect(rank(state, 'hold', random()).status).toBe('won');
+	});
+});
+
+describe('fact-checks', () => {
+	it('trade reach for outrage twice', () => {
+		const state = createFeed(random());
+		state.reach = 60;
+		state.outrage = 60;
+		const once = factCheck(state);
+		expect(once.reach).toBeLessThan(60);
+		expect(once.outrage).toBeLessThan(60);
+		expect(once.factChecks).toBe(1);
+		expect(factCheck(factCheck(once)).factChecks).toBe(0);
 	});
 });
