@@ -8,6 +8,10 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 
 ### Improved
 
+#### leakpatrol
+
+- Floods now push water into neighbouring rooms, so one lost room puts the next one at risk
+
 #### hackers
 
 - Three proxy hops per contract: burn one to knock 18 points off the trace meter when the firewall

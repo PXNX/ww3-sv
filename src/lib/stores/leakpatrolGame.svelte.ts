@@ -268,6 +268,9 @@ export class LeakPatrolGame {
 				this.#play('splash', 1);
 				this.#play('ui-error', 0.8);
 				break;
+			case 'spread':
+				this.#showToast(m.leakpatrol_popup_spread({ room: roomName(event.to) }));
+				break;
 			case 'game-over':
 				break;
 		}

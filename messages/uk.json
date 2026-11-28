@@ -1,5 +1,6 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"leakpatrol_popup_spread": "Вода потрапила до {room}",
 	"hackers_proxy": "Змінити проксі ({count})",
 	"hackers_proxy_none": "Стрибків проксі більше немає",
 	"dome_interceptor_label": "Перехоплювач",

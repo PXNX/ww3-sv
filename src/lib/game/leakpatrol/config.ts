@@ -67,3 +67,6 @@ export const MIN_DIALOG_EVERY_MS = 8000;
 export const DIALOG_WINDOW_MS = 4200;
 export const MIN_DIALOG_WINDOW_MS = 2000;
 export const DIALOG_FACTOR = 0.92;
+
+/** A flooded room pushes water into its neighbours, so triage has to include the next door */
+export const FLOOD_SPREAD = 0.28;

@@ -1,5 +1,6 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"leakpatrol_popup_spread": "Water spread to {room}",
 	"hackers_proxy": "Rotate proxy ({count})",
 	"hackers_proxy_none": "No proxy hops left",
 	"dome_interceptor_label": "Interceptor",

@@ -16,6 +16,7 @@ import {
 	FIRST_SPAWN_MS,
 	FIX_MS,
 	FLOOD_RESET,
+	FLOOD_SPREAD,
 	MAX_LEAKS_PER_ROOM,
 	MAX_PICKUPS,
 	PICKUP_EVERY_MS,
@@ -35,6 +36,7 @@ import {
 	type Inventory,
 	type ToolKind
 } from './tools.js';
+import { adjacentRooms } from './rooms.js';
 import {
 	dialogEveryMs,
 	dialogWindowMs,
@@ -119,6 +121,7 @@ export type LeakPatrolEvent =
 	| { type: 'burst'; room: number; absorbed: boolean }
 	| { type: 'wave'; wave: number }
 	| { type: 'flood'; room: number; lives: number }
+	| { type: 'spread'; from: number; to: number }
 	| { type: 'game-over' };
 
 export function createGame(): LeakPatrolState {
@@ -334,6 +337,10 @@ function tickRooms(state: LeakPatrolState, dtMs: number, events: LeakPatrolEvent
 		state.lives = Math.max(0, state.lives - 1);
 		state.floods += 1;
 		events.push({ type: 'flood', room, lives: state.lives });
+		for (const neighbour of adjacentRooms(room)) {
+			state.rooms[neighbour] = Math.min(0.95, state.rooms[neighbour] + FLOOD_SPREAD);
+			events.push({ type: 'spread', from: room, to: neighbour });
+		}
 		if (state.lives === 0) return false;
 	}
 	return true;

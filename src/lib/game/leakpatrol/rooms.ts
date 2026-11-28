@@ -21,3 +21,22 @@ export function roomOfKey(code: string): number {
 	const index = Number(match[1]) - 1;
 	return index < ROOM_COUNT ? index : -1;
 }
+
+/** Rooms sharing a wall with this one (up, down, left, right on the cross-section grid) */
+export function adjacentRooms(index: number): number[] {
+	const { column, row } = roomCell(index);
+	const neighbours: number[] = [];
+	for (const [dc, dr] of [
+		[1, 0],
+		[-1, 0],
+		[0, 1],
+		[0, -1]
+	]) {
+		const c = column + dc;
+		const r = row + dr;
+		if (c < 0 || c >= ROOM_COLUMNS || r < 0) continue;
+		const other = r * ROOM_COLUMNS + c;
+		if (other < ROOM_COUNT) neighbours.push(other);
+	}
+	return neighbours;
+}
