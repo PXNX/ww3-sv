@@ -290,7 +290,8 @@ export function globalMultiplier(state: TycoonState): number {
 	let multiplier =
 		prestigeMultiplier(state.prestigePoints, state) *
 		(1 + achievementBonus(state, 'output')) *
-		(1 + perkEffect('output', state.perks.output));
+		(1 + perkEffect('output', state.perks.output)) *
+		(1 + state.contractBonus);
 	// A producer at its last level (1000 units): +5% overall production
 	const hasMaxedProducer = PRODUCERS.some((p) => state.owned[p.id] >= 1000);
 	if (hasMaxedProducer) multiplier *= 1.05;

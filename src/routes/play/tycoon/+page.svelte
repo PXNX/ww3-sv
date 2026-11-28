@@ -242,6 +242,34 @@
 					{m.tycoon_hud_per_second({ amount: formatBig(game.perSecond, locale, 1) })}
 				</p>
 			</div>
+			{#if game.state.contract}
+				{@const contract = game.state.contract}
+				<div
+					class="bg-chartreuse/40 flex items-center gap-2 rounded-lg border-2 border-ink px-2 py-1 font-display text-xs font-bold tabular-nums"
+					data-tutorial="contract"
+				>
+					<span>{m.tycoon_contract_label()}</span>
+					<span dir="auto" class="min-w-0 flex-1 truncate">
+						{m.tycoon_contract_progress({
+							delivered: formatBig(contract.delivered, locale),
+							target: formatBig(contract.target, locale),
+							seconds: Math.max(0, Math.ceil(contract.remainingMs / 1000))
+						})}
+					</span>
+					<div
+						class="h-1.5 w-12 shrink-0 overflow-hidden rounded-full bg-ink/15"
+						aria-hidden="true"
+					>
+						<div
+							class="h-full bg-ink"
+							style:width="{Math.min(
+								100,
+								Math.round((contract.delivered / contract.target) * 100)
+							)}%"
+						></div>
+					</div>
+				</div>
+			{/if}
 			<div class="flex flex-wrap gap-1.5 font-display text-xs font-bold tabular-nums">
 				<span class="rounded-full border-2 border-ink bg-sand px-2 py-0.5" dir="auto">
 					{m.tycoon_hud_per_tap({ amount: formatBig(game.tapGain, locale, 1) })}

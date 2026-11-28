@@ -417,6 +417,22 @@ export class TycoonGame {
 				this.#showToast(m.tycoon_toast_prestige({ points: event.points }));
 				this.#play('chime-big', 0);
 				break;
+			case 'contract-start':
+				this.#showToast(m.tycoon_toast_contract_start({ target: formatBig(event.target, locale) }));
+				this.#play('chime', 0);
+				break;
+			case 'contract-complete':
+				this.#showToast(
+					m.tycoon_toast_contract_complete({
+						reward: formatBig(event.reward, locale),
+						percent: formatBig(event.bonus * 100, locale, 1)
+					})
+				);
+				this.#play('chime-big', 0);
+				break;
+			case 'contract-failed':
+				this.#showToast(m.tycoon_toast_contract_failed());
+				break;
 		}
 	}
 

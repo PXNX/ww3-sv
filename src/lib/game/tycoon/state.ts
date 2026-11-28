@@ -45,6 +45,8 @@ import {
 	upgradeDef
 } from './economy.js';
 import { firstEventDelay, nextEventDelay, stepEvents } from './events.js';
+import { beginContracts, deliverToContract, stepContracts } from './contracts.js';
+import { NEXT_CONTRACT_MS } from './contracts.js';
 import type { TycoonEvent, TycoonState } from './types.js';
 
 export function emptyOwned(): Record<ProducerId, number> {
@@ -57,7 +59,7 @@ export function emptyPerks(): Record<PerkId, number> {
 
 /** A brand-new game; the random source only decides when the first crisis comes */
 export function createState(random: Random): TycoonState {
-	return {
+	const state: TycoonState = {
 		barrels: 0,
 		runTotal: 0,
 		lifetime: 0,
@@ -72,12 +74,18 @@ export function createState(random: Random): TycoonState {
 		achievements: [],
 		eventsHandled: 0,
 		sanctionsEvaded: 0,
+		contract: null,
+		contractsCompleted: 0,
+		contractBonus: 0,
+		nextContractMs: 0,
 		event: null,
 		effects: [],
 		nextEventMs: firstEventDelay(random),
 		lastEvent: null,
 		buyMode: '1x'
 	};
+	beginContracts(state, random);
+	return state;
 }
 
 /**
@@ -92,7 +100,7 @@ export function tap(state: TycoonState, random: Random): { gained: number; event
 	state.runTotal += gained;
 	state.lifetime += gained;
 	state.taps += 1;
-	return { gained, events: checkAchievements(state) };
+	return { gained, events: [...deliverToContract(state, gained), ...checkAchievements(state)] };
 }
 
 /**
@@ -237,8 +245,9 @@ export function runCycles(state: TycoonState, dtMs: number): number {
 
 /** One fixed step: the wells produce, crises run their course */
 export function stepGame(state: TycoonState, dtMs: number, random: Random): TycoonEvent[] {
-	runCycles(state, dtMs);
-	const events = stepEvents(state, dtMs, random);
+	const paid = runCycles(state, dtMs);
+	const events = stepContracts(state, dtMs, paid, random);
+	events.push(...stepEvents(state, dtMs, random));
 	events.push(...checkAchievements(state));
 	return events;
 }
@@ -329,5 +338,7 @@ export function prestige(state: TycoonState, random: Random): TycoonEvent[] {
 	state.effects = [];
 	state.lastEvent = null;
 	state.nextEventMs = firstEventDelay(random);
+	state.contract = null;
+	state.nextContractMs = NEXT_CONTRACT_MS;
 	return [{ type: 'prestige', points }, ...checkAchievements(state)];
 }

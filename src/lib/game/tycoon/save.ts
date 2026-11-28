@@ -10,6 +10,7 @@ import { MAX_OWNED, PERKS, PRODUCER_IDS, ACHIEVEMENTS, UPGRADES } from './config
 import { cycleMs } from './economy.js';
 import { createState, syncProducerTiers } from './state.js';
 import type { TycoonState } from './types.js';
+import type { ActiveContract } from './contracts.js';
 
 export const SAVE_VERSION = 2;
 export const SAVE_KEY = 'tycoon:save';
@@ -34,6 +35,10 @@ export interface SaveData {
 	achievements: string[];
 	eventsHandled: number;
 	sanctionsEvaded: number;
+	contract?: ActiveContract | null;
+	contractsCompleted?: number;
+	contractBonus?: number;
+	nextContractMs?: number;
 }
 
 export function serialize(state: TycoonState, now: number): SaveData {
@@ -54,6 +59,10 @@ export function serialize(state: TycoonState, now: number): SaveData {
 		achievements: [...state.achievements],
 		eventsHandled: state.eventsHandled,
 		sanctionsEvaded: state.sanctionsEvaded,
+		contract: state.contract,
+		contractsCompleted: state.contractsCompleted,
+		contractBonus: state.contractBonus,
+		nextContractMs: state.nextContractMs,
 		buyMode: state.buyMode
 	};
 }
@@ -112,6 +121,30 @@ export function parseSave(
 	state.prestiges = Math.floor(amount(data.prestiges) ?? 0);
 	state.eventsHandled = Math.floor(amount(data.eventsHandled) ?? 0);
 	state.sanctionsEvaded = Math.floor(amount(data.sanctionsEvaded) ?? 0);
+	state.contractsCompleted = Math.floor(amount(data.contractsCompleted) ?? 0);
+	state.contractBonus = Math.min(0.3, amount(data.contractBonus) ?? 0);
+	state.nextContractMs = Math.max(0, amount(data.nextContractMs) ?? 0);
+	const rawContract = data.contract;
+	if (isRecord(rawContract)) {
+		const id = typeof rawContract.id === 'string' ? rawContract.id : '';
+		const target = amount(rawContract.target);
+		const delivered = amount(rawContract.delivered);
+		const remainingMs = amount(rawContract.remainingMs);
+		const rewardShare = amount(rawContract.rewardShare);
+		const bonus = amount(rawContract.bonus);
+		if (
+			id &&
+			target &&
+			delivered !== undefined &&
+			remainingMs !== undefined &&
+			rewardShare !== undefined &&
+			bonus !== undefined
+		) {
+			state.contract = { id, target, delivered, remainingMs, rewardShare, bonus };
+		}
+	} else if (rawContract === null || rawContract === undefined) {
+		state.contract = null;
+	}
 
 	const owned = isRecord(data.owned) ? data.owned : {};
 	const progress = isRecord(data.progress) ? data.progress : {};

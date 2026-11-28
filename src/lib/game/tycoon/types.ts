@@ -1,5 +1,6 @@
 /* Shared shapes of the idle game's state. The state is a plain object the rules mutate. */
 import type { PerkId, ProducerId } from './config.js';
+import type { ActiveContract } from './contracts.js';
 
 export type EventKind = 'spike' | 'sanctions' | 'pipeline' | 'protest';
 
@@ -53,6 +54,13 @@ export interface TycoonState {
 	/** Crises the player has answered, and sanctions they dodged by reflagging */
 	eventsHandled: number;
 	sanctionsEvaded: number;
+	/** The delivery goal being worked on, or null between contracts */
+	contract: ActiveContract | null;
+	contractsCompleted: number;
+	/** Permanent output bonus earned from contracts, as a fraction */
+	contractBonus: number;
+	/** Quiet time before the next contract is offered */
+	nextContractMs: number;
 	// Transient: never saved
 	event: PendingEvent | null;
 	effects: ActiveEffect[];
@@ -69,7 +77,10 @@ export type TycoonEvent =
 	| { type: 'event-start'; kind: EventKind; producer?: ProducerId }
 	| { type: 'event-resolved'; kind: EventKind; outcome: EventOutcome; choice: EventChoice }
 	| { type: 'effect-end'; id: EffectId }
-	| { type: 'prestige'; points: number };
+	| { type: 'prestige'; points: number }
+	| { type: 'contract-start'; id: string; target: number }
+	| { type: 'contract-complete'; reward: number; bonus: number }
+	| { type: 'contract-failed'; id: string };
 
 export type EventOutcome =
 	| 'sold'
