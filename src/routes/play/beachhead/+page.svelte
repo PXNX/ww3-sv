@@ -333,7 +333,9 @@
 			{/if}
 		</div>
 	{:else if game.screen === 'base'}
-		<BeachheadIsland {game} />
+		<div data-tutorial="base" class="flex min-h-0 flex-1 flex-col">
+			<BeachheadIsland {game} />
+		</div>
 	{:else}
 		<div data-tutorial="playfield" class="flex min-h-0 flex-1 flex-col">
 			<BeachheadMap {game} />
@@ -346,7 +348,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.beachhead_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.beachhead_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

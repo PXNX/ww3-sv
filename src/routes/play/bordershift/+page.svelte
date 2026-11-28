@@ -74,24 +74,40 @@
 		{/if}
 	{/snippet}
 
-	<section data-tutorial="playfield" class="mx-auto flex w-full max-w-xl flex-1 flex-col items-center gap-2">
+	<section
+		data-tutorial="playfield"
+		class="mx-auto flex w-full max-w-xl flex-1 flex-col items-center gap-2"
+	>
 		<div
 			class="flex w-full flex-col gap-2 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-2 shadow-[3px_3px_0_var(--color-ink)]"
 		>
 			<div class="flex w-full items-center justify-between gap-2">
 				<LivesBar lives={game.reputation} max={STARTING_REPUTATION} class="shrink-0 text-xl" />
-				<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
+				<p
+					dir="auto"
+					data-tutorial="hud-convoy"
+					class="font-display text-sm font-bold tabular-nums sm:text-base"
+				>
 					{m.bordershift_hud_convoy({ count: game.convoyNumber })}
 				</p>
-				<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
+				<p
+					dir="auto"
+					data-tutorial="hud-wave"
+					class="font-display text-sm font-bold tabular-nums sm:text-base"
+				>
 					{m.bordershift_hud_wave({ wave: game.wave })}
 				</p>
-				<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
+				<p
+					dir="auto"
+					data-tutorial="hud-streak"
+					class="font-display text-sm font-bold tabular-nums sm:text-base"
+				>
 					{m.bordershift_hud_streak({ count: game.streak })}
 				</p>
 			</div>
 			<div
 				class="flex items-center gap-2"
+				data-tutorial="hud-destabilisation"
 				role="progressbar"
 				aria-label={m.bordershift_aria_destabilisation()}
 				aria-valuemin={0}
@@ -116,7 +132,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.bordershift_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.bordershift_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

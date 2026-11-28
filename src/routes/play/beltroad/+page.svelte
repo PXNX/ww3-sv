@@ -126,7 +126,8 @@
 
 	{#if playing}
 		<!-- The HUD, the grid and the buttons share one width, as wide as the height allows -->
-		<section data-tutorial="playfield"
+		<section
+			data-tutorial="playfield"
 			class="mx-auto flex w-full flex-col items-center gap-2"
 			style:max-width="max(16rem, min(100%, calc((100dvh - 22rem) * {game.level.width /
 				game.level.height})))"
@@ -216,7 +217,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.beltroad_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.beltroad_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

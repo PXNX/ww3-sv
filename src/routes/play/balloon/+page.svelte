@@ -106,7 +106,11 @@
 					></div>
 				</div>
 			</div>
-			<p data-tutorial="photos" dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
+			<p
+				data-tutorial="photos"
+				dir="auto"
+				class="font-display text-sm font-bold tabular-nums sm:text-base"
+			>
 				{m.balloon_hud_photos({ count: game.photos })}
 			</p>
 			<p dir="auto" class="font-display text-sm font-bold tabular-nums sm:text-base">
@@ -120,7 +124,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.balloon_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.balloon_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>

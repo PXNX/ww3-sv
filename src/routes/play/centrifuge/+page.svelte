@@ -81,11 +81,18 @@
 		{/if}
 	{/snippet}
 
-	<section data-tutorial="playfield" class="mx-auto flex w-full max-w-md flex-col items-center gap-2">
+	<section
+		data-tutorial="playfield"
+		class="mx-auto flex w-full max-w-md flex-col items-center gap-2"
+	>
 		<div
 			class="flex w-full items-center justify-between gap-3 rounded-[12px_6px_14px_8px] border-3 border-ink bg-paper px-3 py-1 shadow-[3px_3px_0_var(--color-ink)]"
 		>
-			<p dir="auto" class="font-display text-base font-bold tabular-nums sm:text-lg">
+			<p
+				dir="auto"
+				data-tutorial="hud-streak"
+				class="font-display text-base font-bold tabular-nums sm:text-lg"
+			>
 				{m.centrifuge_hud_streak({ streak: game.streak, multiplier: game.multiplier })}
 			</p>
 			<LivesBar lives={game.lives} max={STARTING_LIVES} class="shrink-0 text-xl" />
@@ -97,7 +104,7 @@
 	<InteractiveTutorial
 		open={showTutorial}
 		title={m.centrifuge_tutorial_title()}
-		steps={tutorialSteps}
+		steps={tutorialSteps()}
 		closeLabel={m.centrifuge_tutorial_close()}
 		onclose={() => (showTutorial = false)}
 	/>
