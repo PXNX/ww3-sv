@@ -1,61 +1,61 @@
-# Allgemeine Geschäftsbedingungen
+# Terms and Conditions
 
-## 1. Geltungsbereich und Anbieter
+## 1. Scope and provider
 
-Diese Bedingungen gelten für alle Käufe im Spiel World War 3, die über den Telegram-Bot @game_ww3_bot oder die Telegram Mini App abgeschlossen werden. Anbieter und Vertragspartner ist {name}, {street}, {city}, {country}, E-Mail: {email} (siehe Impressum).
+These terms apply to all purchases in the World War 3 game made through the Telegram bot @game_ww3_bot or the Telegram Mini App. The provider and contracting party is {name}, {street}, {city}, {country}, email: {email} (see Legal notice).
 
-Das Spiel selbst ist kostenlos und vollständig ohne Kauf spielbar. Spielmodi, Punktestände und Ranglisten sind nicht kostenpflichtig.
+The game itself is free and fully playable without any purchase. Game modes, scores and leaderboards carry no charge.
 
-## 2. Angebot und Vertragsschluss
+## 2. Offer and conclusion of contract
 
-Die angebotenen Inhalte, ihr Umfang und ihr Preis werden vor dem Kauf in der Rechnung (Invoice) innerhalb von Telegram angezeigt. Die Darstellung im Spiel ist kein bindendes Angebot. Mit dem Bestätigen der Zahlung in Telegram geben Sie ein verbindliches Angebot ab; der Vertrag kommt zustande, sobald die Zahlung erfolgreich ist und wir den Kauf bestätigen.
+The content on offer, its scope and its price are shown before the purchase in the invoice inside Telegram. The presentation in the game is not a binding offer. By confirming the payment in Telegram you make a binding offer; the contract comes about once the payment has succeeded and we confirm the purchase.
 
-Vertragssprache ist Deutsch. Den Vertragstext speichern wir nicht gesondert; die Kaufbestätigung erhalten Sie als Nachricht im Telegram-Chat mit dem Bot, und diese Bedingungen sind jederzeit mit /agb abrufbar.
+The contract language is English. We do not store the contract text separately; you receive the purchase confirmation as a message in the Telegram chat with the bot, and these terms can be retrieved at any time with /agb.
 
-## 3. Preise und Zahlung
+## 3. Prices and payment
 
-Alle Preise werden in Telegram Stars (XTR) angegeben und bezahlt. Telegram Stars erwerben Sie bei Telegram oder über die App-Stores zu deren Bedingungen; wir sind daran nicht beteiligt. Die Zahlung wird vollständig von Telegram abgewickelt.
+All prices are given and paid in Telegram Stars (XTR). You obtain Telegram Stars from Telegram or through the app stores under their terms; we are not involved in that. Payment is handled entirely by Telegram.
 
-## 4. Virtuelle Inhalte
+## 4. Virtual content
 
-Gekaufte Revival-Token sind virtuelle Spielgegenstände ohne Geldwert. Ein Revival-Token setzt einen gescheiterten Lauf in den Spielen fort, die das unterstützen, und wird dabei verbraucht. Revival-Token können nicht in Geld, Telegram Stars oder andere Werte zurückgetauscht, ausgezahlt oder auf andere Konten übertragen werden. Sie werden Ihrem Telegram-Konto unmittelbar nach erfolgreicher Zahlung gutgeschrieben und stehen in der Telegram Mini App zur Verfügung.
+Revival tokens are virtual game items without monetary value. A revival token continues a failed run in the games that support it and is used up in the process. Revival tokens cannot be exchanged for money, Telegram Stars or other value, paid out, or transferred to other accounts. They are credited to your Telegram account immediately after a successful payment and are available in the Telegram Mini App.
 
-Gekaufte Looks für den Agenten (zum Beispiel ein Hut, eine Augen-, Shirt- oder Haarfarbe) sind ebenfalls virtuelle Spielgegenstände ohne Geldwert. Ein Look wird einmal gekauft, Ihrem Telegram-Konto unmittelbar nach erfolgreicher Zahlung dauerhaft zugeordnet und kann in der Telegram Mini App im Agenten-Editor getragen werden, solange wir das Spiel betreiben. Looks verändern nur das Aussehen und bringen keinen spielerischen Vorteil; sie können nicht zurückgetauscht, ausgezahlt oder auf andere Konten übertragen werden.
+Purchased looks for the agent (for example a hat, an eye, shirt or hair colour) are likewise virtual game items without monetary value. A look is bought once, assigned permanently to your Telegram account immediately after a successful payment, and can be worn in the agent editor in the Telegram Mini App for as long as we operate the game. Looks change appearance only and give no gameplay advantage; they cannot be exchanged, paid out or transferred to other accounts.
 
 ## 5. World War 3 Pro
 
-Pro ist ein Abonnement mit einer Laufzeit von 30 Tagen, das sich über Telegram automatisch um jeweils 30 Tage verlängert, bis Sie es kündigen. Pro umfasst 10 Revival-Token je Laufzeit, die zu Beginn jeder Laufzeit gutgeschrieben werden, und – sobald das Spiel Werbung zeigt – ein Spiel ohne Werbung. Nicht genutzte Revival-Token bleiben auch nach dem Ende von Pro erhalten. Sie können jederzeit in Telegram kündigen (Einstellungen › Meine Stars › Abonnements); die Kündigung wirkt zum Ende der laufenden Laufzeit, bis dahin bleibt Pro aktiv.
+Pro is a subscription with a term of 30 days that renews automatically through Telegram for a further 30 days at a time until you cancel it. Pro includes 10 revival tokens per term, credited at the start of each term, and — once the game shows adverts — a game without adverts. Unused revival tokens remain even after Pro ends. You can cancel at any time in Telegram (Settings › My Stars › Subscriptions); the cancellation takes effect at the end of the current term, until then Pro stays active.
 
-## 6. Widerrufsrecht
+## 6. Right of withdrawal
 
-Verbraucherinnen und Verbrauchern steht ein Widerrufsrecht zu; die Einzelheiten stehen in der Widerrufsbelehrung (/widerruf). Für digitale Inhalte erlischt es vorzeitig, wenn Sie vor dem Kauf ausdrücklich zustimmen, dass wir sofort liefern, und bestätigen, dass Sie dadurch Ihr Widerrufsrecht verlieren.
+Consumers have a right of withdrawal; the details are set out in the right of withdrawal notice (/widerruf). For digital content it ends early if, before the purchase, you expressly consent that we deliver immediately and confirm that you thereby lose your right of withdrawal.
 
-## 7. Keine freiwilligen Erstattungen
+## 7. No voluntary refunds
 
-Über das gesetzliche Widerrufsrecht und die gesetzlichen Gewährleistungsrechte hinaus erstatten wir keine Käufe. Insbesondere werden bereits gutgeschriebene oder verbrauchte Inhalte nicht erstattet, und es besteht kein Anspruch auf Erstattung bei Verlust des Telegram-Kontos oder bei Sperrung wegen Missbrauchs. Ihre gesetzlichen Rechte bleiben unberührt.
+Beyond the statutory right of withdrawal and statutory warranty rights we do not refund purchases. In particular, content already credited or used is not refunded, and there is no entitlement to a refund in the event of losing the Telegram account or of a block for abuse. Your statutory rights remain unaffected.
 
-## 8. Gewährleistung
+## 8. Warranty
 
-Es gelten die gesetzlichen Vorschriften über Verträge über digitale Produkte (§§ 327 ff. BGB). Bei Problemen mit einem Kauf wenden Sie sich bitte an den Support (/paysupport).
+The statutory provisions on contracts for digital products apply (§§ 327 et seq. BGB). If there is a problem with a purchase, please contact support (/paysupport).
 
-## 9. Haftung
+## 9. Liability
 
-Wir haften unbeschränkt bei Vorsatz und grober Fahrlässigkeit, bei der Verletzung von Leben, Körper oder Gesundheit sowie nach dem Produkthaftungsgesetz. Bei leicht fahrlässiger Verletzung einer wesentlichen Vertragspflicht, deren Erfüllung die ordnungsgemäße Durchführung des Vertrags überhaupt erst ermöglicht und auf deren Einhaltung Sie regelmäßig vertrauen dürfen, ist die Haftung auf den vertragstypischen, vorhersehbaren Schaden begrenzt. Im Übrigen ist die Haftung für leichte Fahrlässigkeit ausgeschlossen.
+We are liable without limitation for intent and gross negligence, for injury to life, body or health, and under the Product Liability Act. For slight negligence in breach of an essential contractual duty, whose fulfilment makes the proper performance of the contract possible in the first place and on whose observance you may regularly rely, liability is limited to the foreseeable damage typical for this kind of contract. Otherwise liability for slight negligence is excluded.
 
-## 10. Verfügbarkeit und Änderungen am Spiel
+## 10. Availability and changes to the game
 
-Wir entwickeln das Spiel weiter und dürfen Spielinhalte, Spielregeln und die Spielbalance ändern, soweit dies für Sie zumutbar ist und der Wert bereits gekaufter Inhalte nicht wesentlich beeinträchtigt wird. Eine ununterbrochene Verfügbarkeit können wir nicht zusichern; Wartungen und Störungen außerhalb unseres Einflussbereichs sind möglich.
+We keep developing the game and may change game content, game rules and game balance insofar as this is reasonable for you and does not materially detract from the value of content already purchased. We cannot guarantee uninterrupted availability; maintenance and faults outside our control are possible.
 
-## 11. Missbrauch
+## 11. Abuse
 
-Bei Manipulation, dem Ausnutzen von Fehlern oder Zahlungsbetrug können wir betroffene Gutschriften rückgängig machen und den Zugang zu Käufen sperren.
+In the case of manipulation, exploitation of bugs or payment fraud, we may reverse affected credits and block access to purchases.
 
-## 12. Minderjährige
+## 12. Minors
 
-Minderjährige dürfen Käufe nur mit Zustimmung ihrer Erziehungsberechtigten tätigen.
+Minors may make purchases only with the consent of their legal guardians.
 
-## 13. Schlussbestimmungen
+## 13. Final provisions
 
-Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts. Bei Verbraucherinnen und Verbrauchern gilt diese Rechtswahl nur, soweit dadurch nicht der Schutz durch zwingende Bestimmungen des Rechts des Staates ihres gewöhnlichen Aufenthalts entzogen wird. Sollten einzelne Bestimmungen unwirksam sein, bleibt die Wirksamkeit der übrigen unberührt.
+The law of the Federal Republic of Germany applies, excluding the UN Convention on Contracts for the International Sale of Goods. For consumers this choice of law applies only insofar as it does not deprive you of the protection of mandatory provisions of the law of the state of your habitual residence. If individual provisions are invalid, the validity of the remaining provisions is unaffected.
 
-Stand: {updated}
+Last updated: {updated}

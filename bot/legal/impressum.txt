@@ -1,30 +1,29 @@
-# Impressum
+# Legal notice
 
-## Angaben gemäß § 5 DDG
+## 1. Information pursuant to § 5 DDG
 
 {name}
 {street}
 {city}
 {country}
 
-## Kontakt
+## 2. Contact
 
-E-Mail: {email}
+E-mail: {email}
 {telegram_line}
 {phone_line}
-
 {vat_line}
 
-## Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV
+## 3. Responsible for the content pursuant to § 18(2) MStV
 
-{name}, Anschrift wie oben
+{name}, address as above
 
-## Verbraucherstreitbeilegung
+## 4. Consumer dispute resolution
 
-Wir sind nicht bereit und nicht verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.
+We are not willing and not obliged to participate in dispute resolution procedures before a consumer arbitration body.
 
-## Satire
+## 5. Satire
 
-World War 3 ist ein satirisches Spiel. Personen des öffentlichen Lebens erscheinen als Karikaturen; alle Szenen sind erfunden und keine Äußerung einer Figur ist ein echtes Zitat.
+World War 3 is a satirical game. Public figures appear as caricatures; all scenes are fictional and no statement by a figure is a real quote.
 
-Stand: {updated}
+Last updated: {updated}

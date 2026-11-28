@@ -43,13 +43,13 @@ def test_every_legal_page_fills_all_its_placeholders():
     for page in legal.PAGES:
         text = legal.fill_text((legal.config.LEGAL_DIR / f"{page}.txt").read_text(encoding="utf-8"), CONFIG)
         assert not re.search(r"\{\w+\}", text), page
-        assert "Stand: 27.10.2026" in text, page
+        assert "Last updated: 27.10.2026" in text, page
 
 
 def test_the_impressum_names_the_operator_and_omits_empty_optional_lines():
     text = legal.fill_text((legal.config.LEGAL_DIR / "impressum.txt").read_text(encoding="utf-8"), CONFIG)
     assert "Erika Muster\nWeg 1\n12345 Ort" in text
-    assert "Telefon" not in text and "Umsatzsteuer" not in text
+    assert "Phone" not in text and "VAT" not in text
 
 
 def test_missing_operator_data_and_unknown_placeholders_are_refused():

@@ -1,8 +1,8 @@
 """
-The legal texts German law asks for when selling digital goods: Impressum, Datenschutzerklärung, AGB
-and Widerrufsbelehrung. Their sources are legal/*.txt with {placeholders} for the operator data from
-config.local.json; this module fills them in and renders them as Telegram messages. The links sent out
-point to the translated versions of the same documents on the game website.
+The legal texts German law requires for selling digital goods: Legal notice, Privacy policy,
+Terms and conditions, and Right of withdrawal. Their sources are legal/*.txt with {placeholders}
+for the operator data from config.local.json; this module fills them in and renders them as
+Telegram messages. The links sent out point to the same documents on the game website (English only).
 """
 import re
 from functools import cache
@@ -11,10 +11,10 @@ from typing import Final
 from ww3bot import config
 
 PAGES: Final[dict[str, str]] = {
-    "impressum": "Impressum",
-    "datenschutz": "Datenschutz",
-    "agb": "AGB",
-    "widerruf": "Widerruf",
+    "impressum": "Legal notice",
+    "datenschutz": "Privacy policy",
+    "agb": "Terms and conditions",
+    "widerruf": "Right of withdrawal",
 }
 
 # What a link to each page is called: English for every reader, whatever language the page is in
@@ -30,13 +30,14 @@ def page_link_name(page: str, lang: str = "en") -> str:
     return PAGE_LINKS.get(page, PAGES.get(page, page))
 
 # Stored with each consent to record which wording was agreed to; buyers are asked only once per account
-CONSENT_VERSION: Final[str] = "2026-11-24"
+CONSENT_VERSION: Final[str] = "2026-11-28"
 
 # The wording § 356 Abs. 4 and 5 BGB asks for, shown before the first purchase of a version
 CONSENT_TEXT: Final[str] = (
-    "Ich stimme ausdrücklich zu, dass mit der Ausführung des Vertrags vor Ablauf der Widerrufsfrist "
-    "begonnen wird. Mir ist bekannt, dass ich bei Revival-Token und Looks für den Agenten mit Beginn der Ausführung und bei "
-    "World War 3 Pro mit vollständiger Erbringung mein Widerrufsrecht verliere. Ich akzeptiere die AGB."
+    "I expressly consent to the contract being performed before the withdrawal period expires. "
+    "I am aware that for revival tokens and looks for the agent I lose my right of withdrawal when "
+    "performance begins, and for World War 3 Pro when the service is fully performed. "
+    "I accept the terms and conditions."
 )
 
 TELEGRAM_LIMIT: Final[int] = 4000
@@ -77,10 +78,10 @@ def fill_text(source: str, settings: dict) -> str:
     values = {
         **operator,
         "updated": settings.get("legalUpdated") or "",
-        "phone_line": f"Telefon: {operator['phone']}" if operator.get("phone") else "",
+        "phone_line": f"Phone: {operator['phone']}" if operator.get("phone") else "",
         "telegram_line": f"Telegram: {telegram_contact(operator)}" if telegram_contact(operator) else "",
         "vat_line": (
-            f"Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG: {operator['vat_id']}" if operator.get("vat_id") else ""
+            f"VAT identification number pursuant to § 27a UStG: {operator['vat_id']}" if operator.get("vat_id") else ""
         ),
     }
 

@@ -1,61 +1,61 @@
-# Datenschutzerklärung
+# Privacy Policy
 
-## 1. Verantwortlicher
+## 1. Data Controller
 
-Verantwortlich für die Datenverarbeitung im Sinne der Datenschutz-Grundverordnung (DSGVO) ist {name}, {street}, {city}, {country}, E-Mail: {email}.
+Responsible for data processing in the sense of the General Data Protection Regulation (GDPR) is {name}, {street}, {city}, {country}, email: {email}.
 
-## 2. Das Spiel im Browser
+## 2. The game in the browser / Telegram Mini App
 
-Das Spiel World War 3 läuft in Ihrem Browser oder als Telegram Mini App. Spielstände, Einstellungen, Ihre Spielfigur und der Karrierefortschritt werden im lokalen Speicher Ihres Geräts abgelegt und nicht an uns übertragen; Ausnahmen sind in Telegram Ihre Tagesserie für die Erinnerungen (Abschnitt 6) und Ihr Ergebnis, wenn Sie ein Spiel aus einer Gruppe heraus öffnen (Abschnitt 8). Das Speichern ist für die von Ihnen gewünschte Funktion unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG). Es werden keine Tracking- oder Analysewerkzeuge eingesetzt.
+World War 3 runs in your browser or as a Telegram Mini App. Game progress, settings, your avatar and career progress are stored in the local storage of your device and are not transmitted to us; exceptions are your daily streak for the reminders (section 6) and your result when opening a game from a group (section 8). Saving is absolutely required for the function you wish.
 
-Die Website außerhalb von Telegram wird bei Vercel Inc. (440 N Barranca Ave #4133, Covina, CA 91723, USA) gehostet. Beim Aufruf verarbeitet Vercel technisch notwendige Verbindungsdaten (IP-Adresse, Zeitpunkt, abgerufene Datei, Browserkennung), um die Seite auszuliefern und vor Angriffen zu schützen (Art. 6 Abs. 1 lit. f DSGVO). Vercel ist nach dem EU-US Data Privacy Framework zertifiziert; zusätzlich bestehen Standardvertragsklauseln.
+When opening the game outside Telegram, the website is hosted by Vercel Inc. (440 N Barranca Ave #4133, Covina, CA 91723, USA). On access, Vercel processes technically necessary connection data (IP address, time, requested file, browser type) to deliver the page and protect it from attacks (Art. 6 Abs. 1 lit. f GDPR). Vercel is certified under the EU-US Data Privacy Framework; additional standard contractual clauses apply.
 
-## 3. Anmeldung über Telegram
+Opening the game as a Telegram Mini App, we receive signed start data from Telegram. From this we process your Telegram user ID, first name, username and language setting to recognise you and assign your purchases (Art. 6 Abs. 1 lit. b GDPV). The start data itself is not stored.
 
-Öffnen Sie das Spiel als Telegram Mini App, übermittelt Telegram uns signierte Startdaten. Daraus verarbeiten wir Ihre Telegram-Nutzer-ID, Ihren Vornamen, Ihren Benutzernamen und Ihre Spracheinstellung, um Sie zu erkennen und Ihnen Ihre Käufe zuzuordnen (Art. 6 Abs. 1 lit. b DSGVO). Die Startdaten selbst speichern wir nicht.
+## 3. Registration via Telegram
 
-## 4. Käufe mit Telegram Stars
+If you write to the bot, we process your messages and your Telegram user ID to answer your requests (Art. 6 Abs. 1 lit. b and f GDPR). Messages are transmitted via Telegram's servers, which may be located outside the EU.
 
-Für Käufe verarbeiten wir Ihre Telegram-Nutzer-ID, den gekauften Artikel, den Preis in Stars, den Zeitpunkt, die Zahlungskennungen von Telegram, Ihre Zustimmung zur sofortigen Lieferung (mit Zeitpunkt und Version der Bedingungen) sowie Ihr Guthaben an gekauften Revival-Token, die gekauften Looks und die Laufzeit von Pro. Rechtsgrundlage ist die Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO) und, soweit Aufbewahrungspflichten bestehen, Art. 6 Abs. 1 lit. c DSGVO.
+## 4. Purchases with Telegram Stars
 
-Die Zahlung wickelt Telegram ab. Zahlungsdaten wie Kartennummern erhalten wir nicht. Für die Verarbeitung durch Telegram gilt die Datenschutzerklärung von Telegram: https://telegram.org/privacy
+For purchases we process your Telegram user ID, the purchased item, the price in Stars, the time, Telegram's payment identifiers, your consent for immediate delivery (with date and version of the terms) as well as your balance of purchased revival tokens, purchased looks and Pro term duration. Legal basis is contractual performance (Art. 6 Abs. 1 lit. b GDPR) and, where storage obligations exist, Art. 6 Abs. 1 lit. c GDPR. The payment is handled by Telegram. We do not receive payment data such as card numbers. For processing by Telegram, Telegram's privacy policy applies: https://telegram.org/privacy
 
-## 5. Der Telegram-Bot
+## 5. The Telegram Bot
 
-Wenn Sie dem Bot schreiben, verarbeiten wir Ihre Nachrichten und Ihre Telegram-Nutzer-ID, um Ihre Anfragen zu beantworten (Art. 6 Abs. 1 lit. b und f DSGVO). Nachrichten werden über die Server von Telegram übertragen, die auch außerhalb der EU stehen können.
+If you write to the bot, we process your messages and your Telegram user ID to answer your requests (Art. 6 Abs. 1 lit. b and f GDPR). Messages are transmitted via Telegram's servers, which may be located outside the EU.
 
-## 6. Erinnerungen an Ihre Tagesserie
+## 6. Daily streak reminders
 
-Spielen Sie in Telegram, meldet das Spiel dem Bot die Länge Ihrer Serie bei der täglichen Belohnung und den Zeitpunkt, an dem sie endet (Mitternacht nach Ihrer Gerätezeit). Zwei Stunden vorher schickt Ihnen der Bot eine Erinnerung, sofern er Ihnen schreiben darf. Dafür speichern wir Ihre Telegram-Nutzer-ID, die Serienlänge, diesen Zeitpunkt, Ihre Sprache (Deutsch oder Englisch) und ob Sie die Erinnerungen abgeschaltet haben. Jede neue Meldung überschreibt die vorige. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (die Erinnerung ist Teil des Spiels, das Sie nutzen). Sie können die Erinnerungen jederzeit mit der Schaltfläche in der Nachricht oder mit /reminders abschalten.
+If you play in Telegram, the game reports to the bot the length of your series at the daily reward and the time at which it ends (midnight according to your device time). Two hours beforehand the bot sends you a reminder, provided it may write to you. For this we store your Telegram user ID, the series length, this time, your language (German or English) and whether you have disabled the reminders. Each new message overwrites the previous one. Legal basis is Art. 6 Abs. 1 lit. b GDPR (the reminder is part of the game you are using). You can disable the reminders at any time with the button in the message or with /reminders.
 
-## 7. Einladungslinks
+## 7. Invitation links
 
-Jede Spielerin und jeder Spieler erhält einen persönlichen Einladungslink, der die eigene Telegram-Nutzer-ID in kodierter Form enthält. Startet jemand, der den Bot noch nie genutzt hat, den Bot über diesen Link, speichern wir, wer wen eingeladen hat, und schreiben der einladenden Person eine Belohnung gut; sie erhält eine Nachricht ohne Namen der eingeladenen Person. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (die Belohnung ist Teil des Spiels). Die Zuordnung bewahren wir auf, solange die gutgeschriebenen Revival-Token im Guthaben zählen, und löschen sie auf Anfrage.
+Every player receives a personal invitation link that contains their Telegram user ID in encoded form. If someone who has never used the bot starts the bot via this link, we store who invited whom and reward the inviting person with a reward; they receive a message without the name of the invited person. Legal basis is Art. 6 Abs. 1 lit. b GDPR (the reward is part of the game). We keep this as long as the credited revival tokens count in the balance, and we delete them on request.
 
-## 8. Bestenlisten in Gruppen
+## 8. Leaderboards in groups
 
-Fügen Sie den Bot einer Gruppe hinzu, kann er dort Spiele posten. Tippen Sie bei einem solchen Spiel auf „Spielen“, speichern wir eine Spielsitzung mit Ihrer Telegram-Nutzer-ID, Ihrem Vornamen, Ihrer Spracheinstellung, dem Spiel, der Gruppe und der Nachricht, damit Ihr Ergebnis in die Bestenliste genau dieser Gruppe kommt; nach einem Tag wird sie gelöscht. Am Ende einer Runde meldet das Spiel Ihr Ergebnis. Ist es Ihre neue Bestleistung in dieser Gruppe, tragen wir es bei Telegram in die Bestenliste des Spiels ein, und Telegram zeigt in der Gruppe eine Nachricht mit Ihrem Namen und Ergebnis. Wir speichern Ihre Bestleistung je Spiel und Gruppe mit Ihrem Vornamen, damit /top die Bestenliste der Gruppe anzeigen kann; holen Sie den Rekord der Gruppe, schreibt der Bot das mit Ihrem Vornamen und dem der bisherigen Rekordhalterin oder des bisherigen Rekordhalters in die Gruppe. Diese Angaben sehen alle Mitglieder der Gruppe. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (die Bestenliste ist Teil des Spiels, das Sie aus der Gruppe heraus öffnen). Spielen Sie das Spiel nicht aus einer Gruppe heraus, wird nichts davon gespeichert.
+If you add the bot to a group, it can post games there. If you press Play in such a game, we store a game session with your Telegram user ID, your first name, your language setting, the game, the group and the message so that your result appears in the leaderboard of exactly that group; after a day it is deleted. At the end of a round the game reports your result. If it is your new best performance in that group, we update the leaderboard of the game with your name and result. We store your best performance per game and group with your first name so that /top can display the group's leaderboard; all members of the group can see these entries. Legal basis is Art. 6 Abs. 1 lit. b GDPR (the leaderboard is part of the game you open from a group). If you do not open the game from a group, nothing of this is stored.
 
-## 9. Eigenwerbung
+## 9. First-party advertising
 
-Das Spiel zeigt ausschließlich Eigenwerbung, also Hinweise auf unsere eigenen Kanäle und Funktionen. Ein Werbenetzwerk wird nicht eingebunden, und es werden keine Cookies gesetzt. Die aktuellen Anzeigen holt die Schnittstelle des Bots (Abschnitt 10) von unserem eigenen Anzeigenserver, sodass Ihr Browser diesen nicht selbst aufruft. Sehen Sie eine Anzeige, tippen Sie darauf oder schauen Sie sie bis zum Ende an, meldet das Spiel der Schnittstelle nur die Kennung der Anzeige und die Art des Ereignisses. Daraus werden Tagessummen je Anzeige gebildet. Ihre IP-Adresse, Ihre Telegram-Nutzer-ID oder andere Angaben zu Ihrer Person werden dabei weder weitergegeben noch gespeichert. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (unser berechtigtes Interesse, zu erfahren, wie gut unsere Hinweise ankommen).
+The game shows only first-party advertising, i.e. hints on our own channels and functions. No advertising network is included and no cookies are set. The current advertisements are fetched from our own advertisement interface, so your browser does not access it directly. If you see an advertisement, tap on it or watch it to the end, the game only reports the advertisement's identifier and the type of event. Day totals per advertisement are formed from this. Your IP address, your Telegram user ID or other data about you are not passed on or stored in the process. Legal basis is Art. 6 Abs. 1 lit. f GDPR (our legitimate interest in finding out how well our hints are received).
 
-## 10. Hosting des Bots, der Schnittstelle und der Datenbank
+## 10. Hosting of the bot, the interface and the database
 
-Der Bot, die Schnittstelle, über die die Mini App Ihr Konto, Ihre Käufe und Ihre Serie abfragt, und die Datenbank mit Konten, Käufen, Zustimmungen, Serien und Bestenlisten laufen auf einem von uns selbst betriebenen Server. Verbindungen zur Schnittstelle werden über Tailscale Funnel der Tailscale Inc. (Kanada) weitergeleitet; Tailscale sieht dabei Ihre IP-Adresse und den Zeitpunkt, die Inhalte bleiben verschlüsselt (https://tailscale.com/privacy-policy). Für Kanada besteht ein Angemessenheitsbeschluss der EU-Kommission. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b und f DSGVO. Fehlerprotokolle enthalten technische Angaben (Zeitpunkt, Fehlermeldung, gegebenenfalls Ihre Telegram-Nutzer-ID) und dienen der Fehlerbehebung.
+The bot, the interface via which the Mini App queries your account, purchases and series, and the database with accounts, purchases, consents, series and leaderboards run on a server we operate ourselves. Connections to the interface are forwarded via Tailscale Funnel of Tailscale Inc. (Canada); Tailscale thereby sees your IP address and the time, the contents remain encrypted (https://tailscale.com/privacy-policy). For Canada there is an adequacy decision of the EU Commission. Legal basis is Art. 6 Abs. 1 lit. b and f GDPR (error logs contain technical details (time, error message, if applicable your Telegram user ID) and serve for error correction).
 
-## 11. Speicherdauer
+## 11. Storage period
 
-Die Seriendaten und Ihre Einträge in Bestenlisten löschen wir auf Anfrage sofort; Spielsitzungen löschen wir nach einem Tag. Kauf- und Zustimmungsdaten bewahren wir auf, solange Sie das Spiel nutzen, und darüber hinaus so lange, wie es gesetzliche Aufbewahrungspflichten erfordern (bis zu zehn Jahre nach § 147 AO und § 257 HGB). Kontodaten ohne Käufe löschen wir auf Anfrage sofort.
+Daily streak data and your entries in leaderboards we delete on request immediately; game sessions we delete after one day. Purchase and consent data we keep as long as you use the game, and beyond that as long as statutory storage obligations require (up to ten years per § 147 AO and § 257 HGB). Account data without purchases we delete on request immediately.
 
-## 12. Ihre Rechte
+## 12. Your rights
 
-Sie haben das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch gegen Verarbeitungen auf Grundlage berechtigter Interessen (Art. 21). Wenden Sie sich dazu an {email}.
+You have the right to information (Art. 15 GDPR), rectification (Art. 16), erasure (Art. 17), restriction of processing (Art. 18), data portability (Art. 20) and objection against processing on the basis of legitimate interests (Art. 21). Contact {email} for this purpose.
 
-Sie haben außerdem das Recht, sich bei einer Datenschutz-Aufsichtsbehörde zu beschweren (Art. 77 DSGVO), insbesondere in dem Mitgliedstaat Ihres Aufenthaltsorts.
+You also have the right to lodge a complaint with a data protection supervisory authority (Art. 77 GDPR), in particular in the member state of your place of residence.
 
-## 13. Keine automatisierte Entscheidung
+## 13. No automated decision-making
 
-Eine automatisierte Entscheidungsfindung einschließlich Profiling findet nicht statt.
+Automated decision-making including profiling does not take place.
 
-Stand: {updated}
+Last updated: {updated}

@@ -1,50 +1,50 @@
-# Widerrufsbelehrung
+# Right of withdrawal
 
-Verbraucherinnen und Verbrauchern steht ein Widerrufsrecht nach folgender Maßgabe zu. Verbraucher ist jede natürliche Person, die ein Rechtsgeschäft zu Zwecken abschließt, die überwiegend weder ihrer gewerblichen noch ihrer selbständigen beruflichen Tätigkeit zugerechnet werden können.
+Consumers have a right of withdrawal subject to the following provisions. A consumer is any natural person who concludes a contract for purposes that are predominantly not related to their commercial or self-employed professional activity.
 
-## Widerrufsrecht
+## The right of withdrawal
 
-Sie haben das Recht, binnen vierzehn Tagen ohne Angabe von Gründen diesen Vertrag zu widerrufen.
+You have the right to withdraw from this contract within fourteen days without giving a reason.
 
-Die Widerrufsfrist beträgt vierzehn Tage ab dem Tag des Vertragsabschlusses.
+The withdrawal period is fourteen days from the day the contract was concluded.
 
-Um Ihr Widerrufsrecht auszuüben, müssen Sie uns ({name}, {street}, {city}, {country}, E-Mail: {email}) mittels einer eindeutigen Erklärung (z. B. ein mit der Post versandter Brief oder eine E-Mail) über Ihren Entschluss, diesen Vertrag zu widerrufen, informieren. Sie können dafür das beigefügte Muster-Widerrufsformular verwenden, das jedoch nicht vorgeschrieben ist.
+To exercise your right of withdrawal, you must inform us ({name}, {street}, {city}, {country}, E-mail: {email}) by means of a clear declaration (for example a letter sent by post or an email) that you intend to withdraw from this contract. You may use the attached withdrawal form, which is not mandatory.
 
-Zur Wahrung der Widerrufsfrist reicht es aus, dass Sie die Mitteilung über die Ausübung des Widerrufsrechts vor Ablauf der Widerrufsfrist absenden.
+For the purpose of complying with the withdrawal period, it is sufficient to send your notification of the exercise of the right of withdrawal before the end of the period.
 
-## Folgen des Widerrufs
+## Consequences of the withdrawal
 
-Wenn Sie diesen Vertrag widerrufen, haben wir Ihnen alle Zahlungen, die wir von Ihnen erhalten haben, unverzüglich und spätestens binnen vierzehn Tagen ab dem Tag zurückzuzahlen, an dem die Mitteilung über Ihren Widerruf dieses Vertrags bei uns eingegangen ist. Für diese Rückzahlung verwenden wir dasselbe Zahlungsmittel, das Sie bei der ursprünglichen Transaktion eingesetzt haben (Telegram Stars), es sei denn, mit Ihnen wurde ausdrücklich etwas anderes vereinbart; in keinem Fall werden Ihnen wegen dieser Rückzahlung Entgelte berechnet.
+If you withdraw from this contract, we will refund all payments we have received from you immediately and at the latest within fourteen days from the day on which we received your notification of the withdrawal. For this refund we use the same payment means you used for the original transaction (Telegram Stars), unless you expressly agreed to something else; in no case shall you be charged for this refund.
 
-Haben Sie verlangt, dass die Dienstleistung (World War 3 Pro) während der Widerrufsfrist beginnen soll, so haben Sie uns einen angemessenen Betrag zu zahlen, der dem Anteil der bis zu dem Zeitpunkt, zu dem Sie uns von der Ausübung des Widerrufsrechts hinsichtlich dieses Vertrags unterrichten, bereits erbrachten Dienstleistungen im Vergleich zum Gesamtumfang der im Vertrag vorgesehenen Dienstleistungen entspricht.
+If you requested that the service (World War 3 Pro) begin within the withdrawal period, you shall pay us an appropriate amount corresponding to the proportion of the service already provided up to the time you informed us of your exercise of the withdrawal right with regard to this contract, compared to the total scope of services offered in the contract.
 
-## Vorzeitiges Erlöschen des Widerrufsrechts
+## Early expiry of the right of withdrawal
 
-Bei Verträgen über die Bereitstellung digitaler Inhalte (Revival-Token, Looks für den Agenten) erlischt das Widerrufsrecht, sobald wir mit der Bereitstellung begonnen haben, nachdem Sie
+For contracts for the provision of digital content (revival tokens, looks for the agent), the right of withdrawal expires once we have begun performance after you
 
-- ausdrücklich zugestimmt haben, dass wir vor Ablauf der Widerrufsfrist mit der Vertragserfüllung beginnen,
-- Ihre Kenntnis davon bestätigt haben, dass Sie durch Ihre Zustimmung mit Beginn der Vertragserfüllung Ihr Widerrufsrecht verlieren, und
-- wir Ihnen eine Bestätigung des Vertrags auf einem dauerhaften Datenträger (Nachricht im Telegram-Chat) zur Verfügung gestellt haben.
+- expressly agreed that we begin performance before the end of the withdrawal period,
+- confirmed that you thereby lose your right of withdrawal when performance begins, and
+- that we have provided you with confirmation of the contract on a durable medium (message in the Telegram chat).
 
-Die digitalen Inhalte werden unmittelbar nach der Zahlung gutgeschrieben. Vor jedem Kauf holen wir Ihre Zustimmung und Bestätigung ein.
+The digital content is credited immediately after the payment. Before every purchase we ask for your consent and confirmation.
 
-Bei World War 3 Pro erlischt das Widerrufsrecht, wenn wir die Dienstleistung vollständig erbracht haben und mit der Ausführung erst begonnen haben, nachdem Sie dazu Ihre ausdrückliche Zustimmung gegeben und gleichzeitig Ihre Kenntnis davon bestätigt haben, dass Sie Ihr Widerrufsrecht bei vollständiger Vertragserfüllung durch uns verlieren.
+For World War 3 Pro, the right of withdrawal expires when we have fully performed the service and have begun performance after you expressly consented to it and confirmed at the same time that you lose your right of withdrawal upon full performance.
 
-## Muster-Widerrufsformular
+## Withdrawal form
 
-(Wenn Sie den Vertrag widerrufen wollen, dann füllen Sie bitte dieses Formular aus und senden Sie es zurück.)
+(If you wish to withdraw from the contract, please fill in this form and send it back.)
 
-An {name}, {street}, {city}, {country}, E-Mail: {email}:
+To: {name}, {street}, {city}, {country}, E-mail: {email}:
 
-Hiermit widerrufe(n) ich/wir (*) den von mir/uns (*) abgeschlossenen Vertrag über den Kauf der folgenden Waren (*)/die Erbringung der folgenden Dienstleistung (*)
+I hereby withdraw (we) (*) from the contract concluded (I/we (*)) with the purchase of the following goods (*)/the performance of the following service (*)
 
-- Bestellt am (*)/erhalten am (*)
-- Name des/der Verbraucher(s)
-- Telegram-Benutzername oder -ID
-- Anschrift des/der Verbraucher(s)
-- Unterschrift des/der Verbraucher(s) (nur bei Mitteilung auf Papier)
-- Datum
+- Ordered on (*)/Received on (*)
+- Name of the consumer(s)
+- Telegram user name or user ID
+- Address of the consumer(s)
+- Signature of the consumer(s) (only for paper submission)
+- Date
 
-(*) Unzutreffendes streichen.
+(*) Omissions to be deleted.
 
-Stand: {updated}
+Last updated: {updated}
