@@ -8,6 +8,7 @@
 		BAND_LOW,
 		BRIEFINGS,
 		createHearing,
+		filibuster,
 		ROUNDS
 	} from '#lib/game/modelhearing/state.js';
 	import { createRandom, randomSeed } from '#lib/game/random.js';
@@ -114,6 +115,16 @@
 						{actionText[action as keyof typeof actionText]()}
 					</button>
 				{/each}
+			</div>
+			<div class="flex justify-end">
+				<button
+					type="button"
+					class="btn-chunky bg-khaki px-2 py-1 text-xs"
+					disabled={game.filibusters <= 0}
+					onclick={() => (game = filibuster(game, createRandom(randomSeed())))}
+				>
+					{m.hearing_filibuster({ count: game.filibusters })}
+				</button>
 			</div>
 			{#if game.spyRevealed}
 				<p class="text-sm font-bold text-tie-red" dir="auto">{m.hearing_spy()}</p>

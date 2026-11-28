@@ -15,6 +15,7 @@ export const CREDIBILITY_START = 60;
 export const CREDIBILITY_COST = 12;
 export const PUSH_BAN = -10;
 export const PUSH_ACCESS = 10;
+export const FILIBUSTERS = 2;
 
 export type Witness = 'amodei' | 'huang' | 'xi' | 'lobbyist';
 export type Action = 'ban' | 'access' | 'investigate' | 'hold';
@@ -38,6 +39,8 @@ export interface HearingState {
 	/** The spy link, revealed once the player investigates */
 	spyRevealed: boolean;
 	last: { policy: number; credibility: number } | null;
+	/** Filibusters left: a witness says nothing this round, without spending a briefing */
+	filibusters: number;
 }
 
 const EVENTS: readonly { item: HearingEvent; weight: number }[] = [
@@ -75,7 +78,8 @@ export function createHearing(random: Random): HearingState {
 		status: 'playing',
 		event: nextEvent(random),
 		spyRevealed: false,
-		last: null
+		last: null,
+		filibusters: FILIBUSTERS
 	};
 }
 
@@ -121,4 +125,15 @@ export function answer(state: HearingState, action: Action, random: Random): Hea
 		spyRevealed: state.spyRevealed || action === 'investigate',
 		last: { policy, credibility }
 	};
+}
+
+/** Talks a witness down without spending a briefing */
+export function filibuster(state: HearingState, random: Random): HearingState {
+	if (state.status !== 'playing' || state.filibusters <= 0) return state;
+	const next = answer(
+		{ ...state, event: state.event ? { ...state.event, push: 0 } : null },
+		'hold',
+		random
+	);
+	return { ...next, filibusters: state.filibusters - 1 };
 }

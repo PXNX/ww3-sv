@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { createRandom } from '#lib/game/random.js';
-import { answer, BAND_HIGH, BAND_LOW, BRIEFINGS, createHearing, ROUNDS } from './state.js';
+import {
+	answer,
+	BAND_HIGH,
+	BAND_LOW,
+	BRIEFINGS,
+	createHearing,
+	ROUNDS,
+	filibuster
+} from './state.js';
 
 const random = () => createRandom(44);
 
@@ -44,5 +52,16 @@ describe('model hearing', () => {
 		expect(answer(state, 'hold', random()).status).toBe('won');
 		state.policy = 90;
 		expect(answer(state, 'hold', random()).status).toBe('lost');
+	});
+});
+
+describe('filibuster', () => {
+	it('cancels a witness without spending a briefing', () => {
+		const state = createHearing(random());
+		state.event = { witness: 'huang', push: 16, line: 'markets' };
+		const next = filibuster(state, random());
+		expect(next.policy).toBe(state.policy);
+		expect(next.briefings).toBe(state.briefings);
+		expect(next.filibusters).toBe(state.filibusters - 1);
 	});
 });
