@@ -1,5 +1,9 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"avatar_unlock_score": "أكثر من {score} نقطة في {game}",
+	"look_cowboy": "قبعة رعاة البقر",
+	"look_beard": "لحية كاملة",
+	"look_clown": "أنف مهرج",
 	"shop_gift_unavailable": "تعذّر على الروبوت التحقق من الرمز الآن — حاول مرة أخرى بعد لحظة.",
 	"fleethunt_pro_ammo": "تموين Pro: طلقات إضافية ومسح كل يوم.",
 	"warroom_council_used_pro": "استُخدم المرسومان اليوم — يأتي مرسومان جديدان غدًا.",

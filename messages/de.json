@@ -1,5 +1,9 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"avatar_unlock_score": "Über {score} Punkte in {game}",
+	"look_cowboy": "Cowboyhut",
+	"look_beard": "Vollbart",
+	"look_clown": "Clown-Nase",
 	"shop_gift_unavailable": "Der Bot konnte den Code gerade nicht prüfen — versuch es in einem Moment erneut.",
 	"fleethunt_pro_ammo": "Pro-Nachschub: jeden Tag extra Schüsse und ein Scan.",
 	"warroom_council_used_pro": "Beide Direktiven heute genutzt — morgen gibt es neue.",

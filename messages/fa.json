@@ -1,5 +1,9 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"avatar_unlock_score": "بیش از {score} امتیاز در {game}",
+	"look_cowboy": "کلاه کابوی",
+	"look_beard": "ریش کامل",
+	"look_clown": "بینی دلقک",
 	"shop_gift_unavailable": "ربات همین الان نتوانست کد را بررسی کند — لحظهای دیگر دوباره امتحان کنید.",
 	"fleethunt_pro_ammo": "تدارکات Pro: شلیکها و اسکن اضافی هر روز.",
 	"warroom_council_used_pro": "هر دو فرمان امروز استفاده شد — فردا دو فرمان جدید است.",

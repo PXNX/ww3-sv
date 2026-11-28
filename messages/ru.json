@@ -1,5 +1,9 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"avatar_unlock_score": "Более {score} очков в {game}",
+	"look_cowboy": "Ковбойская шляпа",
+	"look_beard": "Полная борода",
+	"look_clown": "Клоунский нос",
 	"shop_gift_unavailable": "Бот не смог проверить код прямо сейчас — попробуйте ещё раз через минуту.",
 	"fleethunt_pro_ammo": "Запасы Pro: дополнительные выстрелы и сканирование каждый день.",
 	"warroom_council_used_pro": "Обе директивы использованы — завтра будут новые.",
