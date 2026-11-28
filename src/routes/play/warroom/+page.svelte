@@ -8,7 +8,7 @@
 	import { onMount } from 'svelte';
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import WarRoomCouncil from '#lib/components/WarRoomCouncil.svelte';
 	import WarRoomCrisis from '#lib/components/WarRoomCrisis.svelte';
 	import WarRoomCurve from '#lib/components/WarRoomCurve.svelte';
@@ -26,6 +26,7 @@
 	import { WarRoomGame } from '#lib/stores/warroomGame.svelte.js';
 	import IconCircleHelp from '~icons/lucide/circle-help';
 	import IconStepForward from '~icons/lucide/step-forward';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new WarRoomGame();
 	const modeName = m.mode_warroom_name();
@@ -106,7 +107,7 @@
 		</button>
 	{/snippet}
 
-	<section class="mx-auto grid w-full max-w-6xl gap-2 pb-3">
+	<section data-tutorial="playfield" class="mx-auto grid w-full max-w-6xl gap-2 pb-3">
 		<WarRoomHud {game} />
 
 		<div class="grid grid-cols-1 items-start gap-2 lg:grid-cols-[minmax(0,1fr)_21rem]">
@@ -172,21 +173,13 @@
 		</div>
 	</section>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.warroom_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.warroom_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.warroom_tutorial_goal({ days: MAX_DAYS })}</p>
-		<p>{m.warroom_tutorial_map()}</p>
-		<p>{m.warroom_tutorial_supply()}</p>
-		<p>{m.warroom_tutorial_industry()}</p>
-		<p>{m.warroom_tutorial_army()}</p>
-		<p>{m.warroom_tutorial_combat()}</p>
-		<p>{m.warroom_tutorial_council()}</p>
-		<p>{m.warroom_tutorial_keys()}</p>
-	</TutorialModal>
+	/>
 
 	<GameOverModal
 		open={game.status === 'over'}

@@ -3,7 +3,7 @@
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import RotateHint from '#lib/components/RotateHint.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import VenezuelaCanvas from '#lib/components/VenezuelaCanvas.svelte';
 	import VenezuelaIcon from '#lib/components/VenezuelaIcon.svelte';
 	import VenezuelaLevelSelect from '#lib/components/VenezuelaLevelSelect.svelte';
@@ -18,6 +18,7 @@
 	import IconList from '~icons/lucide/list';
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new VenezuelaGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_venezuela_name();
@@ -100,79 +101,23 @@
 
 	{#if playing}
 		<!-- Played sideways: the field fills the screen, the HUD and the controls float over it -->
-		<div class="relative flex min-h-0 flex-1 flex-col">
+		<div data-tutorial="playfield" class="relative flex min-h-0 flex-1 flex-col">
 			<VenezuelaCanvas {game} levelName={levelName(game.levelIndex)} />
 			<RotateHint />
 		</div>
 	{:else}
-		<VenezuelaLevelSelect {game} />
+		<div data-tutorial="playfield" class="flex min-h-0 flex-1 flex-col">
+			<VenezuelaLevelSelect {game} />
+		</div>
 	{/if}
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.venezuela_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.venezuela_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.venezuela_tutorial_goal()}</p>
-		<p>{m.venezuela_tutorial_controls()}</p>
-		<p>{m.venezuela_tutorial_jump()}</p>
-		<p>{m.venezuela_tutorial_slam()}</p>
-		<p>{m.venezuela_tutorial_boosters()}</p>
-		<p>{m.venezuela_tutorial_legend()}</p>
-		<ul class="flex flex-col gap-2">
-			<li class="flex items-center gap-2">
-				<VenezuelaIcon kind="barrel" class="size-10 shrink-0" />
-				<span><strong>{m.venezuela_barrel_name()}</strong> {m.venezuela_barrel_hint()}</span>
-			</li>
-			<li class="flex items-center gap-2">
-				<VenezuelaIcon kind="goon" class="size-10 shrink-0" />
-				<span><strong>{m.venezuela_goon_name()}</strong> {m.venezuela_goon_hint()}</span>
-			</li>
-			<li class="flex items-center gap-2">
-				<VenezuelaIcon kind="heli" class="size-10 shrink-0" />
-				<span><strong>{m.venezuela_heli_name()}</strong> {m.venezuela_heli_hint()}</span>
-			</li>
-			<li class="flex items-center gap-2">
-				<VenezuelaIcon kind="spikes" class="size-10 shrink-0" />
-				<span><strong>{m.venezuela_spikes_name()}</strong> {m.venezuela_spikes_hint()}</span>
-			</li>
-			<li class="flex items-center gap-2">
-				<VenezuelaIcon kind="block" class="size-10 shrink-0" />
-				<span><strong>{m.venezuela_block_name()}</strong> {m.venezuela_block_hint()}</span>
-			</li>
-			<li class="flex items-center gap-2">
-				<VenezuelaIcon kind="arepa" class="size-10 shrink-0" />
-				<span><strong>{m.venezuela_arepa_name()}</strong> {m.venezuela_arepa_hint()}</span>
-			</li>
-			<li class="flex items-center gap-2">
-				<VenezuelaIcon kind="turbo" class="size-10 shrink-0" />
-				<span><strong>{m.venezuela_turbo_name()}</strong> {m.venezuela_turbo_hint()}</span>
-			</li>
-			<li class="flex items-center gap-2">
-				<VenezuelaIcon kind="boots" class="size-10 shrink-0" />
-				<span><strong>{m.venezuela_boots_name()}</strong> {m.venezuela_boots_hint()}</span>
-			</li>
-			<li class="flex items-center gap-2">
-				<VenezuelaIcon kind="star" class="size-10 shrink-0" />
-				<span><strong>{m.venezuela_star_name()}</strong> {m.venezuela_star_hint()}</span>
-			</li>
-			<li class="flex items-center gap-2">
-				<VenezuelaIcon kind="spring" class="size-10 shrink-0" />
-				<span><strong>{m.venezuela_spring_name()}</strong> {m.venezuela_spring_hint()}</span>
-			</li>
-			<li class="flex items-center gap-2">
-				<VenezuelaIcon kind="barge" class="size-10 shrink-0" />
-				<span><strong>{m.venezuela_barge_name()}</strong> {m.venezuela_barge_hint()}</span>
-			</li>
-			<li class="flex items-center gap-2">
-				<VenezuelaIcon kind="flag" class="size-10 shrink-0" />
-				<span><strong>{m.venezuela_flag_name()}</strong> {m.venezuela_flag_hint()}</span>
-			</li>
-		</ul>
-		<p>{m.venezuela_tutorial_stars()}</p>
-		<p class="hidden text-sm sm:block">{m.venezuela_keyboard_hint()}</p>
-	</TutorialModal>
+	/>
 
 	<VenezuelaWinPanel
 		open={game.status === 'won'}

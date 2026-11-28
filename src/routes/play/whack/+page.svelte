@@ -3,7 +3,7 @@
 	import GameOverModal from '#lib/components/GameOverModal.svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
 	import LivesBar from '#lib/components/LivesBar.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import WhackCanvas from '#lib/components/WhackCanvas.svelte';
 	import WhackIcon from '#lib/components/WhackIcon.svelte';
 	import { prefersReducedMotion } from '#lib/game/loop.js';
@@ -15,6 +15,7 @@
 	import IconPause from '~icons/lucide/pause';
 	import IconPlay from '~icons/lucide/play';
 	import IconHome from '~icons/lucide/house';
+	import { tutorialSteps } from './tutorial.js';
 
 	const game = new WhackGame({ reducedMotion: prefersReducedMotion() });
 	const modeName = m.mode_whack_name();
@@ -64,7 +65,7 @@
 	{/snippet}
 
 	<!-- The HUD and the playfield share one width, as wide as the height allows -->
-	<section
+	<section data-tutorial="playfield"
 		class="mx-auto flex w-full flex-col items-center gap-2"
 		style:max-width="max(15rem, min(100%, calc((100cqh - 6.5rem) * 0.706)))"
 	>
@@ -84,79 +85,13 @@
 		<WhackCanvas {game} />
 	</section>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.whack_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.whack_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.whack_tutorial_goal()}</p>
-		<ul class="flex flex-col gap-2">
-			<li class="flex items-center gap-2">
-				<WhackIcon kind="spokesperson" class="size-10 shrink-0" />
-				<span><strong>{m.whack_spokesperson_name()}</strong></span>
-			</li>
-			<li class="flex items-center gap-2">
-				<WhackIcon kind="official" class="size-10 shrink-0" />
-				<span><strong>{m.whack_official_name()}</strong></span>
-			</li>
-			<li class="flex items-center gap-2">
-				<WhackIcon kind="talkinghead" class="size-10 shrink-0" />
-				<span><strong>{m.whack_talkinghead_name()}</strong></span>
-			</li>
-		</ul>
-		<p>{m.whack_tutorial_statement()}</p>
-		<p>{m.whack_tutorial_categories()}</p>
-		<ul class="flex flex-col gap-2">
-			<li class="flex items-start gap-2">
-				<span
-					class="mt-0.5 inline-block size-4 shrink-0 rounded-full border-2 border-ink"
-					style:background="var(--color-tie-red)"
-					aria-hidden="true"
-				></span>
-				<span>
-					<strong>{m.whack_category_lie()}</strong>
-					— {m.whack_category_lie_hint()}
-				</span>
-			</li>
-			<li class="flex items-start gap-2">
-				<span
-					class="mt-0.5 inline-block size-4 shrink-0 rounded-full border-2 border-ink"
-					style:background="#3f8a45"
-					aria-hidden="true"
-				></span>
-				<span>
-					<strong>{m.whack_category_correction()}</strong>
-					— {m.whack_category_correction_hint()}
-				</span>
-			</li>
-			<li class="flex items-start gap-2">
-				<span
-					class="mt-0.5 inline-block size-4 shrink-0 rounded-full border-2 border-ink"
-					style:background="#2f6fb0"
-					aria-hidden="true"
-				></span>
-				<span>
-					<strong>{m.whack_category_funding()}</strong>
-					— {m.whack_category_funding_hint()}
-				</span>
-			</li>
-		</ul>
-		<p>{m.whack_tutorial_decoys()}</p>
-		<ul class="flex flex-col gap-2">
-			<li class="flex items-center gap-2">
-				<WhackIcon kind="journalist" class="size-10 shrink-0" />
-				<span><strong>{m.whack_journalist_name()}</strong></span>
-			</li>
-			<li class="flex items-center gap-2">
-				<WhackIcon kind="aidworker" class="size-10 shrink-0" />
-				<span><strong>{m.whack_aidworker_name()}</strong></span>
-			</li>
-		</ul>
-		<p>{m.whack_tutorial_combo()}</p>
-		<p>{m.whack_tutorial_boards()}</p>
-		<p class="hidden text-sm sm:block">{m.whack_keyboard_hint()}</p>
-	</TutorialModal>
+	/>
 
 	<GameOverModal
 		open={game.status === 'over'}

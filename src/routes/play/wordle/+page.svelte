@@ -9,7 +9,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import GameShell from '#lib/components/GameShell.svelte';
-	import TutorialModal from '#lib/components/TutorialModal.svelte';
+	import InteractiveTutorial from '#lib/components/InteractiveTutorial.svelte';
 	import WordleBoard from '#lib/components/WordleBoard.svelte';
 	import WordleKeyboard from '#lib/components/WordleKeyboard.svelte';
 	import WordleResult from '#lib/components/WordleResult.svelte';
@@ -29,6 +29,7 @@
 	import IconChart from '~icons/lucide/chart-column';
 	import IconHelp from '~icons/lucide/circle-help';
 	import IconDice from '~icons/lucide/dices';
+	import { tutorialSteps } from './tutorial.js';
 
 	const locale = wordleLocale(getLocale());
 	const game = new WordleGame({ locale });
@@ -160,7 +161,7 @@
 		</button>
 	{/snippet}
 
-	<section class="mx-auto flex w-full max-w-xl flex-col gap-2 pb-2">
+	<section data-tutorial="playfield" class="mx-auto flex w-full max-w-xl flex-col gap-2 pb-2">
 		<div class="grid grid-cols-2 gap-2" role="group" aria-label={m.wordle_tabs_label()}>
 			<button
 				type="button"
@@ -259,22 +260,13 @@
 		{/if}
 	</section>
 
-	<TutorialModal
+	<InteractiveTutorial
 		open={showTutorial}
 		title={m.wordle_tutorial_title()}
+		steps={tutorialSteps}
 		closeLabel={m.wordle_tutorial_close()}
 		onclose={() => (showTutorial = false)}
-	>
-		<p>{m.wordle_tutorial_goal()}</p>
-		<p>{m.wordle_tutorial_colors()}</p>
-		<p>{m.wordle_tutorial_duplicates()}</p>
-		<p>{m.wordle_tutorial_daily()}</p>
-		<p>{m.wordle_tutorial_share()}</p>
-		<p>{m.wordle_tutorial_keys()}</p>
-		{#if letterRule}
-			<p>{letterRule()}</p>
-		{/if}
-	</TutorialModal>
+	/>
 
 	<WordleResult
 		open={showResult}
