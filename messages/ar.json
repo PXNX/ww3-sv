@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"convoy_ship_label": "اختر سفينتك",
+	"convoy_ship_tanker": "ناقلة نفط",
+	"convoy_ship_corvette": "كورفيت",
+	"convoy_ship_tug": "قاطرة",
+	"convoy_ship_tanker_hint": "٣ قلوب، متوازنة",
+	"convoy_ship_corvette_hint": "قلبان، سريعة وضيقة",
+	"convoy_ship_tug_hint": "قلبان، مع مرافقة",
 	"beachhead_synergies_label": "تآزر الفرق",
 	"beachhead_synergy_combined_arms": "أسلحة مشتركة: الهجوم والدبابات تضرب بقوة أكبر",
 	"beachhead_synergy_fire_support": "دعم نيراني: طائرة مسيرة توجه المدفعية",

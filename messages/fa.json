@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"convoy_ship_label": "انتخاب کشتی",
+	"convoy_ship_tanker": "نفتکش",
+	"convoy_ship_corvette": "ناوچه",
+	"convoy_ship_tug": "یدککش",
+	"convoy_ship_tanker_hint": "۳ قلب، متعادل",
+	"convoy_ship_corvette_hint": "۲ قلب، سریع و باریک",
+	"convoy_ship_tug_hint": "۲ قلب، با اسکورت",
 	"beachhead_synergies_label": "همکاری جوخه",
 	"beachhead_synergy_combined_arms": "سلاح‌های ترکیبی: تکاوران و تانک‌ها با هم قویتر ضربه میزنند",
 	"beachhead_synergy_fire_support": "پشتیبانی آتش: پهپاد توپخانه را هدایت میکند",

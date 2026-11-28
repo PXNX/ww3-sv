@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"convoy_ship_label": "Schiff wählen",
+	"convoy_ship_tanker": "Tanker",
+	"convoy_ship_corvette": "Korvette",
+	"convoy_ship_tug": "Schleppboot",
+	"convoy_ship_tanker_hint": "3 Herzen, ausgewogen",
+	"convoy_ship_corvette_hint": "2 Herzen, schnell und schmal",
+	"convoy_ship_tug_hint": "2 Herzen, mit Geleitschutz",
 	"beachhead_synergies_label": "Squad-Synergien",
 	"beachhead_synergy_combined_arms": "Kombinierte Waffen: Sturmtruppen und Panzer treffen härter",
 	"beachhead_synergy_fire_support": "Feuerunterstützung: eine Drohne lotst die schweren Geschütze",

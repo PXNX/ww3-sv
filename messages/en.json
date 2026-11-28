@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"convoy_ship_label": "Choose your ship",
+	"convoy_ship_tanker": "Tanker",
+	"convoy_ship_corvette": "Corvette",
+	"convoy_ship_tug": "Tug",
+	"convoy_ship_tanker_hint": "3 hearts, balanced",
+	"convoy_ship_corvette_hint": "2 hearts, fast and narrow",
+	"convoy_ship_tug_hint": "2 hearts, starts with escort",
 	"beachhead_synergies_label": "Squad synergies",
 	"beachhead_synergy_combined_arms": "Combined arms: assault and tanks hit harder together",
 	"beachhead_synergy_fire_support": "Fire support: a drone spots for the big guns",

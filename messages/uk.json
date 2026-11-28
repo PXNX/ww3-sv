@@ -1,5 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"convoy_ship_label": "Виберіть судно",
+	"convoy_ship_tanker": "Танкер",
+	"convoy_ship_corvette": "Корвет",
+	"convoy_ship_tug": "Буксир",
+	"convoy_ship_tanker_hint": "3 серця, збалансований",
+	"convoy_ship_corvette_hint": "2 серця, швидкий і вузький",
+	"convoy_ship_tug_hint": "2 серця, з ескортом",
 	"beachhead_synergies_label": "Синергії загону",
 	"beachhead_synergy_combined_arms": "Комбіновані війська: штурмовики й танки б’ють сильніше разом",
 	"beachhead_synergy_fire_support": "Вогнева підтримка: дрон наводить важку артилерію",
