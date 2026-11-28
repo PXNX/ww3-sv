@@ -1,5 +1,7 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"shop_gift_done_pro": "أصبحت ستة أشهر من Pro نشطة على حسابك الآن.",
+	"shop_gift_telegram_only": "هذا الرمز يعمل في Telegram فقط — افتح اللعبة هناك لتفعيله.",
 	"merge_objectives_label": "أهداف الجولة",
 	"merge_objective_ferry": "ابنِ عبّارة",
 	"merge_objective_oil_tanker": "ابنِ ناقلة نفط",

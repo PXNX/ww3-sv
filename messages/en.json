@@ -1,5 +1,7 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"shop_gift_done_pro": "Six months of Pro are now active on your account.",
+	"shop_gift_telegram_only": "This code works in Telegram only — open the game there to redeem it.",
 	"merge_objectives_label": "Run goals",
 	"merge_objective_ferry": "Build a ferry",
 	"merge_objective_oil_tanker": "Build an oil tanker",

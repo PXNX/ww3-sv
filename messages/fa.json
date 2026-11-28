@@ -1,5 +1,7 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"shop_gift_done_pro": "شش ماه Pro اکنون روی حساب شما فعال است.",
+	"shop_gift_telegram_only": "این کد فقط در تلگرام کار میکند — بازی را آنجا باز کنید تا آن را redeem کنید.",
 	"merge_objectives_label": "اهداف مسابقه",
 	"merge_objective_ferry": "ساخت کشتی مسافربری",
 	"merge_objective_oil_tanker": "ساخت نفتکش",

@@ -1,5 +1,7 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"shop_gift_done_pro": "Шість місяців Pro тепер активні на вашому акаунті.",
+	"shop_gift_telegram_only": "Цей код працює лише в Telegram — відкрийте гру там, щоб активувати його.",
 	"merge_objectives_label": "Цілі заходу",
 	"merge_objective_ferry": "Побудувати пором",
 	"merge_objective_oil_tanker": "Побудувати нафтовик",
