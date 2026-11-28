@@ -46,3 +46,19 @@ describe('gift codes', () => {
 		expect(redeemGift(profile, ['WW3GIFT'], 'OILBOOM').status).toBe('ok');
 	});
 });
+
+describe('free look gift codes', () => {
+	it('gives a look without changing the wallet', () => {
+		const result = redeemGift(profile, [], 'FLAMINGO');
+		expect(result.status).toBe('ok');
+		if (result.status === 'ok') {
+			expect(result.gift.reward).toBe('look');
+			expect(result.gift.look).toEqual({ part: 'shirt', value: 'flamingo' });
+			expect(result.profile).toEqual(profile);
+		}
+	});
+
+	it('offers exactly four free looks', () => {
+		expect(GIFT_CODES.filter((gift) => gift.reward === 'look')).toHaveLength(4);
+	});
+});

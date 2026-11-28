@@ -5,7 +5,7 @@
  * are remembered in local storage.
  */
 
-export type GiftReward = 'revive' | 'coins' | 'pro';
+export type GiftReward = 'revive' | 'coins' | 'pro' | 'look';
 
 export interface GiftCode {
 	/** Upper case, no spaces */
@@ -15,6 +15,8 @@ export interface GiftCode {
 	value: number;
 	/** Timestamp in milliseconds after which the code no longer works */
 	expiresAt?: number;
+	/** The avatar part and value this code gives, for free look codes */
+	look?: { part: string; value: string };
 }
 
 export const GIFT_CODES: readonly GiftCode[] = [
@@ -23,7 +25,12 @@ export const GIFT_CODES: readonly GiftCode[] = [
 	// Also an account code: inside Telegram the bot credits it once per account (ACCOUNT_GIFT_CODES)
 	{ code: 'MN5', reward: 'revive', value: 5 },
 	// Telegram-only: the bot grants Pro for six calendar months once per account
-	{ code: 'PRO6M', reward: 'pro', value: 6 }
+	{ code: 'PRO6M', reward: 'pro', value: 6 },
+	// Four free cosmetics, redeemable on any device like the other local codes
+	{ code: 'FLAMINGO', reward: 'look', value: 1, look: { part: 'shirt', value: 'flamingo' } },
+	{ code: 'SKY', reward: 'look', value: 1, look: { part: 'shirtColor', value: '#00a8ff' } },
+	{ code: 'ORANGE', reward: 'look', value: 1, look: { part: 'shirtColor', value: '#fa983a' } },
+	{ code: 'SLATE', reward: 'look', value: 1, look: { part: 'shirtColor', value: '#78909c' } }
 ];
 
 /**

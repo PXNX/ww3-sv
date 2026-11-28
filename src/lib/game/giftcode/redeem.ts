@@ -22,6 +22,7 @@ export function redeemGift(
 	if (gift.expiresAt !== undefined && now > gift.expiresAt) return { status: 'expired' };
 	// Pro lives in the bot's account ledger, so a browser has nothing to credit locally
 	if (gift.reward === 'pro') return { status: 'telegram-only' };
+	if (gift.reward === 'look') return { status: 'ok', gift, profile };
 	const paid: CareerProfile =
 		gift.reward === 'revive'
 			? { ...profile, revives: profile.revives + gift.value }

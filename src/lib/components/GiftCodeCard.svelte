@@ -7,6 +7,7 @@
 	import { accountGiftCode } from '#lib/game/giftcode/config.js';
 	import { telegram } from '#lib/stores/telegram.svelte.js';
 	import { m } from '#lib/paraglide/messages.js';
+	import { paidLookName } from './unlockText.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { soundManager } from '#lib/sound/soundManager.svelte.js';
 	import IconGift from '~icons/lucide/gift';
@@ -88,7 +89,9 @@
 				text:
 					result.gift.reward === 'revive'
 						? m.shop_gift_done_revive({ count: result.gift.value })
-						: m.shop_gift_done_coins({ count: result.gift.value })
+						: result.gift.reward === 'look'
+							? m.shop_gift_done_look({ name: paidLookName(result.gift.code) })
+							: m.shop_gift_done_coins({ count: result.gift.value })
 			};
 			return;
 		}
