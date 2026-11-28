@@ -41,6 +41,7 @@
 	import { resultTip } from '#lib/game/resultTips.js';
 	import { juice } from '#lib/game/juice.svelte.js';
 	import '#lib/styles/hackers.css';
+	import Avatar from './Avatar.svelte';
 	import Confetti from './Confetti.svelte';
 	import GroupLeaderboard from './GroupLeaderboard.svelte';
 	import ResultCharacter from './ResultCharacter.svelte';
@@ -356,6 +357,11 @@
 							{/if}
 						</div>
 
+						<Avatar
+							size={64}
+							reaction={outcome}
+							class="shrink-0 drop-shadow-[2px_2px_0_var(--color-ink)]"
+						/>
 						{#if withCharacter && open}
 							<ResultCharacter {mode} {outcome} class="w-20 sm:w-24" />
 						{/if}

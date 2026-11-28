@@ -17,9 +17,18 @@
 		/** Accessible name; without one the drawing is decorative */
 		label?: string;
 		class?: string;
+		/** A result-sheet reaction: sparkles on a win, a droopy line on a loss */
+		reaction?: 'won' | 'lost';
 	}
 
-	let { look, size = 64, expression = 'happy', label, class: className = '' }: Props = $props();
+	let {
+		look,
+		size = 64,
+		expression = 'happy',
+		label,
+		class: className = '',
+		reaction
+	}: Props = $props();
 
 	const avatarState = avatar();
 	const current = $derived(look ?? avatarState.shown);
@@ -579,5 +588,37 @@
 			stroke="#4a2f1a"
 			stroke-width="2.5"
 		/>
+	{/if}
+	{#if reaction}
+		<g class="reaction" class:lost={reaction === 'lost'} aria-hidden="true">
+			{#if reaction === 'won'}
+				<path
+					d="M60 8 L62 14 L68 16 L62 18 L60 24 L58 18 L52 16 L58 14 Z"
+					fill="#f5c83a"
+					stroke="#111"
+					stroke-width="1.5"
+				/>
+				<path
+					d="M26 26 L28 30 L32 32 L28 34 L26 38 L24 34 L20 32 L24 30 Z"
+					fill="#f5c83a"
+					stroke="#111"
+					stroke-width="1.2"
+				/>
+				<path
+					d="M94 26 L96 30 L100 32 L96 34 L94 38 L92 34 L88 32 L92 30 Z"
+					fill="#f5c83a"
+					stroke="#111"
+					stroke-width="1.2"
+				/>
+			{:else}
+				<path
+					d="M40 18 Q60 10 80 18"
+					fill="none"
+					stroke="#7d8594"
+					stroke-width="3"
+					stroke-dasharray="4 3"
+				/>
+			{/if}
+		</g>
 	{/if}
 </svg>
