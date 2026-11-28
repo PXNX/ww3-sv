@@ -1,5 +1,6 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"bordershift_hud_control": "کنترل صف {value}",
 	"mode_modelhearing_name": "جلسه مدلها",
 	"mode_modelhearing_description": "آمدی میخواهد ممنوعیت و هوانگ دسترسی نامحدود. مصالحهای پیدا کنید.",
 	"hearing_witness_safety": "آمدی: «مدلهای چینی بررسی نشده خطر غیرقابل قبولیاند.»",

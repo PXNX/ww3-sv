@@ -1,5 +1,6 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"bordershift_hud_control": "Контроль очереди {value}",
 	"mode_modelhearing_name": "Слушание моделей",
 	"mode_modelhearing_description": "Амоди хочет запрета, Хуанг — безграничного доступа. Найдите компромисс.",
 	"hearing_witness_safety": "Амоди: «Непроверенные китайские модели — недопустимый риск.»",

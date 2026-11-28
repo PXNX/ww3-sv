@@ -16,6 +16,7 @@ import {
 	VEHICLE_COUNT
 } from './config.js';
 import { clearChance, dealConvoy, patienceFor, psyopsShare, tunnelShare } from './convoys.js';
+import { CONTROL_START } from './config.js';
 import {
 	createGame,
 	decide,
@@ -46,7 +47,7 @@ function passAndAdvance(game: BorderShiftState, random: () => number) {
 
 describe('Border Shift convoys', () => {
 	it('shortens the patience and raises the psy-op share with every shift', () => {
-		expect(patienceFor(2)).toBeLessThan(patienceFor(1));
+		expect(patienceFor(2)).toBeLessThan(patienceFor(1, CONTROL_START));
 		expect(patienceFor(99)).toBe(patienceFor(100));
 		expect(psyopsShare(2)).toBeGreaterThan(psyopsShare(1));
 		expect(psyopsShare(99)).toBe(psyopsShare(100));
@@ -112,7 +113,7 @@ describe('Border Shift state', () => {
 		expect(game.wave).toBe(1);
 		expect(game.convoyNumber).toBe(1);
 		expect(game.reputation).toBe(STARTING_REPUTATION);
-		expect(game.patienceLeftMs).toBe(patienceFor(1));
+		expect(game.patienceLeftMs).toBe(patienceFor(1, CONTROL_START));
 		expect(game.score).toBe(0);
 		expect(game.revealed).toEqual({ documents: null, camera: null, ground: null });
 	});
@@ -121,9 +122,9 @@ describe('Border Shift state', () => {
 		const game = createGame(family);
 		const events = inspect(game, 'documents');
 		expect(events).toEqual([{ type: 'hint', tool: 'documents', hint: 'unclear' }]);
-		expect(game.patienceLeftMs).toBe(patienceFor(1) - INSPECT_MS);
+		expect(game.patienceLeftMs).toBe(patienceFor(1, CONTROL_START) - INSPECT_MS);
 		expect(inspect(game, 'documents')).toEqual([]);
-		expect(game.patienceLeftMs).toBe(patienceFor(1) - INSPECT_MS);
+		expect(game.patienceLeftMs).toBe(patienceFor(1, CONTROL_START) - INSPECT_MS);
 	});
 
 	it('shows the truth through all three tools when the night is clear', () => {
@@ -203,13 +204,13 @@ describe('Border Shift state', () => {
 		const game = createGame(diggers);
 		const events = inspect(game, 'ground');
 		expect(events).toEqual([{ type: 'hint', tool: 'ground', hint: 'tunnel' }]);
-		expect(game.patienceLeftMs).toBe(patienceFor(1) - INSPECT_MS);
+		expect(game.patienceLeftMs).toBe(patienceFor(1, CONTROL_START) - INSPECT_MS);
 		expect(inspect(game, 'ground')).toEqual([]);
 	});
 
 	it('opens the barrier by itself when the convoy runs out of patience', () => {
 		const game = createGame(psyched);
-		const events = advance(game, psyched, PATIENCE_BASE_MS + 10);
+		const events = advance(game, psyched, patienceFor(1, CONTROL_START) + 10);
 		expect(events[0]).toMatchObject({ type: 'wrong', reason: 'timeout', decision: 'pass' });
 		expect(game.patienceLeftMs).toBe(0);
 		expect(game.stats.slipped).toBe(1);
@@ -233,7 +234,7 @@ describe('Border Shift state', () => {
 		expect(events.some((event) => event.type === 'wave')).toBe(true);
 		expect(game.wave).toBe(2);
 		expect(game.correct).toBe(HITS_PER_WAVE);
-		expect(patienceFor(game.wave)).toBeLessThan(patienceFor(1));
+		expect(patienceFor(game.wave)).toBeLessThan(patienceFor(1, CONTROL_START));
 	});
 
 	it('ends the night after the last reputation point and then shows the sheet', () => {
@@ -335,5 +336,24 @@ describe('Border Shift messages', () => {
 			expect(missingMessages([`bordershift_vehicle_${i}`]), `${i}`).toEqual([]);
 		}
 		expect(missingMessages(['bordershift_vehicle_9'])).not.toEqual([]);
+	});
+});
+
+describe('queue control', () => {
+	it('buys patience when the post keeps its nerve', () => {
+		expect(patienceFor(1, 100)).toBeGreaterThan(patienceFor(1, 0));
+		expect(patienceFor(1, 40)).toBeGreaterThan(patienceFor(1, 0));
+	});
+
+	it('rises on correct calls and falls on wrong ones', () => {
+		const state = createGame(createRandom(5));
+		const before = state.control;
+		state.convoy.truth = 'family';
+		decide(state, 'pass');
+		expect(state.control).toBeGreaterThan(before);
+		const next = createGame(createRandom(6));
+		next.convoy.truth = 'family';
+		decide(next, 'refuse');
+		expect(next.control).toBeLessThan(before);
 	});
 });

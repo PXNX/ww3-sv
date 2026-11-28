@@ -9,6 +9,7 @@ import {
 	CLEAR_BASE,
 	CLEAR_MIN,
 	CLEAR_STEP,
+	CONTROL_PATIENCE_SHARE,
 	HITS_PER_WAVE,
 	PATIENCE_BASE_MS,
 	PATIENCE_MIN_MS,
@@ -43,8 +44,10 @@ export interface Convoy {
 }
 
 /** How long a convoy waits in this shift */
-export function patienceFor(wave: number): number {
-	return Math.max(PATIENCE_MIN_MS, PATIENCE_BASE_MS - PATIENCE_STEP_MS * (wave - 1));
+export function patienceFor(wave: number, control = 0): number {
+	const base = Math.max(PATIENCE_MIN_MS, PATIENCE_BASE_MS - PATIENCE_STEP_MS * (wave - 1));
+	const share = Math.max(0, Math.min(100, control)) / 100;
+	return Math.round(base * (1 + share * CONTROL_PATIENCE_SHARE));
 }
 
 /** Share of convoys that are psy-ops in this shift */

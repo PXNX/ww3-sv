@@ -57,6 +57,8 @@ export class BorderShiftGame {
 	reputation = $state(STARTING_REPUTATION);
 	/** The radio's campaign, 0 to 1; the night ends at 1 even with reputation left */
 	destabilisation = $state(0);
+	/** Queue control, mirrored from the rules state for the HUD */
+	control = $state(0);
 	outcome = $state<BorderShiftOutcome | null>(null);
 	score = $state(0);
 	streak = $state(0);
@@ -284,6 +286,7 @@ export class BorderShiftGame {
 		this.patience = patienceShare(state);
 		this.reputation = state.reputation;
 		this.destabilisation = destabilisationShare(state);
+		this.control = state.control;
 		this.outcome = state.outcome;
 		this.score = state.score;
 		this.streak = state.streak;

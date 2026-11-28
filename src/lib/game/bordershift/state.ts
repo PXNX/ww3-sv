@@ -17,6 +17,9 @@ import {
 	DESTAB_TURNED_AWAY,
 	FEEDBACK_MS,
 	GAME_OVER_FEEDBACK_MS,
+	CONTROL_PER_CORRECT,
+	CONTROL_PER_WRONG,
+	CONTROL_START,
 	INSPECT_MS,
 	POINTS_BASE,
 	POINTS_PATIENCE,
@@ -74,6 +77,8 @@ export interface BorderShiftState {
 	wave: number;
 	convoyNumber: number;
 	convoy: Convoy;
+	/** How firmly the post holds the queue, 0 to 100; buys patience on the next convoy */
+	control: number;
 	patienceMs: number;
 	patienceLeftMs: number;
 	/** What each tool has shown so far; null means not used on this convoy */
@@ -113,7 +118,7 @@ function deal(state: BorderShiftState, random: Random) {
 	const previous = state.convoyNumber === 0 ? null : state.convoy.vehicle;
 	state.convoyNumber += 1;
 	state.convoy = dealConvoy(random, state.wave, previous);
-	state.patienceMs = patienceFor(state.wave);
+	state.patienceMs = patienceFor(state.wave, state.control);
 	state.patienceLeftMs = state.patienceMs;
 	state.revealed = { documents: null, camera: null, ground: null };
 	state.phase = 'watch';
@@ -130,7 +135,8 @@ export function createGame(random: Random): BorderShiftState {
 			truth: 'family',
 			hints: { documents: 'unclear', camera: 'unclear', ground: 'unclear' }
 		},
-		patienceMs: patienceFor(1),
+		control: CONTROL_START,
+		patienceMs: patienceFor(1, CONTROL_START),
 		patienceLeftMs: patienceFor(1),
 		revealed: { documents: null, camera: null, ground: null },
 		feedbackLeftMs: 0,
@@ -182,6 +188,7 @@ function resolve(
 		const points = pointsFor(state) + (truth === 'tunnel' ? POINTS_TUNNEL_BONUS : 0);
 		state.score += points;
 		state.correct += 1;
+		state.control = Math.min(100, state.control + CONTROL_PER_CORRECT);
 		state.streak += 1;
 		state.bestStreak = Math.max(state.bestStreak, state.streak);
 		// A right call is a small counter-story: trust in the post creeps back up
@@ -199,6 +206,7 @@ function resolve(
 		}
 	} else {
 		state.wrong += 1;
+		state.control = Math.max(0, state.control - CONTROL_PER_WRONG);
 		state.streak = 0;
 		state.reputation = Math.max(0, state.reputation - 1);
 		// The radio's win: a tunnel through is the loudest story, a psy-op through the next, a

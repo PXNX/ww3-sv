@@ -1,5 +1,6 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"bordershift_hud_control": "ضبط الصف {value}",
 	"mode_modelhearing_name": "جلسة النماذج",
 	"mode_modelhearing_description": "أمودي يريد حظرًا وهوانغ يريد وصولًا غير محدود. ابحث عن حل وسط.",
 	"hearing_witness_safety": "أمودي: «النماذج الصينية غير المفحوصة خطر غير مقبول.»",

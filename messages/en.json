@@ -1,5 +1,6 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"bordershift_hud_control": "Queue control {value}",
 	"mode_modelhearing_name": "Model Hearing",
 	"mode_modelhearing_description": "Amodei wants a ban. Huang wants unlimited access. Find the compromise.",
 	"hearing_witness_safety": "Amodei: \"Unvetted Chinese models are an unacceptable risk.\"",

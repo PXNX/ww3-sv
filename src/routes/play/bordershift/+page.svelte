@@ -107,6 +107,25 @@
 			</div>
 			<div
 				class="flex items-center gap-2"
+				data-tutorial="hud-control"
+				role="progressbar"
+				aria-label={m.bordershift_hud_control({ value: Math.round(game.control) })}
+				aria-valuemin={0}
+				aria-valuemax={100}
+				aria-valuenow={Math.round(game.control)}
+			>
+				<p dir="auto" class="shrink-0 font-display text-xs font-bold tabular-nums sm:text-sm">
+					{m.bordershift_hud_control({ value: Math.round(game.control) })}
+				</p>
+				<div class="h-2.5 w-full overflow-hidden rounded-full border-2 border-ink bg-sand">
+					<div
+						class="h-full bg-khaki transition-[width] duration-300"
+						style:width="{game.control}%"
+					></div>
+				</div>
+			</div>
+			<div
+				class="flex items-center gap-2"
 				data-tutorial="hud-destabilisation"
 				role="progressbar"
 				aria-label={m.bordershift_aria_destabilisation()}

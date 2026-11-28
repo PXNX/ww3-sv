@@ -15,6 +15,13 @@ export const PATIENCE_BASE_MS = 9500;
 export const PATIENCE_MIN_MS = 4600;
 export const PATIENCE_STEP_MS = 900;
 
+/** Queue control: a well-run post keeps its nerve and the queue waits a little longer */
+export const CONTROL_START = 40;
+export const CONTROL_PER_CORRECT = 8;
+export const CONTROL_PER_WRONG = 14;
+/** At full control the queue waits 40 % longer; at zero, the base patience stands */
+export const CONTROL_PATIENCE_SHARE = 0.4;
+
 /** What one look at the papers or one photo costs on the patience clock */
 export const INSPECT_MS = 1200;
 

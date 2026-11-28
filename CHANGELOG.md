@@ -8,6 +8,11 @@ Commits since the last tag. The in-app version history and public `/changelog` p
 
 ### Improved
 
+#### bordershift
+
+- A queue-control meter: correct calls give the post more nerve and the next convoy waits longer;
+  wrong calls cost control and speed the queue up
+
 #### recon
 
 - Strikes backed by more sensor readings now pay a bonus; firing at an unread contact is reckless
